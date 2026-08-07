@@ -29,7 +29,7 @@ Core framework, condensed:
 - "Character" is the emerging universal unit: individuals, films-as-containers, and nations are all entities in one schema, differentiated by type/scale, not separate systems.
 - Entities are tagged "grounded" (derived from real source material the user has provided) vs. reasoned (your own inference) — always say which when it matters, never blur the two.
 
-You have tools to query the live database: search entities, fetch one entity with full detail (tags, continuum scores, container/children), list clusters, list continuum axes, and find entities near a given continuum value. Use them for anything specific rather than guessing from this prompt — this prompt gives you the paradigm, the tools give you the current facts.
+You have tools to query the live database: search entities, fetch one entity with full detail (tags, continuum scores, container/children), list clusters, list continuum axes, find entities near a given continuum value, and list/read the full reference documents (the complete ontology doc, films master list, and the source archive that grounded the film analysis). Use them for anything specific rather than guessing from this prompt — this prompt gives you the paradigm, the tools give you the current facts and the primary sources.
 
 You may also receive PDF documents the user uploaded directly in this message — read them natively.
 
@@ -72,6 +72,24 @@ const TOOLS = [
       type: 'object',
       properties: { axis_key: { type: 'string' }, value: { type: 'number' }, limit: { type: 'number' } },
       required: ['axis_key', 'value'],
+    },
+  },
+  {
+    name: 'list_knowledge_docs',
+    description: 'List the full reference documents available beyond this system prompt (the full ontology doc, films master list, and the source archive that grounded the film analysis). Returns titles and descriptions only, not content.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'read_knowledge_doc',
+    description: 'Read a reference document in full or a slice of it by title (from list_knowledge_docs). The source archive is large (~750k tokens) — prefer offset/length to read a portion rather than the whole thing unless truly needed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        offset: { type: 'number', description: 'Character offset to start from. Default 0.' },
+        length: { type: 'number', description: 'Max characters to return. Default 20000.' },
+      },
+      required: ['title'],
     },
   },
 ];
@@ -134,6 +152,22 @@ export function buildPriorContext(db, excludeSessionId = null) {
   return `\n\nPrior context from recent sessions (most recent last), so you don't need to be re-briefed from scratch:\n\n${blocks.join('\n\n')}`;
 }
 
+// ─── Knowledge base ─────────────────────────────────────────────────────────────
+function listKnowledgeDocs(db) {
+  return db.prepare(`SELECT title, description, length(content) AS chars FROM knowledge_docs`).all();
+}
+function readKnowledgeDoc(db, title, offset, length) {
+  const row = db.prepare(`SELECT content FROM knowledge_docs WHERE title=?`).get(title);
+  if (!row) return { error: 'not_found', available: db.prepare(`SELECT title FROM knowledge_docs`).all().map((r) => r.title) };
+  const content = row.content;
+  return {
+    title, offset, length: Math.min(length, content.length - offset),
+    total_chars: content.length,
+    has_more: offset + length < content.length,
+    text: content.slice(offset, offset + length),
+  };
+}
+
 // ─── Chat turn ───────────────────────────────────────────────────────────────────
 export function makeChatHandler(db) {
   return async function handleChat({ sessionId, text, attachments = [] }) {
@@ -148,6 +182,8 @@ export function makeChatHandler(db) {
         case 'list_clusters': return q.listClusters(db);
         case 'list_continuum_axes': return q.listContinuumAxes(db);
         case 'nearby_on_axis': return q.nearbyOnAxis(db, input.axis_key, input.value, input.limit || 10);
+        case 'list_knowledge_docs': return listKnowledgeDocs(db);
+        case 'read_knowledge_doc': return readKnowledgeDoc(db, input.title, input.offset || 0, input.length || 20000);
         default: return { error: `unknown tool: ${name}` };
       }
     };
@@ -176,11 +212,18 @@ export function makeChatHandler(db) {
     let messages = [...history, { role: 'user', content: userContent }];
     let finalText = '';
     for (let round = 0; round < 6; round++) {
-      const resp = await fetch(ANTHROPIC_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 1500, system, tools: TOOLS, messages }),
-      });
+      let resp;
+      try {
+        resp = await fetch(ANTHROPIC_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 1500, system, tools: TOOLS, messages }),
+        });
+      } catch (e) {
+        // Network failure reaching the API — return a clean error instead of letting
+        // an unhandled rejection crash the whole server (it did, once, before this).
+        return { error: 'network_error', message: `Could not reach the Anthropic API: ${e.message}` };
+      }
       if (!resp.ok) {
         const errText = await resp.text().catch(() => '');
         return { error: 'api_error', message: `Anthropic API HTTP ${resp.status}: ${errText.slice(0, 500)}` };

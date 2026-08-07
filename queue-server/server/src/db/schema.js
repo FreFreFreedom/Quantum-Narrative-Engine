@@ -23,6 +23,7 @@ export function openDb() {
   initSchema(db);
   initOntologySchema(db);
   initChatSchema(db);
+  initKnowledgeSchema(db);
   return db;
 }
 
@@ -219,4 +220,23 @@ export function initChatSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_attachments_session ON chat_attachments(session_id)`); } catch {}
+}
+
+// ─── Knowledge base: full reference documents for the embedded assistant ───────
+// The chat's system prompt is a CONDENSED summary of the project (kept short so
+// every turn doesn't pay for it). The full source documents live here instead, and
+// the assistant pulls them on demand via a tool (see chat.js) — this is the
+// difference between "knows the paradigm" (system prompt) and "can go read the
+// primary source when it matters" (this table).
+export function initKnowledgeSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS knowledge_docs (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL UNIQUE,
+      description TEXT,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
 }

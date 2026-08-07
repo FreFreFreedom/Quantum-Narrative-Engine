@@ -8,13 +8,27 @@ import { queueRoutes } from './routes/queue.js';
 import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
+import { migrateOntology, seedKnowledge } from './services/bootstrapData.js';
 import { initTaskRunner } from './services/taskRunner.js';
+
+process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
+process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
 
 const PORT = process.env.PORT || 8080;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 const db = openDb();
 bindDb(db);
+
+// Repopulate ontology + knowledge data on every boot — Railway's free tier resets
+// the DB on each deploy, so this has to be automatic, not a one-off manual step.
+try {
+  const ontologyResult = migrateOntology(db);
+  const knowledgeResult = seedKnowledge(db);
+  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult }));
+} catch (e) {
+  console.error('Bootstrap data load failed:', e.message);
+}
 
 const app = express();
 app.use(cors());
