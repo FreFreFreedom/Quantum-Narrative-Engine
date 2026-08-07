@@ -62,3 +62,12 @@ Both are still **rendering-layer prototypes** — no database, no ontological/se
 ---
 
 *This file is maintained by Claude in Cowork, tracked in git going forward instead of Google Drive. Commit history is the changelog — check `git log` rather than looking for a list of dated entries here.*
+
+## Latest: graph view — navigation upgrades (this session)
+
+- **Zoom & pan**: scroll wheel zooms centered on cursor, drag pans. Applies to the graph view only.
+- **Always-visible labels**: film titles render under each node (not just hover tooltips), truncated to stay legible; zoom in for clarity on dense clusters.
+- **Timeline layout mode**: toggle between Force (default physics layout) and Timeline, which pins each film's horizontal position to its release year with a year-axis at the bottom. This is the "horizontal = time, same scale" navigation the user described.
+- **Scale bridges (vertical navigation, real version)**: toggle reveals the map's 10 countries in a lower band of the same graph, positioned by their Guilt-as-Engine value. Dashed lines connect any of the 13 guilt-cluster films to countries within 0.15 of their own Guilt-as-Engine position. Clicking a country shows its position and the matching films. This is intentionally the *small, real* version of vertical scale navigation — built on the one axis that actually exists across both domains today, not a placeholder.
+- Not yet done: vertical navigation for the Possession/Sovereign-Otherness axis (no map entities scored on it yet), and horizontal timeline mode for non-grounded clusters (graph still only shows the 47 grounded films).
+
