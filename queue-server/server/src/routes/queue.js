@@ -1,55 +1,87 @@
-// Minimal CRUD over work_prompts to prove the DB + auth + broadcast foundation end-to-end
-// (§12 step 1). This is deliberately NOT promptQueue.js/taskRunner.js yet (§12 steps 2-3) —
-// no ordering/status-machine/agent-spawning logic here, just enough to create/list/soft-delete
-// a queue item and see it round-trip through Railway + Postgres-or-SQLite + a browser.
-
+// Routes for the work queue — subset of §9's HTTP contract, backed by promptQueue.js.
 import { Router } from 'express';
-import { randomUUID } from 'node:crypto';
-import { broadcastAll } from '../realtime.js';
+import * as queue from '../services/promptQueue.js';
 
-export function queueRoutes(db) {
+export function queueRoutes() {
   const router = Router();
 
   router.get('/prompts', (req, res) => {
     const space = req.query.space || 'fmcns';
-    const rows = db.prepare(
-      `SELECT * FROM work_prompts WHERE space = ? AND deleted_at IS NULL ORDER BY position ASC, created_at ASC`
-    ).all(space);
-    res.json({ prompts: rows });
+    const prompts = queue.listPrompts({ space }).map((p) => ({
+      ...p,
+      pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
+      messages: queue.listMessages(p.id),
+    }));
+    res.json({
+      prompts,
+      queue_paused: queue.getQueuePauseState().paused,
+      queue_paused_at: queue.getQueuePauseState().paused_at,
+      queue_paused_reason: queue.getQueuePauseState().reason,
+    });
   });
 
   router.post('/prompts', (req, res) => {
-    const { prompt, title, mode, preset, same_context, space } = req.body || {};
-    if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({ error: 'prompt_required' });
+    try {
+      const row = queue.createPrompt({ ...req.body, created_by: req.user?.sub || 'antoine' });
+      res.status(201).json(row);
+      queue.advanceQueue();
+    } catch (e) {
+      res.status(400).json({ error: e.message });
     }
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    const derivedTitle = title || prompt.split('\n')[0].slice(0, 80);
-    db.prepare(`
-      INSERT INTO work_prompts (id, title, prompt, mode, preset, same_context, space, title_auto, created_by, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'antoine', ?, ?)
-    `).run(
-      id, derivedTitle, prompt,
-      mode === 'question' ? 'question' : 'implement',
-      preset || 'deep',
-      same_context ? 1 : 0,
-      space || 'fmcns',
-      title ? 0 : 1,
-      now, now
-    );
-    const row = db.prepare(`SELECT * FROM work_prompts WHERE id = ?`).get(id);
-    broadcastAll('travaux:prompts:updated', { id });
-    res.status(201).json(row);
+  });
+
+  router.patch('/prompts/:id', (req, res) => {
+    const row = queue.updatePrompt(req.params.id, req.body || {});
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
   });
 
   router.delete('/prompts/:id', (req, res) => {
-    const now = new Date().toISOString();
-    const result = db.prepare(`UPDATE work_prompts SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`)
-      .run(now, now, req.params.id);
-    if (result.changes === 0) return res.status(404).json({ error: 'not_found' });
-    broadcastAll('travaux:prompts:updated', { id: req.params.id, deleted: true });
+    const ok = queue.deletePrompt(req.params.id);
+    if (!ok) return res.status(404).json({ error: 'not_found' });
     res.json({ ok: true });
+  });
+
+  router.post('/prompts/reorder', (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    res.json({ prompts: queue.reorderPrompts(ids) });
+  });
+
+  router.post('/prompts/:id/first', (req, res) => {
+    const row = queue.moveToFront(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
+  router.get('/prompts/:id/messages', (req, res) => {
+    res.json({ messages: queue.listMessages(req.params.id) });
+  });
+
+  router.post('/prompts/:id/reply', (req, res) => {
+    const out = queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    if (out.error === 'running') return res.status(409).json({ error: 'running' });
+    if (out.error) return res.status(400).json({ error: out.error });
+    res.status(201).json(out.prompt);
+  });
+
+  router.post('/prompts/:id/message', (req, res) => {
+    const out = queue.steerPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    if (out.error === 'not-running') return res.status(409).json({ error: 'not-running' });
+    if (out.error) return res.status(400).json({ error: out.error });
+    res.status(201).json({ ...out.prompt, delivered: out.delivered });
+  });
+
+  router.post('/prompts/advance', (req, res) => {
+    const out = queue.advanceQueue();
+    res.json({ started: out.started ? out.started.prompt : null, startedCount: out.startedCount, reason: out.reason });
+  });
+
+  router.get('/queue/pause', (req, res) => res.json(queue.getQueuePauseState()));
+  router.post('/queue/pause', (req, res) => {
+    const body = req.body || {};
+    res.json(body.paused === false ? queue.resumeQueue() : queue.pauseQueue({ reason: body.reason }));
   });
 
   return router;
