@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+.wrap { display:flex; height:100vh; min-height:640px; }
+.left { width:250px; border-right:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; flex-shrink:0; padding:14px; }
+.left h2 { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 10px; }
+.cluster-item { padding:9px 10px; border-radius:7px; cursor:pointer; margin-bottom:3px; font-size:12.5px; line-height:1.35; display:flex; align-items:center; gap:6px; }
+.cluster-item:hover { background:#f2efe9; }
+.cluster-item.active { background:#eee9df; font-weight:600; }
+.cluster-item .count { color:#8a8378; font-weight:400; }
+.gdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.gdot.grounded { background:#4f9d7a; }
+.gdot.reasoned { background:#d9c98a; }
+.legend-mini { font-size:10.5px; color:#8a8378; margin-top:10px; line-height:1.6; border-top:1px solid #e4dfd8; padding-top:10px; }
+.mid { flex:1; display:flex; flex-direction:column; min-width:0; }
+.header { padding:12px 18px 8px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
+.header-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.header h1 { font-size:16px; margin:0 0 2px; font-weight:600; }
+.header p { font-size:12px; margin:0; color:#6b645b; max-width:760px; line-height:1.4; }
+.viewtabs { display:flex; gap:6px; flex-shrink:0; }
+.viewtab { padding:6px 12px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:12px; cursor:pointer; color:#2a2621; }
+.viewtab:hover { background:#f2efe9; }
+.viewtab.active { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.searchrow { padding:9px 18px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
+.searchrow input { width:100%; padding:7px 10px; border:1px solid #d9d3c9; border-radius:6px; font-size:12.5px; background:#fff; }
+.grid { flex:1; overflow-y:auto; padding:14px 18px; }
+.grid-title { font-size:12.5px; font-weight:600; margin:0 0 10px; color:#3a352e; display:flex; align-items:center; gap:8px; }
+.grounding-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600; }
+.grounding-badge.grounded { background:#e2f0e9; color:#2f6b4f; }
+.grounding-badge.reasoned { background:#f5f0dc; color:#8a7a2f; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.chip { padding:7px 12px; border-radius:20px; background:#fff; border:1px solid #e4dfd8; font-size:12px; cursor:pointer; }
+.chip:hover { background:#f2efe9; }
+.chip.sel { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.right { width:380px; border-left:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; padding:16px; flex-shrink:0; }
+.right h2 { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 10px; }
+.poster { width:100%; aspect-ratio:2/3; border-radius:10px; display:flex; flex-direction:column; justify-content:flex-end; padding:14px; color:#fbfaf8; margin-bottom:10px; position:relative; overflow:hidden; }
+.poster .ptitle { font-size:19px; font-weight:700; line-height:1.15; text-shadow:0 1px 4px rgba(0,0,0,.35); }
+.poster .pyear { font-size:12px; opacity:.85; margin-top:4px; }
+.poster .pnote { position:absolute; top:10px; right:10px; font-size:9px; background:rgba(0,0,0,.28); padding:3px 7px; border-radius:20px; }
+.poster .pground { position:absolute; top:10px; left:10px; font-size:9px; padding:3px 7px; border-radius:20px; font-weight:600; }
+.poster .pground.grounded { background:rgba(79,157,122,0.85); color:#fff; }
+.poster .pground.reasoned { background:rgba(217,201,138,0.85); color:#4a3f1a; }
+.meta { font-size:11.5px; color:#6b645b; margin-bottom:2px; }
+.synopsis { font-size:12.5px; line-height:1.55; color:#3a352e; margin:10px 0; }
+.tagrow { display:flex; flex-wrap:wrap; gap:5px; margin:8px 0 4px; }
+.tag { font-size:10px; background:#eee9df; color:#5c554b; padding:3px 8px; border-radius:20px; }
+.continuum-block { margin:12px 0; padding:10px; background:#fff; border:1px solid #e4dfd8; border-radius:8px; }
+.continuum-row { margin-bottom:8px; }
+.continuum-row:last-child { margin-bottom:0; }
+.continuum-label { font-size:10.5px; font-weight:600; color:#5c554b; margin-bottom:3px; }
+.continuum-bar { height:6px; border-radius:3px; background:linear-gradient(to right, #b23a2f, #d99a3d, #dcb84a, #4f9d7a, #2f7d63); position:relative; margin-bottom:3px; }
+.continuum-marker { position:absolute; top:-3px; width:3px; height:12px; background:#2a2621; border-radius:2px; }
+.continuum-poles { display:flex; justify-content:space-between; font-size:9px; color:#8a8378; }
+.section-title { font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin:14px 0 8px; }
+.section-title.diag { color:#8a5a1e; }
+.section-title.ent { color:#5b3f85; }
+.conn { display:flex; align-items:flex-start; gap:8px; padding:8px 9px; border-radius:7px; margin-bottom:5px; cursor:pointer; background:#fff; border:1px solid #e4dfd8; }
+.conn:hover { background:#f2efe9; }
+.conn .dot { width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+.conn .dot.diag { background:#d99a3d; }
+.conn .dot.ent { background:#8b6fb0; }
+.conn .txt { font-size:12px; line-height:1.4; }
+.conn .txt b { font-weight:600; }
+.conn .txt .why { color:#8a8378; font-size:11px; }
+.empty { font-size:12.5px; color:#8a8378; line-height:1.6; }
+
+/* Graph view */
+#graphView { flex:1; display:none; flex-direction:column; min-height:0; }
+#graphView.active { display:flex; }
+#listView { flex:1; display:flex; flex-direction:column; min-height:0; }
+#listView.hidden { display:none; }
+.graph-controls { padding:9px 18px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.graph-controls .label { font-size:11px; color:#8a8378; text-transform:uppercase; letter-spacing:.05em; }
+.colorbtn { padding:5px 10px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11.5px; cursor:pointer; color:#2a2621; }
+.colorbtn:hover { background:#f2efe9; }
+.colorbtn.active { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.graph-info { font-size:11px; color:#8a8378; margin-left:auto; }
+.graph-stage { flex:1; position:relative; overflow:hidden; background:#f0ede6; }
+.graph-legend { position:absolute; left:14px; bottom:14px; background:rgba(255,255,255,0.92); border:1px solid #e4dfd8; border-radius:8px; padding:10px 12px; font-size:11px; z-index:5; width:250px; }
+.graph-legend .row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.graph-legend .row:last-child { margin-bottom:0; }
+.graph-legend .swatch { width:22px; height:0; border-top:2.5px solid #c08a3e; }
+.graph-legend .swatch.e { border-top:2.5px dashed #8b6fb0; }
+.graph-legend .gradient-bar { height:8px; border-radius:4px; background:linear-gradient(to right, #b23a2f, #d99a3d, #dcb84a, #4f9d7a, #2f7d63); margin:4px 0; }
+.resetbtn { padding:5px 10px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11.5px; cursor:pointer; }
+.resetbtn:hover { background:#f2efe9; }
+#graphSvg { width:100%; height:100%; display:block; }
+.gnode { cursor:pointer; }
+.gnode circle { stroke:#fbfaf8; stroke-width:1.5; }
+.gnode.focused circle { stroke:#2a2621; stroke-width:3; }
+.gnode text { font-size:9px; fill:#2a2621; text-anchor:middle; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="left">
+    <h2>Clusters</h2>
+    <div id="clusterList"></div>
+    <div class="legend-mini">
+      <div><span class="gdot grounded" style="display:inline-block;"></span> Archive-grounded</div>
+      <div><span class="gdot reasoned" style="display:inline-block;"></span> Reasoned (Claude knowledge)</div>
+    </div>
+  </div>
+  <div class="mid">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <h1>FMCNS — Scale Echo, full corpus</h1>
+          <p>199 films, 12 clusters. <b>Diagonal navigation</b> (gold) = shared director/writer. <b>Entanglement jumps</b> (violet) = shared tags. Green dots = archive-grounded; tan = Claude's reasoned pass.</p>
+        </div>
+        <div class="viewtabs">
+          <button class="viewtab active" id="tabList">List / Cards</button>
+          <button class="viewtab" id="tabGraph">Graph</button>
+        </div>
+      </div>
+    </div>
+    <div id="listView">
+      <div class="searchrow"><input id="search" placeholder="Search all 199 films..."></div>
+      <div class="grid">
+        <div class="grid-title" id="gridTitle">Select a cluster</div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+    <div id="graphView">
+      <div class="graph-controls">
+        <span class="label">Color by</span>
+        <button class="colorbtn active" data-color="cluster">Cluster</button>
+        <button class="colorbtn" data-color="guilt_as_engine">Guilt-as-Engine</button>
+        <button class="colorbtn" data-color="possession_sovereignty">Possession / Sovereignty</button>
+        <button class="resetbtn" id="resetGraph">Reset view</button>
+        <span class="graph-info" id="graphInfo"></span>
+      </div>
+      <div class="graph-stage">
+        <svg id="graphSvg" viewBox="0 0 900 640" preserveAspectRatio="xMidYMid meet">
+          <g id="edgeLayer"></g>
+          <g id="nodeLayer"></g>
+        </svg>
+        <div class="graph-legend" id="graphLegend"></div>
+      </div>
+    </div>
+  </div>
+  <div class="right">
+    <h2>Selected entry</h2>
+    <div id="cardHost"></div>
+  </div>
+</div>
+<script>
+const DATA = {"clusters":{"I":"Ascetic Self-Destruction, Guilt & the Martyr Archetype","II":"Eros, Power & Erotic Dynamics","III":"Marriage, Infidelity & Domestic Rupture","IV":"Grief, Illness & Mortality","V":"Wilderness, Frontier & Survival","VI":"War & Violence","VII":"Cults, Control & Institutional Shadow","VIII":"Espionage, Surveillance & Paranoia","IX":"Sci-Fi, Cyberpunk & Posthuman","X":"Family, Power & the Gothic Household","XI":"Historical Epics & Civil-War-Adjacent","XII":"Counterculture, Idealism & Its Shadow"},"grounding":{"I":{"status":"grounded","note":"Deepened twice: general archive search, then First_Reformed_Pattern_Extract.pdf (dedicated extract, ~15 passages)."},"II":{"status":"grounded","note":"Archive-mined via ChatGPT_4.1_Conversation_11_03_au_28_juillet.md + Cuckold_Dynamics_Definition_Extract.pdf. All 34 films have at least one real passage; most have deep multi-paragraph discussion."},"III":{"status":"reasoned","note":"Not yet archive-mined."},"IV":{"status":"reasoned","note":"Not yet archive-mined."},"V":{"status":"reasoned","note":"Not yet archive-mined."},"VI":{"status":"reasoned","note":"Not yet archive-mined."},"VII":{"status":"reasoned","note":"Not yet archive-mined."},"VIII":{"status":"reasoned","note":"Not yet archive-mined."},"IX":{"status":"reasoned","note":"Not yet archive-mined."},"X":{"status":"reasoned","note":"Not yet archive-mined."},"XI":{"status":"reasoned","note":"Not yet archive-mined."},"XII":{"status":"reasoned","note":"Not yet archive-mined."}},"continuumAxes":{"guilt_as_engine":{"label":"Guilt-as-Engine","poles":["Ascetic Self-Destruction","Integrated Accountability"],"source":"First_Reformed_Pattern_Extract.pdf + general archive search (guilt/martyr cluster)"},"possession_sovereignty":{"label":"Possession ↔ Sovereign Otherness","poles":["Possessive Control","Sovereign Otherness / Compersion"],"source":"Cuckold_Dynamics_Definition_Extract.pdf"}},"films":[{"id":"f_first_reformed","title":"First Reformed","year":2017,"auteurs":["Paul Schrader"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","eco-guilt","self-annihilation-as-offering","sacrifice-as-transaction","pornography-of-negation","terror-of-desire"],"synopsis":"A small-town pastor's ecological despair curdles into private ritual and thoughts of martyrdom.","grounded":true,"continuum":{"guilt_as_engine":0.15}},{"id":"f_into_the_wild","title":"Into the Wild","year":2007,"auteurs":["Sean Penn"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","wild-man-myth","world-rejection","pornography-of-negation","terror-of-desire"],"synopsis":"A young man abandons his possessions and family to seek purity alone in the Alaskan wild.","grounded":true,"continuum":{"guilt_as_engine":0.15}},{"id":"f_taxi_driver","title":"Taxi Driver","year":1976,"auteurs":["Martin Scorsese","Paul Schrader"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","urban-alienation","vigilante-purification","pornography-of-negation","failed-baptism-of-violence"],"synopsis":"An insomniac cabbie's disgust with the city hardens into a private, violent moral mission.","grounded":true,"continuum":{"guilt_as_engine":0.1}},{"id":"f_winter_light","title":"Winter Light","year":1962,"auteurs":["Ingmar Bergman"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","doubt-wracked-clergy","pornography-of-negation","terror-of-desire"],"synopsis":"A widowed pastor's crisis of faith unfolds across one bleak Sunday of failed counsel.","grounded":true,"continuum":{"guilt_as_engine":0.1}},{"id":"f_the_piano_teacher","title":"The Piano Teacher","year":2001,"auteurs":["Michael Haneke"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","control-as-fortress","masochistic-ritual","impossibility-of-fusion","pornography-of-negation"],"synopsis":"A repressed, exacting piano instructor stages her own humiliation with a besotted student.","grounded":true,"continuum":{"guilt_as_engine":0.08}},{"id":"f_black_narcissus","title":"Black Narcissus","year":1947,"auteurs":["Michael Powell","Emeric Pressburger"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","repressed-desire","institutional-collapse","pornography-of-negation"],"synopsis":"Nuns founding a Himalayan convent are undone by altitude, isolation, and unspoken longing.","grounded":true,"continuum":{"guilt_as_engine":0.15}},{"id":"f_hunger","title":"Hunger","year":2008,"auteurs":["Steve McQueen"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","body-as-protest","political-martyrdom","pornography-of-negation"],"synopsis":"IRA prisoner Bobby Sands starves himself in a final act of political witness.","grounded":true,"continuum":{"guilt_as_engine":0.35}},{"id":"f_dogville","title":"Dogville","year":2003,"auteurs":["Lars von Trier"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","humiliation-as-power","mythic-americana","pornography-of-negation"],"synopsis":"A fugitive woman's gratitude toward a small town curdles into ritualized humiliation and revenge.","grounded":true,"continuum":{"guilt_as_engine":0.1}},{"id":"f_calvary","title":"Calvary","year":2014,"auteurs":["John Michael McDonagh"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","faith-under-siege","communal-sin-absorption"],"synopsis":"A good priest is given a week to live after being threatened for another man's sins.","grounded":true,"continuum":{"guilt_as_engine":0.4}},{"id":"f_the_master","title":"The Master","year":2012,"auteurs":["Paul Thomas Anderson"],"clusters":["I","VII"],"tags":["ascetic-purification","silence-of-god","institutional-shadow","surrender-to-doctrine","discipleship-and-terror-of-intimacy","surrender-vs-control"],"synopsis":"A drifting WWII veteran is drawn into the orbit of a charismatic postwar guru.","grounded":true,"continuum":{"guilt_as_engine":0.15}},{"id":"f_take_shelter","title":"Take Shelter","year":2011,"auteurs":["Jeff Nichols"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","paranoia-as-coping","prophecy-or-madness"],"synopsis":"A husband's visions of an apocalyptic storm may be prophecy or the onset of madness.","grounded":true,"continuum":{"guilt_as_engine":0.3}},{"id":"f_antichrist","title":"Antichrist","year":2009,"auteurs":["Lars von Trier"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","grief-turned-monstrous","nature-as-shadow"],"synopsis":"A grieving couple's retreat to the woods unravels into nature-soaked psychological horror.","grounded":true,"continuum":{"guilt_as_engine":0.05}},{"id":"f_mother","title":"Mother!","year":2017,"auteurs":["Darren Aronofsky"],"clusters":["I"],"tags":["ascetic-purification","silence-of-god","domestic-apocalypse","creation-as-consumption"],"synopsis":"A poet's wife watches her home, and self, consumed by ever-multiplying uninvited guests.","grounded":true,"continuum":{"guilt_as_engine":0.1}},{"id":"f_eyes_wide_shut","title":"Eyes Wide Shut","year":1999,"auteurs":["Stanley Kubrick"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","marital-shadow-descent","erotic-initiation","shattering-of-possessive-illusion","psychic-conspiracy-of-marriage","sovereign-otherness"],"synopsis":"A doctor's night of erotic temptation exposes the fault lines in his marriage.","grounded":true,"continuum":{"possession_sovereignty":0.45}},{"id":"f_damage","title":"Damage","year":1992,"auteurs":["Louis Malle"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","destructive-obsession","ruin-as-consequence"],"synopsis":"A civil servant's affair with his son's fiancée detonates his family.","grounded":true,"continuum":{"possession_sovereignty":0.05}},{"id":"f_unfaithful","title":"Unfaithful","year":2002,"auteurs":["Adrian Lyne"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","erotic-ambivalence","jealousy-as-violence"],"synopsis":"A suburban wife's affair spirals into concealment and violence.","grounded":true,"continuum":{"possession_sovereignty":0.1}},{"id":"f_secretary","title":"Secretary","year":2002,"auteurs":["Steven Shainberg"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","masochistic-ritual","ritualized-power-exchange","submission-as-self-discovery"],"synopsis":"A submissive office assistant and her controlling boss discover intimacy through discipline.","grounded":true,"continuum":{"possession_sovereignty":0.6}},{"id":"f_the_duke_of_burgundy","title":"The Duke of Burgundy","year":2014,"auteurs":["Peter Strickland"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","ritualized-power-exchange","role-fatigue","sacred-theater-of-taboo"],"synopsis":"Two women's domestic life is structured entirely around ritualized dominance and submission.","grounded":true,"continuum":{"possession_sovereignty":0.55}},{"id":"f_venus_in_fur","title":"Venus in Fur","year":2013,"auteurs":["Roman Polanski"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","power-play-as-sacred-theater","performer-role-collapse"],"synopsis":"A director and actress's audition becomes a power struggle mirroring the play itself.","grounded":true,"continuum":{}},{"id":"f_story_of_o","title":"Story of O","year":1975,"auteurs":["Just Jaeckin"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","total-submission-as-erasure","ritualized-power-exchange"],"synopsis":"A woman submits completely to her lover's demands for total obedience.","grounded":true,"continuum":{"possession_sovereignty":0.15}},{"id":"f_la_belle_noiseuse","title":"La Belle Noiseuse","year":1991,"auteurs":["Jacques Rivette"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","the-gaze-as-erotic-torture","artist-muse-unveiling"],"synopsis":"An aging painter's obsessive final portrait becomes a battle of wills with his model.","grounded":true,"continuum":{}},{"id":"f_elle","title":"Elle","year":2016,"auteurs":["Paul Verhoeven"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","agency-after-violation","refusal-of-catharsis"],"synopsis":"A woman methodically hunts the man who assaulted her while refusing the role of victim.","grounded":true,"continuum":{"possession_sovereignty":0.5}},{"id":"f_closer","title":"Closer","year":2004,"auteurs":["Mike Nichols"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","cruelty-as-intimacy","confession-as-exposure"],"synopsis":"Two couples' affairs and betrayals strip intimacy down to cruelty and need.","grounded":true,"continuum":{"possession_sovereignty":0.1}},{"id":"f_gone_girl","title":"Gone Girl","year":2014,"auteurs":["David Fincher"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","domestic-rupture","identity-concealment","weaponized-performance","marriage-as-battleground"],"synopsis":"A wife's disappearance unravels a marriage built on performance and control.","grounded":true,"continuum":{"possession_sovereignty":0.2}},{"id":"f_we_need_to_talk_about_kevin","title":"We Need to Talk About Kevin","year":2011,"auteurs":["Lynne Ramsay"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","the-unbearable-mirror","loving-what-cannot-be-fixed"],"synopsis":"A mother reckons with her son's atrocity and her own complicity.","grounded":true,"continuum":{"possession_sovereignty":0.35}},{"id":"f_shame","title":"Shame","year":2011,"auteurs":["Steve McQueen"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","addiction-as-armor","existential-emptiness-of-desire","body-as-prison"],"synopsis":"A sex addict's controlled life collapses when his sister moves in.","grounded":true,"continuum":{}},{"id":"f_nymphomaniac","title":"Nymphomaniac","year":2013,"auteurs":["Lars von Trier"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","confession-as-structure","self-annihilation-through-excess"],"synopsis":"A woman recounts her sexual history to the stranger who found her beaten in an alley.","grounded":true,"continuum":{"possession_sovereignty":0.2}},{"id":"f_in_the_realm_of_the_senses","title":"In the Realm of the Senses","year":1976,"auteurs":["Nagisa Oshima"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","obsession-spiraling-to-death","ritual-and-death"],"synopsis":"A consuming sexual obsession between two lovers escalates toward annihilation.","grounded":true,"continuum":{}},{"id":"f_the_handmaiden","title":"The Handmaiden","year":2016,"auteurs":["Park Chan-wook"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","deception-as-intimacy","desire-as-deception","layered-betrayal-and-liberation"],"synopsis":"A con artist and her mark fall into a spiraling, deception-laced seduction.","grounded":true,"continuum":{}},{"id":"f_stranger_by_the_lake","title":"Stranger by the Lake","year":2013,"auteurs":["Alain Guiraudie"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","eroticized-danger","witness-as-desire"],"synopsis":"A cruising spot's summer idyll turns lethal when desire outweighs danger.","grounded":true,"continuum":{}},{"id":"f_blue_is_the_warmest_color","title":"Blue Is the Warmest Color","year":2013,"auteurs":["Abdellatif Kechiche"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","hunger-to-be-consumed","coming-of-age-humiliation"],"synopsis":"A teenager's first love with an older art student reshapes her identity.","grounded":true,"continuum":{"possession_sovereignty":0.25}},{"id":"f_the_dreamers","title":"The Dreamers","year":2003,"auteurs":["Bernardo Bertolucci"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","watching-as-ritual","cinema-as-erotic-language"],"synopsis":"An American student's friendship with French cinephile twins dissolves into obsession.","grounded":true,"continuum":{}},{"id":"f_wetlands","title":"Wetlands","year":2013,"auteurs":["David Wnendt"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","body-horror-rebellion","grotesque-autonomy"],"synopsis":"A hospitalized teenager's frank hedonism confronts her family's buried dysfunction.","grounded":true,"continuum":{}},{"id":"f_fat_girl","title":"Fat Girl","year":2001,"auteurs":["Catherine Breillat"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","jealousy-and-defilement","sisterhood-and-envy"],"synopsis":"Two sisters' first sexual experiences expose the cruelty underneath desire.","grounded":true,"continuum":{}},{"id":"f_betty_blue","title":"Betty Blue","year":1986,"auteurs":["Jean-Jacques Beineix"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","passionate-collapse"],"synopsis":"A volatile woman's passionate love affair spirals toward breakdown.","grounded":true,"continuum":{}},{"id":"f_basic_instinct","title":"Basic Instinct","year":1992,"auteurs":["Paul Verhoeven"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","femme-fatale-destruction","sex-as-weapon"],"synopsis":"A detective's investigation of a novelist entangles him in a lethal seduction.","grounded":true,"continuum":{}},{"id":"f_match_point","title":"Match Point","year":2005,"auteurs":["Woody Allen"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","desire-as-fate","betrayal-as-game"],"synopsis":"An ambitious social climber's affair threatens the marriage that secured his rise.","grounded":true,"continuum":{}},{"id":"f_disobedience","title":"Disobedience","year":2017,"auteurs":["Sebastián Lelio"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","repression-and-sanctity-of-liberty","reclaiming-autonomy"],"synopsis":"A woman's return to her Orthodox community reignites a forbidden past love.","grounded":true,"continuum":{"possession_sovereignty":0.55}},{"id":"f_passages","title":"Passages","year":2023,"auteurs":["Ira Sachs"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","narcissism-as-intimacy","destructive-freedom"],"synopsis":"A filmmaker's affair with a woman destabilizes his marriage to another man.","grounded":true,"continuum":{}},{"id":"f_passion_simple","title":"Passion Simple","year":2020,"auteurs":["Danielle Arbid"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","ritualizing-absence","erotic-obsession-as-waiting"],"synopsis":"A woman's consuming affair with a foreign diplomat reorganizes her entire life around waiting.","grounded":true,"continuum":{}},{"id":"f_pleasure","title":"Pleasure","year":2021,"auteurs":["Ninja Thyberg"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","power-and-exploitation","performance-and-cost-of-surrender"],"synopsis":"A young Swedish woman's ambitions in the LA porn industry cost her more than expected.","grounded":true,"continuum":{}},{"id":"f_benedetta","title":"Benedetta","year":2021,"auteurs":["Paul Verhoeven"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","erotic-power-and-religious-ecstasy","sanctity-as-theater"],"synopsis":"A 17th-century nun's visions and same-sex desire collide with convent power politics.","grounded":true,"continuum":{}},{"id":"f_swallow","title":"Swallow","year":2019,"auteurs":["Carlo Mirabella-Davis"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","body-as-protest","compulsion-as-control"],"synopsis":"A pregnant, controlled housewife develops a compulsion to swallow dangerous objects.","grounded":true,"continuum":{}},{"id":"f_the_voyeurs","title":"The Voyeurs","year":2021,"auteurs":["Michael Mohan"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","obsessive-witnessing","exposure-and-manipulation"],"synopsis":"A young couple's fascination with watching their neighbors turns dangerous.","grounded":true,"continuum":{}},{"id":"f_palm_trees_and_power_lines","title":"Palm Trees and Power Lines","year":2022,"auteurs":["Jamie Dack"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","grooming-as-manipulation","extremes-of-consent"],"synopsis":"A teenage girl's relationship with an older man reveals it as grooming.","grounded":true,"continuum":{}},{"id":"f_tokyo_decadence","title":"Tokyo Decadence","year":1992,"auteurs":["Ryu Murakami"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","urban-nihilism-and-abyss","sex-work-and-unmasking"],"synopsis":"A young dominatrix drifts through Tokyo's underworld of wealth and submission.","grounded":true,"continuum":{}},{"id":"f_in_the_cut","title":"In the Cut","year":2003,"auteurs":["Jane Campion"],"clusters":["II"],"tags":["erotic-power-inversion","desire-as-exposure","paranoia-lust-violence-swirl","danger-as-desire"],"synopsis":"A writing teacher's affair with a detective investigating a murder blurs desire and danger.","grounded":true,"continuum":{}},{"id":"f_scenes_from_a_marriage","title":"Scenes from a Marriage","year":1973,"auteurs":["Ingmar Bergman"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion","marital-dissection"],"synopsis":"A married couple dissects the slow disintegration of their intimacy over years.","grounded":false,"continuum":{}},{"id":"f_marriage_story","title":"Marriage Story","year":2019,"auteurs":["Noah Baumbach"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion","divorce-as-ordeal"],"synopsis":"A couple's divorce turns collaborative separation into adversarial war.","grounded":false,"continuum":{}},{"id":"f_blue_valentine","title":"Blue Valentine","year":2010,"auteurs":["Derek Cianfrance"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion","romantic-disillusion"],"synopsis":"A marriage's origin and collapse are told in interwoven timelines.","grounded":false,"continuum":{}},{"id":"f_revolutionary_road","title":"Revolutionary Road","year":2008,"auteurs":["Sam Mendes"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A 1950s suburban couple's dream of escape curdles into mutual destruction.","grounded":false,"continuum":{}},{"id":"f_the_bridges_of_madison_county","title":"The Bridges of Madison County","year":1995,"auteurs":["Clint Eastwood"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A farmwife's brief affair with a photographer becomes her life's defining memory.","grounded":false,"continuum":{}},{"id":"f_fatal_attraction","title":"Fatal Attraction","year":1987,"auteurs":["Adrian Lyne"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A married man's affair turns into a campaign of obsessive retribution.","grounded":false,"continuum":{}},{"id":"f_the_war_of_the_roses","title":"The War of the Roses","year":1989,"auteurs":["Danny DeVito"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A divorcing couple wages escalating domestic warfare over their house.","grounded":false,"continuum":{}},{"id":"f_little_children","title":"Little Children","year":2006,"auteurs":["Todd Field"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"Two suburban parents' affair exposes the quiet desperation of their marriages.","grounded":false,"continuum":{}},{"id":"f_another_year","title":"Another Year","year":2010,"auteurs":["Mike Leigh"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A contented couple's stability contrasts with the unraveling lives of their friends.","grounded":false,"continuum":{}},{"id":"f_take_this_waltz","title":"Take This Waltz","year":2011,"auteurs":["Sarah Polley"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A married woman's attraction to her neighbor tests the shape of contentment.","grounded":false,"continuum":{}},{"id":"f_a_separation","title":"A Separation","year":2011,"auteurs":["Asghar Farhadi"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion","moral-adjudication","institutional-shadow"],"synopsis":"A couple's divorce proceedings expose class, faith, and moral compromise.","grounded":false,"continuum":{}},{"id":"f_faithless","title":"Faithless","year":2000,"auteurs":["Liv Ullmann"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A woman recounts the affair that destroyed her marriage and family.","grounded":false,"continuum":{}},{"id":"f_lantana","title":"Lantana","year":2001,"auteurs":["Ray Lawrence"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"Interlocking suburban marriages fracture around a woman's disappearance.","grounded":false,"continuum":{}},{"id":"f_the_deep_blue_sea","title":"The Deep Blue Sea","year":2011,"auteurs":["Terence Davies"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A woman leaves her husband for a passionate affair that cannot sustain her.","grounded":false,"continuum":{}},{"id":"f_private_life","title":"Private Life","year":2018,"auteurs":["Tamara Jenkins"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A couple's fertility struggles strain their marriage and family ties.","grounded":false,"continuum":{}},{"id":"f_causeway","title":"Causeway","year":2022,"auteurs":["Lila Neugebauer"],"clusters":["III"],"tags":["domestic-rupture","intimacy-erosion"],"synopsis":"A soldier's recovery from injury and a mechanic's grief form an unlikely bond.","grounded":false,"continuum":{}},{"id":"f_the_son","title":"The Son","year":2022,"auteurs":["Florian Zeller"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A father tries to reach his depressed teenage son before it's too late.","grounded":false,"continuum":{}},{"id":"f_manchester_by_the_sea","title":"Manchester by the Sea","year":2016,"auteurs":["Kenneth Lonergan"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness","unforgivable-guilt"],"synopsis":"A man returns to his hometown to raise his nephew, haunted by an unforgivable past.","grounded":false,"continuum":{}},{"id":"f_still_walking","title":"Still Walking","year":2008,"auteurs":["Hirokazu Kore-eda"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness","ancestral-memory"],"synopsis":"A family's annual gathering to mourn a dead son reveals unspoken resentments.","grounded":false,"continuum":{}},{"id":"f_a_monster_calls","title":"A Monster Calls","year":2016,"auteurs":["J.A. Bayona"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A boy's mother's terminal illness summons a mythic tree monster who tells him truths.","grounded":false,"continuum":{}},{"id":"f_the_farewell","title":"The Farewell","year":2019,"auteurs":["Lulu Wang"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A family hides a grandmother's terminal diagnosis from her, per cultural custom.","grounded":false,"continuum":{}},{"id":"f_pieces_of_a_woman","title":"Pieces of a Woman","year":2020,"auteurs":["Kornél Mundruczó"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A couple's home birth ends in loss, fracturing their relationship and families.","grounded":false,"continuum":{}},{"id":"f_the_diving_bell_and_the_butterfly","title":"The Diving Bell and the Butterfly","year":2007,"auteurs":["Julian Schnabel"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A paralyzed man communicates and finds meaning after a catastrophic stroke.","grounded":false,"continuum":{}},{"id":"f_the_death_of_mr__lazarescu","title":"The Death of Mr. Lazarescu","year":2005,"auteurs":["Cristi Puiu"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A dying man is shuttled between hospitals by an indifferent medical system.","grounded":false,"continuum":{}},{"id":"f_beautiful_boy","title":"Beautiful Boy","year":2018,"auteurs":["Felix Van Groeningen"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A father struggles to save his son from methamphetamine addiction.","grounded":false,"continuum":{}},{"id":"f_the_girl_with_the_needle","title":"The Girl with the Needle","year":2024,"auteurs":["Magnus von Horn"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A destitute woman in postwar Copenhagen is drawn into a monstrous scheme.","grounded":false,"continuum":{}},{"id":"f_you_can_count_on_me","title":"You Can Count on Me","year":2000,"auteurs":["Kenneth Lonergan"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"A single mother's stability is disrupted by her unreliable brother's return.","grounded":false,"continuum":{}},{"id":"f_never_let_me_go","title":"Never Let Me Go","year":2010,"auteurs":["Mark Romanek"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness"],"synopsis":"Cloned children raised for organ donation grapple with love and mortality.","grounded":false,"continuum":{}},{"id":"f_the_lost_daughter","title":"The Lost Daughter","year":2021,"auteurs":["Maggie Gyllenhaal"],"clusters":["IV"],"tags":["grief-metabolism","mortality-witness","maternal-ambivalence"],"synopsis":"A woman's fixation on a young mother stirs buried regret about her own children.","grounded":false,"continuum":{}},{"id":"f_the_revenant","title":"The Revenant","year":2015,"auteurs":["Alejandro G. Iñárritu"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature","vengeance-as-purification"],"synopsis":"A frontiersman left for dead survives betrayal and wilderness to seek revenge.","grounded":false,"continuum":{}},{"id":"f_jeremiah_johnson","title":"Jeremiah Johnson","year":1972,"auteurs":["Sydney Pollack"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A man's retreat into the mountains as a trapper draws him into a war with the Crow.","grounded":false,"continuum":{}},{"id":"f_alone_in_the_wilderness","title":"Alone in the Wilderness","year":2004,"auteurs":["Bob Swerer"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A man builds a self-sufficient cabin life alone in the Alaskan wilderness.","grounded":false,"continuum":{}},{"id":"f_wind_river","title":"Wind River","year":2017,"auteurs":["Taylor Sheridan"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A tracker and rookie FBI agent investigate a death on a remote reservation.","grounded":false,"continuum":{}},{"id":"f_the_grey","title":"The Grey","year":2011,"auteurs":["Joe Carnahan"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Plane crash survivors fight wolves and cold in the Alaskan wilderness.","grounded":false,"continuum":{}},{"id":"f_leave_no_trace","title":"Leave No Trace","year":2018,"auteurs":["Debra Granik"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A veteran father and daughter's off-grid forest life collides with the outside world.","grounded":false,"continuum":{}},{"id":"f_wild","title":"Wild","year":2014,"auteurs":["Jean-Marc Vallée"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A woman hikes the Pacific Crest Trail alone to process grief and addiction.","grounded":false,"continuum":{}},{"id":"f_into_the_white","title":"Into the White","year":2012,"auteurs":["Petter Næss"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Enemy WWII pilots shelter together after crashing in the Norwegian snow.","grounded":false,"continuum":{}},{"id":"f_meek_s_cutoff","title":"Meek's Cutoff","year":2010,"auteurs":["Kelly Reichardt"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Settlers on the Oregon Trail lose faith in their guide amid the desert.","grounded":false,"continuum":{}},{"id":"f_the_last_of_the_mohicans","title":"The Last of the Mohicans","year":1992,"auteurs":["Michael Mann"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A frontiersman protects colonial sisters amid the French and Indian War.","grounded":false,"continuum":{}},{"id":"f_dances_with_wolves","title":"Dances with Wolves","year":1990,"auteurs":["Kevin Costner"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A Union soldier stationed on the frontier is assimilated into Lakota life.","grounded":false,"continuum":{}},{"id":"f_butcher_s_crossing","title":"Butcher's Crossing","year":2022,"auteurs":["Gabe Polsky"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A young Harvard dropout joins a doomed buffalo-hunting expedition.","grounded":false,"continuum":{}},{"id":"f_rescue_dawn","title":"Rescue Dawn","year":2006,"auteurs":["Werner Herzog"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A downed pilot endures a Laotian POW camp and jungle escape.","grounded":false,"continuum":{}},{"id":"f_tracks","title":"Tracks","year":2013,"auteurs":["John Curran"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A woman crosses the Australian desert alone with camels and a dog.","grounded":false,"continuum":{}},{"id":"f_the_lost_city_of_z","title":"The Lost City of Z","year":2016,"auteurs":["James Gray"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"An explorer becomes obsessed with a lost Amazonian civilization.","grounded":false,"continuum":{}},{"id":"f_the_way_back","title":"The Way Back","year":2010,"auteurs":["Peter Weir"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Gulag escapees walk thousands of miles across Asia toward freedom.","grounded":false,"continuum":{}},{"id":"f_embrace_of_the_serpent","title":"Embrace of the Serpent","year":2015,"auteurs":["Ciro Guerra"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"An Amazonian shaman guides two explorers decades apart toward the same sacred plant.","grounded":false,"continuum":{}},{"id":"f_edge_of_the_world","title":"Edge of the World","year":2021,"auteurs":["Michael Haussman"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"An adventurer's expedition into Borneo's jungle becomes a colonial reckoning.","grounded":false,"continuum":{}},{"id":"f_dersu_uzala","title":"Dersu Uzala","year":1975,"auteurs":["Akira Kurosawa"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A Russian surveyor's friendship with an aging Siberian hunter reshapes his worldview.","grounded":false,"continuum":{}},{"id":"f_hostiles","title":"Hostiles","year":2017,"auteurs":["Scott Cooper"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A cavalry officer escorts a dying Cheyenne chief home across hostile frontier.","grounded":false,"continuum":{}},{"id":"f_the_homesman","title":"The Homesman","year":2014,"auteurs":["Tommy Lee Jones"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A frontierswoman and a claim-jumper transport three mentally ill women across the plains.","grounded":false,"continuum":{}},{"id":"f_the_proposition","title":"The Proposition","year":2005,"auteurs":["John Hillcoat"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"An outlaw is offered his brother's life for hunting down their older brother.","grounded":false,"continuum":{}},{"id":"f_the_claim","title":"The Claim","year":2000,"auteurs":["Michael Winterbottom"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A frontier boomtown founder is confronted by the wife and daughter he once traded away.","grounded":false,"continuum":{}},{"id":"f_bone_tomahawk","title":"Bone Tomahawk","year":2015,"auteurs":["S. Craig Zahler"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Frontier settlers rescue captives from a cave-dwelling cannibal tribe.","grounded":false,"continuum":{}},{"id":"f_valhalla_rising","title":"Valhalla Rising","year":2009,"auteurs":["Nicolas Winding Refn"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature","sovereign-exile"],"synopsis":"A mute Norse warrior leads Crusaders on a doomed voyage to a new land.","grounded":false,"continuum":{}},{"id":"f_the_northman","title":"The Northman","year":2022,"auteurs":["Robert Eggers"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A Viking prince pursues ancestral revenge against the uncle who murdered his father.","grounded":false,"continuum":{}},{"id":"f_the_green_knight","title":"The Green Knight","year":2021,"auteurs":["David Lowery"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A young knight's quest to honor a game of honor becomes a trial of character.","grounded":false,"continuum":{}},{"id":"f_cold_mountain","title":"Cold Mountain","year":2003,"auteurs":["Anthony Minghella"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A wounded Confederate deserter treks home to the woman he loves.","grounded":false,"continuum":{}},{"id":"f_true_grit","title":"True Grit","year":2010,"auteurs":["Ethan Coen","Joel Coen"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A teenage girl hires a U.S. Marshal to hunt her father's killer.","grounded":false,"continuum":{}},{"id":"f_the_sisters_brothers","title":"The Sisters Brothers","year":2018,"auteurs":["Jacques Audiard"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Two outlaw brothers pursue a prospector with a secret gold-panning formula.","grounded":false,"continuum":{}},{"id":"f_the_ballad_of_buster_scruggs","title":"The Ballad of Buster Scruggs","year":2018,"auteurs":["Ethan Coen","Joel Coen"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Six vignettes trace mortality and chance across the American frontier.","grounded":false,"continuum":{}},{"id":"f_the_ballad_of_lefty_brown","title":"The Ballad of Lefty Brown","year":2017,"auteurs":["Jared Moshé"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"An aging sidekick avenges his partner's murder alone.","grounded":false,"continuum":{}},{"id":"f_no_country_for_old_men","title":"No Country for Old Men","year":2007,"auteurs":["Ethan Coen","Joel Coen"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature","fate-and-violence"],"synopsis":"A hunter's discovery of drug money draws a relentless killer's pursuit.","grounded":false,"continuum":{}},{"id":"f_centurion","title":"Centurion","year":2010,"auteurs":["Neil Marshall"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A Roman legion's survivors flee deep into hostile Pictish territory.","grounded":false,"continuum":{}},{"id":"f_outlaw_king","title":"Outlaw King","year":2018,"auteurs":["David Mackenzie"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Robert the Bruce wages guerrilla war to reclaim the Scottish throne.","grounded":false,"continuum":{}},{"id":"f_arctic","title":"Arctic","year":2018,"auteurs":["Joe Penna"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"A plane crash survivor treks across the Arctic for rescue.","grounded":false,"continuum":{}},{"id":"f_everest","title":"Everest","year":2015,"auteurs":["Baltasar Kormákur"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Climbers on Everest are caught in a catastrophic storm.","grounded":false,"continuum":{}},{"id":"f_sweetgrass","title":"Sweetgrass","year":2009,"auteurs":["Ilisa Barbash","Lucien Castaing-Taylor"],"clusters":["V"],"tags":["wilderness-ordeal","self-vs-nature"],"synopsis":"Montana sheepherders drive their flock through the mountains for a final season.","grounded":false,"continuum":{}},{"id":"f_platoon","title":"Platoon","year":1986,"auteurs":["Oliver Stone"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A young soldier's Vietnam tour becomes a moral battle between two sergeants.","grounded":false,"continuum":{}},{"id":"f_born_on_the_fourth_of_july","title":"Born on the Fourth of July","year":1989,"auteurs":["Oliver Stone"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A paralyzed Vietnam veteran transforms from patriot to anti-war activist.","grounded":false,"continuum":{}},{"id":"f_apocalypse_now","title":"Apocalypse Now","year":1979,"auteurs":["Francis Ford Coppola"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance","descent-into-madness","imperial-shadow"],"synopsis":"A soldier's mission upriver to kill a rogue colonel becomes a descent into war's madness.","grounded":false,"continuum":{}},{"id":"f_the_deer_hunter","title":"The Deer Hunter","year":1978,"auteurs":["Michael Cimino"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"Steelworker friends are shattered by their experience in the Vietnam War.","grounded":false,"continuum":{}},{"id":"f_coming_home","title":"Coming Home","year":1978,"auteurs":["Hal Ashby"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A soldier's wife falls for a paralyzed veteran while her husband is at war.","grounded":false,"continuum":{}},{"id":"f_restrepo","title":"Restrepo","year":2010,"auteurs":["Tim Hetherington","Sebastian Junger"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A platoon documents a year defending an outpost in Afghanistan's Korengal Valley.","grounded":false,"continuum":{}},{"id":"f_the_hunted","title":"The Hunted","year":2003,"auteurs":["William Friedkin"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A tracker is enlisted to hunt down the elite soldier he trained.","grounded":false,"continuum":{}},{"id":"f_in_the_valley_of_elah","title":"In the Valley of Elah","year":2007,"auteurs":["Paul Haggis"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A father investigates his son's mysterious death after returning from Iraq.","grounded":false,"continuum":{}},{"id":"f_munich","title":"Munich","year":2005,"auteurs":["Steven Spielberg"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"Israeli agents hunt the perpetrators of the Munich Olympics massacre.","grounded":false,"continuum":{}},{"id":"f_waltz_with_bashir","title":"Waltz with Bashir","year":2008,"auteurs":["Ari Folman"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"An animated veteran reconstructs his suppressed memories of the Lebanon War.","grounded":false,"continuum":{}},{"id":"f_gladiator","title":"Gladiator","year":2000,"auteurs":["Ridley Scott"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A betrayed Roman general becomes a gladiator seeking revenge on the emperor.","grounded":false,"continuum":{}},{"id":"f_the_last_duel","title":"The Last Duel","year":2021,"auteurs":["Ridley Scott"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A rape accusation is settled by trial-by-combat, told from three perspectives.","grounded":false,"continuum":{}},{"id":"f_the_tragedy_of_macbeth","title":"The Tragedy of Macbeth","year":2021,"auteurs":["Joel Coen"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A Scottish lord's prophecy-fueled ambition drives him to regicide and ruin.","grounded":false,"continuum":{}},{"id":"f_macbeth","title":"Macbeth","year":2015,"auteurs":["Justin Kurzel"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A war hero's ambition and a witches' prophecy drive him to murder his king.","grounded":false,"continuum":{}},{"id":"f_killers_of_the_flower_moon","title":"Killers of the Flower Moon","year":2023,"auteurs":["Martin Scorsese"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance","betrayal-as-inheritance"],"synopsis":"Osage Nation murders for oil wealth are orchestrated from within a family.","grounded":false,"continuum":{}},{"id":"f_12_years_a_slave","title":"12 Years a Slave","year":2013,"auteurs":["Steve McQueen"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance","institutional-shadow"],"synopsis":"A free Black man is kidnapped and sold into slavery in the antebellum South.","grounded":false,"continuum":{}},{"id":"f_free_state_of_jones","title":"Free State of Jones","year":2016,"auteurs":["Gary Ross"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A Confederate deserter leads a multiracial rebellion against the Confederacy.","grounded":false,"continuum":{}},{"id":"f_harriet","title":"Harriet","year":2019,"auteurs":["Kasi Lemmons"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"Harriet Tubman escapes slavery and returns repeatedly to free others.","grounded":false,"continuum":{}},{"id":"f_glory","title":"Glory","year":1989,"auteurs":["Edward Zwick"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"The first all-Black Union regiment fights for dignity and recognition in the Civil War.","grounded":false,"continuum":{}},{"id":"f_gangs_of_new_york","title":"Gangs of New York","year":2002,"auteurs":["Martin Scorsese"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"A young man infiltrates the gang that killed his father to seek revenge.","grounded":false,"continuum":{}},{"id":"f_lincoln","title":"Lincoln","year":2012,"auteurs":["Steven Spielberg"],"clusters":["VI"],"tags":["war-trauma","violence-as-inheritance"],"synopsis":"Lincoln maneuvers Congress to pass the 13th Amendment as the Civil War ends.","grounded":false,"continuum":{}},{"id":"f_holy_hell","title":"Holy Hell","year":2016,"auteurs":["Will Allen"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"A former member's home videos document decades inside a secretive spiritual cult.","grounded":false,"continuum":{}},{"id":"f_going_clear","title":"Going Clear","year":2015,"auteurs":["Alex Gibney"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"Former Scientologists detail the church's methods of control and abuse.","grounded":false,"continuum":{}},{"id":"f_sound_of_my_voice","title":"Sound of My Voice","year":2011,"auteurs":["Zal Batmanglij"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"Documentarians infiltrating a cult begin to believe its leader's claims.","grounded":false,"continuum":{}},{"id":"f_martha_marcy_may_marlene","title":"Martha Marcy May Marlene","year":2011,"auteurs":["Sean Durkin"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine","identity-dissolution"],"synopsis":"A woman fleeing a cult struggles to readjust to normal life.","grounded":false,"continuum":{}},{"id":"f_compliance","title":"Compliance","year":2012,"auteurs":["Craig Zobel"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"A prank caller manipulates a fast-food manager into abusing an employee.","grounded":false,"continuum":{}},{"id":"f_red_state","title":"Red State","year":2011,"auteurs":["Kevin Smith"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"Teenagers are captured by a violent fundamentalist church compound.","grounded":false,"continuum":{}},{"id":"f_the_righteous_gemstones","title":"The Righteous Gemstones","year":2019,"auteurs":["Danny McBride"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"A televangelist family's empire is riddled with hypocrisy and dysfunction.","grounded":false,"continuum":{}},{"id":"f_frailty","title":"Frailty","year":2001,"auteurs":["Bill Paxton"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine"],"synopsis":"A father convinces his sons that God has ordered them to kill demons.","grounded":false,"continuum":{}},{"id":"f_the_apostle","title":"The Apostle","year":1997,"auteurs":["Robert Duvall"],"clusters":["VII"],"tags":["institutional-shadow","surrender-to-doctrine","faith-under-siege"],"synopsis":"A disgraced preacher flees to start a new church and reckon with his sins.","grounded":false,"continuum":{}},{"id":"f_the_conversation","title":"The Conversation","year":1974,"auteurs":["Francis Ford Coppola"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment","guilt-of-witnessing"],"synopsis":"A surveillance expert's own recording implicates him in a possible murder.","grounded":false,"continuum":{}},{"id":"f_tinker_tailor_soldier_spy","title":"Tinker Tailor Soldier Spy","year":2011,"auteurs":["Tomas Alfredson"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A retired spymaster hunts a Soviet mole inside British intelligence.","grounded":false,"continuum":{}},{"id":"f_le_samouraï","title":"Le Samouraï","year":1967,"auteurs":["Jean-Pierre Melville"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A stoic hitman's perfect routine unravels after a botched job.","grounded":false,"continuum":{}},{"id":"f_three_days_of_the_condor","title":"Three Days of the Condor","year":1975,"auteurs":["Sydney Pollack"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A CIA researcher goes on the run after his office is massacred.","grounded":false,"continuum":{}},{"id":"f_north_by_northwest","title":"North by Northwest","year":1959,"auteurs":["Alfred Hitchcock"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"An advertising executive is mistaken for a spy and pursued across the country.","grounded":false,"continuum":{}},{"id":"f_enemy_of_the_state","title":"Enemy of the State","year":1998,"auteurs":["Tony Scott"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A lawyer is targeted by rogue NSA agents after receiving incriminating footage.","grounded":false,"continuum":{}},{"id":"f_spy_game","title":"Spy Game","year":2001,"auteurs":["Tony Scott"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A retiring CIA officer maneuvers to save his protégé from execution abroad.","grounded":false,"continuum":{}},{"id":"f_bridge_of_spies","title":"Bridge of Spies","year":2015,"auteurs":["Steven Spielberg"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A lawyer negotiates a Cold War prisoner exchange between the US and USSR.","grounded":false,"continuum":{}},{"id":"f_eye_in_the_sky","title":"Eye in the Sky","year":2015,"auteurs":["Gavin Hood"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"Military and political officials debate a drone strike as civilian risk mounts in real time.","grounded":false,"continuum":{}},{"id":"f_burn_after_reading","title":"Burn After Reading","year":2008,"auteurs":["Ethan Coen","Joel Coen"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A discarded memoir manuscript spirals into espionage farce among bumbling gym employees.","grounded":false,"continuum":{}},{"id":"f_atomic_blonde","title":"Atomic Blonde","year":2017,"auteurs":["David Leitch"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A British spy navigates betrayal in divided Berlin as the Wall falls.","grounded":false,"continuum":{}},{"id":"f_the_courier","title":"The Courier","year":2020,"auteurs":["Dominic Cooke"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A British businessman becomes an unlikely spy passing Soviet secrets during the Cuban Missile Crisis.","grounded":false,"continuum":{}},{"id":"f_sicario","title":"Sicario","year":2015,"auteurs":["Denis Villeneuve"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"An FBI agent is drawn into a morally murky task force fighting the drug war.","grounded":false,"continuum":{}},{"id":"f_no_way_out","title":"No Way Out","year":1987,"auteurs":["Roger Donaldson"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment"],"synopsis":"A Naval officer's affair entangles him in a murder investigation he must deflect from himself.","grounded":false,"continuum":{}},{"id":"f_vertigo","title":"Vertigo","year":1958,"auteurs":["Alfred Hitchcock"],"clusters":["VIII"],"tags":["surveillance-paranoia","identity-concealment","obsession-and-doubling"],"synopsis":"A detective's obsession with a woman he's shadowing spirals into deception and doubling.","grounded":false,"continuum":{}},{"id":"f_blade_runner","title":"Blade Runner","year":1982,"auteurs":["Ridley Scott"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime","identity-as-artifice"],"synopsis":"A blade runner hunts rogue replicants questioning what separates them from the human.","grounded":false,"continuum":{}},{"id":"f_arrival","title":"Arrival","year":2016,"auteurs":["Denis Villeneuve"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime","temporal-nonlinearity"],"synopsis":"A linguist deciphers an alien language that reshapes her sense of time.","grounded":false,"continuum":{}},{"id":"f_children_of_men","title":"Children of Men","year":2006,"auteurs":["Alfonso Cuarón"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime","apocalyptic-guardianship"],"synopsis":"In a world of global infertility, a man protects the first pregnant woman in decades.","grounded":false,"continuum":{}},{"id":"f_cloud_atlas","title":"Cloud Atlas","year":2012,"auteurs":["Lana Wachowski","Lilly Wachowski","Tom Tykwer"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime"],"synopsis":"Six interlinked stories across centuries trace souls and consequences reincarnating through time.","grounded":false,"continuum":{}},{"id":"f_predator__badlands","title":"Predator: Badlands","year":2025,"auteurs":["Dan Trachtenberg"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime"],"synopsis":"A young Predator outcast partners with a synthetic on a hostile alien world.","grounded":false,"continuum":{}},{"id":"f_predator__killer_of_killers","title":"Predator: Killer of Killers","year":2025,"auteurs":["Dan Trachtenberg"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime"],"synopsis":"Warriors across history face the ultimate hunter in interconnected vignettes.","grounded":false,"continuum":{}},{"id":"f_silent_running","title":"Silent Running","year":1972,"auteurs":["Douglas Trumbull"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime"],"synopsis":"An ecologist alone on a space station refuses orders to destroy Earth's last forests.","grounded":false,"continuum":{}},{"id":"f_soylent_green","title":"Soylent Green","year":1973,"auteurs":["Richard Fleischer"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime"],"synopsis":"A detective uncovers the horrifying source of a food substitute in an overpopulated future.","grounded":false,"continuum":{}},{"id":"f_altered_carbon","title":"Altered Carbon","year":2018,"auteurs":["Laeta Kalogridis"],"clusters":["IX"],"tags":["posthuman-estrangement","technological-sublime"],"synopsis":"In a future of transferable consciousness, a soldier investigates his host's murder.","grounded":false,"continuum":{}},{"id":"f_the_housemaid","title":"The Housemaid","year":1960,"auteurs":["Kim Ki-young"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A new housemaid's affair with her employer destabilizes an entire household.","grounded":false,"continuum":{}},{"id":"f_notes_on_a_scandal","title":"Notes on a Scandal","year":2006,"auteurs":["Richard Eyre"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A lonely teacher exploits a colleague's affair with a student to bind her closer.","grounded":false,"continuum":{}},{"id":"f_phantom_thread","title":"Phantom Thread","year":2017,"auteurs":["Paul Thomas Anderson"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A controlling dressmaker's relationship becomes a quiet battle for power.","grounded":false,"continuum":{}},{"id":"f_the_favourite","title":"The Favourite","year":2018,"auteurs":["Yorgos Lanthimos"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"Two women vie for the favor and power of an ailing, capricious queen.","grounded":false,"continuum":{}},{"id":"f_rebecca","title":"Rebecca","year":1940,"auteurs":["Alfred Hitchcock"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion","haunted-by-predecessor"],"synopsis":"A new bride is haunted by the memory of her husband's first wife.","grounded":false,"continuum":{}},{"id":"f_the_piano","title":"The Piano","year":1993,"auteurs":["Jane Campion"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A mute woman's piano becomes the site of a fraught colonial-era affair.","grounded":false,"continuum":{}},{"id":"f_portrait_of_a_lady_on_fire","title":"Portrait of a Lady on Fire","year":2019,"auteurs":["Céline Sciamma"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A painter and her reluctant subject fall in love before an arranged marriage.","grounded":false,"continuum":{}},{"id":"f_carol","title":"Carol","year":2015,"auteurs":["Todd Haynes"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A young shopgirl and an older, unhappily married woman fall in love in 1950s New York.","grounded":false,"continuum":{}},{"id":"f_call_me_by_your_name","title":"Call Me by Your Name","year":2017,"auteurs":["Luca Guadagnino"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A summer romance between a teenager and an older graduate student reshapes his life.","grounded":false,"continuum":{}},{"id":"f_laurence_anyways","title":"Laurence Anyways","year":2012,"auteurs":["Xavier Dolan"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A couple's love is tested when one partner transitions gender.","grounded":false,"continuum":{}},{"id":"f_i_killed_my_mother","title":"I Killed My Mother","year":2009,"auteurs":["Xavier Dolan"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A teenager's fraught, loving relationship with his mother spirals into open warfare.","grounded":false,"continuum":{}},{"id":"f_the_skin_i_live_in","title":"The Skin I Live In","year":2011,"auteurs":["Pedro Almodóvar"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A surgeon's obsessive revenge against his daughter's attacker takes a monstrous form.","grounded":false,"continuum":{}},{"id":"f_black_swan","title":"Black Swan","year":2010,"auteurs":["Darren Aronofsky"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion","artistic-sublimation","self-annihilation-as-perfection"],"synopsis":"A ballerina's pursuit of perfection unravels her sanity and identity.","grounded":false,"continuum":{}},{"id":"f_the_shining","title":"The Shining","year":1980,"auteurs":["Stanley Kubrick"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion","domestic-apocalypse","madness-as-inheritance"],"synopsis":"A winter caretaker's isolation in a haunted hotel curdles into murderous madness.","grounded":false,"continuum":{}},{"id":"f_dead_ringers","title":"Dead Ringers","year":1988,"auteurs":["David Cronenberg"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"Identical twin gynecologists' shared life and lovers spirals into psychological collapse.","grounded":false,"continuum":{}},{"id":"f_lady_macbeth","title":"Lady Macbeth","year":2016,"auteurs":["William Oldroyd"],"clusters":["X"],"tags":["gothic-household-control","domestic-power-inversion"],"synopsis":"A trapped young wife's affair unleashes ruthless, murderous ambition.","grounded":false,"continuum":{}},{"id":"f_the_last_samurai","title":"The Last Samurai","year":2003,"auteurs":["Edward Zwick"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning"],"synopsis":"A disillusioned American officer is captured by, and comes to admire, samurai resisters.","grounded":false,"continuum":{}},{"id":"f_the_king","title":"The King","year":2019,"auteurs":["David Michôd"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning"],"synopsis":"A reluctant young Prince Hal becomes king and must define his own rule.","grounded":false,"continuum":{}},{"id":"f_the_king_s_speech","title":"The King's Speech","year":2010,"auteurs":["Tom Hooper"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning"],"synopsis":"A stammering king works with a speech therapist to lead Britain into war.","grounded":false,"continuum":{}},{"id":"f_kingdom_of_heaven","title":"Kingdom of Heaven","year":2005,"auteurs":["Ridley Scott"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning"],"synopsis":"A blacksmith turned knight defends Jerusalem amid the Crusades' religious politics.","grounded":false,"continuum":{}},{"id":"f_the_count_of_monte_cristo","title":"The Count of Monte Cristo","year":2002,"auteurs":["Kevin Reynolds"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning"],"synopsis":"A wrongly imprisoned man escapes to exact elaborate revenge on his betrayers.","grounded":false,"continuum":{}},{"id":"f_gone_with_the_wind","title":"Gone with the Wind","year":1939,"auteurs":["Victor Fleming"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning","sovereign-collapse"],"synopsis":"A willful Southern belle survives the Civil War and its ruin of her world.","grounded":false,"continuum":{}},{"id":"f_the_social_network","title":"The Social Network","year":2010,"auteurs":["David Fincher","Aaron Sorkin"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning","ambition-as-betrayal"],"synopsis":"Facebook's founding is retold through the lawsuits and betrayals it left behind.","grounded":false,"continuum":{}},{"id":"f_the_founder","title":"The Founder","year":2016,"auteurs":["John Lee Hancock"],"clusters":["XI"],"tags":["sovereign-ambition","historical-reckoning"],"synopsis":"A struggling salesman takes over and reshapes McDonald's, pushing out its founders.","grounded":false,"continuum":{}},{"id":"f_easy_rider","title":"Easy Rider","year":1969,"auteurs":["Dennis Hopper"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion","freedom-as-dead-end"],"synopsis":"Two bikers' cross-country journey collides with 1960s America's violent backlash.","grounded":false,"continuum":{}},{"id":"f_the_graduate","title":"The Graduate","year":1967,"auteurs":["Mike Nichols"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion"],"synopsis":"An aimless graduate's affair with an older woman entangles him with her daughter.","grounded":false,"continuum":{}},{"id":"f_waking_life","title":"Waking Life","year":2001,"auteurs":["Richard Linklater"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion"],"synopsis":"A young man drifts through a series of dreamlike philosophical conversations.","grounded":false,"continuum":{}},{"id":"f_captain_fantastic","title":"Captain Fantastic","year":2016,"auteurs":["Matt Ross"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion"],"synopsis":"A father's radical off-grid parenting is tested by his wife's death and family's judgment.","grounded":false,"continuum":{}},{"id":"f_the_trial_of_the_chicago_7","title":"The Trial of the Chicago 7","year":2020,"auteurs":["Aaron Sorkin"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion"],"synopsis":"Anti-war activists face a politically charged trial after protests turn violent.","grounded":false,"continuum":{}},{"id":"f_fight_club","title":"Fight Club","year":1999,"auteurs":["David Fincher"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion","identity-dissolution","self-annihilation-as-offering"],"synopsis":"An insomniac's underground fight club spirals into an anarchist conspiracy.","grounded":false,"continuum":{}},{"id":"f_you_were_never_really_here","title":"You Were Never Really Here","year":2017,"auteurs":["Lynne Ramsay"],"clusters":["XII"],"tags":["idealism-and-its-shadow","counterculture-disillusion","vigilante-purification"],"synopsis":"A traumatized hitman rescues trafficked girls with brutal, haunted efficiency.","grounded":false,"continuum":{}}],"clusterBaseTags":{"I":["ascetic-purification","silence-of-god"],"II":["erotic-power-inversion","desire-as-exposure"],"III":["domestic-rupture","intimacy-erosion"],"IV":["grief-metabolism","mortality-witness"],"V":["wilderness-ordeal","self-vs-nature"],"VI":["war-trauma","violence-as-inheritance"],"VII":["institutional-shadow","surrender-to-doctrine"],"VIII":["surveillance-paranoia","identity-concealment"],"IX":["posthuman-estrangement","technological-sublime"],"X":["gothic-household-control","domestic-power-inversion"],"XI":["sovereign-ambition","historical-reckoning"],"XII":["idealism-and-its-shadow","counterculture-disillusion"]}};
+const filmsById = {};
+DATA.films.forEach(f => filmsById[f.id] = f);
+
+const clusterList = document.getElementById("clusterList");
+const chips = document.getElementById("chips");
+const gridTitle = document.getElementById("gridTitle");
+const cardHost = document.getElementById("cardHost");
+const searchBox = document.getElementById("search");
+
+let activeCluster = null;
+
+const PALETTE = ["#8a5a3f","#5b3f85","#3f6b85","#5f7a3f","#85503f","#3f8577","#7a3f5f","#6b5f3f","#3f5f85","#853f6b"];
+function colorFor(str) {
+  let h = 0;
+  for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+const CLUSTER_COLORS = {
+  "I":"#b23a2f","II":"#8b3f85","III":"#3f6b85","IV":"#5f7a3f","V":"#85703f",
+  "VI":"#7a3f3f","VII":"#3f8577","VIII":"#4a4a85","IX":"#3f8598","X":"#85503f",
+  "XI":"#6b5f3f","XII":"#5b6b3f"
+};
+
+function continuumColor(p) {
+  if (p === null || p === undefined) return "#c9c3b8";
+  const stops = [
+    [0.0, [178, 58, 47]], [0.25, [217, 154, 61]], [0.5, [220, 184, 74]],
+    [0.75, [79, 157, 122]], [1.0, [47, 125, 99]]
+  ];
+  let a = stops[0], b = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (p >= stops[i][0] && p <= stops[i+1][0]) { a = stops[i]; b = stops[i+1]; break; }
+  }
+  const t = (p - a[0]) / (b[0] - a[0] || 1);
+  const c = a[1].map((v, i) => Math.round(v + (b[1][i] - v) * t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+function countInCluster(code) {
+  return DATA.films.filter(f => f.clusters.includes(code)).length;
+}
+
+function renderClusters() {
+  clusterList.innerHTML = "";
+  Object.keys(DATA.clusters).forEach(code => {
+    const g = DATA.grounding[code];
+    const div = document.createElement("div");
+    div.className = "cluster-item" + (activeCluster === code ? " active" : "");
+    div.innerHTML = `<span class="gdot ${g.status}"></span>${code}. ${DATA.clusters[code]} <span class="count">(${countInCluster(code)})</span>`;
+    div.addEventListener("click", () => { activeCluster = code; searchBox.value=""; renderClusters(); renderGrid(); });
+    clusterList.appendChild(div);
+  });
+}
+
+function renderGrid(filterText) {
+  chips.innerHTML = "";
+  let list;
+  if (filterText) {
+    const q = filterText.toLowerCase();
+    list = DATA.films.filter(f => f.title.toLowerCase().includes(q));
+    gridTitle.innerHTML = `Search: "${filterText}" (${list.length})`;
+  } else if (activeCluster) {
+    list = DATA.films.filter(f => f.clusters.includes(activeCluster));
+    const g = DATA.grounding[activeCluster];
+    const badge = `<span class="grounding-badge ${g.status}">${g.status === 'grounded' ? 'Archive-grounded' : 'Reasoned'}</span>`;
+    gridTitle.innerHTML = `${activeCluster}. ${DATA.clusters[activeCluster]} — ${list.length} films ${badge}`;
+  } else {
+    list = [];
+    gridTitle.textContent = "Select a cluster, or search above";
+  }
+  list.sort((a,b) => a.title.localeCompare(b.title));
+  list.forEach(f => {
+    const c = document.createElement("div");
+    c.className = "chip";
+    c.textContent = `${f.title} (${f.year})`;
+    c.addEventListener("click", () => selectFilm(f.id));
+    chips.appendChild(c);
+  });
+}
+
+searchBox.addEventListener("input", () => {
+  if (searchBox.value.trim()) { activeCluster = null; renderClusters(); renderGrid(searchBox.value.trim()); }
+  else renderGrid();
+});
+
+function computeDiagonal(film) {
+  const results = [];
+  DATA.films.forEach(f => {
+    if (f.id === film.id) return;
+    const shared = f.auteurs.filter(a => film.auteurs.includes(a));
+    if (shared.length) results.push({ film: f, why: `Shares ${shared.join(" & ")}` });
+  });
+  return results;
+}
+
+function computeEntanglement(film, diagIds) {
+  const results = [];
+  DATA.films.forEach(f => {
+    if (f.id === film.id) return;
+    if (diagIds.has(f.id)) return;
+    const sharedTags = f.tags.filter(t => film.tags.includes(t));
+    if (sharedTags.length) results.push({ film: f, sharedTags });
+  });
+  results.sort((a,b) => b.sharedTags.length - a.sharedTags.length || a.film.title.localeCompare(b.film.title));
+  return results.slice(0, 6);
+}
+
+function posterHtml(film) {
+  const c1 = colorFor(film.title);
+  const c2 = colorFor(film.title.split("").reverse().join(""));
+  const gLabel = film.grounded ? "grounded" : "reasoned";
+  return `<div class="poster" style="background:linear-gradient(160deg, ${c1}, ${c2})">
+    <div class="pground ${gLabel}">${film.grounded ? "Archive-grounded" : "Reasoned"}</div>
+    <div class="pnote">${film.clusters.join(" / ")}</div>
+    <div class="ptitle">${film.title}</div>
+    <div class="pyear">${film.year} — ${film.auteurs.join(", ")}</div>
+  </div>`;
+}
+
+function continuumHtml(film) {
+  const keys = Object.keys(film.continuum || {});
+  if (!keys.length) return "";
+  let html = '<div class="continuum-block">';
+  keys.forEach(k => {
+    const axis = DATA.continuumAxes[k];
+    const v = film.continuum[k];
+    html += `<div class="continuum-row">
+      <div class="continuum-label">${axis.label}: ${v.toFixed(2)}</div>
+      <div class="continuum-bar"><div class="continuum-marker" style="left:${v*100}%"></div></div>
+      <div class="continuum-poles"><span>${axis.poles[0]}</span><span>${axis.poles[1]}</span></div>
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function selectFilm(id, fromGraph) {
+  const film = filmsById[id];
+  if (!film) return;
+  const diag = computeDiagonal(film);
+  const diagIds = new Set(diag.map(d => d.film.id));
+  const ent = computeEntanglement(film, diagIds);
+
+  let html = posterHtml(film);
+  html += `<div class="meta">Cluster${film.clusters.length>1?'s':''}: ${film.clusters.map(c => DATA.clusters[c]).join(" / ")}</div>`;
+  html += `<div class="synopsis">${film.synopsis}</div>`;
+  html += continuumHtml(film);
+  html += `<div class="tagrow">${film.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>`;
+
+  html += `<div class="section-title diag">Diagonal navigation — real lineage (${diag.length})</div>`;
+  if (diag.length === 0) {
+    html += `<div class="empty">No other film in this corpus shares an author with ${film.title} yet.</div>`;
+  } else {
+    diag.forEach(d => {
+      html += `<div class="conn" data-id="${d.film.id}"><span class="dot diag"></span><span class="txt"><b>${d.film.title}</b> (${d.film.year})<div class="why">${d.why}</div></span></div>`;
+    });
+  }
+
+  html += `<div class="section-title ent">Entanglement jumps — pattern only (${ent.length}${ent.length===6 ? '+' : ''})</div>`;
+  if (ent.length === 0) {
+    html += `<div class="empty">No matching tags without shared authorship found yet.</div>`;
+  } else {
+    ent.forEach(d => {
+      html += `<div class="conn" data-id="${d.film.id}"><span class="dot ent"></span><span class="txt"><b>${d.film.title}</b> (${d.film.year})<div class="why">Shared signature: ${d.sharedTags.join(", ")}</div></span></div>`;
+    });
+  }
+
+  cardHost.innerHTML = html;
+  cardHost.querySelectorAll(".conn").forEach(el => {
+    el.addEventListener("click", () => {
+      const targetId = el.dataset.id;
+      const target = filmsById[targetId];
+      if (target.clusters.length) { activeCluster = target.clusters[0]; searchBox.value=""; renderClusters(); renderGrid(); }
+      selectFilm(targetId);
+      if (graphInitialized && graphNodeById[targetId]) focusGraphNode(targetId);
+    });
+  });
+
+  Array.from(chips.children).forEach(ch => ch.classList.toggle("sel", ch.textContent.startsWith(film.title + " (")));
+
+  if (graphInitialized && !fromGraph && graphNodeById[id]) focusGraphNode(id);
+}
+
+// ============== VIEW SWITCHER ==============
+const tabList = document.getElementById("tabList");
+const tabGraph = document.getElementById("tabGraph");
+const listView = document.getElementById("listView");
+const graphView = document.getElementById("graphView");
+
+tabList.addEventListener("click", () => {
+  tabList.classList.add("active"); tabGraph.classList.remove("active");
+  listView.classList.remove("hidden"); graphView.classList.remove("active");
+});
+tabGraph.addEventListener("click", () => {
+  tabGraph.classList.add("active"); tabList.classList.remove("active");
+  listView.classList.add("hidden"); graphView.classList.add("active");
+  if (!graphInitialized) initGraph();
+});
+
+// ============== FORCE-DIRECTED GRAPH ==============
+let graphInitialized = false;
+let graphNodes = [];
+let graphEdges = [];
+let graphNodeById = {};
+let focusedNodeId = null;
+const GVBW = 900, GVBH = 640;
+
+function baseTagSetFor(film) {
+  const set = new Set();
+  film.clusters.forEach(c => (DATA.clusterBaseTags[c] || []).forEach(t => set.add(t)));
+  return set;
+}
+
+function buildGraphData() {
+  // Start with archive-grounded films only (47) -- real signal subset.
+  const nodeFilms = DATA.films.filter(f => f.grounded);
+  const nodeIds = new Set(nodeFilms.map(f => f.id));
+
+  // bonus tags = tags minus this film's own cluster base tags (the generic "same cluster" signal).
+  // Graph entanglement edges are drawn on bonus-tag overlap only, so the graph surfaces real
+  // cross-cutting archetypal signal rather than a dense "everyone in cluster I is entangled" blob.
+  const bonusTags = {};
+  nodeFilms.forEach(f => {
+    const base = baseTagSetFor(f);
+    bonusTags[f.id] = f.tags.filter(t => !base.has(t));
+  });
+
+  graphNodes = nodeFilms.map((f, i) => {
+    const angle = (i / nodeFilms.length) * Math.PI * 2;
+    const r = 200 + (i % 5) * 20;
+    return {
+      id: f.id, film: f,
+      x: GVBW/2 + Math.cos(angle) * r + (Math.random()-0.5)*20,
+      y: GVBH/2 + Math.sin(angle) * r + (Math.random()-0.5)*20,
+      vx: 0, vy: 0
+    };
+  });
+  graphNodeById = {};
+  graphNodes.forEach(n => graphNodeById[n.id] = n);
+
+  graphEdges = [];
+  const seenPairs = new Set();
+  nodeFilms.forEach(f => {
+    // diagonal: shared auteur, within node set
+    nodeFilms.forEach(g => {
+      if (f.id >= g.id) return;
+      const key = f.id + "|" + g.id;
+      const shared = f.auteurs.filter(a => g.auteurs.includes(a));
+      if (shared.length && nodeIds.has(f.id) && nodeIds.has(g.id)) {
+        graphEdges.push({ source: f.id, target: g.id, type: "diagonal", weight: 1 });
+        seenPairs.add(key);
+      }
+    });
+  });
+  nodeFilms.forEach(f => {
+    nodeFilms.forEach(g => {
+      if (f.id >= g.id) return;
+      const key = f.id + "|" + g.id;
+      if (seenPairs.has(key)) return; // already a diagonal edge, don't double with entanglement
+      const sharedBonus = bonusTags[f.id].filter(t => bonusTags[g.id].includes(t));
+      if (sharedBonus.length) {
+        graphEdges.push({ source: f.id, target: g.id, type: "entanglement", weight: sharedBonus.length, sharedTags: sharedBonus });
+      }
+    });
+  });
+
+  // degree for sizing
+  graphNodes.forEach(n => n.degree = 0);
+  graphEdges.forEach(e => { graphNodeById[e.source].degree++; graphNodeById[e.target].degree++; });
+}
+
+const svg = document.getElementById("graphSvg");
+const edgeLayer = document.getElementById("edgeLayer");
+const nodeLayer = document.getElementById("nodeLayer");
+const graphInfo = document.getElementById("graphInfo");
+const graphLegend = document.getElementById("graphLegend");
+let colorMode = "cluster";
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+let edgeEls = [];
+let nodeEls = {};
+
+function initGraph() {
+  buildGraphData();
+  edgeLayer.innerHTML = "";
+  nodeLayer.innerHTML = "";
+  edgeEls = graphEdges.map(e => {
+    const line = el("line", {
+      class: "gedge",
+      stroke: e.type === "diagonal" ? "#c08a3e" : "#8b6fb0",
+      "stroke-width": e.type === "diagonal" ? 1.6 : Math.min(1 + e.weight * 0.6, 4),
+      "stroke-dasharray": e.type === "diagonal" ? "" : "4 4",
+      opacity: 0.55
+    });
+    edgeLayer.appendChild(line);
+    return { el: line, edge: e };
+  });
+
+  nodeEls = {};
+  graphNodes.forEach(n => {
+    const g = el("g", { class: "gnode" });
+    const r = 7 + Math.min(n.degree, 10) * 0.9;
+    const circle = el("circle", { r: r, fill: nodeColor(n) });
+    g.appendChild(circle);
+    const title = el("title", {});
+    title.textContent = n.film.title + " (" + n.film.year + ")";
+    g.appendChild(title);
+    g.addEventListener("click", () => {
+      selectFilm(n.id, true);
+      focusGraphNode(n.id);
+    });
+    nodeLayer.appendChild(g);
+    nodeEls[n.id] = { g, circle, r };
+  });
+
+  graphInfo.textContent = `${graphNodes.length} archive-grounded films (of 199) — ${graphEdges.filter(e=>e.type==='diagonal').length} diagonal, ${graphEdges.filter(e=>e.type==='entanglement').length} entanglement edges (bridge-tag overlap only)`;
+
+  renderLegend();
+  graphInitialized = true;
+  runSimLoop();
+}
+
+function nodeColor(n) {
+  if (colorMode === "cluster") {
+    return CLUSTER_COLORS[n.film.clusters[0]] || "#8a5a3f";
+  } else {
+    const v = n.film.continuum ? n.film.continuum[colorMode] : undefined;
+    return continuumColor(v);
+  }
+}
+
+function renderLegend() {
+  if (colorMode === "cluster") {
+    graphLegend.innerHTML = `
+      <div class="row"><span class="swatch"></span><span>Diagonal navigation (shared author)</span></div>
+      <div class="row"><span class="swatch e"></span><span>Entanglement jump (shared tags, weighted)</span></div>
+      <div class="row" style="margin-top:6px;color:#8a8378;">Node color = primary cluster</div>`;
+  } else {
+    const axis = DATA.continuumAxes[colorMode];
+    graphLegend.innerHTML = `
+      <div class="row"><span class="swatch"></span><span>Diagonal navigation (shared author)</span></div>
+      <div class="row"><span class="swatch e"></span><span>Entanglement jump (shared tags, weighted)</span></div>
+      <div style="margin-top:6px;">
+        <div style="font-weight:600;font-size:10.5px;">${axis.label}</div>
+        <div class="gradient-bar"></div>
+        <div style="display:flex;justify-content:space-between;color:#8a8378;font-size:9.5px;"><span>${axis.poles[0]}</span><span>${axis.poles[1]}</span></div>
+        <div style="color:#8a8378;font-size:9.5px;margin-top:2px;">Gray = no position on this axis</div>
+      </div>`;
+  }
+}
+
+document.querySelectorAll(".colorbtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".colorbtn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    colorMode = btn.dataset.color;
+    graphNodes.forEach(n => { if (nodeEls[n.id]) nodeEls[n.id].circle.setAttribute("fill", nodeColor(n)); });
+    renderLegend();
+  });
+});
+
+document.getElementById("resetGraph").addEventListener("click", () => {
+  focusedNodeId = null;
+  document.querySelectorAll(".gnode").forEach(g => g.classList.remove("focused"));
+  edgeEls.forEach(({el: line}) => line.setAttribute("opacity", 0.55));
+  Object.values(nodeEls).forEach(({circle}) => circle.setAttribute("opacity", 1));
+  runSimLoop();
+});
+
+function focusGraphNode(id) {
+  focusedNodeId = id;
+  const neighborIds = new Set([id]);
+  graphEdges.forEach(e => {
+    if (e.source === id) neighborIds.add(e.target);
+    if (e.target === id) neighborIds.add(e.source);
+  });
+  Object.entries(nodeEls).forEach(([nid, {g, circle}]) => {
+    g.classList.toggle("focused", nid === id);
+    circle.setAttribute("opacity", neighborIds.has(nid) ? 1 : 0.15);
+  });
+  edgeEls.forEach(({el: line, edge}) => {
+    const touches = edge.source === id || edge.target === id;
+    line.setAttribute("opacity", touches ? 0.9 : 0.06);
+  });
+  runSimLoop();
+}
+
+// simple force simulation
+let simRunning = false;
+function runSimLoop() {
+  if (simRunning) return;
+  simRunning = true;
+  let ticks = 0;
+  function step() {
+    ticks++;
+    const REPULSION = 2600;
+    const CENTER_X = GVBW/2, CENTER_Y = GVBH/2;
+    // repulsion
+    for (let i = 0; i < graphNodes.length; i++) {
+      for (let j = i+1; j < graphNodes.length; j++) {
+        const a = graphNodes[i], b = graphNodes[j];
+        let dx = a.x - b.x, dy = a.y - b.y;
+        let dist2 = dx*dx + dy*dy;
+        if (dist2 < 1) dist2 = 1;
+        const dist = Math.sqrt(dist2);
+        const force = REPULSION / dist2;
+        const fx = (dx/dist) * force, fy = (dy/dist) * force;
+        a.vx += fx; a.vy += fy;
+        b.vx -= fx; b.vy -= fy;
+      }
+    }
+    // edges (springs)
+    graphEdges.forEach(e => {
+      const a = graphNodeById[e.source], b = graphNodeById[e.target];
+      const targetLen = e.type === "diagonal" ? 90 : Math.max(60, 140 - e.weight*15);
+      const strength = e.type === "diagonal" ? 0.02 : 0.012 + e.weight*0.003;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.sqrt(dx*dx+dy*dy) || 1;
+      const diff = (dist - targetLen) * strength;
+      const fx = (dx/dist) * diff, fy = (dy/dist) * diff;
+      a.vx += fx; a.vy += fy;
+      b.vx -= fx; b.vy -= fy;
+    });
+    // center gravity + focus gravity
+    graphNodes.forEach(n => {
+      const strength = (focusedNodeId === n.id) ? 0.25 : 0.012;
+      n.vx += (CENTER_X - n.x) * strength * 0.02;
+      n.vy += (CENTER_Y - n.y) * strength * 0.02;
+      n.vx *= 0.82; n.vy *= 0.82;
+      n.x += n.vx; n.y += n.vy;
+      n.x = Math.max(20, Math.min(GVBW-20, n.x));
+      n.y = Math.max(20, Math.min(GVBH-20, n.y));
+    });
+    // render
+    edgeEls.forEach(({el: line, edge}) => {
+      const a = graphNodeById[edge.source], b = graphNodeById[edge.target];
+      line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+      line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+    });
+    graphNodes.forEach(n => {
+      const ne = nodeEls[n.id];
+      ne.g.setAttribute("transform", `translate(${n.x},${n.y})`);
+    });
+    if (ticks < 220) {
+      requestAnimationFrame(step);
+    } else {
+      simRunning = false;
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+renderClusters();
+renderGrid();
+activeCluster = "I"; renderClusters(); renderGrid();
+selectFilm("f_first_reformed");
+
+</script>
+</body>
+</html>
