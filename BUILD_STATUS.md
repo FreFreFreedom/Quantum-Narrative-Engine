@@ -6,68 +6,61 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 
 ## What exists right now
 
-Two self-contained HTML prototypes in this repo (also live as reopenable Cowork artifacts):
+Three self-contained HTML prototypes in this repo (also live as reopenable Cowork artifacts):
 
 1. **fmcns_map_prototype.html** — world map (real Natural Earth country boundaries, inline SVG), 10 hand-scored countries on the "Guilt-as-Engine" Integration Continuum (Ascetic Self-Destruction ↔ Integrated Accountability), click-to-zoom fractal navigation.
-2. **fmcns_film_corpus.html** — 199 films across 12 clusters from Films_Analyzed_Master_List.md. Two view modes: List/Cards and a force-directed Graph view (toggle at top).
-   - **Diagonal navigation** (solid gold): shared director/writer, computed corpus-wide.
-   - **Entanglement jumps** (dashed violet): shared archetypal tags. In list view, ranked by all shared tags; in graph view, edges are drawn only on shared *bridge* tags (excluding the two generic base tags every film in a cluster shares) so the graph stays legible instead of becoming a near-complete blob.
-   - Graph view currently renders only the **47 archive-grounded films** (clusters I and II) — the subset with real signal. Node color toggles between cluster and either continuum axis.
-   - Two continuum axes tracked: **Guilt-as-Engine** (13 films, cluster I) and **Possession ↔ Sovereign Otherness** (13 films, cluster II) — the second axis surfaced directly from mining `Cuckold_Dynamics_Definition_Extract.pdf`.
+2. **fmcns_film_corpus.html** — 199 films across 12 clusters, film-primary. List/Cards + force-directed Graph view. Kept as-is for corpus breadth (still the widest single view of the material), but superseded conceptually by (3) below for the grounded subset.
+3. **fmcns_char_navigator.html** (new — Cowork artifact `fmcns-character-navigator`) — **character-primary** rebuild of the 47 archive-grounded films (clusters I and II). 51 characters are now the atomic navigable/graph unit; films are containers (shown as metadata on each character card, not as nodes). Same List/Cards + Graph view pattern, but:
+   - **Diagonal navigation** (solid gold) = shared director/writer, resolved via each character's container film.
+   - **Entanglement jumps** (dashed violet) = shared archetypal tags, computed at character granularity (tags can differ from the parent film when a character has an explicit override — see below).
+   - Graph view keeps zoom/pan, cluster-vs-continuum node coloring, Timeline layout (x = release year of container film), and the optional country scale-bridge overlay (character ↔ nation on Guilt-as-Engine), all ported from the film-graph prototype.
+   - **4 films are split into 2 characters each** where the archive material clearly differentiates two poles of the same pattern: Eyes Wide Shut (Bill Harford / Alice Harford), The Master (Freddie Quell / Lancaster Dodd), The Duke of Burgundy (Cynthia / Evelyn), Gone Girl (Amy Dunne / Nick Dunne). All other films contribute one character each.
+   - Characters without an explicit tag/continuum override simply inherit their container film's existing grounded tags and continuum score — no data was invented, only reframed at the character level or, where the archive supported it, split into two differentiated reads.
 
-Both are still **rendering-layer prototypes** — no database, no ontological/semantic/analogical graph underneath, no persistence beyond these HTML files and this repo.
+Both older prototypes (map, film corpus) are still **rendering-layer prototypes** — no database, no ontological/semantic/analogical graph underneath, no persistence beyond these HTML files and this repo. The character navigator is the first prototype built around the user's "character as universal ontological unit" reframing (individual, institutional, national, fictional entities are all instances of "Character" bearing an archetypal pattern), though it currently only covers individual-scale (fictional) characters — institutional/national characters are not yet represented as characters, only as the older country nodes bridged in on one shared axis.
 
 ## Archive-grounding coverage tracker
 
-| Cluster | Films | Status | Source |
-|---|---|---|---|
-| I. Ascetic Self-Destruction, Guilt & the Martyr Archetype | 13 | **Grounded** | General archive search + First_Reformed_Pattern_Extract.pdf |
-| II. Eros, Power & Erotic Dynamics | 34 | **Grounded** | General archive search + Cuckold_Dynamics_Definition_Extract.pdf |
-| III. Marriage, Infidelity & Domestic Rupture | 16 | Reasoned | Not yet mined |
-| IV. Grief, Illness & Mortality | 13 | Reasoned | Not yet mined |
-| V. Wilderness, Frontier & Survival | 38 | Reasoned | Not yet mined |
-| VI. War & Violence | 21 | Reasoned | Not yet mined |
-| VII. Cults, Control & Institutional Shadow | 10 | Reasoned | Not yet mined |
-| VIII. Espionage, Surveillance & Paranoia | 15 | Reasoned | Not yet mined |
-| IX. Sci-Fi, Cyberpunk & Posthuman | 9 | Reasoned | Not yet mined |
-| X. Family, Power & the Gothic Household | 16 | Reasoned | Not yet mined |
-| XI. Historical Epics & Civil-War-Adjacent | 8 | Reasoned | Not yet mined |
-| XII. Counterculture, Idealism & Its Shadow | 7 | Reasoned | Not yet mined |
-| XIII. Additional Notable Titles | ~90 | **Not in corpus** | Unsorted grab-bag, no cluster tag |
+| Cluster | Films | Characters | Status | Source |
+|---|---|---|---|---|
+| I. Ascetic Self-Destruction, Guilt & the Martyr Archetype | 13 | 14 | **Grounded** | General archive search + First_Reformed_Pattern_Extract.pdf |
+| II. Eros, Power & Erotic Dynamics | 34 | 37 | **Grounded** | General archive search + Cuckold_Dynamics_Definition_Extract.pdf |
+| III. Marriage, Infidelity & Domestic Rupture | 16 | — | Reasoned | Not yet mined |
+| IV. Grief, Illness & Mortality | 13 | — | Reasoned | Not yet mined |
+| V. Wilderness, Frontier & Survival | 38 | — | Reasoned | Not yet mined |
+| VI. War & Violence | 21 | — | Reasoned | Not yet mined |
+| VII. Cults, Control & Institutional Shadow | 10 | — | Reasoned | Not yet mined |
+| VIII. Espionage, Surveillance & Paranoia | 15 | — | Reasoned | Not yet mined |
+| IX. Sci-Fi, Cyberpunk & Posthuman | 9 | — | Reasoned | Not yet mined |
+| X. Family, Power & the Gothic Household | 16 | — | Reasoned | Not yet mined |
+| XI. Historical Epics & Civil-War-Adjacent | 8 | — | Reasoned | Not yet mined |
+| XII. Counterculture, Idealism & Its Shadow | 7 | — | Reasoned | Not yet mined |
+| XIII. Additional Notable Titles | ~90 | — | **Not in corpus** | Unsorted grab-bag, no cluster tag |
 
-**47 of 199 films (24%) are archive-grounded. 152 (76%) are Claude-reasoned only.**
+**47 of 199 films (24%) are archive-grounded, now expressed as 51 characters. 152 films (76%) are Claude-reasoned only and have no character layer yet.**
 
 ## Known gaps / honest caveats
 
-- **No shared schema** between map country-nodes and film-nodes yet.
-- **76% of the film corpus is still reasoned, not grounded** — same methodology as clusters I/II just not yet run on clusters III–XII.
+- **Character layer only covers the 47 grounded films** — the other 152 reasoned films have no characters yet, by design (rebuild the grounded subset first, per your call).
+- **No shared schema** between map country-nodes, film-nodes, and character-nodes yet — the character navigator bridges to countries the same narrow way the old film graph did (one shared continuum axis), not a true unified ontology. Countries are not yet themselves "Character" instances.
+- **Character split judgment calls** (which 4 films get 2 characters instead of 1) were made by Claude based on where the archive material clearly differentiated two poles of the same dynamic — worth double-checking against your own read, especially for films that might deserve a 2-character split but didn't get one (e.g. Damage, Closer, Secretary all have strong dual-protagonist dynamics but were kept single for now).
+- **76% of the film corpus is still reasoned, not grounded** — unchanged from before this pivot.
 - **Film metadata (director/year) is knowledge-based, not verified** against TMDB/Wikidata — this sandbox can't reach those domains.
-- **No real poster art** in the film prototype — generated colors only, network + copyright constraints.
-- **Cluster XIII (~90 titles)** still not in the graph.
-- **Continuum scores are Claude's interpretive judgment**, grounded in the archive's own analysis but ultimately a single read — worth spot-checking against your own sense of these films.
-- **Graph view entanglement edges use bridge tags only** (not base cluster tags) to stay legible — this means the graph under-represents connections compared to the list view's "all shared tags" ranking. Intentional tradeoff, not a bug.
+- **No real poster art** — generated gradient cards only, network + copyright constraints.
+- **Continuum scores are Claude's interpretive judgment**, grounded in the archive's own analysis but ultimately a single read.
 
 ## Open threads (from the vision doc, §7, and since)
 
-- Archive-mine the remaining 10 clusters (152 films), one at a time, same methodology
-- Extend graph view to reasoned clusters once they're grounded (or add a toggle to include them now, clearly marked)
-- Building one shared entity schema across map, film, and future domains
-- Continuum positions for the remaining film clusters
-- Temporal/timeline view (pattern recurrence across release years)
+- Extend the character layer to the remaining 10 clusters (152 films) once/if they get archive-mined — same split-vs-single judgment call each time
+- Build countries (and eventually institutions, corporations) as true Character instances, not a separate bridged node type — this is the real "shared schema" fix implied by the character-as-universal-unit reframing
+- Revisit the 4 single-vs-split character calls above with your own read; likely more films deserve a split
+- Archive-mine the remaining 10 clusters (152 films), one at a time, same methodology as I/II
+- Temporal/timeline view (pattern recurrence across release years) — ported to character navigator, not yet extended further
 - Ratio-formalization auto-generation from shared tags
 - Ritual/playback sequences (ordered watchlists)
-- Personal integration layer (mark films watched / rate resonance)
+- Personal integration layer (mark films/characters watched or resonant) — user has expressed wanting to add personally-watched films directly; titles not yet supplied
 - Whether the experiential/somatic fourth layer gets built out
 
 ---
 
-*This file is maintained by Claude in Cowork, tracked in git going forward instead of Google Drive. Commit history is the changelog — check `git log` rather than looking for a list of dated entries here.*
-
-## Latest: graph view — navigation upgrades (this session)
-
-- **Zoom & pan**: scroll wheel zooms centered on cursor, drag pans. Applies to the graph view only.
-- **Always-visible labels**: film titles render under each node (not just hover tooltips), truncated to stay legible; zoom in for clarity on dense clusters.
-- **Timeline layout mode**: toggle between Force (default physics layout) and Timeline, which pins each film's horizontal position to its release year with a year-axis at the bottom. This is the "horizontal = time, same scale" navigation the user described.
-- **Scale bridges (vertical navigation, real version)**: toggle reveals the map's 10 countries in a lower band of the same graph, positioned by their Guilt-as-Engine value. Dashed lines connect any of the 13 guilt-cluster films to countries within 0.15 of their own Guilt-as-Engine position. Clicking a country shows its position and the matching films. This is intentionally the *small, real* version of vertical scale navigation — built on the one axis that actually exists across both domains today, not a placeholder.
-- Not yet done: vertical navigation for the Possession/Sovereign-Otherness axis (no map entities scored on it yet), and horizontal timeline mode for non-grounded clusters (graph still only shows the 47 grounded films).
-
+*This file is maintained by Claude in Cowork, tracked in git. Commit history is the changelog — check `git log` rather than looking for a list of dated entries here.*
