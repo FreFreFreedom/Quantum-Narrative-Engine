@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+.wrap { display:flex; height:100vh; min-height:640px; }
+.left { width:230px; border-right:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; flex-shrink:0; padding:14px; }
+.left h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:14px 0 8px; }
+.left h2:first-child { margin-top:0; }
+.type-toggle { display:flex; align-items:center; gap:7px; padding:6px 4px; font-size:12.5px; cursor:pointer; }
+.type-toggle input { margin:0; }
+.cluster-item { padding:7px 8px; border-radius:6px; cursor:pointer; margin-bottom:2px; font-size:12px; }
+.cluster-item:hover { background:#f2efe9; }
+.cluster-item.active { background:#eee9df; font-weight:600; }
+.searchbox { width:100%; padding:6px 8px; border:1px solid #d9d3c9; border-radius:6px; font-size:12px; margin-bottom:6px; }
+.mid { flex:1; display:flex; flex-direction:column; min-width:0; }
+.header { padding:10px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
+.header h1 { font-size:15px; margin:0 0 3px; font-weight:600; }
+.header p { font-size:11.5px; margin:0; color:#6b645b; }
+.graph-controls { padding:7px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.ctrl-label { font-size:10.5px; color:#8a8378; text-transform:uppercase; letter-spacing:.04em; }
+.ctrlbtn { padding:4px 9px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11px; cursor:pointer; }
+.ctrlbtn.active { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.graph-stage { flex:1; position:relative; overflow:hidden; background:#f0ede6; }
+#graphSvg { width:100%; height:100%; display:block; cursor:grab; }
+#graphSvg.panning { cursor:grabbing; }
+.gnode { cursor:pointer; }
+.gnode circle { stroke:#fbfaf8; stroke-width:1.3; }
+.gnode.focused circle { stroke:#2a2621; stroke-width:3; }
+.gnode text { font-size:8px; fill:#2a2621; text-anchor:middle; pointer-events:none; }
+.legend { position:absolute; left:12px; bottom:12px; background:rgba(255,255,255,.92); border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; }
+.legend .row { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+.legend .swatch { width:18px; height:0; border-top:2.5px solid #c08a3e; }
+.legend .swatch.e { border-top:2.5px dashed #8b6fb0; }
+.legend .swatch.b { border-top:2px dotted #4f9d7a; }
+.right { width:360px; border-left:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; padding:14px; flex-shrink:0; }
+.right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
+.card { border-radius:10px; padding:12px; color:#fbfaf8; margin-bottom:10px; }
+.card .name { font-size:17px; font-weight:700; }
+.card .sub { font-size:11px; opacity:.9; margin-top:3px; }
+.card .type-badge { font-size:9px; padding:2px 7px; border-radius:20px; background:rgba(0,0,0,.25); display:inline-block; margin-bottom:6px; }
+.note { font-size:12px; line-height:1.5; margin:8px 0; font-style:italic; color:#3a352e; }
+.tagrow { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0; }
+.tag { font-size:9.5px; background:#eee9df; color:#5c554b; padding:2px 7px; border-radius:20px; }
+.continuum-block { margin:10px 0; padding:8px; background:#fff; border:1px solid #e4dfd8; border-radius:8px; }
+.continuum-row { margin-bottom:7px; }
+.continuum-label { font-size:10px; font-weight:600; color:#5c554b; margin-bottom:2px; }
+.continuum-bar { height:5px; border-radius:3px; background:linear-gradient(to right,#b23a2f,#d99a3d,#dcb84a,#4f9d7a,#2f7d63); position:relative; margin-bottom:2px; }
+.continuum-marker { position:absolute; top:-2px; width:2.5px; height:9px; background:#2a2621; border-radius:2px; }
+.continuum-poles { display:flex; justify-content:space-between; font-size:8.5px; color:#8a8378; }
+.section-title { font-size:10px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; margin:12px 0 6px; }
+.section-title.diag { color:#8a5a1e; }
+.section-title.ent { color:#5b3f85; }
+.section-title.bridge { color:#2f7d63; }
+.conn { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; border-radius:6px; margin-bottom:4px; cursor:pointer; background:#fff; border:1px solid #e4dfd8; font-size:11px; }
+.conn:hover { background:#f2efe9; }
+.conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
+.dot.diag { background:#d99a3d; } .dot.ent { background:#8b6fb0; } .dot.bridge { background:#4f9d7a; }
+.empty { font-size:11.5px; color:#8a8378; }
+.loading, .loginbox { padding:40px; text-align:center; font-size:13px; color:#6b645b; }
+.loginbox input { padding:8px 10px; border:1px solid #d9d3c9; border-radius:6px; font-size:13px; width:220px; margin:10px 0; }
+.loginbox button { padding:8px 16px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="loginGate" class="loginbox">
+  <h2 style="margin-top:0;">FMCNS Fractal Navigator</h2>
+  <p>Enter the app password to load live data.</p>
+  <input type="password" id="loginPw" placeholder="Password"><br>
+  <button id="loginBtn">Connect</button>
+  <div id="loginErr" style="color:#b23a2f;margin-top:8px;font-size:12px;"></div>
+</div>
+<div class="wrap" id="app" style="display:none;">
+  <div class="left">
+    <h2>Entity types</h2>
+    <label class="type-toggle"><input type="checkbox" id="tCharacter" checked> Characters</label>
+    <label class="type-toggle"><input type="checkbox" id="tCountry" checked> Countries</label>
+    <label class="type-toggle"><input type="checkbox" id="tFilm"> Films (containers)</label>
+    <h2>Search</h2>
+    <input class="searchbox" id="search" placeholder="Search entities...">
+    <h2>Clusters</h2>
+    <div id="clusterList"></div>
+  </div>
+  <div class="mid">
+    <div class="header">
+      <h1>FMCNS — Fractal Navigator</h1>
+      <p>One live graph across characters, films, and countries. Gold = shared director/writer. Violet = shared tags. Green dotted = continuum-proximity bridge across scale (the Scale Echo mechanism) — connects entities of ANY type close on a shared axis.</p>
+    </div>
+    <div class="graph-controls">
+      <span class="ctrl-label">Color by</span>
+      <button class="ctrlbtn active" data-color="type">Type</button>
+      <button class="ctrlbtn" data-color="cluster">Cluster</button>
+      <button class="ctrlbtn" data-color="guilt_as_engine">Guilt-as-Engine</button>
+      <button class="ctrlbtn" data-color="possession_sovereignty">Possession/Sovereignty</button>
+      <button class="ctrlbtn" id="toggleBridges">Bridges: on</button>
+      <button class="ctrlbtn" id="resetBtn">Reset view</button>
+      <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:#8a8378;"></span>
+    </div>
+    <div class="graph-stage">
+      <svg id="graphSvg" viewBox="0 0 900 640" preserveAspectRatio="xMidYMid meet">
+        <g id="viewport"><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
+      </svg>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+  <div class="right">
+    <h2>Selected entity</h2>
+    <div id="cardHost"><div class="empty">Click a node to inspect it.</div></div>
+  </div>
+</div>
+<script>
+const API_BASE = "https://quantum-narrative-engine-production.up.railway.app";
+let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
+let ENTITIES = [], CLUSTERS = {}, AXES = {};
+const byId = {};
+
+async function api(path) {
+  const resp = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + TOKEN } });
+  if (resp.status === 401) throw new Error('unauthorized');
+  return resp.json();
+}
+
+document.getElementById('loginBtn').onclick = async function() {
+  const pw = document.getElementById('loginPw').value;
+  const err = document.getElementById('loginErr');
+  err.textContent = '';
+  try {
+    const resp = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: pw}) });
+    if (!resp.ok) { err.textContent = 'Wrong password.'; return; }
+    const data = await resp.json();
+    TOKEN = data.token;
+    localStorage.setItem('fmcns_chat_token', TOKEN);
+    await boot();
+  } catch (e) { err.textContent = 'Could not reach the server.'; }
+};
+
+async function boot() {
+  try {
+    const [entRes, clRes, axRes] = await Promise.all([
+      api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
+    ]);
+    ENTITIES = entRes.entities;
+    ENTITIES.forEach(e => byId[e.id] = e);
+    clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
+    axRes.axes.forEach(a => AXES[a.key] = a);
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    renderClusterList();
+    initGraph();
+  } catch (e) {
+    document.getElementById('loginErr').textContent = 'Session expired, log in again.';
+    document.getElementById('loginGate').style.display = 'block';
+  }
+}
+if (TOKEN) boot();
+
+// ---------- Cluster list / search ----------
+let activeCluster = null;
+function renderClusterList() {
+  const el = document.getElementById('clusterList');
+  el.innerHTML = '';
+  Object.entries(CLUSTERS).forEach(([code, c]) => {
+    const n = ENTITIES.filter(e => (e.clusters||[]).includes(code)).length;
+    if (!n) return;
+    const div = document.createElement('div');
+    div.className = 'cluster-item' + (activeCluster === code ? ' active' : '');
+    div.textContent = code + '. ' + c.name.split(',')[0] + ' (' + n + ')';
+    div.onclick = () => { activeCluster = activeCluster === code ? null : code; renderClusterList(); layoutAndDraw(); };
+    el.appendChild(div);
+  });
+}
+document.getElementById('search').addEventListener('input', () => layoutAndDraw());
+['tCharacter','tCountry','tFilm'].forEach(id => document.getElementById(id).addEventListener('change', () => layoutAndDraw()));
+
+// ---------- Colors ----------
+const TYPE_COLORS = { character: '#8b3f85', film: '#3f6b85', country: '#5f7a3f' };
+const CLUSTER_COLORS = { I:"#b23a2f",II:"#8b3f85",III:"#3f6b85",IV:"#5f7a3f",V:"#85703f",VI:"#7a3f3f",VII:"#3f8577",VIII:"#4a4a85",IX:"#3f8598",X:"#85503f",XI:"#6b5f3f",XII:"#5b6b3f" };
+function continuumColor(p) {
+  if (p === null || p === undefined) return '#c9c3b8';
+  const stops = [[0,[178,58,47]],[.25,[217,154,61]],[.5,[220,184,74]],[.75,[79,157,122]],[1,[47,125,99]]];
+  let a=stops[0], b=stops[stops.length-1];
+  for (let i=0;i<stops.length-1;i++) if (p>=stops[i][0]&&p<=stops[i+1][0]) { a=stops[i]; b=stops[i+1]; break; }
+  const t=(p-a[0])/((b[0]-a[0])||1);
+  const c=a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+let colorMode = 'type';
+function nodeColor(e) {
+  if (colorMode === 'type') return TYPE_COLORS[e.type] || '#8a8378';
+  if (colorMode === 'cluster') return CLUSTER_COLORS[(e.clusters||[])[0]] || '#c9c3b8';
+  return continuumColor(e.continuum ? e.continuum[colorMode] : undefined);
+}
+document.querySelectorAll('.ctrlbtn[data-color]').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.ctrlbtn[data-color]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    colorMode = b.getAttribute('data-color');
+    drawGraph();
+  };
+});
+
+// ---------- Graph data / physics ----------
+const GVBW=900, GVBH=640;
+let nodes=[], edges=[];
+let focusedId=null, bridgesOn=true;
+const camera={x:0,y:0,scale:1};
+let simRunning=false;
+
+function activeEntities() {
+  const showC = document.getElementById('tCharacter').checked;
+  const showN = document.getElementById('tCountry').checked;
+  const showF = document.getElementById('tFilm').checked;
+  const q = document.getElementById('search').value.toLowerCase();
+  return ENTITIES.filter(e => {
+    if (e.type==='character' && !showC) return false;
+    if (e.type==='country' && !showN) return false;
+    if (e.type==='film' && !showF) return false;
+    if (activeCluster && !(e.clusters||[]).includes(activeCluster)) return false;
+    if (q && !e.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function computeDiagonal(e, pool) {
+  const auteurs = (e.meta && e.meta.auteurs) || [];
+  if (!auteurs.length) return [];
+  return pool.filter(o => o.id!==e.id && ((o.meta&&o.meta.auteurs)||[]).some(a=>auteurs.includes(a)));
+}
+function computeEntanglement(e, pool, diagIds) {
+  const tags = e.tags||[];
+  if (!tags.length) return [];
+  return pool.filter(o => o.id!==e.id && !diagIds.has(o.id) && (o.tags||[]).some(t=>tags.includes(t)))
+    .map(o => ({ o, shared: (o.tags||[]).filter(t=>tags.includes(t)) }))
+    .sort((a,b)=>b.shared.length-a.shared.length).slice(0,6);
+}
+function computeBridges(e, pool) {
+  const out = [];
+  Object.keys(e.continuum||{}).forEach(axis => {
+    const v = e.continuum[axis];
+    pool.forEach(o => {
+      if (o.id===e.id || o.type===e.type) return; // bridges are explicitly cross-type
+      const ov = o.continuum && o.continuum[axis];
+      if (ov===undefined) return;
+      if (Math.abs(ov-v) < 0.07) out.push({ o, axis, delta: Math.abs(ov-v) });
+    });
+  });
+  return out.sort((a,b)=>a.delta-b.delta).slice(0,5);
+}
+
+function buildGraph() {
+  const pool = activeEntities();
+  nodes = pool.map(e => ({ ...e, x: GVBW/2+(Math.random()-.5)*420, y: GVBH/2+(Math.random()-.5)*420, vx:0, vy:0 }));
+  nodes.forEach(n => byId[n.id]=n);
+  const seen = new Set();
+  edges = [];
+  pool.forEach(e => {
+    const diag = computeDiagonal(e, pool);
+    const diagIds = new Set(diag.map(o=>o.id));
+    diag.forEach(o => { const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'diag'}); });
+    computeEntanglement(e, pool, diagIds).forEach(({o})=>{ const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'ent'}); });
+    if (bridgesOn) computeBridges(e, pool).forEach(({o,axis})=>{ const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'bridge',axis}); });
+  });
+}
+
+function el(tag, attrs) { const e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function truncate(s,n){ return s.length>n? s.slice(0,n-1)+"…" : s; }
+
+function drawGraph() {
+  const edgeLayer=document.getElementById('edgeLayer'), nodeLayer=document.getElementById('nodeLayer');
+  edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
+  edges.forEach(e=>{
+    const a=byId[e.a], b=byId[e.b]; if(!a||!b) return;
+    const stroke = e.type==='diag'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
+    const dash = e.type==='ent'?'4,3': e.type==='bridge'?'1.5,2.5':'none';
+    edgeLayer.appendChild(el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke,'stroke-width':1.3,'stroke-dasharray':dash,opacity:.55}));
+  });
+  nodes.forEach(n=>{
+    const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':'')});
+    const r = n.id===focusedId?11:(n.type==='country'?8:6);
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r,fill:nodeColor(n)}));
+    const t=el('text',{x:n.x,y:n.y+r+9}); t.textContent=truncate(n.name,15); g.appendChild(t);
+    g.onclick=()=>selectEntity(n.id);
+    nodeLayer.appendChild(g);
+  });
+  document.getElementById('graphInfo').textContent = nodes.length+' nodes, '+edges.length+' edges';
+}
+
+function runSim(){
+  if (simRunning) return; simRunning=true;
+  let ticks=0;
+  function step(){
+    ticks++;
+    const cx=GVBW/2, cy=GVBH/2;
+    nodes.forEach(n=>{
+      let fx=0,fy=0;
+      nodes.forEach(o=>{ if(o===n)return; let dx=n.x-o.x,dy=n.y-o.y; let d2=dx*dx+dy*dy+.01; let d=Math.sqrt(d2); let f=900/d2; fx+=(dx/d)*f; fy+=(dy/d)*f; });
+      fx+=(cx-n.x)*.006; fy+=(cy-n.y)*.006;
+      if (focusedId && n.id===focusedId) { fx+=(cx-n.x)*.03; fy+=(cy-n.y)*.03; }
+      edges.forEach(e=>{ if(e.a!==n.id&&e.b!==n.id)return; const oid=e.a===n.id?e.b:e.a; const o=byId[oid]; if(!o)return; fx+=(o.x-n.x)*.008; fy+=(o.y-n.y)*.008; });
+      n.vx=(n.vx+fx)*.75; n.vy=(n.vy+fy)*.75;
+    });
+    nodes.forEach(n=>{ n.x+=n.vx*.05; n.y+=n.vy*.05; n.x=Math.max(20,Math.min(GVBW-20,n.x)); n.y=Math.max(20,Math.min(GVBH-20,n.y)); });
+    drawGraph();
+    if (ticks<220) requestAnimationFrame(step); else simRunning=false;
+  }
+  requestAnimationFrame(step);
+}
+
+function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); }
+
+function renderLegend(){
+  let html = '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div><div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div><div class="row"><span class="swatch b"></span> Continuum bridge (cross-scale echo)</div>';
+  document.getElementById('legend').innerHTML = html;
+}
+
+function initGraph(){
+  layoutAndDraw();
+  setupZoomPan();
+  document.getElementById('toggleBridges').onclick = function(e){
+    bridgesOn = !bridgesOn;
+    e.target.textContent = 'Bridges: ' + (bridgesOn?'on':'off');
+    e.target.classList.toggle('active', bridgesOn);
+    layoutAndDraw();
+  };
+  document.getElementById('resetBtn').onclick = function(){ camera.x=0;camera.y=0;camera.scale=1; applyCamera(); focusedId=null; layoutAndDraw(); };
+}
+
+function applyCamera(){ document.getElementById('viewport').setAttribute('transform', `translate(${camera.x},${camera.y}) scale(${camera.scale})`); }
+function setupZoomPan(){
+  const svg=document.getElementById('graphSvg');
+  let panning=false,lastX=0,lastY=0;
+  svg.addEventListener('wheel',e=>{ e.preventDefault(); camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.1:.9))); applyCamera(); },{passive:false});
+  svg.addEventListener('mousedown',e=>{ panning=true; lastX=e.clientX; lastY=e.clientY; svg.classList.add('panning'); });
+  window.addEventListener('mousemove',e=>{ if(!panning)return; camera.x+=(e.clientX-lastX); camera.y+=(e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; applyCamera(); });
+  window.addEventListener('mouseup',()=>{ panning=false; svg.classList.remove('panning'); });
+}
+
+// ---------- Detail panel ----------
+function continuumHtml(e){
+  const keys = Object.keys(e.continuum||{});
+  if (!keys.length) return '';
+  let rows='';
+  keys.forEach(k=>{
+    const axis=AXES[k]; if(!axis) return;
+    const p=e.continuum[k];
+    rows += `<div class="continuum-row"><div class="continuum-label">${axis.name}</div><div class="continuum-bar"><div class="continuum-marker" style="left:${p*100}%"></div></div><div class="continuum-poles"><span>${axis.low}</span><span>${axis.high}</span></div></div>`;
+  });
+  return `<div class="continuum-block">${rows}</div>`;
+}
+
+async function selectEntity(id){
+  focusedId = id;
+  drawGraph();
+  let e = byId[id];
+  try { e = await api('/api/ontology/entities/' + id); } catch(err) {}
+  const color = TYPE_COLORS[e.type] || '#8a8378';
+  const sub = e.type==='character' ? ((e.meta&&e.meta.filmTitle)||'') + (e.meta&&e.meta.filmYear? ' ('+e.meta.filmYear+')':'')
+    : e.type==='film' ? ((e.meta&&e.meta.year)||'') : 'Country';
+  let html = `<div class="card" style="background:linear-gradient(160deg, ${color}, #2a2621);">
+    <span class="type-badge">${e.type}</span>
+    <div class="name">${e.name}</div>
+    <div class="sub">${sub}</div>
+  </div>`;
+  const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
+  if (lensText) html += `<div class="note">${lensText}</div>`;
+  else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
+  if (e.tags && e.tags.length) html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`;
+  html += continuumHtml(e);
+
+  const pool = activeEntities();
+  const diag = computeDiagonal(e, pool);
+  const diagIds = new Set(diag.map(o=>o.id));
+  const ent = computeEntanglement(e, pool, diagIds);
+  const bridges = bridgesOn ? computeBridges(e, pool) : [];
+
+  html += `<div class="section-title diag">Diagonal (${diag.length})</div>`;
+  html += diag.length ? diag.slice(0,6).map(o=>`<div class="conn" data-goto="${o.id}"><span class="dot diag"></span>${o.name}</div>`).join('') : '<div class="empty">None.</div>';
+  html += `<div class="section-title ent">Entanglement (${ent.length})</div>`;
+  html += ent.length ? ent.map(({o,shared})=>`<div class="conn" data-goto="${o.id}"><span class="dot ent"></span>${o.name} — ${shared.join(', ')}</div>`).join('') : '<div class="empty">None.</div>';
+  html += `<div class="section-title bridge">Continuum bridges (${bridges.length})</div>`;
+  html += bridges.length ? bridges.map(({o,axis})=>`<div class="conn" data-goto="${o.id}"><span class="dot bridge"></span>${o.name} (${o.type}) — close on ${AXES[axis]?AXES[axis].name:axis}</div>`).join('') : '<div class="empty">None within range.</div>';
+
+  document.getElementById('cardHost').innerHTML = html;
+  document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
+}
+</script>
+<style>
+#fmcns-chat-btn { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: #2a2621; color: #fbfaf8; border: none; font-size: 22px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+#fmcns-chat-panel { position: fixed; bottom: 84px; right: 20px; width: 360px; max-width: calc(100vw - 40px); height: 480px; max-height: calc(100vh - 120px); background: #fbfaf8; border: 1px solid #e4dfd8; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); display: none; flex-direction: column; z-index: 9999; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; overflow: hidden; }
+#fmcns-chat-panel.open { display: flex; }
+#fmcns-chat-header { padding: 10px 14px; border-bottom: 1px solid #e4dfd8; font-size: 12.5px; font-weight: 600; color: #2a2621; display: flex; justify-content: space-between; align-items: center; }
+#fmcns-chat-header button { background: none; border: none; cursor: pointer; font-size: 16px; color: #8a8378; }
+#fmcns-chat-log { flex: 1; overflow-y: auto; padding: 10px 14px; font-size: 12.5px; line-height: 1.5; }
+#fmcns-chat-log .msg { margin-bottom: 10px; white-space: pre-wrap; }
+#fmcns-chat-log .msg.user { color: #2a2621; }
+#fmcns-chat-log .msg.assistant { color: #3a352e; }
+#fmcns-chat-log .msg .role { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #8a8378; display: block; margin-bottom: 2px; }
+#fmcns-chat-log .msg.pending { color: #8a8378; font-style: italic; }
+#fmcns-chat-input-row { border-top: 1px solid #e4dfd8; padding: 8px; display: flex; gap: 6px; align-items: center; }
+#fmcns-chat-input { flex: 1; border: 1px solid #d9d3c9; border-radius: 6px; padding: 7px 9px; font-size: 12.5px; resize: none; font-family: inherit; }
+#fmcns-chat-send, #fmcns-chat-attach { border: 1px solid #d9d3c9; background: #fff; border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+#fmcns-chat-attach-label { font-size: 10px; color: #8a8378; padding: 0 8px 6px; }
+#fmcns-chat-login { padding: 14px; font-size: 12.5px; }
+#fmcns-chat-login input { width: 100%; padding: 7px 9px; border: 1px solid #d9d3c9; border-radius: 6px; font-size: 12.5px; margin: 8px 0; }
+#fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: #2a2621; color: #fbfaf8; font-size: 12.5px; cursor: pointer; }
+</style>
+<button id="fmcns-chat-btn" title="FMCNS Assistant">✦</button>
+<div id="fmcns-chat-panel">
+  <div id="fmcns-chat-header"><span>FMCNS Assistant</span><button id="fmcns-chat-close">✕</button></div>
+  <div id="fmcns-chat-login" style="display:none;">
+    <div>Enter the app password to connect:</div>
+    <input type="password" id="fmcns-chat-pw" placeholder="Password">
+    <button id="fmcns-chat-pw-submit">Connect</button>
+    <div id="fmcns-chat-pw-error" style="color:#b23a2f;margin-top:6px;"></div>
+  </div>
+  <div id="fmcns-chat-log"></div>
+  <div id="fmcns-chat-attach-label"></div>
+  <div id="fmcns-chat-input-row">
+    <button id="fmcns-chat-attach" title="Attach PDF">📎</button>
+    <input type="file" id="fmcns-chat-file" accept="application/pdf" style="display:none;">
+    <textarea id="fmcns-chat-input" rows="1" placeholder="Ask the assistant..."></textarea>
+    <button id="fmcns-chat-send">Send</button>
+  </div>
+</div>
+<script>
+(function() {
+  var FMCNS_CHAT_SERVER = "https://quantum-narrative-engine-production.up.railway.app";
+  var btn = document.getElementById('fmcns-chat-btn');
+  var panel = document.getElementById('fmcns-chat-panel');
+  var closeBtn = document.getElementById('fmcns-chat-close');
+  var loginBox = document.getElementById('fmcns-chat-login');
+  var pwInput = document.getElementById('fmcns-chat-pw');
+  var pwSubmit = document.getElementById('fmcns-chat-pw-submit');
+  var pwError = document.getElementById('fmcns-chat-pw-error');
+  var log = document.getElementById('fmcns-chat-log');
+  var input = document.getElementById('fmcns-chat-input');
+  var sendBtn = document.getElementById('fmcns-chat-send');
+  var attachBtn = document.getElementById('fmcns-chat-attach');
+  var fileInput = document.getElementById('fmcns-chat-file');
+  var attachLabel = document.getElementById('fmcns-chat-attach-label');
+  var pendingAttachment = null;
+
+  function getToken() { return localStorage.getItem('fmcns_chat_token'); }
+  function setToken(t) { localStorage.setItem('fmcns_chat_token', t); }
+  function getSessionId() { return localStorage.getItem('fmcns_chat_session'); }
+  function setSessionId(id) { localStorage.setItem('fmcns_chat_session', id); }
+
+  function addMsg(role, text) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + role;
+    d.innerHTML = '<span class="role">' + (role === 'user' ? 'You' : 'Assistant') + '</span>';
+    var t = document.createElement('span');
+    t.textContent = text;
+    d.appendChild(t);
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+
+  async function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (getToken()) opts.headers['Authorization'] = 'Bearer ' + getToken();
+    var resp = await fetch(FMCNS_CHAT_SERVER + path, opts);
+    if (resp.status === 401) { setToken(''); showLogin(); throw new Error('unauthorized'); }
+    return resp;
+  }
+
+  function showLogin() { loginBox.style.display = 'block'; log.style.display = 'none'; document.getElementById('fmcns-chat-input-row').style.display = 'none'; }
+  function showChat() { loginBox.style.display = 'none'; log.style.display = 'block'; document.getElementById('fmcns-chat-input-row').style.display = 'flex'; }
+
+  async function ensureSession() {
+    var sid = getSessionId();
+    if (sid) return sid;
+    var resp = await api('/api/chat/sessions', { method: 'POST', body: JSON.stringify({}) });
+    var data = await resp.json();
+    setSessionId(data.id);
+    return data.id;
+  }
+
+  async function loadHistory() {
+    var sid = getSessionId();
+    if (!sid) return;
+    try {
+      var resp = await api('/api/chat/sessions/' + sid + '/messages');
+      if (!resp.ok) return;
+      var data = await resp.json();
+      log.innerHTML = '';
+      (data.messages || []).forEach(function(m) { addMsg(m.role, m.text); });
+    } catch (e) {}
+  }
+
+  pwSubmit.onclick = async function() {
+    pwError.textContent = '';
+    try {
+      var resp = await fetch(FMCNS_CHAT_SERVER + '/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwInput.value }),
+      });
+      if (!resp.ok) { pwError.textContent = 'Wrong password.'; return; }
+      var data = await resp.json();
+      setToken(data.token);
+      showChat();
+      await ensureSession();
+      await loadHistory();
+    } catch (e) { pwError.textContent = 'Could not reach the server.'; }
+  };
+
+  btn.onclick = async function() {
+    panel.classList.toggle('open');
+    if (!panel.classList.contains('open')) return;
+    if (!getToken()) { showLogin(); return; }
+    showChat();
+    await ensureSession();
+    if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; }
+  };
+  closeBtn.onclick = function() { panel.classList.remove('open'); };
+
+  attachBtn.onclick = function() { fileInput.click(); };
+  fileInput.onchange = function() {
+    var f = fileInput.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      var base64 = reader.result.split(',')[1];
+      pendingAttachment = { filename: f.name, mimeType: f.type || 'application/pdf', dataBase64: base64 };
+      attachLabel.textContent = '📎 ' + f.name + ' attached';
+    };
+    reader.readAsDataURL(f);
+  };
+
+  async function send() {
+    var text = input.value.trim();
+    if (!text && !pendingAttachment) return;
+    var sid = await ensureSession();
+    addMsg('user', text || '(PDF attached, no message)');
+    input.value = '';
+    var pending = addMsg('assistant', 'Thinking...');
+    pending.classList.add('pending');
+    var attachments = pendingAttachment ? [pendingAttachment] : [];
+    pendingAttachment = null;
+    attachLabel.textContent = '';
+    try {
+      var resp = await api('/api/chat/message', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: sid, text: text || '(see attached PDF)', attachments: attachments }),
+      });
+      var data = await resp.json();
+      pending.remove();
+      if (data.error) addMsg('assistant', 'Error: ' + (data.message || data.error));
+      else addMsg('assistant', data.text);
+    } catch (e) {
+      pending.remove();
+      addMsg('assistant', 'Could not reach the assistant.');
+    }
+  }
+  sendBtn.onclick = send;
+  input.onkeydown = function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+})();
+</script>
+
+</body>
+</html>

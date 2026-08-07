@@ -55,7 +55,7 @@ export function migrateOntology(db) {
     `).run(key, name, low, high);
   }
   for (const [filmId, film] of Object.entries(seed.filmsIndex)) {
-    upsertEntity(db, { id: filmId, type: 'film', name: film.title, scale: 'film', clusters: film.clusters, grounded: false, meta: { year: film.year, auteurs: film.auteurs } });
+    upsertEntity(db, { id: filmId, type: 'film', name: film.title, scale: 'film', clusters: film.clusters, grounded: false, meta: { year: film.year, auteurs: film.auteurs, synopsis: film.synopsis || '' } });
   }
   const groundedFilmIds = new Set(seed.characters.map((c) => c.filmId));
   for (const filmId of groundedFilmIds) db.prepare(`UPDATE entities SET grounded=1 WHERE id=?`).run(filmId);
@@ -71,7 +71,7 @@ export function migrateOntology(db) {
   }
   for (const c of seed.countries) {
     const id = 'country_' + c.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    upsertEntity(db, { id, type: 'country', name: c.name, scale: 'national', grounded: true, meta: {} });
+    upsertEntity(db, { id, type: 'country', name: c.name, scale: 'national', grounded: true, meta: { description: c.description || '' } });
     setContinuum(db, id, { guilt_as_engine: c.guilt_as_engine });
   }
   return { films: Object.keys(seed.filmsIndex).length, characters: seed.characters.length, countries: seed.countries.length };
