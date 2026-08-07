@@ -60,6 +60,13 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
 .dot.diag { background:#d99a3d; } .dot.ent { background:#8b6fb0; } .dot.bridge { background:#4f9d7a; }
 .empty { font-size:11.5px; color:#8a8378; }
+.bookbtn { width:100%; padding:7px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11.5px; cursor:pointer; margin:8px 0; }
+.bookbtn:hover { background:#f2efe9; }
+.book { padding:7px 9px; border-radius:7px; background:#fff; border:1px solid #e4dfd8; margin-bottom:6px; font-size:11.5px; }
+.book .btitle { font-weight:600; }
+.book .bauthor { color:#6b645b; font-size:10.5px; }
+.book .bkind { display:inline-block; font-size:9px; padding:1px 6px; border-radius:20px; background:#eee9df; color:#5c554b; margin-left:5px; }
+.book .bwhy { font-size:10.5px; color:#3a352e; margin-top:3px; line-height:1.4; }
 .loading, .loginbox { padding:40px; text-align:center; font-size:13px; color:#6b645b; }
 .loginbox input { padding:8px 10px; border:1px solid #d9d3c9; border-radius:6px; font-size:13px; width:220px; margin:10px 0; }
 .loginbox button { padding:8px 16px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:13px; cursor:pointer; }
@@ -369,6 +376,7 @@ async function selectEntity(id){
   else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
   if (e.tags && e.tags.length) html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`;
   html += continuumHtml(e);
+  html += `<button class="bookbtn" id="booksBtn">📚 Suggest books for this pattern</button><div id="booksHost"></div>`;
 
   const pool = activeEntities();
   const diag = computeDiagonal(e, pool);
@@ -385,6 +393,25 @@ async function selectEntity(id){
 
   document.getElementById('cardHost').innerHTML = html;
   document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
+
+  const booksBtn = document.getElementById('booksBtn');
+  if (booksBtn) booksBtn.onclick = async () => {
+    const host = document.getElementById('booksHost');
+    booksBtn.textContent = 'Thinking...'; booksBtn.disabled = true;
+    try {
+      const resp = await fetch(API_BASE + '/api/ontology/entities/' + e.id + '/books', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN }, body: '{}',
+      });
+      const data = await resp.json();
+      if (data.error) { host.innerHTML = '<div class="empty">Could not get suggestions: ' + data.error + '</div>'; }
+      else {
+        host.innerHTML = data.books.map(b =>
+          `<div class="book"><span class="btitle">${b.title}</span><span class="bkind">${b.kind}</span><div class="bauthor">${b.author}</div><div class="bwhy">${b.why}</div></div>`
+        ).join('');
+      }
+    } catch (err) { host.innerHTML = '<div class="empty">Could not reach the server.</div>'; }
+    booksBtn.textContent = '📚 Suggest books for this pattern'; booksBtn.disabled = false;
+  };
 }
 </script>
 <style>

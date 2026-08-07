@@ -24,6 +24,7 @@ export function openDb() {
   initOntologySchema(db);
   initChatSchema(db);
   initKnowledgeSchema(db);
+  initBooksSchema(db);
   return db;
 }
 
@@ -237,6 +238,19 @@ export function initKnowledgeSchema(db) {
       content TEXT NOT NULL,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+}
+
+// ─── Book recommendations, cached per entity ────────────────────────────────────
+// Generated once per entity via the Claude API (see services/books.js) and cached
+// here so re-clicking the same entity doesn't cost another API call.
+export function initBooksSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_book_suggestions (
+      entity_id TEXT PRIMARY KEY REFERENCES entities(id),
+      suggestions TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
 }
