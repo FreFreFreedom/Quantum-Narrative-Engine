@@ -21,6 +21,8 @@ export function openDb() {
   const db = new DatabaseSync(DB_PATH);
   db.exec('PRAGMA journal_mode = WAL');
   initSchema(db);
+  initOntologySchema(db);
+  initChatSchema(db);
   return db;
 }
 
@@ -109,4 +111,112 @@ function initSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_pos ON work_ideas(position)`); } catch {}
+}
+
+// ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──
+// One generic `entities` table for characters, films, and countries alike — this is
+// the first real step toward the "character as universal ontological unit" reframe
+// from BUILD_STATUS.md's open threads: everything (individual, film-container,
+// nation) is a row here, differentiated by `type` and `scale`, not a separate table
+// per domain. Tags and continuum scores are separate tables so an entity can carry
+// any number of either without schema changes.
+export function initOntologySchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entities (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL CHECK(type IN ('character','film','country')),
+      name TEXT NOT NULL,
+      scale TEXT NOT NULL DEFAULT 'individual',
+      container_id TEXT REFERENCES entities(id),
+      clusters TEXT,
+      grounded INTEGER NOT NULL DEFAULT 0,
+      meta TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_container ON entities(container_id)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_tags (
+      entity_id TEXT NOT NULL REFERENCES entities(id),
+      tag TEXT NOT NULL,
+      PRIMARY KEY (entity_id, tag)
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS continuum_axes (
+      key TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      low TEXT,
+      high TEXT
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_continuum (
+      entity_id TEXT NOT NULL REFERENCES entities(id),
+      axis_key TEXT NOT NULL REFERENCES continuum_axes(key),
+      value REAL NOT NULL,
+      PRIMARY KEY (entity_id, axis_key)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS clusters (
+      code TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      grounding_status TEXT
+    )
+  `);
+}
+
+// ─── Embedded assistant: chat memory + attachments ─────────────────────────────
+// Persistent so each new app session can pull in past context instead of the user
+// re-explaining things. Retrieval logic (what counts as "relevant") can get
+// smarter later — this just makes sure everything is captured now so nothing is
+// lost while that logic is still simple.
+export function initChatSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id TEXT PRIMARY KEY,
+      title TEXT,
+      -- Rolling summary of the session, regenerated periodically. Simple/placeholder
+      -- for now (see chat.js) — the schema is ready for a smarter summarizer later.
+      summary TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated ON chat_sessions(updated_at)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES chat_sessions(id),
+      role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+      text TEXT NOT NULL DEFAULT '',
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id, created_at)`); } catch {}
+
+  // PDFs uploaded alongside a message. Stored as base64 directly in the DB (small
+  // personal-scale use, and simpler than wiring up separate file storage on
+  // Railway's ephemeral filesystem) — revisit if volume ever gets large.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS chat_attachments (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES chat_sessions(id),
+      message_id TEXT REFERENCES chat_messages(id),
+      filename TEXT NOT NULL,
+      mime_type TEXT NOT NULL DEFAULT 'application/pdf',
+      data_base64 TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_chat_attachments_session ON chat_attachments(session_id)`); } catch {}
 }

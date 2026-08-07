@@ -879,5 +879,180 @@ activeCluster = "I"; renderClusters(); renderGrid();
 selectFilm("f_first_reformed");
 
 </script>
+<style>
+#fmcns-chat-btn { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: #2a2621; color: #fbfaf8; border: none; font-size: 22px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+#fmcns-chat-panel { position: fixed; bottom: 84px; right: 20px; width: 360px; max-width: calc(100vw - 40px); height: 480px; max-height: calc(100vh - 120px); background: #fbfaf8; border: 1px solid #e4dfd8; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); display: none; flex-direction: column; z-index: 9999; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; overflow: hidden; }
+#fmcns-chat-panel.open { display: flex; }
+#fmcns-chat-header { padding: 10px 14px; border-bottom: 1px solid #e4dfd8; font-size: 12.5px; font-weight: 600; color: #2a2621; display: flex; justify-content: space-between; align-items: center; }
+#fmcns-chat-header button { background: none; border: none; cursor: pointer; font-size: 16px; color: #8a8378; }
+#fmcns-chat-log { flex: 1; overflow-y: auto; padding: 10px 14px; font-size: 12.5px; line-height: 1.5; }
+#fmcns-chat-log .msg { margin-bottom: 10px; white-space: pre-wrap; }
+#fmcns-chat-log .msg.user { color: #2a2621; }
+#fmcns-chat-log .msg.assistant { color: #3a352e; }
+#fmcns-chat-log .msg .role { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #8a8378; display: block; margin-bottom: 2px; }
+#fmcns-chat-log .msg.pending { color: #8a8378; font-style: italic; }
+#fmcns-chat-input-row { border-top: 1px solid #e4dfd8; padding: 8px; display: flex; gap: 6px; align-items: center; }
+#fmcns-chat-input { flex: 1; border: 1px solid #d9d3c9; border-radius: 6px; padding: 7px 9px; font-size: 12.5px; resize: none; font-family: inherit; }
+#fmcns-chat-send, #fmcns-chat-attach { border: 1px solid #d9d3c9; background: #fff; border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+#fmcns-chat-attach-label { font-size: 10px; color: #8a8378; padding: 0 8px 6px; }
+#fmcns-chat-login { padding: 14px; font-size: 12.5px; }
+#fmcns-chat-login input { width: 100%; padding: 7px 9px; border: 1px solid #d9d3c9; border-radius: 6px; font-size: 12.5px; margin: 8px 0; }
+#fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: #2a2621; color: #fbfaf8; font-size: 12.5px; cursor: pointer; }
+</style>
+<button id="fmcns-chat-btn" title="FMCNS Assistant">✦</button>
+<div id="fmcns-chat-panel">
+  <div id="fmcns-chat-header"><span>FMCNS Assistant</span><button id="fmcns-chat-close">✕</button></div>
+  <div id="fmcns-chat-login" style="display:none;">
+    <div>Enter the app password to connect:</div>
+    <input type="password" id="fmcns-chat-pw" placeholder="Password">
+    <button id="fmcns-chat-pw-submit">Connect</button>
+    <div id="fmcns-chat-pw-error" style="color:#b23a2f;margin-top:6px;"></div>
+  </div>
+  <div id="fmcns-chat-log"></div>
+  <div id="fmcns-chat-attach-label"></div>
+  <div id="fmcns-chat-input-row">
+    <button id="fmcns-chat-attach" title="Attach PDF">📎</button>
+    <input type="file" id="fmcns-chat-file" accept="application/pdf" style="display:none;">
+    <textarea id="fmcns-chat-input" rows="1" placeholder="Ask the assistant..."></textarea>
+    <button id="fmcns-chat-send">Send</button>
+  </div>
+</div>
+<script>
+(function() {
+  var FMCNS_CHAT_SERVER = "https://quantum-narrative-engine-production.up.railway.app";
+  var btn = document.getElementById('fmcns-chat-btn');
+  var panel = document.getElementById('fmcns-chat-panel');
+  var closeBtn = document.getElementById('fmcns-chat-close');
+  var loginBox = document.getElementById('fmcns-chat-login');
+  var pwInput = document.getElementById('fmcns-chat-pw');
+  var pwSubmit = document.getElementById('fmcns-chat-pw-submit');
+  var pwError = document.getElementById('fmcns-chat-pw-error');
+  var log = document.getElementById('fmcns-chat-log');
+  var input = document.getElementById('fmcns-chat-input');
+  var sendBtn = document.getElementById('fmcns-chat-send');
+  var attachBtn = document.getElementById('fmcns-chat-attach');
+  var fileInput = document.getElementById('fmcns-chat-file');
+  var attachLabel = document.getElementById('fmcns-chat-attach-label');
+  var pendingAttachment = null;
+
+  function getToken() { return localStorage.getItem('fmcns_chat_token'); }
+  function setToken(t) { localStorage.setItem('fmcns_chat_token', t); }
+  function getSessionId() { return localStorage.getItem('fmcns_chat_session'); }
+  function setSessionId(id) { localStorage.setItem('fmcns_chat_session', id); }
+
+  function addMsg(role, text) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + role;
+    d.innerHTML = '<span class="role">' + (role === 'user' ? 'You' : 'Assistant') + '</span>';
+    var t = document.createElement('span');
+    t.textContent = text;
+    d.appendChild(t);
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+
+  async function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (getToken()) opts.headers['Authorization'] = 'Bearer ' + getToken();
+    var resp = await fetch(FMCNS_CHAT_SERVER + path, opts);
+    if (resp.status === 401) { setToken(''); showLogin(); throw new Error('unauthorized'); }
+    return resp;
+  }
+
+  function showLogin() { loginBox.style.display = 'block'; log.style.display = 'none'; document.getElementById('fmcns-chat-input-row').style.display = 'none'; }
+  function showChat() { loginBox.style.display = 'none'; log.style.display = 'block'; document.getElementById('fmcns-chat-input-row').style.display = 'flex'; }
+
+  async function ensureSession() {
+    var sid = getSessionId();
+    if (sid) return sid;
+    var resp = await api('/api/chat/sessions', { method: 'POST', body: JSON.stringify({}) });
+    var data = await resp.json();
+    setSessionId(data.id);
+    return data.id;
+  }
+
+  async function loadHistory() {
+    var sid = getSessionId();
+    if (!sid) return;
+    try {
+      var resp = await api('/api/chat/sessions/' + sid + '/messages');
+      if (!resp.ok) return;
+      var data = await resp.json();
+      log.innerHTML = '';
+      (data.messages || []).forEach(function(m) { addMsg(m.role, m.text); });
+    } catch (e) {}
+  }
+
+  pwSubmit.onclick = async function() {
+    pwError.textContent = '';
+    try {
+      var resp = await fetch(FMCNS_CHAT_SERVER + '/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwInput.value }),
+      });
+      if (!resp.ok) { pwError.textContent = 'Wrong password.'; return; }
+      var data = await resp.json();
+      setToken(data.token);
+      showChat();
+      await ensureSession();
+      await loadHistory();
+    } catch (e) { pwError.textContent = 'Could not reach the server.'; }
+  };
+
+  btn.onclick = async function() {
+    panel.classList.toggle('open');
+    if (!panel.classList.contains('open')) return;
+    if (!getToken()) { showLogin(); return; }
+    showChat();
+    await ensureSession();
+    if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; }
+  };
+  closeBtn.onclick = function() { panel.classList.remove('open'); };
+
+  attachBtn.onclick = function() { fileInput.click(); };
+  fileInput.onchange = function() {
+    var f = fileInput.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      var base64 = reader.result.split(',')[1];
+      pendingAttachment = { filename: f.name, mimeType: f.type || 'application/pdf', dataBase64: base64 };
+      attachLabel.textContent = '📎 ' + f.name + ' attached';
+    };
+    reader.readAsDataURL(f);
+  };
+
+  async function send() {
+    var text = input.value.trim();
+    if (!text && !pendingAttachment) return;
+    var sid = await ensureSession();
+    addMsg('user', text || '(PDF attached, no message)');
+    input.value = '';
+    var pending = addMsg('assistant', 'Thinking...');
+    pending.classList.add('pending');
+    var attachments = pendingAttachment ? [pendingAttachment] : [];
+    pendingAttachment = null;
+    attachLabel.textContent = '';
+    try {
+      var resp = await api('/api/chat/message', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: sid, text: text || '(see attached PDF)', attachments: attachments }),
+      });
+      var data = await resp.json();
+      pending.remove();
+      if (data.error) addMsg('assistant', 'Error: ' + (data.message || data.error));
+      else addMsg('assistant', data.text);
+    } catch (e) {
+      pending.remove();
+      addMsg('assistant', 'Could not reach the assistant.');
+    }
+  }
+  sendBtn.onclick = send;
+  input.onkeydown = function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+})();
+</script>
+
 </body>
 </html>

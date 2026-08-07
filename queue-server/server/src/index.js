@@ -5,6 +5,8 @@ import { openDb } from './db/schema.js';
 import { requireAuth, issueToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
 import { queueRoutes } from './routes/queue.js';
+import { ontologyRoutes } from './routes/ontology.js';
+import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { initTaskRunner } from './services/taskRunner.js';
 
@@ -16,7 +18,7 @@ bindDb(db);
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '25mb' })); // PDFs come through as base64 in the chat payload
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'fmcns-queue-server', time: new Date().toISOString() });
@@ -30,6 +32,8 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.use('/api/travaux', requireAuth, queueRoutes());
+app.use('/api/ontology', requireAuth, ontologyRoutes(db));
+app.use('/api/chat', requireAuth, chatRoutes(db));
 
 const server = http.createServer(app);
 attachRealtime(server);
