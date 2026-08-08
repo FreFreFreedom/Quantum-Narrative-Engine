@@ -131,18 +131,65 @@ export function initOntologySchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS entities (
       id TEXT PRIMARY KEY,
-      type TEXT NOT NULL CHECK(type IN ('character','film','country')),
+      -- Deliberately NO CHECK constraint on type. The original schema pinned it to
+      -- ('character','film','country'), which meant any new kind of pattern-instance
+      -- (Reddit-derived accounts of real situations, institutions, etc.) could not be
+      -- inserted at all without a table rebuild — exactly the "bolted on the side"
+      -- outcome the ontology is meant to avoid ("character as universal ontological
+      -- unit" means the unit is the schema, not the three seeded types).
+      type TEXT NOT NULL,
       name TEXT NOT NULL,
       scale TEXT NOT NULL DEFAULT 'individual',
       container_id TEXT REFERENCES entities(id),
       clusters TEXT,
       grounded INTEGER NOT NULL DEFAULT 0,
+      -- Provenance, independent of type: where this instance came from (archive,
+      -- reddit, …). Type says WHAT it is, source says WHERE IT CAME FROM — keeping
+      -- them separate is what lets a Reddit-derived instance be a first-class
+      -- character rather than its own parallel mode.
+      source TEXT NOT NULL DEFAULT 'archive',
       meta TEXT,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
+  // Existing databases (the volume now persists them across deploys) still carry the
+  // old CHECK constraint, which ALTER TABLE cannot drop in SQLite. Rebuild the table
+  // once, only if the constraint is actually still there — idempotent by inspection,
+  // not by a migration-version counter.
+  try {
+    const ddl = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='entities'`).get();
+    if (ddl && ddl.sql && ddl.sql.includes('CHECK(type IN')) {
+      console.log('[schema] Rebuilding entities table to drop the hardcoded type CHECK constraint…');
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.exec(`
+        CREATE TABLE entities_new (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          scale TEXT NOT NULL DEFAULT 'individual',
+          container_id TEXT REFERENCES entities(id),
+          clusters TEXT,
+          grounded INTEGER NOT NULL DEFAULT 0,
+          source TEXT NOT NULL DEFAULT 'archive',
+          meta TEXT,
+          created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+          updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+        )
+      `);
+      db.exec(`
+        INSERT INTO entities_new (id, type, name, scale, container_id, clusters, grounded, source, meta, created_at, updated_at)
+        SELECT id, type, name, scale, container_id, clusters, grounded, 'archive', meta, created_at, updated_at FROM entities
+      `);
+      db.exec('DROP TABLE entities');
+      db.exec('ALTER TABLE entities_new RENAME TO entities');
+      db.exec('PRAGMA foreign_keys=ON');
+      console.log('[schema] entities table rebuilt — type is now open-ended.');
+    }
+  } catch (e) { console.error('[schema] entities rebuild failed (continuing with existing table):', e.message); }
+  try { db.exec(`ALTER TABLE entities ADD COLUMN source TEXT NOT NULL DEFAULT 'archive'`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_source ON entities(source)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entities_container ON entities(container_id)`); } catch {}
 
   db.exec(`

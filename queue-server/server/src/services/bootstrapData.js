@@ -11,14 +11,15 @@ import { randomUUID } from 'node:crypto';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEED_DIR = resolve(__dirname, '../../../data-seed');
 
-function upsertEntity(db, { id, type, name, scale = 'individual', container_id = null, clusters = [], grounded = false, meta = {} }) {
+function upsertEntity(db, { id, type, name, scale = 'individual', container_id = null, clusters = [], grounded = false, source = 'archive', meta = {} }) {
   db.prepare(`
-    INSERT INTO entities (id, type, name, scale, container_id, clusters, grounded, meta, updated_at)
-    VALUES (?,?,?,?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    INSERT INTO entities (id, type, name, scale, container_id, clusters, grounded, source, meta, updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(id) DO UPDATE SET
       type=excluded.type, name=excluded.name, scale=excluded.scale, container_id=excluded.container_id,
-      clusters=excluded.clusters, grounded=excluded.grounded, meta=excluded.meta, updated_at=excluded.updated_at
-  `).run(id, type, name, scale, container_id, JSON.stringify(clusters), grounded ? 1 : 0, JSON.stringify(meta));
+      clusters=excluded.clusters, grounded=excluded.grounded, source=excluded.source, meta=excluded.meta,
+      updated_at=excluded.updated_at
+  `).run(id, type, name, scale, container_id, JSON.stringify(clusters), grounded ? 1 : 0, source, JSON.stringify(meta));
 }
 function setTags(db, entityId, tags) {
   db.prepare(`DELETE FROM entity_tags WHERE entity_id=?`).run(entityId);

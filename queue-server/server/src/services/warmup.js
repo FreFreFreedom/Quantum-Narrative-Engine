@@ -56,14 +56,38 @@ export async function warmCaches(db, { getBooks, getTagLens }) {
   const start = Date.now();
   let done = 0;
 
+  // Count real outcomes, not just attempts. These handlers RETURN {error} objects
+  // rather than throwing, so an earlier version of this loop happily reported
+  // "369/369 done" while every single call was failing upstream — the cache stayed
+  // empty and the failure was invisible until a user clicked something. Track
+  // failures explicitly and make them loud.
+  let failed = 0;
+  const errorCounts = new Map();
+
   await runWithLimit(jobs, CONCURRENCY, async (job) => {
-    if (job.kind === 'books') await getBooks(job.entity, { force: false });
-    else await getTagLens(job.entity, job.tag, { force: false });
+    const out = job.kind === 'books'
+      ? await getBooks(job.entity, { force: false })
+      : await getTagLens(job.entity, job.tag, { force: false });
     done++;
-    if (done % 10 === 0 || done === jobs.length) {
-      console.log(`Cache warm-up: ${done}/${jobs.length} done (${Math.round((Date.now() - start) / 1000)}s elapsed).`);
+    if (out && out.error) {
+      failed++;
+      const key = `${out.error}${out.status ? ' ' + out.status : ''}`;
+      errorCounts.set(key, (errorCounts.get(key) || 0) + 1);
+    }
+    if (done % 25 === 0 || done === jobs.length) {
+      console.log(`Cache warm-up: ${done}/${jobs.length} attempted, ${failed} failed (${Math.round((Date.now() - start) / 1000)}s elapsed).`);
     }
   });
 
-  console.log(`Cache warm-up: complete, ${jobs.length} job(s) in ${Math.round((Date.now() - start) / 1000)}s.`);
+  const secs = Math.round((Date.now() - start) / 1000);
+  const succeeded = jobs.length - failed;
+  if (failed === 0) {
+    console.log(`Cache warm-up: complete — ${succeeded}/${jobs.length} cached in ${secs}s.`);
+  } else {
+    const breakdown = [...errorCounts.entries()].map(([k, n]) => `${k} x${n}`).join(', ');
+    console.error(
+      `Cache warm-up: FINISHED WITH FAILURES — only ${succeeded}/${jobs.length} actually cached in ${secs}s. ` +
+      `${failed} failed: ${breakdown}. Those entities will retry on next boot and will hit a live call (slow) if clicked before then.`
+    );
+  }
 }

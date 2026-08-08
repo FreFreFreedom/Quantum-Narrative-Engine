@@ -12,9 +12,10 @@ export function hydrate(db, row) {
   return { ...row, clusters: JSON.parse(row.clusters || '[]'), grounded: !!row.grounded, meta: JSON.parse(row.meta || '{}'), tags, continuum };
 }
 
-export function searchEntities(db, { type, cluster, tag, name, grounded } = {}) {
+export function searchEntities(db, { type, cluster, tag, name, grounded, source } = {}) {
   let rows = db.prepare(`SELECT * FROM entities`).all();
   if (type) rows = rows.filter((r) => r.type === type);
+  if (source) rows = rows.filter((r) => (r.source || 'archive') === source);
   if (grounded !== undefined && grounded !== null) rows = rows.filter((r) => !!r.grounded === !!grounded);
   if (cluster) rows = rows.filter((r) => JSON.parse(r.clusters || '[]').includes(cluster));
   if (name) rows = rows.filter((r) => r.name.toLowerCase().includes(String(name).toLowerCase()));
@@ -43,4 +44,23 @@ export function nearbyOnAxis(db, key, value, limit = 10) {
     ORDER BY ABS(ec.value - ?) ASC LIMIT ?
   `).all(key, value, limit);
   return rows.map((r) => ({ ...hydrate(db, r), axis_value: r.axis_value }));
+}
+
+// Live facet values, computed from what's actually in the DB rather than hardcoded in
+// the client. This is what lets a new entity source (Reddit-derived pattern-instances)
+// appear in Exploration's filters automatically the moment such rows exist, instead of
+// needing a new checkbox shipped in the frontend.
+export function listFacets(db) {
+  const types = db.prepare(`SELECT type AS value, COUNT(*) AS n FROM entities GROUP BY type ORDER BY n DESC`).all();
+  const sources = db.prepare(`SELECT COALESCE(source,'archive') AS value, COUNT(*) AS n FROM entities GROUP BY COALESCE(source,'archive') ORDER BY n DESC`).all();
+  const axes = db.prepare(`
+    SELECT a.key, a.name, a.low, a.high,
+           COUNT(ec.entity_id) AS scored,
+           MIN(ec.value) AS min_value,
+           MAX(ec.value) AS max_value
+    FROM continuum_axes a LEFT JOIN entity_continuum ec ON ec.axis_key = a.key
+    GROUP BY a.key, a.name, a.low, a.high
+  `).all();
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM entities`).get().n;
+  return { types, sources, axes, total };
 }

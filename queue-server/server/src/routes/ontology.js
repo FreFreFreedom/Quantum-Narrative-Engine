@@ -13,8 +13,8 @@ export function ontologyRoutes(db) {
   const getBookDetail = makeBookDetailHandler(db);
 
   router.get('/entities', (req, res) => {
-    const { type, cluster, tag, name, grounded } = req.query;
-    const entities = q.searchEntities(db, { type, cluster, tag, name, grounded: grounded === undefined ? undefined : grounded === 'true' });
+    const { type, cluster, tag, name, grounded, source } = req.query;
+    const entities = q.searchEntities(db, { type, cluster, tag, name, source, grounded: grounded === undefined ? undefined : grounded === 'true' });
     res.json({ entities, count: entities.length });
   });
 
@@ -23,6 +23,10 @@ export function ontologyRoutes(db) {
     if (!entity) return res.status(404).json({ error: 'not_found' });
     res.json(entity);
   });
+
+  // Live facets (entity types, sources, continuum axes with their scored counts) so the
+  // client's filter UI is built from real data instead of a hardcoded list of three types.
+  router.get('/facets', (req, res) => res.json(q.listFacets(db)));
 
   router.get('/clusters', (req, res) => res.json({ clusters: q.listClusters(db) }));
   router.get('/continuum-axes', (req, res) => res.json({ axes: q.listContinuumAxes(db) }));
