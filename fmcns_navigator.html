@@ -649,7 +649,8 @@ function initGraph(){
 function applyCamera(){ document.getElementById('viewport').setAttribute('transform', `translate(${camera.x},${camera.y}) scale(${camera.scale})`); }
 function setupZoomPan(){
   const svg=document.getElementById('graphSvg');
-  let panning=false,lastX=0,lastY=0;
+  let mouseDown=false, dragging=false, lastX=0, lastY=0, downX=0, downY=0;
+  const DRAG_THRESHOLD = 4; // px of movement before a mousedown counts as a pan, not a click
   let zoomLabelTimer=null;
   // macOS trackpads report a pinch gesture as a wheel event with ctrlKey set (the
   // browser's own convention, not something we opt into) — that's the only zoom
@@ -678,9 +679,21 @@ function setupZoomPan(){
       camera.x -= e.deltaX; camera.y -= e.deltaY; applyCamera();
     }
   },{passive:false});
-  svg.addEventListener('mousedown',e=>{ panning=true; lastX=e.clientX; lastY=e.clientY; svg.classList.add('panning'); });
-  window.addEventListener('mousemove',e=>{ if(!panning)return; camera.x+=(e.clientX-lastX); camera.y+=(e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; applyCamera(); });
-  window.addEventListener('mouseup',()=>{ panning=false; svg.classList.remove('panning'); });
+  // A mousedown on a node or edge used to arm panning immediately, and any pixel of
+  // movement during a click — extremely common on a trackpad tap — would nudge the
+  // camera and could suppress the click. Now panning only actually engages once the
+  // pointer has moved past a small threshold, so a stationary click (even a slightly
+  // wobbly trackpad one) always reaches the node/edge underneath it untouched.
+  svg.addEventListener('mousedown',e=>{ mouseDown=true; dragging=false; downX=lastX=e.clientX; downY=lastY=e.clientY; });
+  window.addEventListener('mousemove',e=>{
+    if(!mouseDown)return;
+    if(!dragging){
+      if(Math.abs(e.clientX-downX)<DRAG_THRESHOLD && Math.abs(e.clientY-downY)<DRAG_THRESHOLD) return;
+      dragging=true; svg.classList.add('panning');
+    }
+    camera.x+=(e.clientX-lastX); camera.y+=(e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; applyCamera();
+  });
+  window.addEventListener('mouseup',()=>{ mouseDown=false; dragging=false; svg.classList.remove('panning'); });
 }
 
 // ---------- Detail panel ----------
