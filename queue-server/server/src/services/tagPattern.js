@@ -4,11 +4,7 @@
 // (see tagLens.js). Cached per tag so it's a one-time cost.
 
 import { searchEntities } from './ontologyQuery.js';
-
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const CHAT_MODEL = process.env.CHAT_MODEL || 'claude-sonnet-4-5';
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const SERVICE_LABEL = 'tagPattern';
+import { generateText } from './claudeText.js';
 
 function buildPrompt(tag, examples) {
   const names = examples.map((e) => `${e.name} (${e.type})`).join(', ');
@@ -29,38 +25,12 @@ export function makeTagPatternHandler(db) {
       const cached = db.prepare(`SELECT explanation FROM tag_pattern_explanations WHERE tag=?`).get(tag);
       if (cached) return { explanation: cached.explanation, cached: true };
     }
-    if (!ANTHROPIC_API_KEY) return { error: 'no_api_key' };
-
     const examples = searchEntities(db, { tag }).slice(0, 4);
-    let resp;
-    try {
-      resp = await fetch(ANTHROPIC_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 150, messages: [{ role: 'user', content: buildPrompt(tag, examples) }] }),
-      });
-    } catch (e) {
-      return { error: 'network_error', message: e.message };
-    }
-    if (!resp.ok) {
-      // Surface the upstream reason instead of swallowing it. A bare "HTTP 400" is
-      // undiagnosable from the UI — Anthropic returns the actual cause (bad model
-      // name, exhausted credit balance, malformed request) in the body, and that
-      // distinction is exactly what tells you whether it's a code bug or a billing
-      // problem. Logged server-side too, since the client only shows a short string.
-      let detail = '';
-      try { detail = (await resp.text()).slice(0, 400); } catch {}
-      console.error(`[${SERVICE_LABEL}] Anthropic API ${resp.status}: ${detail}`);
-      let friendly = `HTTP ${resp.status}`;
-      try {
-        const parsed = JSON.parse(detail);
-        if (parsed?.error?.message) friendly = parsed.error.message;
-      } catch {}
-      return { error: 'api_error', message: friendly, status: resp.status };
-    }
-    const data = await resp.json();
-    const text = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
-    if (!text) return { error: 'empty_response' };
+    const out = await generateText({
+      prompt: buildPrompt(tag, examples), maxTokens: 150, label: 'tagPattern', cliModel: 'sonnet',
+    });
+    if (out.error) return out;
+    const text = out.text;
 
     db.prepare(`
       INSERT INTO tag_pattern_explanations (tag, explanation, created_at) VALUES (?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
