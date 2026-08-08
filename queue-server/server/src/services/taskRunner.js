@@ -31,6 +31,19 @@ import { broadcastAll } from '../realtime.js';
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 const CLAUDE_BIN = process.env.CLAUDE_BIN || 'claude';
 const AGENT_CWD = process.env.AGENT_CWD || process.cwd();
+
+// Environment handed to every spawned `claude` process. Deliberately strips
+// ANTHROPIC_API_KEY (used elsewhere in this service for direct Anthropic API calls —
+// tagLens.js, books.js, tagPattern.js) before it reaches the CLI: if that variable is
+// present, Claude Code silently switches to pay-per-token API billing instead of the
+// subscription quota unlocked by CLAUDE_CODE_OAUTH_TOKEN/a prior `claude /login`, with
+// no visible warning either side. ERP_AGENT_RUN=1 tells this process's own
+// ~/.claude/settings.json hooks (if any) to stay quiet, matching the source spec.
+function claudeSpawnEnv(extra = {}) {
+  const env = { ...process.env, ERP_AGENT_RUN: '1', ...extra };
+  delete env.ANTHROPIC_API_KEY;
+  return env;
+}
 const AGENT_INTERNAL_SECRET = process.env.AGENT_INTERNAL_SECRET || '';
 
 const TASKS_FILE = resolve(DATA_DIR, 'agent-tasks.json');
@@ -283,7 +296,7 @@ function nextFallbackModel(task) {
 export function runToollessClaude({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000 }) {
   return new Promise((resolveP) => {
     const proc = spawn(CLAUDE_BIN, ['-p', '--model', model, '--tools', ''], {
-      cwd: AGENT_CWD, env: { ...process.env }, stdio: 'pipe',
+      cwd: AGENT_CWD, env: claudeSpawnEnv(), stdio: 'pipe',
     });
     proc.stdin.write(prompt);
     proc.stdin.end();
@@ -322,7 +335,7 @@ function runUserSummary(taskId) {
       `Technical report:\n${report.slice(-12000)}`,
     ].join('');
     const proc = spawn(CLAUDE_BIN, ['-p', '--model', 'haiku', '--tools', ''], {
-      cwd: AGENT_CWD, env: { ...process.env }, stdio: 'pipe',
+      cwd: AGENT_CWD, env: claudeSpawnEnv(), stdio: 'pipe',
     });
     proc.stdin.write(prompt);
     proc.stdin.end();
@@ -567,7 +580,7 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
 
   const proc = spawn('setsid', ['--fork', 'bash', '-c', cmd], {
     cwd: AGENT_CWD,
-    env: { ...process.env, ERP_AGENT_TASK_ID: taskId },
+    env: claudeSpawnEnv({ ERP_AGENT_TASK_ID: taskId }),
     detached: true,
     stdio: 'ignore',
   });
