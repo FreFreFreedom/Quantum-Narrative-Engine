@@ -175,7 +175,6 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <button id="loginBtn">Connect</button>
   <div id="loginErr" style="color:#b23a2f;margin-top:8px;font-size:12px;"></div>
 </div>
-<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:700;">BUILD MARKER — CLICK-DEBUG-V4 — if you see this text, you are on the current file</div>
 <div class="app-shell" id="appShell" style="display:none;">
 <div class="modebar">
   <button id="modeContentBtn" class="active">Content navigator</button>
@@ -322,9 +321,36 @@ function renderClusterList() {
     const div = document.createElement('div');
     div.className = 'cluster-item' + (activeCluster === code ? ' active' : '');
     div.textContent = code + '. ' + c.name.split(',')[0] + ' (' + n + ')';
-    div.onclick = () => { activeCluster = activeCluster === code ? null : code; renderClusterList(); layoutAndDraw(); };
+    div.onclick = () => {
+      activeCluster = activeCluster === code ? null : code;
+      renderClusterList(); layoutAndDraw();
+      if (activeCluster) selectCluster(code); // also show cluster info in the right panel, not just filter the graph
+    };
     el.appendChild(div);
   });
+}
+
+// Clicking a cluster shows its own info panel (name, entity count, member list you
+// can click into) — previously a cluster click only filtered the graph with no
+// corresponding detail view, unlike entities and edges which both have one.
+function selectCluster(code) {
+  focusedId = null; focusedEdge = null; activeLensTag = null;
+  const c = CLUSTERS[code];
+  const members = ENTITIES.filter(e => (e.clusters||[]).includes(code));
+  let html = `<div class="card" style="background:linear-gradient(160deg, ${CLUSTER_COLORS[code]||'#8a8378'}, #2a2621);">
+    <span class="type-badge">cluster</span>
+    <div class="name">${code}. ${c ? c.name.split(',')[0] : code}</div>
+    <div class="sub">${members.length} entities</div>
+  </div>`;
+  if (c && c.name && c.name.includes(',')) html += `<div class="note">${c.name}</div>`;
+  html += `<div class="section-title" style="color:#5c554b;">Entities in this cluster (${members.length})</div>`;
+  html += members.length
+    ? members.slice(0, 40).map(o => `<div class="conn" data-goto="${o.id}"><span class="dot ${o.type==='film'?'diag':o.type==='country'?'bridge':'ent'}"></span>${o.name} <span style="opacity:.6;">(${o.type})</span></div>`).join('')
+    : '<div class="empty">None.</div>';
+  if (members.length > 40) html += `<div class="empty">…and ${members.length-40} more.</div>`;
+
+  document.getElementById(activeCardHost).innerHTML = html;
+  document.querySelectorAll('[data-goto]').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
 }
 
 // Clicking a pattern (tag) here focuses the graph on every entity carrying it and
@@ -503,6 +529,15 @@ function labelVisible(n, spotlight) {
   return false;
 }
 
+// Hover-driven redraws are debounced well past a normal click's mousedown-to-mouseup
+// span, so a rebuild triggered by cursor jitter during a click always lands after the
+// click has already fully dispatched, instead of destroying the element mid-gesture.
+let hoverRedrawTimer = null;
+function scheduleHoverRedraw() {
+  clearTimeout(hoverRedrawTimer);
+  hoverRedrawTimer = setTimeout(drawGraph, 200);
+}
+
 // ---------- Edge hover/click: full-cluster highlight + connection panel ----------
 let hoveredEdge = null, focusedEdge = null;
 function edgeKey(e){ return [e.a,e.b,e.type,e.axis||''].join('|'); }
@@ -554,8 +589,15 @@ function drawGraph() {
       // thin to hover/click reliably, this gives it a comfortable target without changing
       // how it looks.
       const hit = el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:'transparent','stroke-width':12,style:'cursor:pointer;pointer-events:stroke;'});
-      hit.onmouseenter=()=>{ hoveredEdge=e; hoveredId=null; drawGraph(); };
-      hit.onmouseleave=()=>{ hoveredEdge=null; drawGraph(); };
+      // Hover used to call drawGraph() here, which tears down and rebuilds every node
+      // and edge as brand-new DOM elements. A trackpad click almost always includes a
+      // tiny bit of cursor jitter, which could trigger a hover-out/hover-in — and thus
+      // a full rebuild — in the middle of a click gesture. When that happens, mousedown
+      // and mouseup land on two different DOM element instances and the browser silently
+      // drops the click. Debounced instead of removed: hover-driven spotlight still
+      // updates, just not synchronously inside the same tick a click could be racing.
+      hit.onmouseenter=()=>{ hoveredEdge=e; hoveredId=null; scheduleHoverRedraw(); };
+      hit.onmouseleave=()=>{ hoveredEdge=null; scheduleHoverRedraw(); };
       hit.onclick=(ev)=>{ ev.stopPropagation(); selectEdgeConnection(e); };
       edgeLayer.appendChild(hit);
     }
@@ -575,19 +617,9 @@ function drawGraph() {
     if (labelVisible(n, spotlight)) {
       const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
     }
-    g.onclick=()=>{
-      // Ultimate diagnostic: a modal alert() has no dependency on any DOM element
-      // existing or any prior code succeeding. If this doesn't pop up, the click event
-      // is not reaching JavaScript at all — not a bug in this app's rendering logic.
-      alert('NODE CLICK REGISTERED: ' + n.name);
-      const host = document.getElementById(activeCardHost);
-      if (host) host.innerHTML = '<div style="padding:14px;background:#c0392b;color:#fff;font-weight:600;border-radius:6px;">Click registered — loading ' + n.name + '…</div>';
-      selectEntity(n.id).catch(err => {
-        if (host) host.innerHTML = '<div style="padding:14px;background:#c0392b;color:#fff;">selectEntity error: ' + (err && err.message) + '</div>';
-      });
-    };
-    g.onmouseenter=()=>{ hoveredId=n.id; hoveredEdge=null; drawGraph(); };
-    g.onmouseleave=()=>{ hoveredId=null; drawGraph(); };
+    g.onclick=()=>selectEntity(n.id);
+    g.onmouseenter=()=>{ hoveredId=n.id; hoveredEdge=null; scheduleHoverRedraw(); };
+    g.onmouseleave=()=>{ hoveredId=null; scheduleHoverRedraw(); };
     nodeLayer.appendChild(g);
   });
   document.getElementById('graphInfo').textContent = nodes.length+' nodes, '+edges.length+' connections total';
