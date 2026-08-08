@@ -70,6 +70,56 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .loading, .loginbox { padding:40px; text-align:center; font-size:13px; color:#6b645b; }
 .loginbox input { padding:8px 10px; border:1px solid #d9d3c9; border-radius:6px; font-size:13px; width:220px; margin:10px 0; }
 .loginbox button { padding:8px 16px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:13px; cursor:pointer; }
+
+/* ---------- Top-level mode switch ---------- */
+.modebar { display:flex; align-items:center; gap:0; border-bottom:1px solid #e4dfd8; background:#2a2621; flex-shrink:0; }
+.modebar button { flex:none; padding:9px 18px; font-size:12px; border:none; background:transparent; color:#b8b0a3; cursor:pointer; letter-spacing:.02em; }
+.modebar button.active { color:#fbfaf8; box-shadow: inset 0 -2px 0 #c08a3e; }
+.app-shell { display:flex; flex-direction:column; height:100vh; min-height:640px; }
+.app-shell .wrap { flex:1; min-height:0; }
+
+/* ---------- Architecture Navigator ---------- */
+#archApp { flex:1; display:none; flex-direction:column; min-height:0; }
+#archApp.open { display:flex; }
+.arch-toolbar { padding:8px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:14px; }
+.arch-toolbar .arch-title { font-size:13px; font-weight:600; }
+.arch-toolbar .arch-sub { font-size:11px; color:#6b645b; margin-left:2px; }
+.arch-viewbtns { display:flex; gap:6px; margin-left:auto; }
+.arch-viewbtns button { padding:5px 11px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11px; cursor:pointer; }
+.arch-viewbtns button.active { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.arch-body { flex:1; display:flex; min-height:0; }
+.arch-stage { flex:1; overflow:auto; padding:22px; position:relative; }
+.arch-cols { display:flex; gap:26px; min-width:960px; position:relative; }
+.arch-col { flex:1; min-width:210px; }
+.arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin-bottom:4px; font-weight:600; }
+.arch-col-sub { font-size:10.5px; color:#8a8378; margin-bottom:10px; line-height:1.4; }
+.arch-node { border:1px solid #e4dfd8; background:#fff; border-radius:9px; padding:9px 11px; margin-bottom:10px; cursor:pointer; position:relative; }
+.arch-node:hover { border-color:#c9c3b8; }
+.arch-node.selected { border-color:#2a2621; box-shadow:0 0 0 1px #2a2621; }
+.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:3px; }
+.arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:#fbfaf8; }
+.arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.arch-right { width:340px; border-left:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; padding:14px; flex-shrink:0; }
+.arch-right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
+.arch-detail-name { font-size:16px; font-weight:700; margin-bottom:2px; }
+.arch-detail-territory { font-size:10.5px; color:#8a8378; margin-bottom:10px; }
+.arch-field { margin-bottom:11px; }
+.arch-field-label { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:#8a8378; font-weight:600; margin-bottom:3px; }
+.arch-field-body { font-size:11.5px; line-height:1.5; color:#3a352e; }
+.arch-io { display:flex; align-items:center; gap:6px; font-size:11px; }
+.arch-io .a { color:#5c554b; }
+.arch-io .arrow { color:#c08a3e; }
+.arch-versionladder { margin-top:4px; }
+.arch-vstep { font-size:10.5px; padding:5px 8px; border-radius:6px; background:#fff; border:1px solid #e4dfd8; margin-bottom:4px; }
+.arch-vstep .vtag { font-weight:700; color:#8a5a1e; margin-right:5px; }
+.arch-actionrow { display:flex; gap:7px; margin-top:12px; }
+.arch-actionrow button { flex:1; padding:7px 6px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11px; cursor:pointer; }
+.arch-actionrow button:hover { background:#f2efe9; }
+.queueform { margin-top:10px; padding:9px; border:1px solid #e4dfd8; border-radius:8px; background:#fff; }
+.queueform input, .queueform textarea { width:100%; border:1px solid #d9d3c9; border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; box-sizing:border-box; }
+.queueform textarea { resize:vertical; min-height:60px; }
+.queueform button { padding:6px 12px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
+.queueform .qf-status { font-size:10.5px; margin-top:5px; color:#6b645b; }
 </style>
 </head>
 <body>
@@ -80,7 +130,12 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <button id="loginBtn">Connect</button>
   <div id="loginErr" style="color:#b23a2f;margin-top:8px;font-size:12px;"></div>
 </div>
-<div class="wrap" id="app" style="display:none;">
+<div class="app-shell" id="appShell" style="display:none;">
+<div class="modebar">
+  <button id="modeContentBtn" class="active">Content navigator</button>
+  <button id="modeArchBtn">Architecture navigator</button>
+</div>
+<div class="wrap" id="app">
   <div class="left">
     <h2>Entity types</h2>
     <label class="type-toggle"><input type="checkbox" id="tCharacter" checked> Characters</label>
@@ -118,6 +173,25 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
     <div id="cardHost"><div class="empty">Click a node to inspect it.</div></div>
   </div>
 </div>
+<div id="archApp">
+  <div class="arch-toolbar">
+    <span class="arch-title">Architecture Navigator</span>
+    <span class="arch-sub">How FMCNS itself is built — click any component.</span>
+    <div class="arch-viewbtns">
+      <button class="active" data-arch-view="architecture">Architecture</button>
+      <button data-arch-view="development">Development</button>
+      <button data-arch-view="evolution">Evolution</button>
+    </div>
+  </div>
+  <div class="arch-body">
+    <div class="arch-stage" id="archStage"></div>
+    <div class="arch-right" id="archRight">
+      <h2>Component</h2>
+      <div class="empty">Click a component to inspect it.</div>
+    </div>
+  </div>
+</div>
+</div>
 <script>
 const API_BASE = "https://quantum-narrative-engine-production.up.railway.app";
 let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
@@ -154,9 +228,10 @@ async function boot() {
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
     axRes.axes.forEach(a => AXES[a.key] = a);
     document.getElementById('loginGate').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
+    document.getElementById('appShell').style.display = 'flex';
     renderClusterList();
     initGraph();
+    initArchNav();
   } catch (e) {
     document.getElementById('loginErr').textContent = 'Session expired, log in again.';
     document.getElementById('loginGate').style.display = 'block';
@@ -412,6 +487,252 @@ async function selectEntity(id){
     } catch (err) { host.innerHTML = '<div class="empty">Could not reach the server.</div>'; }
     booksBtn.textContent = '📚 Suggest books for this pattern'; booksBtn.disabled = false;
   };
+}
+
+// ---------- Mode switch ----------
+document.getElementById('modeContentBtn').onclick = () => setMode('content');
+document.getElementById('modeArchBtn').onclick = () => setMode('arch');
+function setMode(m) {
+  document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
+  document.getElementById('modeArchBtn').classList.toggle('active', m==='arch');
+  document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
+  document.getElementById('archApp').classList.toggle('open', m==='arch');
+}
+
+// ---------- Architecture Navigator ----------
+// Status written by hand from a real review of BUILD_STATUS.md and the actual repo/DB state
+// (per explicit instruction: accurate now, not guessed, not live-introspected).
+const STATUS_LEVELS = ['Concept','Designed','Prototype','Working','Validated','Advanced'];
+const STATUS_COLORS = { Concept:'#8a8378', Designed:'#7a6a4a', Prototype:'#c08a3e', Working:'#4f9d7a', Validated:'#2f7d63', Advanced:'#1f5c48' };
+const TERRITORY_COLORS = { perception:'#3f6b85', knowledge:'#8b3f85', reasoning:'#7a3f3f', experience:'#5f7a3f' };
+
+const ARCH_DATA = [
+  { id:'observation-layer', territory:'perception', name:'Observation Layer',
+    what:'The intake surface — how new material (films, characters, countries, patterns) enters FMCNS at all.',
+    why:'Every other layer depends on something arriving here first; right now that arrival is entirely manual.',
+    input:'Archive material, Claude\'s own knowledge, hand-written seed JSON', output:'Raw candidate entities, not yet structured',
+    now:'Not built as its own layer. All intake is manual: I hand-curate seed data (fmcns_ontology.json) and edit it directly. No ingestion pipeline, no submission form, no automated source-checking exists.',
+    next:'Define a lightweight ingestion contract — what a "new entity submission" needs to contain — before automating anything.',
+    status:'Concept', depends:[] },
+
+  { id:'ontological-layer', territory:'knowledge', name:'Ontological Layer',
+    what:'The shared schema: one `entities` table (type: character / film / country), not separate tables per domain.',
+    why:'Directly implements "character as universal ontological unit" — individuals, films-as-containers, and nations are instances of one schema, not three parallel systems.',
+    input:'Curated entity records (name, type, scale, container, meta)', output:'Structured rows in a live SQLite DB, queryable by the API and the chat assistant',
+    now:'Working and deployed. `entities`/`entity_tags`/`entity_continuum`/`clusters` tables live on Railway, auto-reseeded on every boot. 51 characters, ~199 films, 10 countries are represented as rows in this one schema.',
+    next:'Extend to the 152 reasoned-only films as first-class character rows (they exist as film containers today, not as characters yet).',
+    status:'Working', depends:['observation-layer'] },
+
+  { id:'semantic-layer', territory:'knowledge', name:'Semantic Layer',
+    what:'Archetypal tags and pattern-lens descriptions attached to each entity.',
+    why:'Tags are the substrate entanglement and pattern-matching run on; without them an entity is just a name.',
+    input:'Entity + archive-grounded (or reasoned) interpretive reading', output:'Tag arrays + a written pattern-lens note/synopsis/description per entity',
+    now:'Prototype-level. Fully grounded for clusters I & II (47 of 199 films / 51 characters), plus all 10 countries now carry archetypal tags (fixed this session — countries previously had none). The remaining 152 films (clusters III–XIII) are reasoned, not archive-grounded, and largely untagged at character granularity.',
+    next:'Archive-mine cluster III (16 films) next, same methodology as I & II.',
+    status:'Prototype', depends:['ontological-layer'],
+    versions:[['v0','Hand-written tags per entity, no formal vocabulary'],['v1','Grounded against primary archive material, cluster by cluster (current — 2 of 12 clusters)'],['v2','Full corpus grounded, shared tag vocabulary enforced'],['v3','Tag confidence scoring (grounded vs. reasoned shown in UI)']] },
+
+  { id:'analogical-layer', territory:'knowledge', name:'Analogical Layer',
+    what:'The mechanism that finds structurally-similar entities across type — same pattern, different scale or surface.',
+    why:'This is where "civilizations and characters share a shadow" becomes a computable relationship instead of just a metaphor.',
+    input:'Tags + continuum positions across all entities', output:'Entanglement edges (shared tags) and continuum-proximity bridges (cross-type)',
+    now:'Prototype. Computed client-side in the navigator on every render — tag-overlap entanglement and cross-type continuum-proximity bridges (0.07 delta threshold). Not a stored graph, not backed by embeddings, recomputed from scratch each time.',
+    next:'Move this out of client-side JS into a real backend service with a stored pattern-instance graph (edges table), so the chat assistant, task queue, and navigator all read the same computed relationships instead of three separate reimplementations.',
+    status:'Prototype', depends:['semantic-layer','integration-continuum'] },
+
+  { id:'pattern-engine', territory:'reasoning', name:'Pattern Engine',
+    what:'A formal system for defining and matching archetypal patterns (not just tags, but named recurring structures with roles/dynamics).',
+    why:'The vision doc treats patterns as first-class objects; right now they only exist implicitly, encoded into ad hoc tag names.',
+    input:'Tags, continuum data, grounded readings', output:'Named, reusable pattern definitions an entity can be scored against',
+    now:'Does not exist as a distinct component. What plays its role today is informal: tag-overlap counts as a weak proxy for "shares a pattern." No pattern is defined, stored, or versioned as its own object.',
+    next:'Pick one well-grounded pattern (e.g. "ascetic self-destruction") and formalize it as a first named, structured pattern definition — proof of concept before generalizing.',
+    status:'Concept', depends:['semantic-layer','analogical-layer'] },
+
+  { id:'graphrag', territory:'reasoning', name:'GraphRAG',
+    what:'Graph-based retrieval — answering questions by traversing entity relationships and community structure, not just semantic search.',
+    why:'The chat assistant currently answers from flat tool calls (search/get entity); GraphRAG would let it reason across the whole relationship graph.',
+    input:'The ontological + analogical graph', output:'Retrieved subgraphs / community summaries relevant to a query',
+    now:'Not built. The embedded chat assistant has direct DB query tools (search_entities, get_entity, nearby_on_axis) but no graph traversal, no community detection, no subgraph retrieval of any kind.',
+    next:'Simplest first version: static community detection over the existing tag/continuum data, before any dynamic subgraph work.',
+    status:'Concept', depends:['ontological-layer','semantic-layer'] },
+
+  { id:'scale-echo', territory:'reasoning', name:'Scale Echo',
+    what:'The mechanism connecting entities of different scale (individual ↔ nation ↔ civilization) that sit close on the same underlying axis.',
+    why:'This is the platform\'s core unmet promise from the original vision doc — proof that the same pattern really does recur across scales, not just within one.',
+    input:'Continuum-axis scores for any two entities of different type', output:'A cross-scale "bridge" edge in the graph, shown as a dotted green connection',
+    now:'First working instantiation exists. Implemented as continuum-proximity bridge edges in the Fractal Navigator, explicitly restricted to cross-type pairs, 0.07 delta threshold on a shared axis. This is v0: it only checks numeric proximity, not causal or structural similarity.',
+    next:'v1 — make bridges scale-aware (weight by how far apart the scales are, not just axis distance).',
+    status:'Prototype', depends:['integration-continuum','analogical-layer'],
+    versions:[['v0','Semantic nearest-neighbor on a single shared axis, cross-type only (current)'],['v1','Scale-aware weighting (distance in scale, not just axis value)'],['v2','Pattern-instance graph (stored, not recomputed per render)'],['v3','GraphRAG analogical traversal'],['v4','Temporal trajectory (does the echo hold across time, not just a snapshot?)'],['v5','Dynamic cross-scale sensing (new entities auto-echo on ingestion)']] },
+
+  { id:'integration-continuum', territory:'reasoning', name:'Integration Continuum',
+    what:'Named spectrum axes (e.g. Guilt-as-Engine, Possession/Sovereignty) that any entity, of any type, can be scored on.',
+    why:'The one truly shared measurement across characters/films/countries — the thing Scale Echo bridges are computed from.',
+    input:'A grounded or reasoned interpretive read of the entity', output:'A 0–1 score on each applicable axis, plus low/high pole labels',
+    now:'Working. Two axes are live with real scores: Guilt-as-Engine (originally the map prototype\'s axis) and Possession/Sovereignty, covering characters, films, and all 10 countries.',
+    next:'Add a 3rd axis once cluster III is archive-grounded, so films in that cluster have something meaningful to score against.',
+    status:'Working', depends:['semantic-layer'] },
+
+  { id:'thread-click', territory:'experience', name:'Thread Click',
+    what:'Clicking any connection (diagonal / entanglement / bridge) on an entity jumps you to the connected entity.',
+    why:'This is the basic unit of "following a thread" through the graph — the smallest interaction the whole navigation model depends on.',
+    input:'A rendered connection row in the detail panel', output:'The graph refocuses and the detail panel re-renders on the new entity',
+    now:'Working in the Fractal Navigator (click any diagonal/entanglement/bridge row, or any node). Not yet unified — the three older prototypes (map, film corpus, character navigator) each implement their own separate version of this.',
+    next:'Unify click-through behavior across all four apps instead of four separate implementations.',
+    status:'Working', depends:['analogical-layer','ontological-layer'] },
+
+  { id:'fractal-zoom', territory:'experience', name:'Fractal Zoom',
+    what:'Zooming from a wide view into one node revealing more structure nested inside it.',
+    why:'The name of the whole system promises fractality — the same navigation logic should hold at every scale you zoom into.',
+    input:'A click/scroll/zoom gesture on a node', output:'Camera reframes; in a true version, the node\'s own internal graph would appear',
+    now:'Prototype. Camera zoom/pan exists (mouse wheel + drag) in the graph views. It is NOT truly fractal yet — zooming in does not reveal a node\'s own internal substructure, it only moves the camera closer to the same flat graph. This Architecture Navigator\'s own territory→component drill-down is the first real instance of that pattern.',
+    next:'True recursive zoom: clicking into a node reveals its own internal graph, not just a closer camera.',
+    status:'Prototype', depends:['ontological-layer'] },
+
+  { id:'maps', territory:'experience', name:'Maps',
+    what:'Geographic view — countries positioned on real boundaries, scored on the Integration Continuum.',
+    why:'The most literal "scale" register in the system — nations as characters, on real geography.',
+    input:'Country entities + continuum scores + real boundary data (Natural Earth GeoJSON)', output:'A colored, clickable map',
+    now:'Prototype. Real boundaries render for all countries, but only 10 are hand-scored on the continuum; the rest are unscored and inert. Static embedded data, not yet reading from the live backend like the Fractal Navigator does.',
+    next:'Extend scoring beyond the 10 hand-picked countries; move it onto the live API.',
+    status:'Prototype', depends:['ontological-layer','integration-continuum'] },
+
+  { id:'exploration', territory:'experience', name:'Exploration',
+    what:'List/card browsing, search, and cluster filtering — the non-graph way of moving through the corpus.',
+    why:'Not everyone wants to navigate a force-directed graph; this is the plain-text fallback and the main way to scan breadth quickly.',
+    input:'A search string, a cluster filter, a type toggle', output:'A filtered list/card view of matching entities',
+    now:'Working. Search, cluster filters, and type toggles all function in the Fractal Navigator and the older prototypes. Each app currently searches only its own local dataset.',
+    next:'Cross-app unified search — one query surfacing matches across characters, films, and countries at once, which the shared schema now makes possible.',
+    status:'Working', depends:['ontological-layer'] },
+];
+const ARCH_BY_ID = {}; ARCH_DATA.forEach(c => ARCH_BY_ID[c.id] = c);
+const TERRITORIES = [
+  { id:'perception', label:'Perception', sub:'Observation Layer — how anything gets in.' },
+  { id:'knowledge', label:'Knowledge', sub:'Ontological, Semantic & Analogical Layers.' },
+  { id:'reasoning', label:'Reasoning', sub:'Pattern Engine, GraphRAG, Scale Echo, Integration Continuum.' },
+  { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
+];
+let archView = 'architecture', archSelected = null;
+let archInited = false;
+
+function initArchNav() {
+  if (archInited) return; archInited = true;
+  document.querySelectorAll('[data-arch-view]').forEach(b => {
+    b.onclick = () => { archView = b.getAttribute('data-arch-view'); document.querySelectorAll('[data-arch-view]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderArchStage(); };
+  });
+  renderArchStage();
+}
+
+function renderArchStage() {
+  const stage = document.getElementById('archStage');
+  let html = '<div class="arch-cols" id="archCols">';
+  TERRITORIES.forEach(t => {
+    html += `<div class="arch-col"><div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div><div class="arch-col-sub">${t.sub}</div>`;
+    ARCH_DATA.filter(c => c.territory === t.id).forEach(c => {
+      const badgeColor = archView === 'development' ? STATUS_COLORS[c.status] : TERRITORY_COLORS[t.id];
+      const badgeText = archView === 'development' ? c.status : (archView === 'evolution' && c.versions ? c.versions[0][0] : t.label);
+      html += `<div class="arch-node${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+        <div class="an-name">${c.name}</div>
+        <span class="an-badge" style="background:${badgeColor}">${badgeText}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  html += '<svg class="arch-svg-overlay" id="archOverlay"></svg></div>';
+  stage.innerHTML = html;
+  document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
+  if (archView === 'architecture') { if (typeof requestAnimationFrame==='function') requestAnimationFrame(drawArchDeps); else setTimeout(drawArchDeps,0); }
+}
+
+function drawArchDeps() {
+  const overlay = document.getElementById('archOverlay');
+  const stage = document.getElementById('archStage');
+  if (!overlay || !stage) return;
+  const stageRect = stage.getBoundingClientRect();
+  overlay.setAttribute('width', stage.scrollWidth);
+  overlay.setAttribute('height', stage.scrollHeight);
+  let svgHtml = '';
+  ARCH_DATA.forEach(c => {
+    (c.depends || []).forEach(depId => {
+      const a = document.getElementById('archnode-' + depId);
+      const b = document.getElementById('archnode-' + c.id);
+      if (!a || !b) return;
+      const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
+      const x1 = ar.right - stageRect.left + stage.scrollLeft, y1 = ar.top + ar.height/2 - stageRect.top + stage.scrollTop;
+      const x2 = br.left - stageRect.left + stage.scrollLeft, y2 = br.top + br.height/2 - stageRect.top + stage.scrollTop;
+      const highlight = archSelected === c.id || archSelected === depId;
+      svgHtml += `<path d="M${x1},${y1} C${x1+40},${y1} ${x2-40},${y2} ${x2},${y2}" fill="none" stroke="${highlight?'#2a2621':'#d9d3c9'}" stroke-width="${highlight?1.6:1}" opacity="${highlight?0.9:0.45}"/>`;
+    });
+  });
+  overlay.innerHTML = svgHtml;
+}
+
+function selectArchNode(id) {
+  archSelected = id;
+  document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('selected', n.getAttribute('data-arch-id')===id));
+  if (archView === 'architecture') drawArchDeps();
+  renderArchDetail(id);
+}
+
+function renderArchDetail(id) {
+  const c = ARCH_BY_ID[id];
+  const host = document.getElementById('archRight');
+  if (!c) { host.innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>'; return; }
+  let html = `<h2>Component</h2>
+    <div class="arch-detail-name">${c.name}</div>
+    <div class="arch-detail-territory">${TERRITORIES.find(t=>t.id===c.territory).label} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>
+    <div class="arch-field"><div class="arch-field-label">What</div><div class="arch-field-body">${c.what}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${c.why}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input}</span><span class="arrow">→</span><span class="a">${c.output}</span></div></div>
+    <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${c.now}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${c.next}</div></div>`;
+  if (c.versions) {
+    html += `<div class="arch-field"><div class="arch-field-label">Evolution path</div><div class="arch-versionladder">`;
+    c.versions.forEach(([tag,desc]) => { html += `<div class="arch-vstep"><span class="vtag">${tag}</span>${desc}</div>`; });
+    html += `</div></div>`;
+  }
+  html += `<div class="arch-actionrow">
+      <button id="archAskBtn">💬 Ask about this</button>
+      <button id="archQueueBtn">📋 Queue work on this</button>
+    </div>
+    <div id="archQueueHost"></div>`;
+  host.innerHTML = html;
+
+  document.getElementById('archAskBtn').onclick = () => {
+    const prompt = `About the "${c.name}" component (${c.territory}, currently ${c.status}): ${c.what} Current state: ${c.now}`;
+    openChatWithPrompt(prompt);
+  };
+  document.getElementById('archQueueBtn').onclick = () => {
+    const qhost = document.getElementById('archQueueHost');
+    qhost.innerHTML = `<div class="queueform">
+        <input id="qfTitle" value="${c.name}: ${c.next.split('.')[0]}">
+        <textarea id="qfPrompt">${c.next}\n\nContext — ${c.name} (${c.territory}, ${c.status}): ${c.what}</textarea>
+        <button id="qfSubmit">Create queued prompt</button>
+        <div class="qf-status" id="qfStatus"></div>
+      </div>`;
+    document.getElementById('qfSubmit').onclick = async () => {
+      const status = document.getElementById('qfStatus');
+      status.textContent = 'Creating...';
+      try {
+        const resp = await fetch(API_BASE + '/api/travaux/prompts', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+          body: JSON.stringify({ title: document.getElementById('qfTitle').value, prompt: document.getElementById('qfPrompt').value }),
+        });
+        if (!resp.ok) throw new Error('failed');
+        status.textContent = 'Queued.';
+      } catch (e) { status.textContent = 'Could not reach the server.'; }
+    };
+  };
+}
+
+function openChatWithPrompt(text) {
+  const panel = document.getElementById('fmcns-chat-panel');
+  const btn = document.getElementById('fmcns-chat-btn');
+  if (!panel.classList.contains('open')) btn.click();
+  setTimeout(() => {
+    const input = document.getElementById('fmcns-chat-input');
+    if (input) { input.value = text; input.focus(); }
+  }, 50);
 }
 </script>
 <style>
