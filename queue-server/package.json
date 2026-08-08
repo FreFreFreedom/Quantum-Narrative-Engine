@@ -12,7 +12,8 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "@anthropic-ai/claude-code": "^2.1.225"
   },
   "engines": {
     "node": ">=22.5"

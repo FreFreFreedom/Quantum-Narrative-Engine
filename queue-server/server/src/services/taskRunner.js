@@ -9,11 +9,13 @@
 // plain work queue. Kept: kick(), releaseSlot(), getSettings() shape, task format — the
 // original spec warns these four are shared plumbing even if you strip the rest.
 //
-// Simplified vs. the original (§10.4): no agentModel.js quota-fallback chain (fable →
-// opus). One task = one model, resolved as-is. If a quota/rate-limit is detected in the
-// transcript, the task is deferred back to the queue (promptQueue.onAgentTaskDeferred)
-// instead of retrying on a fallback model. Good enough until FMCNS actually needs
-// multi-model fallback; simpler to reason about until then.
+// §11 safety rail — model fallback chain: on a detected quota/usage-limit hit, the SAME
+// task is retried in place on the next untried model in FALLBACK_CHAIN (sonnet → haiku →
+// opus), preserving its resume_session_id and prompt so context isn't lost. Only once
+// every model in the chain has been tried for this task does it defer back to the queue
+// (promptQueue.onAgentTaskDeferred) — and the whole queue is explicitly paused at that
+// point (setQueuePaused) rather than left to silently sit there, so nothing keeps
+// hammering an exhausted quota unattended.
 //
 // Seam vs. the original (§10.1): every hard-coded path (CLAUDE_BIN, CWD, DATA_DIR) is
 // env-configurable. On Railway, CLAUDE_BIN must point to an actually-installed and
@@ -263,10 +265,18 @@ export function extractPendingQuestion(raw) {
   return { text: head, question: plain ? { question: plain, options: [] } : null };
 }
 
-// Quota / rate-limit detection (simplified: no fallback model chain, see file header).
-const LIMIT_RE = /(?:hit your (?:session|usage|weekly) limit|usage limit reached|limit will reset)/i;
+// Quota / rate-limit detection.
+const LIMIT_RE = /(?:hit your (?:session|usage|weekly) limit|usage limit reached|limit will reset|try again after)/i;
 export function detectSessionLimit(text) {
   return LIMIT_RE.test(String(text || '')) ? { label: 'quota reached' } : null;
+}
+
+// §11 model fallback chain — order matters: try the model most likely to have a separate
+// quota bucket from the one that just hit its limit.
+export const FALLBACK_CHAIN = ['sonnet', 'haiku', 'opus'];
+function nextFallbackModel(task) {
+  const tried = new Set(task.tried_models || [task.model]);
+  return FALLBACK_CHAIN.find((m) => !tried.has(m)) || null;
 }
 
 // ─── Toolless Claude calls (used for user-summary generation) ─────────────────
@@ -422,16 +432,44 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       agent_result = (text ? text + '\n\n' : '') + `(exit code: ${code})`;
     }
 
-    const limit = detectSessionLimit(agent_result);
+    // Check the assistant text, the CLI'''s structured result field, and the raw transcript —
+    // a real usage-limit hit often produces no assistant turn at all, only a result/error line.
+    const limit = detectSessionLimit(agent_result) || detectSessionLimit(extractResultText(raw)) || detectSessionLimit(raw);
     if (limit) {
       const t = readTasks().find((x) => x.id === taskId);
-      if (t) {
-        setImmediate(() => {
-          import('./promptQueue.js')
-            .then((m) => m.onAgentTaskDeferred(t, { label: limit.label }))
-            .catch((e) => console.error('queue: deferral failed —', e.message));
+      if (!t) { cleanup(); return; }
+
+      const fallback = nextFallbackModel(t);
+      if (fallback) {
+        // Same task, same prompt, same session — just a different model. Retry in place,
+        // do NOT release the slot or touch the queue: this is still "one task running".
+        const triedList = Array.from(new Set([...(t.tried_models || [t.model]), fallback]));
+        const retried = updateTask(taskId, {
+          model: fallback, tried_models: triedList, run_model: fallback,
+          status: 'in_progress', started_at: new Date().toISOString(),
         });
+        if (retried) broadcastTask(retried);
+        appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${t.model} — retrying on ${fallback}.` });
+        let prevPrompt = '';
+        try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
+        runDetachedExecution(taskId, prevPrompt, {
+          model: fallback, effort: t.effort, tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
+          resumeSessionId: t.resume_session_id || sessionId || null, lane,
+        });
+        return;
       }
+
+      // Every model in the chain hit quota for this task — stop trying automatically and
+      // make that explicit and visible rather than leaving it as an inert queued row.
+      setImmediate(() => {
+        import('./promptQueue.js')
+          .then((m) => m.onAgentTaskDeferred(t, { label: limit.label }))
+          .catch((e) => console.error('queue: deferral failed —', e.message));
+      });
+      setQueuePaused(true, {
+        reason: `Claude usage limit reached on every available model (${FALLBACK_CHAIN.join('/')}) while running "${t.title}" — paused, resume manually once quota resets.`,
+      });
+      appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on all fallback models — queue paused. ${limit.label}.` });
       cleanup();
       return;
     }
