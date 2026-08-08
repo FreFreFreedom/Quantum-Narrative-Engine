@@ -17,11 +17,10 @@ function buildPrompt(entity, tag) {
     otherTags ? `Its other tags: ${otherTags}\n` : '',
     continuumLines ? `Continuum position: ${continuumLines}\n` : '',
     `\nThe tag being examined as a LENS is: "${tag}".\n`,
-    `Write a fuller examination (2-3 short paragraphs, roughly 150-220 words total) of this specific entity read specifically through the lens of "${tag}" — `,
+    `Write ONE tight paragraph (strict hard limit: 60-80 words, never more) examining this specific entity read specifically through the lens of "${tag}" — `,
     `what does looking at ${entity.name} through THIS particular tag reveal that the general description doesn't foreground? `,
-    `Ground it in specific, concrete detail about this entity (what they do, what they want, what the pattern costs them) rather than restating the tag's definition. `,
-    `If useful, touch on how this pattern might echo at other scales (a person's private version of something a family, institution, or nation also does) — but only if it's a genuine insight, not forced. `,
-    `No preamble, no "Through the lens of..." framing device — just the examination itself, written as flowing prose in 2-3 paragraphs, not a list.\n`,
+    `Ground it in one or two concrete, specific details about this entity rather than restating the tag's definition. Cut anything not essential — no throat-clearing, no summary sentence at the end restating the point. `,
+    `No preamble, no "Through the lens of..." framing device — just the examination itself, one paragraph, no list.\n`,
     `Respond with ONLY the examination text, no JSON, no markdown, no quotes around it.`,
   ].join('');
 }
@@ -40,7 +39,7 @@ export function makeTagLensHandler(db) {
       resp = await fetch(ANTHROPIC_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 700, messages: [{ role: 'user', content: buildPrompt(entity, tag) }] }),
+        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 200, messages: [{ role: 'user', content: buildPrompt(entity, tag) }] }),
       });
     } catch (e) {
       return { error: 'network_error', message: e.message };
