@@ -74,9 +74,14 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .empty { font-size:11.5px; color:#8a8378; }
 .bookbtn { width:100%; padding:7px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11.5px; cursor:pointer; margin:8px 0; }
 .bookbtn:hover { background:#f2efe9; }
-.book { padding:7px 9px; border-radius:7px; background:#fff; border:1px solid #e4dfd8; margin-bottom:6px; font-size:11.5px; }
+.book { display:flex; gap:9px; padding:7px 9px; border-radius:7px; background:#fff; border:1px solid #e4dfd8; margin-bottom:6px; font-size:11.5px; }
+.book .bcover { width:36px; height:54px; object-fit:cover; border-radius:3px; flex-shrink:0; background:#eee9df; }
+.book .bcover-ph { width:36px; height:54px; border-radius:3px; flex-shrink:0; background:#eee9df; display:flex; align-items:center; justify-content:center; font-size:16px; color:#b8b2a6; }
 .book .btitle { font-weight:600; }
+.book .btitle a { color:inherit; text-decoration:none; }
+.book .btitle a:hover { text-decoration:underline; }
 .book .bauthor { color:#6b645b; font-size:10.5px; }
+.book .byear { color:#a19a8e; }
 .book .bkind { display:inline-block; font-size:9px; padding:1px 6px; border-radius:20px; background:#eee9df; color:#5c554b; margin-left:5px; }
 .book .bwhy { font-size:10.5px; color:#3a352e; margin-top:3px; line-height:1.4; }
 .loading, .loginbox { padding:40px; text-align:center; font-size:13px; color:#6b645b; }
@@ -963,9 +968,14 @@ async function loadBooksFor(entityId) {
     if (!host) return;
     if (data.error) { host.innerHTML = '<div class="empty">Could not get book suggestions: ' + data.error + '</div>'; }
     else {
-      host.innerHTML = data.books.map(b =>
-        `<div class="book"><span class="btitle">${b.title}</span><span class="bkind">${b.kind}</span><div class="bauthor">${b.author}</div><div class="bwhy">${b.why}</div></div>`
-      ).join('');
+      // Real cover/year/link come from a Google Books lookup on the backend (no
+      // Amazon account/API-approval process needed) — falls back to a plain title
+      // when a book couldn't be matched in that database.
+      host.innerHTML = data.books.map(b => {
+        const titleHtml = b.link ? `<a href="${b.link}" target="_blank" rel="noopener">${b.title}</a>` : b.title;
+        const cover = b.cover ? `<img class="bcover" src="${b.cover}" alt="" loading="lazy">` : `<div class="bcover-ph">📖</div>`;
+        return `<div class="book">${cover}<div><span class="btitle">${titleHtml}</span><span class="bkind">${b.kind}</span><div class="bauthor">${b.author}${b.year ? ` <span class="byear">(${b.year})</span>` : ''}</div><div class="bwhy">${b.why}</div></div></div>`;
+      }).join('');
     }
   } catch (err) {
     if (focusedId !== entityId) return;
