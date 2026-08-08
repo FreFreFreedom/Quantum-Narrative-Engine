@@ -8,7 +8,7 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 
 **Live backend** (`queue-server/`, deployed on Railway, auto-reseeds its SQLite DB on every boot):
 - Shared `entities` table (character / film / country as one schema — "character as universal ontological unit"), with `entity_tags` and `entity_continuum` alongside it.
-- Task queue foundation ported from the original spec (`work_prompts`, `taskRunner.js`, `promptQueue.js`) — routes and detached-execution plumbing work end-to-end against a mock CLI, but there is **no real, authenticated Claude Code CLI wired in yet**, so queued prompts don't actually execute against real work.
+- Task queue now executes real work. `@anthropic-ai/claude-code` is installed as a real dependency and authenticated via `CLAUDE_CODE_OAUTH_TOKEN` (your Claude subscription, not pay-per-token API billing). Verified end-to-end against a real queued task: ran on `haiku`, exit code 0, real result returned, in ~8 seconds. §11 safety rails implemented and verified (against a controlled mock CLI, all three branches): quota/usage-limit detection (checks the CLI's structured result field and raw transcript, not just assistant text — a real limit hit produces no assistant turn at all), a model fallback chain (sonnet → haiku → opus, same task retried in place, preserving session/prompt) that only defers back to the queue once every model is exhausted, and an explicit queue-pause with a visible reason at that point. The pre-existing `stop_after` brake (pause the queue after one flagged task finishes) was also verified working.
 - Embedded chat assistant (`chat.js`) — a live Claude API connection with tool access to the app's own DB (search/get entities, list clusters/axes, nearby-on-axis, read knowledge docs), session memory, and native PDF upload. Runs inside the app itself, not this Cowork session.
 - Knowledge base (`knowledge_docs` table) seeded from the real reference documents (ontology doc, films master list, archive notes) so the embedded assistant can pull from them on demand.
 - Book-recommendation endpoint — suggests fiction/nonfiction reflecting an entity's archetypal pattern, cached per entity.
@@ -45,7 +45,7 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 
 ## Known gaps / honest caveats
 
-- **Task queue has no real execution path.** `taskRunner.js`/`promptQueue.js` work end-to-end against a mock CLI locally, but nothing authenticates a real Claude Code CLI on the machine that would actually run queued work. This is the single biggest open blocker on the queue being useful.
+- **No queue UI yet.** Queuing/managing prompts is currently API-only (`/api/travaux/prompts`) — there's no page in the app to add, watch, or manage queued work. You'd need this before using the queue day-to-day.
 - **76% of the film corpus is still reasoned, not grounded** — same as before, no archive-mining done this round.
 - **GraphRAG and a formal Pattern Engine don't exist** — the "Architecture Navigator" audit (see below) made this explicit for the first time rather than leaving it implied.
 - **Fractal Zoom isn't actually recursive yet** — camera zoom/pan only, no per-node internal graph revealed on zoom-in, except as a first proof-of-concept in the Architecture Navigator's own territory→component drill-down.
@@ -55,7 +55,7 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 
 ## Open threads (from the vision doc, §7, and since)
 
-- Wire a real, authenticated Claude Code CLI into `taskRunner.js` so the task queue actually executes — currently the largest concrete blocker
+- Build a queue UI in the app — the execution path is real now, but there's no page to actually use it from
 - Archive-mine the remaining 10 clusters (152 films), one at a time, same methodology as I/II
 - Extract the entanglement/diagonal/bridge computation out of client-side JS into one shared backend service (still duplicated between Content mode's graph and Map mode, even within the now-unified app)
 - Formalize a first named Pattern (beyond tag-overlap) as a Pattern Engine proof of concept
