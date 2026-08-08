@@ -567,7 +567,10 @@ function drawGraph() {
     const dimmed = spotlight && !spotlight.has(n.id);
     const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':''),opacity: dimmed?(isPatternFocus?0.06:0.15):1});
     const r = n.id===focusedId?11:(n.type==='country'?8:6);
-    g.appendChild(el('circle',{cx:n.x,cy:n.y,r,fill:nodeColor(n)}));
+    // An invisible, larger hit-circle under the visible one — the graph gets dense
+    // enough (150+ edges) that the real 6-8px dot is a hard target to land on exactly.
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:r+7,fill:'transparent',style:'pointer-events:all;'}));
+    g.appendChild(el('circle',{cx:n.x,cy:n.y,r,fill:nodeColor(n),style:'pointer-events:none;'}));
     if (labelVisible(n, spotlight)) {
       const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
     }
