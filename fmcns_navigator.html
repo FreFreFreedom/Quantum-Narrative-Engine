@@ -175,6 +175,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <button id="loginBtn">Connect</button>
   <div id="loginErr" style="color:#b23a2f;margin-top:8px;font-size:12px;"></div>
 </div>
+<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:700;">BUILD MARKER — CLICK-DEBUG-V4 — if you see this text, you are on the current file</div>
 <div class="app-shell" id="appShell" style="display:none;">
 <div class="modebar">
   <button id="modeContentBtn" class="active">Content navigator</button>
@@ -575,10 +576,10 @@ function drawGraph() {
       const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
     }
     g.onclick=()=>{
-      // Instant, synchronous, on-screen proof the click was received — before anything
-      // async or network-dependent runs. If this never appears, the click event itself
-      // isn't reaching this handler. If it appears and then an error shows instead of
-      // the real panel, selectEntity is throwing somewhere past this point.
+      // Ultimate diagnostic: a modal alert() has no dependency on any DOM element
+      // existing or any prior code succeeding. If this doesn't pop up, the click event
+      // is not reaching JavaScript at all — not a bug in this app's rendering logic.
+      alert('NODE CLICK REGISTERED: ' + n.name);
       const host = document.getElementById(activeCardHost);
       if (host) host.innerHTML = '<div style="padding:14px;background:#c0392b;color:#fff;font-weight:600;border-radius:6px;">Click registered — loading ' + n.name + '…</div>';
       selectEntity(n.id).catch(err => {
