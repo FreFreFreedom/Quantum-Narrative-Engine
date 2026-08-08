@@ -27,15 +27,19 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .graph-stage { flex:1; position:relative; overflow:hidden; background:#f0ede6; }
 #graphSvg { width:100%; height:100%; display:block; cursor:grab; }
 #graphSvg.panning { cursor:grabbing; }
-.gnode { cursor:pointer; }
+.gnode { cursor:pointer; transition:opacity .18s ease; }
 .gnode circle { stroke:#fbfaf8; stroke-width:1.3; }
 .gnode.focused circle { stroke:#2a2621; stroke-width:3; }
-.gnode text { font-size:8px; fill:#2a2621; text-anchor:middle; pointer-events:none; }
-.legend { position:absolute; left:12px; bottom:12px; background:rgba(255,255,255,.92); border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; }
+.gnode text { font-size:9px; fill:#2a2621; text-anchor:middle; pointer-events:none; }
+.gedge { transition:opacity .18s ease; }
+.legend { position:absolute; left:12px; bottom:12px; background:rgba(255,255,255,.92); border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
+.legend .section-label { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:#8a8378; margin:7px 0 4px; }
+.legend .section-label:first-child { margin-top:0; }
 .legend .row { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
-.legend .swatch { width:18px; height:0; border-top:2.5px solid #c08a3e; }
+.legend .swatch { width:18px; height:0; border-top:2.5px solid #c08a3e; flex-shrink:0; }
 .legend .swatch.e { border-top:2.5px dashed #8b6fb0; }
 .legend .swatch.b { border-top:2px dotted #4f9d7a; }
+.legend .dotswatch { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
 .right { width:360px; border-left:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; padding:14px; flex-shrink:0; }
 .right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
 .card { border-radius:10px; padding:12px; color:#fbfaf8; margin-bottom:10px; }
@@ -173,7 +177,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <div class="mid">
     <div class="header">
       <h1>FMCNS — Fractal Navigator</h1>
-      <p>One live graph across characters, films, and countries. Gold = shared director/writer. Violet = shared tags. Green dotted = continuum-proximity bridge across scale (the Scale Echo mechanism) — connects entities of ANY type close on a shared axis.</p>
+      <p>One live graph across characters, films, and countries, grouped into cluster regions. Gold = shared director/writer (always visible). Violet = shared tags. Green dotted = continuum-proximity bridge across scale (Scale Echo). Hover or click a node to reveal its connections — everything else fades.</p>
     </div>
     <div class="graph-controls">
       <span class="ctrl-label">Color by</span>
@@ -182,6 +186,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <button class="ctrlbtn" data-color="guilt_as_engine">Guilt-as-Engine</button>
       <button class="ctrlbtn" data-color="possession_sovereignty">Possession/Sovereignty</button>
       <button class="ctrlbtn" id="toggleBridges">Bridges: on</button>
+      <button class="ctrlbtn" id="toggleShowAll">Show all connections</button>
       <button class="ctrlbtn" id="resetBtn">Reset view</button>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:#8a8378;"></span>
     </div>
@@ -326,15 +331,33 @@ document.querySelectorAll('.ctrlbtn[data-color]').forEach(b => {
     b.classList.add('active');
     colorMode = b.getAttribute('data-color');
     drawGraph();
+    renderLegend();
   };
 });
 
 // ---------- Graph data / physics ----------
 const GVBW=900, GVBH=640;
 let nodes=[], edges=[];
-let focusedId=null, bridgesOn=true;
+let focusedId=null, hoveredId=null, bridgesOn=true, showAllConnections=false;
 const camera={x:0,y:0,scale:1};
 let simRunning=false;
+
+// Cluster-zone layout: each cluster gets a fixed centroid on a ring, so same-cluster
+// nodes drift toward the same region (visible separation between groups) while local
+// repulsion still keeps them from overlapping each other.
+const CLUSTER_ORDER = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','other'];
+const CLUSTER_CENTROIDS = {};
+(function computeCentroids(){
+  const cx=GVBW/2, cy=GVBH/2, R=Math.min(GVBW,GVBH)*0.36;
+  CLUSTER_ORDER.forEach((code,i) => {
+    const a = (i/CLUSTER_ORDER.length) * Math.PI*2 - Math.PI/2;
+    CLUSTER_CENTROIDS[code] = { x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R };
+  });
+})();
+function centroidFor(e) {
+  const code = (e.clusters||[])[0];
+  return CLUSTER_CENTROIDS[code] || CLUSTER_CENTROIDS.other;
+}
 
 function activeEntities() {
   const showC = document.getElementById('tCharacter').checked;
@@ -361,7 +384,7 @@ function computeEntanglement(e, pool, diagIds) {
   if (!tags.length) return [];
   return pool.filter(o => o.id!==e.id && !diagIds.has(o.id) && (o.tags||[]).some(t=>tags.includes(t)))
     .map(o => ({ o, shared: (o.tags||[]).filter(t=>tags.includes(t)) }))
-    .sort((a,b)=>b.shared.length-a.shared.length).slice(0,6);
+    .sort((a,b)=>b.shared.length-a.shared.length).slice(0,3); // top 3 by default — reduces visual noise
 }
 function computeBridges(e, pool) {
   const out = [];
@@ -379,7 +402,10 @@ function computeBridges(e, pool) {
 
 function buildGraph() {
   const pool = activeEntities();
-  nodes = pool.map(e => ({ ...e, x: GVBW/2+(Math.random()-.5)*420, y: GVBH/2+(Math.random()-.5)*420, vx:0, vy:0 }));
+  nodes = pool.map(e => {
+    const c = centroidFor(e);
+    return { ...e, x: c.x+(Math.random()-.5)*70, y: c.y+(Math.random()-.5)*70, vx:0, vy:0, degree:0, big:false };
+  });
   nodes.forEach(n => byId[n.id]=n);
   const seen = new Set();
   edges = [];
@@ -390,29 +416,70 @@ function buildGraph() {
     computeEntanglement(e, pool, diagIds).forEach(({o})=>{ const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'ent'}); });
     if (bridgesOn) computeBridges(e, pool).forEach(({o,axis})=>{ const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'bridge',axis}); });
   });
+  // Degree per node, used to decide which labels earn a permanent spot.
+  edges.forEach(e => { if(byId[e.a]) byId[e.a].degree++; if(byId[e.b]) byId[e.b].degree++; });
+  const byDegree = nodes.slice().sort((a,b)=>b.degree-a.degree);
+  const topN = Math.max(6, Math.round(nodes.length*0.15));
+  byDegree.slice(0, topN).forEach(n => { if (n.degree>0) n.big = true; });
 }
 
 function el(tag, attrs) { const e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
 function truncate(s,n){ return s.length>n? s.slice(0,n-1)+"…" : s; }
 
+// A node is "active" (spotlight) if nothing is focused/hovered — everything is equally
+// visible — or it IS the focused/hovered node or one of its direct neighbors.
+function neighborSet(id) {
+  if (!id) return null;
+  const set = new Set([id]);
+  edges.forEach(e => { if(e.a===id) set.add(e.b); else if(e.b===id) set.add(e.a); });
+  return set;
+}
+// An edge is drawn by default only if it's a diagonal edge (rare, always meaningful) or
+// touches the spotlighted node. Entanglement/bridge edges elsewhere only appear once
+// "show all connections" is on, or once you focus/hover one of their endpoints.
+function edgeVisible(e, spotlight) {
+  if (showAllConnections) return true;
+  if (e.type === 'diag') return true;
+  if (spotlight && (spotlight.has(e.a) || spotlight.has(e.b))) return true;
+  return false;
+}
+function labelVisible(n, spotlight) {
+  if (spotlight) return spotlight.has(n.id);
+  if (n.big) return true;
+  if (camera.scale > 2.0) return true; // zoom in far enough and more labels reveal themselves
+  return false;
+}
+
 function drawGraph() {
   const edgeLayer=document.getElementById('edgeLayer'), nodeLayer=document.getElementById('nodeLayer');
   edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
+  const spotlightId = hoveredId || focusedId;
+  const spotlight = neighborSet(spotlightId);
+
   edges.forEach(e=>{
     const a=byId[e.a], b=byId[e.b]; if(!a||!b) return;
+    const visible = edgeVisible(e, spotlight);
+    if (!visible && !spotlight) return; // fully hidden by default, not just faded — keeps the graph legible
     const stroke = e.type==='diag'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
     const dash = e.type==='ent'?'4,3': e.type==='bridge'?'1.5,2.5':'none';
-    edgeLayer.appendChild(el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke,'stroke-width':1.3,'stroke-dasharray':dash,opacity:.55}));
+    const dimmed = spotlight && !(spotlight.has(e.a) && spotlight.has(e.b));
+    const opacity = !visible ? 0 : (dimmed ? 0.08 : (e.type==='diag'?0.75:0.55));
+    edgeLayer.appendChild(el('line',{class:'gedge',x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke,'stroke-width':e.type==='diag'?1.6:1.3,'stroke-dasharray':dash,opacity}));
   });
   nodes.forEach(n=>{
-    const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':'')});
+    const dimmed = spotlight && !spotlight.has(n.id);
+    const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':''),opacity: dimmed?0.15:1});
     const r = n.id===focusedId?11:(n.type==='country'?8:6);
     g.appendChild(el('circle',{cx:n.x,cy:n.y,r,fill:nodeColor(n)}));
-    const t=el('text',{x:n.x,y:n.y+r+9}); t.textContent=truncate(n.name,15); g.appendChild(t);
+    if (labelVisible(n, spotlight)) {
+      const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
+    }
     g.onclick=()=>selectEntity(n.id);
+    g.onmouseenter=()=>{ hoveredId=n.id; drawGraph(); };
+    g.onmouseleave=()=>{ hoveredId=null; drawGraph(); };
     nodeLayer.appendChild(g);
   });
-  document.getElementById('graphInfo').textContent = nodes.length+' nodes, '+edges.length+' edges';
+  document.getElementById('graphInfo').textContent = nodes.length+' nodes, '+edges.length+' connections total';
 }
 
 function runSim(){
@@ -420,18 +487,22 @@ function runSim(){
   let ticks=0;
   function step(){
     ticks++;
-    const cx=GVBW/2, cy=GVBH/2;
     nodes.forEach(n=>{
       let fx=0,fy=0;
+      // Local repulsion — this is what prevents same-cluster nodes from sitting on
+      // top of each other, since they're all pulled toward the same centroid.
       nodes.forEach(o=>{ if(o===n)return; let dx=n.x-o.x,dy=n.y-o.y; let d2=dx*dx+dy*dy+.01; let d=Math.sqrt(d2); let f=900/d2; fx+=(dx/d)*f; fy+=(dy/d)*f; });
-      fx+=(cx-n.x)*.006; fy+=(cy-n.y)*.006;
-      if (focusedId && n.id===focusedId) { fx+=(cx-n.x)*.03; fy+=(cy-n.y)*.03; }
-      edges.forEach(e=>{ if(e.a!==n.id&&e.b!==n.id)return; const oid=e.a===n.id?e.b:e.a; const o=byId[oid]; if(!o)return; fx+=(o.x-n.x)*.008; fy+=(o.y-n.y)*.008; });
+      // Weak pull toward this node's own cluster centroid — keeps clusters visibly
+      // separated as distinct regions instead of one undifferentiated blob.
+      const c = centroidFor(n);
+      fx+=(c.x-n.x)*.012; fy+=(c.y-n.y)*.012;
+      if (focusedId && n.id===focusedId) { fx+=(GVBW/2-n.x)*.02; fy+=(GVBH/2-n.y)*.02; }
+      edges.forEach(e=>{ if(e.a!==n.id&&e.b!==n.id)return; const oid=e.a===n.id?e.b:e.a; const o=byId[oid]; if(!o)return; fx+=(o.x-n.x)*.006; fy+=(o.y-n.y)*.006; });
       n.vx=(n.vx+fx)*.75; n.vy=(n.vy+fy)*.75;
     });
     nodes.forEach(n=>{ n.x+=n.vx*.05; n.y+=n.vy*.05; n.x=Math.max(20,Math.min(GVBW-20,n.x)); n.y=Math.max(20,Math.min(GVBH-20,n.y)); });
     drawGraph();
-    if (ticks<220) requestAnimationFrame(step); else simRunning=false;
+    if (ticks<260) requestAnimationFrame(step); else simRunning=false;
   }
   requestAnimationFrame(step);
 }
@@ -439,7 +510,22 @@ function runSim(){
 function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); }
 
 function renderLegend(){
-  let html = '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div><div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div><div class="row"><span class="swatch b"></span> Continuum bridge (cross-scale echo)</div>';
+  let html = '<div class="section-label">Connections</div>';
+  html += '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div>';
+  html += '<div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div>';
+  html += '<div class="row"><span class="swatch b"></span> Continuum bridge (cross-scale echo)</div>';
+  html += '<div class="section-label">Color key — ' + (colorMode==='type'?'entity type':colorMode==='cluster'?'cluster':(AXES[colorMode]?AXES[colorMode].name:colorMode)) + '</div>';
+  if (colorMode === 'type') {
+    Object.entries(TYPE_COLORS).forEach(([t,c]) => { html += `<div class="row"><span class="dotswatch" style="background:${c}"></span> ${t}</div>`; });
+  } else if (colorMode === 'cluster') {
+    Object.entries(CLUSTER_COLORS).forEach(([code,c]) => {
+      const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
+      html += `<div class="row"><span class="dotswatch" style="background:${c}"></span> ${code}. ${name}</div>`;
+    });
+  } else {
+    const axis = AXES[colorMode];
+    html += `<div class="continuum-bar" style="margin:4px 0 2px;"></div><div class="continuum-poles">${axis?`<span>${axis.low}</span><span>${axis.high}</span>`:''}</div>`;
+  }
   document.getElementById('legend').innerHTML = html;
 }
 
@@ -452,14 +538,26 @@ function initGraph(){
     e.target.classList.toggle('active', bridgesOn);
     layoutAndDraw();
   };
-  document.getElementById('resetBtn').onclick = function(){ camera.x=0;camera.y=0;camera.scale=1; applyCamera(); focusedId=null; layoutAndDraw(); };
+  document.getElementById('toggleShowAll').onclick = function(e){
+    showAllConnections = !showAllConnections;
+    e.target.classList.toggle('active', showAllConnections);
+    drawGraph();
+  };
+  document.getElementById('resetBtn').onclick = function(){ camera.x=0;camera.y=0;camera.scale=1; applyCamera(); focusedId=null; hoveredId=null; layoutAndDraw(); };
 }
 
 function applyCamera(){ document.getElementById('viewport').setAttribute('transform', `translate(${camera.x},${camera.y}) scale(${camera.scale})`); }
 function setupZoomPan(){
   const svg=document.getElementById('graphSvg');
   let panning=false,lastX=0,lastY=0;
-  svg.addEventListener('wheel',e=>{ e.preventDefault(); camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.1:.9))); applyCamera(); },{passive:false});
+  let zoomLabelTimer=null;
+  svg.addEventListener('wheel',e=>{
+    e.preventDefault();
+    camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.1:.9)));
+    applyCamera();
+    clearTimeout(zoomLabelTimer);
+    zoomLabelTimer=setTimeout(drawGraph, 120); // re-evaluate zoom-based label reveal, debounced
+  },{passive:false});
   svg.addEventListener('mousedown',e=>{ panning=true; lastX=e.clientX; lastY=e.clientY; svg.classList.add('panning'); });
   window.addEventListener('mousemove',e=>{ if(!panning)return; camera.x+=(e.clientX-lastX); camera.y+=(e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; applyCamera(); });
   window.addEventListener('mouseup',()=>{ panning=false; svg.classList.remove('panning'); });
