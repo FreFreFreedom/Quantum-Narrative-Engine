@@ -101,8 +101,8 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .arch-viewbtns button.active { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
 .arch-body { flex:1; display:flex; min-height:0; }
 .arch-stage { flex:1; overflow:auto; padding:22px; position:relative; }
-.arch-cols { display:flex; gap:26px; min-width:960px; position:relative; }
-.arch-col { flex:1; min-width:210px; }
+.arch-cols { display:flex; flex-wrap:wrap; gap:26px; position:relative; }
+.arch-col { flex:1 1 210px; min-width:210px; }
 .arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin-bottom:4px; font-weight:600; }
 .arch-col-sub { font-size:10.5px; color:#8a8378; margin-bottom:10px; line-height:1.4; }
 .arch-node { border:1px solid #e4dfd8; background:#fff; border-radius:9px; padding:9px 11px; margin-bottom:10px; cursor:pointer; position:relative; }
@@ -1007,7 +1007,7 @@ function setMode(m) {
 // (per explicit instruction: accurate now, not guessed, not live-introspected).
 const STATUS_LEVELS = ['Concept','Designed','Prototype','Working','Validated','Advanced'];
 const STATUS_COLORS = { Concept:'#8a8378', Designed:'#7a6a4a', Prototype:'#c08a3e', Working:'#4f9d7a', Validated:'#2f7d63', Advanced:'#1f5c48' };
-const TERRITORY_COLORS = { perception:'#3f6b85', knowledge:'#8b3f85', reasoning:'#7a3f3f', experience:'#5f7a3f' };
+const TERRITORY_COLORS = { perception:'#3f6b85', knowledge:'#8b3f85', reasoning:'#7a3f3f', experience:'#5f7a3f', interface:'#a3672f' };
 
 const ARCH_DATA = [
   { id:'observation-layer', territory:'perception', name:'Observation Layer',
