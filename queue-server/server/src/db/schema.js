@@ -26,6 +26,7 @@ export function openDb() {
   initKnowledgeSchema(db);
   initBooksSchema(db);
   initArchitectureSchema(db);
+  initTagLensSchema(db);
   return db;
 }
 
@@ -253,6 +254,21 @@ export function initBooksSchema(db) {
       entity_id TEXT PRIMARY KEY REFERENCES entities(id),
       suggestions TEXT NOT NULL,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+}
+
+// ─── Tag lenses: an entity examined through one of its own tags ─────────────────
+// Generated once per (entity, tag) pair via the Claude API and cached — clicking a
+// tag on an already-viewed entity is then free.
+export function initTagLensSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_tag_lenses (
+      entity_id TEXT NOT NULL REFERENCES entities(id),
+      tag TEXT NOT NULL,
+      lens_text TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      PRIMARY KEY (entity_id, tag)
     )
   `);
 }

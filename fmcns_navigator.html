@@ -48,7 +48,11 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .card .type-badge { font-size:9px; padding:2px 7px; border-radius:20px; background:rgba(0,0,0,.25); display:inline-block; margin-bottom:6px; }
 .note { font-size:12px; line-height:1.5; margin:8px 0; font-style:italic; color:#3a352e; }
 .tagrow { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0; }
-.tag { font-size:9.5px; background:#eee9df; color:#5c554b; padding:2px 7px; border-radius:20px; }
+.tag { font-size:9.5px; background:#eee9df; color:#5c554b; padding:2px 7px; border-radius:20px; cursor:pointer; border:1px solid transparent; }
+.tag:hover { background:#e4dfd2; }
+.tag.active { background:#2a2621; color:#fbfaf8; }
+.lens-panel { background:#fff; border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; margin:2px 0 8px; font-size:11.5px; line-height:1.55; color:#3a352e; }
+.lens-panel .lens-tag { font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:#8a5a1e; font-weight:600; margin-bottom:5px; }
 .continuum-block { margin:10px 0; padding:8px; background:#fff; border:1px solid #e4dfd8; border-radius:8px; }
 .continuum-row { margin-bottom:7px; }
 .continuum-label { font-size:10px; font-weight:600; color:#5c554b; margin-bottom:2px; }
@@ -589,6 +593,7 @@ function continuumHtml(e){
 
 async function selectEntity(id){
   focusedId = id;
+  activeLensTag = null;
   drawGraph();
   let e = byId[id];
   try { e = await api('/api/ontology/entities/' + id); } catch(err) {}
@@ -603,7 +608,10 @@ async function selectEntity(id){
   const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
   if (lensText) html += `<div class="note">${lensText}</div>`;
   else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
-  if (e.tags && e.tags.length) html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`;
+  if (e.tags && e.tags.length) {
+    html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
+    html += `<div id="lensHost"></div>`;
+  }
   html += continuumHtml(e);
   html += `<div class="section-title" style="color:#5c554b;">📚 Books reflecting this pattern</div><div id="booksHost"><div class="empty">Loading…</div></div>`;
 
@@ -622,8 +630,40 @@ async function selectEntity(id){
 
   document.getElementById(activeCardHost).innerHTML = html;
   document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
+  document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
 
   loadBooksFor(e.id); // auto-loads (cached server-side after the first real generation per entity)
+}
+
+// Tags as lenses: clicking a tag examines the currently-selected entity specifically
+// through that tag, rather than showing the same general description every time.
+let activeLensTag = null;
+async function toggleTagLens(entity, tag, tagEl) {
+  const lensHost = document.getElementById('lensHost');
+  if (!lensHost) return;
+  const allTagEls = document.querySelectorAll('.tag[data-tag]');
+  if (activeLensTag === tag) {
+    activeLensTag = null;
+    allTagEls.forEach(t => t.classList.remove('active'));
+    lensHost.innerHTML = '';
+    return;
+  }
+  activeLensTag = tag;
+  allTagEls.forEach(t => t.classList.toggle('active', t.getAttribute('data-tag') === tag));
+  lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div><div class="empty" style="margin:0;">Loading…</div></div>`;
+  try {
+    const resp = await fetch(API_BASE + '/api/ontology/entities/' + entity.id + '/tag-lens', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      body: JSON.stringify({ tag }),
+    });
+    const data = await resp.json();
+    if (activeLensTag !== tag) return; // user switched tags before this resolved
+    if (data.error) { lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div><div class="empty" style="margin:0;">Could not generate: ${data.error}</div></div>`; return; }
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div>${data.lens}</div>`;
+  } catch (err) {
+    if (activeLensTag !== tag) return;
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div><div class="empty" style="margin:0;">Could not reach the server.</div></div>`;
+  }
 }
 
 async function loadBooksFor(entityId) {
