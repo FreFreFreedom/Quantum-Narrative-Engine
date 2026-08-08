@@ -41,19 +41,19 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 |---|---|---|---|
 | I. Ascetic Self-Destruction, Guilt & the Martyr Archetype | 13 | **Grounded** | General archive search + First_Reformed_Pattern_Extract.pdf |
 | II. Eros, Power & Erotic Dynamics | 34 | **Grounded** | General archive search + Cuckold_Dynamics_Definition_Extract.pdf |
-| III. Marriage, Infidelity & Domestic Rupture | 16 | Reasoned | Not yet mined |
-| IV. Grief, Illness & Mortality | 13 | Reasoned | Not yet mined |
-| V. Wilderness, Frontier & Survival | 38 | Reasoned | Not yet mined |
-| VI. War & Violence | 21 | Reasoned | Not yet mined |
-| VII. Cults, Control & Institutional Shadow | 10 | Reasoned | Not yet mined |
-| VIII. Espionage, Surveillance & Paranoia | 15 | Reasoned | Not yet mined |
-| IX. Sci-Fi, Cyberpunk & Posthuman | 9 | Reasoned | Not yet mined |
-| X. Family, Power & the Gothic Household | 16 | Reasoned | Not yet mined |
-| XI. Historical Epics & Civil-War-Adjacent | 8 | Reasoned | Not yet mined |
-| XII. Counterculture, Idealism & Its Shadow | 7 | Reasoned | Not yet mined |
+| III. Marriage, Infidelity & Domestic Rupture | 16 | **Grounded** | Per-film web research (reviews/critical analysis/plot sources) |
+| IV. Grief, Illness & Mortality | 13 | **Grounded** | Per-film web research |
+| V. Wilderness, Frontier & Survival | 38 | **Grounded** | Per-film web research |
+| VI. War & Violence | 21 | **Grounded** | Per-film web research + established critical consensus |
+| VII. Cults, Control & Institutional Shadow | 10 | **Grounded** | Per-film web research |
+| VIII. Espionage, Surveillance & Paranoia | 15 | **Grounded** | Per-film web research |
+| IX. Sci-Fi, Cyberpunk & Posthuman | 9 | **Grounded** | Per-film web research |
+| X. Family, Power & the Gothic Household | 16 | **Grounded** | Per-film web research |
+| XI. Historical Epics & Civil-War-Adjacent | 8 | **Grounded** | Per-film web research |
+| XII. Counterculture, Idealism & Its Shadow | 7 | **Grounded** | Per-film web research |
 | XIII. Additional Notable Titles | ~90 | **Not in corpus** | Unsorted grab-bag, no cluster tag |
 
-**47 of 199 films (24%) are archive-grounded. 152 (76%) are Claude-reasoned only.** Unchanged this round — no new archive-mining happened, work went into infrastructure instead.
+**All 199 films in the twelve numbered clusters (100%) are now grounded** — up from 47 (24%). Clusters III-XII (152 films) were mined this round: each film individually researched (not pattern-matched from memory alone) and given its own character entity with tags/continuum grounded in that research, same rigor as I/II but via web research instead of archive PDFs (no new source PDFs were available for these clusters). One honest outlier flagged during mining: *Causeway* (cluster III) turned out on research to not actually be a marriage/infidelity story — it's grounded around its real subject (intimacy-avoidance after trauma) rather than forced into the cluster's frame; worth a second look if the cluster taxonomy gets audited. Character count: 51 → 204. The ~90 ungrounded "Additional Notable Titles" (cluster XIII, no cluster tag) remain out of scope — same unsorted grab-bag as before, not part of the twelve-cluster taxonomy this tracker covers.
 
 ## Known gaps / honest caveats
 
