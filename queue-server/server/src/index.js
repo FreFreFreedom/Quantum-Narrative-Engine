@@ -61,6 +61,21 @@ attachRealtime(server);
 initTaskRunner();
 initPromptQueue();
 
+// One-off, env-gated: queues a single trivial real task on boot to verify the real
+// Claude Code execution path end to end. Only fires when RUN_QUEUE_SELFTEST=1 is set;
+// meant to be unset again right after the one test run.
+if (process.env.RUN_QUEUE_SELFTEST === '1') {
+  import('./services/promptQueue.js').then((pq) => {
+    const row = pq.createPrompt({
+      title: 'Queue self-test',
+      prompt: 'This is a one-off connectivity test of a real automated task queue. Reply with only the single word OK, and do not read, write, or modify any files.',
+      mode: 'implement', preset: 'fast',
+    });
+    console.log('[selftest] queued prompt id=' + row.id);
+    pq.advanceQueue();
+  }).catch((e) => console.error('[selftest] failed to queue —', e.message));
+}
+
 server.listen(PORT, () => {
   console.log(`fmcns-queue-server listening on :${PORT}`);
 });

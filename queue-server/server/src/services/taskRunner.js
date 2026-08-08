@@ -418,6 +418,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     const sessionId = extractSessionId(raw);
 
     let status, agent_result;
+    console.log(`[taskRunner] task ${taskId} process finished — code=${code} killedTimeout=${killedTimeout}`);
     if (killedTimeout) {
       status = 'blocked';
       agent_result = `(timed out after ${Math.round(EXEC_TIMEOUT_MS / 60000)} min)\n\n${text}`;
@@ -511,6 +512,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       session_id: sessionId || null, completed_at: new Date().toISOString(),
     });
     if (finalTask) broadcastTask(finalTask);
+    console.log(`[taskRunner] task ${taskId} finalized — status=${status} result=${JSON.stringify((agent_result||'').slice(0,300))}`);
 
     if (finalTask) {
       setImmediate(() => {
@@ -578,6 +580,7 @@ function executeTask(next, { lane = 'exec' } = {}) {
   else { busy = true; currentTaskId = next.id; }
 
   const model = next.model || 'sonnet';
+  console.log(`[taskRunner] executing task ${next.id} ("${next.title}") on model=${model} lane=${lane}`);
   const task = updateTask(next.id, { status: 'in_progress', started_at: new Date().toISOString(), run_model: model });
   broadcastTask(task);
 
