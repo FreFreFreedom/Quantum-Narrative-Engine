@@ -427,9 +427,20 @@ function buildGraph() {
   pool.forEach(e => {
     const diag = computeDiagonal(e, pool);
     const diagIds = new Set(diag.map(o=>o.id));
-    diag.forEach(o => { const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'diag'}); });
-    computeEntanglement(e, pool, diagIds).forEach(({o})=>{ const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'ent'}); });
-    if (bridgesOn) computeBridges(e, pool).forEach(({o,axis})=>{ const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k); edges.push({a:e.id,b:o.id,type:'bridge',axis}); });
+    diag.forEach(o => {
+      const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k);
+      const auteurs = (e.meta&&e.meta.auteurs)||[];
+      const shared = auteurs.filter(a => ((o.meta&&o.meta.auteurs)||[]).includes(a));
+      edges.push({a:e.id,b:o.id,type:'diag',auteur:shared[0]||null});
+    });
+    computeEntanglement(e, pool, diagIds).forEach(({o,shared})=>{
+      const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k);
+      edges.push({a:e.id,b:o.id,type:'ent',tags:shared});
+    });
+    if (bridgesOn) computeBridges(e, pool).forEach(({o,axis,delta})=>{
+      const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k);
+      edges.push({a:e.id,b:o.id,type:'bridge',axis,delta});
+    });
   });
   // Degree per node, used to decide which labels earn a permanent spot.
   edges.forEach(e => { if(byId[e.a]) byId[e.a].degree++; if(byId[e.b]) byId[e.b].degree++; });
@@ -465,11 +476,32 @@ function labelVisible(n, spotlight) {
   return false;
 }
 
+// ---------- Edge hover/click: full-cluster highlight + connection panel ----------
+let hoveredEdge = null, focusedEdge = null;
+function edgeKey(e){ return [e.a,e.b,e.type,e.axis||''].join('|'); }
+
+// The set of ALL entities (not just this edge's two endpoints) linked by the same
+// specific pattern this edge represents — a shared tag, a shared director/writer,
+// or proximity on the same continuum axis.
+function clusterForEdge(e) {
+  const pool = activeEntities();
+  const set = new Set([e.a, e.b]);
+  if (e.type === 'diag' && e.auteur) {
+    pool.forEach(o => { if (((o.meta&&o.meta.auteurs)||[]).includes(e.auteur)) set.add(o.id); });
+  } else if (e.type === 'ent' && e.tags && e.tags.length) {
+    pool.forEach(o => { if ((o.tags||[]).some(t => e.tags.includes(t))) set.add(o.id); });
+  } else if (e.type === 'bridge' && e.axis) {
+    const v = byId[e.a] && byId[e.a].continuum ? byId[e.a].continuum[e.axis] : undefined;
+    if (v !== undefined) pool.forEach(o => { const ov = o.continuum && o.continuum[e.axis]; if (ov!==undefined && Math.abs(ov-v) < 0.07) set.add(o.id); });
+  }
+  return set;
+}
+
 function drawGraph() {
   const edgeLayer=document.getElementById('edgeLayer'), nodeLayer=document.getElementById('nodeLayer');
   edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
-  const spotlightId = hoveredId || focusedId;
-  const spotlight = neighborSet(spotlightId);
+  const activeEdge = focusedEdge || hoveredEdge;
+  const spotlight = activeEdge ? clusterForEdge(activeEdge) : neighborSet(hoveredId || focusedId);
 
   edges.forEach(e=>{
     const a=byId[e.a], b=byId[e.b]; if(!a||!b) return;
@@ -478,8 +510,20 @@ function drawGraph() {
     const stroke = e.type==='diag'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
     const dash = e.type==='ent'?'4,3': e.type==='bridge'?'1.5,2.5':'none';
     const dimmed = spotlight && !(spotlight.has(e.a) && spotlight.has(e.b));
-    const opacity = !visible ? 0 : (dimmed ? 0.08 : (e.type==='diag'?0.75:0.55));
-    edgeLayer.appendChild(el('line',{class:'gedge',x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke,'stroke-width':e.type==='diag'?1.6:1.3,'stroke-dasharray':dash,opacity}));
+    const isThisEdge = activeEdge && edgeKey(activeEdge) === edgeKey(e);
+    const opacity = !visible ? 0 : (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='diag'?0.75:0.55)));
+    const width = isThisEdge ? (e.type==='diag'?2.6:2.2) : (e.type==='diag'?1.6:1.3);
+    edgeLayer.appendChild(el('line',{class:'gedge',x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke,'stroke-width':width,'stroke-dasharray':dash,opacity}));
+    if (visible) {
+      // Invisible wide hit-line layered over the thin visible one — the real line is too
+      // thin to hover/click reliably, this gives it a comfortable target without changing
+      // how it looks.
+      const hit = el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:'transparent','stroke-width':12,style:'cursor:pointer;pointer-events:stroke;'});
+      hit.onmouseenter=()=>{ hoveredEdge=e; hoveredId=null; drawGraph(); };
+      hit.onmouseleave=()=>{ hoveredEdge=null; drawGraph(); };
+      hit.onclick=(ev)=>{ ev.stopPropagation(); selectEdgeConnection(e); };
+      edgeLayer.appendChild(hit);
+    }
   });
   nodes.forEach(n=>{
     const dimmed = spotlight && !spotlight.has(n.id);
@@ -490,7 +534,7 @@ function drawGraph() {
       const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
     }
     g.onclick=()=>selectEntity(n.id);
-    g.onmouseenter=()=>{ hoveredId=n.id; drawGraph(); };
+    g.onmouseenter=()=>{ hoveredId=n.id; hoveredEdge=null; drawGraph(); };
     g.onmouseleave=()=>{ hoveredId=null; drawGraph(); };
     nodeLayer.appendChild(g);
   });
@@ -594,45 +638,117 @@ function continuumHtml(e){
 async function selectEntity(id){
   focusedId = id;
   activeLensTag = null;
+  focusedEdge = null;
   drawGraph();
   let e = byId[id];
-  try { e = await api('/api/ontology/entities/' + id); } catch(err) {}
-  const color = TYPE_COLORS[e.type] || '#8a8378';
-  const sub = e.type==='character' ? ((e.meta&&e.meta.filmTitle)||'') + (e.meta&&e.meta.filmYear? ' ('+e.meta.filmYear+')':'')
-    : e.type==='film' ? ((e.meta&&e.meta.year)||'') : 'Country';
-  let html = `<div class="card" style="background:linear-gradient(160deg, ${color}, #2a2621);">
-    <span class="type-badge">${e.type}</span>
-    <div class="name">${e.name}</div>
-    <div class="sub">${sub}</div>
-  </div>`;
-  const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
-  if (lensText) html += `<div class="note">${lensText}</div>`;
-  else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
-  if (e.tags && e.tags.length) {
-    html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
-    html += `<div id="lensHost"></div>`;
+  try {
+    const r = await api('/api/ontology/entities/' + id);
+    // Defensive: this endpoint may return the entity directly or wrapped as {entity:...}
+    // (every other boot endpoint uses a wrapped shape) — accept either so a shape change
+    // server-side can't silently blank out the whole detail panel again.
+    const fetched = (r && r.entity) ? r.entity : r;
+    if (fetched && fetched.id) e = fetched;
+  } catch(err) { console.error('selectEntity fetch failed, using local fallback:', err); }
+  if (!e) { document.getElementById(activeCardHost).innerHTML = '<div class="empty">Could not load this entity.</div>'; return; }
+  try {
+    const color = TYPE_COLORS[e.type] || '#8a8378';
+    const sub = e.type==='character' ? ((e.meta&&e.meta.filmTitle)||'') + (e.meta&&e.meta.filmYear? ' ('+e.meta.filmYear+')':'')
+      : e.type==='film' ? ((e.meta&&e.meta.year)||'') : 'Country';
+    let html = `<div class="card" style="background:linear-gradient(160deg, ${color}, #2a2621);">
+      <span class="type-badge">${e.type}</span>
+      <div class="name">${e.name}</div>
+      <div class="sub">${sub}</div>
+    </div>`;
+    const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
+    if (lensText) html += `<div class="note">${lensText}</div>`;
+    else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
+    if (e.tags && e.tags.length) {
+      html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
+      html += `<div id="lensHost"></div>`;
+    }
+    html += continuumHtml(e);
+    html += `<div class="section-title" style="color:#5c554b;">📚 Books reflecting this pattern</div><div id="booksHost"><div class="empty">Loading…</div></div>`;
+
+    const pool = activeEntities();
+    const diag = computeDiagonal(e, pool);
+    const diagIds = new Set(diag.map(o=>o.id));
+    const ent = computeEntanglement(e, pool, diagIds);
+    const bridges = bridgesOn ? computeBridges(e, pool) : [];
+
+    html += `<div class="section-title diag">Diagonal (${diag.length})</div>`;
+    html += diag.length ? diag.slice(0,6).map(o=>`<div class="conn" data-goto="${o.id}"><span class="dot diag"></span>${o.name}</div>`).join('') : '<div class="empty">None.</div>';
+    html += `<div class="section-title ent">Entanglement (${ent.length})</div>`;
+    html += ent.length ? ent.map(({o,shared})=>`<div class="conn" data-goto="${o.id}"><span class="dot ent"></span>${o.name} — ${shared.join(', ')}</div>`).join('') : '<div class="empty">None.</div>';
+    html += `<div class="section-title bridge">Continuum bridges (${bridges.length})</div>`;
+    html += bridges.length ? bridges.map(({o,axis})=>`<div class="conn" data-goto="${o.id}"><span class="dot bridge"></span>${o.name} (${o.type}) — close on ${AXES[axis]?AXES[axis].name:axis}</div>`).join('') : '<div class="empty">None within range.</div>';
+
+    document.getElementById(activeCardHost).innerHTML = html;
+    document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
+    document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
+
+    loadBooksFor(e.id); // auto-loads (cached server-side after the first real generation per entity)
+  } catch (err) {
+    console.error('selectEntity render failed:', err);
+    document.getElementById(activeCardHost).innerHTML = `<div class="empty">Something went wrong rendering this entity (${err.message}).</div>`;
   }
-  html += continuumHtml(e);
-  html += `<div class="section-title" style="color:#5c554b;">📚 Books reflecting this pattern</div><div id="booksHost"><div class="empty">Loading…</div></div>`;
+}
 
-  const pool = activeEntities();
-  const diag = computeDiagonal(e, pool);
-  const diagIds = new Set(diag.map(o=>o.id));
-  const ent = computeEntanglement(e, pool, diagIds);
-  const bridges = bridgesOn ? computeBridges(e, pool) : [];
-
-  html += `<div class="section-title diag">Diagonal (${diag.length})</div>`;
-  html += diag.length ? diag.slice(0,6).map(o=>`<div class="conn" data-goto="${o.id}"><span class="dot diag"></span>${o.name}</div>`).join('') : '<div class="empty">None.</div>';
-  html += `<div class="section-title ent">Entanglement (${ent.length})</div>`;
-  html += ent.length ? ent.map(({o,shared})=>`<div class="conn" data-goto="${o.id}"><span class="dot ent"></span>${o.name} — ${shared.join(', ')}</div>`).join('') : '<div class="empty">None.</div>';
-  html += `<div class="section-title bridge">Continuum bridges (${bridges.length})</div>`;
-  html += bridges.length ? bridges.map(({o,axis})=>`<div class="conn" data-goto="${o.id}"><span class="dot bridge"></span>${o.name} (${o.type}) — close on ${AXES[axis]?AXES[axis].name:axis}</div>`).join('') : '<div class="empty">None within range.</div>';
+// Clicking an edge: explain the pattern it represents in plain language, then let the
+// user click into any entity in the highlighted cluster to see that entity's own read.
+async function selectEdgeConnection(e) {
+  focusedEdge = e; hoveredEdge = null; focusedId = null; activeLensTag = null;
+  drawGraph();
+  const cluster = Array.from(clusterForEdge(e)).map(id => byId[id]).filter(Boolean);
+  const kindLabel = e.type === 'diag' ? 'Shared author' : e.type === 'ent' ? 'Shared pattern' : 'Continuum proximity';
+  let html = `<div class="section-title" style="color:#5c554b;">Connection</div>`;
+  html += `<div class="lens-panel"><div class="lens-tag">${kindLabel}</div><div id="edgeExplainHost"><div class="empty">Loading…</div></div></div>`;
+  html += `<div class="section-title" style="color:#5c554b;">Entities in this cluster (${cluster.length})</div>`;
+  html += cluster.length
+    ? cluster.map(o => `<div class="conn" data-edge-goto="${o.id}"><span class="dot ${e.type}"></span>${o.name} <span style="opacity:.6;">(${o.type})</span></div>`).join('')
+    : '<div class="empty">None.</div>';
 
   document.getElementById(activeCardHost).innerHTML = html;
-  document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
-  document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
+  document.querySelectorAll('[data-edge-goto]').forEach(elx => {
+    elx.onclick = async () => {
+      const entityId = elx.getAttribute('data-edge-goto');
+      await selectEntity(entityId);
+      // For entanglement edges, auto-open the entity-specific read of the shared tag —
+      // the whole point of drilling into the cluster is seeing the entity-specific take,
+      // not the generic pattern description repeated.
+      if (e.type === 'ent' && e.tags && e.tags.length) {
+        const tagEl = document.querySelector(`.tag[data-tag="${e.tags[0]}"]`);
+        const ent = byId[entityId];
+        if (tagEl && ent) toggleTagLens(ent, e.tags[0], tagEl);
+      }
+    };
+  });
 
-  loadBooksFor(e.id); // auto-loads (cached server-side after the first real generation per entity)
+  const explainHost = document.getElementById('edgeExplainHost');
+  if (e.type === 'diag') {
+    explainHost.innerHTML = `Every entity here shares the same director/writer (<b>${e.auteur || 'unknown'}</b>) — an authorial fingerprint running across otherwise unrelated stories.`;
+    return;
+  }
+  if (e.type === 'bridge') {
+    const axis = AXES[e.axis];
+    explainHost.innerHTML = axis
+      ? `These entities land within a narrow band on the same continuum — <b>${axis.name}</b> (between "${axis.low}" and "${axis.high}") — a cross-type echo of the same underlying position, regardless of scale.`
+      : `These entities sit close together on the same continuum axis, a cross-type echo of the same underlying position.`;
+    return;
+  }
+  // 'ent' — fetch the general tag-pattern explanation from the backend, cached per tag.
+  const tag = (e.tags && e.tags[0]) || null;
+  if (!tag) { explainHost.innerHTML = 'Shared tag pattern.'; return; }
+  try {
+    const resp = await fetch(API_BASE + '/api/ontology/tags/' + encodeURIComponent(tag) + '/explain', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN }, body: '{}',
+    });
+    const data = await resp.json();
+    if (focusedEdge !== e) return; // user moved on before this resolved
+    explainHost.innerHTML = data.error ? `Could not generate an explanation: ${data.error}` : data.explanation;
+  } catch (err) {
+    if (focusedEdge !== e) return;
+    explainHost.innerHTML = 'Could not reach the server.';
+  }
 }
 
 // Tags as lenses: clicking a tag examines the currently-selected entity specifically

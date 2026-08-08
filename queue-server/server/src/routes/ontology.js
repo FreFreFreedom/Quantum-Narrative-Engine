@@ -2,11 +2,13 @@ import { Router } from 'express';
 import * as q from '../services/ontologyQuery.js';
 import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
+import { makeTagPatternHandler } from '../services/tagPattern.js';
 
 export function ontologyRoutes(db) {
   const router = Router();
   const getBooks = makeBooksHandler(db);
   const getTagLens = makeTagLensHandler(db);
+  const getTagPattern = makeTagPatternHandler(db);
 
   router.get('/entities', (req, res) => {
     const { type, cluster, tag, name, grounded } = req.query;
@@ -43,6 +45,12 @@ export function ontologyRoutes(db) {
     if (!entity) return res.status(404).json({ error: 'not_found' });
     const tag = req.body?.tag;
     const out = await getTagLens(entity, tag, { force: !!req.body?.force });
+    if (out.error) return res.status(out.error === 'invalid_tag' ? 400 : 500).json(out);
+    res.json(out);
+  });
+
+  router.post('/tags/:tag/explain', async (req, res) => {
+    const out = await getTagPattern(req.params.tag, { force: !!req.body?.force });
     if (out.error) return res.status(out.error === 'invalid_tag' ? 400 : 500).json(out);
     res.json(out);
   });

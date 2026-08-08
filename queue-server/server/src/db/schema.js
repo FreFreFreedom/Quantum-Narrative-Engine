@@ -27,6 +27,7 @@ export function openDb() {
   initBooksSchema(db);
   initArchitectureSchema(db);
   initTagLensSchema(db);
+  initTagPatternSchema(db);
   return db;
 }
 
@@ -269,6 +270,19 @@ export function initTagLensSchema(db) {
       lens_text TEXT NOT NULL,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       PRIMARY KEY (entity_id, tag)
+    )
+  `);
+}
+
+// ─── Tag PATTERN explanations: what a tag means as a general pattern, not tied to
+// any one entity — this is what an edge's connection panel shows before you drill
+// into how a specific entity expresses it (that's entity_tag_lenses instead). ───
+export function initTagPatternSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tag_pattern_explanations (
+      tag TEXT PRIMARY KEY,
+      explanation TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
 }
