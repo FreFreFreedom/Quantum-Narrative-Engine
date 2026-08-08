@@ -13,16 +13,15 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 - Knowledge base (`knowledge_docs` table) seeded from the real reference documents (ontology doc, films master list, archive notes) so the embedded assistant can pull from them on demand.
 - Book-recommendation endpoint — suggests fiction/nonfiction reflecting an entity's archetypal pattern, cached per entity.
 
-**Four self-contained HTML apps**, also live as reopenable Cowork artifacts:
+**One unified app** (`fmcns_navigator.html`, Cowork artifact `fmcns-fractal-navigator`) — this is now the single app going forward, with three modes:
 
-1. **fmcns_navigator.html** (`fmcns-fractal-navigator`) — the current main app. One live graph fetched from the backend, covering characters, films, and countries together. Diagonal edges (shared director/writer), entanglement edges (shared tags), and continuum-proximity bridges (cross-type only — the Scale Echo mechanism) all render on one canvas. Entity panel shows a pattern-lens description (not generic plot/country facts) and a book-recommendation button. Now also holds a second mode, the **Architecture Navigator**: a meta-view of FMCNS's own build (4 territories, 12 components, honest WHAT/WHY/NOW/NEXT per component, 3 view modes — Architecture/Development/Evolution — click-to-target into the chat assistant or the task queue).
-2. **fmcns_char_navigator.html** (`fmcns-character-navigator`) — character-primary view of the 47 archive-grounded films (clusters I–II), 51 characters as the atomic unit. Still uses static embedded data, not the live backend.
-3. **fmcns_film_corpus.html** (`fmcns-film-recommendation-prototype`) — all 199 films across 12 clusters, film-primary, widest single view of the corpus. Static embedded data.
-4. **fmcns_map_prototype.html** (`fmcns-geographic-map-prototype`) — world map, real boundaries, 10 hand-scored countries on the Guilt-as-Engine axis. Static embedded data.
+1. **Content** — one live graph fetched from the backend, covering characters, films, and countries together. Diagonal edges (shared director/writer), entanglement edges (shared tags), and continuum-proximity bridges (cross-type only — the Scale Echo mechanism) all render on one canvas. Entity panel shows a pattern-lens description (not generic plot/country facts) and a book-recommendation button.
+2. **Map** — real country-boundary geography (Natural Earth data), merged in from the formerly-standalone map prototype. Reads live country entities and shares the same rich detail panel as Content mode (tags, continuum bars, connections, book recs) via a shared renderer keyed off which mode is active.
+3. **Architecture Navigator** — a meta-view of FMCNS's own build: 4 territories, 12 components, honest WHAT/WHY/NOW/NEXT per component, 3 view modes (Architecture/Development/Evolution), click-to-target into the chat assistant or the task queue.
 
-All four have the embedded chat assistant widget attached (bottom-right).
+The embedded chat assistant widget is attached to this app (bottom-right). It also had a real bug this round: a stale session id cached in the browser (surviving a Railway DB reset on redeploy) caused every message to fail with "invalid_session." Fixed — the client now detects that error, silently mints a fresh session, and retries once.
 
-**Known inconsistency, not yet resolved:** only the Fractal Navigator reads live from the backend. The other three still run on static JSON baked into the HTML at build time — they don't reflect DB edits (e.g. the country-tags fix below) until manually regenerated.
+**Two older prototypes are now superseded and no longer maintained:** `fmcns_char_navigator.html` (`fmcns-character-navigator`) and `fmcns_film_corpus.html` (`fmcns-film-recommendation-prototype`). Their content already exists live in Content mode — 51 grounded characters, and all 199 films are visible by toggling "Films (containers)." They're left in the repo/artifacts for reference but shouldn't be edited going forward.
 
 ## Archive-grounding coverage tracker
 
@@ -47,7 +46,6 @@ All four have the embedded chat assistant widget attached (bottom-right).
 ## Known gaps / honest caveats
 
 - **Task queue has no real execution path.** `taskRunner.js`/`promptQueue.js` work end-to-end against a mock CLI locally, but nothing authenticates a real Claude Code CLI on the machine that would actually run queued work. This is the single biggest open blocker on the queue being useful.
-- **Three of four apps still run on static embedded data**, not the live backend — see inconsistency note above.
 - **76% of the film corpus is still reasoned, not grounded** — same as before, no archive-mining done this round.
 - **GraphRAG and a formal Pattern Engine don't exist** — the "Architecture Navigator" audit (see below) made this explicit for the first time rather than leaving it implied.
 - **Fractal Zoom isn't actually recursive yet** — camera zoom/pan only, no per-node internal graph revealed on zoom-in, except as a first proof-of-concept in the Architecture Navigator's own territory→component drill-down.
@@ -59,8 +57,7 @@ All four have the embedded chat assistant widget attached (bottom-right).
 
 - Wire a real, authenticated Claude Code CLI into `taskRunner.js` so the task queue actually executes — currently the largest concrete blocker
 - Archive-mine the remaining 10 clusters (152 films), one at a time, same methodology as I/II
-- Move the three older apps (map, film corpus, character navigator) onto the live backend instead of static embedded data
-- Extract the entanglement/diagonal/bridge computation out of client-side JS (currently reimplemented separately in each app) into one shared backend service
+- Extract the entanglement/diagonal/bridge computation out of client-side JS into one shared backend service (still duplicated between Content mode's graph and Map mode, even within the now-unified app)
 - Formalize a first named Pattern (beyond tag-overlap) as a Pattern Engine proof of concept
 - First version of GraphRAG (static community detection over existing tag/continuum data)
 - Scale Echo v1 — make continuum-proximity bridges scale-aware, not just axis-proximity
