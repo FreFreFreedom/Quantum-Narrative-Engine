@@ -574,7 +574,17 @@ function drawGraph() {
     if (labelVisible(n, spotlight)) {
       const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
     }
-    g.onclick=()=>selectEntity(n.id);
+    g.onclick=()=>{
+      // Instant, synchronous, on-screen proof the click was received — before anything
+      // async or network-dependent runs. If this never appears, the click event itself
+      // isn't reaching this handler. If it appears and then an error shows instead of
+      // the real panel, selectEntity is throwing somewhere past this point.
+      const host = document.getElementById(activeCardHost);
+      if (host) host.innerHTML = '<div style="padding:14px;background:#c0392b;color:#fff;font-weight:600;border-radius:6px;">Click registered — loading ' + n.name + '…</div>';
+      selectEntity(n.id).catch(err => {
+        if (host) host.innerHTML = '<div style="padding:14px;background:#c0392b;color:#fff;">selectEntity error: ' + (err && err.message) + '</div>';
+      });
+    };
     g.onmouseenter=()=>{ hoveredId=n.id; hoveredEdge=null; drawGraph(); };
     g.onmouseleave=()=>{ hoveredId=null; drawGraph(); };
     nodeLayer.appendChild(g);
