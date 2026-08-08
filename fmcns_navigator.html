@@ -413,38 +413,53 @@ let focusedId=null, hoveredId=null, bridgesOn=true, showAllConnections=false;
 const camera={x:0,y:0,scale:1};
 let simRunning=false;
 
-// Cluster-zone layout: each cluster gets a fixed centroid on a ring, so same-cluster
-// nodes drift toward the same region (visible separation between groups) while local
-// repulsion still keeps them from overlapping each other.
-const CLUSTER_ORDER = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','other'];
-const CLUSTER_CENTROIDS = {};
-(function computeCentroids(){
-  const cx=GVBW/2, cy=GVBH/2, R=Math.min(GVBW,GVBH)*0.4;
-  CLUSTER_ORDER.forEach((code,i) => {
-    const a = (i/CLUSTER_ORDER.length) * Math.PI*2 - Math.PI/2;
+// Cluster-zone layout: each cluster that actually has entities in the CURRENT active
+// pool gets a centroid on a ring, so same-cluster nodes drift toward the same region.
+// Recomputed per pool (not fixed once for all 12 clusters) — with the default filters
+// only clusters I/II/III have any grounded characters, so the old fixed-for-all-12
+// layout squeezed everything into 3 of 12 ring slots while 9 slots sat empty, wasting
+// most of the canvas. Only clusters with real members now get a slot, so the ones that
+// exist spread across the FULL canvas instead.
+const CLUSTER_ORDER_ALL = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','other'];
+let CLUSTER_CENTROIDS = {};
+let activeClusterCodes = [];
+function computeCentroids(pool) {
+  const present = new Set();
+  pool.forEach(e => { const code=(e.clusters||[])[0]; present.add(code && CLUSTER_ORDER_ALL.includes(code) ? code : 'other'); });
+  activeClusterCodes = CLUSTER_ORDER_ALL.filter(c => present.has(c));
+  if (!activeClusterCodes.length) activeClusterCodes = ['other'];
+  CLUSTER_CENTROIDS = {};
+  const cx=GVBW/2, cy=GVBH/2;
+  // A single cluster gets the dead center; otherwise spread on a ring sized so
+  // clusters don't crowd each other regardless of how many are actually present.
+  const R = activeClusterCodes.length <= 1 ? 0 : Math.min(GVBW,GVBH)*0.42;
+  activeClusterCodes.forEach((code,i) => {
+    const a = (i/activeClusterCodes.length) * Math.PI*2 - Math.PI/2;
     CLUSTER_CENTROIDS[code] = { x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R };
   });
-})();
+}
 function centroidFor(e) {
   const code = (e.clusters||[])[0];
-  return CLUSTER_CENTROIDS[code] || CLUSTER_CENTROIDS.other;
+  return CLUSTER_CENTROIDS[code] || CLUSTER_CENTROIDS.other || {x:GVBW/2,y:GVBH/2};
 }
 
-// Faint, non-interactive region labels at each cluster's centroid — orientation cues
-// so it's obvious at a glance which loose region of the canvas belongs to which
+// Faint, non-interactive region labels at each active cluster's centroid — orientation
+// cues so it's obvious at a glance which loose region of the canvas belongs to which
 // cluster, without adding any new clickable surface (pointer-events:none throughout,
-// so this can never interfere with node/edge clicks). Static positions, rendered once.
+// so this can never interfere with node/edge clicks). Only draws zones that actually
+// have members in the current pool — recomputed alongside the layout, not fixed.
 function renderZoneLabels() {
   const layer = document.getElementById('zoneLayer');
   if (!layer) return;
   layer.innerHTML = '';
   layer.setAttribute('style', 'pointer-events:none;');
-  CLUSTER_ORDER.forEach(code => {
+  const zoneR = activeClusterCodes.length <= 1 ? 260 : 150;
+  activeClusterCodes.forEach(code => {
     if (code === 'other') return;
     const c = CLUSTER_CENTROIDS[code];
     const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
-    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:150,fill:CLUSTER_COLORS[code]||'#c9c3b8',opacity:0.05}));
-    layer.appendChild(el('text',{x:c.x,y:c.y-158,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'#8a8378')+';opacity:0.5;letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
+    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR,fill:CLUSTER_COLORS[code]||'#c9c3b8',opacity:0.05}));
+    layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-8,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'#8a8378')+';opacity:0.5;letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
   });
 }
 
@@ -491,6 +506,7 @@ function computeBridges(e, pool) {
 
 function buildGraph() {
   const pool = activeEntities();
+  computeCentroids(pool);
   nodes = pool.map(e => {
     const c = centroidFor(e);
     return { ...e, x: c.x+(Math.random()-.5)*70, y: c.y+(Math.random()-.5)*70, vx:0, vy:0, degree:0, big:false };
