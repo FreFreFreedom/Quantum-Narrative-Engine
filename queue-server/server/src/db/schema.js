@@ -285,6 +285,12 @@ export function initTagPatternSchema(db) {
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
+  // One-time-per-boot cleanup: explanations generated under the old, longer
+  // prompt (2-4 sentences / ~350 tokens) are stale now that the prompt is capped
+  // to 2 sentences / 40-55 words. Purge anything still long so it lazily
+  // regenerates (short, cheap) next time that tag's edge is clicked. Idempotent —
+  // deletes zero rows once everything's already short.
+  db.exec(`DELETE FROM tag_pattern_explanations WHERE length(explanation) > 300`);
 }
 
 // ─── Architecture Navigator: live component state, evolution ladders, generated
