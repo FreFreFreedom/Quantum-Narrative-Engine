@@ -15,6 +15,10 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .cluster-item { padding:7px 8px; border-radius:6px; cursor:pointer; margin-bottom:2px; font-size:12px; }
 .cluster-item:hover { background:#f2efe9; }
 .cluster-item.active { background:#eee9df; font-weight:600; }
+.pattern-chiplist { display:flex; flex-wrap:wrap; gap:5px; }
+.pattern-chip { padding:4px 8px; border-radius:11px; cursor:pointer; font-size:10.5px; background:#f2efe9; color:#5c554b; border:1px solid transparent; }
+.pattern-chip:hover { background:#eee9df; }
+.pattern-chip.active { background:#3f6b85; color:#fff; }
 .searchbox { width:100%; padding:6px 8px; border:1px solid #d9d3c9; border-radius:6px; font-size:12px; margin-bottom:6px; }
 .mid { flex:1; display:flex; flex-direction:column; min-width:0; }
 .header { padding:10px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
@@ -187,6 +191,8 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
     <input class="searchbox" id="search" placeholder="Search entities...">
     <h2>Clusters</h2>
     <div id="clusterList"></div>
+    <h2>Patterns</h2>
+    <div id="patternList" class="pattern-chiplist"></div>
   </div>
   <div class="mid">
     <div class="header">
@@ -317,6 +323,26 @@ function renderClusterList() {
     div.textContent = code + '. ' + c.name.split(',')[0] + ' (' + n + ')';
     div.onclick = () => { activeCluster = activeCluster === code ? null : code; renderClusterList(); layoutAndDraw(); };
     el.appendChild(div);
+  });
+}
+
+// Clicking a pattern (tag) here focuses the graph on every entity carrying it and
+// fades the rest — the same spotlight treatment edges get, but reachable directly
+// instead of needing to first find an edge that happens to represent that pattern.
+let focusedTag = null;
+function renderPatternList() {
+  const el = document.getElementById('patternList');
+  if (!el) return;
+  const counts = {};
+  activeEntities().forEach(e => (e.tags||[]).forEach(t => { counts[t] = (counts[t]||0) + 1; }));
+  const top = Object.entries(counts).filter(([,n]) => n >= 2).sort((a,b) => b[1]-a[1]).slice(0, 18);
+  el.innerHTML = '';
+  top.forEach(([tag, n]) => {
+    const chip = document.createElement('div');
+    chip.className = 'pattern-chip' + (focusedTag === tag ? ' active' : '');
+    chip.textContent = tag + ' (' + n + ')';
+    chip.onclick = () => { focusedTag = focusedTag === tag ? null : tag; renderPatternList(); drawGraph(); };
+    el.appendChild(chip);
   });
 }
 document.getElementById('search').addEventListener('input', () => layoutAndDraw());
@@ -501,7 +527,15 @@ function drawGraph() {
   const edgeLayer=document.getElementById('edgeLayer'), nodeLayer=document.getElementById('nodeLayer');
   edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
   const activeEdge = focusedEdge || hoveredEdge;
-  const spotlight = activeEdge ? clusterForEdge(activeEdge) : neighborSet(hoveredId || focusedId);
+  // Priority: an actively hovered/clicked edge > a clicked pattern chip > an axis-based
+  // color mode (only entities scored on that axis count as "in the pattern") > the
+  // plain hover/click neighbor-highlight. Only one spotlight is active at a time.
+  const axisMode = colorMode !== 'type' && colorMode !== 'cluster';
+  let spotlight;
+  if (activeEdge) spotlight = clusterForEdge(activeEdge);
+  else if (focusedTag) spotlight = new Set(nodes.filter(n => (n.tags||[]).includes(focusedTag)).map(n => n.id));
+  else if (axisMode) spotlight = new Set(nodes.filter(n => n.continuum && n.continuum[colorMode] !== undefined).map(n => n.id));
+  else spotlight = neighborSet(hoveredId || focusedId);
 
   edges.forEach(e=>{
     const a=byId[e.a], b=byId[e.b]; if(!a||!b) return;
@@ -525,9 +559,13 @@ function drawGraph() {
       edgeLayer.appendChild(hit);
     }
   });
+  // A deliberately clicked pattern (tag chip, edge, or axis color mode) fades the rest
+  // of the graph harder than a passing hover does — the point is to isolate the pattern,
+  // not just nudge attention toward it.
+  const isPatternFocus = !!(activeEdge || focusedTag || axisMode);
   nodes.forEach(n=>{
     const dimmed = spotlight && !spotlight.has(n.id);
-    const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':''),opacity: dimmed?0.15:1});
+    const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':''),opacity: dimmed?(isPatternFocus?0.06:0.15):1});
     const r = n.id===focusedId?11:(n.type==='country'?8:6);
     g.appendChild(el('circle',{cx:n.x,cy:n.y,r,fill:nodeColor(n)}));
     if (labelVisible(n, spotlight)) {
@@ -566,7 +604,7 @@ function runSim(){
   requestAnimationFrame(step);
 }
 
-function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); }
+function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); renderPatternList(); }
 
 function renderLegend(){
   let html = '<div class="section-label">Connections</div>';
@@ -610,12 +648,29 @@ function setupZoomPan(){
   const svg=document.getElementById('graphSvg');
   let panning=false,lastX=0,lastY=0;
   let zoomLabelTimer=null;
+  // macOS trackpads report a pinch gesture as a wheel event with ctrlKey set (the
+  // browser's own convention, not something we opt into) — so ctrlKey means "zoom",
+  // and a plain two-finger swipe (no ctrlKey, real deltaX+deltaY) means "pan." A mouse
+  // wheel has no ctrlKey either, so it falls through to the same zoom path as pinch,
+  // matching prior scroll-to-zoom behavior for non-trackpad users.
   svg.addEventListener('wheel',e=>{
     e.preventDefault();
-    camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.1:.9)));
-    applyCamera();
-    clearTimeout(zoomLabelTimer);
-    zoomLabelTimer=setTimeout(drawGraph, 120); // re-evaluate zoom-based label reveal, debounced
+    if (e.ctrlKey) {
+      camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.06:0.94)));
+      applyCamera();
+      clearTimeout(zoomLabelTimer);
+      zoomLabelTimer=setTimeout(drawGraph, 120); // re-evaluate zoom-based label reveal, debounced
+    } else if (e.deltaX !== 0) {
+      // Two-finger horizontal component present — treat as a trackpad pan, not a zoom.
+      camera.x -= e.deltaX; camera.y -= e.deltaY; applyCamera();
+    } else {
+      // Plain vertical wheel (mouse or trackpad scroll with no horizontal component) —
+      // keep the original scroll-to-zoom behavior so mouse users aren't broken.
+      camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.1:.9)));
+      applyCamera();
+      clearTimeout(zoomLabelTimer);
+      zoomLabelTimer=setTimeout(drawGraph, 120);
+    }
   },{passive:false});
   svg.addEventListener('mousedown',e=>{ panning=true; lastX=e.clientX; lastY=e.clientY; svg.classList.add('panning'); });
   window.addEventListener('mousemove',e=>{ if(!panning)return; camera.x+=(e.clientX-lastX); camera.y+=(e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; applyCamera(); });
