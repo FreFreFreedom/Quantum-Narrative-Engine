@@ -72,6 +72,7 @@ export function migrateOntology(db) {
   for (const c of seed.countries) {
     const id = 'country_' + c.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     upsertEntity(db, { id, type: 'country', name: c.name, scale: 'national', grounded: true, meta: { description: c.description || '' } });
+    setTags(db, id, c.tags || []);
     setContinuum(db, id, { guilt_as_engine: c.guilt_as_engine });
   }
   return { films: Object.keys(seed.filmsIndex).length, characters: seed.characters.length, countries: seed.countries.length };
