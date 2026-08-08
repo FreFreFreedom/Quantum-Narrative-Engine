@@ -739,7 +739,7 @@ function setupZoomPan(){
       const rect = svg.getBoundingClientRect();
       const mx = e.clientX - rect.left, my = e.clientY - rect.top;
       const oldScale = camera.scale;
-      const newScale = Math.max(.3, Math.min(4, oldScale * (e.deltaY < 0 ? 1.06 : 0.94)));
+      const newScale = Math.max(.3, Math.min(16, oldScale * (e.deltaY < 0 ? 1.06 : 0.94)));
       camera.x = mx - ((mx - camera.x) / oldScale) * newScale;
       camera.y = my - ((my - camera.y) / oldScale) * newScale;
       camera.scale = newScale;
