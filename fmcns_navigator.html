@@ -880,6 +880,13 @@ function openChatWithPrompt(text) {
     reader.readAsDataURL(f);
   };
 
+  async function sendMessageOnce(sid, text, attachments) {
+    return api('/api/chat/message', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId: sid, text: text, attachments: attachments }),
+    });
+  }
+
   async function send() {
     var text = input.value.trim();
     if (!text && !pendingAttachment) return;
@@ -891,12 +898,18 @@ function openChatWithPrompt(text) {
     var attachments = pendingAttachment ? [pendingAttachment] : [];
     pendingAttachment = null;
     attachLabel.textContent = '';
+    var msgText = text || '(see attached PDF)';
     try {
-      var resp = await api('/api/chat/message', {
-        method: 'POST',
-        body: JSON.stringify({ sessionId: sid, text: text || '(see attached PDF)', attachments: attachments }),
-      });
+      var resp = await sendMessageOnce(sid, msgText, attachments);
       var data = await resp.json();
+      if (data.error === 'invalid_session') {
+        // Stale session from before a backend restart (Railway resets the DB on redeploy).
+        // Clear it, mint a fresh one, and retry silently before bothering the user.
+        setSessionId('');
+        sid = await ensureSession();
+        resp = await sendMessageOnce(sid, msgText, attachments);
+        data = await resp.json();
+      }
       pending.remove();
       if (data.error) addMsg('assistant', 'Error: ' + (data.message || data.error));
       else addMsg('assistant', data.text);
