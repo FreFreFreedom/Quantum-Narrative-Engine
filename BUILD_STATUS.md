@@ -13,6 +13,7 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 - Knowledge base (`knowledge_docs` table) seeded from the real reference documents (ontology doc, films master list, archive notes) so the embedded assistant can pull from them on demand.
 - Book-recommendation endpoint — suggests fiction/nonfiction reflecting an entity's archetypal pattern, cached per entity. Now auto-loads on entity select instead of requiring a button click.
 - Tag-lens endpoint — click any tag on a selected entity's panel to see that entity examined specifically through that tag (not a generic tag definition), generated once and cached per (entity, tag) pair.
+- Book-recommendation endpoint enriched — now suggests 10-12 books per entity (up from 5-6) and looks each one up against the public Google Books API (no account/approval needed, unlike Amazon's Product Advertising API) for a real cover thumbnail, publish year, and a link to the book. Book cards in the entity panel now show the cover, a clickable title, and the year alongside the author.
 
 **One unified app** (`fmcns_navigator.html`, Cowork artifact `fmcns-fractal-navigator`) — this is now the single app going forward, with three modes:
 
