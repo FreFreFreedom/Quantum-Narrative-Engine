@@ -34,7 +34,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .gnode { cursor:pointer; transition:opacity .18s ease; }
 .gnode circle { stroke:#fbfaf8; stroke-width:1.3; }
 .gnode.focused circle { stroke:#2a2621; stroke-width:3; }
-.gnode text { font-size:9px; fill:#2a2621; text-anchor:middle; pointer-events:none; }
+.gnode text { font-size:9px; fill:#2a2621; text-anchor:middle; cursor:pointer; }
 .gedge { transition:opacity .18s ease; }
 .legend { position:absolute; left:12px; bottom:12px; background:rgba(255,255,255,.92); border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
 .legend .section-label { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:#8a8378; margin:7px 0 4px; }
@@ -652,27 +652,30 @@ function setupZoomPan(){
   let panning=false,lastX=0,lastY=0;
   let zoomLabelTimer=null;
   // macOS trackpads report a pinch gesture as a wheel event with ctrlKey set (the
-  // browser's own convention, not something we opt into) — so ctrlKey means "zoom",
-  // and a plain two-finger swipe (no ctrlKey, real deltaX+deltaY) means "pan." A mouse
-  // wheel has no ctrlKey either, so it falls through to the same zoom path as pinch,
-  // matching prior scroll-to-zoom behavior for non-trackpad users.
+  // browser's own convention, not something we opt into) — that's the only zoom
+  // trigger now. Any wheel event without ctrlKey pans, including a plain vertical
+  // two-finger scroll (deltaX===0) — previously that fell through to a zoom fallback,
+  // which is what made scrolling feel like it "zoomed unpredictably" rather than panned.
+  // Mouse-wheel users lose scroll-to-zoom as a result, but gain correct trackpad pan,
+  // which is what was actually reported as broken.
   svg.addEventListener('wheel',e=>{
     e.preventDefault();
     if (e.ctrlKey) {
-      camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.06:0.94)));
+      // Zoom anchored to the cursor position, not the viewport corner — the point under
+      // your fingers stays put as the graph scales, matching how pinch-zoom feels
+      // everywhere else on a Mac instead of the content jumping toward one corner.
+      const rect = svg.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const oldScale = camera.scale;
+      const newScale = Math.max(.3, Math.min(4, oldScale * (e.deltaY < 0 ? 1.06 : 0.94)));
+      camera.x = mx - ((mx - camera.x) / oldScale) * newScale;
+      camera.y = my - ((my - camera.y) / oldScale) * newScale;
+      camera.scale = newScale;
       applyCamera();
       clearTimeout(zoomLabelTimer);
       zoomLabelTimer=setTimeout(drawGraph, 120); // re-evaluate zoom-based label reveal, debounced
-    } else if (e.deltaX !== 0) {
-      // Two-finger horizontal component present — treat as a trackpad pan, not a zoom.
-      camera.x -= e.deltaX; camera.y -= e.deltaY; applyCamera();
     } else {
-      // Plain vertical wheel (mouse or trackpad scroll with no horizontal component) —
-      // keep the original scroll-to-zoom behavior so mouse users aren't broken.
-      camera.scale=Math.max(.3,Math.min(4,camera.scale*(e.deltaY<0?1.1:.9)));
-      applyCamera();
-      clearTimeout(zoomLabelTimer);
-      zoomLabelTimer=setTimeout(drawGraph, 120);
+      camera.x -= e.deltaX; camera.y -= e.deltaY; applyCamera();
     }
   },{passive:false});
   svg.addEventListener('mousedown',e=>{ panning=true; lastX=e.clientX; lastY=e.clientY; svg.classList.add('panning'); });
