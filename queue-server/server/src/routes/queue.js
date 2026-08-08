@@ -21,12 +21,21 @@ export function queueRoutes() {
   });
 
   router.post('/prompts', (req, res) => {
+    let row;
     try {
-      const row = queue.createPrompt({ ...req.body, created_by: req.user?.sub || 'antoine' });
-      res.status(201).json(row);
+      row = queue.createPrompt({ ...req.body, created_by: req.user?.sub || 'antoine' });
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
+    // The response for the CREATE is sent before advanceQueue() runs — advanceQueue can
+    // spawn a process and touch disk, so a failure in it must never try to send a second
+    // response onto a request that's already been answered (that used to crash the
+    // process with ERR_HTTP_HEADERS_SENT and silently strand the item at 'queued').
+    res.status(201).json(row);
+    try {
       queue.advanceQueue();
     } catch (e) {
-      res.status(400).json({ error: e.message });
+      console.error('advanceQueue failed after prompt creation (prompt still queued, will retry on next advance):', e.message);
     }
   });
 

@@ -23,12 +23,19 @@
 // not something this file can paper over.
 
 import { spawn } from 'node:child_process';
-import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
+// This directory was never guaranteed to exist (no bootstrap step created it), so every
+// write here — agent-tasks.json, settings, PID files, exec logs — threw ENOENT the moment
+// a task tried to start. That exception propagated up through advanceQueue() into the
+// queue route's try/catch, which then attempted a SECOND res.json() after the first had
+// already been sent (ERR_HTTP_HEADERS_SENT) — the queue silently never advanced past
+// 'queued' with no visible error to the caller. Fixed at the root: ensure it exists.
+try { mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { console.error('Failed to create DATA_DIR', DATA_DIR, e.message); }
 const CLAUDE_BIN = process.env.CLAUDE_BIN || 'claude';
 const AGENT_CWD = process.env.AGENT_CWD || process.cwd();
 
