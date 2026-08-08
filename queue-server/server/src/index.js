@@ -11,6 +11,9 @@ import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
 import { initTaskRunner } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
+import { warmCaches } from './services/warmup.js';
+import { makeBooksHandler } from './services/books.js';
+import { makeTagLensHandler } from './services/tagLens.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -31,6 +34,12 @@ try {
 } catch (e) {
   console.error('Bootstrap data load failed:', e.message);
 }
+
+// Fire-and-forget: pre-generate book suggestions + first-tag lens for every
+// character/country so they're already cached (instant) by the time a user
+// clicks, instead of everyone eating live Claude-API latency after each redeploy.
+warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
+  .catch((e) => console.error('Cache warm-up failed:', e.message));
 
 const app = express();
 app.use(cors());

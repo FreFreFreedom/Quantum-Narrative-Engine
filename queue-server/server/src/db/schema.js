@@ -28,6 +28,7 @@ export function openDb() {
   initArchitectureSchema(db);
   initTagLensSchema(db);
   initTagPatternSchema(db);
+  initBookDetailSchema(db);
   return db;
 }
 
@@ -255,6 +256,21 @@ export function initBooksSchema(db) {
       entity_id TEXT PRIMARY KEY REFERENCES entities(id),
       suggestions TEXT NOT NULL,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+}
+
+// ─── Book detail: a deeper, on-demand read of how ONE recommended book specifically
+// exhibits an entity's pattern — separate from the one-line "why" shown in the list,
+// generated only when the user clicks into a book. Cached per (entity, book title). ───
+export function initBookDetailSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_book_details (
+      entity_id TEXT NOT NULL REFERENCES entities(id),
+      book_title TEXT NOT NULL,
+      detail_text TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      PRIMARY KEY (entity_id, book_title)
     )
   `);
 }
