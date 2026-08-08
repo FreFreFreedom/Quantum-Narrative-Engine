@@ -74,6 +74,38 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .empty { font-size:11.5px; color:#8a8378; }
 .bookbtn { width:100%; padding:7px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11.5px; cursor:pointer; margin:8px 0; }
 .bookbtn:hover { background:#f2efe9; }
+/* ─── Exploration: continuum filter/sort controls + list view ─────────────── */
+.axisselect { width:100%; padding:5px 7px; border-radius:6px; border:1px solid #ddd6cc; background:#fff; font-size:11px; color:#3a352e; margin-bottom:6px; font-family:inherit; }
+.axis-poles { display:flex; justify-content:space-between; font-size:9.5px; color:#8a8378; margin-bottom:3px; }
+.axis-range { display:flex; gap:8px; margin-bottom:6px; }
+.axis-range label { font-size:10px; color:#6b645b; display:flex; align-items:center; gap:4px; flex:1; }
+.axis-range input { width:100%; padding:3px 5px; border-radius:5px; border:1px solid #ddd6cc; font-size:10.5px; font-family:inherit; }
+.axis-note { font-size:9.5px; color:#a19a8e; line-height:1.4; }
+.ctrl-sep { width:1px; height:14px; background:#ddd6cc; margin:0 4px; }
+.list-stage { display:none; flex:1; overflow-y:auto; padding:2px 2px 10px; }
+.list-summary { font-size:10.5px; color:#8a8378; padding:4px 2px 8px; }
+.lgroup { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#a19a8e; margin:12px 0 6px; padding-bottom:3px; border-bottom:1px solid #eee9df; }
+.lcard { background:#fff; border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; margin-bottom:7px; cursor:pointer; }
+.lcard:hover { border-color:#c9c1b3; }
+.lcard.sel { border-color:#8a7f6a; box-shadow:0 0 0 2px rgba(138,127,106,.14); }
+.lcard-top { display:flex; align-items:baseline; gap:7px; }
+.lcard-name { font-weight:600; font-size:12.5px; color:#2a2621; }
+.lcard-type { font-size:9px; padding:1px 6px; border-radius:20px; background:#eee9df; color:#5c554b; }
+.lcard-src { font-size:9px; padding:1px 6px; border-radius:20px; background:#e8eef0; color:#3f6b85; }
+.lcard-note { font-size:10.5px; color:#5c554b; line-height:1.45; margin-top:4px; }
+.lcard-meta { display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
+.lcard-score { font-size:10px; color:#3a352e; background:#f3efe8; border-radius:5px; padding:2px 7px; }
+.lcard-score b { font-variant-numeric:tabular-nums; }
+.echo-btn { font-size:10px; padding:3px 9px; border-radius:20px; border:1px solid #cfc6b6; background:#fbf9f6; color:#5c554b; cursor:pointer; font-family:inherit; }
+.echo-btn:hover { background:#f3efe8; border-color:#b3a993; }
+.echo-host { margin-top:7px; padding-top:7px; border-top:1px dashed #e4dfd8; }
+.echo-line { font-size:10.5px; color:#3a352e; padding:3px 0; display:flex; gap:6px; align-items:baseline; cursor:pointer; }
+.echo-line:hover { color:#000; }
+.echo-kind { font-size:8.5px; padding:1px 5px; border-radius:20px; flex-shrink:0; }
+.echo-kind.diag { background:#f6e7cf; color:#8a5a1e; }
+.echo-kind.ent { background:#ece5f4; color:#5c3f80; }
+.echo-kind.bridge { background:#d9eee4; color:#2f7d63; }
+.echo-why { color:#8a8378; font-size:9.5px; }
 .book { padding:7px 9px; border-radius:7px; background:#fff; border:1px solid #e4dfd8; margin-bottom:6px; font-size:11.5px; cursor:pointer; }
 .book:hover { border-color:#c9c1b3; }
 .book .bwrap { display:flex; gap:9px; }
@@ -100,6 +132,44 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .modebar button.active { color:#fbfaf8; box-shadow: inset 0 -2px 0 #c08a3e; }
 .app-shell { display:flex; flex-direction:column; height:100vh; min-height:640px; }
 .app-shell .wrap { flex:1; min-height:0; }
+
+/* ---------- Task queue ---------- */
+#queueApp { flex:1; display:none; flex-direction:column; min-height:0; }
+#queueApp.open { display:flex; }
+.q-toolbar { padding:8px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:14px; }
+.q-pausebadge { font-size:10.5px; padding:3px 9px; border-radius:20px; background:#f6e7cf; color:#8a5a1e; }
+.q-body { flex:1; display:flex; min-height:0; }
+.q-left { width:400px; flex-shrink:0; border-right:1px solid #e4dfd8; overflow-y:auto; padding:14px; }
+.q-left h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
+.q-textarea, .q-input, .q-row select { width:100%; border:1px solid #d9d3c9; border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; margin-bottom:7px; box-sizing:border-box; }
+.q-textarea { resize:vertical; min-height:70px; }
+.q-row { display:flex; gap:8px; margin-bottom:7px; }
+.q-row label { flex:1; font-size:10px; color:#6b645b; }
+.q-check { display:flex; align-items:center; gap:5px; font-size:11px; color:#3a352e; flex:none !important; }
+.q-addbtn { width:100%; padding:8px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:12px; font-weight:600; cursor:pointer; }
+.q-addbtn:hover { background:#3a352e; }
+.q-addbtn:disabled { background:#c9c1b3; cursor:default; }
+.q-err { font-size:10.5px; color:#b23a2f; margin-top:5px; }
+.q-item { border:1px solid #e4dfd8; background:#fff; border-radius:8px; padding:9px 11px; margin-bottom:7px; cursor:pointer; }
+.q-item:hover { border-color:#c9c1b3; }
+.q-item.sel { border-color:#2a2621; box-shadow:0 0 0 1px #2a2621; }
+.q-item-top { display:flex; align-items:center; gap:7px; }
+.q-item-title { font-size:12px; font-weight:600; flex:1; }
+.q-badge { font-size:9px; padding:2px 7px; border-radius:20px; color:#fff; flex-shrink:0; }
+.q-item-meta { font-size:10px; color:#8a8378; margin-top:4px; display:flex; gap:8px; align-items:center; }
+.q-item-q { font-size:10.5px; color:#8a5a1e; margin-top:5px; background:#f6e7cf; border-radius:5px; padding:5px 7px; }
+.q-right { flex:1; overflow-y:auto; padding:16px; background:#fbfaf8; }
+.q-right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
+.q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
+.q-thread-msg.user { background:#e8eef0; margin-left:auto; }
+.q-thread-msg.agent { background:#fff; border:1px solid #e4dfd8; }
+.q-thread-role { font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:#8a8378; margin-bottom:3px; }
+.q-optbtn { display:block; width:100%; text-align:left; padding:7px 9px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11.5px; margin-top:5px; cursor:pointer; }
+.q-optbtn:hover { background:#f2efe9; border-color:#b3a993; }
+.q-replybox { display:flex; gap:6px; margin-top:10px; }
+.q-replybox textarea { flex:1; border:1px solid #d9d3c9; border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; resize:vertical; min-height:44px; }
+.q-replybox button { padding:0 14px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
+.q-detail-row { display:flex; gap:14px; font-size:10.5px; color:#6b645b; margin-bottom:12px; flex-wrap:wrap; }
 
 /* ---------- Architecture Navigator ---------- */
 #archApp { flex:1; display:none; flex-direction:column; min-height:0; }
@@ -191,15 +261,35 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <button id="modeContentBtn" class="active">Content navigator</button>
   <button id="modeMapBtn">Map</button>
   <button id="modeArchBtn">Architecture navigator</button>
+  <button id="modeQueueBtn">Queue</button>
 </div>
 <div class="wrap" id="app">
   <div class="left">
     <h2>Entity types</h2>
-    <label class="type-toggle"><input type="checkbox" id="tCharacter" checked> Characters</label>
-    <label class="type-toggle"><input type="checkbox" id="tCountry" checked> Countries</label>
-    <label class="type-toggle"><input type="checkbox" id="tFilm"> Films (containers)</label>
+    <div id="typeList"></div>
+    <div id="sourceBlock" style="display:none;">
+      <h2>Source</h2>
+      <div id="sourceList"></div>
+    </div>
     <h2>Search</h2>
     <input class="searchbox" id="search" placeholder="Search entities...">
+    <h2>Integration continuum</h2>
+    <select class="axisselect" id="axisSelect"><option value="">No axis filter</option></select>
+    <div id="axisControls" style="display:none;">
+      <div class="axis-poles"><span id="axisLow">low</span><span id="axisHigh">high</span></div>
+      <div class="axis-range">
+        <label>from <input type="number" id="axisMin" min="0" max="1" step="0.05" value="0"></label>
+        <label>to <input type="number" id="axisMax" min="0" max="1" step="0.05" value="1"></label>
+      </div>
+      <select class="axisselect" id="axisSort">
+        <option value="">Sort: default</option>
+        <option value="asc">Sort: lowest value first</option>
+        <option value="desc">Sort: highest value first</option>
+        <option value="near1">Sort: closest to full integration</option>
+        <option value="near0">Sort: closest to the low pole</option>
+      </select>
+      <div class="axis-note" id="axisNote"></div>
+    </div>
     <h2>Clusters</h2>
     <div id="clusterList"></div>
     <h2>Patterns</h2>
@@ -211,6 +301,10 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <p>One live graph across characters, films, and countries, grouped into cluster regions. Gold = shared director/writer (always visible). Violet = shared tags. Green dotted = continuum-proximity bridge across scale (Scale Echo). Hover or click a node to reveal its connections — everything else fades.</p>
     </div>
     <div class="graph-controls">
+      <span class="ctrl-label">View</span>
+      <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
+      <button class="ctrlbtn" id="viewListBtn">List</button>
+      <span class="ctrl-sep"></span>
       <span class="ctrl-label">Color by</span>
       <button class="ctrlbtn active" data-color="type">Type</button>
       <button class="ctrlbtn" data-color="cluster">Cluster</button>
@@ -226,6 +320,10 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
         <g id="viewport"><g id="zoneLayer"></g><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
       </svg>
       <div class="legend" id="legend"></div>
+    </div>
+    <div class="list-stage" id="listStage">
+      <div class="list-summary" id="listSummary"></div>
+      <div id="listHost"></div>
     </div>
   </div>
   <div class="right">
@@ -249,6 +347,48 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
     <div class="arch-right" id="archRight">
       <h2>Component</h2>
       <div class="empty">Click a component to inspect it.</div>
+    </div>
+  </div>
+</div>
+<div id="queueApp">
+  <div class="q-toolbar">
+    <span class="arch-title">Task queue</span>
+    <span class="arch-sub">Real tasks run by the server through Claude Code — implementation edits the actual repo, questions are read-only.</span>
+    <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
+    <button class="ctrlbtn" id="queuePauseBtn" style="margin-left:auto;">Pause queue</button>
+  </div>
+  <div class="q-body">
+    <div class="q-left">
+      <h2>New prompt</h2>
+      <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
+      <input class="q-input" id="qPromptTitle" placeholder="Title (optional — auto-generated if left blank)">
+      <div class="q-row">
+        <label>Mode
+          <select id="qMode">
+            <option value="implement">Implement (edits the repo)</option>
+            <option value="question">Question (read-only)</option>
+          </select>
+        </label>
+        <label>Speed / depth
+          <select id="qPreset">
+            <option value="fast">Fast (haiku)</option>
+            <option value="standard">Standard (sonnet)</option>
+            <option value="deep" selected>Deep (strongest model)</option>
+          </select>
+        </label>
+      </div>
+      <div class="q-row">
+        <label class="q-check"><input type="checkbox" id="qSameContext"> Continue previous context</label>
+        <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
+      </div>
+      <button class="q-addbtn" id="qAddBtn">Add to queue</button>
+      <div id="qAddErr" class="q-err"></div>
+      <h2 style="margin-top:20px;">Queue (<span id="qCount">0</span>)</h2>
+      <div id="qList"></div>
+    </div>
+    <div class="q-right" id="qRight">
+      <h2>Task</h2>
+      <div class="empty">Select a queued item to see its thread.</div>
     </div>
   </div>
 </div>
@@ -285,6 +425,21 @@ async function api(path) {
   if (resp.status === 401) throw new Error('unauthorized');
   return resp.json();
 }
+// api() only ever did GET; the queue page needs POST/PATCH/DELETE with a body, so
+// rather than bolt that onto api() and risk changing its (widely-called) GET
+// behavior, this is a separate helper just for the write paths.
+async function apiWrite(path, method, body) {
+  const resp = await fetch(API_BASE + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (resp.status === 401) throw new Error('unauthorized');
+  let data = {};
+  try { data = await resp.json(); } catch {}
+  if (!resp.ok) throw new Error(data && data.error ? data.error : `HTTP ${resp.status}`);
+  return data;
+}
 
 document.getElementById('loginBtn').onclick = async function() {
   const pw = document.getElementById('loginPw').value;
@@ -302,20 +457,42 @@ document.getElementById('loginBtn').onclick = async function() {
 
 async function boot() {
   try {
-    const [entRes, clRes, axRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
+      // Tolerate an older backend that predates /facets rather than failing to boot.
+      api('/api/ontology/facets').catch(() => null),
     ]);
     ENTITIES = entRes.entities;
     ENTITIES.forEach(e => byId[e.id] = e);
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
     axRes.axes.forEach(a => AXES[a.key] = a);
+
+    FACETS = facetRes || {
+      types: [...new Set(ENTITIES.map(e => e.type))].map(t => ({ value: t, n: ENTITIES.filter(e => e.type === t).length })),
+      sources: [{ value: 'archive', n: ENTITIES.length }],
+      axes: axRes.axes.map(a => ({ ...a, scored: ENTITIES.filter(e => e.continuum && e.continuum[a.key] !== undefined).length })),
+    };
+    // Films are containers — on by default they bury the characters inside them.
+    enabledTypes = new Set(FACETS.types.map(t => t.value).filter(t => t !== 'film'));
+    enabledSources = new Set(FACETS.sources.map(s => s.value));
+
     document.getElementById('loginGate').style.display = 'none';
     document.getElementById('appShell').style.display = 'flex';
+    renderFacets();
+    renderAxisControls();
     renderClusterList();
     initGraph();
     initArchNav();
   } catch (e) {
-    document.getElementById('loginErr').textContent = 'Session expired, log in again.';
+    // This used to report EVERY startup failure as "Session expired, log in again."
+    // A plain JS bug in any init step therefore looked exactly like being locked out
+    // of the app, which is both alarming and completely undiagnosable. Only claim an
+    // auth problem when the error actually is one; otherwise say what really broke.
+    console.error('boot() failed:', e);
+    const authish = /401|403|unauthorized|invalid[_ ]token|expired/i.test(e && (e.message || ''));
+    document.getElementById('loginErr').textContent = authish
+      ? 'Session expired, log in again.'
+      : `Loaded, but startup hit an error: ${e && e.message ? e.message : e}. (Full details in the browser console.)`;
     document.getElementById('loginGate').style.display = 'block';
   }
 }
@@ -383,8 +560,51 @@ function renderPatternList() {
     el.appendChild(chip);
   });
 }
-document.getElementById('search').addEventListener('input', () => layoutAndDraw());
-['tCharacter','tCountry','tFilm'].forEach(id => document.getElementById(id).addEventListener('change', () => layoutAndDraw()));
+document.getElementById('search').addEventListener('input', () => refreshView());
+
+// Graph ⇄ List. Both are driven by exactly the same filter state (activeEntities), so
+// switching never changes WHAT you're looking at, only how it's laid out.
+function setContentView(v) {
+  contentView = v;
+  document.getElementById('viewGraphBtn').classList.toggle('active', v === 'graph');
+  document.getElementById('viewListBtn').classList.toggle('active', v === 'list');
+  document.querySelector('.graph-stage').style.display = v === 'graph' ? '' : 'none';
+  document.getElementById('listStage').style.display = v === 'list' ? 'flex' : 'none';
+  // Colour-mode and bridge buttons only mean something on the canvas.
+  document.querySelectorAll('[data-color], #toggleBridges, #toggleShowAll, #resetBtn')
+    .forEach(b => { b.style.display = v === 'graph' ? '' : 'none'; });
+  document.querySelectorAll('.ctrl-label').forEach(l => {
+    if (l.textContent === 'Color by') l.style.display = v === 'graph' ? '' : 'none';
+  });
+  refreshView();
+}
+document.getElementById('viewGraphBtn').onclick = () => setContentView('graph');
+document.getElementById('viewListBtn').onclick = () => setContentView('list');
+
+document.getElementById('axisSelect').addEventListener('change', (e) => {
+  axisFilter.key = e.target.value;
+  axisFilter.min = 0; axisFilter.max = 1; axisFilter.sort = '';
+  document.getElementById('axisMin').value = 0;
+  document.getElementById('axisMax').value = 1;
+  document.getElementById('axisSort').value = '';
+  renderAxisControls();
+  refreshView();
+});
+['axisMin','axisMax'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+  const min = parseFloat(document.getElementById('axisMin').value);
+  const max = parseFloat(document.getElementById('axisMax').value);
+  axisFilter.min = Number.isNaN(min) ? 0 : Math.max(0, Math.min(1, min));
+  axisFilter.max = Number.isNaN(max) ? 1 : Math.max(0, Math.min(1, max));
+  if (axisFilter.min > axisFilter.max) { const t = axisFilter.min; axisFilter.min = axisFilter.max; axisFilter.max = t; }
+  document.getElementById('axisMin').value = axisFilter.min;
+  document.getElementById('axisMax').value = axisFilter.max;
+  refreshView();
+}));
+document.getElementById('axisSort').addEventListener('change', (e) => {
+  axisFilter.sort = e.target.value;
+  // Ordering is only expressible in the list; jump there rather than silently no-op.
+  if (axisFilter.sort && contentView !== 'list') setContentView('list'); else refreshView();
+});
 
 // ---------- Colors ----------
 const TYPE_COLORS = { character: '#8b3f85', film: '#3f6b85', country: '#5f7a3f' };
@@ -474,18 +694,264 @@ function renderZoneLabels() {
   });
 }
 
+// Type and source filters are built from whatever the backend actually reports (see
+// /api/ontology/facets), not a hardcoded list of three checkboxes — so a new kind of
+// pattern-instance (e.g. Reddit-derived) filters, searches and sorts alongside
+// characters/films/countries the moment such rows exist, with no frontend change.
+let enabledTypes = new Set(), enabledSources = new Set();
+let FACETS = { types: [], sources: [], axes: [] };
+
+// Which continuum axis (if any) is currently constraining/ordering the view.
+let axisFilter = { key: '', min: 0, max: 1, sort: '' };
+function axisValue(e, key) {
+  const v = e.continuum && e.continuum[key];
+  return (typeof v === 'number') ? v : null;
+}
+
 function activeEntities() {
-  const showC = document.getElementById('tCharacter').checked;
-  const showN = document.getElementById('tCountry').checked;
-  const showF = document.getElementById('tFilm').checked;
   const q = document.getElementById('search').value.toLowerCase();
   return ENTITIES.filter(e => {
-    if (e.type==='character' && !showC) return false;
-    if (e.type==='country' && !showN) return false;
-    if (e.type==='film' && !showF) return false;
+    if (enabledTypes.size && !enabledTypes.has(e.type)) return false;
+    if (enabledSources.size && !enabledSources.has(e.source || 'archive')) return false;
     if (activeCluster && !(e.clusters||[]).includes(activeCluster)) return false;
-    if (q && !e.name.toLowerCase().includes(q)) return false;
+    // Search covers name, the pattern note, and tags — not just the name, so that
+    // searching a pattern word finds instances that express it under another title.
+    if (q) {
+      const hay = [e.name, (e.meta && (e.meta.note || e.meta.description || e.meta.synopsis)) || '', (e.tags||[]).join(' ')]
+        .join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    // An explicit range filter means "show me things scored in this band", so
+    // unscored entities are excluded here. Sorting alone never hides anything —
+    // unscored are grouped at the end instead (see renderList).
+    if (axisFilter.key && isAxisRangeNarrowed()) {
+      const v = axisValue(e, axisFilter.key);
+      if (v === null) return false;
+      if (v < axisFilter.min || v > axisFilter.max) return false;
+    }
     return true;
+  });
+}
+function isAxisRangeNarrowed() { return axisFilter.min > 0 || axisFilter.max < 1; }
+
+const TYPE_LABELS = { character:'Characters', country:'Countries', film:'Films (containers)' };
+const SOURCE_LABELS = { archive:'Archive / curated', reddit:'Reddit-derived' };
+function prettyLabel(map, v) {
+  return map[v] || (v.charAt(0).toUpperCase() + v.slice(1).replace(/[-_]/g, ' '));
+}
+
+// Films default off (they're containers, and including them buries the characters);
+// everything else defaults on, including any source/type that didn't exist when this
+// was written.
+function renderFacets() {
+  const typeHost = document.getElementById('typeList');
+  typeHost.innerHTML = '';
+  FACETS.types.forEach(({ value, n }) => {
+    const on = enabledTypes.has(value);
+    const lab = document.createElement('label');
+    lab.className = 'type-toggle';
+    lab.innerHTML = `<input type="checkbox" ${on?'checked':''}> ${prettyLabel(TYPE_LABELS, value)} <span style="opacity:.5;">${n}</span>`;
+    lab.querySelector('input').onchange = (ev) => {
+      if (ev.target.checked) enabledTypes.add(value); else enabledTypes.delete(value);
+      refreshView();
+    };
+    typeHost.appendChild(lab);
+  });
+
+  // The source filter only earns its space once more than one source exists.
+  const block = document.getElementById('sourceBlock');
+  if (FACETS.sources.length > 1) {
+    block.style.display = '';
+    const host = document.getElementById('sourceList');
+    host.innerHTML = '';
+    FACETS.sources.forEach(({ value, n }) => {
+      const on = enabledSources.has(value);
+      const lab = document.createElement('label');
+      lab.className = 'type-toggle';
+      lab.innerHTML = `<input type="checkbox" ${on?'checked':''}> ${prettyLabel(SOURCE_LABELS, value)} <span style="opacity:.5;">${n}</span>`;
+      lab.querySelector('input').onchange = (ev) => {
+        if (ev.target.checked) enabledSources.add(value); else enabledSources.delete(value);
+        refreshView();
+      };
+      host.appendChild(lab);
+    });
+  } else {
+    block.style.display = 'none';
+  }
+
+  const sel = document.getElementById('axisSelect');
+  sel.innerHTML = '<option value="">No axis filter</option>' +
+    FACETS.axes.map(a => `<option value="${a.key}">${a.name} (${a.scored} scored)</option>`).join('');
+}
+
+function renderAxisControls() {
+  const wrap = document.getElementById('axisControls');
+  if (!axisFilter.key) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const ax = FACETS.axes.find(a => a.key === axisFilter.key) || {};
+  document.getElementById('axisLow').textContent = ax.low || '0';
+  document.getElementById('axisHigh').textContent = ax.high || '1';
+  const scored = ENTITIES.filter(e => axisValue(e, axisFilter.key) !== null).length;
+  document.getElementById('axisNote').textContent =
+    `${scored} of ${ENTITIES.length} entities are scored on this axis. Narrowing the range hides unscored ones; sorting keeps them, grouped at the end.`;
+}
+
+// Sort comparator for the active axis. Returns null when no ordering is requested,
+// so callers can keep the natural order rather than doing a pointless stable sort.
+function axisComparator() {
+  const { key, sort } = axisFilter;
+  if (!key || !sort) return null;
+  const score = (e) => {
+    const v = axisValue(e, key);
+    if (v === null) return null;
+    if (sort === 'near1') return 1 - v;      // distance from full integration
+    if (sort === 'near0') return v;          // distance from the low pole
+    return sort === 'desc' ? -v : v;
+  };
+  return (a, b) => {
+    const av = score(a), bv = score(b);
+    if (av === null && bv === null) return a.name.localeCompare(b.name);
+    if (av === null) return 1;               // unscored always sink to the bottom
+    if (bv === null) return -1;
+    return av - bv || a.name.localeCompare(b.name);
+  };
+}
+
+// ---------- Exploration: list view ----------
+let contentView = 'graph';
+
+function refreshView() {
+  if (contentView === 'graph') layoutAndDraw();
+  else { renderList(); renderPatternList(); }
+}
+
+function entityNote(e) {
+  return (e.meta && (e.meta.note || e.meta.description || e.meta.synopsis)) || '';
+}
+
+function lcardHtml(e) {
+  const axKey = axisFilter.key;
+  const v = axKey ? axisValue(e, axKey) : null;
+  const ax = FACETS.axes.find(a => a.key === axKey);
+  const score = (v !== null)
+    ? `<span class="lcard-score">${ax ? ax.name : axKey}: <b>${v.toFixed(2)}</b></span>` : '';
+  const src = (e.source && e.source !== 'archive') ? `<span class="lcard-src">${prettyLabel(SOURCE_LABELS, e.source)}</span>` : '';
+  const note = entityNote(e);
+  return `<div class="lcard${focusedId===e.id?' sel':''}" data-eid="${e.id}">
+    <div class="lcard-top">
+      <span class="lcard-name">${e.name}</span>
+      <span class="lcard-type">${e.type}</span>${src}
+    </div>
+    ${note ? `<div class="lcard-note">${note}</div>` : ''}
+    <div class="lcard-meta">
+      ${score}
+      <button class="echo-btn" data-echo="${e.id}">Find its echoes</button>
+    </div>
+    <div class="echo-host" id="echohost-${e.id}" style="display:none;"></div>
+  </div>`;
+}
+
+function renderList() {
+  const host = document.getElementById('listHost');
+  const summary = document.getElementById('listSummary');
+  let pool = activeEntities();
+  const cmp = axisComparator();
+
+  let html = '';
+  if (cmp && axisFilter.key) {
+    // Sorting must never make things vanish — split rather than filter, so the
+    // unscored remainder stays visible and its size is obvious at a glance.
+    const scored = pool.filter(e => axisValue(e, axisFilter.key) !== null).sort(cmp);
+    const unscored = pool.filter(e => axisValue(e, axisFilter.key) === null).sort((a,b)=>a.name.localeCompare(b.name));
+    if (scored.length) html += `<div class="lgroup">Scored on this axis — ${scored.length}</div>` + scored.map(lcardHtml).join('');
+    if (unscored.length) html += `<div class="lgroup">Not scored on this axis — ${unscored.length}</div>` + unscored.map(lcardHtml).join('');
+    summary.textContent = `${pool.length} entities · ${scored.length} scored, ${unscored.length} unscored`;
+  } else {
+    pool = pool.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    html = pool.map(lcardHtml).join('');
+    summary.textContent = `${pool.length} entities`;
+  }
+  host.innerHTML = html || '<div class="empty">Nothing matches these filters.</div>';
+
+  host.querySelectorAll('.lcard').forEach(el => {
+    el.onclick = (ev) => {
+      if (ev.target.closest('[data-echo]')) return; // the echo button handles itself
+      selectEntity(el.getAttribute('data-eid'));
+      host.querySelectorAll('.lcard').forEach(o => o.classList.toggle('sel', o === el));
+    };
+  });
+  host.querySelectorAll('[data-echo]').forEach(btn => {
+    btn.onclick = (ev) => { ev.stopPropagation(); toggleEchoes(btn.getAttribute('data-echo'), btn); };
+  });
+}
+
+// ---------- Scale Echo: "find its echoes" ----------
+// Deliberately computed against the WHOLE corpus, ignoring the active filters — the
+// question this answers is "what does this echo anywhere?", which is the opposite of
+// the filtered card sections that only look inside the current view. Ranked so the
+// strongest structural rhyme comes first regardless of kind.
+function computeEchoes(e, limit = 8) {
+  const all = ENTITIES;
+  const out = [];
+  const auteurs = (e.meta && e.meta.auteurs) || [];
+
+  if (auteurs.length) {
+    all.forEach(o => {
+      if (o.id === e.id) return;
+      const shared = ((o.meta && o.meta.auteurs) || []).filter(a => auteurs.includes(a));
+      if (shared.length) out.push({ o, kind:'diag', strength: 100 + shared.length, why:`shared author — ${shared[0]}` });
+    });
+  }
+  const tags = e.tags || [];
+  if (tags.length) {
+    all.forEach(o => {
+      if (o.id === e.id) return;
+      const shared = (o.tags||[]).filter(t => tags.includes(t));
+      if (shared.length) out.push({
+        o, kind:'ent', strength: 10 + shared.length * 2,
+        why: `${shared.length} shared pattern${shared.length>1?'s':''} — ${shared.slice(0,2).join(', ')}`,
+      });
+    });
+  }
+  Object.keys(e.continuum || {}).forEach(axis => {
+    const v = e.continuum[axis];
+    const ax = FACETS.axes.find(a => a.key === axis);
+    all.forEach(o => {
+      if (o.id === e.id || o.type === e.type) return; // a bridge is cross-scale by definition
+      const ov = o.continuum && o.continuum[axis];
+      if (typeof ov !== 'number') return;
+      const delta = Math.abs(ov - v);
+      if (delta < 0.07) out.push({
+        o, kind:'bridge', strength: 50 + (0.07 - delta) * 100,
+        why: `${ax ? ax.name : axis} within ${delta.toFixed(2)} (${e.type} ↔ ${o.type})`,
+      });
+    });
+  });
+
+  // Keep the strongest single relationship per target — the same pair often rhymes
+  // in more than one way, and listing it three times crowds out genuine variety.
+  const best = new Map();
+  out.forEach(r => { const p = best.get(r.o.id); if (!p || r.strength > p.strength) best.set(r.o.id, r); });
+  return [...best.values()].sort((a,b) => b.strength - a.strength).slice(0, limit);
+}
+
+function echoListHtml(echoes) {
+  if (!echoes.length) return '<div class="empty">No echoes found anywhere in the corpus.</div>';
+  return echoes.map(r => `<div class="echo-line" data-goto="${r.o.id}">
+      <span class="echo-kind ${r.kind}">${r.kind==='diag'?'author':r.kind==='ent'?'pattern':'scale echo'}</span>
+      <span><b>${r.o.name}</b> <span style="opacity:.55;">(${r.o.type})</span><br><span class="echo-why">${r.why}</span></span>
+    </div>`).join('');
+}
+
+function toggleEchoes(id, btn) {
+  const host = document.getElementById('echohost-' + id);
+  if (!host) return;
+  if (host.style.display !== 'none') { host.style.display = 'none'; host.innerHTML = ''; btn.textContent = 'Find its echoes'; return; }
+  host.style.display = '';
+  btn.textContent = 'Hide echoes';
+  host.innerHTML = echoListHtml(computeEchoes(byId[id]));
+  host.querySelectorAll('[data-goto]').forEach(el => {
+    el.onclick = (ev) => { ev.stopPropagation(); selectEntity(el.getAttribute('data-goto')); };
   });
 }
 
@@ -839,6 +1305,11 @@ async function selectEntity(id){
       html += `<div id="lensHost"></div>`;
     }
     html += continuumHtml(e);
+    // Same corpus-wide echo search as the list cards, available without leaving the
+    // detail panel or switching to the graph.
+    html += `<div class="section-title" style="color:#5c554b;">Echoes</div>
+      <div class="lcard-meta" style="margin-top:0;"><button class="echo-btn" data-echo="${e.id}">Find its echoes</button></div>
+      <div class="echo-host" id="echohost-${e.id}" style="display:none;"></div>`;
     html += `<div class="section-title" style="color:#5c554b;">📚 Books reflecting this pattern</div><div id="booksHost"><div class="empty">Loading…</div></div>`;
 
     const pool = activeEntities();
@@ -857,6 +1328,9 @@ async function selectEntity(id){
     document.getElementById(activeCardHost).innerHTML = html;
     document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
+    document.querySelectorAll(`[data-echo="${e.id}"]`).forEach(btn => {
+      btn.onclick = (ev) => { ev.stopPropagation(); toggleEchoes(e.id, btn); };
+    });
 
     // Auto-open the entity's own first tag as a lens on select — the point of the lens
     // feature is a tailored, pattern-specific read instead of the one generic sentence,
@@ -1151,15 +1625,198 @@ let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
 document.getElementById('modeArchBtn').onclick = () => setMode('arch');
+document.getElementById('modeQueueBtn').onclick = () => setMode('queue');
 function setMode(m) {
   document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
   document.getElementById('modeMapBtn').classList.toggle('active', m==='map');
   document.getElementById('modeArchBtn').classList.toggle('active', m==='arch');
+  document.getElementById('modeQueueBtn').classList.toggle('active', m==='queue');
   document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
   document.getElementById('mapApp').classList.toggle('open', m==='map');
   document.getElementById('archApp').classList.toggle('open', m==='arch');
+  document.getElementById('queueApp').classList.toggle('open', m==='queue');
   activeCardHost = m==='map' ? 'mapCardHost' : 'cardHost';
   if (m==='map') initMap();
+  if (m==='queue') initQueue();
+  else stopQueuePolling();
+}
+
+// ---------- Task queue ----------
+// A page for the /api/travaux/prompts API, which previously had no UI at all — adding
+// a task meant crafting a curl call by hand. Polls rather than using WebSocket events,
+// same reasoning as the rest of this app: simplicity over infra, and the poll interval
+// (4s) is short enough that "running" -> "done" feels prompt without being chatty.
+const Q_STATUS_COLORS = { queued:'#8a8378', running:'#2f7d63', done:'#4f9d7a', blocked:'#b23a2f', paused:'#a19a8e', cancelled:'#a19a8e' };
+const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', blocked:'Blocked', paused:'Set aside', cancelled:'Cancelled' };
+let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
+
+function initQueue() {
+  document.getElementById('qAddBtn').onclick = qAddPrompt;
+  document.getElementById('queuePauseBtn').onclick = qTogglePause;
+  qLoad();
+  if (qPollTimer) clearInterval(qPollTimer);
+  qPollTimer = setInterval(qLoad, 4000);
+}
+function stopQueuePolling() { if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; } }
+
+async function qLoad() {
+  let data;
+  try { data = await api('/api/travaux/prompts?space=fmcns'); }
+  catch (e) { return; } // a transient poll failure shouldn't blank the page
+  qPrompts = data.prompts || [];
+  qPaused = !!data.queue_paused;
+  const badge = document.getElementById('queuePauseBadge');
+  badge.style.display = qPaused ? '' : 'none';
+  badge.textContent = 'Queue paused' + (data.queue_paused_reason ? ` — ${data.queue_paused_reason}` : '');
+  document.getElementById('queuePauseBtn').textContent = qPaused ? 'Resume queue' : 'Pause queue';
+  document.getElementById('qCount').textContent = qPrompts.length;
+  qRenderList();
+  if (qSelected) {
+    const fresh = qPrompts.find(p => p.id === qSelected.id);
+    if (fresh) { qSelected = fresh; qRenderDetail(fresh); }
+  }
+}
+
+function qElapsed(p) {
+  if (p.status !== 'running' || !p.started_at) return '';
+  const secs = Math.max(0, Math.round((Date.now() - new Date(p.started_at).getTime()) / 1000));
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return ` · ${m}:${String(s).padStart(2,'0')}`;
+}
+
+function qRenderList() {
+  const host = document.getElementById('qList');
+  if (!qPrompts.length) { host.innerHTML = '<div class="empty">Nothing queued yet — add a prompt above.</div>'; return; }
+  host.innerHTML = qPrompts.map(p => `
+    <div class="q-item${qSelected && qSelected.id===p.id ? ' sel':''}" data-qid="${p.id}">
+      <div class="q-item-top">
+        <span class="q-item-title">${p.title || '(untitled)'}</span>
+        <span class="q-badge" style="background:${Q_STATUS_COLORS[p.status]||'#8a8378'};">${Q_STATUS_LABELS[p.status]||p.status}</span>
+      </div>
+      <div class="q-item-meta">
+        <span>${p.mode==='question'?'Question':'Implement'} · ${p.preset}</span>
+        <span>${qElapsed(p)}</span>
+      </div>
+      ${p.pending_question ? `<div class="q-item-q">🙋 ${p.pending_question.question}</div>` : ''}
+    </div>
+  `).join('');
+  host.querySelectorAll('.q-item').forEach(el => {
+    el.onclick = () => { qSelected = qPrompts.find(p => p.id === el.getAttribute('data-qid')); qRenderList(); qRenderDetail(qSelected); };
+  });
+}
+
+async function qAddPrompt() {
+  const promptText = document.getElementById('qPromptText').value.trim();
+  const errEl = document.getElementById('qAddErr');
+  errEl.textContent = '';
+  if (!promptText) { errEl.textContent = 'Write a prompt first.'; return; }
+  const btn = document.getElementById('qAddBtn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+  try {
+    await apiWrite('/api/travaux/prompts', 'POST', {
+      prompt: promptText,
+      title: document.getElementById('qPromptTitle').value.trim(),
+      mode: document.getElementById('qMode').value,
+      preset: document.getElementById('qPreset').value,
+      same_context: document.getElementById('qSameContext').checked,
+      priority: document.getElementById('qPriority').checked,
+      space: 'fmcns',
+    });
+    document.getElementById('qPromptText').value = '';
+    document.getElementById('qPromptTitle').value = '';
+    document.getElementById('qSameContext').checked = false;
+    document.getElementById('qPriority').checked = false;
+    await qLoad();
+  } catch (e) {
+    errEl.textContent = 'Could not add: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add to queue';
+  }
+}
+
+async function qTogglePause() {
+  try {
+    if (qPaused) await apiWrite('/api/travaux/queue/pause', 'POST', { paused: false });
+    else await apiWrite('/api/travaux/queue/pause', 'POST', { paused: true, reason: 'Paused from the queue page' });
+    await qLoad();
+  } catch (e) { console.error('pause toggle failed', e); }
+}
+
+function qRenderDetail(p) {
+  const host = document.getElementById('qRight');
+  const messages = (p.messages || []);
+  host.innerHTML = `
+    <h2>Task</h2>
+    <div class="arch-detail-name">${p.title || '(untitled)'}</div>
+    <div class="q-detail-row">
+      <span><b>Status:</b> ${Q_STATUS_LABELS[p.status]||p.status}</span>
+      <span><b>Mode:</b> ${p.mode}</span>
+      <span><b>Preset:</b> ${p.preset}</span>
+      ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
+      ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
+    </div>
+    <div class="arch-field"><div class="arch-field-label">Original prompt</div><div class="arch-field-body">${p.prompt}</div></div>
+    <div class="arch-field-label" style="margin-top:14px;">Thread</div>
+    <div id="qThread"></div>
+    ${p.pending_question ? `<div id="qQuestionHost"></div>` : ''}
+    <div class="q-replybox">
+      <textarea id="qReplyText" placeholder="${p.status==='running' ? 'Send a message while it runs (steering)…' : 'Reply — this relaunches the task with the full thread as context…'}"></textarea>
+      <button id="qReplyBtn">${p.status==='running' ? 'Steer' : 'Reply'}</button>
+    </div>
+    <div id="qReplyErr" class="q-err"></div>
+    <div class="q-row" style="margin-top:10px;">
+      ${p.status==='queued' ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
+      ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qDeleteBtn">Remove</button>` : ''}
+    </div>
+  `;
+
+  const threadHost = document.getElementById('qThread');
+  threadHost.innerHTML = messages.length
+    ? messages.map(m => `<div class="q-thread-msg ${m.role}"><div class="q-thread-role">${m.role}</div>${m.text}</div>`).join('')
+    : '<div class="empty">No exchanges yet.</div>';
+
+  if (p.pending_question) {
+    const qh = document.getElementById('qQuestionHost');
+    qh.innerHTML = `<div class="q-item-q" style="margin-bottom:6px;">🙋 ${p.pending_question.question}</div>` +
+      (p.pending_question.options || []).map(o => `<button class="q-optbtn" data-opt="${encodeURIComponent(o)}">${o}</button>`).join('');
+    qh.querySelectorAll('[data-opt]').forEach(b => {
+      b.onclick = () => qReply(p.id, decodeURIComponent(b.getAttribute('data-opt')));
+    });
+  }
+
+  document.getElementById('qReplyBtn').onclick = () => {
+    const text = document.getElementById('qReplyText').value.trim();
+    if (!text) return;
+    if (p.status === 'running') qSteer(p.id, text); else qReply(p.id, text);
+  };
+  const firstBtn = document.getElementById('qFirstBtn');
+  if (firstBtn) firstBtn.onclick = async () => { await apiWrite(`/api/travaux/prompts/${p.id}/first`, 'POST'); await qLoad(); };
+  const delBtn = document.getElementById('qDeleteBtn');
+  if (delBtn) delBtn.onclick = async () => {
+    await apiWrite(`/api/travaux/prompts/${p.id}`, 'DELETE');
+    qSelected = null;
+    document.getElementById('qRight').innerHTML = '<h2>Task</h2><div class="empty">Select a queued item to see its thread.</div>';
+    await qLoad();
+  };
+}
+
+async function qReply(id, text) {
+  const errEl = document.getElementById('qReplyErr');
+  if (errEl) errEl.textContent = '';
+  try {
+    await apiWrite(`/api/travaux/prompts/${id}/reply`, 'POST', { text });
+    document.getElementById('qReplyText').value = '';
+    await qLoad();
+  } catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
+}
+async function qSteer(id, text) {
+  const errEl = document.getElementById('qReplyErr');
+  if (errEl) errEl.textContent = '';
+  try {
+    await apiWrite(`/api/travaux/prompts/${id}/message`, 'POST', { text });
+    document.getElementById('qReplyText').value = '';
+    await qLoad();
+  } catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
 }
 
 // ---------- Architecture Navigator ----------
