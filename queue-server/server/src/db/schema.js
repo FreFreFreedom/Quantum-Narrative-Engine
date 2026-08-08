@@ -25,6 +25,7 @@ export function openDb() {
   initChatSchema(db);
   initKnowledgeSchema(db);
   initBooksSchema(db);
+  initArchitectureSchema(db);
   return db;
 }
 
@@ -65,6 +66,7 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN pending_question TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN stop_after INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN space TEXT NOT NULL DEFAULT 'fmcns'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN component_id TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -253,4 +255,42 @@ export function initBooksSchema(db) {
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
+}
+
+// ─── Architecture Navigator: live component state, evolution ladders, generated
+// "what's next" suggestions, and a build-history trail ──────────────────────────
+// now_text/status/last_verified_at are recomputed from live data on every read
+// (see services/architecture.js) — this table caches the result rather than
+// recomputing on every request, and is what actually gets served. evolution_json
+// is authored content (like BUILD_STATUS.md), seeded once and editable later.
+// suggestions are Claude-generated on demand (cost-controlled — regeneration is a
+// manual action, not automatic) and cached until the next regenerate call.
+export function initArchitectureSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS architecture_components (
+      id TEXT PRIMARY KEY,
+      now_text TEXT,
+      status TEXT,
+      last_verified_at TEXT,
+      evolution_json TEXT,
+      suggestions_json TEXT,
+      suggestions_generated_at TEXT,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+
+  // Manually-maintained mapping of commits to the component(s) they touched — the
+  // deployed container has no .git access, so this can't be computed live. Going
+  // forward only: seeded by hand alongside each relevant commit from now on.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS component_commits (
+      id TEXT PRIMARY KEY,
+      component_id TEXT NOT NULL,
+      sha TEXT NOT NULL,
+      message TEXT NOT NULL,
+      committed_at TEXT NOT NULL
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_component_commits ON component_commits(component_id, committed_at)`); } catch {}
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_component_commits_sha ON component_commits(component_id, sha)`); } catch {}
 }

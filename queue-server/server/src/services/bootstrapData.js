@@ -101,3 +101,22 @@ export function seedKnowledge(db) {
   }
   return { docs: count };
 }
+
+// ─── Architecture Navigator: component → commit mapping (manual, appended over
+// time — going forward only, see architecture.js header) ────────────────────────
+import { seedComponentCommits } from './architecture.js';
+
+const COMPONENT_COMMIT_SEED = [
+  { component_id: 'analogical-layer', sha: 'bb603d4952620c154b34355169649ebc5e05247f', message: 'Redesign the graph view for clarity: cluster-zone layout + spotlight interaction', committed_at: '2026-08-07T21:35:08-04:00' },
+  { component_id: 'thread-click', sha: 'bb603d4952620c154b34355169649ebc5e05247f', message: 'Redesign the graph view for clarity: cluster-zone layout + spotlight interaction', committed_at: '2026-08-07T21:35:08-04:00' },
+  { component_id: 'maps', sha: 'bd2148ef2c06e0c7dae973ceb5817ee026c38023', message: 'Unify apps: merge the Map prototype into the Fractal Navigator as a third mode', committed_at: '2026-08-07T20:41:15-04:00' },
+  { component_id: 'thread-click', sha: 'bd2148ef2c06e0c7dae973ceb5817ee026c38023', message: 'Unify apps: merge the Map prototype into the Fractal Navigator as a third mode', committed_at: '2026-08-07T20:41:15-04:00' },
+  { component_id: 'semantic-layer', sha: '2ae3a359a397a6beed406fb14d87973126c16827', message: 'Finish schema unification: give countries archetypal tags', committed_at: '2026-08-07T20:10:53-04:00' },
+  { component_id: 'semantic-layer', sha: 'fae6f1e0f768d4d0632ac5079e749666c817e038', message: "Pattern-lens descriptions: films get their archetypal synopsis, countries get a written guilt-as-engine framing", committed_at: '2026-08-07T17:44:55-04:00' },
+  { component_id: 'analogical-layer', sha: 'fae6f1e0f768d4d0632ac5079e749666c817e038', message: "Pattern-lens descriptions: films get their archetypal synopsis, countries get a written guilt-as-engine framing", committed_at: '2026-08-07T17:44:55-04:00' },
+];
+
+export function seedArchitectureHistory(db) {
+  seedComponentCommits(db, COMPONENT_COMMIT_SEED);
+  return { commits: COMPONENT_COMMIT_SEED.length };
+}

@@ -63,6 +63,7 @@ function heuristicTitle(text) {
 export function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
+  component_id = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -72,10 +73,10 @@ export function createPrompt({
   const initial = status === 'paused' ? 'paused' : 'queued';
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, suggestion_id, created_by, title_auto, space)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, suggestion_id, created_by, title_auto, space, component_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), same_context ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, suggestion_id, created_by, given ? 0 : 1, inSpace);
+    mode === 'question' ? 'question' : 'implement', preset, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id);
   broadcast();
   return getPrompt(id);
 }

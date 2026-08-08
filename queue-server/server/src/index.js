@@ -8,8 +8,9 @@ import { queueRoutes } from './routes/queue.js';
 import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
-import { migrateOntology, seedKnowledge } from './services/bootstrapData.js';
+import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
 import { initTaskRunner } from './services/taskRunner.js';
+import { architectureRoutes } from './routes/architecture.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -25,7 +26,8 @@ bindDb(db);
 try {
   const ontologyResult = migrateOntology(db);
   const knowledgeResult = seedKnowledge(db);
-  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult }));
+  const architectureHistoryResult = seedArchitectureHistory(db);
+  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult, architectureHistoryResult }));
 } catch (e) {
   console.error('Bootstrap data load failed:', e.message);
 }
@@ -48,6 +50,7 @@ app.post('/api/auth/login', (req, res) => {
 app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
+app.use('/api/architecture', requireAuth, architectureRoutes(db));
 
 const server = http.createServer(app);
 attachRealtime(server);

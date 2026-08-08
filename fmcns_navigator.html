@@ -124,6 +124,16 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .queueform textarea { resize:vertical; min-height:60px; }
 .queueform button { padding:6px 12px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
 .queueform .qf-status { font-size:10.5px; margin-top:5px; color:#6b645b; }
+.arch-verified { font-size:10px; color:#8a8378; margin:-6px 0 10px; }
+.arch-suggestion { border:1px solid #e4dfd8; background:#fff; border-radius:8px; padding:8px 10px; margin-bottom:7px; cursor:pointer; }
+.arch-suggestion:hover { background:#f2efe9; }
+.arch-suggestion .as-title { font-size:11.5px; font-weight:600; margin-bottom:2px; }
+.arch-suggestion .as-prompt { font-size:10.5px; color:#6b645b; line-height:1.4; }
+.arch-regenbtn { width:100%; padding:6px; border-radius:6px; border:1px dashed #d9d3c9; background:#fff; font-size:10.5px; color:#6b645b; cursor:pointer; margin-top:4px; }
+.arch-regenbtn:hover { background:#f2efe9; }
+.arch-history-item { font-size:10.5px; padding:5px 8px; border-radius:6px; background:#fff; border:1px solid #e4dfd8; margin-bottom:4px; }
+.arch-history-item .ah-meta { color:#8a8378; font-size:9.5px; margin-top:2px; }
+.arch-history-sha { font-family:monospace; font-size:9px; color:#8a5a1e; }
 
 /* ---------- Map mode ---------- */
 #mapApp { flex:1; display:none; min-height:0; }
@@ -206,6 +216,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <div class="arch-toolbar">
     <span class="arch-title">Architecture Navigator</span>
     <span class="arch-sub">How FMCNS itself is built — click any component.</span>
+    <span id="archQueueBanner" style="font-size:10.5px;color:#6b645b;margin-left:14px;"></span>
     <div class="arch-viewbtns">
       <button class="active" data-arch-view="architecture">Architecture</button>
       <button data-arch-view="development">Development</button>
@@ -890,13 +901,46 @@ const TERRITORIES = [
 ];
 let archView = 'architecture', archSelected = null;
 let archInited = false;
+let archQueueStatus = null;
 
-function initArchNav() {
+// Live component data (NOW/status/last_verified_at/evolution/suggestions) overrides
+// the static ARCH_DATA fallback text once fetched — this is what makes NOW actually
+// live instead of hand-written, without risking a rewrite of the 12 static blocks.
+async function loadArchLiveData() {
+  try {
+    const compRes = await api('/api/architecture/components');
+    (compRes.components || []).forEach(lc => {
+      const c = ARCH_BY_ID[lc.id];
+      if (!c) return;
+      if (lc.now_text) c.now = lc.now_text;
+      if (lc.status) c.status = lc.status;
+      if (lc.evolution && lc.evolution.length) c.versions = lc.evolution;
+      c.last_verified_at = lc.last_verified_at || null;
+      c.suggestions = lc.suggestions || null;
+      c.suggestions_generated_at = lc.suggestions_generated_at || null;
+    });
+  } catch (e) { /* fall back silently to the static ARCH_DATA text */ }
+  try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
+}
+
+function renderArchQueueBanner() {
+  const el = document.getElementById('archQueueBanner');
+  if (!el) return;
+  if (!archQueueStatus) { el.textContent = ''; return; }
+  const dot = archQueueStatus.executionConfigured ? '●' : '○';
+  el.innerHTML = `<span style="color:${archQueueStatus.executionConfigured?'#4f9d7a':'#8a8378'}">${dot}</span> Task queue execution: ${archQueueStatus.executionConfigured?'wired in':'not configured'} · ${archQueueStatus.completedCount} completed run${archQueueStatus.completedCount===1?'':'s'}`;
+}
+
+async function initArchNav() {
   if (archInited) return; archInited = true;
   document.querySelectorAll('[data-arch-view]').forEach(b => {
     b.onclick = () => { archView = b.getAttribute('data-arch-view'); document.querySelectorAll('[data-arch-view]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderArchStage(); };
   });
   renderArchStage();
+  await loadArchLiveData();
+  renderArchStage();
+  renderArchQueueBanner();
+  if (archSelected) renderArchDetail(archSelected); // refresh detail panel with live data if already open
 }
 
 function renderArchStage() {
@@ -950,29 +994,62 @@ function selectArchNode(id) {
   renderArchDetail(id);
 }
 
+function fmtVerified(iso) {
+  if (!iso) return null;
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch (e) { return iso; }
+}
+
+async function queuePromptDirect(title, promptText, componentId, statusHost) {
+  if (statusHost) statusHost.textContent = 'Queuing...';
+  try {
+    const resp = await fetch(API_BASE + '/api/travaux/prompts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      body: JSON.stringify({ title, prompt: promptText, component_id: componentId }),
+    });
+    if (!resp.ok) throw new Error('failed');
+    if (statusHost) statusHost.textContent = 'Queued.';
+    return true;
+  } catch (e) { if (statusHost) statusHost.textContent = 'Could not reach the server.'; return false; }
+}
+
 function renderArchDetail(id) {
   const c = ARCH_BY_ID[id];
   const host = document.getElementById('archRight');
   if (!c) { host.innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>'; return; }
+  const verified = fmtVerified(c.last_verified_at);
   let html = `<h2>Component</h2>
     <div class="arch-detail-name">${c.name}</div>
-    <div class="arch-detail-territory">${TERRITORIES.find(t=>t.id===c.territory).label} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>
-    <div class="arch-field"><div class="arch-field-label">What</div><div class="arch-field-body">${c.what}</div></div>
+    <div class="arch-detail-territory">${TERRITORIES.find(t=>t.id===c.territory).label} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>`;
+  html += verified ? `<div class="arch-verified">Last verified ${verified} (live)</div>` : `<div class="arch-verified">Not yet live-verified — static description</div>`;
+  html += `<div class="arch-field"><div class="arch-field-label">What</div><div class="arch-field-body">${c.what}</div></div>
     <div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${c.why}</div></div>
     <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input}</span><span class="arrow">→</span><span class="a">${c.output}</span></div></div>
     <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${c.now}</div></div>
     <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${c.next}</div></div>`;
-  if (c.versions) {
+  if (c.versions && c.versions.length) {
     html += `<div class="arch-field"><div class="arch-field-label">Evolution path</div><div class="arch-versionladder">`;
     c.versions.forEach(([tag,desc]) => { html += `<div class="arch-vstep"><span class="vtag">${tag}</span>${desc}</div>`; });
     html += `</div></div>`;
   }
+
+  // Suggested next steps — Claude-generated, ready-to-queue prompts. Regeneration is
+  // manual only (cost control): a real API call, not something that fires on its own.
+  html += `<div class="arch-field"><div class="arch-field-label">Suggested next steps</div><div id="archSuggestHost"></div></div>`;
+
+  html += `<div class="arch-field"><div class="arch-field-label">Build history</div><div id="archHistoryHost"><div class="empty">Loading…</div></div></div>`;
+
   html += `<div class="arch-actionrow">
       <button id="archAskBtn">💬 Ask about this</button>
-      <button id="archQueueBtn">📋 Queue work on this</button>
+      <button id="archQueueBtn">📋 Queue custom prompt</button>
     </div>
     <div id="archQueueHost"></div>`;
   host.innerHTML = html;
+
+  renderArchSuggestions(c);
+  loadArchHistory(id);
 
   document.getElementById('archAskBtn').onclick = () => {
     const prompt = `About the "${c.name}" component (${c.territory}, currently ${c.status}): ${c.what} Current state: ${c.now}`;
@@ -986,19 +1063,75 @@ function renderArchDetail(id) {
         <button id="qfSubmit">Create queued prompt</button>
         <div class="qf-status" id="qfStatus"></div>
       </div>`;
-    document.getElementById('qfSubmit').onclick = async () => {
-      const status = document.getElementById('qfStatus');
-      status.textContent = 'Creating...';
-      try {
-        const resp = await fetch(API_BASE + '/api/travaux/prompts', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
-          body: JSON.stringify({ title: document.getElementById('qfTitle').value, prompt: document.getElementById('qfPrompt').value }),
-        });
-        if (!resp.ok) throw new Error('failed');
-        status.textContent = 'Queued.';
-      } catch (e) { status.textContent = 'Could not reach the server.'; }
-    };
+    document.getElementById('qfSubmit').onclick = () => queuePromptDirect(
+      document.getElementById('qfTitle').value, document.getElementById('qfPrompt').value, c.id,
+      document.getElementById('qfStatus'),
+    );
   };
+}
+
+function renderArchSuggestions(c) {
+  const el = document.getElementById('archSuggestHost');
+  if (!el) return;
+  let html = '';
+  if (c.suggestions && c.suggestions.length) {
+    c.suggestions.forEach(s => {
+      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${s.title}</div><div class="as-prompt">${s.prompt}</div></div>`;
+    });
+    const genAt = fmtVerified(c.suggestions_generated_at);
+    if (genAt) html += `<div class="arch-verified" style="margin-top:2px;">Generated ${genAt}</div>`;
+  } else {
+    html += `<div class="empty">No suggestions generated yet.</div>`;
+  }
+  html += `<button class="arch-regenbtn" id="archRegenBtn">✦ ${c.suggestions&&c.suggestions.length?'Regenerate':'Generate'} suggestions</button>`;
+  html += `<div class="qf-status" id="archRegenStatus"></div>`;
+  el.innerHTML = html;
+
+  el.querySelectorAll('.arch-suggestion').forEach(node => {
+    node.onclick = async () => {
+      const s = c.suggestions.find(x => x.id === node.getAttribute('data-sid'));
+      if (!s) return;
+      node.style.opacity = '0.5';
+      await queuePromptDirect(s.title, s.prompt, c.id, null);
+      node.style.opacity = '1';
+      node.querySelector('.as-title').textContent = '✓ Queued: ' + s.title;
+    };
+  });
+
+  document.getElementById('archRegenBtn').onclick = async () => {
+    const btn = document.getElementById('archRegenBtn');
+    const status = document.getElementById('archRegenStatus');
+    btn.disabled = true; status.textContent = 'Generating (this calls the Claude API)…';
+    try {
+      const resp = await fetch(API_BASE + '/api/architecture/components/' + c.id + '/suggestions/regenerate', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN },
+      });
+      const data = await resp.json();
+      if (data.error) { status.textContent = 'Could not generate: ' + data.error; btn.disabled = false; return; }
+      c.suggestions = data.suggestions;
+      c.suggestions_generated_at = data.suggestions_generated_at;
+      renderArchSuggestions(c);
+    } catch (e) { status.textContent = 'Could not reach the server.'; btn.disabled = false; }
+  };
+}
+
+async function loadArchHistory(id) {
+  const el = document.getElementById('archHistoryHost');
+  if (!el) return;
+  try {
+    const data = await api('/api/architecture/components/' + id + '/history');
+    let html = '';
+    (data.commits || []).forEach(c => {
+      html += `<div class="arch-history-item">📦 ${c.message}<div class="ah-meta"><span class="arch-history-sha">${c.sha.slice(0,7)}</span> · ${fmtVerified(c.committed_at)||c.committed_at}</div></div>`;
+    });
+    (data.prompts || []).forEach(p => {
+      html += `<div class="arch-history-item">📋 ${p.title} <span style="color:${p.status==='done'?'#4f9d7a':'#8a8378'}">(${p.status})</span><div class="ah-meta">${fmtVerified(p.created_at)||p.created_at}</div></div>`;
+    });
+    if (!html) html = '<div class="empty">No tracked history yet — commits and queued prompts touching this component going forward will appear here.</div>';
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Could not load history.</div>';
+  }
 }
 
 function openChatWithPrompt(text) {
