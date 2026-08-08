@@ -32,9 +32,9 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 #graphSvg { width:100%; height:100%; display:block; cursor:grab; }
 #graphSvg.panning { cursor:grabbing; }
 .gnode { cursor:pointer; transition:opacity .18s ease; }
-.gnode circle { stroke:#fbfaf8; stroke-width:1.3; }
+.gnode circle { stroke:#fbfaf8; stroke-width:1.6; }
 .gnode.focused circle { stroke:#2a2621; stroke-width:3; }
-.gnode text { font-size:9px; fill:#2a2621; text-anchor:middle; cursor:pointer; }
+.gnode text { font-size:10.5px; font-weight:500; fill:#2a2621; text-anchor:middle; cursor:pointer; paint-order:stroke; stroke:#f7f5f2; stroke-width:3px; stroke-linejoin:round; }
 .gedge { transition:opacity .18s ease; }
 .legend { position:absolute; left:12px; bottom:12px; background:rgba(255,255,255,.92); border:1px solid #e4dfd8; border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
 .legend .section-label { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:#8a8378; margin:7px 0 4px; }
@@ -211,8 +211,8 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:#8a8378;"></span>
     </div>
     <div class="graph-stage">
-      <svg id="graphSvg" viewBox="0 0 900 640" preserveAspectRatio="xMidYMid meet">
-        <g id="viewport"><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
+      <svg id="graphSvg" viewBox="0 0 1500 1080" preserveAspectRatio="xMidYMid meet">
+        <g id="viewport"><g id="zoneLayer"></g><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
       </svg>
       <div class="legend" id="legend"></div>
     </div>
@@ -404,7 +404,10 @@ document.querySelectorAll('.ctrlbtn[data-color]').forEach(b => {
 });
 
 // ---------- Graph data / physics ----------
-const GVBW=900, GVBH=640;
+// Canvas nearly tripled in area from the original 900x640 — the single biggest lever
+// for "everything is too close together": more room means the same repulsion force
+// spreads nodes out further before it's overwhelmed by the centroid pull.
+const GVBW=1500, GVBH=1080;
 let nodes=[], edges=[];
 let focusedId=null, hoveredId=null, bridgesOn=true, showAllConnections=false;
 const camera={x:0,y:0,scale:1};
@@ -416,7 +419,7 @@ let simRunning=false;
 const CLUSTER_ORDER = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','other'];
 const CLUSTER_CENTROIDS = {};
 (function computeCentroids(){
-  const cx=GVBW/2, cy=GVBH/2, R=Math.min(GVBW,GVBH)*0.36;
+  const cx=GVBW/2, cy=GVBH/2, R=Math.min(GVBW,GVBH)*0.4;
   CLUSTER_ORDER.forEach((code,i) => {
     const a = (i/CLUSTER_ORDER.length) * Math.PI*2 - Math.PI/2;
     CLUSTER_CENTROIDS[code] = { x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R };
@@ -425,6 +428,24 @@ const CLUSTER_CENTROIDS = {};
 function centroidFor(e) {
   const code = (e.clusters||[])[0];
   return CLUSTER_CENTROIDS[code] || CLUSTER_CENTROIDS.other;
+}
+
+// Faint, non-interactive region labels at each cluster's centroid — orientation cues
+// so it's obvious at a glance which loose region of the canvas belongs to which
+// cluster, without adding any new clickable surface (pointer-events:none throughout,
+// so this can never interfere with node/edge clicks). Static positions, rendered once.
+function renderZoneLabels() {
+  const layer = document.getElementById('zoneLayer');
+  if (!layer) return;
+  layer.innerHTML = '';
+  layer.setAttribute('style', 'pointer-events:none;');
+  CLUSTER_ORDER.forEach(code => {
+    if (code === 'other') return;
+    const c = CLUSTER_CENTROIDS[code];
+    const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
+    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:150,fill:CLUSTER_COLORS[code]||'#c9c3b8',opacity:0.05}));
+    layer.appendChild(el('text',{x:c.x,y:c.y-158,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'#8a8378')+';opacity:0.5;letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
+  });
 }
 
 function activeEntities() {
@@ -633,24 +654,31 @@ function runSim(){
     nodes.forEach(n=>{
       let fx=0,fy=0;
       // Local repulsion — this is what prevents same-cluster nodes from sitting on
-      // top of each other, since they're all pulled toward the same centroid.
-      nodes.forEach(o=>{ if(o===n)return; let dx=n.x-o.x,dy=n.y-o.y; let d2=dx*dx+dy*dy+.01; let d=Math.sqrt(d2); let f=900/d2; fx+=(dx/d)*f; fy+=(dy/d)*f; });
+      // top of each other, since they're all pulled toward the same centroid. Constant
+      // raised well past the original (900 -> 2600) now that the canvas has the room
+      // to let it actually push nodes apart instead of being overwhelmed immediately.
+      nodes.forEach(o=>{ if(o===n)return; let dx=n.x-o.x,dy=n.y-o.y; let d2=dx*dx+dy*dy+.01; let d=Math.sqrt(d2); let f=2600/d2; fx+=(dx/d)*f; fy+=(dy/d)*f; });
       // Weak pull toward this node's own cluster centroid — keeps clusters visibly
-      // separated as distinct regions instead of one undifferentiated blob.
+      // separated as distinct regions instead of one undifferentiated blob. Slightly
+      // softened so the now-much-stronger repulsion isn't immediately fought back into
+      // a tight clump.
       const c = centroidFor(n);
-      fx+=(c.x-n.x)*.012; fy+=(c.y-n.y)*.012;
+      fx+=(c.x-n.x)*.009; fy+=(c.y-n.y)*.009;
       if (focusedId && n.id===focusedId) { fx+=(GVBW/2-n.x)*.02; fy+=(GVBH/2-n.y)*.02; }
       edges.forEach(e=>{ if(e.a!==n.id&&e.b!==n.id)return; const oid=e.a===n.id?e.b:e.a; const o=byId[oid]; if(!o)return; fx+=(o.x-n.x)*.006; fy+=(o.y-n.y)*.006; });
       n.vx=(n.vx+fx)*.75; n.vy=(n.vy+fy)*.75;
     });
     nodes.forEach(n=>{ n.x+=n.vx*.05; n.y+=n.vy*.05; n.x=Math.max(20,Math.min(GVBW-20,n.x)); n.y=Math.max(20,Math.min(GVBH-20,n.y)); });
     drawGraph();
-    if (ticks<260) requestAnimationFrame(step); else simRunning=false;
+    // Fewer ticks than before (260 -> 170) — the layout converges faster with more room
+    // to work with, which also shortens the window where the graph is still animating
+    // (and therefore redrawing every frame) right after a page load or filter change.
+    if (ticks<170) requestAnimationFrame(step); else simRunning=false;
   }
   requestAnimationFrame(step);
 }
 
-function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); renderPatternList(); }
+function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); renderPatternList(); renderZoneLabels(); }
 
 function renderLegend(){
   let html = '<div class="section-label">Connections</div>';
