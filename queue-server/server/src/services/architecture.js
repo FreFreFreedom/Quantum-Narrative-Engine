@@ -97,6 +97,30 @@ export const EVOLUTION = {
     ['v2', 'Saved searches / smart filters'],
     ['v3', 'Natural-language search via the embedded chat assistant’s existing query tools'],
   ],
+
+  // ─── Interface territory: visual/UX quality, tracked as its own territory since
+  // nothing else had a home for it — the graph-clutter issue existed for a while
+  // before it got flagged manually, precisely because there was no tracked owner.
+  'layout-spacing': [
+    ['v0', 'Inconsistent spacing, no shared scale — ad hoc padding/margin per view (current)'],
+    ['v1', 'A documented spacing scale applied consistently across Content/Map/Architecture'],
+    ['v2', 'Responsive layout — usable below desktop width, not just a fixed-width app shell'],
+  ],
+  'typography-color': [
+    ['v0', 'Per-view color choices, some duplicated/inconsistent ramps (current)'],
+    ['v1', 'One shared color system — cluster colors, type colors, and semantic colors documented once'],
+    ['v2', 'Full dark-mode pass — currently light-surface-only'],
+  ],
+  'interaction-patterns': [
+    ['v0', 'Click-drag pan, scroll-wheel zoom, hover/click on nodes and now edges (current)'],
+    ['v1', 'Native trackpad gestures — two-finger scroll to pan, pinch to zoom, matching OS conventions'],
+    ['v2', 'Consistent spotlight/fade focus pattern applied everywhere selection happens, not just the graph'],
+  ],
+  'per-view-polish': [
+    ['v0', 'Uneven — some views (Architecture Navigator) more considered than others (Content graph) (current)'],
+    ['v1', 'Content graph brought up to the same bar as Architecture Navigator (cluster-zone layout, spotlight/fade — shipped this round; clutter/label-legibility fixes remain open)'],
+    ['v2', 'Map mode polish pass — currently reuses Content mode\'s detail panel but hasn\'t had its own dedicated review'],
+  ],
 };
 
 // ─── Live NOW computation ────────────────────────────────────────────────────
@@ -190,6 +214,26 @@ const NOW_COMPUTERS = {
       status: 'Working',
     };
   },
+
+  // Interface territory has no DB signal for visual/UX quality — hand-written status,
+  // per the explicit decision to not fake a live number here. Update these by hand
+  // when a real UI pass happens, same as any other prose in this file.
+  'layout-spacing': () => ({
+    text: 'Prototype. No documented spacing scale — padding and margins were set ad hoc per view as each was built. Works, but drift between Content/Map/Architecture is visible on close inspection.',
+    status: 'Prototype',
+  }),
+  'typography-color': () => ({
+    text: 'Prototype. TYPE_COLORS, CLUSTER_COLORS, and continuum gradient colors are each defined separately with no shared system. Sentence-case and flat-surface conventions are followed but not written down anywhere.',
+    status: 'Prototype',
+  }),
+  'interaction-patterns': () => ({
+    text: 'Prototype. Click-drag pan and scroll-wheel zoom work; node and edge hover/click both now drive a spotlight/fade focus state. No native trackpad gesture support (two-finger pan, pinch-to-zoom) yet — currently flagged as a known gap.',
+    status: 'Prototype',
+  }),
+  'per-view-polish': () => ({
+    text: 'Uneven across views. Architecture Navigator got a dedicated design pass; the Content graph did too this round (cluster-zone layout, spotlight/fade, reduced default edge/label density) but was flagged as too cluttered before that fix shipped, and further legibility work is still open. Map mode has not had its own dedicated polish pass — it inherits Content mode\'s detail panel but its own layout hasn\'t been reviewed.',
+    status: 'Prototype',
+  }),
 };
 
 function computeLiveNow(db, id) {

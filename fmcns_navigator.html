@@ -1052,6 +1052,43 @@ const ARCH_DATA = [
     now:'Working. Search, cluster filters, and type toggles all function in the Fractal Navigator and the older prototypes. Each app currently searches only its own local dataset.',
     next:'Cross-app unified search — one query surfacing matches across characters, films, and countries at once, which the shared schema now makes possible.',
     status:'Working', depends:['ontological-layer'] },
+
+  { id:'layout-spacing', territory:'interface', name:'Layout & spacing',
+    what:'Padding, margins, and structural spacing across the app shell and every view.',
+    why:'Inconsistent spacing is invisible until you look for it, but it\'s what makes an interface feel considered instead of assembled piecemeal.',
+    input:'CSS written per-component as each view was built', output:'Rendered layout the user reads at a glance',
+    now:'Prototype. No documented spacing scale — padding and margins were set ad hoc per view. Works, but drift between Content/Map/Architecture is visible on close inspection.',
+    next:'Write down one spacing scale (e.g. 4/8/12/16/24px) and audit each view against it.',
+    status:'Prototype', depends:[] },
+
+  { id:'typography-color', territory:'interface', name:'Typography & color',
+    what:'Type sizes/weights and the color ramps used for entity types, clusters, and continuum gradients.',
+    why:'Color currently carries real meaning (type, cluster, position on an axis) — if the system isn\'t coherent, that meaning gets muddied.',
+    input:'TYPE_COLORS, CLUSTER_COLORS, continuum gradient stops, ad hoc font sizes', output:'Consistent (or inconsistent) visual meaning across the app',
+    now:'Prototype. TYPE_COLORS, CLUSTER_COLORS, and continuum gradient colors are each defined separately with no shared system. Sentence-case and flat-surface conventions are followed but not written down anywhere.',
+    next:'Document the color system in one place (what each ramp means, when to use which) and do a full dark-mode pass — currently light-surface only.',
+    status:'Prototype', depends:[] },
+
+  { id:'interaction-patterns', territory:'interface', name:'Interaction patterns',
+    what:'How the user actually moves through and manipulates the graph and detail views — pan, zoom, hover, click.',
+    why:'Flagged directly: click-drag-only panning and no pinch-to-zoom made the graph feel clumsy well before the clutter itself was the issue.',
+    input:'Mouse/trackpad/touch input', output:'Camera movement, spotlight/fade focus state, panel updates',
+    now:'Prototype. Click-drag pan and scroll-wheel zoom work; node and edge hover/click both now drive a spotlight/fade focus state. No native trackpad gesture support (two-finger pan, pinch-to-zoom) yet.',
+    next:'Wire native trackpad gestures — wheel-event pan (deltaX/deltaY without ctrlKey) and pinch-to-zoom (wheel + ctrlKey, matching browser convention) on the graph canvas.',
+    status:'Prototype', depends:[] },
+
+  { id:'per-view-polish', territory:'interface', name:'Per-view polish',
+    what:'A dedicated design pass, rated separately, for each major view: Map, Content graph, Architecture Navigator.',
+    why:'Quality was uneven across views and there was no place tracking that unevenness — this component exists specifically to hold that.',
+    input:'Each view\'s own layout, density, and interaction choices', output:'A per-view quality rating and a known-gaps list',
+    now:'Uneven. Architecture Navigator got a dedicated pass; Content graph did too this round (cluster-zone layout, spotlight/fade, reduced default edge/label density) but was flagged as too cluttered before that fix shipped, and legibility work is still open. Map mode has not had its own dedicated polish pass yet.',
+    next:'Give Map mode the same kind of dedicated review Content graph just got.',
+    status:'Prototype', depends:[],
+    subviews:[
+      { id:'map', label:'Map', rating:'Not yet reviewed', note:'Inherits Content mode\'s detail panel; its own layout hasn\'t had a dedicated pass.' },
+      { id:'content-graph', label:'Content graph', rating:'Known gap logged, partially fixed', note:'Flagged as too cluttered to read (node overlap, label/edge noise). Cluster-zone layout + spotlight/fade shipped in response; further legibility and navigation work (trackpad gestures, stronger pattern-focus fade) still open.' },
+      { id:'architecture-nav', label:'Architecture Navigator', rating:'Reviewed', note:'Got a dedicated design pass this round: live NOW data, versioned evolution, build history, generated suggestions.' },
+    ] },
 ];
 const ARCH_BY_ID = {}; ARCH_DATA.forEach(c => ARCH_BY_ID[c.id] = c);
 const TERRITORIES = [
@@ -1059,6 +1096,7 @@ const TERRITORIES = [
   { id:'knowledge', label:'Knowledge', sub:'Ontological, Semantic & Analogical Layers.' },
   { id:'reasoning', label:'Reasoning', sub:'Pattern Engine, GraphRAG, Scale Echo, Integration Continuum.' },
   { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
+  { id:'interface', label:'Interface', sub:'Layout & spacing, Typography & color, Interaction patterns, Per-view polish.' },
 ];
 let archView = 'architecture', archSelected = null;
 let archInited = false;
@@ -1198,6 +1236,14 @@ function renderArchDetail(id) {
 
   // Suggested next steps — Claude-generated, ready-to-queue prompts. Regeneration is
   // manual only (cost control): a real API call, not something that fires on its own.
+  if (c.subviews && c.subviews.length) {
+    html += `<div class="arch-field"><div class="arch-field-label">Per-view rating</div>`;
+    c.subviews.forEach(sv => {
+      html += `<div class="arch-vstep"><span class="vtag">${sv.label}</span><b>${sv.rating}.</b> ${sv.note}</div>`;
+    });
+    html += `</div>`;
+  }
+
   html += `<div class="arch-field"><div class="arch-field-label">Suggested next steps</div><div id="archSuggestHost"></div></div>`;
 
   html += `<div class="arch-field"><div class="arch-field-label">Build history</div><div id="archHistoryHost"><div class="empty">Loading…</div></div></div>`;
