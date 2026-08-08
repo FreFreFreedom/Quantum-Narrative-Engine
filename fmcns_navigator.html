@@ -831,6 +831,15 @@ async function selectEntity(id){
     document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
 
+    // Auto-open the entity's own first tag as a lens on select — the point of the lens
+    // feature is a tailored, pattern-specific read instead of the one generic sentence,
+    // so it shouldn't require an extra click to see at all. Other tags stay clickable
+    // to switch which pattern the description is read through.
+    if (e.tags && e.tags.length) {
+      const firstTagEl = document.querySelector('.tag[data-tag]');
+      if (firstTagEl) toggleTagLens(e, e.tags[0], firstTagEl);
+    }
+
     loadBooksFor(e.id); // auto-loads (cached server-side after the first real generation per entity)
   } catch (err) {
     console.error('selectEntity render failed:', err);

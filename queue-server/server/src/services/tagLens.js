@@ -17,9 +17,11 @@ function buildPrompt(entity, tag) {
     otherTags ? `Its other tags: ${otherTags}\n` : '',
     continuumLines ? `Continuum position: ${continuumLines}\n` : '',
     `\nThe tag being examined as a LENS is: "${tag}".\n`,
-    `Write a short, sharp examination (3-5 sentences) of this specific entity read specifically through the lens of "${tag}" — `,
+    `Write a fuller examination (2-3 short paragraphs, roughly 150-220 words total) of this specific entity read specifically through the lens of "${tag}" — `,
     `what does looking at ${entity.name} through THIS particular tag reveal that the general description doesn't foreground? `,
-    `Be concrete and specific to this entity, not a generic definition of the tag. No preamble, no "Through the lens of..." framing device — just the examination itself.\n`,
+    `Ground it in specific, concrete detail about this entity (what they do, what they want, what the pattern costs them) rather than restating the tag's definition. `,
+    `If useful, touch on how this pattern might echo at other scales (a person's private version of something a family, institution, or nation also does) — but only if it's a genuine insight, not forced. `,
+    `No preamble, no "Through the lens of..." framing device — just the examination itself, written as flowing prose in 2-3 paragraphs, not a list.\n`,
     `Respond with ONLY the examination text, no JSON, no markdown, no quotes around it.`,
   ].join('');
 }
@@ -38,7 +40,7 @@ export function makeTagLensHandler(db) {
       resp = await fetch(ANTHROPIC_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 400, messages: [{ role: 'user', content: buildPrompt(entity, tag) }] }),
+        body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 700, messages: [{ role: 'user', content: buildPrompt(entity, tag) }] }),
       });
     } catch (e) {
       return { error: 'network_error', message: e.message };
