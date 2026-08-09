@@ -464,7 +464,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 <div id="travauxApp">
   <div class="tv-toolbar">
     <div class="tv-toolbar-top">
-      <span class="arch-title">Travaux</span>
+      <span class="arch-title">Work items</span>
       <span class="arch-sub">Claude proposes work, you decide what runs — nothing here executes on its own.</span>
     </div>
     <div id="usageStripHost"></div>
@@ -1945,9 +1945,9 @@ function fmtResetIn(iso) {
   if (!(ms > 0)) return '';
   const totalMin = Math.round(ms / 60000);
   const days = Math.floor(totalMin / 1440), hours = Math.floor((totalMin % 1440) / 60), mins = totalMin % 60;
-  if (days >= 1) return `réinit. dans ${days} j ${hours} h`;
-  if (hours >= 1) return `réinit. dans ${hours} h ${mins} min`;
-  return `réinit. dans ${mins} min`;
+  if (days >= 1) return `resets in ${days}d ${hours}h`;
+  if (hours >= 1) return `resets in ${hours}h ${mins}m`;
+  return `resets in ${mins}m`;
 }
 function fmtTokens(n) {
   if (!(n > 0)) return '0';
@@ -1959,7 +1959,7 @@ function usageBarHtml(icon, label, bucket, hint) {
   const b = bucket || {};
   const pct = typeof b.utilizationPct === 'number' ? Math.max(0, Math.min(100, b.utilizationPct)) : null;
   if (pct == null) {
-    return `<div class="usage-item" title="${hint}"><span class="ui-label">${icon} ${label}</span><span class="usage-pct">${fmtTokens(b.totalTokens)} jetons</span></div>`;
+    return `<div class="usage-item" title="${hint}"><span class="ui-label">${icon} ${label}</span><span class="usage-pct">${fmtTokens(b.totalTokens)} tokens</span></div>`;
   }
   const tone = usageTone(pct, b.severity);
   const resetIn = fmtResetIn(b.resetsAt);
@@ -1981,23 +1981,23 @@ async function loadUsage() {
     <div class="usage-strip">
       <div class="usage-strip-row">
         <b style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;">Quotas Claude</b>
-        ${usageBarHtml('⏱', 'Fenêtre 5 h', u.session, 'Bloc glissant de 5 h — le plafond qui coupe le plus souvent.')}
-        ${usageBarHtml('📅', 'Semaine', u.week, 'Total des 7 derniers jours, tous modèles confondus.')}
-        ${scoped ? usageBarHtml('⚙️', `Semaine ${scoped.label||'modèle'}`, scoped, 'Plafond hebdomadaire propre à ce modèle.') : ''}
-        <span class="usage-item"><span class="ui-label">jetons aujourd'hui</span><span class="usage-pct">${fmtTokens(u.today && u.today.totalTokens)}</span></span>
+        ${usageBarHtml('⏱', '5h window', u.session, 'Rolling 5-hour window — the limit that hits most often.')}
+        ${usageBarHtml('📅', 'Week', u.week, 'Total over the last 7 days, all models combined.')}
+        ${scoped ? usageBarHtml('⚙️', `Week (${scoped.label||'model'})`, scoped, 'Weekly cap specific to this model.') : ''}
+        <span class="usage-item"><span class="ui-label">tokens today</span><span class="usage-pct">${fmtTokens(u.today && u.today.totalTokens)}</span></span>
       </div>
-      <div class="usage-note">Pas de limite par jour — Claude plafonne par fenêtre de 5 h et par semaine.${u.subscriptionAvailable ? '' : ' (quotas d\'abonnement indisponibles en ce moment — jetons seulement)'}</div>
-      ${(u.schedulerLimitResetAt || hot.length) ? `<div class="usage-alert">${u.schedulerLimitResetAt ? 'Plafond atteint — la file est en pause forcée, reprise automatique à la réinitialisation.' : 'Marge Claude faible sur un des plafonds.'}</div>` : ''}
+      <div class="usage-note">No daily limit — Claude caps by rolling 5h window and by week.${u.subscriptionAvailable ? '' : ' (subscription quota % unavailable right now — token counts only)'}</div>
+      ${(u.schedulerLimitResetAt || hot.length) ? `<div class="usage-alert">${u.schedulerLimitResetAt ? 'Limit reached — the queue is force-paused, it will resume automatically at reset.' : 'Claude usage is running low on one of the limits.'}</div>` : ''}
     </div>`;
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
-const TV_KIND_LABEL = { chantier: 'Chantier', integration: 'Intégration' };
-const TV_STATUS_LABEL = { new: 'Nouvelle', accepted: 'Acceptée', dismissed: 'Écartée' };
+const TV_KIND_LABEL = { chantier: 'Work item', integration: 'Integration' };
+const TV_STATUS_LABEL = { new: 'New', accepted: 'Accepted', dismissed: 'Dismissed' };
 
 async function loadSuggestions() {
   const body = document.getElementById('tvBody');
-  body.innerHTML = '<div class="tv-empty">Chargement…</div>';
+  body.innerHTML = '<div class="tv-empty">Loading…</div>';
   try {
     const q = [];
     if (tvSuggestionFilter.status !== 'all') q.push('status=' + tvSuggestionFilter.status);
@@ -2010,8 +2010,8 @@ async function loadSuggestions() {
 
 function renderSuggestions() {
   const body = document.getElementById('tvBody');
-  const statusOpts = [['new','Nouvelles'],['accepted','Acceptées'],['dismissed','Écartées'],['all','Toutes']];
-  const kindOpts = [['all','Tout'],['chantier','Chantiers'],['integration','Intégrations']];
+  const statusOpts = [['new','New'],['accepted','Accepted'],['dismissed','Dismissed'],['all','All']];
+  const kindOpts = [['all','All'],['chantier','Work items'],['integration','Integrations']];
   body.innerHTML = `
     <div class="sg-toolbar-row">
       <div class="sg-filterbtns" id="sgStatusBtns">
@@ -2020,7 +2020,7 @@ function renderSuggestions() {
       <div class="sg-filterbtns" id="sgKindBtns">
         ${kindOpts.map(([v,l]) => `<button data-v="${v}" class="${tvSuggestionFilter.kind===v?'active':''}">${l}</button>`).join('')}
       </div>
-      <button class="sg-genbtn" id="sgGenBtn" style="margin-left:auto;">✨ Générer maintenant</button>
+      <button class="sg-genbtn" id="sgGenBtn" style="margin-left:auto;">✨ Generate now</button>
     </div>
     <div id="sgGenStatus" style="font-size:10.5px;color:#8a8378;margin-bottom:10px;"></div>
     <div id="sgList"></div>
@@ -2031,7 +2031,7 @@ function renderSuggestions() {
 
   const list = document.getElementById('sgList');
   if (!tvSuggestions.length) {
-    list.innerHTML = '<div class="tv-empty">Aucune suggestion ici. Clique « Générer maintenant » pour en demander de nouvelles.</div>';
+    list.innerHTML = '<div class="tv-empty">No suggestions here. Click "Generate now" to ask for new ones.</div>';
     return;
   }
   list.innerHTML = tvSuggestions.map(s => `
@@ -2045,10 +2045,10 @@ function renderSuggestions() {
       ${s.status === 'new' ? `
         <textarea class="sg-prompt" data-role="prompt">${s.prompt}</textarea>
         <div class="sg-actions">
-          <button class="primary" data-action="accept">Accepter → file (mise de côté)</button>
-          <button data-action="dismiss">Écarter</button>
+          <button class="primary" data-action="accept">Accept → queue (set aside)</button>
+          <button data-action="dismiss">Dismiss</button>
         </div>
-      ` : s.status === 'accepted' ? `<div class="sg-rationale">Déjà dans la file — voir l'onglet Queue.</div>` : ''}
+      ` : s.status === 'accepted' ? `<div class="sg-rationale">Already in the queue — see the Queue tab.</div>` : ''}
     </div>
   `).join('');
   list.querySelectorAll('.sg-card').forEach(card => {
@@ -2059,12 +2059,12 @@ function renderSuggestions() {
       const promptText = card.querySelector('[data-role="prompt"]').value;
       acceptBtn.disabled = true; acceptBtn.textContent = 'Ajout…';
       try { await apiWrite(`/api/travaux/suggestions/${id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); }
-      catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accepter → file (mise de côté)'; alert('Erreur : ' + e.message); }
+      catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accept → queue (set aside)'; alert('Error: ' + e.message); }
     };
     if (dismissBtn) dismissBtn.onclick = async () => {
       dismissBtn.disabled = true;
       try { await apiWrite(`/api/travaux/suggestions/${id}/dismiss`, 'POST', {}); await loadSuggestions(); }
-      catch (e) { dismissBtn.disabled = false; alert('Erreur : ' + e.message); }
+      catch (e) { dismissBtn.disabled = false; alert('Error: ' + e.message); }
     };
   });
 }
@@ -2073,20 +2073,20 @@ async function generateSuggestionsNow() {
   const btn = document.getElementById('sgGenBtn');
   const status = document.getElementById('sgGenStatus');
   btn.disabled = true; btn.textContent = '✨ Génération…';
-  status.textContent = 'Claude réfléchit aux prochains chantiers — ça prend une minute ou deux.';
+  status.textContent = 'Claude is thinking about what to work on next — this takes a minute or two.';
   try {
     await apiWrite('/api/travaux/suggestions/generate', 'POST', {});
-    setTimeout(async () => { await loadSuggestions(); status.textContent = ''; btn.disabled = false; btn.textContent = '✨ Générer maintenant'; }, 20000);
+    setTimeout(async () => { await loadSuggestions(); status.textContent = ''; btn.disabled = false; btn.textContent = '✨ Generate now'; }, 20000);
   } catch (e) {
-    status.textContent = 'Erreur : ' + e.message;
-    btn.disabled = false; btn.textContent = '✨ Générer maintenant';
+    status.textContent = 'Error: ' + e.message;
+    btn.disabled = false; btn.textContent = '✨ Generate now';
   }
 }
 
 // ── Idées ──────────────────────────────────────────────────────────────────────
 async function loadIdeas() {
   const body = document.getElementById('tvBody');
-  body.innerHTML = '<div class="tv-empty">Chargement…</div>';
+  body.innerHTML = '<div class="tv-empty">Loading…</div>';
   try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
   renderIdeas();
 }
@@ -2095,11 +2095,11 @@ function renderIdeas() {
   const body = document.getElementById('tvBody');
   body.innerHTML = `
     <div class="id-form">
-      <input id="idTitleInput" placeholder="L'idée en une ligne…">
-      <textarea id="idNotesInput" placeholder="Développer (facultatif) — pourquoi, pistes, ce que ça changerait…"></textarea>
+      <input id="idTitleInput" placeholder="The idea in one line…">
+      <textarea id="idNotesInput" placeholder="Expand (optional) — why, angles, what it would change…"></textarea>
       <div class="id-form-row">
-        <span class="id-form-hint">Rien ne s'exécute depuis les idées : elles restent là pour être relues.</span>
-        <button class="id-addbtn" id="idAddBtn">+ Garder l'idée</button>
+        <span class="id-form-hint">Nothing runs from an idea — they just sit here to be revisited.</span>
+        <button class="id-addbtn" id="idAddBtn">+ Keep the idea</button>
       </div>
     </div>
     <div id="idList"></div>
@@ -2108,22 +2108,22 @@ function renderIdeas() {
   document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
 
   const list = document.getElementById('idList');
-  if (!tvIdeas.length) { list.innerHTML = '<div class="tv-empty">Aucune idée pour l\'instant. Note ci-dessus ce que tu veux garder sous la main.</div>'; return; }
+  if (!tvIdeas.length) { list.innerHTML = '<div class="tv-empty">No ideas yet. Jot down above whatever you want to keep on hand.</div>'; return; }
   list.innerHTML = tvIdeas.map((idea, i) => `
     <div class="id-card" data-iid="${idea.id}">
       <div class="id-card-main">
         <input data-role="title" value="${(idea.title||'').replace(/"/g,'&quot;')}">
         <textarea data-role="notes" rows="2">${idea.notes||''}</textarea>
         <input class="id-tag-input" data-role="tag" placeholder="tag" value="${(idea.tag||'').replace(/"/g,'&quot;')}" style="max-width:120px;">
-        ${idea.work_prompt_id ? '<span class="id-done-pill">Déjà dans la file</span>' : ''}
+        ${idea.work_prompt_id ? '<span class="id-done-pill">Already in the queue</span>' : ''}
       </div>
       <div class="id-card-actions">
         <div class="id-move-row">
           <button data-action="up" ${i===0?'disabled':''}>↑</button>
           <button data-action="down" ${i===tvIdeas.length-1?'disabled':''}>↓</button>
         </div>
-        <button data-action="promote">→ File</button>
-        <button class="danger" data-action="delete">Retirer</button>
+        <button data-action="promote">→ Queue</button>
+        <button class="danger" data-action="delete">Remove</button>
       </div>
     </div>
   `).join('');
@@ -2142,7 +2142,7 @@ function renderIdeas() {
     card.querySelector('[data-action="promote"]').onclick = async (e) => {
       e.target.disabled = true; e.target.textContent = '…';
       try { await apiWrite(`/api/travaux/ideas/${id}/promote`, 'POST', {}); await loadIdeas(); }
-      catch (err) { e.target.disabled = false; e.target.textContent = '→ File'; alert('Erreur : ' + err.message); }
+      catch (err) { e.target.disabled = false; e.target.textContent = '→ Queue'; alert('Error: ' + err.message); }
     };
     const upBtn = card.querySelector('[data-action="up"]'), downBtn = card.querySelector('[data-action="down"]');
     if (upBtn) upBtn.onclick = () => moveIdea(id, -1);
@@ -2159,7 +2159,7 @@ async function addIdea() {
   try {
     await apiWrite('/api/travaux/ideas', 'POST', { title, notes });
     await loadIdeas();
-  } catch (e) { alert('Erreur : ' + e.message); } finally { btn.disabled = false; }
+  } catch (e) { alert('Error: ' + e.message); } finally { btn.disabled = false; }
 }
 
 async function moveIdea(id, delta) {
