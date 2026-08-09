@@ -283,13 +283,40 @@ function addMessage(promptId, { role, text, agentTaskId = null, author = null })
   return db.prepare('SELECT * FROM work_prompt_messages WHERE id=?').get(id);
 }
 
-export function buildFollowUpPrompt(row, messages) {
+// Credit control, threshold #1: when resuming a CLI session (resume_session_id
+// set), the CLI already has the full transcript on its side — re-sending the whole
+// thread as prompt text on top of that was pure duplication, and its cost grew
+// with every single reply (reply #10 resent 9 replies' worth of thread, every
+// time). Once resuming, only the tail (what the CLI does NOT already have: this
+// latest human message, or a fresh session's recap) needs to go in the prompt.
+const FOLLOWUP_TAIL = 2; // last human message + the agent turn just before it, for footing
+// Credit control, threshold #2: even with the thread text capped, the CLI's OWN
+// internal context still grows by one full exchange on every --resume, and that
+// growth compounds the same way a long chat session's would. Past this many
+// continuations on one session, force a brand-new session instead of another
+// --resume — carrying forward only a short recap, not the accumulated transcript.
+export const CONTEXT_RESET_THRESHOLD = 6;
+
+export function buildFollowUpPrompt(row, messages, { fresh = false } = {}) {
+  if (!fresh) {
+    // Resuming — the CLI already has everything before this tail.
+    const tail = messages.slice(-FOLLOWUP_TAIL);
+    const thread = tail.map((m) => `${m.role === 'user' ? 'Human' : 'You'}: ${m.text}`).join('\n\n');
+    return [
+      'Continuing a conversation on a work-queue task (your session already has the full history — this is just the latest exchange, not a summary):\n\n',
+      `${thread}\n\n`,
+      '=== DO NOW ===\n',
+      'Respond to the LAST human message and continue the task accordingly. ',
+      'If you still need information, say precisely what — do not guess.',
+    ].join('');
+  }
+  // Fresh session — no CLI memory at all, so a short recap has to substitute for it.
   const thread = messages.map((m) => `${m.role === 'user' ? 'Human' : 'You'}: ${m.text}`).join('\n\n');
   return [
-    'Continuing a conversation on a work-queue task. The context below may already be in your session; ',
-    'if not, it is enough to pick the work back up.\n\n',
+    'Continuing a work-queue task in a NEW session (the previous one was long enough that ',
+    'starting fresh saves cost — you do not have this history already).\n\n',
     `=== ORIGINAL REQUEST ===\n${row.prompt}\n\n`,
-    `=== THREAD ===\n${thread}\n\n`,
+    `=== THREAD SO FAR ===\n${thread}\n\n`,
     '=== DO NOW ===\n',
     'Respond to the LAST human message and continue the task accordingly. ',
     'If you still need information, say precisely what — do not guess.',
@@ -306,17 +333,33 @@ export function replyToPrompt(id, { text, userId = null }) {
   return relaunchWithThread(row);
 }
 
+// Deliberate, user-triggered version of the same reset the threshold does
+// automatically — lets a long thread be cut short "whenever you feel like it"
+// rather than waiting for the counter, without losing the visible conversation
+// (thread messages are untouched; only the CLI session link + counter reset).
+export function clearContext(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  db.prepare(`UPDATE work_prompts SET session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+  return getPrompt(id);
+}
+
 function relaunchWithThread(row) {
   const messages = listMessages(row.id);
   const { model, effort } = presetFor(row.preset);
+  const overThreshold = (row.context_turns || 0) >= CONTEXT_RESET_THRESHOLD;
+  const fresh = !row.session_id || overThreshold;
   const task = enqueueAgentTask({
-    title: row.title, description: buildFollowUpPrompt(row, messages), kind: 'queue', mode: row.mode, model, effort,
-    author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: row.session_id || null,
+    title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
+    author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : row.session_id,
   });
+  const nextTurns = fresh ? 0 : (row.context_turns || 0) + 1;
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-      completed_at=NULL, pending_question=NULL, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(task.id, row.id);
+      completed_at=NULL, pending_question=NULL, context_turns=?,
+      session_id=CASE WHEN ? THEN NULL ELSE session_id END,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(task.id, nextTurns, fresh ? 1 : 0, row.id);
   broadcast();
   return { prompt: getPrompt(row.id), task };
 }

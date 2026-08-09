@@ -70,6 +70,13 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN stop_after INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN space TEXT NOT NULL DEFAULT 'fmcns'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN component_id TEXT`); } catch {}
+  // Credit-saving: counts how many times this task's session has been continued
+  // (reply/steer) without a fresh start. Each continuation both resumed the CLI
+  // session (which already carries the full transcript) AND re-sent the whole
+  // thread as prompt text, so cost grew with every reply, compounding the longer a
+  // conversation went on. Past a threshold the chain auto-resets to a fresh session
+  // with a short recap instead of unbounded growth (see promptQueue.js).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN context_turns INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

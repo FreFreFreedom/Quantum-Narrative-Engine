@@ -66,6 +66,12 @@ export function queueRoutes() {
     res.json({ messages: queue.listMessages(req.params.id) });
   });
 
+  router.post('/prompts/:id/clear-context', (req, res) => {
+    const row = queue.clearContext(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
   router.post('/prompts/:id/reply', (req, res) => {
     const out = queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });

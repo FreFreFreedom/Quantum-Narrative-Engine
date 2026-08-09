@@ -106,10 +106,17 @@ let _lastSub = null;
 const SUB_STALE_MAX_MS = 30 * 60 * 1000;
 
 async function fetchSubscription() {
+  // Two ways this container can hold a usable OAuth token: the interactive
+  // `claude /login` flow writes ~/.claude/.credentials.json, but this deployment
+  // was instead set up non-interactively via the CLAUDE_CODE_OAUTH_TOKEN env var
+  // (see BUILD_STATUS.md) — that token works identically for API calls, it's just
+  // not on disk. Try the file first (it's the more complete/refreshable form),
+  // fall back to the env var so the percentage view works either way.
   let token;
   try {
     token = JSON.parse(await readFile(CREDENTIALS_PATH, 'utf8'))?.claudeAiOauth?.accessToken;
-  } catch { return null; }
+  } catch { /* fall through to env var */ }
+  if (!token) token = process.env.CLAUDE_CODE_OAUTH_TOKEN || null;
   if (!token) return null;
 
   let data;

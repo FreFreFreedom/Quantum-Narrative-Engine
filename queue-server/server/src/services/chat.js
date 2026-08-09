@@ -202,12 +202,30 @@ export function makeChatHandler(db) {
 
     // Prior turns in THIS session, replayed as plain text (attachments aren't
     // re-sent on later turns — only their content mattered at the time).
-    const history = listMessages(db, sessionId).slice(0, -1).map((m) => ({
-      role: m.role, content: m.text,
-    }));
+    //
+    // Credit control: this used to replay EVERY prior message in the session,
+    // uncapped. A session's per-turn cost is roughly proportional to its length,
+    // so a long-running conversation's TOTAL cost grows with the square of its
+    // turn count, not linearly — turn 40 resends 39 turns' worth of history, turn
+    // 80 resends 79 turns' worth, and so on. Capping the replay window breaks
+    // that growth: cost per turn stays roughly flat once a session passes the
+    // cap, and anything older is folded into the same short summary already used
+    // to prime brand-new sessions (see summarizeSession/buildPriorContext above)
+    // instead of being resent verbatim.
+    const HISTORY_WINDOW = 24; // ~12 exchanges kept verbatim
+    const allPrior = listMessages(db, sessionId).slice(0, -1);
+    const trimmed = allPrior.length > HISTORY_WINDOW;
+    const recentPrior = trimmed ? allPrior.slice(-HISTORY_WINDOW) : allPrior;
+    const history = recentPrior.map((m) => ({ role: m.role, content: m.text }));
 
     const priorContext = buildPriorContext(db, sessionId);
-    const system = SYSTEM_PROMPT + priorContext;
+    // When this session itself has been trimmed, splice in a compact recap of the
+    // part that got cut, so nothing is silently forgotten — only stops being
+    // billed for on every subsequent turn.
+    const trimNote = trimmed
+      ? `\n\nThis session has run long; earlier turns were condensed to save on cost. Recap of the earlier part of THIS session:\n${summarizeSession(db, sessionId) || '(no recap available)'}`
+      : '';
+    const system = SYSTEM_PROMPT + priorContext + trimNote;
 
     let messages = [...history, { role: 'user', content: userContent }];
     let finalText = '';

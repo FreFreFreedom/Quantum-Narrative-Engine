@@ -1840,6 +1840,7 @@ function qRenderDetail(p) {
       <span><b>Preset:</b> ${p.preset}</span>
       ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
       ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
+      ${p.session_id ? `<span title="Continued ${p.context_turns||0}/6 times on the same session before it auto-refreshes to save credit."><b>Context:</b> ${p.context_turns||0}/6 continued</span>` : ''}
     </div>
     <div class="arch-field"><div class="arch-field-label">Original prompt</div><div class="arch-field-body">${p.prompt}</div></div>
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
@@ -1852,6 +1853,7 @@ function qRenderDetail(p) {
     <div id="qReplyErr" class="q-err"></div>
     <div class="q-row" style="margin-top:10px;">
       ${p.status==='queued' ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
+      ${p.session_id && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
       ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qDeleteBtn">Remove</button>` : ''}
     </div>
   `;
@@ -1877,6 +1879,12 @@ function qRenderDetail(p) {
   };
   const firstBtn = document.getElementById('qFirstBtn');
   if (firstBtn) firstBtn.onclick = async () => { await apiWrite(`/api/travaux/prompts/${p.id}/first`, 'POST'); await qLoad(); };
+  const clearCtxBtn = document.getElementById('qClearCtxBtn');
+  if (clearCtxBtn) clearCtxBtn.onclick = async () => {
+    clearCtxBtn.disabled = true; clearCtxBtn.textContent = 'Clearing…';
+    try { await apiWrite(`/api/travaux/prompts/${p.id}/clear-context`, 'POST'); await qLoad(); }
+    catch (e) { clearCtxBtn.disabled = false; clearCtxBtn.textContent = 'Clear context'; alert('Error: ' + e.message); }
+  };
   const delBtn = document.getElementById('qDeleteBtn');
   if (delBtn) delBtn.onclick = async () => {
     await apiWrite(`/api/travaux/prompts/${p.id}`, 'DELETE');
