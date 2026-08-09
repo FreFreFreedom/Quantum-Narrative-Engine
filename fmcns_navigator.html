@@ -171,6 +171,74 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .q-replybox button { padding:0 14px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
 .q-detail-row { display:flex; gap:14px; font-size:10.5px; color:#6b645b; margin-bottom:12px; flex-wrap:wrap; }
 
+/* ---------- Travaux: Suggestions + Idées + Quotas strip ---------- */
+#travauxApp { flex:1; display:none; flex-direction:column; min-height:0; }
+#travauxApp.open { display:flex; }
+.tv-toolbar { padding:10px 16px 0; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
+.tv-toolbar-top { display:flex; align-items:center; gap:14px; margin-bottom:9px; }
+.tv-tabs { display:flex; gap:4px; margin-bottom:-1px; }
+.tv-tabs button { padding:7px 14px; font-size:11.5px; border:1px solid transparent; border-bottom:none; background:transparent; color:#6b645b; cursor:pointer; border-radius:6px 6px 0 0; }
+.tv-tabs button.active { background:#fff; border-color:#e4dfd8; color:#2a2621; font-weight:600; }
+.tv-body { flex:1; overflow-y:auto; padding:16px; }
+.tv-empty { font-size:11.5px; color:#8a8378; border:1px dashed #d9d3c9; border-radius:8px; padding:18px; text-align:center; }
+/* usage strip */
+.usage-strip { border:1px solid #e4dfd8; background:#f2efe9; border-radius:8px; padding:8px 12px; font-size:10.5px; margin-bottom:12px; }
+.usage-strip-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+.usage-item { display:flex; align-items:center; gap:6px; min-width:0; }
+.usage-item .ui-label { color:#8a8378; }
+.usage-bar { width:64px; height:6px; border-radius:4px; background:#e4dfd8; overflow:hidden; flex-shrink:0; }
+.usage-bar-fill { display:block; height:100%; border-radius:4px; background:#4f9d7a; }
+.usage-bar-fill.warn { background:#d99a3d; }
+.usage-bar-fill.hot { background:#b23a2f; }
+.usage-pct { font-weight:700; color:#2a2621; }
+.usage-reset { color:#8a8378; }
+.usage-note { font-size:10px; color:#8a8378; margin-top:5px; }
+.usage-alert { margin-top:6px; padding:6px 9px; border-radius:6px; background:#fbe4e0; color:#8a2c1e; font-size:10.5px; }
+/* suggestions */
+.sg-toolbar-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.sg-filterbtns { display:flex; gap:5px; }
+.sg-filterbtns button { padding:5px 10px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:10.5px; cursor:pointer; }
+.sg-filterbtns button.active { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.sg-card { border:1px solid #e4dfd8; background:#fff; border-radius:9px; padding:11px 13px; margin-bottom:9px; }
+.sg-card-top { display:flex; align-items:flex-start; gap:8px; }
+.sg-card-title { font-size:12.5px; font-weight:600; flex:1; }
+.sg-kind-badge { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; }
+.sg-kind-badge.chantier { background:#5c7a9d; }
+.sg-kind-badge.integration { background:#8a5a1e; }
+.sg-status-badge { font-size:9px; padding:2px 8px; border-radius:20px; flex-shrink:0; background:#eee9df; color:#6b645b; }
+.sg-rationale { font-size:11px; color:#6b645b; margin:5px 0 8px; line-height:1.4; }
+.sg-prompt { width:100%; border:1px solid #d9d3c9; border-radius:6px; padding:7px 9px; font-size:11px; font-family:inherit; resize:vertical; min-height:52px; box-sizing:border-box; margin-bottom:8px; }
+.sg-actions { display:flex; gap:7px; }
+.sg-actions button { padding:6px 12px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11px; cursor:pointer; }
+.sg-actions button.primary { background:#2a2621; color:#fbfaf8; border-color:#2a2621; }
+.sg-actions button:hover { background:#f2efe9; }
+.sg-actions button.primary:hover { background:#3a352e; }
+.sg-genbtn { padding:6px 14px; border-radius:6px; border:1px dashed #d9d3c9; background:#fff; font-size:11px; cursor:pointer; color:#6b645b; }
+.sg-genbtn:hover { background:#f2efe9; }
+.sg-genbtn:disabled { opacity:.6; cursor:default; }
+/* idées */
+.id-form { border:1px solid #e4dfd8; background:#fff; border-radius:9px; padding:12px 13px; margin-bottom:16px; }
+.id-form input, .id-form textarea { width:100%; border:1px solid #d9d3c9; border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; margin-bottom:7px; box-sizing:border-box; }
+.id-form textarea { resize:vertical; min-height:46px; }
+.id-form-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.id-form-hint { font-size:10.5px; color:#8a8378; }
+.id-addbtn { padding:7px 14px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; flex-shrink:0; }
+.id-addbtn:disabled { background:#c9c1b3; cursor:default; }
+.id-card { border:1px solid #e4dfd8; background:#fff; border-radius:9px; padding:10px 12px; margin-bottom:8px; display:flex; gap:10px; align-items:flex-start; }
+.id-card-main { flex:1; min-width:0; }
+.id-card input, .id-card textarea { width:100%; border:none; background:transparent; font-family:inherit; padding:2px 0; }
+.id-card input { font-size:12.5px; font-weight:600; margin-bottom:3px; }
+.id-card textarea { font-size:11px; color:#6b645b; resize:vertical; min-height:34px; }
+.id-card input:focus, .id-card textarea:focus { outline:1px solid #d9d3c9; border-radius:4px; }
+.id-tag-input { font-size:10px !important; color:#8a5a1e !important; font-weight:600 !important; width:auto !important; }
+.id-done-pill { display:inline-block; font-size:9.5px; padding:2px 8px; border-radius:20px; background:#e4f0ea; color:#2f7d63; margin-top:4px; }
+.id-card-actions { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
+.id-card-actions button { padding:5px 9px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:10.5px; cursor:pointer; white-space:nowrap; }
+.id-card-actions button:hover { background:#f2efe9; }
+.id-card-actions button.danger { color:#b23a2f; }
+.id-move-row { display:flex; gap:3px; }
+.id-move-row button { padding:2px 7px; font-size:10px; }
+
 /* ---------- Architecture Navigator ---------- */
 #archApp { flex:1; display:none; flex-direction:column; min-height:0; }
 #archApp.open { display:flex; }
@@ -262,6 +330,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
   <button id="modeMapBtn">Map</button>
   <button id="modeArchBtn">Architecture navigator</button>
   <button id="modeQueueBtn">Queue</button>
+  <button id="modeTravauxBtn">Travaux</button>
 </div>
 <div class="wrap" id="app">
   <div class="left">
@@ -391,6 +460,20 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <div class="empty">Select a queued item to see its thread.</div>
     </div>
   </div>
+</div>
+<div id="travauxApp">
+  <div class="tv-toolbar">
+    <div class="tv-toolbar-top">
+      <span class="arch-title">Travaux</span>
+      <span class="arch-sub">Claude proposes work, you decide what runs — nothing here executes on its own.</span>
+    </div>
+    <div id="usageStripHost"></div>
+    <div class="tv-tabs">
+      <button id="tvTabSuggestions" class="active">Suggestions de Claude</button>
+      <button id="tvTabIdeas">Idées</button>
+    </div>
+  </div>
+  <div class="tv-body" id="tvBody"></div>
 </div>
 <div id="mapApp">
   <div class="mapcol">
@@ -1626,19 +1709,22 @@ document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
 document.getElementById('modeArchBtn').onclick = () => setMode('arch');
 document.getElementById('modeQueueBtn').onclick = () => setMode('queue');
+document.getElementById('modeTravauxBtn').onclick = () => setMode('travaux');
 function setMode(m) {
   document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
   document.getElementById('modeMapBtn').classList.toggle('active', m==='map');
   document.getElementById('modeArchBtn').classList.toggle('active', m==='arch');
   document.getElementById('modeQueueBtn').classList.toggle('active', m==='queue');
+  document.getElementById('modeTravauxBtn').classList.toggle('active', m==='travaux');
   document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
   document.getElementById('mapApp').classList.toggle('open', m==='map');
   document.getElementById('archApp').classList.toggle('open', m==='arch');
   document.getElementById('queueApp').classList.toggle('open', m==='queue');
+  document.getElementById('travauxApp').classList.toggle('open', m==='travaux');
   activeCardHost = m==='map' ? 'mapCardHost' : 'cardHost';
   if (m==='map') initMap();
-  if (m==='queue') initQueue();
-  else stopQueuePolling();
+  if (m==='queue') initQueue(); else stopQueuePolling();
+  if (m==='travaux') initTravaux(); else stopUsagePolling();
 }
 
 // ---------- Task queue ----------
@@ -1817,6 +1903,273 @@ async function qSteer(id, text) {
     document.getElementById('qReplyText').value = '';
     await qLoad();
   } catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
+}
+
+// ---------- Travaux: Suggestions de Claude + Idées + Quotas strip ----------
+// Ported from the "Portage — Suggestions de Claude, Idées et Quotas Claude" spec, adapted
+// from a multi-file React app into this single-file vanilla-JS one, same pattern as the
+// Queue page above. Nothing here ever runs on its own: a suggestion accepted or an idea
+// promoted becomes a 'paused' item in the existing task queue (Queue tab) — the human still
+// has to press start.
+let tvTab = 'suggestions';
+let tvSuggestions = [], tvSuggestionFilter = { status: 'new', kind: 'all' };
+let tvIdeas = [];
+let usagePollTimer = null;
+
+function initTravaux() {
+  document.getElementById('tvTabSuggestions').onclick = () => { tvTab = 'suggestions'; renderTravauxTabs(); loadSuggestions(); };
+  document.getElementById('tvTabIdeas').onclick = () => { tvTab = 'ideas'; renderTravauxTabs(); loadIdeas(); };
+  renderTravauxTabs();
+  if (tvTab === 'suggestions') loadSuggestions(); else loadIdeas();
+  loadUsage();
+  if (usagePollTimer) clearInterval(usagePollTimer);
+  usagePollTimer = setInterval(loadUsage, 30000);
+}
+function stopUsagePolling() { if (usagePollTimer) { clearInterval(usagePollTimer); usagePollTimer = null; } }
+
+function renderTravauxTabs() {
+  document.getElementById('tvTabSuggestions').classList.toggle('active', tvTab === 'suggestions');
+  document.getElementById('tvTabIdeas').classList.toggle('active', tvTab === 'ideas');
+}
+
+// ── Quotas Claude usage strip ──────────────────────────────────────────────────
+function usageTone(pct, severity) {
+  if (severity && severity !== 'normal') return 'hot';
+  if (pct >= 90) return 'hot';
+  if (pct >= 70) return 'warn';
+  return '';
+}
+function fmtResetIn(iso) {
+  if (!iso) return '';
+  const ms = new Date(iso).getTime() - Date.now();
+  if (!(ms > 0)) return '';
+  const totalMin = Math.round(ms / 60000);
+  const days = Math.floor(totalMin / 1440), hours = Math.floor((totalMin % 1440) / 60), mins = totalMin % 60;
+  if (days >= 1) return `réinit. dans ${days} j ${hours} h`;
+  if (hours >= 1) return `réinit. dans ${hours} h ${mins} min`;
+  return `réinit. dans ${mins} min`;
+}
+function fmtTokens(n) {
+  if (!(n > 0)) return '0';
+  if (n >= 1000000) return (n/1000000).toFixed(n >= 10000000 ? 0 : 1) + ' M';
+  if (n >= 1000) return (n/1000).toFixed(n >= 100000 ? 0 : 1) + ' k';
+  return String(Math.round(n));
+}
+function usageBarHtml(icon, label, bucket, hint) {
+  const b = bucket || {};
+  const pct = typeof b.utilizationPct === 'number' ? Math.max(0, Math.min(100, b.utilizationPct)) : null;
+  if (pct == null) {
+    return `<div class="usage-item" title="${hint}"><span class="ui-label">${icon} ${label}</span><span class="usage-pct">${fmtTokens(b.totalTokens)} jetons</span></div>`;
+  }
+  const tone = usageTone(pct, b.severity);
+  const resetIn = fmtResetIn(b.resetsAt);
+  return `<div class="usage-item" title="${hint}">
+    <span class="ui-label">${icon} ${label}</span>
+    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
+    <span class="usage-pct">reste ${100-pct}%</span>
+    ${resetIn ? `<span class="usage-reset">· ${resetIn}</span>` : ''}
+  </div>`;
+}
+async function loadUsage() {
+  const host = document.getElementById('usageStripHost');
+  if (!host) return;
+  let u;
+  try { u = await api('/api/agent/usage'); } catch (e) { host.innerHTML = ''; return; }
+  const scoped = u.weekScoped;
+  const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
+  host.innerHTML = `
+    <div class="usage-strip">
+      <div class="usage-strip-row">
+        <b style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;">Quotas Claude</b>
+        ${usageBarHtml('⏱', 'Fenêtre 5 h', u.session, 'Bloc glissant de 5 h — le plafond qui coupe le plus souvent.')}
+        ${usageBarHtml('📅', 'Semaine', u.week, 'Total des 7 derniers jours, tous modèles confondus.')}
+        ${scoped ? usageBarHtml('⚙️', `Semaine ${scoped.label||'modèle'}`, scoped, 'Plafond hebdomadaire propre à ce modèle.') : ''}
+        <span class="usage-item"><span class="ui-label">jetons aujourd'hui</span><span class="usage-pct">${fmtTokens(u.today && u.today.totalTokens)}</span></span>
+      </div>
+      <div class="usage-note">Pas de limite par jour — Claude plafonne par fenêtre de 5 h et par semaine.${u.subscriptionAvailable ? '' : ' (quotas d\'abonnement indisponibles en ce moment — jetons seulement)'}</div>
+      ${(u.schedulerLimitResetAt || hot.length) ? `<div class="usage-alert">${u.schedulerLimitResetAt ? 'Plafond atteint — la file est en pause forcée, reprise automatique à la réinitialisation.' : 'Marge Claude faible sur un des plafonds.'}</div>` : ''}
+    </div>`;
+}
+
+// ── Suggestions de Claude ──────────────────────────────────────────────────────
+const TV_KIND_LABEL = { chantier: 'Chantier', integration: 'Intégration' };
+const TV_STATUS_LABEL = { new: 'Nouvelle', accepted: 'Acceptée', dismissed: 'Écartée' };
+
+async function loadSuggestions() {
+  const body = document.getElementById('tvBody');
+  body.innerHTML = '<div class="tv-empty">Chargement…</div>';
+  try {
+    const q = [];
+    if (tvSuggestionFilter.status !== 'all') q.push('status=' + tvSuggestionFilter.status);
+    if (tvSuggestionFilter.kind !== 'all') q.push('kind=' + tvSuggestionFilter.kind);
+    const data = await api('/api/travaux/suggestions' + (q.length ? '?' + q.join('&') : ''));
+    tvSuggestions = data.suggestions || [];
+  } catch (e) { tvSuggestions = []; }
+  renderSuggestions();
+}
+
+function renderSuggestions() {
+  const body = document.getElementById('tvBody');
+  const statusOpts = [['new','Nouvelles'],['accepted','Acceptées'],['dismissed','Écartées'],['all','Toutes']];
+  const kindOpts = [['all','Tout'],['chantier','Chantiers'],['integration','Intégrations']];
+  body.innerHTML = `
+    <div class="sg-toolbar-row">
+      <div class="sg-filterbtns" id="sgStatusBtns">
+        ${statusOpts.map(([v,l]) => `<button data-v="${v}" class="${tvSuggestionFilter.status===v?'active':''}">${l}</button>`).join('')}
+      </div>
+      <div class="sg-filterbtns" id="sgKindBtns">
+        ${kindOpts.map(([v,l]) => `<button data-v="${v}" class="${tvSuggestionFilter.kind===v?'active':''}">${l}</button>`).join('')}
+      </div>
+      <button class="sg-genbtn" id="sgGenBtn" style="margin-left:auto;">✨ Générer maintenant</button>
+    </div>
+    <div id="sgGenStatus" style="font-size:10.5px;color:#8a8378;margin-bottom:10px;"></div>
+    <div id="sgList"></div>
+  `;
+  document.querySelectorAll('#sgStatusBtns button').forEach(b => b.onclick = () => { tvSuggestionFilter.status = b.getAttribute('data-v'); loadSuggestions(); });
+  document.querySelectorAll('#sgKindBtns button').forEach(b => b.onclick = () => { tvSuggestionFilter.kind = b.getAttribute('data-v'); loadSuggestions(); });
+  document.getElementById('sgGenBtn').onclick = generateSuggestionsNow;
+
+  const list = document.getElementById('sgList');
+  if (!tvSuggestions.length) {
+    list.innerHTML = '<div class="tv-empty">Aucune suggestion ici. Clique « Générer maintenant » pour en demander de nouvelles.</div>';
+    return;
+  }
+  list.innerHTML = tvSuggestions.map(s => `
+    <div class="sg-card" data-sid="${s.id}">
+      <div class="sg-card-top">
+        <span class="sg-card-title">${s.title}</span>
+        <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind]||s.kind}</span>
+        <span class="sg-status-badge">${TV_STATUS_LABEL[s.status]||s.status}</span>
+      </div>
+      ${s.rationale ? `<div class="sg-rationale">${s.rationale}</div>` : ''}
+      ${s.status === 'new' ? `
+        <textarea class="sg-prompt" data-role="prompt">${s.prompt}</textarea>
+        <div class="sg-actions">
+          <button class="primary" data-action="accept">Accepter → file (mise de côté)</button>
+          <button data-action="dismiss">Écarter</button>
+        </div>
+      ` : s.status === 'accepted' ? `<div class="sg-rationale">Déjà dans la file — voir l'onglet Queue.</div>` : ''}
+    </div>
+  `).join('');
+  list.querySelectorAll('.sg-card').forEach(card => {
+    const id = card.getAttribute('data-sid');
+    const acceptBtn = card.querySelector('[data-action="accept"]');
+    const dismissBtn = card.querySelector('[data-action="dismiss"]');
+    if (acceptBtn) acceptBtn.onclick = async () => {
+      const promptText = card.querySelector('[data-role="prompt"]').value;
+      acceptBtn.disabled = true; acceptBtn.textContent = 'Ajout…';
+      try { await apiWrite(`/api/travaux/suggestions/${id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); }
+      catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accepter → file (mise de côté)'; alert('Erreur : ' + e.message); }
+    };
+    if (dismissBtn) dismissBtn.onclick = async () => {
+      dismissBtn.disabled = true;
+      try { await apiWrite(`/api/travaux/suggestions/${id}/dismiss`, 'POST', {}); await loadSuggestions(); }
+      catch (e) { dismissBtn.disabled = false; alert('Erreur : ' + e.message); }
+    };
+  });
+}
+
+async function generateSuggestionsNow() {
+  const btn = document.getElementById('sgGenBtn');
+  const status = document.getElementById('sgGenStatus');
+  btn.disabled = true; btn.textContent = '✨ Génération…';
+  status.textContent = 'Claude réfléchit aux prochains chantiers — ça prend une minute ou deux.';
+  try {
+    await apiWrite('/api/travaux/suggestions/generate', 'POST', {});
+    setTimeout(async () => { await loadSuggestions(); status.textContent = ''; btn.disabled = false; btn.textContent = '✨ Générer maintenant'; }, 20000);
+  } catch (e) {
+    status.textContent = 'Erreur : ' + e.message;
+    btn.disabled = false; btn.textContent = '✨ Générer maintenant';
+  }
+}
+
+// ── Idées ──────────────────────────────────────────────────────────────────────
+async function loadIdeas() {
+  const body = document.getElementById('tvBody');
+  body.innerHTML = '<div class="tv-empty">Chargement…</div>';
+  try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
+  renderIdeas();
+}
+
+function renderIdeas() {
+  const body = document.getElementById('tvBody');
+  body.innerHTML = `
+    <div class="id-form">
+      <input id="idTitleInput" placeholder="L'idée en une ligne…">
+      <textarea id="idNotesInput" placeholder="Développer (facultatif) — pourquoi, pistes, ce que ça changerait…"></textarea>
+      <div class="id-form-row">
+        <span class="id-form-hint">Rien ne s'exécute depuis les idées : elles restent là pour être relues.</span>
+        <button class="id-addbtn" id="idAddBtn">+ Garder l'idée</button>
+      </div>
+    </div>
+    <div id="idList"></div>
+  `;
+  document.getElementById('idAddBtn').onclick = addIdea;
+  document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
+
+  const list = document.getElementById('idList');
+  if (!tvIdeas.length) { list.innerHTML = '<div class="tv-empty">Aucune idée pour l\'instant. Note ci-dessus ce que tu veux garder sous la main.</div>'; return; }
+  list.innerHTML = tvIdeas.map((idea, i) => `
+    <div class="id-card" data-iid="${idea.id}">
+      <div class="id-card-main">
+        <input data-role="title" value="${(idea.title||'').replace(/"/g,'&quot;')}">
+        <textarea data-role="notes" rows="2">${idea.notes||''}</textarea>
+        <input class="id-tag-input" data-role="tag" placeholder="tag" value="${(idea.tag||'').replace(/"/g,'&quot;')}" style="max-width:120px;">
+        ${idea.work_prompt_id ? '<span class="id-done-pill">Déjà dans la file</span>' : ''}
+      </div>
+      <div class="id-card-actions">
+        <div class="id-move-row">
+          <button data-action="up" ${i===0?'disabled':''}>↑</button>
+          <button data-action="down" ${i===tvIdeas.length-1?'disabled':''}>↓</button>
+        </div>
+        <button data-action="promote">→ File</button>
+        <button class="danger" data-action="delete">Retirer</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.id-card').forEach(card => {
+    const id = card.getAttribute('data-iid');
+    const titleEl = card.querySelector('[data-role="title"]');
+    const notesEl = card.querySelector('[data-role="notes"]');
+    const tagEl = card.querySelector('[data-role="tag"]');
+    const save = () => apiWrite(`/api/travaux/ideas/${id}`, 'PATCH', { title: titleEl.value, notes: notesEl.value, tag: tagEl.value }).catch(() => {});
+    titleEl.onblur = save; notesEl.onblur = save; tagEl.onblur = save;
+    card.querySelector('[data-action="delete"]').onclick = async () => {
+      tvIdeas = tvIdeas.filter(x => x.id !== id); renderIdeas();
+      try { await apiWrite(`/api/travaux/ideas/${id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
+    };
+    card.querySelector('[data-action="promote"]').onclick = async (e) => {
+      e.target.disabled = true; e.target.textContent = '…';
+      try { await apiWrite(`/api/travaux/ideas/${id}/promote`, 'POST', {}); await loadIdeas(); }
+      catch (err) { e.target.disabled = false; e.target.textContent = '→ File'; alert('Erreur : ' + err.message); }
+    };
+    const upBtn = card.querySelector('[data-action="up"]'), downBtn = card.querySelector('[data-action="down"]');
+    if (upBtn) upBtn.onclick = () => moveIdea(id, -1);
+    if (downBtn) downBtn.onclick = () => moveIdea(id, 1);
+  });
+}
+
+async function addIdea() {
+  const title = document.getElementById('idTitleInput').value.trim();
+  if (!title) return;
+  const notes = document.getElementById('idNotesInput').value.trim();
+  const btn = document.getElementById('idAddBtn');
+  btn.disabled = true;
+  try {
+    await apiWrite('/api/travaux/ideas', 'POST', { title, notes });
+    await loadIdeas();
+  } catch (e) { alert('Erreur : ' + e.message); } finally { btn.disabled = false; }
+}
+
+async function moveIdea(id, delta) {
+  const i = tvIdeas.findIndex(x => x.id === id);
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= tvIdeas.length) return;
+  const next = tvIdeas.slice();
+  [next[i], next[j]] = [next[j], next[i]];
+  tvIdeas = next; renderIdeas();
+  try { await apiWrite('/api/travaux/ideas/reorder', 'POST', { ids: next.map(x => x.id) }); } catch (e) { await loadIdeas(); }
 }
 
 // ---------- Architecture Navigator ----------

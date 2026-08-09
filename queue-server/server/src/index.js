@@ -14,6 +14,10 @@ import { architectureRoutes } from './routes/architecture.js';
 import { warmCaches } from './services/warmup.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
+import { travauxRoutes } from './routes/travaux.js';
+import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
+import { bindWorkIdeasDb } from './services/workIdeas.js';
+import { getClaudeUsage } from './services/claudeUsage.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -23,6 +27,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 const db = openDb();
 bindDb(db);
+bindWorkSuggestionsDb(db);
+bindWorkIdeasDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -57,6 +63,16 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.use('/api/travaux', requireAuth, queueRoutes());
+app.use('/api/travaux', requireAuth, travauxRoutes());
+
+app.get('/api/agent/usage', requireAuth, async (req, res) => {
+  try {
+    const usage = await getClaudeUsage();
+    res.json({ ...usage, schedulerLimitResetAt: null });
+  } catch (err) {
+    res.status(500).json({ error: 'usage_failed', message: err.message });
+  }
+});
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
