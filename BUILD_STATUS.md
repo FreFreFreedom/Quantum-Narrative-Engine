@@ -88,3 +88,28 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 ---
 
 *This file is maintained by Claude in Cowork, tracked in git. Commit history is the changelog — check `git log` rather than looking for a list of dated entries here.*
+
+## Travaux module — Suggestions de Claude, Idées, Quotas Claude (2026-08-09)
+Ported from the user-uploaded "Portage" spec into a new "Travaux" tab (vanilla JS,
+same single-file app), adapted to FMCNS's schema/conventions instead of the
+original multi-file React/Orisha app:
+- **Suggestions de Claude**: two engines (chantiers = feature/fix ideas from
+  ontology+queue state; integrations = external services not yet wired up) generate
+  candidate work items on demand. Accepting one creates a `paused` item in the
+  existing task queue — nothing runs by itself. Dismissing keeps the row so the
+  engine won't repropose it.
+- **Idées**: a notebook — title/notes/tag, reorderable, autosaves on blur, never
+  executes. "→ File" promotes an idea into a paused queue item.
+- **Quotas Claude**: usage strip (5h window / week / today) at the top of the
+  Travaux page, polled every 30s. Verified live: token counts work (485K tokens
+  this session, real data from local transcripts). The subscription %/reset-time
+  read (`subscriptionAvailable`) is currently false — the container was logged in
+  via `CLAUDE_CODE_OAUTH_TOKEN` rather than the interactive `.credentials.json`
+  flow the usage endpoint expects, so percentage-of-quota isn't available yet,
+  only raw token counts. Falls back cleanly (shows "N jetons" instead of a %).
+Backend: `work_suggestions`/`work_ideas` tables (already scaffolded in schema.js),
+new `services/workSuggestions.js`, `services/workIdeas.js`, `services/claudeUsage.js`,
+`routes/travaux.js`, mounted alongside the existing queue routes at `/api/travaux`.
+Verified live via curl: `/api/agent/usage`, `/api/travaux/ideas`,
+`/api/travaux/suggestions` all return 200. Smoketest extended to cover the new tab
+(`node smoketest.js` — PASSED).
