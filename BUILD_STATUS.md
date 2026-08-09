@@ -16,6 +16,13 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 - Book-recommendation endpoint enriched — now suggests 10-12 books per entity (up from 5-6) and looks each one up against the public Google Books API (no account/approval needed, unlike Amazon's Product Advertising API) for a real cover thumbnail, publish year, and a link to the book. Book cards in the entity panel now show the cover, a clickable title, and the year alongside the author. Clicking a book card (not the title link) expands an inline "deeper read" — a new endpoint generates a concrete, book-specific explanation of how it exhibits the entity's pattern, cached per (entity, book).
 - Boot-time cache warm-up — since Railway's free tier resets the DB on every deploy, the generate-once-and-cache pattern for books/tag-lens otherwise meant every entity started cold after each redeploy, with the first click on it eating live Claude-API latency. A fire-and-forget job now runs right after boot and pre-generates book suggestions + the first tag's lens for every character and country not yet cached, so both are already warm (instant) once the job catches up shortly after a deploy.
 - Shared-pattern edge explanations shortened to a strict 2 sentences (40-55 words) per the same "too long" feedback that shaped the tag-lens text; stale longer cached entries are purged on boot so they regenerate short.
+- Text generation (books, tag-lens, shared-pattern explanations, book detail) now runs through the Claude subscription (via the Claude Code CLI, `CLAUDE_CODE_OAUTH_TOKEN`) by default instead of the pay-per-token API, after the API's credit balance ran dry and took all four features down at once. New `services/claudeText.js` centralises this with automatic fallback to the other backend on failure, so a billing problem on one side can't do that again. Errors are also now surfaced with Anthropic's real message instead of a bare HTTP code.
+- Persistent storage: a Railway volume is mounted at `/data`, with the SQLite DB and the task-runner's on-disk state (`agent-tasks.json`, exec logs, PID files) both pointed at it. Previously both reset on every deploy; the task runner's directory in particular was never created at all, which silently broke every queued task (see below) with no visible error.
+- Fixed: the task queue never actually advanced past "queued" — `DATA_DIR` had no bootstrap step creating it, so the first disk write inside `advanceQueue()` threw, which then crashed the request with a second, invalid response. Verified fixed with a live end-to-end test: two previously-stuck tasks executed and completed the moment the fix deployed.
+- **Exploration features added to Content navigator**: a List view (toggle next to the graph) sharing the same filters; a continuum-axis range filter and sort (including "closest to full integration"); a corpus-wide "Find its echoes" action (diagonal + entanglement + Scale Echo, ranked, ignoring active filters) on both list cards and the entity detail panel. Entity type/source filters are now driven by a new `GET /api/ontology/facets` endpoint reading live DB counts instead of three hardcoded checkboxes — a future entity source (e.g. Reddit-derived pattern-instances) will filter and search alongside the rest automatically. The `entities.type` column's hardcoded CHECK constraint was also removed for the same reason.
+- **New Queue page** (5th mode) — the task queue previously had no UI at all (API-only). Now: add a prompt (mode/preset/continue-context/priority), live-polled status list with elapsed-time on running tasks, per-task thread view, reply/steer (button adapts to whether the task is running), one-click pending-question options, pause/resume, move-to-front, remove.
+- Fixed a real bug this round: `boot()` reported every startup exception as "Session expired, log in again," regardless of cause — a plain JS bug looked identical to being logged out. Now only claims an auth problem when the error actually looks like one.
+- Added `smoketest.js` — a headless (jsdom) boot test run against stubbed API responses, now covering boot, the list view, axis filter/sort, echoes, and the queue page. Used to catch and fix a real bug (a duplicate stub route) before it shipped, not just for this summary.
 
 **One unified app** (`fmcns_navigator.html`, Cowork artifact `fmcns-fractal-navigator`) — this is now the single app going forward, with three modes:
 
@@ -57,7 +64,7 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 
 ## Known gaps / honest caveats
 
-- **No queue UI yet.** Queuing/managing prompts is currently API-only (`/api/travaux/prompts`) — there's no page in the app to add, watch, or manage queued work. You'd need this before using the queue day-to-day.
+- ~~No queue UI yet.~~ Fixed — see the new Queue page above.
 - **76% of the film corpus is still reasoned, not grounded** — same as before, no archive-mining done this round.
 - **GraphRAG and a formal Pattern Engine don't exist** — the "Architecture Navigator" audit (see below) made this explicit for the first time rather than leaving it implied.
 - **Fractal Zoom isn't actually recursive yet** — camera zoom/pan only, no per-node internal graph revealed on zoom-in, except as a first proof-of-concept in the Architecture Navigator's own territory→component drill-down.
@@ -67,8 +74,7 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 
 ## Open threads (from the vision doc, §7, and since)
 
-- Build a queue UI in the app — the execution path is real now, but there's no page to actually use it from
-- Archive-mine the remaining 10 clusters (152 films), one at a time, same methodology as I/II
+- ~~Build a queue UI~~ / ~~Archive-mine the remaining 10 clusters~~ — both done this round
 - Extract the entanglement/diagonal/bridge computation out of client-side JS into one shared backend service (still duplicated between Content mode's graph and Map mode, even within the now-unified app)
 - Formalize a first named Pattern (beyond tag-overlap) as a Pattern Engine proof of concept
 - First version of GraphRAG (static community detection over existing tag/continuum data)
