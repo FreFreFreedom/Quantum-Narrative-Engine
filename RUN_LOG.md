@@ -11,6 +11,7 @@ Branch: `overnight/2026-08-10`. Nothing pushed, nothing merged, nothing publishe
 - [x] Step 0 — Mac execution fix (`setsid` → `bash` fallback).
 - [x] Step 1 — Frontend API_BASE local toggle.
 - [x] Step 2 — `agent-tasks.json` → SQLite; per-task pid files; 5-state `run_state` + heartbeat + UI.
+- [x] Step 3 — `gitOps.js` + worktree per task; `agents` table with dev1/dev2; per-agent slots, `MAX_CONCURRENT_WRITERS=2`.
 - [ ] Step 3 — `gitOps.js` + worktree per task; `agents` table; per-agent slots, `MAX_CONCURRENT_WRITERS=2`.
 - [ ] Step 4 — `parent_prompt_id` + `sessionOfParent` + "Continuer : ⟨tâche⟩" dropdown.
 
@@ -34,7 +35,26 @@ None so far.
 3. **Step 0 verification runs on the free OpenCode model** (deepseek-v4-flash-free)
    rather than Claude Code — same code path, zero quota cost, matches the plan's
    cost discipline.
-4. **Worktrees live under `~/.fmcns-worktrees`** for this machine... *(filled in during step 3)*
+4. **Worktrees live under `<repo>/../.fmcns-worktrees`**
+   (`/Users/antoinelambert/Projects/.fmcns-worktrees` — sibling of the repo,
+   never inside it); `WORKTREE_ROOT` env overrides. `MAIN_REPO` = the true git
+   top-level (resolved via `rev-parse --show-toplevel`): the repo root, not
+   queue-server. Resolved during step 3.
+5. **Worktree base = `origin/main` when present locally, else local `main`.**
+   The plan mandates origin/main (agents' base identical to what Railway sees);
+   on a machine where the remote has never been fetched (or fetch fails), the
+   fallback keeps dispatch possible instead of blocking on the network.
+6. **Questions and toolless summaries run in the MAIN checkout, not a worktree**
+   (plan 2b: `runToollessClaude` keeps MAIN_REPO; questions are read-only).
+   Only writer tasks get worktrees.
+7. **Agent seeding lives in `schema.js`, not bootstrapData.js** — FK ordering:
+   `agent_tasks.agent_key` REFERENCES agents(key), and the legacy-task import
+   runs before the bootstrap pass; rows must exist before any insert
+   (documented deviation from "next to seedKnowledge").
+8. **Task-level provider/model still comes from the task form**, as before;
+   the agent row's provider/model fields are defaults for API callers that
+   don't specify one (the full per-agent default wiring lands with the step-9
+   roster work).
 
 ## Step log
 
@@ -103,7 +123,50 @@ None so far.
 
 ### Step 3 — Parallel writers
 
-- [ ] Not started.
+- [x] `services/gitOps.js` — the ONLY module that runs git. `createWorktree`
+      (branch `agent/<agentKey>/<shortId>-<slug>` from `origin/main`, falling back
+      to local `main` when the remote ref is absent; `node_modules` symlinked, not
+      copied), `removeWorktree` (keeps the branch — it is the record of the work),
+      boot GC (prune + remove worktrees whose task row is gone or > 7 days old,
+      only touching dirs that look like task ids). `GIT_OPS_DISABLED=1` is the
+      env safety valve → agents run in the main checkout (pre-worktree behaviour).
+- [x] `agents` table seeded with **dev1** and **dev2** in `schema.js` (INSERT OR
+      IGNORE — a UI edit is never clobbered). Seeded there rather than in
+      bootstrapData.js because `agent_tasks.agent_key` carries a REFERENCES FK —
+      rows must exist before the first insert, and openDb() runs before the
+      bootstrap pass (documented deviation from the plan's "next to seedKnowledge").
+      `services/agents.js` + `routes/agents.js` (GET/POST/PATCH/DELETE
+      `/api/travaux/agents`, whitelisted fields, dev1/dev2 undeletable).
+- [x] `work_prompts.agent_key TEXT REFERENCES agents(key)` (ALTER; NULL → dev1);
+      `createPrompt`/`startPrompt`/`relaunchWithThread` propagate it; EDITABLE
+      so a queued prompt's agent can be switched.
+- [x] Per-agent writer slots in `taskRunner` (`_runningByAgent: Map<agentKey,
+      Set<taskId>>`) replace the single `busy` flag; `kick()` iterates queued
+      writers in priority order, skipping agents that are `paused`/`!enabled`/
+      at `max_parallel`, capped by the global `MAX_CONCURRENT_WRITERS` (env,
+      default 2 — the Mac can't sustain five concurrent CLIs). Question lane
+      keeps `MAX_PARALLEL_QUESTIONS` unchanged. Boot re-attach re-registers
+      slots so a restart can't exceed the cap; `failEarly` releases them.
+- [x] `promptQueue.advanceQueue` mirrors the same gate at the prompt level
+      (per-agent + global cap) — replaces the old single-implement gate.
+- [x] Writer tasks spawn in their own worktree (`cwd: worktree_path`, recorded on
+      the task row); question tasks + toolless summaries run in the main checkout
+      (MAIN_REPO). Execution prompt tells agents: isolated worktree, do NOT run
+      git commands. Git failure → logged fallback to the main checkout, never a
+      wedged queue.
+- [x] Frontend: "Agent" picker in the new-task form (from `/api/travaux/agents`),
+      `agent_key` sent at creation, agent shown in list rows + detail panel.
+- [x] Verified live: two implement tasks (dev1 + dev2, free OpenCode model) ran
+      CONCURRENTLY — two `in_progress` tasks, two per-task pid files at once,
+      `git worktree list` showed two trees, `git branch --list 'agent/*'` showed
+      two branches, both transcripts streamed and finalized `done` with real
+      reports, both wrote their marker file INSIDE their own worktree only
+      (main checkout untouched: `git log -1` unchanged, no stray files), pid/exec
+      files cleaned, `node_modules` symlink present in the worktree.
+- [x] Test artifacts cleaned up (prompts deleted, test worktrees removed —
+      branches kept, they are the record). `node --check` on extracted inline
+      scripts passed. Server stop verified clean (no strays, port released).
+- [x] Committed — pending.
 
 ### Step 4 — Session chaining
 
@@ -131,3 +194,9 @@ None so far.
   files, port released. `data/queue.db-wal` noted at 4.1 MB during heavy write
   load; sqlite3 CLI reads fine (one transient "unable to open database file" while
   the WAL was being checkpointed under load — reads via the API were unaffected).
+- Step 3 observation (pre-existing, not introduced here): the ASK_USER_INSTRUCTION
+  ("ask the user ONLY if a decision is not yours to make") is appended to every
+  queue task prompt, and both test agents emitted degenerate questions anyway
+  ("No external decision required…" / "Should the marker file be committed to
+  git?"). Harmless (question shows in the thread, answerable), but worth rewording
+  the instruction at some point — noted for Antoine, not blocking.

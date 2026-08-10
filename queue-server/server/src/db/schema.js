@@ -97,6 +97,12 @@ function initSchema(db) {
   // from session_id (Claude's) because the two CLIs have incompatible session
   // stores — a session is only ever resumable by the provider that created it.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN opencode_session_id TEXT`); } catch {}
+  // Agent roster link (plan Part 1): which agent this prompt is assigned to.
+  // NULL → the runner falls back to 'dev1'. ALTER, not in the CREATE, so
+  // pre-existing rows get NULL and behave exactly as before. The REFERENCES is
+  // validated by node:sqlite (FKs on by default): an unknown agent key is
+  // rejected at insert time rather than silently dispatching to dev1.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN agent_key TEXT REFERENCES agents(key)`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -221,6 +227,17 @@ function initSchema(db) {
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
+  `);
+  // Seed the two developer agents (step 3 scope — the full roster arrives in a
+  // later step). Seeded HERE rather than in bootstrapData.js because agent_tasks
+  // rows (legacy import + live queue) carry a REFERENCES agents(key) FK — the rows
+  // must exist before the first task is ever inserted, and openDb() runs before
+  // the bootstrap pass. INSERT OR IGNORE: a UI edit to an agent is never clobbered.
+  db.exec(`
+    INSERT OR IGNORE INTO agents (key, label, emoji, role, persona, provider, provider_model, preset, tools, path_allow, path_deny, max_parallel, enabled, paused, sort_order)
+    VALUES
+      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
+      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
   `);
 }
 

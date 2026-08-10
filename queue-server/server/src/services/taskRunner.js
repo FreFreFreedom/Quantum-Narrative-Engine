@@ -32,6 +32,7 @@ import { broadcastAll } from '../realtime.js';
 import { getProvider } from './providers/index.js';
 import * as claudeCode from './providers/claudeCode.js';
 import { defaultOpenCodeModel } from './providers/index.js';
+import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 // This directory was never guaranteed to exist (no bootstrap step created it), so every
@@ -83,6 +84,10 @@ const DEFAULT_GENERAL_PROMPT =
 const DEFAULT_EXECUTION_PROMPT = [
   '{{general}}', '\n\n',
   'Implement ONLY the task below.\n\n',
+  'You are working in an isolated git worktree on your own branch, checked out from ',
+  'the canonical main. Do NOT run any git commands (no commit, no push, no checkout, ',
+  'no merge, no rebase, no stash) — just edit files in place; your work is saved and ',
+  'reviewed outside of git.\n\n',
   '{{brief}}',
   '\n\nReport in detail what you changed and the result of any build/tests you ran, or the reason for being blocked.\n',
   SUMMARY_SECTION_INSTRUCTION,
@@ -122,6 +127,12 @@ const READONLY_TOOLS = 'Read,Glob,Grep';
 const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
 const MAX_PARALLEL_QUESTIONS = 2;
 const SUMMARY_TIMEOUT_MS = 3 * 60_000;
+
+// Global cap on concurrent WRITER (implement) tasks (plan 2b). Env-configurable;
+// defaults to 2 — the Mac can't sustain five concurrent CLIs, and the roster can
+// hold more agents than run at once. Also exported for promptQueue.js, which
+// mirrors this gate at the prompt level.
+export const MAX_CONCURRENT_WRITERS = Math.max(1, parseInt(process.env.MAX_CONCURRENT_WRITERS || '2', 10));
 
 // `setsid` exists on Linux (util-linux) but not on macOS. Memoised at load time —
 // the platform does not change while the server runs. When absent, execution falls
@@ -269,10 +280,37 @@ export function setQueuePaused(paused, { reason = null } = {}) {
   return { paused: !!next.queuePaused, pausedAt: next.queuePausedAt || null, reason: next.queuePausedReason || null };
 }
 
-let busy = false;
-let currentTaskId = null;
+// Per-agent writer slots (plan 2b): agentKey → Set<taskId> of implement tasks
+// currently executing. The old single `busy` boolean made the exec lane global —
+// two agents could never run in parallel. Each agent gets its own slot set, gated
+// by the agent row's max_parallel AND the global MAX_CONCURRENT_WRITERS cap in
+// kick(). The read-only question lane keeps its own set + cap unchanged.
+const _runningByAgent = new Map();
 const _questionRuns = new Set();
 const streamBuffers = new Map();
+
+function writerRunsFor(agentKey) { return _runningByAgent.get(agentKey || 'dev1')?.size || 0; }
+function totalWriterRuns() {
+  let n = 0;
+  for (const set of _runningByAgent.values()) n += set.size;
+  return n;
+}
+function addWriterRun(agentKey, taskId) {
+  const key = agentKey || 'dev1';
+  if (!_runningByAgent.has(key)) _runningByAgent.set(key, new Set());
+  _runningByAgent.get(key).add(taskId);
+}
+// Called on every finalize/cleanup (and boot re-attach): the plan's
+// releaseSlot(agentKey, taskId) — deletes from the set and re-kicks.
+function releaseSlot(agentKey, taskId) {
+  const key = agentKey || 'dev1';
+  const set = _runningByAgent.get(key);
+  if (set) {
+    set.delete(taskId);
+    if (set.size === 0) _runningByAgent.delete(key);
+  }
+  setImmediate(kick);
+}
 // Which provider is running a task right now — needed to parse its transcript on
 // log lines that arrive without task context. Set at spawn, cleared in cleanup.
 const taskProviderCache = new Map();
@@ -299,9 +337,10 @@ function appendStreamChunk(taskId, chunk) {
 }
 export function getStreamBuffer(taskId) { return streamBuffers.get(taskId) || []; }
 
-export function isRunnerBusy() { return busy; }
+export function isRunnerBusy() { return totalWriterRuns() > 0 || _questionRuns.size > 0; }
 export function getMaxParallelQuestions() { return MAX_PARALLEL_QUESTIONS; }
-export function getCurrentTaskId() { return currentTaskId; }
+export function getMaxConcurrentWriters() { return MAX_CONCURRENT_WRITERS; }
+export function getCurrentTaskId() { return null; }
 
 // Steering: not wired to a live Claude Code hook yet (§12 step 6 — the steering hook
 // script is a later port step). This still writes the inbox file and the live stream
@@ -334,11 +373,12 @@ function detectLimitFor(provider, ...texts) {
   return null;
 }
 
-// ─── Toolless Claude calls (used for the model-policy judge + user summaries) ─
-// Deliberately Claude-only: internal metering/helping calls, not queue work the
-// user picks a provider for.
+// Toolless Claude calls (used for the model-policy judge + user summaries) —
+// deliberately Claude-only. These never touch files, so they run in the MAIN
+// checkout (plan 2b), never a worktree.
+const SUMMARY_CWD = () => mainRepo() || process.env.AGENT_CWD || process.cwd();
 export function runToollessClaude({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000 }) {
-  return claudeCode.runToolless({ prompt, model, timeoutMs, cwd: AGENT_CWD, env: claudeCode.spawnEnv() });
+  return claudeCode.runToolless({ prompt, model, timeoutMs, cwd: SUMMARY_CWD(), env: claudeCode.spawnEnv() });
 }
 
 const _summarizing = new Map();
@@ -365,7 +405,7 @@ async function runUserSummary(taskId) {
       `Technical report:\n${report.slice(-12000)}`,
     ].join('');
     const { code, text } = await claudeCode.runToolless({
-      prompt, model: 'haiku', timeoutMs: SUMMARY_TIMEOUT_MS, cwd: AGENT_CWD, env: claudeCode.spawnEnv(),
+      prompt, model: 'haiku', timeoutMs: SUMMARY_TIMEOUT_MS, cwd: SUMMARY_CWD(), env: claudeCode.spawnEnv(),
     });
     if (code === 0 && text) {
       const updated = updateTask(taskId, { user_summary: text });
@@ -379,6 +419,13 @@ async function runUserSummary(taskId) {
 }
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────────
+// Roster lookup for slot gating. Reads live from SQLite on every kick (cheap; a
+// paused/enabled toggle in the UI must take effect immediately, not after a cache
+// TTL). NULL row → the agent is unknown → treat as dev1 defaults but don't block.
+function agentRow(agentKey) {
+  try { return db?.prepare(`SELECT * FROM agents WHERE key=?`).get(agentKey || 'dev1') || null; } catch { return null; }
+}
+
 function kick() {
   if (!getSettings().enabled) return;
   const tasks = readTasks().filter((t) => !(isQueuePaused() && t.kind === 'queue'));
@@ -389,15 +436,20 @@ function kick() {
     executeTask(q, { lane: 'question' });
   }
 
-  if (busy) return;
-  const nextExec = tasks.filter((t) => t.status === 'approved' && t.mode !== 'question').sort(byPriority)[0];
-  if (nextExec) executeTask(nextExec);
-}
-
-function releaseSlot() {
-  busy = false;
-  currentTaskId = null;
-  setImmediate(kick);
+  // Writer lane (plan 2b): iterate queued implement tasks in priority order and
+  // start each one whose agent has a free slot (agent enabled, not paused, under
+  // its max_parallel) AND whose start keeps us under the global cap. Skipped
+  // agents stay 'approved' — a later kick picks them up.
+  const writers = tasks.filter((t) => t.status === 'approved' && t.mode !== 'question').sort(byPriority);
+  for (const next of writers) {
+    if (totalWriterRuns() >= MAX_CONCURRENT_WRITERS) break;
+    const agentKey = next.agent_key || 'dev1';
+    const agent = agentRow(agentKey);
+    if (agent && (!agent.enabled || agent.paused)) continue;
+    const agentCap = agent ? Math.max(1, Math.min(4, agent.max_parallel || 1)) : 1;
+    if (writerRunsFor(agentKey) >= agentCap) continue;
+    executeTask(next, { lane: 'exec' });
+  }
 }
 
 function isProcessAlive(pid) {
@@ -431,6 +483,9 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
   let offset = 0;
   let lineBuffer = '';
   let finished = false;
+  // Agent key the slot was allocated to at dispatch (cleanup falls back to it if
+  // the task row is already gone by then).
+  const slotAgentKey = (readTasks().find((t) => t.id === taskId)?.agent_key) || 'dev1';
 
   function drainLog() {
     try {
@@ -459,7 +514,12 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     taskProviderCache.delete(taskId);
     setTimeout(() => streamBuffers.delete(taskId), 120_000).unref?.();
     if (lane === 'question') { _questionRuns.delete(taskId); setImmediate(kick); }
-    else releaseSlot();
+    else {
+      // Release the agent's writer slot. Read the key from the DB row (it may
+      // have changed since spawn), falling back to what we allocated at execute.
+      const cur = readTasks().find((x) => x.id === taskId);
+      releaseSlot(cur?.agent_key || slotAgentKey, taskId);
+    }
   }
 
   function finalize({ killedTimeout = false } = {}) {
@@ -643,13 +703,16 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
   drainLog();
 }
 
-function runDetachedExecution(taskId, prompt, { model = null, effort = null, tools = EXEC_TOOLS, resumeSessionId = null, lane = 'exec', provider = 'claude-code', providerModel = null, question = false } = {}) {
+function runDetachedExecution(taskId, prompt, { model = null, effort = null, tools = EXEC_TOOLS, resumeSessionId = null, lane = 'exec', provider = 'claude-code', providerModel = null, question = false, cwd = null } = {}) {
   const LOG = EXEC_LOG(taskId);
   const CODE = EXEC_CODE(taskId);
   const PROMPT = EXEC_PROMPT(taskId);
   for (const f of [LOG, CODE, EXEC_INBOX(taskId)]) { try { if (existsSync(f)) unlinkSync(f); } catch {} }
   writeFileSync(PROMPT, prompt, 'utf8');
 
+  // Where the agent actually works (plan 2b): the task's worktree when it has one
+  // (writers), the main checkout otherwise (questions, worktree-less fallback).
+  const execCwd = cwd || SUMMARY_CWD();
   const pidFile = PID_FILE(taskId);
   const prov = getProvider(provider);
   const bin = prov.resolveBin();
@@ -668,7 +731,7 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
   const cmd = `printf '%s\\n%s\\n' "$$" "${taskId}" > "${pidFile}"; ` + body;
 
   const base = {
-    cwd: AGENT_CWD,
+    cwd: execCwd,
     env: prov.spawnEnv({ ERP_AGENT_TASK_ID: taskId }),
     detached: true,
     stdio: 'ignore',
@@ -700,13 +763,13 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
 }
 
 // A task that fails BEFORE anything was spawned (no usable model, missing
-// read-only agent) must still release the lane it was allocated at the top of
-// executeTask — otherwise one early failure parks busy=true or a question slot
-// forever and the queue silently deadlocks behind it.
+// read-only agent) must still release the slot it was allocated at the top of
+// executeTask — otherwise one early failure parks an agent slot or a question
+// slot forever and the queue silently deadlocks behind it.
 function failEarly(task, message) {
   const lane = task.mode === 'question' ? 'question' : 'exec';
   if (lane === 'question') _questionRuns.delete(task.id);
-  else { busy = false; currentTaskId = null; }
+  else releaseSlot(task.agent_key || 'dev1', task.id);
   const blocked = updateTask(task.id, {
     status: 'blocked',
     agent_result: message,
@@ -722,7 +785,7 @@ function failEarly(task, message) {
 
 async function executeTask(next, { lane = 'exec' } = {}) {
   if (lane === 'question') _questionRuns.add(next.id);
-  else { busy = true; currentTaskId = next.id; }
+  else addWriterRun(next.agent_key || 'dev1', next.id);
 
   const provider = next.provider || 'claude-code';
   let model = next.model || 'sonnet';
@@ -745,7 +808,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
     // is missing, opencode does NOT fail — it silently falls back to its default
     // (write-capable) agent, breaking the read-only guarantee. Fail loudly instead.
     if (next.mode === 'question') {
-      const agentCheck = getProvider('opencode').ensureQuestionAgent({ cwd: AGENT_CWD });
+      const agentCheck = getProvider('opencode').ensureQuestionAgent({ cwd: mainRepo() || AGENT_CWD });
       if (!agentCheck.ok) {
         failEarly(next, `(cannot run read-only: ${agentCheck.error})`);
         return;
@@ -753,7 +816,27 @@ async function executeTask(next, { lane = 'exec' } = {}) {
     }
   }
 
-  console.log(`[taskRunner] executing task ${next.id} ("${next.title}") on provider=${provider} model=${model} lane=${lane}`);
+  // Writer tasks get their own git worktree (plan 2a): an isolated checkout on
+  // its own branch, created at dispatch time. The task row records it
+  // (worktree_path/branch/base_sha) so continuations can land on the same branch.
+  // On git failure the task still runs — in the main checkout, like before
+  // worktrees existed — with a logged warning, so one broken git repo can never
+  // wedge the queue.
+  let execCwd = null;
+  if (next.mode !== 'question') {
+    try {
+      const wt = createWorktree({ taskId: next.id, title: next.title, agentKey: next.agent_key || 'dev1' });
+      if (wt) {
+        const withWt = updateTask(next.id, { worktree_path: wt.worktreePath, branch: wt.branch, base_sha: wt.baseSha });
+        if (withWt) broadcastTask(withWt);
+        execCwd = wt.worktreePath;
+      }
+    } catch (e) {
+      console.error(`[taskRunner] worktree setup failed for ${next.id} — running in main checkout: ${e.message}`);
+    }
+  }
+
+  console.log(`[taskRunner] executing task ${next.id} ("${next.title}") on provider=${provider} model=${model} lane=${lane}${execCwd ? ' worktree=' + execCwd : ''}`);
   const task = updateTask(next.id, { status: 'in_progress', started_at: new Date().toISOString(), run_model: model });
   broadcastTask(task);
 
@@ -769,6 +852,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
     model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
     resumeSessionId: next.resume_session_id || null, lane,
     provider, providerModel: provider === 'opencode' ? model : null, question: isQuestion,
+    cwd: execCwd,
   });
 }
 
@@ -832,7 +916,19 @@ export function cancelPendingAgentTask(id) {
 
 export function initTaskRunner() {
   const timer = setTimeout(() => {
+    // Boot-time worktree GC (plan 2a): prune stale metadata, remove worktrees
+    // whose task row is gone or which are older than 7 days.
+    try {
+      gcWorktrees({ knownTaskIds: readTasks().map((t) => t.id) });
+    } catch (e) { console.error('[taskRunner] worktree GC failed:', e.message); }
+
+    // Re-attach monitors to tasks that were mid-flight when the server stopped —
+    // AND re-register their slots, so a writer restarted by the monitor counts
+    // against its agent's cap and the global MAX_CONCURRENT_WRITERS again
+    // (otherwise a restart could let a third writer start).
     for (const t of readTasks().filter((x) => x.status === 'in_progress')) {
+      if (t.mode === 'question') _questionRuns.add(t.id);
+      else addWriterRun(t.agent_key || 'dev1', t.id);
       monitorExecution(t.id, null, { lane: t.mode === 'question' ? 'question' : 'exec' });
     }
     setImmediate(kick);

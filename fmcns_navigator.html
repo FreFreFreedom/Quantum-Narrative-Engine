@@ -530,6 +530,11 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
                 <option value="question">Question (read-only)</option>
               </select>
             </label>
+            <label>Agent
+              <select id="qAgent">
+                <option value="">(loading agents…)</option>
+              </select>
+            </label>
             <label>Speed / depth
               <select id="qPreset">
                 <option value="auto" selected>Auto (judges the task — recommended)</option>
@@ -1917,6 +1922,7 @@ function initCore() {
   setCoreTab(coreTab);
   startUsagePolling();
   loadProviders(); // model picker + provider liveness for the New-prompt form
+  loadAgents(); // agent roster for the New-prompt form
   qLoad(); // keep the queue count + pause state fresh even off the Dispatch Queue sub-tab
   startQueuePolling();
 }
@@ -1936,7 +1942,7 @@ function setCoreTab(t) {
   if (t === 'arch') initArchNav();
   if (t === 'seeds') loadIdeas();
   if (t === 'signals') loadSuggestions();
-  if (t === 'queue') { qRenderList(); loadProviders(); }
+  if (t === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
   if (coreInited) startQueuePolling(); // rate depends on which sub-tab is now active
 }
 
@@ -1981,6 +1987,25 @@ let qFilter = 'active', qConnFails = 0, qDragId = null;
 // (free first) + provider liveness. Fetched once at init and again whenever the
 // Queue tab is opened, so a pick never happens against stale/empty options.
 let qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: null } };
+// Agent roster (GET /api/travaux/agents): who can take a task. Each agent runs in
+// its own worktree; two agents can implement in parallel (dev1, dev2 by default).
+let qAgents = [];
+
+async function loadAgents() {
+  try {
+    const data = await api('/api/travaux/agents');
+    qAgents = data.agents || [];
+  } catch (e) {
+    qAgents = [{ key: 'dev1', label: 'Developer 1', emoji: '👨‍💻' }];
+  }
+  const sel = document.getElementById('qAgent');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = qAgents.map(a =>
+    `<option value="${a.key}">${a.emoji ? a.emoji + ' ' : ''}${a.label}${a.paused ? ' (paused)' : ''}</option>`).join('');
+  if (prev && qAgents.some(a => a.key === prev)) sel.value = prev;
+  else sel.value = qAgents.length ? qAgents[0].key : '';
+}
 
 async function loadProviders() {
   try {
@@ -2153,6 +2178,12 @@ function qProviderLabel(p) {
   return `Claude Code · ${presetLabel}`;
 }
 
+// Which agent a task is assigned to (roster label; dev1 when unknown).
+function qAgentLabel(p) {
+  const a = qAgents.find(x => x.key === (p.agent_key || 'dev1'));
+  return a ? `${a.emoji ? a.emoji + ' ' : ''}${a.label}` : (p.agent_key || 'dev1');
+}
+
 function qRenderList() {
   document.querySelectorAll('.q-filterbtn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-qfilter') === qFilter);
@@ -2174,7 +2205,7 @@ function qRenderList() {
         <span class="q-badge" style="background:${Q_STATUS_COLORS[p.status]||'#8a8378'};">${Q_STATUS_LABELS[p.status]||p.status}</span>
       </div>
       <div class="q-item-meta">
-        <span>${p.mode==='question'?'Question':'Implement'} · ${qProviderLabel(p)}</span>
+        <span>${qAgentLabel(p)} · ${p.mode==='question'?'Question':'Implement'} · ${qProviderLabel(p)}</span>
         <span>${qElapsed(p)}</span>
       </div>
       ${p.status === 'running' ? qRunStateLine(p) : ''}
@@ -2231,6 +2262,7 @@ async function qAddPrompt() {
       space: 'fmcns',
       provider,
       provider_model: isOpen ? modelSel.value : null,
+      agent_key: document.getElementById('qAgent').value || 'dev1',
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
@@ -2276,6 +2308,7 @@ function qRenderDetail(p) {
     <div class="q-detail-row">
       <span><b>Status:</b> ${Q_STATUS_LABELS[p.status]||p.status}</span>
       <span><b>Mode:</b> ${p.mode}</span>
+      <span><b>Agent:</b> ${qAgentLabel(p)}</span>
       <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
       ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
       ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}

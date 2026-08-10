@@ -26,9 +26,11 @@ import {
   enqueueAgentTask, findAgentTask, getSettings, presetFor, getMaxParallelQuestions,
   generateUserSummary, isQueuePaused, setQueuePaused,
   updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage, stopTask,
+  MAX_CONCURRENT_WRITERS,
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { defaultOpenCodeModel } from './providers/index.js';
+import { listAgents } from './agents.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -81,7 +83,7 @@ function effectivePreset(row) {
 export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
-  component_id = null, provider = 'claude-code', provider_model = null,
+  component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -91,6 +93,8 @@ export async function createPrompt({
   const label = given || heuristicTitle(text);
   const initial = status === 'paused' ? 'paused' : 'queued';
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
+  // Agent assignment (plan Part 1): NULL falls back to dev1 at dispatch time.
+  const useAgentKey = String(agent_key || '').trim() || null;
   const resolved = (preset === 'auto' && useProvider === 'claude-code')
     ? await resolvePreset({ mode, prompt: text }).catch(() => 'standard') : null;
   let useModel = provider_model || null;
@@ -100,15 +104,15 @@ export async function createPrompt({
     try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
   }
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), same_context ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel);
+    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey);
   broadcast();
   return getPrompt(id);
 }
 
-const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model'];
+const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
@@ -265,7 +269,6 @@ export function advanceQueue() {
 
   const runningRows = db.prepare(`${SELECT()} AND status='running'`).all();
   const runningQuestions = runningRows.filter((r) => r.mode === 'question').length;
-  const implRunning = runningRows.some((r) => r.mode !== 'question');
   const started = [];
 
   const slots = getMaxParallelQuestions() - runningQuestions;
@@ -274,12 +277,29 @@ export function advanceQueue() {
     for (const q of questions) started.push(startPrompt(q));
   }
 
-  if (!implRunning) {
-    const next = PROMPT_SPACES
-      .map((sp) => db.prepare(`${SELECT()} AND status='queued' AND space=? AND (mode!='question' OR same_context=1) ORDER BY position, created_at LIMIT 1`).get(sp))
-      .filter(Boolean)
-      .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))[0];
-    if (next) started.push(startPrompt(next));
+  // Writer lane, per agent (plan 2b): instead of the old single-implement gate,
+  // start every queued implement prompt whose agent has a free slot and whose
+  // start keeps the global MAX_CONCURRENT_WRITERS cap intact. This is the prompt
+  // level of the same guard taskRunner's kick() applies at the task level — two
+  // agents can genuinely run in parallel; a paused/disabled agent's prompts wait.
+  const agents = new Map(listAgents().map((a) => [a.key, a]));
+  const runningImpl = runningRows.filter((r) => r.mode !== 'question');
+  const runningByAgent = new Map();
+  for (const r of runningImpl) {
+    const k = r.agent_key || 'dev1';
+    runningByAgent.set(k, (runningByAgent.get(k) || 0) + 1);
+  }
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) ORDER BY position, created_at`).all();
+  for (const next of queuedImpl) {
+    if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
+    const agentKey = next.agent_key || 'dev1';
+    const agent = agents.get(agentKey);
+    if (agent && (!agent.enabled || agent.paused)) continue;
+    const agentCap = agent ? Math.max(1, Math.min(4, agent.max_parallel || 1)) : 1;
+    if ((runningByAgent.get(agentKey) || 0) >= agentCap) continue;
+    started.push(startPrompt(next));
+    runningImpl.push(next);
+    runningByAgent.set(agentKey, (runningByAgent.get(agentKey) || 0) + 1);
   }
 
   if (!started.length) {
@@ -311,6 +331,7 @@ function startPrompt(row, { forceFresh = false } = {}) {
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue', work_prompt_id: row.id, resume_session_id: resume,
     provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
+    agent_key: row.agent_key || 'dev1',
   });
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
@@ -433,6 +454,7 @@ function relaunchWithThread(row) {
     title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : activeSession,
     provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
+    agent_key: row.agent_key || 'dev1',
   });
   const nextTurns = fresh ? 0 : (row.context_turns || 0) + 1;
   db.prepare(`

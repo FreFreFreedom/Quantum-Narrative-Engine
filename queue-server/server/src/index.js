@@ -5,9 +5,11 @@ import { openDb } from './db/schema.js';
 import { requireAuth, issueToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
 import { queueRoutes } from './routes/queue.js';
+import { agentsRoutes } from './routes/agents.js';
 import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
+import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
 import { initTaskRunner, bindTaskDb } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
@@ -28,6 +30,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const db = openDb();
 bindDb(db);
 bindTaskDb(db);
+bindAgentsDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
 
@@ -64,6 +67,7 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.use('/api/travaux', requireAuth, queueRoutes());
+app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
