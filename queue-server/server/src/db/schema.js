@@ -86,6 +86,17 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN tokens_in INTEGER`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN tokens_out INTEGER`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN run_model TEXT`); } catch {}
+  // Execution provider ('claude-code' | 'opencode') — which CLI actually runs this
+  // prompt. Defaults to claude-code so every pre-existing row keeps behaving exactly
+  // as before (a missing value IS claude-code). provider_model is the concrete
+  // OpenCode model id (e.g. 'opencode/deepseek-v4-flash-free') the user picked for
+  // this task; ignored for claude-code rows.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN provider TEXT NOT NULL DEFAULT 'claude-code'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN provider_model TEXT`); } catch {}
+  // OpenCode's own session id, for `opencode run --session` continuation. Separate
+  // from session_id (Claude's) because the two CLIs have incompatible session
+  // stores — a session is only ever resumable by the provider that created it.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN opencode_session_id TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

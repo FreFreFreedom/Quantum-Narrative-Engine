@@ -9,24 +9,29 @@
 // plain work queue. Kept: kick(), releaseSlot(), getSettings() shape, task format — the
 // original spec warns these four are shared plumbing even if you strip the rest.
 //
-// §11 safety rail — model fallback chain: on a detected quota/usage-limit hit, the SAME
-// task is retried in place on the next untried model in FALLBACK_CHAIN (sonnet → haiku →
-// opus), preserving its resume_session_id and prompt so context isn't lost. Only once
-// every model in the chain has been tried for this task does it defer back to the queue
+// §11 safety rail — model fallback chain (Claude provider only): on a detected
+// quota/usage-limit hit, the SAME task is retried in place on the next untried model in
+// the chain, preserving its resume_session_id and prompt so context isn't lost. Only
+// once every model in the chain has been tried does it defer back to the queue
 // (promptQueue.onAgentTaskDeferred) — and the whole queue is explicitly paused at that
-// point (setQueuePaused) rather than left to silently sit there, so nothing keeps
-// hammering an exhausted quota unattended.
+// point rather than left to silently sit there. The OpenCode provider deliberately has
+// NO automatic model fallback: a limit hit defers + pauses immediately with the model
+// named, and a different model runs only once the user picks one in the UI (explicit
+// requirement — see providers/opencode.js).
 //
 // Seam vs. the original (§10.1): every hard-coded path (CLAUDE_BIN, CWD, DATA_DIR) is
-// env-configurable. On Railway, CLAUDE_BIN must point to an actually-installed and
-// authenticated Claude Code CLI — that is a real, unresolved prerequisite (see README),
-// not something this file can paper over.
+// env-configurable. Execution providers live in providers/ (claudeCode.js, opencode.js)
+// and are resolved through the provider seam below — everything scheduler/monitor/file
+// related is provider-agnostic.
 
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
+import { getProvider } from './providers/index.js';
+import * as claudeCode from './providers/claudeCode.js';
+import { defaultOpenCodeModel } from './providers/index.js';
 
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 // This directory was never guaranteed to exist (no bootstrap step created it), so every
@@ -36,39 +41,7 @@ const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 // already been sent (ERR_HTTP_HEADERS_SENT) — the queue silently never advanced past
 // 'queued' with no visible error to the caller. Fixed at the root: ensure it exists.
 try { mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { console.error('Failed to create DATA_DIR', DATA_DIR, e.message); }
-const CLAUDE_BIN = process.env.CLAUDE_BIN || 'claude';
 const AGENT_CWD = process.env.AGENT_CWD || process.cwd();
-
-// Environment handed to every spawned `claude` process. Deliberately strips
-// ANTHROPIC_API_KEY (used elsewhere in this service for direct Anthropic API calls —
-// tagLens.js, books.js, tagPattern.js) before it reaches the CLI: if that variable is
-// present, Claude Code silently switches to pay-per-token API billing instead of the
-// subscription quota unlocked by CLAUDE_CODE_OAUTH_TOKEN/a prior `claude /login`, with
-// no visible warning either side. ERP_AGENT_RUN=1 tells this process's own
-// ~/.claude/settings.json hooks (if any) to stay quiet, matching the source spec.
-function claudeSpawnEnv(extra = {}) {
-  const env = { ...process.env, ERP_AGENT_RUN: '1', ...extra };
-  delete env.ANTHROPIC_API_KEY;
-  return env;
-}
-const AGENT_INTERNAL_SECRET = process.env.AGENT_INTERNAL_SECRET || '';
-
-const TASKS_FILE = resolve(DATA_DIR, 'agent-tasks.json');
-const TASKS_TMP = TASKS_FILE + '.tmp';
-const SETTINGS_FILE = resolve(DATA_DIR, 'agent-settings.json');
-const PID_FILE = resolve(DATA_DIR, '.agent-pid');
-const QPID_FILE = (id) => resolve(DATA_DIR, `.agent-qpid-${id}`);
-
-const EXEC_LOG = (id) => resolve(DATA_DIR, `.agent-exec-${id}.log`);
-const EXEC_CODE = (id) => resolve(DATA_DIR, `.agent-exec-${id}.code`);
-const EXEC_PROMPT = (id) => resolve(DATA_DIR, `.agent-exec-${id}.prompt`);
-const EXEC_INBOX = (id) => resolve(DATA_DIR, `.agent-exec-${id}.inbox`);
-
-const EXEC_TIMEOUT_MS = 30 * 60_000;
-const READONLY_TOOLS = 'Read,Glob,Grep';
-const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
-const MAX_PARALLEL_QUESTIONS = 2;
-const SUMMARY_TIMEOUT_MS = 3 * 60_000;
 
 export const SUMMARY_SECTION_MARKER = '=== USER SUMMARY ===';
 export const QUESTION_MARKER = '=== USER QUESTION ===';
@@ -127,6 +100,25 @@ const DEFAULT_QUESTION_PROMPT = [
 function renderTemplate(tpl, vars) {
   return String(tpl).replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vars ? String(vars[k] ?? '') : m));
 }
+
+const AGENT_INTERNAL_SECRET = process.env.AGENT_INTERNAL_SECRET || '';
+
+const TASKS_FILE = resolve(DATA_DIR, 'agent-tasks.json');
+const TASKS_TMP = TASKS_FILE + '.tmp';
+const SETTINGS_FILE = resolve(DATA_DIR, 'agent-settings.json');
+const PID_FILE = resolve(DATA_DIR, '.agent-pid');
+const QPID_FILE = (id) => resolve(DATA_DIR, `.agent-qpid-${id}`);
+
+const EXEC_LOG = (id) => resolve(DATA_DIR, `.agent-exec-${id}.log`);
+const EXEC_CODE = (id) => resolve(DATA_DIR, `.agent-exec-${id}.code`);
+const EXEC_PROMPT = (id) => resolve(DATA_DIR, `.agent-exec-${id}.prompt`);
+const EXEC_INBOX = (id) => resolve(DATA_DIR, `.agent-exec-${id}.inbox`);
+
+const EXEC_TIMEOUT_MS = 30 * 60_000;
+const READONLY_TOOLS = 'Read,Glob,Grep';
+const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
+const MAX_PARALLEL_QUESTIONS = 2;
+const SUMMARY_TIMEOUT_MS = 3 * 60_000;
 
 // ─── File-backed stores (atomic write) ────────────────────────────────────────
 function readJson(file, fallback) {
@@ -187,6 +179,14 @@ let busy = false;
 let currentTaskId = null;
 const _questionRuns = new Set();
 const streamBuffers = new Map();
+// Which provider is running a task right now — needed to parse its transcript on
+// log lines that arrive without task context. Set at spawn, cleared in cleanup.
+const taskProviderCache = new Map();
+function providerForTask(taskId) {
+  if (taskProviderCache.has(taskId)) return taskProviderCache.get(taskId);
+  const task = readTasks().find((t) => t.id === taskId);
+  return (task && task.provider) || 'claude-code';
+}
 
 function appendStreamChunk(taskId, chunk) {
   if (!taskId) return;
@@ -219,133 +219,25 @@ function streamLine(taskId, line) {
   if (!taskId || !line.trim()) return;
   try {
     const evt = JSON.parse(line);
-    if (evt.type === 'assistant' && evt.message?.content) {
-      for (const block of evt.message.content) {
-        if (block.type === 'text' && block.text?.trim()) appendStreamChunk(taskId, { kind: 'text', text: block.text });
-        else if (block.type === 'tool_use') {
-          const inp = block.input;
-          const preview = inp?.command || inp?.file_path || inp?.pattern || '';
-          appendStreamChunk(taskId, { kind: 'tool', name: block.name, input: preview });
-        }
-      }
-    }
+    getProvider(providerForTask(taskId)).streamEventToChunks(evt, (chunk) => appendStreamChunk(taskId, chunk));
   } catch {}
 }
 
-function extractAssistantText(transcript) {
-  let text = '';
-  for (const line of transcript.split('\n')) {
-    if (!line.trim()) continue;
-    try {
-      const evt = JSON.parse(line);
-      if (evt.type === 'assistant' && evt.message?.content) {
-        for (const block of evt.message.content) if (block.type === 'text') text += block.text;
-      }
-    } catch {}
-  }
-  return text;
-}
-function extractResultText(transcript) {
-  let last = '';
-  for (const line of transcript.split('\n')) {
-    if (!line.includes('"result"')) continue;
-    try {
-      const evt = JSON.parse(line);
-      if (evt.type === 'result' && typeof evt.result === 'string' && evt.result.trim()) last = evt.result;
-    } catch {}
-  }
-  return last;
-}
-function extractSessionId(transcript) {
-  for (const line of transcript.split('\n')) {
-    if (!line.includes('session_id')) continue;
-    try { const evt = JSON.parse(line); if (evt.session_id) return evt.session_id; } catch {}
+// Quota / rate-limit detection — provider-specific (Claude's quota wording vs the
+// generic provider errors opencode surfaces).
+function detectLimitFor(provider, ...texts) {
+  for (const t of texts) {
+    const hit = provider.detectLimit(t);
+    if (hit) return hit;
   }
   return null;
 }
 
-// Cost meter (Part 2c): the CLI's final `result` line already carries usage + cost —
-// this just reads it out, nothing computed or estimated.
-function extractUsage(transcript) {
-  for (const line of transcript.split('\n').reverse()) {
-    if (!line.includes('"result"')) continue;
-    try {
-      const evt = JSON.parse(line);
-      if (evt.type !== 'result') continue;
-      const usage = evt.usage || {};
-      return {
-        cost_usd: typeof evt.total_cost_usd === 'number' ? evt.total_cost_usd : null,
-        tokens_in: (usage.input_tokens || 0) + (usage.cache_read_input_tokens || 0) + (usage.cache_creation_input_tokens || 0) || null,
-        tokens_out: usage.output_tokens || null,
-      };
-    } catch {}
-  }
-  return { cost_usd: null, tokens_in: null, tokens_out: null };
-}
-
-export function extractPendingQuestion(raw) {
-  const text = String(raw || '');
-  const idx = text.lastIndexOf(QUESTION_MARKER);
-  if (idx === -1) return { text, question: null };
-  const body = text.slice(idx + QUESTION_MARKER.length).trim();
-  const head = text.slice(0, idx).trim();
-  if (!body) return { text: head, question: null };
-  const json = body.match(/\{[\s\S]*\}/);
-  if (json) {
-    try {
-      const parsed = JSON.parse(json[0]);
-      const q = String(parsed.question || '').trim();
-      if (!q) return { text: head, question: null };
-      const options = Array.isArray(parsed.options) ? parsed.options.map((o) => String(o).trim()).filter(Boolean).slice(0, 4) : [];
-      return { text: head, question: { question: q, options } };
-    } catch {}
-  }
-  const plain = body.replace(/```\w*|```/g, '').trim();
-  return { text: head, question: plain ? { question: plain, options: [] } : null };
-}
-
-// Quota / rate-limit detection.
-const LIMIT_RE = /(?:hit your (?:session|usage|weekly) limit|usage limit reached|limit will reset|try again after)/i;
-export function detectSessionLimit(text) {
-  return LIMIT_RE.test(String(text || '')) ? { label: 'quota reached' } : null;
-}
-
-// §11 model fallback chain. Previously a fixed sonnet → haiku → opus order, which meant
-// a quota hit on a 'deep' (opus) task silently demoted it to haiku mid-flight — a real
-// quality loss disguised as a retry. Now built per task: try same-or-higher tiers first
-// (most likely to still satisfy the task), only dropping to haiku as the last resort.
-const MODEL_TIER_ORDER = ['haiku', 'sonnet', 'opus'];
-export function buildFallbackChain(model) {
-  const i = MODEL_TIER_ORDER.indexOf(model);
-  if (i === -1) return MODEL_TIER_ORDER.slice();
-  const higher = MODEL_TIER_ORDER.slice(i + 1);
-  const lowerNonHaiku = MODEL_TIER_ORDER.slice(1, i).reverse();
-  return [...higher, ...lowerNonHaiku, 'haiku'].filter((m, idx, arr) => arr.indexOf(m) === idx);
-}
-// Kept for backward compatibility with anything importing the old constant name.
-export const FALLBACK_CHAIN = MODEL_TIER_ORDER;
-function nextFallbackModel(task) {
-  const tried = new Set(task.tried_models || [task.model]);
-  return buildFallbackChain(task.model).find((m) => !tried.has(m)) || null;
-}
-
-// ─── Toolless Claude calls (used for user-summary generation) ─────────────────
+// ─── Toolless Claude calls (used for the model-policy judge + user summaries) ─
+// Deliberately Claude-only: internal metering/helping calls, not queue work the
+// user picks a provider for.
 export function runToollessClaude({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000 }) {
-  return new Promise((resolveP) => {
-    const proc = spawn(CLAUDE_BIN, ['-p', '--model', model, '--tools', ''], {
-      cwd: AGENT_CWD, env: claudeSpawnEnv(), stdio: 'pipe',
-    });
-    proc.stdin.write(prompt);
-    proc.stdin.end();
-    let output = '';
-    let settled = false;
-    const settle = (v) => { if (!settled) { settled = true; clearTimeout(timer); resolveP(v); } };
-    const timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, timeoutMs);
-    proc.stdout.on('data', (c) => { output += c.toString(); });
-    proc.stderr.on('data', () => {});
-    proc.on('error', () => settle({ code: -1, text: '' }));
-    proc.on('close', (code) => settle({ code, text: output.trim() }));
-  });
+  return claudeCode.runToolless({ prompt, model, timeoutMs, cwd: AGENT_CWD, env: claudeCode.spawnEnv() });
 }
 
 const _summarizing = new Map();
@@ -356,12 +248,12 @@ export function generateUserSummary(taskId) {
   _summarizing.set(taskId, p);
   return p;
 }
-function runUserSummary(taskId) {
-  return new Promise((resolveP) => {
+async function runUserSummary(taskId) {
+  try {
     const task = readTasks().find((t) => t.id === taskId);
-    if (!task || task.user_summary || !['done', 'blocked'].includes(task.status)) return resolveP(false);
+    if (!task || task.user_summary || !['done', 'blocked'].includes(task.status)) return false;
     const report = (task.agent_result || '').trim();
-    if (!report || report === '(finished without a report)') return resolveP(false);
+    if (!report || report === '(finished without a report)') return false;
     const prompt = [
       'An autonomous agent just worked on a task in a personal project. ',
       'Write a plain-language summary for the user, no jargon, no file names. ',
@@ -371,27 +263,18 @@ function runUserSummary(taskId) {
       `Original request:\n${task.description || task.title || '(unknown)'}\n\n`,
       `Technical report:\n${report.slice(-12000)}`,
     ].join('');
-    const proc = spawn(CLAUDE_BIN, ['-p', '--model', 'haiku', '--tools', ''], {
-      cwd: AGENT_CWD, env: claudeSpawnEnv(), stdio: 'pipe',
+    const { code, text } = await claudeCode.runToolless({
+      prompt, model: 'haiku', timeoutMs: SUMMARY_TIMEOUT_MS, cwd: AGENT_CWD, env: claudeCode.spawnEnv(),
     });
-    proc.stdin.write(prompt);
-    proc.stdin.end();
-    let output = '';
-    let settled = false;
-    const settle = (ok) => { if (settled) return; settled = true; clearTimeout(timer); resolveP(ok); };
-    const timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, SUMMARY_TIMEOUT_MS);
-    proc.stdout.on('data', (c) => { output += c.toString(); });
-    proc.stderr.on('data', () => {});
-    proc.on('error', () => settle(false));
-    proc.on('close', (code) => {
-      const text = output.trim();
-      if (code === 0 && text) {
-        const updated = updateTask(taskId, { user_summary: text });
-        if (updated) broadcastTask(updated);
-        settle(true);
-      } else settle(false);
-    });
-  });
+    if (code === 0 && text) {
+      const updated = updateTask(taskId, { user_summary: text });
+      if (updated) broadcastTask(updated);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 // ─── Scheduler ─────────────────────────────────────────────────────────────────
@@ -469,6 +352,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     try { unlinkSync(EXEC_PROMPT(taskId)); } catch {}
     try { unlinkSync(EXEC_INBOX(taskId)); } catch {}
     try { unlinkSync(pidFile); } catch {}
+    taskProviderCache.delete(taskId);
     setTimeout(() => streamBuffers.delete(taskId), 120_000).unref?.();
     if (lane === 'question') { _questionRuns.delete(taskId); setImmediate(kick); }
     else releaseSlot();
@@ -484,9 +368,11 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     try { if (existsSync(CODE)) code = parseInt(readFileSync(CODE, 'utf8').trim(), 10); } catch {}
     let raw = '';
     try { if (existsSync(LOG)) raw = readFileSync(LOG, 'utf8'); } catch {}
-    const text = extractAssistantText(raw);
-    const sessionId = extractSessionId(raw);
-    const usage = extractUsage(raw);
+    const provider = getProvider(providerForTask(taskId));
+    const parsed = provider.parseTranscript(raw);
+    const text = parsed.text;
+    const sessionId = parsed.sessionId;
+    const usage = parsed.usage;
 
     let status, agent_result;
     console.log(`[taskRunner] task ${taskId} process finished — code=${code} killedTimeout=${killedTimeout}`);
@@ -504,14 +390,31 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       agent_result = (text ? text + '\n\n' : '') + `(exit code: ${code})`;
     }
 
-    // Check the assistant text, the CLI'''s structured result field, and the raw transcript —
-    // a real usage-limit hit often produces no assistant turn at all, only a result/error line.
-    const limit = detectSessionLimit(agent_result) || detectSessionLimit(extractResultText(raw)) || detectSessionLimit(raw);
+    // Check the assistant text, the structured error/result, and the raw transcript —
+    // a real usage-limit hit often produces no assistant turn at all, only an error line.
+    const limit = detectLimitFor(provider, agent_result, parsed.resultText || parsed.errorMessage, raw);
     if (limit) {
       const t = readTasks().find((x) => x.id === taskId);
       if (!t) { cleanup(); return; }
 
-      const fallback = nextFallbackModel(t);
+      if (provider.id === 'opencode') {
+        // No automatic model switching, ever — explicit user requirement. Defer back
+        // to the queue and pause so nothing else runs on the same exhausted model;
+        // the UI shows a model picker (free first) + "Use this model & resume".
+        appendStreamChunk(taskId, { kind: 'system', text: `Usage limit reached on ${t.run_model || t.provider_model || 'the selected model'} — queue paused. Pick another model in the task panel, then resume.` });
+        setImmediate(() => {
+          import('./promptQueue.js')
+            .then((m) => m.onAgentTaskDeferred(t, { label: limit.label }))
+            .catch((e) => console.error('queue: deferral failed —', e.message));
+        });
+        setQueuePaused(true, {
+          reason: `OpenCode model ${t.run_model || t.provider_model || '(selected)'} hit its usage limit — switch models in the task panel (free models are listed first), then resume the queue.`,
+        });
+        cleanup();
+        return;
+      }
+
+      const fallback = claudeCode.nextFallbackModel(t);
       if (fallback) {
         // Same task, same prompt, same session — just a different model. Retry in place,
         // do NOT release the slot or touch the queue: this is still "one task running".
@@ -526,7 +429,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
         try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
         runDetachedExecution(taskId, prevPrompt, {
           model: fallback, effort: t.effort, tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
-          resumeSessionId: t.resume_session_id || sessionId || null, lane,
+          resumeSessionId: t.resume_session_id || sessionId || null, lane, provider: 'claude-code',
         });
         return;
       }
@@ -539,7 +442,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
           .catch((e) => console.error('queue: deferral failed —', e.message));
       });
       setQueuePaused(true, {
-        reason: `Claude usage limit reached on every available model (${FALLBACK_CHAIN.join('/')}) while running "${t.title}" — paused, resume manually once quota resets.`,
+        reason: `Claude usage limit reached on every available model (${claudeCode.FALLBACK_CHAIN.join('/')}) while running "${t.title}" — paused, resume manually once quota resets.`,
       });
       appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on all fallback models — queue paused. ${limit.label}.` });
       cleanup();
@@ -555,7 +458,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       user_summary = agent_result.slice(summaryIdx + SUMMARY_SECTION_MARKER.length).trim() || null;
       agent_result = agent_result.slice(0, summaryIdx).trim();
     } else {
-      const cutResult = extractPendingQuestion(extractResultText(raw));
+      const cutResult = extractPendingQuestion(parsed.resultText);
       const resultText = cutResult.text;
       if (!pending_question) pending_question = cutResult.question;
       const i = resultText.lastIndexOf(SUMMARY_SECTION_MARKER);
@@ -581,7 +484,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     const finalTask = updateTask(taskId, {
       status, agent_result, user_summary, pending_question, missed_user_message,
       session_id: sessionId || null, completed_at: new Date().toISOString(),
-      cost_usd: usage.cost_usd, tokens_in: usage.tokens_in, tokens_out: usage.tokens_out,
+      cost_usd: usage?.cost_usd ?? null, tokens_in: usage?.tokens_in ?? null, tokens_out: usage?.tokens_out ?? null,
     });
     if (finalTask) broadcastTask(finalTask);
     console.log(`[taskRunner] task ${taskId} finalized — status=${status} result=${JSON.stringify((agent_result||'').slice(0,300))}`);
@@ -603,6 +506,16 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
   }
 
   const poll = setInterval(() => {
+    // If the task was already finalized out-of-band (spawn failure marked it
+    // 'blocked'; stopTask keeps status 'in_progress' so its stop_requested flow
+    // still reaches the dead-process check below), stop polling — finalize()
+    // would otherwise run again on a stale timeout and double-record the result.
+    const cur = readTasks().find((t) => t.id === taskId);
+    if (cur && cur.status !== 'in_progress') {
+      clearInterval(poll);
+      cleanup();
+      return;
+    }
     drainLog();
     if (existsSync(CODE)) { finalize(); return; }
     if (Date.now() - startedAt > EXEC_TIMEOUT_MS) {
@@ -618,41 +531,105 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
   drainLog();
 }
 
-function runDetachedExecution(taskId, prompt, { model = null, effort = null, tools = EXEC_TOOLS, resumeSessionId = null, lane = 'exec' } = {}) {
+function runDetachedExecution(taskId, prompt, { model = null, effort = null, tools = EXEC_TOOLS, resumeSessionId = null, lane = 'exec', provider = 'claude-code', providerModel = null, question = false } = {}) {
   const LOG = EXEC_LOG(taskId);
   const CODE = EXEC_CODE(taskId);
   const PROMPT = EXEC_PROMPT(taskId);
   for (const f of [LOG, CODE, EXEC_INBOX(taskId)]) { try { if (existsSync(f)) unlinkSync(f); } catch {} }
   writeFileSync(PROMPT, prompt, 'utf8');
 
-  const modelFlags = (model ? ` --model "${model}"` : '') + (effort ? ` --effort "${effort}"` : '');
-  const resumeFlag = resumeSessionId ? ` --resume "${resumeSessionId}"` : '';
   const pidFile = lane === 'question' ? QPID_FILE(taskId) : PID_FILE;
+  const prov = getProvider(provider);
+  const bin = prov.resolveBin();
+  const body = provider === 'claude-code'
+    ? prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model, effort, tools, resumeSessionId })
+    : prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model: providerModel || model, sessionId: resumeSessionId, question });
 
   // setsid --fork detaches the execution from the server's process tree, so a
   // platform restart (Railway redeploy) can't kill an in-flight execution or lose
   // its result — the result is read back off durable .log/.code files, never the
   // child's stdout pipe. See §11 in SPEC.md for why this isn't cosmetic.
-  const cmd = `printf '%s\\n%s\\n' "$$" "${taskId}" > "${pidFile}"; ` +
-    `"${CLAUDE_BIN}" -p --output-format stream-json --verbose${modelFlags}${resumeFlag} ` +
-    `--allowedTools "${tools}" < "${PROMPT}" > "${LOG}" 2>&1; echo $? > "${CODE}"`;
+  const cmd = `printf '%s\\n%s\\n' "$$" "${taskId}" > "${pidFile}"; ` + body;
 
   const proc = spawn('setsid', ['--fork', 'bash', '-c', cmd], {
     cwd: AGENT_CWD,
-    env: claudeSpawnEnv({ ERP_AGENT_TASK_ID: taskId }),
+    env: prov.spawnEnv({ ERP_AGENT_TASK_ID: taskId }),
     detached: true,
     stdio: 'ignore',
   });
   proc.unref();
+  // If the wrapper itself can't spawn (e.g. `setsid` missing on non-Linux hosts,
+  // or a bad bin path), no .log/.code file would EVER appear — without this the
+  // task would sit 'in_progress' forever, silently blocking the queue behind it.
+  // Write the failure into the durable files instead of finalizing here: the
+  // monitor's poll picks the CODE file up within ~2s and runs the full normal
+  // finalize path (lane release, question extraction, queue hand-off), so no
+  // lane state gets orphaned.
+  proc.on('error', (err) => {
+    console.error(`[taskRunner] failed to launch execution for task ${taskId}: ${err.message}`);
+    const note = `(could not launch the agent CLI — ${err.message})`;
+    try { writeFileSync(LOG, `[spawn failure] ${err.message}\n\n${note}`); } catch {}
+    try { writeFileSync(CODE, '1'); } catch {}
+  });
+  taskProviderCache.set(taskId, provider);
   monitorExecution(taskId, null, { lane });
 }
 
-function executeTask(next, { lane = 'exec' } = {}) {
+// A task that fails BEFORE anything was spawned (no usable model, missing
+// read-only agent) must still release the lane it was allocated at the top of
+// executeTask — otherwise one early failure parks busy=true or a question slot
+// forever and the queue silently deadlocks behind it.
+function failEarly(task, message) {
+  const lane = task.mode === 'question' ? 'question' : 'exec';
+  if (lane === 'question') _questionRuns.delete(task.id);
+  else { busy = false; currentTaskId = null; }
+  const blocked = updateTask(task.id, {
+    status: 'blocked',
+    agent_result: message,
+    completed_at: new Date().toISOString(),
+  });
+  if (blocked) broadcastTask(blocked);
+  setImmediate(() => {
+    import('./promptQueue.js')
+      .then((m) => m.onAgentTaskFinalized(blocked))
+      .catch((e) => console.error('queue: finalize hand-off failed —', e.message));
+  });
+}
+
+async function executeTask(next, { lane = 'exec' } = {}) {
   if (lane === 'question') _questionRuns.add(next.id);
   else { busy = true; currentTaskId = next.id; }
 
-  const model = next.model || 'sonnet';
-  console.log(`[taskRunner] executing task ${next.id} ("${next.title}") on model=${model} lane=${lane}`);
+  const provider = next.provider || 'claude-code';
+  let model = next.model || 'sonnet';
+  let effort = next.effort;
+  if (provider === 'opencode') {
+    // OpenCode ignores preset tiers — the user picked a concrete model
+    // (provider_model). Resolve a default lazily only if none was stored.
+    effort = null;
+    if (next.provider_model) {
+      model = next.provider_model;
+    } else {
+      try { model = await defaultOpenCodeModel(); }
+      catch (e) { console.error(`[taskRunner] no OpenCode model resolvable for ${next.id}: ${e.message}`); model = null; }
+    }
+    if (!model) {
+      failEarly(next, '(no OpenCode model selected — pick one in the task panel, then Run again)');
+      return;
+    }
+    // Question tasks run under the read-only fmcns-question agent. If that agent
+    // is missing, opencode does NOT fail — it silently falls back to its default
+    // (write-capable) agent, breaking the read-only guarantee. Fail loudly instead.
+    if (next.mode === 'question') {
+      const agentCheck = getProvider('opencode').ensureQuestionAgent({ cwd: AGENT_CWD });
+      if (!agentCheck.ok) {
+        failEarly(next, `(cannot run read-only: ${agentCheck.error})`);
+        return;
+      }
+    }
+  }
+
+  console.log(`[taskRunner] executing task ${next.id} ("${next.title}") on provider=${provider} model=${model} lane=${lane}`);
   const task = updateTask(next.id, { status: 'in_progress', started_at: new Date().toISOString(), run_model: model });
   broadcastTask(task);
 
@@ -665,14 +642,16 @@ function executeTask(next, { lane = 'exec' } = {}) {
   if (next.work_prompt_id) prompt += ASK_USER_INSTRUCTION;
 
   runDetachedExecution(next.id, prompt, {
-    model, effort: next.effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
+    model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
     resumeSessionId: next.resume_session_id || null, lane,
+    provider, providerModel: provider === 'opencode' ? model : null, question: isQuestion,
   });
 }
 
 export function enqueueAgentTask({
   title, description, kind = 'queue', mode = 'implement', model = 'opus', effort = 'high',
   priority = 0, author = '', work_prompt_id = null, resume_session_id = null,
+  provider = 'claude-code', provider_model = null,
 }) {
   const now = new Date().toISOString();
   const task = {
@@ -680,6 +659,7 @@ export function enqueueAgentTask({
     title: title || (description || '').slice(0, 140), description: description || '',
     author, model, effort, status: 'approved', priority,
     agent_result: null, user_summary: null, work_prompt_id, resume_session_id,
+    provider, provider_model,
     created_at: now, updated_at: now, started_at: null, completed_at: null,
   };
   const tasks = readTasks();
@@ -696,7 +676,7 @@ export function updatePendingAgentTask(id, patch = {}) {
   if (!id) return false;
   const task = readTasks().find((t) => t.id === id);
   if (!task || task.status !== 'approved') return false;
-  const allowed = ['title', 'description', 'model', 'effort', 'mode'];
+  const allowed = ['title', 'description', 'model', 'effort', 'mode', 'provider', 'provider_model'];
   const updates = {};
   for (const k of allowed) if (patch[k] !== undefined) updates[k] = patch[k];
   if (!Object.keys(updates).length) return true;
@@ -722,4 +702,28 @@ export function initTaskRunner() {
     setImmediate(kick);
   }, 1000);
   timer.unref?.();
+}
+
+// ─── Transcript helpers shared by the prompt-queue hand-off ──────────────────
+// (Question/summary marker extraction reads the SAME conventions regardless of
+// provider — both CLIs are instructed to emit the markers.)
+export function extractPendingQuestion(raw) {
+  const text = String(raw || '');
+  const idx = text.lastIndexOf(QUESTION_MARKER);
+  if (idx === -1) return { text, question: null };
+  const body = text.slice(idx + QUESTION_MARKER.length).trim();
+  const head = text.slice(0, idx).trim();
+  if (!body) return { text: head, question: null };
+  const json = body.match(/\{[\s\S]*\}/);
+  if (json) {
+    try {
+      const parsed = JSON.parse(json[0]);
+      const q = String(parsed.question || '').trim();
+      if (!q) return { text: head, question: null };
+      const options = Array.isArray(parsed.options) ? parsed.options.map((o) => String(o).trim()).filter(Boolean).slice(0, 4) : [];
+      return { text: head, question: { question: q, options } };
+    } catch {}
+  }
+  const plain = body.replace(/```\w*|```/g, '').trim();
+  return { text: head, question: plain ? { question: plain, options: [] } : null };
 }

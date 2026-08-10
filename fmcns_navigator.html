@@ -529,6 +529,19 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
             </label>
           </div>
           <div class="q-row">
+            <label>Runs on
+              <select id="qProvider">
+                <option value="claude-code">Claude Code</option>
+                <option value="opencode">OpenCode</option>
+              </select>
+            </label>
+            <label>Model
+              <select id="qOpenModel" disabled>
+                <option value="">(loading models…)</option>
+              </select>
+            </label>
+          </div>
+          <div class="q-row">
             <label class="q-check"><input type="checkbox" id="qSameContext"> Continue previous context</label>
             <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
           </div>
@@ -1872,9 +1885,11 @@ function initCore() {
     document.querySelectorAll('.q-filterbtn').forEach(b => {
       b.onclick = () => { qFilter = b.getAttribute('data-qfilter'); qRenderList(); };
     });
+    document.getElementById('qProvider').onchange = qProviderUi;
   }
   setCoreTab(coreTab);
   startUsagePolling();
+  loadProviders(); // model picker + provider liveness for the New-prompt form
   qLoad(); // keep the queue count + pause state fresh even off the Dispatch Queue sub-tab
   startQueuePolling();
 }
@@ -1894,7 +1909,7 @@ function setCoreTab(t) {
   if (t === 'arch') initArchNav();
   if (t === 'seeds') loadIdeas();
   if (t === 'signals') loadSuggestions();
-  if (t === 'queue') qRenderList();
+  if (t === 'queue') { qRenderList(); loadProviders(); }
   if (coreInited) startQueuePolling(); // rate depends on which sub-tab is now active
 }
 
@@ -1935,6 +1950,51 @@ const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
 const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
 let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
 let qFilter = 'active', qConnFails = 0, qDragId = null;
+// Execution-provider picker data (GET /api/travaux/providers): opencode model list
+// (free first) + provider liveness. Fetched once at init and again whenever the
+// Queue tab is opened, so a pick never happens against stale/empty options.
+let qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: null } };
+
+async function loadProviders() {
+  try {
+    qProviders = await api('/api/travaux/providers');
+  } catch (e) {
+    qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: 'unreachable' } };
+  }
+  const sel = document.getElementById('qOpenModel');
+  if (!sel) return;
+  const prev = sel.value;
+  const models = (qProviders.opencode?.models) || [];
+  sel.innerHTML = models.length
+    ? models.map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.id}</option>`).join('')
+    : `<option value="">${qProviders.opencode?.error ? 'unavailable — ' + qProviders.opencode.error : '(no models)'}</option>`;
+  sel.disabled = models.length === 0;
+  // Keep a user-chosen model across refreshes; only fall back to the free default
+  // when the old choice is gone (e.g. server can't reach that provider anymore).
+  if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+  else if (models.length) {
+    const free = models.find(m => m.free);
+    sel.value = free ? free.id : models[0].id;
+  }
+  qProviderUi(); // disabled state must follow the form's current provider, not just model availability
+}
+
+// Picking OpenCode: its task model is fixed by the user in the model dropdown, and
+// the preset/auto tiering is a Claude-Code concept — so the preset select is
+// disabled (the row still stores a plain 'standard' so tier-aware bits don't choke).
+function qProviderUi() {
+  const prov = document.getElementById('qProvider');
+  const preset = document.getElementById('qPreset');
+  const modelSel = document.getElementById('qOpenModel');
+  if (!prov) return;
+  const isOpen = prov.value === 'opencode';
+  if (preset) preset.disabled = isOpen;
+  if (modelSel) modelSel.disabled = !isOpen;
+  if (isOpen && !modelSel.value) {
+    const free = (qProviders.opencode?.models || []).find(m => m.free);
+    if (free) modelSel.value = free.id;
+  }
+}
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
@@ -2035,6 +2095,17 @@ function qCostLine(p) {
   return parts.length ? `<div class="q-item-meta"><span>${parts.join(' · ')}</span></div>` : '';
 }
 
+// Which CLI + model a task runs on: 'OpenCode · <model>' for opencode rows
+// (provider_model is the concrete model the user picked), 'Claude Code · <tier
+// label>' for claude-code rows (the preset, or the auto-resolved tier).
+function qProviderLabel(p) {
+  if ((p.provider || 'claude-code') === 'opencode') {
+    return `OpenCode${p.provider_model ? ' · ' + p.provider_model : ''}`;
+  }
+  const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
+  return `Claude Code · ${presetLabel}`;
+}
+
 function qRenderList() {
   document.querySelectorAll('.q-filterbtn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-qfilter') === qFilter);
@@ -2048,7 +2119,6 @@ function qRenderList() {
   host.innerHTML = visible.map(p => {
     const reorderable = Q_REORDERABLE_STATUSES.includes(p.status);
     const finished = !Q_ACTIVE_STATUSES.includes(p.status);
-    const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
     return `
     <div class="q-item${qSelected && qSelected.id===p.id ? ' sel':''}" data-qid="${p.id}" ${reorderable ? 'draggable="true"' : ''}>
       <div class="q-item-top">
@@ -2057,7 +2127,7 @@ function qRenderList() {
         <span class="q-badge" style="background:${Q_STATUS_COLORS[p.status]||'#8a8378'};">${Q_STATUS_LABELS[p.status]||p.status}</span>
       </div>
       <div class="q-item-meta">
-        <span>${p.mode==='question'?'Question':'Implement'} · ${presetLabel}</span>
+        <span>${p.mode==='question'?'Question':'Implement'} · ${qProviderLabel(p)}</span>
         <span>${qElapsed(p)}</span>
       </div>
       ${finished ? qCostLine(p) : ''}
@@ -2094,15 +2164,25 @@ async function qAddPrompt() {
   if (!promptText) { errEl.textContent = 'Write a prompt first.'; return; }
   const btn = document.getElementById('qAddBtn');
   btn.disabled = true; btn.textContent = 'Adding…';
+  const provider = document.getElementById('qProvider').value;
+  const isOpen = provider === 'opencode';
+  const modelSel = document.getElementById('qOpenModel');
+  if (isOpen && !modelSel.value) {
+    errEl.textContent = 'Pick a model first (or wait for the list to load).';
+    btn.disabled = false; btn.textContent = 'Add to queue';
+    return;
+  }
   try {
     await apiWrite('/api/travaux/prompts', 'POST', {
       prompt: promptText,
       title: document.getElementById('qPromptTitle').value.trim(),
       mode: document.getElementById('qMode').value,
-      preset: document.getElementById('qPreset').value,
+      preset: isOpen ? 'standard' : document.getElementById('qPreset').value,
       same_context: document.getElementById('qSameContext').checked,
       priority: document.getElementById('qPriority').checked,
       space: 'fmcns',
+      provider,
+      provider_model: isOpen ? modelSel.value : null,
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
@@ -2127,12 +2207,17 @@ async function qTogglePause() {
 function qRenderDetail(p) {
   const host = document.getElementById('qRight');
   const messages = (p.messages || []);
+  const isOpen = (p.provider || 'claude-code') === 'opencode';
   const tier = p.preset === 'auto' ? (p.resolved_preset || 'standard') : p.preset;
   const ctxLimit = Q_CONTEXT_LIMITS[tier] || 6;
   const ctxTurns = p.context_turns || 0;
   const ctxAmber = ctxTurns >= ctxLimit - 1;
-  const presetLabel = p.preset === 'auto' ? `auto → ${tier}` : p.preset;
+  const activeSession = isOpen ? p.opencode_session_id : p.session_id;
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
+  const switchable = p.status !== 'running';
+  const providerOpts = `
+    <option value="claude-code"${isOpen ? '' : ' selected'}>Claude Code</option>
+    <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode</option>`;
   const costParts = [];
   if (p.run_model) costParts.push(p.run_model);
   if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
@@ -2143,12 +2228,24 @@ function qRenderDetail(p) {
     <div class="q-detail-row">
       <span><b>Status:</b> ${Q_STATUS_LABELS[p.status]||p.status}</span>
       <span><b>Mode:</b> ${p.mode}</span>
-      <span><b>Preset:</b> ${presetLabel}</span>
+      <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
       ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
       ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
-      ${p.session_id ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
+      ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
     </div>
     ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
+    ${switchable ? `
+      <div class="q-detail-row" style="gap:8px;align-items:center;">
+        <span><b>Provider:</b>
+          <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
+        </span>
+        <span><b>OpenCode model:</b>
+          <select id="qDetailModel" class="q-input" style="width:auto;" ${isOpen ? '' : 'disabled'}>
+            <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
+          </select>
+        </span>
+        <span style="font-size:11px;color:#8a8378;">Switching provider drops the old session link and starts fresh.</span>
+      </div>` : ''}
     <div class="arch-field"><div class="arch-field-label">Original prompt</div><div class="arch-field-body">${p.prompt}</div></div>
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
     <div id="qThread"></div>
@@ -2161,12 +2258,44 @@ function qRenderDetail(p) {
     <div class="q-row" style="margin-top:10px;">
       ${p.status === 'paused' ? `<button class="ctrlbtn" id="qStartBtn" title="Queue it — it runs in its normal turn, not necessarily right away.">Start</button>` : ''}
       ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
-      ${p.session_id && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
+      ${activeSession && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
       ${canRerun ? `<button class="ctrlbtn" id="qRerunBtn"${p.status==='blocked' ? ' title="Retries one tier stronger if this was on the auto policy — a block usually means the model ran out of depth, not luck."' : ''}>Run again</button>` : ''}
       ${canRerun ? `<button class="ctrlbtn" id="qRerunFreshBtn" title="Run again, but start a brand-new session instead of resuming the one that led here.">Run again fresh</button>` : ''}
       ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qDeleteBtn">Remove</button>` : ''}
     </div>
   `;
+
+  if (switchable) {
+    const provSel = document.getElementById('qDetailProvider');
+    const modelSel = document.getElementById('qDetailModel');
+    modelSel.innerHTML = '<option value="">— pick one —</option>' +
+      (qProviders.opencode?.models || []).map(m =>
+        `<option value="${m.id}"${m.id === p.provider_model ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.id}</option>`).join('');
+    const commitPatch = async (patch) => {
+      try {
+        await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', patch);
+        await qLoad();
+      } catch (e) { alert('Could not switch: ' + e.message); }
+    };
+    provSel.onchange = async () => {
+      if (provSel.value === (isOpen ? 'opencode' : 'claude-code')) {
+        modelSel.disabled = provSel.value !== 'opencode';
+        return;
+      }
+      if (!confirm('Switch this task to the other CLI? Its session link resets — replies start fresh.')) {
+        provSel.value = isOpen ? 'opencode' : 'claude-code';
+        return;
+      }
+      modelSel.disabled = provSel.value !== 'opencode';
+      if (provSel.value === 'opencode' && !modelSel.value) {
+        const free = (qProviders.opencode?.models || []).find(m => m.free);
+        if (free) modelSel.value = free.id;
+      }
+      await commitPatch({ provider: provSel.value, provider_model: provSel.value === 'opencode' ? modelSel.value : null });
+    };
+    modelSel.onchange = async () => { if (modelSel.value) await commitPatch({ provider_model: modelSel.value }); };
+  }
+
 
   const threadHost = document.getElementById('qThread');
   threadHost.innerHTML = messages.length
