@@ -101,16 +101,29 @@ export function detectLimit(text) {
 // A missing `--agent` does NOT fail the run: opencode warns and silently falls
 // back to the DEFAULT agent — which can write files. For a Question task that
 // would silently break the read-only guarantee, so verify the agent file exists
-// in the standard project/user config locations BEFORE spawning.
+// BEFORE spawning. The file ships at the repo root (.opencode/agent/fmcns-question.md);
+// the server's cwd is queue-server/ (or a per-task worktree with its own copy), so
+// search upward from cwd as well as the standard user config locations.
 export function ensureQuestionAgent({ cwd }) {
   const name = 'fmcns-question';
+  function findUp(rel) {
+    let dir = cwd;
+    for (let i = 0; i < 4; i++) {
+      const p = join(dir, rel);
+      if (existsSync(p)) return p;
+      const parent = resolve(dir, '..');
+      if (parent === dir) break;
+      dir = parent;
+    }
+    return null;
+  }
   const candidates = [
-    join(cwd, '.opencode', 'agent', `${name}.md`),
-    join(cwd, '.opencode', 'agents', `${name}.md`),
+    findUp(join('.opencode', 'agent', `${name}.md`)),
+    findUp(join('.opencode', 'agents', `${name}.md`)),
     join(homedir(), '.config', 'opencode', 'agent', `${name}.md`),
     join(homedir(), '.config', 'opencode', 'agents', `${name}.md`),
   ];
-  const found = candidates.find((p) => existsSync(p));
+  const found = candidates.find((p) => p && existsSync(p));
   return found ? { ok: true, path: found } : { ok: false, error: `read-only agent '${name}' not found — opencode would silently fall back to its default (write-capable) agent. Add .opencode/agent/${name}.md to the repo root (it ships there).` };
 }
 

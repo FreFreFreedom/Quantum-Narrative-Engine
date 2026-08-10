@@ -3,6 +3,7 @@ import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
 import { listOpenCodeModels } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
+import { findAgentTask } from '../services/taskRunner.js';
 
 export function queueRoutes() {
   const router = Router();
@@ -27,11 +28,19 @@ export function queueRoutes() {
 
   router.get('/prompts', (req, res) => {
     const space = req.query.space || 'fmcns';
-    const prompts = queue.listPrompts({ space }).map((p) => ({
-      ...p,
-      pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
-      messages: queue.listMessages(p.id),
-    }));
+    const prompts = queue.listPrompts({ space }).map((p) => {
+      // Surface the RUNNING task's process state (run_state + heartbeat) so the UI
+      // can tell a wedged agent from a busy one — plan Part 3. Null for prompts
+      // with no live agent task.
+      const task = p.agent_task_id ? findAgentTask(p.agent_task_id) : null;
+      return {
+        ...p,
+        pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
+        messages: queue.listMessages(p.id),
+        run_state: task?.run_state ?? null,
+        heartbeat_at: task?.heartbeat_at ?? null,
+      };
+    });
     res.json({
       prompts,
       queue_paused: queue.getQueuePauseState().paused,

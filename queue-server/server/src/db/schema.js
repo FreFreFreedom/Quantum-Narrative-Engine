@@ -145,6 +145,83 @@ function initSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_pos ON work_ideas(position)`); } catch {}
+
+  // Agent task executions — the runner's own record, previously a JSON file
+  // (data/agent-tasks.json). Moved to SQLite because an unlocked whole-file
+  // read-modify-write loses writes when two tasks finalize in the same tick;
+  // node:sqlite serializes writes for free (see plan 2c).
+  // run_state is the PROCESS state (idle|dispatched|working|awaiting_input|stopped)
+  // orthogonal to status (approved|in_progress|done|blocked|cancelled) — lets the
+  // UI tell a wedged agent from a busy one (plan Part 3, trimmed to 5 states).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_tasks (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL DEFAULT 'queue',
+      mode TEXT NOT NULL DEFAULT 'implement',
+      agent_key TEXT REFERENCES agents(key),
+      title TEXT,
+      description TEXT,
+      author TEXT,
+      status TEXT NOT NULL DEFAULT 'approved',
+      run_state TEXT NOT NULL DEFAULT 'idle',
+      model TEXT,
+      effort TEXT,
+      priority INTEGER NOT NULL DEFAULT 0,
+      provider TEXT NOT NULL DEFAULT 'claude-code',
+      provider_model TEXT,
+      run_model TEXT,
+      tried_models TEXT,
+      agent_result TEXT,
+      user_summary TEXT,
+      pending_question TEXT,
+      missed_user_message TEXT,
+      work_prompt_id TEXT,
+      resume_session_id TEXT,
+      session_id TEXT,
+      worktree_path TEXT,
+      branch TEXT,
+      base_sha TEXT,
+      stop_requested INTEGER NOT NULL DEFAULT 0,
+      cost_usd REAL,
+      tokens_in INTEGER,
+      tokens_out INTEGER,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      started_at TEXT,
+      completed_at TEXT,
+      heartbeat_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_queue ON agent_tasks(status, kind, priority, created_at)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_prompt ON agent_tasks(work_prompt_id)`); } catch {}
+
+  // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
+  // because node:sqlite enforces foreign keys by default — the REFERENCES above
+  // needs the table to exist. Seeded with the roster rows in step 3
+  // (services/agents.js + bootstrapData); an empty roster here changes nothing.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agents (
+      key            TEXT PRIMARY KEY,
+      label          TEXT NOT NULL,
+      emoji          TEXT,
+      role           TEXT NOT NULL DEFAULT 'dev'
+                     CHECK(role IN ('research','dev','design','test','reviewer','integrator')),
+      persona        TEXT NOT NULL DEFAULT '',
+      brief_file     TEXT,
+      provider       TEXT NOT NULL DEFAULT 'claude-code',
+      provider_model TEXT,
+      preset         TEXT NOT NULL DEFAULT 'standard',
+      tools          TEXT NOT NULL DEFAULT 'Bash,Read,Write,Edit,Glob,Grep',
+      path_allow     TEXT NOT NULL DEFAULT '["**"]',
+      path_deny      TEXT NOT NULL DEFAULT '[]',
+      max_parallel   INTEGER NOT NULL DEFAULT 1,
+      enabled        INTEGER NOT NULL DEFAULT 1,
+      paused         INTEGER NOT NULL DEFAULT 0,
+      sort_order     REAL NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

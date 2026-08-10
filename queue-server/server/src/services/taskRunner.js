@@ -103,11 +103,14 @@ function renderTemplate(tpl, vars) {
 
 const AGENT_INTERNAL_SECRET = process.env.AGENT_INTERNAL_SECRET || '';
 
-const TASKS_FILE = resolve(DATA_DIR, 'agent-tasks.json');
-const TASKS_TMP = TASKS_FILE + '.tmp';
 const SETTINGS_FILE = resolve(DATA_DIR, 'agent-settings.json');
-const PID_FILE = resolve(DATA_DIR, '.agent-pid');
-const QPID_FILE = (id) => resolve(DATA_DIR, `.agent-qpid-${id}`);
+// Legacy task file — imported into SQLite once on first boot after the migration,
+// then renamed to .migrated (never deleted; it is the pre-migration record).
+const TASKS_JSON = resolve(DATA_DIR, 'agent-tasks.json');
+// One pid file per task, for EVERY lane (exec AND question). The old scheme had a
+// single global .agent-pid for the exec lane plus a per-question fork — with N
+// parallel writers one global file would be overwritten by the second writer.
+const PID_FILE = (id) => resolve(DATA_DIR, `.agent-pid-${id}`);
 
 const EXEC_LOG = (id) => resolve(DATA_DIR, `.agent-exec-${id}.log`);
 const EXEC_CODE = (id) => resolve(DATA_DIR, `.agent-exec-${id}.code`);
@@ -128,7 +131,18 @@ const HAS_SETSID = (() => {
   try { return existsSync('/usr/bin/setsid') || existsSync('/bin/setsid'); } catch { return false; }
 })();
 
-// ─── File-backed stores (atomic write) ────────────────────────────────────────
+// ─── SQLite-backed task store ──────────────────────────────────────────────────
+// Previously data/agent-tasks.json via unlocked whole-file read-modify-write: two
+// tasks finalizing in the same tick lost one write entirely (the plan's 2c — the
+// exact failure that left prompts 'running' forever). node:sqlite serializes
+// writes for free. The public function signatures (readTasks/updateTask/
+// findAgentTask/enqueueAgentTask) are unchanged so promptQueue.js needs no edits.
+let db = null;
+export function bindTaskDb(database) {
+  db = database;
+  importLegacyTasksFile();
+}
+
 function readJson(file, fallback) {
   try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return fallback; }
 }
@@ -137,19 +151,91 @@ function writeJson(file, value) {
   writeFileSync(tmp, JSON.stringify(value, null, 2) + '\n', 'utf8');
   renameSync(tmp, file);
 }
-function readTasks() { return readJson(TASKS_FILE, []); }
-function writeTasks(tasks) {
-  writeFileSync(TASKS_TMP, JSON.stringify(tasks, null, 2) + '\n', 'utf8');
-  renameSync(TASKS_TMP, TASKS_FILE);
+function parseJsonOr(text, fallback) {
+  if (text === null || text === undefined || text === '') return fallback;
+  try { return JSON.parse(text); } catch { return fallback; }
+}
+function taskFromRow(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    tried_models: parseJsonOr(row.tried_models, null),
+    pending_question: parseJsonOr(row.pending_question, null),
+  };
+}
+function readTasks() {
+  if (!db) return [];
+  return db.prepare(`SELECT * FROM agent_tasks ORDER BY created_at`).all().map(taskFromRow);
 }
 function updateTask(id, updates) {
-  const tasks = readTasks();
-  const idx = tasks.findIndex((t) => t.id === id);
-  if (idx === -1) return null;
-  const task = { ...tasks[idx], ...updates, updated_at: new Date().toISOString() };
-  tasks[idx] = task;
-  writeTasks(tasks);
-  return task;
+  if (!db) return null;
+  const sets = [];
+  const vals = [];
+  for (const [k, v] of Object.entries(updates || {})) {
+    if (k === 'id' || k === 'created_at') continue;
+    let value = v;
+    if (k === 'tried_models' && Array.isArray(v)) value = JSON.stringify(v);
+    if (k === 'pending_question' && v && typeof v === 'object') value = JSON.stringify(v);
+    sets.push(`${k}=?`);
+    vals.push(value);
+  }
+  if (!sets.length) return findAgentTask(id);
+  sets.push(`updated_at=?`);
+  vals.push(new Date().toISOString());
+  db.prepare(`UPDATE agent_tasks SET ${sets.join(', ')} WHERE id=?`).run(...vals, id);
+  return findAgentTask(id);
+}
+
+// One-shot import of a pre-existing data/agent-tasks.json on the first boot after
+// the migration. Only fires when the file exists AND the SQLite table is still
+// empty; afterwards the file is renamed to agent-tasks.json.migrated (kept, not
+// deleted — it is the pre-migration record).
+function importLegacyTasksFile() {
+  if (!existsSync(TASKS_JSON)) return;
+  let legacy;
+  try { legacy = readJson(TASKS_JSON, []); } catch { legacy = null; }
+  const rowCount = db.prepare(`SELECT COUNT(*) AS n FROM agent_tasks`).get().n;
+  if (!Array.isArray(legacy) || legacy.length === 0) {
+    try { renameSync(TASKS_JSON, TASKS_JSON + '.migrated'); } catch {}
+    return;
+  }
+  if (rowCount > 0) {
+    console.warn('[taskRunner] legacy agent-tasks.json ignored — SQLite already populated.');
+    return;
+  }
+  const insert = db.prepare(`
+    INSERT OR REPLACE INTO agent_tasks (
+      id, kind, mode, agent_key, title, description, author, status, run_state,
+      model, effort, priority, provider, provider_model, run_model, tried_models,
+      agent_result, user_summary, pending_question, missed_user_message,
+      work_prompt_id, resume_session_id, session_id,
+      worktree_path, branch, base_sha, stop_requested,
+      cost_usd, tokens_in, tokens_out,
+      created_at, updated_at, started_at, completed_at, heartbeat_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `);
+  for (const t of legacy) {
+    insert.run(
+      t.id, t.kind || 'queue', t.mode || 'implement', t.agent_key || null,
+      t.title || null, t.description || null, t.author || null,
+      t.status || 'approved',
+      t.status === 'in_progress' ? 'working' : (t.run_state || 'idle'),
+      t.model || null, t.effort || null, t.priority || 0,
+      t.provider || 'claude-code', t.provider_model || null, t.run_model || null,
+      Array.isArray(t.tried_models) ? JSON.stringify(t.tried_models) : (t.tried_models || null),
+      t.agent_result || null, t.user_summary || null,
+      (t.pending_question && typeof t.pending_question === 'object') ? JSON.stringify(t.pending_question) : (t.pending_question || null),
+      t.missed_user_message || null,
+      t.work_prompt_id || null, t.resume_session_id || null, t.session_id || null,
+      t.worktree_path || null, t.branch || null, t.base_sha || null,
+      t.stop_requested ? 1 : 0,
+      t.cost_usd ?? null, t.tokens_in ?? null, t.tokens_out ?? null,
+      t.created_at || null, t.updated_at || null, t.started_at || null,
+      t.completed_at || null, t.heartbeat_at || null
+    );
+  }
+  try { renameSync(TASKS_JSON, TASKS_JSON + '.migrated'); } catch {}
+  console.log(`[taskRunner] imported ${legacy.length} task(s) from agent-tasks.json into SQLite (file kept as agent-tasks.json.migrated).`);
 }
 function broadcastTask(task) { broadcastAll('agent:task:updated', { task }); }
 
@@ -198,10 +284,17 @@ function providerForTask(taskId) {
 
 function appendStreamChunk(taskId, chunk) {
   if (!taskId) return;
-  if (!streamBuffers.has(taskId)) streamBuffers.set(taskId, []);
+  const first = !streamBuffers.has(taskId);
+  if (first) streamBuffers.set(taskId, []);
   const buf = streamBuffers.get(taskId);
   buf.push(chunk);
   if (buf.length > 500) buf.shift();
+  if (first) {
+    // First output of any kind → the process is demonstrably alive and producing:
+    // run_state 'dispatched' → 'working' (plan Part 3: working = ≥1 stream chunk).
+    const t = updateTask(taskId, { run_state: 'working', heartbeat_at: new Date().toISOString() });
+    if (t) broadcastTask(t);
+  }
   broadcastAll('agent:task:stream', { taskId, chunk });
 }
 export function getStreamBuffer(taskId) { return streamBuffers.get(taskId) || []; }
@@ -321,11 +414,10 @@ function isProcessAlive(pid) {
 export function stopTask(taskId) {
   const task = readTasks().find((t) => t.id === taskId);
   if (!task || task.status !== 'in_progress') return false;
-  const lane = task.mode === 'question' ? 'question' : 'exec';
-  const pidFile = lane === 'question' ? QPID_FILE(taskId) : PID_FILE;
+  const pidFile = PID_FILE(taskId);
   let pid = null;
   try { pid = parseInt(readFileSync(pidFile, 'utf8').trim().split('\n')[0], 10); } catch {}
-  const updated = updateTask(taskId, { stop_requested: true });
+  const updated = updateTask(taskId, { stop_requested: true, run_state: 'stopped' });
   if (updated) broadcastTask(updated);
   if (pid) { try { process.kill(-pid, 'SIGKILL'); } catch {} }
   return true;
@@ -334,7 +426,7 @@ export function stopTask(taskId) {
 export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}) {
   const LOG = EXEC_LOG(taskId);
   const CODE = EXEC_CODE(taskId);
-  const pidFile = lane === 'question' ? QPID_FILE(taskId) : PID_FILE;
+  const pidFile = PID_FILE(taskId);
   const startedAt = Date.now();
   let offset = 0;
   let lineBuffer = '';
@@ -351,6 +443,10 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       const parts = lineBuffer.split('\n');
       lineBuffer = parts.pop();
       for (const line of parts) streamLine(taskId, line);
+      // Heartbeat: every new byte of transcript output means the agent is alive.
+      // One column, one clock — the cheapest possible wedge detector (plan Part 3).
+      const t = updateTask(taskId, { heartbeat_at: new Date().toISOString() });
+      if (t) broadcastTask(t);
     } catch {}
   }
 
@@ -489,10 +585,18 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       }
     } catch {}
 
+    // run_state at the end of a run: a stopped task stays 'stopped'; a task that
+    // ends while asking the user something shows 'awaiting_input' (the prompt row
+    // keeps the question until the user answers); otherwise it's done working.
+    const cur = readTasks().find((x) => x.id === taskId);
+    const runState = cur && cur.stop_requested ? 'stopped'
+      : (pending_question?.question ? 'awaiting_input' : (cur?.run_state || 'idle'));
+
     const finalTask = updateTask(taskId, {
       status, agent_result, user_summary, pending_question, missed_user_message,
       session_id: sessionId || null, completed_at: new Date().toISOString(),
       cost_usd: usage?.cost_usd ?? null, tokens_in: usage?.tokens_in ?? null, tokens_out: usage?.tokens_out ?? null,
+      run_state: runState, heartbeat_at: new Date().toISOString(),
     });
     if (finalTask) broadcastTask(finalTask);
     console.log(`[taskRunner] task ${taskId} finalized — status=${status} result=${JSON.stringify((agent_result||'').slice(0,300))}`);
@@ -546,7 +650,7 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
   for (const f of [LOG, CODE, EXEC_INBOX(taskId)]) { try { if (existsSync(f)) unlinkSync(f); } catch {} }
   writeFileSync(PROMPT, prompt, 'utf8');
 
-  const pidFile = lane === 'question' ? QPID_FILE(taskId) : PID_FILE;
+  const pidFile = PID_FILE(taskId);
   const prov = getProvider(provider);
   const bin = prov.resolveBin();
   const body = provider === 'claude-code'
@@ -587,6 +691,11 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
     try { writeFileSync(CODE, '1'); } catch {}
   });
   taskProviderCache.set(taskId, provider);
+  // The process is now (attempting to) run: stamp the heartbeat so a spawned-but-
+  // silent task does not immediately look wedged, and so the re-attached monitor
+  // after a server restart inherits a fresh clock.
+  const spawned = updateTask(taskId, { heartbeat_at: new Date().toISOString() });
+  if (spawned) broadcastTask(spawned);
   monitorExecution(taskId, null, { lane });
 }
 
@@ -666,26 +775,38 @@ async function executeTask(next, { lane = 'exec' } = {}) {
 export function enqueueAgentTask({
   title, description, kind = 'queue', mode = 'implement', model = 'opus', effort = 'high',
   priority = 0, author = '', work_prompt_id = null, resume_session_id = null,
-  provider = 'claude-code', provider_model = null,
+  provider = 'claude-code', provider_model = null, agent_key = null,
 }) {
   const now = new Date().toISOString();
   const task = {
     id: randomUUID(), kind, mode: mode === 'question' ? 'question' : 'implement',
     title: title || (description || '').slice(0, 140), description: description || '',
-    author, model, effort, status: 'approved', priority,
+    author, model, effort, status: 'approved', run_state: 'dispatched', priority,
     agent_result: null, user_summary: null, work_prompt_id, resume_session_id,
-    provider, provider_model,
-    created_at: now, updated_at: now, started_at: null, completed_at: null,
+    provider, provider_model, agent_key,
+    created_at: now, updated_at: now, started_at: null, completed_at: null, heartbeat_at: null,
   };
-  const tasks = readTasks();
-  tasks.push(task);
-  writeTasks(tasks);
+  db.prepare(`
+    INSERT INTO agent_tasks (
+      id, kind, mode, agent_key, title, description, author, status, run_state,
+      model, effort, priority, provider, provider_model,
+      work_prompt_id, resume_session_id,
+      created_at, updated_at, started_at, completed_at, heartbeat_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(
+    task.id, task.kind, task.mode, agent_key, task.title, task.description, task.author,
+    task.status, task.run_state, model, effort, priority, provider, provider_model,
+    work_prompt_id, resume_session_id, now, now, null, null, null
+  );
   broadcastTask(task);
   setImmediate(kick);
   return task;
 }
 
-export function findAgentTask(id) { return readTasks().find((t) => t.id === id) || null; }
+export function findAgentTask(id) {
+  if (!db || !id) return null;
+  return taskFromRow(db.prepare(`SELECT * FROM agent_tasks WHERE id=?`).get(id));
+}
 
 export function updatePendingAgentTask(id, patch = {}) {
   if (!id) return false;

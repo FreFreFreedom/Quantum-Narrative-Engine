@@ -178,6 +178,8 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .q-item-title { font-size:12px; font-weight:600; flex:1; }
 .q-badge { font-size:9px; padding:2px 7px; border-radius:20px; color:#fff; flex-shrink:0; }
 .q-item-meta { font-size:10px; color:#8a8378; margin-top:4px; display:flex; gap:8px; align-items:center; }
+.q-item-meta .q-runstate { color:#2a6d3b; font-weight:600; }
+.q-item-meta .q-heartbeat-warn { color:#b3541e; font-weight:600; }
 .q-item-q { font-size:10.5px; color:#8a5a1e; margin-top:5px; background:#f6e7cf; border-radius:5px; padding:5px 7px; }
 .q-drag-handle { cursor:grab; color:#a19a8e; font-size:12px; flex-shrink:0; }
 .q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
@@ -2112,6 +2114,26 @@ function qElapsed(p) {
   return ` · ${m}:${String(s).padStart(2,'0')}`;
 }
 
+// Part 3 run_state surfacing: a running row says WHAT the process is doing
+// (working / waiting for your answer / …), and a working row whose heartbeat is
+// older than 5 minutes gets a warning badge — the cheapest possible wedge detector.
+const Q_RUN_STATE_LABELS = {
+  dispatched: 'starting…',
+  working: 'working',
+  awaiting_input: 'waiting for your answer',
+  stopped: 'stopped',
+};
+function qRunStateLine(p) {
+  if (p.status !== 'running') return '';
+  const label = Q_RUN_STATE_LABELS[p.run_state] || p.run_state || '…';
+  let warn = '';
+  if ((p.run_state === 'working' || p.run_state === 'dispatched') && p.heartbeat_at) {
+    const mins = (Date.now() - new Date(p.heartbeat_at).getTime()) / 60000;
+    if (mins > 5) warn = `<span class="q-heartbeat-warn" title="No agent output received in a while"> · no activity for ${Math.round(mins)} min</span>`;
+  }
+  return `<div class="q-item-meta"><span class="q-runstate">${label}</span><span>${qElapsed(p)}</span>${warn}</div>`;
+}
+
 function qCostLine(p) {
   if (p.cost_usd == null && !p.run_model) return '';
   const parts = [];
@@ -2155,6 +2177,7 @@ function qRenderList() {
         <span>${p.mode==='question'?'Question':'Implement'} · ${qProviderLabel(p)}</span>
         <span>${qElapsed(p)}</span>
       </div>
+      ${p.status === 'running' ? qRunStateLine(p) : ''}
       ${finished ? qCostLine(p) : ''}
       ${p.status === 'paused' ? `<div class="q-item-meta"><span>Set aside — not running. Click in, then hit Start.</span></div>` : ''}
       ${p.pending_question ? `<div class="q-item-q">🙋 ${p.pending_question.question}</div>` : ''}

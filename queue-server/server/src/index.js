@@ -9,7 +9,7 @@ import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
-import { initTaskRunner } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { warmCaches } from './services/warmup.js';
 import { makeBooksHandler } from './services/books.js';
@@ -27,6 +27,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 const db = openDb();
 bindDb(db);
+bindTaskDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
 
