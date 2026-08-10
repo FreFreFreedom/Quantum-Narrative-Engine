@@ -164,7 +164,10 @@ whole thing).
   meta-view of FMCNS's own build), Queue, Travaux. Talks to the deployed backend
   via a hardcoded `API_BASE` / `FMCNS_CHAT_SERVER` constant near the top of the
   file (`https://quantum-narrative-engine-production.up.railway.app`) — update
-  both if the backend's Railway domain ever changes.
+  both if the backend's Railway domain ever changes. The server now serves the
+  app at its own root (`/`) from `queue-server/public/index.html`, which must be
+  kept in sync with the master copy before any deploy that ships frontend
+  changes (see AGENTS.md).
 - **`fmcns_char_navigator.html`** and **`fmcns_film_corpus.html`** — superseded
   prototypes. Their content already lives in Content mode of the unified app.
   Left in the repo for reference; don't edit going forward.

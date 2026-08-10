@@ -71,6 +71,10 @@ questions come first.
 ## Layout (in brief)
 
 - `fmcns_navigator.html` — the live single-file frontend app (no build step).
+  Master copy lives at the repo root. Railway only deploys `queue-server/`, so
+  before any deploy that ships a frontend change, copy it to
+  `queue-server/public/index.html` (the server serves the app at `/` from
+  there). Keep the two in sync.
 - `queue-server/` — Node/Express backend; server code under `queue-server/server/src/`.
 - `plans/` — implementation plans; `plans/README.md` is the index. A plan in
   `plans/` is not a green light unless Antoine explicitly asks for it by name.

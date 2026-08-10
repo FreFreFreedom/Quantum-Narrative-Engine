@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openDb } from './db/schema.js';
 import { requireAuth, issueToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
@@ -81,6 +83,11 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
+
+// Serve the single-file frontend app (fmcns_navigator.html, copied to
+// public/index.html) at the root address, so the whole app lives at one URL.
+const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
+app.use(express.static(PUBLIC_DIR));
 
 const server = http.createServer(app);
 attachRealtime(server);

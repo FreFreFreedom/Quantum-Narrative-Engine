@@ -206,6 +206,25 @@ None so far.
       gate, deterministic checks, review screen and one-click Revert remain for a
       future run.)
 
+## Daytime follow-up (Antoine session) — serve the app from the server's own address
+
+Antoine asked for the app page to live at the same address as the backend, so he
+has one stable URL instead of the Cowork artifact. Decision (his): Option A —
+Express serves the single-file app at `/` from `queue-server/public/index.html`.
+
+- [x] Added `express.static(PUBLIC_DIR)` in `server/src/index.js` (public dir
+      resolved relative to the module, not cwd) + imports for `path`/
+      `fileURLToPath`.
+- [x] Copied master `fmcns_navigator.html` → `queue-server/public/index.html`.
+      NOTE for future runs: any frontend change must be copied there before a
+      deploy, else the online app is stale — documented in AGENTS.md + CLAUDE.md.
+- [x] Verified locally on :3000: `GET /` returns the page (HTTP 200, `diff`
+      clean vs master, new "Continuer" UI present), `/api/health` 200, login
+      works. Server currently running (JWT_SECRET=dev ADMIN_PASSWORD=dev PORT=3000).
+- [ ] Deploy to Railway — Antoine's call (push to main + verify). Not done here.
+      Local dev note for Antoine: password is `dev` on the local server; the
+      online version keeps his usual password.
+
 ## Verification notes
 
 - Baseline boot verified: `/api/health`, login, `/api/travaux/prompts`,
