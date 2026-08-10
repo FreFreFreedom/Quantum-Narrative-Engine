@@ -241,7 +241,6 @@ Implemented this session (after the deploy above).
       stats; Merge button gated by typing `MERGE`; Revert on merged cards;
       Discard to reject. Polled from `qLoad`. CSS added. (All review UI strings
       are English per Antoine — the gate word is `MERGE`, not `FUSIONNER`.)
-      Jeter to reject. Polled from `qLoad`. CSS added.
 - [x] **Sandbox verification (all pass)** — scratch clone + local bare origin in
       `/tmp`, never the real remote: clean branch → approved → merge commit
       pushed → worktree/branch cleaned → revert pushed; broken syntax → refused
