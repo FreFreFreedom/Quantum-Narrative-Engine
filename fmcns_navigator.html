@@ -2228,7 +2228,7 @@ function qAgentLabel(p) {
 }
 
 const REVIEW_ORDER = { pending: 0, approved: 1, changes_requested: 2, merged: 3, rejected: 4, reverted: 5 };
-const REVIEW_STATUS_LABELS = { pending: 'Vérification en cours…', approved: 'Prêt à fusionner', changes_requested: 'À corriger', merged: 'Fusionné', rejected: 'Jeté', reverted: 'Reverté' };
+const REVIEW_STATUS_LABELS = { pending: 'Checking…', approved: 'Ready to merge', changes_requested: 'Needs changes', merged: 'Merged', rejected: 'Discarded', reverted: 'Reverted' };
 const REVIEW_STATUS_COLORS = { pending: '#a19a8e', approved: '#2f7d63', changes_requested: '#b8860b', merged: '#4f9d7a', rejected: '#8a8378', reverted: '#8a8378' };
 let qReviews = [];
 
@@ -2236,29 +2236,29 @@ function qReviewCard(r) {
   const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const checks = r.checks || {};
   const rows = [
-    ['syntax', 'Syntaxe des fichiers modifiés'],
-    ['boot', 'Le serveur démarre'],
-    ['endpoints', 'Les pages répondent'],
-    ['html', 'Page principale intègre'],
-    ['scope', 'Périmètre respecté'],
+    ['syntax', 'Changed files parse'],
+    ['boot', 'Server starts'],
+    ['endpoints', 'Pages respond'],
+    ['html', 'Main page intact'],
+    ['scope', 'Scope respected'],
   ].map(([k, label]) => {
     const c = checks[k];
     if (!c) return '';
     return `<div class="q-review-check"><span class="${c.ok ? 'q-check-ok' : 'q-check-bad'}">${c.ok ? '✓' : '✗'}</span><span>${label}</span></div>`;
   }).join('');
   const conflict = (r.conflicts_with && r.conflicts_with.length)
-    ? `<div class="q-review-conflict">⚠ En conflit avec : ${esc(r.conflicts_with.join(', '))}</div>` : '';
+    ? `<div class="q-review-conflict">⚠ Conflicts with : ${esc(r.conflicts_with.join(', '))}</div>` : '';
   const concerns = (r.concerns && r.concerns.length)
     ? `<div class="q-review-concerns">${r.concerns.map(c => esc(c)).join('<br>')}</div>` : '';
   const stats = (r.files_changed && r.files_changed.length)
-    ? `<div class="q-review-meta">${r.files_changed.length} fichier(s) · +${r.insertions || 0} / −${r.deletions || 0}</div>` : '';
+    ? `<div class="q-review-meta">${r.files_changed.length} file(s) · +${r.insertions || 0} / −${r.deletions || 0}</div>` : '';
   const canMerge = r.status === 'approved';
   const canRevert = r.status === 'merged';
   const canReject = ['pending', 'approved', 'changes_requested'].includes(r.status);
   return `
   <div class="q-review" data-review-id="${r.id}">
     <div class="q-item-top">
-      <span class="q-item-title">${esc(r.prompt_title || r.branch || 'Travail')}</span>
+      <span class="q-item-title">${esc(r.prompt_title || r.branch || 'Work')}</span>
       <span class="q-badge" style="background:${REVIEW_STATUS_COLORS[r.status]||'#8a8378'};">${REVIEW_STATUS_LABELS[r.status]||r.status}</span>
     </div>
     <div class="q-review-plain">${esc(r.plain_summary || '')}</div>
@@ -2267,9 +2267,9 @@ function qReviewCard(r) {
     ${concerns}
     ${stats}
     <div class="q-review-actions">
-      ${canMerge ? `<button class="ctrlbtn q-mergebtn" data-merge="${r.id}">Fusionner → envoyer en ligne</button>` : ''}
-      ${canRevert ? `<button class="ctrlbtn q-revertbtn" data-revert="${r.id}">Annuler cette fusion</button>` : ''}
-      ${canReject ? `<button class="ctrlbtn q-rejectbtn" data-reject="${r.id}">Jeter</button>` : ''}
+      ${canMerge ? `<button class="ctrlbtn q-mergebtn" data-merge="${r.id}">Merge → publish online</button>` : ''}
+      ${canRevert ? `<button class="ctrlbtn q-revertbtn" data-revert="${r.id}">Undo this merge</button>` : ''}
+      ${canReject ? `<button class="ctrlbtn q-rejectbtn" data-reject="${r.id}">Discard</button>` : ''}
     </div>
   </div>`;
 }
@@ -2286,21 +2286,21 @@ async function qRenderReviews() {
     .sort((a, b) => (REVIEW_ORDER[a.status] || 9) - (REVIEW_ORDER[b.status] || 9));
   if (!visible.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
   host.style.display = '';
-  host.innerHTML = `<div style="font-size:13px;color:#8a8378;margin-bottom:6px;">À valider (${visible.length})</div>` + visible.map(qReviewCard).join('');
+  host.innerHTML = `<div style="font-size:13px;color:#8a8378;margin-bottom:6px;">Ready to merge (${visible.length})</div>` + visible.map(qReviewCard).join('');
   host.querySelectorAll('[data-merge]').forEach(b => {
     b.onclick = async (e) => {
       e.stopPropagation();
       const id = b.getAttribute('data-merge');
-      const typed = prompt('Tape FUSIONNER (majuscules) pour fusionner et envoyer en ligne :');
-      if (typed !== 'FUSIONNER') { alert('Fusion annulée.'); return; }
-      b.disabled = true; b.textContent = 'Fusion en cours…';
+      const typed = prompt('Type MERGE (capital letters) to merge and publish online:');
+      if (typed !== 'MERGE') { alert('Merge cancelled.'); return; }
+      b.disabled = true; b.textContent = 'Merging…';
       try {
         const out = await apiWrite('/api/travaux/reviews/' + id + '/merge', 'POST', {});
-        alert('Fusionné ✓ Le travail est en ligne.');
+        alert('Merged ✓ The work is online.');
       } catch (err) {
-        alert('Fusion impossible : ' + (err.message === 'unauthorized' ? 'session expirée' : err.message));
+        alert('Merge failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
       }
-      b.disabled = false; b.textContent = 'Fusionner → envoyer en ligne';
+      b.disabled = false; b.textContent = 'Merge → publish online';
       qRenderReviews();
     };
   });
@@ -2308,15 +2308,15 @@ async function qRenderReviews() {
     b.onclick = async (e) => {
       e.stopPropagation();
       const id = b.getAttribute('data-revert');
-      if (!confirm('Annuler cette fusion ? Le site en ligne reviendra en arrière.')) return;
-      b.disabled = true; b.textContent = 'Revert en cours…';
+      if (!confirm('Undo this merge? The online site will go back to how it was before.')) return;
+      b.disabled = true; b.textContent = 'Reverting…';
       try {
         await apiWrite('/api/travaux/reviews/' + id + '/revert', 'POST', {});
-        alert('Revert effectué ✓');
+        alert('Reverted ✓');
       } catch (err) {
-        alert('Revert impossible : ' + (err.message === 'unauthorized' ? 'session expirée' : err.message));
+        alert('Revert failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
       }
-      b.disabled = false; b.textContent = 'Annuler cette fusion';
+      b.disabled = false; b.textContent = 'Undo this merge';
       qRenderReviews();
     };
   });
@@ -2324,11 +2324,11 @@ async function qRenderReviews() {
     b.onclick = async (e) => {
       e.stopPropagation();
       const id = b.getAttribute('data-reject');
-      if (!confirm('Jeter ce travail ? Son dossier de travail sera supprimé.')) return;
+      if (!confirm('Discard this work? Its working folder will be removed.')) return;
       try {
         await apiWrite('/api/travaux/reviews/' + id + '/reject', 'POST', {});
       } catch (err) {
-        alert('Impossible : ' + (err.message === 'unauthorized' ? 'session expirée' : err.message));
+        alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
       }
       qRenderReviews();
     };

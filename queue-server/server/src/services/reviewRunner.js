@@ -124,7 +124,7 @@ function runChecksAndFinalize(reviewId, task) {
       console.log(`[reviews] ${reviewId} — ${ok ? 'approved' : 'changes_requested'} (${result.checks.syntax.ok?'✓':'✗'}${result.checks.boot?.ok?'✓':'✗'}${result.checks.endpoints?.ok?'✓':'✗'}${result.checks.html?.ok?'✓':'✗'}${result.checks.scope?.ok?'✓':'✗'})`);
     }).catch((e) => {
       console.error(`[reviews] ${reviewId} check run failed:`, e.message);
-      updateReview(reviewId, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['Les vérifications n’ont pas pu s’exécuter: ' + e.message]) });
+      updateReview(reviewId, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['The checks could not run: ' + e.message]) });
     });
   });
 }
@@ -136,7 +136,7 @@ export async function runChecks({ task, reviewId }) {
   const wt = task?.worktree_path;
   const branch = task?.branch;
   if (!wt || !existsSync(wt)) {
-    return { ok: false, checks: { syntax: { ok: false }, boot: { ok: false }, endpoints: { ok: false }, html: { ok: false }, scope: { ok: false }, conflict: { ok: false } }, concerns: ['Le dossier de travail de l’agent n’existe plus.'], filesChanged: [], insertions: 0, deletions: 0, conflictsWith: [], plainSummary: '' };
+    return { ok: false, checks: { syntax: { ok: false }, boot: { ok: false }, endpoints: { ok: false }, html: { ok: false }, scope: { ok: false }, conflict: { ok: false } }, concerns: ['The agent working folder no longer exists.'], filesChanged: [], insertions: 0, deletions: 0, conflictsWith: [], plainSummary: '' };
   }
 
   const diffFiles = git(['diff', '--name-only', 'origin/main...HEAD'], { cwd: wt, lines: true });
@@ -161,12 +161,12 @@ export async function runChecks({ task, reviewId }) {
   checks.conflict = checkConflict(branch);
 
   const allOk = ['syntax', 'boot', 'endpoints', 'html', 'scope'].every((k) => checks[k]?.ok);
-  if (!checks.syntax?.ok) concerns.push('Erreur de syntaxe dans les fichiers modifiés.');
-  if (!checks.boot?.ok) concerns.push('Le serveur ne démarre pas avec ces changements.');
-  if (!checks.endpoints?.ok) concerns.push('Des pages du serveur ne répondent pas.');
-  if (!checks.html?.ok) concerns.push('La page principale est cassée (fichier HTML).');
-  if (!checks.scope?.ok) concerns.push('Le travail touche des fichiers hors de son périmètre.');
-  if (checks.conflict?.conflictsWith?.length) concerns.push('Ce travail est en conflit avec une autre branche.');
+  if (!checks.syntax?.ok) concerns.push('Syntax error in the changed files.');
+  if (!checks.boot?.ok) concerns.push('The server does not start with these changes.');
+  if (!checks.endpoints?.ok) concerns.push('Some server pages do not respond.');
+  if (!checks.html?.ok) concerns.push('The main page is broken (HTML file).');
+  if (!checks.scope?.ok) concerns.push('The work touches files outside its allowed scope.');
+  if (checks.conflict?.conflictsWith?.length) concerns.push('This work conflicts with another branch.');
 
   const conflictsWith = checks.conflict?.conflictsWith || [];
   const summary = buildPlainSummary({ allOk, diffFiles, insertions, deletions, conflictsWith, concerns });
@@ -339,10 +339,10 @@ function checkConflict(branch) {
 }
 
 function buildPlainSummary({ allOk, diffFiles, insertions, deletions, conflictsWith, concerns }) {
-  const files = `${diffFiles.length} fichier(s) modifié(s), +${insertions} / −${deletions}`;
-  if (!allOk) return `À corriger. ${files}. ${concerns.join(' ')}`;
-  if (conflictsWith.length) return `En conflit avec: ${conflictsWith.join(', ')}. ${files}. À mettre à jour avant de fusionner.`;
-  return `Sûr à fusionner. ${files}. Le serveur démarre, les pages répondent, rien ne touche à tes données.`;
+  const files = `${diffFiles.length} file(s) changed, +${insertions} / −${deletions}`;
+  if (!allOk) return `To fix. ${files}. ${concerns.join(' ')}`;
+  if (conflictsWith.length) return `In conflict with: ${conflictsWith.join(', ')}. ${files}. Needs an update before merging.`;
+  return `Safe to merge. ${files}. The server starts, the pages respond, nothing touches your data.`;
 }
 
 // ─── Human actions: merge / revert / request-changes / reject ────────────────
@@ -355,8 +355,8 @@ export async function mergeReview(id) {
   const main = mainRepo();
   if (!review) return { error: 'not_found' };
   if (review.status === 'merged') return { error: 'already_merged' };
-  if (review.status !== 'approved') return { error: 'not_approved', detail: 'Le travail n’est pas approuvé — les vérifications ne passent pas ou il attend tes corrections.' };
-  if (!main) return { error: 'no_git', detail: 'Pas de dépôt git sur ce serveur — la fusion n’est possible que là où le code vit (sur ton Mac).' };
+  if (review.status !== 'approved') return { error: 'not_approved', detail: 'The work is not approved — the checks fail or it is waiting for your changes.' };
+  if (!main) return { error: 'no_git', detail: 'No git repository on this server — merging is only possible where the code lives (your Mac).' };
 
   const steps = [];
   const step = (s) => { steps.push(s); console.log(`[reviews] merge ${id}: ${s}`); };
@@ -368,12 +368,12 @@ export async function mergeReview(id) {
 
   step('working tree must be clean');
   const status = git(['-C', main, 'status', '--porcelain', '--untracked-files=no'], { cwd: main, quiet: true });
-  if (status && status.length) return { error: 'dirty', detail: 'Le dépôt local a des changements non publiés. Termine ou remise-les avant de fusionner.', steps };
+  if (status && status.length) return { error: 'dirty', detail: 'The local repository has unpublished changes. Finish or stash them before merging.', steps };
 
   step('checkout main + ff-only origin/main');
   if (git(['-C', main, 'checkout', 'main'], { cwd: main, quiet: true }) === null) return { error: 'checkout_failed', steps };
   if (git(['-C', main, 'merge', '--ff-only', 'origin/main'], { cwd: main, quiet: true }) === null) {
-    return { error: 'ff_failed', detail: 'main n’a pas pu suivre origin/main — vérifie l’état du dépôt.', steps };
+    return { error: 'ff_failed', detail: 'main could not follow origin/main — check the repository state.', steps };
   }
 
   step('dry-land the merge (--no-ff --no-commit)');
@@ -382,7 +382,7 @@ export async function mergeReview(id) {
     const conflicts = git(['-C', main, 'diff', '--name-only', '--diff-filter=U'], { cwd: main, quiet: true }) || [];
     updateReview(id, { status: 'changes_requested', verdict: 'unsafe', conflicts_with: JSON.stringify(conflicts) });
     broadcastReview(id);
-    return { error: 'conflict', detail: 'Ce travail touche les mêmes lignes qu’un autre changement déjà publié. L’agent doit le remettre à jour.', conflicts, steps };
+    return { error: 'conflict', detail: 'This work touches the same lines as another published change. The agent must update it first.', conflicts, steps };
   }
 
   const prompt = getPrompt(review.prompt_id);
@@ -398,7 +398,7 @@ export async function mergeReview(id) {
   const postMerge = await runPostMergeChecks(main);
   if (!postMerge.ok) {
     git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
-    updateReview(id, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['La fusion casse les vérifications: ' + postMerge.detail]) });
+    updateReview(id, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['The merge breaks the checks: ' + postMerge.detail]) });
     broadcastReview(id);
     return { error: 'post_merge_failed', detail: postMerge.detail, steps };
   }
@@ -406,7 +406,7 @@ export async function mergeReview(id) {
   step('push to main');
   if (git(['-C', main, 'push', 'origin', 'main'], { cwd: main, quiet: true }) === null) {
     git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
-    return { error: 'push_failed', detail: 'La fusion est faite en local mais l’envoi a échoué — rien n’a été publié. Corrige l’accès au dépôt puis réessaie (le travail n’est pas perdu).', steps };
+    return { error: 'push_failed', detail: 'The merge is done locally but publishing failed — nothing was released. Fix repository access and try again (the work is not lost).', steps };
   }
 
   step('cleanup worktree');
@@ -427,17 +427,17 @@ export function revertReview(id) {
   if (!main) return { error: 'no_git' };
   if (git(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { cwd: main, quiet: true }) === null) return { error: 'fetch_failed' };
   const status = git(['-C', main, 'status', '--porcelain', '--untracked-files=no'], { cwd: main, quiet: true });
-  if (status && status.length) return { error: 'dirty', detail: 'Le dépôt local a des changements non publiés.' };
+  if (status && status.length) return { error: 'dirty', detail: 'The local repository has unpublished changes.' };
   if (git(['-C', main, 'checkout', 'main'], { cwd: main, quiet: true }) === null) return { error: 'checkout_failed' };
   if (git(['-C', main, 'merge', '--ff-only', 'origin/main'], { cwd: main, quiet: true }) === null) return { error: 'ff_failed' };
   const reverted = git(['-C', main, 'revert', '-m', '1', review.merge_commit, '--no-edit'], { cwd: main, quiet: true });
   if (reverted === null) {
     git(['-C', main, 'revert', '--abort'], { cwd: main, quiet: true });
-    return { error: 'revert_conflict', detail: 'Le revert entre en conflit — le site reste comme il est. Regarde le dépôt à la main.' };
+    return { error: 'revert_conflict', detail: 'The revert conflicts — the site stays as it is. Check the repository manually.' };
   }
   if (git(['-C', main, 'push', 'origin', 'main'], { cwd: main, quiet: true }) === null) {
     git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
-    return { error: 'push_failed', detail: 'Le revert est prêt en local mais l’envoi a échoué — le site en ligne n’a pas changé.' };
+    return { error: 'push_failed', detail: 'The revert is ready locally but publishing failed — the online site has not changed.' };
   }
   updateReview(id, { status: 'reverted', reverted_at: new Date().toISOString() });
   broadcastReview(id);
@@ -451,7 +451,7 @@ export function requestChanges(id, { reason = null } = {}) {
   if (review.status === 'merged' || review.status === 'reverted') return { error: 'locked' };
   updateReview(id, {
     status: 'changes_requested',
-    concerns: JSON.stringify(reason ? [reason] : ['Tu as demandé des corrections.']),
+    concerns: JSON.stringify(reason ? [reason] : ['You asked for changes.']),
   });
   broadcastReview(id);
   return { ok: true, review: getReview(id) };

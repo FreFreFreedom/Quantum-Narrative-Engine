@@ -207,7 +207,7 @@ Implemented this session (after the deploy above).
 - [x] `reviews` table (additive `CREATE TABLE IF NOT EXISTS`): prompt/task/agent
       refs, branch + base/head SHAs, status
       (`pending|approved|changes_requested|rejected|merged|reverted`), verdict,
-      French `plain_summary`, concerns/checks/files/diff-stats/conflicts as JSON,
+      English `plain_summary`, concerns/checks/files/diff-stats/conflicts as JSON,
       `merge_commit`, `merged_at`, `reverted_at` + status/prompt indexes.
 - [x] `services/reviewRunner.js` — the review + merge gate:
       - `createReviewForTask` fired from `onAgentTaskFinalized` in promptQueue
@@ -236,9 +236,11 @@ Implemented this session (after the deploy above).
         conflict). Plus `request-changes` and `reject` (removes worktree only).
 - [x] `routes/reviews.js` mounted at `/api/travaux/reviews` (GET list/detail,
       POST merge/revert/request-changes/reject; merge is awaited).
-- [x] Frontend: `qRenderReviews()` above the queue list — « À valider » cards
-      with ✓/✗ check rows, French summary, conflict warnings, concerns, diff
-      stats; Merge button gated by typing `FUSIONNER`; Revert on merged cards;
+- [x] Frontend: `qRenderReviews()` above the queue list — « To validate » cards
+      with ✓/✗ check rows, English summary, conflict warnings, concerns, diff
+      stats; Merge button gated by typing `MERGE`; Revert on merged cards;
+      Discard to reject. Polled from `qLoad`. CSS added. (All review UI strings
+      are English per Antoine — the gate word is `MERGE`, not `FUSIONNER`.)
       Jeter to reject. Polled from `qLoad`. CSS added.
 - [x] **Sandbox verification (all pass)** — scratch clone + local bare origin in
       `/tmp`, never the real remote: clean branch → approved → merge commit
