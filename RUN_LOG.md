@@ -312,7 +312,7 @@ glance. Zero API spend.
       sandbox re-run not repeated this session — merge-path changes exercised
       via the step-5 sandbox earlier; briefing refresh in the merge path is the
       same git primitives already proven there.)
-- [x] Committed — pending.
+- [x] Committed `f86669b`.
 
 ## Daytime follow-up (Antoine session) — serve the app from the server's own address
 
