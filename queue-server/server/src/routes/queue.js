@@ -20,10 +20,10 @@ export function queueRoutes() {
     });
   });
 
-  router.post('/prompts', (req, res) => {
+  router.post('/prompts', async (req, res) => {
     let row;
     try {
-      row = queue.createPrompt({ ...req.body, created_by: req.user?.sub || 'antoine' });
+      row = await queue.createPrompt({ ...req.body, created_by: req.user?.sub || 'antoine' });
     } catch (e) {
       return res.status(400).json({ error: e.message });
     }

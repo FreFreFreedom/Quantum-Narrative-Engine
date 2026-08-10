@@ -93,8 +93,8 @@ initPromptQueue();
 // Claude Code execution path end to end. Only fires when RUN_QUEUE_SELFTEST=1 is set;
 // meant to be unset again right after the one test run.
 if (process.env.RUN_QUEUE_SELFTEST === '1') {
-  import('./services/promptQueue.js').then((pq) => {
-    const row = pq.createPrompt({
+  import('./services/promptQueue.js').then(async (pq) => {
+    const row = await pq.createPrompt({
       title: 'Queue self-test',
       prompt: 'This is a one-off connectivity test of a real automated task queue. Reply with only the single word OK, and do not read, write, or modify any files.',
       mode: 'implement', preset: 'fast',

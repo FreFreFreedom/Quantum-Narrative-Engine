@@ -177,6 +177,10 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .q-badge { font-size:9px; padding:2px 7px; border-radius:20px; color:#fff; flex-shrink:0; }
 .q-item-meta { font-size:10px; color:#8a8378; margin-top:4px; display:flex; gap:8px; align-items:center; }
 .q-item-q { font-size:10.5px; color:#8a5a1e; margin-top:5px; background:#f6e7cf; border-radius:5px; padding:5px 7px; }
+.q-drag-handle { cursor:grab; color:#a19a8e; font-size:12px; flex-shrink:0; }
+.q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
+.q-item-arrows { display:flex; gap:5px; margin-top:6px; }
+.q-item-arrows .q-arrow { padding:1px 7px; font-size:9px; }
 .q-right { flex:1; overflow-y:auto; padding:16px; background:#fbfaf8; }
 .q-right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
 .q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
@@ -517,9 +521,10 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
             </label>
             <label>Speed / depth
               <select id="qPreset">
+                <option value="auto" selected>Auto (judges the task — recommended)</option>
                 <option value="fast">Fast (haiku)</option>
                 <option value="standard">Standard (sonnet)</option>
-                <option value="deep" selected>Deep (strongest model)</option>
+                <option value="deep">Deep (strongest model)</option>
               </select>
             </label>
           </div>
@@ -529,7 +534,13 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
           </div>
           <button class="q-addbtn" id="qAddBtn">Add to queue</button>
           <div id="qAddErr" class="q-err"></div>
+          <div id="qConnLost" style="display:none;color:#b23a2f;font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
           <h2 style="margin-top:20px;">Queue (<span id="qCount">0</span>)</h2>
+          <div class="q-row" id="qFilterStrip" style="gap:6px;margin-bottom:8px;">
+            <button class="ctrlbtn q-filterbtn" data-qfilter="active">Active</button>
+            <button class="ctrlbtn q-filterbtn" data-qfilter="all">All</button>
+            <button class="ctrlbtn q-filterbtn" data-qfilter="finished">Finished</button>
+          </div>
           <div id="qList"></div>
         </div>
         <div class="q-right" id="qRight" data-src="CORE ARCHITECTURE → Dispatch Queue → selected task thread (reply/steer/pause) | fmcns_navigator.html: renderQueueDetail() (~line 1847) | backend: services/promptQueue.js reply/steer/pause endpoints">
@@ -1858,6 +1869,9 @@ function initCore() {
     Object.keys(CORE_TAB_IDS).forEach(t => { document.getElementById(CORE_TAB_IDS[t]).onclick = () => setCoreTab(t); });
     document.getElementById('qAddBtn').onclick = qAddPrompt;
     document.getElementById('queuePauseBtn').onclick = qTogglePause;
+    document.querySelectorAll('.q-filterbtn').forEach(b => {
+      b.onclick = () => { qFilter = b.getAttribute('data-qfilter'); qRenderList(); };
+    });
   }
   setCoreTab(coreTab);
   startUsagePolling();
@@ -1916,7 +1930,11 @@ function jumpToArchNode(id) {
 // since they only need the header/badge counts to stay roughly live.
 const Q_STATUS_COLORS = { queued:'#8a8378', running:'#2f7d63', done:'#4f9d7a', blocked:'#b23a2f', paused:'#a19a8e', cancelled:'#a19a8e' };
 const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', blocked:'Blocked', paused:'Set aside', cancelled:'Cancelled' };
+const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
+const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
+const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
 let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
+let qFilter = 'active', qConnFails = 0, qDragId = null;
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
@@ -1926,22 +1944,80 @@ function stopQueuePolling() { if (qPollTimer) { clearInterval(qPollTimer); qPoll
 
 async function qLoad() {
   let data;
-  try { data = await api('/api/travaux/prompts?space=fmcns'); }
-  catch (e) { return; } // a transient poll failure shouldn't blank the page
+  try {
+    data = await api('/api/travaux/prompts?space=fmcns');
+    qConnFails = 0;
+  } catch (e) {
+    // A transient poll failure shouldn't blank the page — but it also shouldn't be
+    // invisible (the list could just be silently stale). Surface it after the first miss.
+    qConnFails++;
+    const connEl = document.getElementById('qConnLost');
+    if (connEl) connEl.style.display = qConnFails >= 1 ? '' : 'none';
+    return;
+  }
+  const connEl = document.getElementById('qConnLost');
+  if (connEl) connEl.style.display = 'none';
   qPrompts = data.prompts || [];
   qPaused = !!data.queue_paused;
   const badge = document.getElementById('queuePauseBadge');
   badge.style.display = qPaused ? '' : 'none';
   badge.textContent = 'Queue paused' + (data.queue_paused_reason ? ` — ${data.queue_paused_reason}` : '');
   document.getElementById('queuePauseBtn').textContent = qPaused ? 'Resume queue' : 'Pause queue';
-  document.getElementById('qCount').textContent = qPrompts.length;
+  // "Work still waiting" is the useful count — finished/cancelled items no longer move
+  // the number, so it stops meaning something once the list never shrinks.
+  const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
+  document.getElementById('qCount').textContent = activeCount;
   const countEl = document.getElementById('coreCountQueue');
-  if (countEl) countEl.textContent = qPrompts.length || '';
+  if (countEl) countEl.textContent = activeCount || '';
   qRenderList();
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
     if (fresh) { qSelected = fresh; qRenderDetail(fresh); }
   }
+}
+
+function qVisiblePrompts() {
+  if (qFilter === 'all') return qPrompts;
+  if (qFilter === 'finished') return qPrompts.filter(p => !Q_ACTIVE_STATUSES.includes(p.status));
+  return qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status));
+}
+
+function qReorderableIds() {
+  return qPrompts.filter(p => Q_REORDERABLE_STATUSES.includes(p.status)).map(p => p.id);
+}
+// Only the queued/paused subset is ever permuted — done/blocked/cancelled/running items
+// keep their exact slot. reorderPrompts() writes position=index+1 for exactly the ids it
+// receives, so sending a filtered subset would collide finished items onto the same
+// positions; sending the full list with only the reorderable ids shuffled avoids that.
+function qRebuildFullOrder(newReorderableOrder) {
+  const set = new Set(newReorderableOrder);
+  let i = 0;
+  return qPrompts.map(p => (set.has(p.id) ? newReorderableOrder[i++] : p.id));
+}
+async function qPersistReorder(fullIds) {
+  try { await apiWrite('/api/travaux/prompts/reorder', 'POST', { ids: fullIds }); }
+  catch (e) { console.error('reorder failed', e); }
+  await qLoad();
+}
+function qMoveStep(id, dir) {
+  const ord = qReorderableIds();
+  const idx = ord.indexOf(id);
+  const t = idx + dir;
+  if (idx === -1 || t < 0 || t >= ord.length) return;
+  [ord[idx], ord[t]] = [ord[t], ord[idx]];
+  qPersistReorder(qRebuildFullOrder(ord));
+}
+function qDropOn(targetId) {
+  if (!qDragId || qDragId === targetId) { qDragId = null; return; }
+  const ord = qReorderableIds();
+  const from = ord.indexOf(qDragId);
+  if (from === -1) { qDragId = null; return; }
+  ord.splice(from, 1);
+  const to = ord.indexOf(targetId);
+  if (to === -1) { qDragId = null; return; }
+  ord.splice(to, 0, qDragId);
+  qPersistReorder(qRebuildFullOrder(ord));
+  qDragId = null;
 }
 
 function qElapsed(p) {
@@ -1951,25 +2027,64 @@ function qElapsed(p) {
   return ` · ${m}:${String(s).padStart(2,'0')}`;
 }
 
+function qCostLine(p) {
+  if (p.cost_usd == null && !p.run_model) return '';
+  const parts = [];
+  if (p.run_model) parts.push(p.run_model);
+  if (p.cost_usd != null) parts.push('~$' + p.cost_usd.toFixed(2));
+  return parts.length ? `<div class="q-item-meta"><span>${parts.join(' · ')}</span></div>` : '';
+}
+
 function qRenderList() {
+  document.querySelectorAll('.q-filterbtn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-qfilter') === qFilter);
+  });
   const host = document.getElementById('qList');
-  if (!qPrompts.length) { host.innerHTML = '<div class="empty">Nothing queued yet — add a prompt above.</div>'; return; }
-  host.innerHTML = qPrompts.map(p => `
-    <div class="q-item${qSelected && qSelected.id===p.id ? ' sel':''}" data-qid="${p.id}">
+  const visible = qVisiblePrompts();
+  if (!visible.length) {
+    host.innerHTML = `<div class="empty">${qFilter === 'finished' ? 'Nothing finished yet.' : 'Nothing queued yet — add a prompt above.'}</div>`;
+    return;
+  }
+  host.innerHTML = visible.map(p => {
+    const reorderable = Q_REORDERABLE_STATUSES.includes(p.status);
+    const finished = !Q_ACTIVE_STATUSES.includes(p.status);
+    const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
+    return `
+    <div class="q-item${qSelected && qSelected.id===p.id ? ' sel':''}" data-qid="${p.id}" ${reorderable ? 'draggable="true"' : ''}>
       <div class="q-item-top">
+        ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
         <span class="q-item-title">${p.title || '(untitled)'}</span>
         <span class="q-badge" style="background:${Q_STATUS_COLORS[p.status]||'#8a8378'};">${Q_STATUS_LABELS[p.status]||p.status}</span>
       </div>
       <div class="q-item-meta">
-        <span>${p.mode==='question'?'Question':'Implement'} · ${p.preset}</span>
+        <span>${p.mode==='question'?'Question':'Implement'} · ${presetLabel}</span>
         <span>${qElapsed(p)}</span>
       </div>
+      ${finished ? qCostLine(p) : ''}
+      ${p.status === 'paused' ? `<div class="q-item-meta"><span>Set aside — not running. Click in, then hit Start.</span></div>` : ''}
       ${p.pending_question ? `<div class="q-item-q">🙋 ${p.pending_question.question}</div>` : ''}
+      ${reorderable ? `
+        <div class="q-item-arrows">
+          <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
+          <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>
+        </div>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
   host.querySelectorAll('.q-item').forEach(el => {
-    el.onclick = () => { qSelected = qPrompts.find(p => p.id === el.getAttribute('data-qid')); qRenderList(); qRenderDetail(qSelected); };
+    const id = el.getAttribute('data-qid');
+    el.onclick = (e) => {
+      if (e.target.closest('.q-arrow')) return;
+      qSelected = qPrompts.find(p => p.id === id); qRenderList(); qRenderDetail(qSelected);
+    };
+    if (el.hasAttribute('draggable')) {
+      el.addEventListener('dragstart', () => { qDragId = id; });
+      el.addEventListener('dragover', (e) => { e.preventDefault(); });
+      el.addEventListener('drop', (e) => { e.preventDefault(); qDropOn(id); });
+    }
   });
+  host.querySelectorAll('[data-qup]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qup'), -1); }; });
+  host.querySelectorAll('[data-qdown]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qdown'), 1); }; });
 }
 
 async function qAddPrompt() {
@@ -2012,17 +2127,28 @@ async function qTogglePause() {
 function qRenderDetail(p) {
   const host = document.getElementById('qRight');
   const messages = (p.messages || []);
+  const tier = p.preset === 'auto' ? (p.resolved_preset || 'standard') : p.preset;
+  const ctxLimit = Q_CONTEXT_LIMITS[tier] || 6;
+  const ctxTurns = p.context_turns || 0;
+  const ctxAmber = ctxTurns >= ctxLimit - 1;
+  const presetLabel = p.preset === 'auto' ? `auto → ${tier}` : p.preset;
+  const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
+  const costParts = [];
+  if (p.run_model) costParts.push(p.run_model);
+  if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
+  if (p.cost_usd != null) costParts.push('~$' + p.cost_usd.toFixed(3));
   host.innerHTML = `
     <h2>Task</h2>
     <div class="arch-detail-name">${p.title || '(untitled)'}</div>
     <div class="q-detail-row">
       <span><b>Status:</b> ${Q_STATUS_LABELS[p.status]||p.status}</span>
       <span><b>Mode:</b> ${p.mode}</span>
-      <span><b>Preset:</b> ${p.preset}</span>
+      <span><b>Preset:</b> ${presetLabel}</span>
       ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
       ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
-      ${p.session_id ? `<span title="Continued ${p.context_turns||0}/6 times on the same session before it auto-refreshes to save credit."><b>Context:</b> ${p.context_turns||0}/6 continued</span>` : ''}
+      ${p.session_id ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
     </div>
+    ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
     <div class="arch-field"><div class="arch-field-label">Original prompt</div><div class="arch-field-body">${p.prompt}</div></div>
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
     <div id="qThread"></div>
@@ -2033,8 +2159,11 @@ function qRenderDetail(p) {
     </div>
     <div id="qReplyErr" class="q-err"></div>
     <div class="q-row" style="margin-top:10px;">
-      ${p.status==='queued' ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
+      ${p.status === 'paused' ? `<button class="ctrlbtn" id="qStartBtn" title="Queue it — it runs in its normal turn, not necessarily right away.">Start</button>` : ''}
+      ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
       ${p.session_id && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
+      ${canRerun ? `<button class="ctrlbtn" id="qRerunBtn"${p.status==='blocked' ? ' title="Retries one tier stronger if this was on the auto policy — a block usually means the model ran out of depth, not luck."' : ''}>Run again</button>` : ''}
+      ${canRerun ? `<button class="ctrlbtn" id="qRerunFreshBtn" title="Run again, but start a brand-new session instead of resuming the one that led here.">Run again fresh</button>` : ''}
       ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qDeleteBtn">Remove</button>` : ''}
     </div>
   `;
@@ -2058,6 +2187,15 @@ function qRenderDetail(p) {
     if (!text) return;
     if (p.status === 'running') qSteer(p.id, text); else qReply(p.id, text);
   };
+  const startBtn = document.getElementById('qStartBtn');
+  if (startBtn) startBtn.onclick = async () => {
+    startBtn.disabled = true; startBtn.textContent = 'Starting…';
+    try {
+      await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
+      await apiWrite('/api/travaux/prompts/advance', 'POST');
+      await qLoad();
+    } catch (e) { startBtn.disabled = false; startBtn.textContent = 'Start'; alert('Error: ' + e.message); }
+  };
   const firstBtn = document.getElementById('qFirstBtn');
   if (firstBtn) firstBtn.onclick = async () => { await apiWrite(`/api/travaux/prompts/${p.id}/first`, 'POST'); await qLoad(); };
   const clearCtxBtn = document.getElementById('qClearCtxBtn');
@@ -2072,6 +2210,25 @@ function qRenderDetail(p) {
     qSelected = null;
     document.getElementById('qRight').innerHTML = '<h2>Task</h2><div class="empty">Select a queued item to see its thread.</div>';
     await qLoad();
+  };
+  const rerunBtn = document.getElementById('qRerunBtn');
+  if (rerunBtn) rerunBtn.onclick = async () => {
+    rerunBtn.disabled = true; rerunBtn.textContent = 'Starting…';
+    try {
+      await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
+      await apiWrite('/api/travaux/prompts/advance', 'POST');
+      await qLoad();
+    } catch (e) { rerunBtn.disabled = false; rerunBtn.textContent = 'Run again'; alert('Error: ' + e.message); }
+  };
+  const rerunFreshBtn = document.getElementById('qRerunFreshBtn');
+  if (rerunFreshBtn) rerunFreshBtn.onclick = async () => {
+    rerunFreshBtn.disabled = true; rerunFreshBtn.textContent = 'Starting…';
+    try {
+      await apiWrite(`/api/travaux/prompts/${p.id}/clear-context`, 'POST');
+      await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
+      await apiWrite('/api/travaux/prompts/advance', 'POST');
+      await qLoad();
+    } catch (e) { rerunFreshBtn.disabled = false; rerunFreshBtn.textContent = 'Run again fresh'; alert('Error: ' + e.message); }
   };
 }
 

@@ -17,8 +17,9 @@ import { broadcastAll } from '../realtime.js';
 import {
   enqueueAgentTask, findAgentTask, getSettings, presetFor, getMaxParallelQuestions,
   generateUserSummary, isQueuePaused, setQueuePaused,
-  updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage,
+  updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage, stopTask,
 } from './taskRunner.js';
+import { resolvePreset, escalate } from './modelPolicy.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -60,7 +61,15 @@ function heuristicTitle(text) {
   return first.length > 80 ? first.slice(0, 79) + '…' : first || '(untitled)';
 }
 
-export function createPrompt({
+// Tier a row is actually running at: for a manual preset, exactly that; for 'auto',
+// whatever the model policy judged (resolvePreset, called once at creation and
+// remembered in resolved_preset so replies/retries don't re-judge every turn), falling
+// back to 'standard' if judging hasn't happened yet for some reason — never 'fast'.
+function effectivePreset(row) {
+  return row.preset === 'auto' ? (row.resolved_preset || 'standard') : row.preset;
+}
+
+export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null,
@@ -72,11 +81,12 @@ export function createPrompt({
   const label = given || heuristicTitle(text);
   const initial = status === 'paused' ? 'paused' : 'queued';
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
+  const resolved = preset === 'auto' ? await resolvePreset({ mode, prompt: text }).catch(() => 'standard') : null;
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, suggestion_id, created_by, title_auto, space, component_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), same_context ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id);
+    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id);
   broadcast();
   return getPrompt(id);
 }
@@ -99,9 +109,27 @@ function reclaimPending(row) {
   return getPrompt(row.id);
 }
 
+// Same idea as reclaimPending(), for a task that's actually mid-execution rather than
+// still waiting in taskRunner's own queue. Flips the prompt row back to 'queued'
+// immediately rather than waiting on the OS process to actually die (that can take a
+// few seconds, or — if something went wrong spawning it in the first place — never
+// happen at all) so the UI reflects "stopped" the moment you click pause. stopTask()'s
+// stop_requested flag is the backstop: whenever the kill DOES get noticed by
+// taskRunner's poll loop, onAgentTaskFinalized() sees that flag and skips re-recording
+// this as 'blocked' over the top of the 'queued' state set here.
+function reclaimRunning(row) {
+  if (row.status !== 'running' || !row.agent_task_id) return row;
+  stopTask(row.agent_task_id);
+  db.prepare(`
+    UPDATE work_prompts SET status='queued', agent_task_id=NULL, started_at=NULL,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(row.id);
+  return getPrompt(row.id);
+}
+
 function syncPendingTask(row) {
   if (!isPending(row)) return;
-  const { model, effort } = presetFor(row.preset);
+  const { model, effort } = presetFor(effectivePreset(row));
   updatePendingAgentTask(row.agent_task_id, { title: row.title, description: row.prompt, mode: row.mode, model, effort });
 }
 
@@ -177,6 +205,11 @@ export function getQueuePauseState() {
 
 export function pauseQueue({ reason = null } = {}) {
   const state = setQueuePaused(true, { reason });
+  // Actually stop what's running, not just block new starts — otherwise a task already
+  // in flight (up to 30 min) keeps going and "Pause queue" looks like it did nothing.
+  for (const row of db.prepare(`${SELECT()} AND status='running'`).all()) {
+    reclaimRunning(row);
+  }
   broadcast();
   return { paused: state.paused, paused_at: state.pausedAt, reason: state.reason };
 }
@@ -193,6 +226,9 @@ export function advanceQueue() {
     const task = running.agent_task_id ? findAgentTask(running.agent_task_id) : null;
     if (!task) {
       finishPrompt(running.id, { status: 'blocked', agent_result: '(task not found — execution lost)', user_summary: null, session_id: null });
+    } else if (task.stop_requested) {
+      // Being (or about to be) handled by onAgentTaskFinalized's stop_requested branch —
+      // don't race it by recording this deliberate stop as a 'blocked' failure here.
     } else if (['done', 'blocked', 'cancelled'].includes(task.status)) {
       finishPrompt(running.id, task);
     }
@@ -238,7 +274,7 @@ function sessionOfPrevious(row) {
 }
 
 function startPrompt(row, { forceFresh = false } = {}) {
-  const { model, effort } = presetFor(row.preset);
+  const { model, effort } = presetFor(effectivePreset(row));
   const resume = (!forceFresh && row.same_context) ? sessionOfPrevious(row) : null;
   const task = enqueueAgentTask({
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
@@ -257,9 +293,11 @@ function finishPrompt(id, task) {
   const q = task.pending_question && task.pending_question.question ? JSON.stringify(task.pending_question) : null;
   db.prepare(`
     UPDATE work_prompts SET status=?, session_id=COALESCE(?, session_id), pending_question=?,
+      cost_usd=COALESCE(?, cost_usd), tokens_in=COALESCE(?, tokens_in), tokens_out=COALESCE(?, tokens_out),
+      run_model=COALESCE(?, run_model),
       completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
     WHERE id=?
-  `).run(status, task.session_id || null, q, id);
+  `).run(status, task.session_id || null, q, task.cost_usd ?? null, task.tokens_in ?? null, task.tokens_out ?? null, task.run_model || null, id);
   broadcast();
   return getPrompt(id);
 }
@@ -295,7 +333,13 @@ const FOLLOWUP_TAIL = 2; // last human message + the agent turn just before it, 
 // growth compounds the same way a long chat session's would. Past this many
 // continuations on one session, force a brand-new session instead of another
 // --resume — carrying forward only a short recap, not the accumulated transcript.
+// Tier-aware: the same number of turns costs far more on a deep (opus) thread than a
+// fast (haiku) one, so deep resets sooner and fast can run longer before resetting.
 export const CONTEXT_RESET_THRESHOLD = 6;
+const CONTEXT_RESET_BY_TIER = { fast: 8, standard: 6, deep: 4 };
+export function contextResetThresholdFor(row) {
+  return CONTEXT_RESET_BY_TIER[effectivePreset(row)] ?? CONTEXT_RESET_THRESHOLD;
+}
 
 export function buildFollowUpPrompt(row, messages, { fresh = false } = {}) {
   if (!fresh) {
@@ -346,8 +390,8 @@ export function clearContext(id) {
 
 function relaunchWithThread(row) {
   const messages = listMessages(row.id);
-  const { model, effort } = presetFor(row.preset);
-  const overThreshold = (row.context_turns || 0) >= CONTEXT_RESET_THRESHOLD;
+  const { model, effort } = presetFor(effectivePreset(row));
+  const overThreshold = (row.context_turns || 0) >= contextResetThresholdFor(row);
   const fresh = !row.session_id || overThreshold;
   const task = enqueueAgentTask({
     title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
@@ -415,6 +459,17 @@ export async function onAgentTaskFinalized(task) {
   const row = getPrompt(task.work_prompt_id);
   if (!row) return;
 
+  // Deliberately interrupted via Pause queue (taskRunner.stopTask) — put it back in
+  // line rather than recording a manual stop as if the model had failed.
+  if (task.stop_requested) {
+    db.prepare(`
+      UPDATE work_prompts SET status='queued', agent_task_id=NULL, started_at=NULL, completed_at=NULL,
+        updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(row.id);
+    broadcast();
+    return;
+  }
+
   const producedNothing = !(task.agent_result || '').trim() && !(task.user_summary || '').trim();
   if (task.resume_session_id && task.status !== 'done' && producedNothing && !_resumeRetried.has(row.id)) {
     _resumeRetried.add(row.id);
@@ -427,6 +482,17 @@ export async function onAgentTaskFinalized(task) {
   addMessage(row.id, { role: 'agent', text: reply, agentTaskId: task.id });
 
   const finished = finishPrompt(row.id, task);
+
+  // Reliability valve for the auto policy: a blocked auto-resolved task probably ran
+  // out of depth, not luck — bump the remembered tier so the next "Run again" retries
+  // stronger instead of repeating the same (apparently insufficient) tier.
+  if (finished.status === 'blocked' && finished.preset === 'auto' && finished.resolved_preset) {
+    const next = escalate(finished.resolved_preset);
+    if (next !== finished.resolved_preset) {
+      db.prepare(`UPDATE work_prompts SET resolved_preset=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(next, row.id);
+      broadcast();
+    }
+  }
 
   const stopHere = !!finished.stop_after;
   if (stopHere) {

@@ -64,14 +64,14 @@ export function addSuggestion({ title, rationale = '', prompt, area = null, kind
   return row(db.prepare(`SELECT * FROM work_suggestions WHERE id = ?`).get(id));
 }
 
-export function acceptSuggestion(id, { editedPrompt = null, editedTitle = null } = {}) {
+export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = null } = {}) {
   const s = db.prepare(`SELECT * FROM work_suggestions WHERE id = ? AND deleted_at IS NULL`).get(id);
   if (!s) return null;
   if (s.work_prompt_id) {
     // Idempotent: already accepted, just return the existing queue item.
     return { suggestion: row(s), prompt: queue.getPrompt(s.work_prompt_id), already: true };
   }
-  const promptRow = queue.createPrompt({
+  const promptRow = await queue.createPrompt({
     title: editedTitle || s.title,
     prompt: editedPrompt || s.prompt,
     mode: 'implement',

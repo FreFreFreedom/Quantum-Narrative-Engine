@@ -82,7 +82,7 @@ export function plantIdea(id, { territory = 'reasoning', depends = [] } = {}) {
   return { idea: getIdea(id), node: out.node, already: false };
 }
 
-export function promoteIdea(id, { userId = 'antoine', prompt = null } = {}) {
+export async function promoteIdea(id, { userId = 'antoine', prompt = null } = {}) {
   const idea = getIdea(id);
   if (!idea) return null;
   if (idea.work_prompt_id) {
@@ -91,7 +91,7 @@ export function promoteIdea(id, { userId = 'antoine', prompt = null } = {}) {
     return { idea, prompt: queue.getPrompt(idea.work_prompt_id), already: true };
   }
   const body = prompt || [idea.title, idea.notes].filter(Boolean).join('\n\n');
-  const promptRow = queue.createPrompt({
+  const promptRow = await queue.createPrompt({
     title: idea.title,
     prompt: body,
     mode: 'implement',

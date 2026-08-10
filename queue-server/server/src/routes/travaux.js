@@ -23,8 +23,8 @@ export function travauxRoutes() {
       .catch((e) => console.error('[travaux] suggestion engine run failed:', e.message));
   });
 
-  router.post('/suggestions/:id/accept', (req, res) => {
-    const out = suggestions.acceptSuggestion(req.params.id, {
+  router.post('/suggestions/:id/accept', async (req, res) => {
+    const out = await suggestions.acceptSuggestion(req.params.id, {
       editedPrompt: req.body?.prompt || null,
       editedTitle: req.body?.title || null,
     });
@@ -74,8 +74,8 @@ export function travauxRoutes() {
     res.json({ ideas: ideas.reorderIdeas(ids) });
   });
 
-  router.post('/ideas/:id/promote', (req, res) => {
-    const out = ideas.promoteIdea(req.params.id, { userId: req.user?.sub || 'antoine', prompt: req.body?.prompt || null });
+  router.post('/ideas/:id/promote', async (req, res) => {
+    const out = await ideas.promoteIdea(req.params.id, { userId: req.user?.sub || 'antoine', prompt: req.body?.prompt || null });
     if (!out) return res.status(404).json({ error: 'not_found' });
     res.json(out);
   });

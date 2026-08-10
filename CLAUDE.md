@@ -21,12 +21,8 @@ truth for what changed and why — don't duplicate that into memory or docs.
 
 ## Commands
 
-All commands run from `queue-server/` (there is no root `package.json`):
-
-```bash
-npm install
-npm start          # same as `npm run dev` — node server/src/index.js
-```
+All commands run from `queue-server/` (there is no root `package.json`) — see its
+`scripts` for the standard `npm install` / `npm start` invocations.
 
 No test suite, linter, or build step exists in this repo. `node --check <file>`
 is a reasonable sanity check after editing a server file.
@@ -55,10 +51,7 @@ change against the UI means deploying it (or temporarily editing the hardcoded
 
 ## Backend architecture (`queue-server/`)
 
-Entry point `server/src/index.js` wires everything together: opens the DB, binds
-it into each service module (`bindDb`, `bindWorkSuggestionsDb`, ...), runs
-bootstrap/reseed logic, mounts routes, attaches the WebSocket server, then starts
-the task runner and prompt queue.
+Entry point is `server/src/index.js`.
 
 - **DB**: `server/src/db/schema.js`, using Node's built-in `node:sqlite`
   (`node:sqlite` needs Node ≥22.5) instead of `better-sqlite3` — no native addon
@@ -160,31 +153,9 @@ edit in place, open in a browser to test.
 
 ## Deploying
 
-Railway project `Quantum-Narrative-Engine`, root directory set to `queue-server`.
-Required variables: `JWT_SECRET`, `ADMIN_PASSWORD`; see
-`queue-server/README.md` for the full variable table and deploy steps. The repo
-README states Claude (via Cowork) commits and pushes after each work session —
-there's no separate release process beyond that.
-
-Railway deploys automatically from this GitHub repo's `main` branch — there is no
-manual "deploy" step beyond pushing. Workflow for any backend change:
-
-1. Edit the code.
-2. `node --check <file>` on every changed server file (no test suite catches
-   syntax errors otherwise).
-3. Commit and push to `main`.
-4. Wait ~60s for Railway to pick up the push and build.
-5. Check the Railway deploy logs (via the Railway MCP tools if available, e.g.
-   `get-logs`/`list-deployments`, or the dashboard) to confirm the build/boot
-   actually succeeded — a green "deploy succeeded" only means the process
-   started, not that the change works.
-6. Verify the real behavior with an actual request against the live backend
-   (e.g. `curl` against `/api/health` or the specific endpoint changed, or
-   exercising it from `fmcns_navigator.html`) before considering the change
-   done. A deploy that boots cleanly can still be silently broken — see the
-   `DATA_DIR`-not-created bug in `taskRunner.js` and the entity-panel
-   response-unwrapping bug in `BUILD_STATUS.md` history, both of which passed a
-   "it deployed" check while being fully broken in actual use.
+Railway auto-deploys from `main`. Full workflow and verification discipline live
+in the `deploy` skill (`.claude/skills/deploy/SKILL.md`) — invoke it before
+pushing any backend change.
 
 ## Credit/cost efficiency
 
@@ -211,3 +182,27 @@ efficiency is a real design constraint here, not an afterthought:
   suggestions) is deliberately manual-regenerate-only, not automatic on every
   view — preserve that pattern for any new Claude-backed feature rather than
   regenerating on each page load.
+- **Model choice is judged per task, not defaulted to the strongest model.**
+  `services/modelPolicy.js` resolves the Dispatch Queue's `auto` preset (the
+  default in the New-prompt form) to a concrete tier (`fast`/`standard`/`deep`):
+  free deterministic guards first (short read-only questions → fast; anything
+  naming architecture/schema/migration/refactor or over ~1500 chars → deep),
+  otherwise one cheap haiku call via `runToollessClaude()` that is explicitly
+  instructed to err upward when unsure — a wrong cheap answer costs more than a
+  right expensive one. The result is stored once in `work_prompts.resolved_preset`
+  (`promptQueue.js#createPrompt`) so replies/retries reuse it instead of
+  re-judging every turn, and it never falls back to `fast` on a broken judge
+  (falls back to `standard`). If an auto-resolved task ends `blocked`,
+  `onAgentTaskFinalized` bumps `resolved_preset` one tier up so the next "Run
+  again" retries stronger — the reliability valve for not always picking cheap.
+  `taskRunner.js`'s quota fallback chain (`buildFallbackChain`) is tier-aware for
+  the same reason: it tries same-or-higher models first and only drops to haiku
+  as the last resort, instead of a fixed sonnet→haiku→opus order that used to
+  silently demote a `deep` task.
+- `CONTEXT_RESET_THRESHOLD` in `promptQueue.js` is tier-aware
+  (`contextResetThresholdFor`): a `deep` thread resets sooner (4 turns) than a
+  `fast` one (8), since the same number of turns costs far more on the stronger
+  model.
+- Per-run cost is read (not estimated) out of the CLI's own `stream-json` result
+  line — `taskRunner.js#extractUsage` — and persisted onto the prompt row
+  (`cost_usd`, `tokens_in`, `tokens_out`, `run_model`) for display in the queue UI.

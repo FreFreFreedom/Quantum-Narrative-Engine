@@ -77,6 +77,15 @@ function initSchema(db) {
   // conversation went on. Past a threshold the chain auto-resets to a fresh session
   // with a short recap instead of unbounded growth (see promptQueue.js).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN context_turns INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Cost policy (modelPolicy.js): when preset='auto', the concrete tier the judge picked,
+  // remembered here so replies/retries reuse the decision instead of re-judging every turn.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN resolved_preset TEXT`); } catch {}
+  // Per-run cost visibility, read out of the CLI's own stream-json result line
+  // (taskRunner.js extractUsage()) — nothing computed, just surfaced.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN cost_usd REAL`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN tokens_in INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN tokens_out INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN run_model TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

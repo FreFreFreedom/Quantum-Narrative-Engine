@@ -264,6 +264,25 @@ function extractSessionId(transcript) {
   return null;
 }
 
+// Cost meter (Part 2c): the CLI's final `result` line already carries usage + cost —
+// this just reads it out, nothing computed or estimated.
+function extractUsage(transcript) {
+  for (const line of transcript.split('\n').reverse()) {
+    if (!line.includes('"result"')) continue;
+    try {
+      const evt = JSON.parse(line);
+      if (evt.type !== 'result') continue;
+      const usage = evt.usage || {};
+      return {
+        cost_usd: typeof evt.total_cost_usd === 'number' ? evt.total_cost_usd : null,
+        tokens_in: (usage.input_tokens || 0) + (usage.cache_read_input_tokens || 0) + (usage.cache_creation_input_tokens || 0) || null,
+        tokens_out: usage.output_tokens || null,
+      };
+    } catch {}
+  }
+  return { cost_usd: null, tokens_in: null, tokens_out: null };
+}
+
 export function extractPendingQuestion(raw) {
   const text = String(raw || '');
   const idx = text.lastIndexOf(QUESTION_MARKER);
@@ -291,12 +310,23 @@ export function detectSessionLimit(text) {
   return LIMIT_RE.test(String(text || '')) ? { label: 'quota reached' } : null;
 }
 
-// §11 model fallback chain — order matters: try the model most likely to have a separate
-// quota bucket from the one that just hit its limit.
-export const FALLBACK_CHAIN = ['sonnet', 'haiku', 'opus'];
+// §11 model fallback chain. Previously a fixed sonnet → haiku → opus order, which meant
+// a quota hit on a 'deep' (opus) task silently demoted it to haiku mid-flight — a real
+// quality loss disguised as a retry. Now built per task: try same-or-higher tiers first
+// (most likely to still satisfy the task), only dropping to haiku as the last resort.
+const MODEL_TIER_ORDER = ['haiku', 'sonnet', 'opus'];
+export function buildFallbackChain(model) {
+  const i = MODEL_TIER_ORDER.indexOf(model);
+  if (i === -1) return MODEL_TIER_ORDER.slice();
+  const higher = MODEL_TIER_ORDER.slice(i + 1);
+  const lowerNonHaiku = MODEL_TIER_ORDER.slice(1, i).reverse();
+  return [...higher, ...lowerNonHaiku, 'haiku'].filter((m, idx, arr) => arr.indexOf(m) === idx);
+}
+// Kept for backward compatibility with anything importing the old constant name.
+export const FALLBACK_CHAIN = MODEL_TIER_ORDER;
 function nextFallbackModel(task) {
   const tried = new Set(task.tried_models || [task.model]);
-  return FALLBACK_CHAIN.find((m) => !tried.has(m)) || null;
+  return buildFallbackChain(task.model).find((m) => !tried.has(m)) || null;
 }
 
 // ─── Toolless Claude calls (used for user-summary generation) ─────────────────
@@ -390,6 +420,26 @@ function isProcessAlive(pid) {
   try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
+// Pausing the queue previously only stopped NEW tasks from starting (the kick()
+// filter above) — a task already in flight kept running until it finished or hit its
+// 30-min timeout, which made "Pause queue" look broken. This actually kills the
+// spawned process (same -pid group-kill the timeout path already uses), and flags the
+// task so the finalize() path this triggers (via the normal dead-process poll in
+// monitorExecution) knows this was a deliberate stop, not a crash — promptQueue.js
+// puts the prompt back to 'queued' instead of recording it as 'blocked'.
+export function stopTask(taskId) {
+  const task = readTasks().find((t) => t.id === taskId);
+  if (!task || task.status !== 'in_progress') return false;
+  const lane = task.mode === 'question' ? 'question' : 'exec';
+  const pidFile = lane === 'question' ? QPID_FILE(taskId) : PID_FILE;
+  let pid = null;
+  try { pid = parseInt(readFileSync(pidFile, 'utf8').trim().split('\n')[0], 10); } catch {}
+  const updated = updateTask(taskId, { stop_requested: true });
+  if (updated) broadcastTask(updated);
+  if (pid) { try { process.kill(-pid, 'SIGKILL'); } catch {} }
+  return true;
+}
+
 export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}) {
   const LOG = EXEC_LOG(taskId);
   const CODE = EXEC_CODE(taskId);
@@ -436,6 +486,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     try { if (existsSync(LOG)) raw = readFileSync(LOG, 'utf8'); } catch {}
     const text = extractAssistantText(raw);
     const sessionId = extractSessionId(raw);
+    const usage = extractUsage(raw);
 
     let status, agent_result;
     console.log(`[taskRunner] task ${taskId} process finished — code=${code} killedTimeout=${killedTimeout}`);
@@ -530,6 +581,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     const finalTask = updateTask(taskId, {
       status, agent_result, user_summary, pending_question, missed_user_message,
       session_id: sessionId || null, completed_at: new Date().toISOString(),
+      cost_usd: usage.cost_usd, tokens_in: usage.tokens_in, tokens_out: usage.tokens_out,
     });
     if (finalTask) broadcastTask(finalTask);
     console.log(`[taskRunner] task ${taskId} finalized — status=${status} result=${JSON.stringify((agent_result||'').slice(0,300))}`);
