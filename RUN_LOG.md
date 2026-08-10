@@ -167,7 +167,7 @@ None so far.
 - [x] Test artifacts cleaned up (prompts deleted, test worktrees removed —
       branches kept, they are the record). `node --check` on extracted inline
       scripts passed. Server stop verified clean (no strays, port released).
-- [x] Committed — pending.
+- [x] Committed `d027ac8`.
 
 ### Step 4 — Session chaining
 
@@ -198,11 +198,13 @@ None so far.
       running. All test prompts/tasks cleaned up, test worktrees removed
       (branches kept). node --check passed on server files + extracted inline
       scripts.
-- [x] Committed — pending.
+- [x] Committed `7a99ac8`.
 
 ### Step 5 — Reviews
 
-- [ ] Not started.
+- [ ] Not started. (Outside tonight's requested scope — steps 0–4 only; the merge
+      gate, deterministic checks, review screen and one-click Revert remain for a
+      future run.)
 
 ## Verification notes
 
