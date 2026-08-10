@@ -240,11 +240,16 @@ function initSchema(db) {
   // must exist before the first task is ever inserted, and openDb() runs before
   // the bootstrap pass. INSERT OR IGNORE: a UI edit to an agent is never clobbered.
   db.exec(`
-    INSERT OR IGNORE INTO agents (key, label, emoji, role, persona, provider, provider_model, preset, tools, path_allow, path_deny, max_parallel, enabled, paused, sort_order)
+    INSERT OR IGNORE INTO agents (key, label, emoji, role, persona, brief_file, provider, provider_model, preset, tools, path_allow, path_deny, max_parallel, enabled, paused, sort_order)
     VALUES
-      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
-      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
+      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', '.agents/roles/dev.md', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
+      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
   `);
+  // Backfill brief_file on rows seeded before step 6 (INSERT OR IGNORE never
+  // clobbers a UI edit — this only fills NULLs for the two default devs).
+  try {
+    db.prepare(`UPDATE agents SET brief_file='.agents/roles/dev.md' WHERE key IN ('dev1','dev2') AND brief_file IS NULL`).run();
+  } catch {}
 
   // ─── Reviews — the merge gate (plan Part 4, step 5) ───────────────────────────
   // One row per finished dev/design task whose branch reached the review stage.

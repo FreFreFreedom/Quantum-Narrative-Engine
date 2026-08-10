@@ -19,6 +19,7 @@ import { join, resolve, dirname } from 'node:path';
 import { mainRepo, removeWorktree } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { getPrompt } from './promptQueue.js';
+import { regenerateBriefing } from './briefing.js';
 import { broadcastAll } from '../realtime.js';
 
 let db = null;
@@ -366,9 +367,16 @@ export async function mergeReview(id) {
     return { error: 'fetch_failed' };
   }
 
+  // Boot regeneration drifts the generated briefing file; drop that drift so the
+  // merge starts from a truly clean tree (the fresh copy is folded in later).
+  git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
+
   step('working tree must be clean');
   const status = git(['-C', main, 'status', '--porcelain', '--untracked-files=no'], { cwd: main, quiet: true });
-  if (status && status.length) return { error: 'dirty', detail: 'The local repository has unpublished changes. Finish or stash them before merging.', steps };
+  // .agents/current-state.md is a generated file (regenerated at boot and folded
+  // into every merge commit) — its working-tree drift must not block a merge.
+  const dirty = (status || '').split('\n').filter((l) => l && !l.includes('.agents/current-state.md'));
+  if (dirty.length) return { error: 'dirty', detail: 'The local repository has unpublished changes. Finish or stash them before merging.', steps };
 
   step('checkout main + ff-only origin/main');
   if (git(['-C', main, 'checkout', 'main'], { cwd: main, quiet: true }) === null) return { error: 'checkout_failed', steps };
@@ -403,6 +411,20 @@ export async function mergeReview(id) {
     return { error: 'post_merge_failed', detail: postMerge.detail, steps };
   }
 
+  // Refresh the shared-knowledge briefing and fold it into the push (plan Part 6:
+  // "The merge step commits it" — agents branching from origin/main always get a
+  // fresh copy). Only if it actually changed, to avoid empty commits.
+  step('refresh .agents/current-state.md');
+  try { regenerateBriefing(); } catch (e) { console.error('[reviews] briefing refresh failed:', e.message); }
+  // `git diff --quiet` exits 0 (no diff) or 1 (diff) — null on exit 1.
+  const briefingChanged = git(['-C', main, 'diff', '--quiet', 'HEAD', '--', '.agents/current-state.md'], { cwd: main, quiet: true }) === null;
+  if (briefingChanged) {
+    git(['-C', main, 'add', '.agents/current-state.md'], { cwd: main, quiet: true });
+    git(['-C', main, 'commit', '-m', 'chore: refresh .agents/current-state.md'], { cwd: main, quiet: true });
+  } else {
+    git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
+  }
+
   step('push to main');
   if (git(['-C', main, 'push', 'origin', 'main'], { cwd: main, quiet: true }) === null) {
     git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
@@ -426,8 +448,10 @@ export function revertReview(id) {
   if (review.status !== 'merged' || !review.merge_commit) return { error: 'not_merged' };
   if (!main) return { error: 'no_git' };
   if (git(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { cwd: main, quiet: true }) === null) return { error: 'fetch_failed' };
+  git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
   const status = git(['-C', main, 'status', '--porcelain', '--untracked-files=no'], { cwd: main, quiet: true });
-  if (status && status.length) return { error: 'dirty', detail: 'The local repository has unpublished changes.' };
+  const dirty = (status || '').split('\n').filter((l) => l && !l.includes('.agents/current-state.md'));
+  if (dirty.length) return { error: 'dirty', detail: 'The local repository has unpublished changes.' };
   if (git(['-C', main, 'checkout', 'main'], { cwd: main, quiet: true }) === null) return { error: 'checkout_failed' };
   if (git(['-C', main, 'merge', '--ff-only', 'origin/main'], { cwd: main, quiet: true }) === null) return { error: 'ff_failed' };
   const reverted = git(['-C', main, 'revert', '-m', '1', review.merge_commit, '--no-edit'], { cwd: main, quiet: true });

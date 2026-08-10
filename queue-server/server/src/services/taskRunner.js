@@ -33,6 +33,8 @@ import { getProvider } from './providers/index.js';
 import * as claudeCode from './providers/claudeCode.js';
 import { defaultOpenCodeModel } from './providers/index.js';
 import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
+import { getAgent } from './agents.js';
+import { roleBriefFor } from './briefing.js';
 
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 // This directory was never guaranteed to exist (no bootstrap step created it), so every
@@ -84,7 +86,8 @@ const DEFAULT_GENERAL_PROMPT =
 const DEFAULT_EXECUTION_PROMPT = [
   '{{general}}', '\n\n',
   'Implement ONLY the task below.\n\n',
-  'You are working in an isolated git worktree on your own branch, checked out from ',
+  '{{roleBrief}}',
+  '\n\nYou are working in an isolated git worktree on your own branch, checked out from ',
   'the canonical main. Do NOT run any git commands (no commit, no push, no checkout, ',
   'no merge, no rebase, no stash) — just edit files in place; your work is saved and ',
   'reviewed outside of git.\n\n',
@@ -97,6 +100,8 @@ const DEFAULT_QUESTION_PROMPT = [
   '{{general}}', '\n\n',
   'The request below is a QUESTION, not an implementation request. ',
   'Implement NOTHING: you are READ-ONLY (Read/Glob/Grep only).\n\n',
+  '{{roleBrief}}',
+  '\n\n',
   '{{brief}}',
   '\n\nExplore the code as needed to answer precisely and completely.\n',
   QUESTION_SUMMARY_INSTRUCTION,
@@ -848,9 +853,15 @@ async function executeTask(next, { lane = 'exec' } = {}) {
 
   const isQuestion = next.mode === 'question';
   const brief = `Description:\n${next.description}`;
-  let prompt = renderTemplate(getSettings()[isQuestion ? 'questionPrompt' : 'executionPrompt'], {
-    general: getSettings().generalPrompt, brief, internalSecret: AGENT_INTERNAL_SECRET,
+  const agent = getAgent(next.agent_key || 'dev1');
+  const roleBrief = roleBriefFor(agent);
+  const tpl = getSettings()[isQuestion ? 'questionPrompt' : 'executionPrompt'];
+  let prompt = renderTemplate(tpl, {
+    general: getSettings().generalPrompt, brief, roleBrief, internalSecret: AGENT_INTERNAL_SECRET,
   });
+  // Hot-overridable templates (agent-settings.json) may predate {{roleBrief}} —
+  // append it rather than silently dropping the role brief for custom templates.
+  if (roleBrief && !tpl.includes('{{roleBrief}}')) prompt += '\n\n' + roleBrief;
   if (!prompt.includes(SUMMARY_SECTION_MARKER)) prompt += '\n\n' + (isQuestion ? QUESTION_SUMMARY_INSTRUCTION : SUMMARY_SECTION_INSTRUCTION);
   if (next.work_prompt_id) prompt += ASK_USER_INSTRUCTION;
 

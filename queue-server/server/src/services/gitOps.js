@@ -141,6 +141,16 @@ export function removeWorktree(worktreePath) {
   } catch { return false; }
 }
 
+// Read-only listing of open agent branches (`agent/*`), for the briefing file
+// (plan Part 6: "open branches" section). Sorted by branch name.
+export function listAgentBranches() {
+  const main = mainRepo();
+  if (!main) return [];
+  const out = git(['-C', main, 'for-each-ref', '--format=%(refname:short)', 'refs/heads/agent/'], { quiet: true });
+  if (out === null) return [];
+  return out.split('\n').filter(Boolean).sort();
+}
+
 // Boot-time GC (plan 2a): prune stale git metadata, then remove any worktree whose
 // task row no longer exists (its task id is not in knownTaskIds), or whose directory
 // is older than 7 days. Branch refs are untouched — only the working tree goes.

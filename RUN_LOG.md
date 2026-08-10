@@ -13,8 +13,7 @@ Branch: `overnight/2026-08-10`. Nothing pushed, nothing merged, nothing publishe
 - [x] Step 2 — `agent-tasks.json` → SQLite; per-task pid files; 5-state `run_state` + heartbeat + UI.
 - [x] Step 3 — `gitOps.js` + worktree per task; `agents` table with dev1/dev2; per-agent slots, `MAX_CONCURRENT_WRITERS=2`.
 - [x] Step 4 — `parent_prompt_id` + `sessionOfParent` + "Continuer : ⟨tâche⟩" dropdown.
-- [ ] Step 3 — `gitOps.js` + worktree per task; `agents` table; per-agent slots, `MAX_CONCURRENT_WRITERS=2`.
-- [ ] Step 4 — `parent_prompt_id` + `sessionOfParent` + "Continuer : ⟨tâche⟩" dropdown.
+- [x] Step 6 — Shared knowledge: `AGENTS.md` essentials, `.agents/roles/*`, `briefing.js#regenerateBriefing`.
 
 ## Pending decisions
 
@@ -267,6 +266,53 @@ Implemented this session (after the deploy above).
       git against the repo on this Mac and push to GitHub, so the online
       Railway instance keeps serving the last deployed code until the user
       explicitly merges a review.
+
+### Step 6 — Shared knowledge (Part 6)
+
+The plan's "cheap shared knowledge": a per-agent role brief in every prompt, and
+an auto-generated `current-state.md` the agents read to know the project at a
+glance. Zero API spend.
+
+- [x] **`.agents/roles/*`** — four role briefs created: `dev.md`, `uiux.md`,
+      `reviewer.md`, `immersive.md`. Each says who the agent is, the project in
+      brief, how it works (worktree, no git, never `queue-server/data/`,
+      `node --check`, English UI strings, cost discipline) and the exact
+      `=== USER SUMMARY ===` closing section. Seeded into the `agents` table via
+      a new `brief_file` column (`schema.js`: seed rows carry
+      `.agents/roles/dev.md`; a backfill UPDATE fills the two default devs on
+      existing DBs — INSERT OR IGNORE never clobbers a UI edit).
+- [x] **`services/briefing.js`** (new) — `regenerateBriefing()` writes
+      `.agents/current-state.md` (~2.5 KB) with four sections read from live
+      data: architecture components (status + "next" from `architecture.js`
+      `computeLiveNow`/`nextAction`), agent roster (from the `agents` table),
+      open agent branches (`gitOps.listAgentBranches()` — read-only
+      `for-each-ref`), plan backlog (statuses). Every section is defensive —
+      a failed query or missing git repo degrades that section, never the boot.
+- [x] **`roleBriefFor(agent)`** — resolves an agent's `brief_file` (checked in
+      the MAIN checkout, worktree-independent) with caching; missing file →
+      empty string, prompt proceeds without it.
+- [x] **`taskRunner.js`** — `{{roleBrief}}` slot in both execution and question
+      prompt templates; custom templates (agent-settings.json) that predate the
+      token get the role brief appended at the end instead of silently dropping
+      it.
+- [x] **Boot + merge wiring** — `index.js` runs `regenerateBriefing()` at boot
+      (after `bootstrapData`, best-effort); `reviewRunner.mergeReview` refreshes
+      the briefing before the push and commits it as `chore: refresh
+      .agents/current-state.md` (only when it actually changed — no empty
+      commits), so agents branching from origin/main always get a fresh copy.
+      Merge/revert dirty-checks ignore the generated file (it regenerates at
+      boot — its drift must not block a merge).
+- [x] **`AGENTS.md`** — "Repository essentials" section (what FMCNS is, boot,
+      git rules, cost discipline, shared-knowledge pointers) so any agent
+      dropped into the repo starts oriented.
+- [x] Verified: `node --check` on `briefing.js` + all changed server files;
+      local boot writes `current-state.md` (spot-checked the generated file,
+      sections populated from the real DB); `regenerateBriefing()` called
+      standalone mid-session; role briefs verified present on disk. (Full
+      sandbox re-run not repeated this session — merge-path changes exercised
+      via the step-5 sandbox earlier; briefing refresh in the merge path is the
+      same git primitives already proven there.)
+- [x] Committed — pending.
 
 ## Daytime follow-up (Antoine session) — serve the app from the server's own address
 

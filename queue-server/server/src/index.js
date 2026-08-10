@@ -23,6 +23,7 @@ import { reviewsRoutes } from './routes/reviews.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
+import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
@@ -38,6 +39,7 @@ bindAgentsDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
 bindReviewsDb(db);
+bindBriefingDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -49,6 +51,10 @@ try {
 } catch (e) {
   console.error('Bootstrap data load failed:', e.message);
 }
+
+// Regenerate the shared-knowledge briefing (.agents/current-state.md) at boot
+// (plan Part 6). Best-effort — it needs a git repo; on Railway there is none.
+try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate failed:', e.message); }
 
 // Fire-and-forget: pre-generate book suggestions + first-tag lens for every
 // character/country so they're already cached (instant) by the time a user

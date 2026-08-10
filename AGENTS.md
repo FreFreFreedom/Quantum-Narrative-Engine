@@ -68,6 +68,32 @@ questions come first.
 - Keep `RUN_LOG.md` current as you go — Antoine reads it in the morning, not
   your memory.
 
+## Repository essentials
+
+For agents working in this repo — what FMCNS is, how to run things, the rules.
+
+- **FMCNS** (Fractal Mythic Consciousness Navigation System) is a personal
+  research tool: characters, films and countries are mapped as one ontology of
+  "characters" (universal ontological units), navigated fractally. Private
+  project, not a product. `CLAUDE.md` has the full context.
+- **Two parts**: the frontend is standalone single-file HTML apps (no build
+  step); `fmcns_navigator.html` is the live one. The backend is `queue-server/`
+  (Node/Express, `node:sqlite`, ESM) deployed on Railway.
+- **Boot**: `cd queue-server && JWT_SECRET=dev ADMIN_PASSWORD=dev npm start`
+  (minimum env). There is no test suite and no linter — `node --check <file>` is
+  the sanity check, and local boot + `curl` + the browser are the verification.
+- **Git rules (hard)**: never push, never merge, never checkout/reset away work
+  on `main`. Agent work lives on `agent/*` branches in worktrees; merging and
+  publishing are the human's call via the review screen.
+- **Never touch `queue-server/data/`** — that is the live database (and the
+  agents' per-task pid/exec files).
+- **Cost discipline**: model calls cost real quota. Prefer deterministic checks
+  and cached generation; never spend API credits on throwaway verification.
+- **Shared knowledge**: `.agents/roles/<role>.md` are the per-role briefs;
+  `.agents/current-state.md` is auto-generated (architecture components, roster,
+  open branches, plan backlog). Read your role brief first — it is named in
+  your prompt.
+
 ## Layout (in brief)
 
 - `fmcns_navigator.html` — the live single-file frontend app (no build step).
