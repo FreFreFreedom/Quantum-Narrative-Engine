@@ -120,6 +120,14 @@ const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
 const MAX_PARALLEL_QUESTIONS = 2;
 const SUMMARY_TIMEOUT_MS = 3 * 60_000;
 
+// `setsid` exists on Linux (util-linux) but not on macOS. Memoised at load time —
+// the platform does not change while the server runs. When absent, execution falls
+// back to a plain `bash -c` under Node's `detached: true` (which itself calls
+// setsid(2) on POSIX), so the group-kill semantics stay identical.
+const HAS_SETSID = (() => {
+  try { return existsSync('/usr/bin/setsid') || existsSync('/bin/setsid'); } catch { return false; }
+})();
+
 // ─── File-backed stores (atomic write) ────────────────────────────────────────
 function readJson(file, fallback) {
   try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -545,18 +553,25 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
     ? prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model, effort, tools, resumeSessionId })
     : prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model: providerModel || model, sessionId: resumeSessionId, question });
 
-  // setsid --fork detaches the execution from the server's process tree, so a
-  // platform restart (Railway redeploy) can't kill an in-flight execution or lose
-  // its result — the result is read back off durable .log/.code files, never the
-  // child's stdout pipe. See §11 in SPEC.md for why this isn't cosmetic.
+  // Detached execution: on Linux (Railway) `setsid --fork` starts a new session so
+  // a platform restart can't kill an in-flight execution or lose its result — the
+  // result is read back off durable .log/.code files, never the child's stdout pipe
+  // (see §11 in SPEC.md for why this isn't cosmetic). macOS has no `setsid` binary,
+  // so there the wrapper is plain `bash` — Node's `detached: true` calls setsid(2)
+  // itself on POSIX, and the spawned bash *is* the process-group leader, so the
+  // existing `process.kill(-pid, 'SIGKILL')` group-kill in stopTask and the timeout
+  // path behaves identically on both platforms.
   const cmd = `printf '%s\\n%s\\n' "$$" "${taskId}" > "${pidFile}"; ` + body;
 
-  const proc = spawn('setsid', ['--fork', 'bash', '-c', cmd], {
+  const base = {
     cwd: AGENT_CWD,
     env: prov.spawnEnv({ ERP_AGENT_TASK_ID: taskId }),
     detached: true,
     stdio: 'ignore',
-  });
+  };
+  const proc = HAS_SETSID
+    ? spawn('setsid', ['--fork', 'bash', '-c', cmd], base)
+    : spawn('bash', ['-c', cmd], base);
   proc.unref();
   // If the wrapper itself can't spawn (e.g. `setsid` missing on non-Linux hosts,
   // or a bad bin path), no .log/.code file would EVER appear — without this the
