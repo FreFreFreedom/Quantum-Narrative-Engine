@@ -146,6 +146,8 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .core-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-family:monospace; }
 .core-sub { font-size:11px; color:#6b645b; }
 .core-queueline { display:flex; align-items:center; gap:10px; font-size:10.5px; color:#6b645b; margin:6px 0 8px; }
+.core-serverpick { margin-left:auto; display:flex; align-items:center; gap:4px; }
+.core-serverpick select { font-size:10.5px; padding:1px 4px; }
 .core-tabs { display:flex; gap:4px; margin-bottom:-1px; }
 .core-tabs button { padding:7px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; border:1px solid transparent; border-bottom:none; background:transparent; color:#6b645b; cursor:pointer; border-radius:6px 6px 0 0; }
 .core-tabs button.active { background:#fff; border-color:#e4dfd8; color:#2a2621; font-weight:600; }
@@ -460,6 +462,13 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <span id="archQueueBanner"></span>
       <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
       <button class="ctrlbtn" id="queuePauseBtn">Pause queue</button>
+      <span class="core-serverpick" title="Which backend this page talks to: the local server on this Mac, or the deployed site. Choosing one saves it and reloads.">
+        Server:
+        <select id="serverToggle">
+          <option value="local">local</option>
+          <option value="production">production</option>
+        </select>
+      </span>
     </div>
     <div class="core-tabs" data-src="CORE ARCHITECTURE → sub-tab bar | fmcns_navigator.html: setCoreTab()">
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
@@ -587,7 +596,10 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 </div>
 </div>
 <script>
-const API_BASE = "https://quantum-narrative-engine-production.up.railway.app";
+const API_BASE = localStorage.getItem('fmcns_api_base')
+  || (location.hostname === 'localhost' || location.protocol === 'file:'
+      ? 'http://localhost:3000'
+      : 'https://quantum-narrative-engine-production.up.railway.app');
 let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
 let ENTITIES = [], CLUSTERS = {}, AXES = {};
 const byId = {};
@@ -1886,6 +1898,19 @@ function initCore() {
       b.onclick = () => { qFilter = b.getAttribute('data-qfilter'); qRenderList(); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
+    // "Server: local / production" — writes the shared key both constants read,
+    // then reloads so every fetch lands on the new backend. Initial value mirrors
+    // what the constants resolved to before this element existed.
+    const serverSel = document.getElementById('serverToggle');
+    if (serverSel) {
+      const saved = localStorage.getItem('fmcns_api_base');
+      const effective = saved || ((location.hostname === 'localhost' || location.protocol === 'file:') ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
+      serverSel.value = effective === 'http://localhost:3000' ? 'local' : 'production';
+      serverSel.onchange = () => {
+        localStorage.setItem('fmcns_api_base', serverSel.value === 'local' ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
+        location.reload();
+      };
+    }
   }
   setCoreTab(coreTab);
   startUsagePolling();
@@ -3337,7 +3362,12 @@ function openChatWithPrompt(text) {
 </div>
 <script>
 (function() {
-  var FMCNS_CHAT_SERVER = "https://quantum-narrative-engine-production.up.railway.app";
+  // Same shared server choice as the main app: the chat panel must follow the
+  // "Server: local / production" toggle (stored in the same localStorage key).
+  var FMCNS_CHAT_SERVER = localStorage.getItem('fmcns_api_base')
+    || ((location.hostname === 'localhost' || location.protocol === 'file:')
+        ? 'http://localhost:3000'
+        : 'https://quantum-narrative-engine-production.up.railway.app');
   var btn = document.getElementById('fmcns-chat-btn');
   var panel = document.getElementById('fmcns-chat-panel');
   var closeBtn = document.getElementById('fmcns-chat-close');
