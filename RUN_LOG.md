@@ -221,9 +221,16 @@ Express serves the single-file app at `/` from `queue-server/public/index.html`.
 - [x] Verified locally on :3000: `GET /` returns the page (HTTP 200, `diff`
       clean vs master, new "Continuer" UI present), `/api/health` 200, login
       works. Server currently running (JWT_SECRET=dev ADMIN_PASSWORD=dev PORT=3000).
-- [ ] Deploy to Railway — Antoine's call (push to main + verify). Not done here.
-      Local dev note for Antoine: password is `dev` on the local server; the
-      online version keeps his usual password.
+- [x] **DEPLOYED (Antoine's explicit go-ahead, push run by him in Terminal —
+      git push is deny-ruled in opencode.json for this repo).** Pre-push data
+      audit: queue tasks / suggestions / tech tree nodes all live in the online
+      DB on the persistent Railway volume; schema diff for this push is
+      additive-only (new columns/tables, guarded ALTERs); the one `DROP TABLE`
+      in schema.js is the pre-existing entities-rebuild migration already live
+      on origin/main. Post-deploy verification: `/api/health` 200, `GET /`
+      serves the app (was 404 before), served HTML byte-identical to
+      `queue-server/public/index.html`, login endpoint enforces auth (401 on
+      bad password).
 
 ## Verification notes
 
