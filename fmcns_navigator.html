@@ -130,13 +130,32 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .modebar { display:flex; align-items:center; gap:0; border-bottom:1px solid #e4dfd8; background:#2a2621; flex-shrink:0; }
 .modebar button { flex:none; padding:9px 18px; font-size:12px; border:none; background:transparent; color:#b8b0a3; cursor:pointer; letter-spacing:.02em; }
 .modebar button.active { color:#fbfaf8; box-shadow: inset 0 -2px 0 #c08a3e; }
+#inspectToggleBtn { margin-left:auto; background:#3f6b85; color:#fff; border-radius:5px; padding:6px 12px; }
+#inspectToggleBtn.active { background:#c08a3e; color:#2a2621; font-weight:600; }
+.inspect-hit { outline:2px solid #c08a3e !important; outline-offset:-2px; cursor:crosshair !important; }
+.inspect-tooltip { position:fixed; z-index:9999; max-width:420px; background:#2a2621; color:#fbfaf8; font-size:11px; line-height:1.4; padding:7px 10px; border-radius:6px; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.inspect-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; background:#2a2621; color:#fbfaf8; font-size:12.5px; padding:9px 16px; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
 .app-shell { display:flex; flex-direction:column; height:100vh; min-height:640px; }
 .app-shell .wrap { flex:1; min-height:0; }
 
-/* ---------- Task queue ---------- */
-#queueApp { flex:1; display:none; flex-direction:column; min-height:0; }
-#queueApp.open { display:flex; }
-.q-toolbar { padding:8px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:14px; }
+/* ---------- CORE ARCHITECTURE shell (merged Architecture/Seeds/Suggestion Engine/Dispatch Queue) ---------- */
+#coreApp { flex:1; display:none; flex-direction:column; min-height:0; }
+#coreApp.open { display:flex; }
+.core-header { border-bottom:1px solid #e4dfd8; background:#fbfaf8; padding:10px 16px 0; flex-shrink:0; }
+.core-header-top { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
+.core-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-family:monospace; }
+.core-sub { font-size:11px; color:#6b645b; }
+.core-queueline { display:flex; align-items:center; gap:10px; font-size:10.5px; color:#6b645b; margin:6px 0 8px; }
+.core-tabs { display:flex; gap:4px; margin-bottom:-1px; }
+.core-tabs button { padding:7px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; border:1px solid transparent; border-bottom:none; background:transparent; color:#6b645b; cursor:pointer; border-radius:6px 6px 0 0; }
+.core-tabs button.active { background:#fff; border-color:#e4dfd8; color:#2a2621; font-weight:600; }
+.core-tab-count { font-family:monospace; font-size:10px; color:#8a5a1e; }
+.core-handoff-link { color:#8a5a1e; text-decoration:underline; cursor:pointer; }
+.core-panes { flex:1; min-height:0; display:flex; }
+.core-pane { flex:1; display:none; flex-direction:column; min-height:0; min-width:0; }
+.core-pane.open { display:flex; }
+
+/* ---------- Task queue (Dispatch Queue sub-tab) ---------- */
 .q-pausebadge { font-size:10.5px; padding:3px 9px; border-radius:20px; background:#f6e7cf; color:#8a5a1e; }
 .q-body { flex:1; display:flex; min-height:0; }
 .q-left { width:400px; flex-shrink:0; border-right:1px solid #e4dfd8; overflow-y:auto; padding:14px; }
@@ -171,9 +190,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .q-replybox button { padding:0 14px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
 .q-detail-row { display:flex; gap:14px; font-size:10.5px; color:#6b645b; margin-bottom:12px; flex-wrap:wrap; }
 
-/* ---------- Travaux: Suggestions + Idées + Quotas strip ---------- */
-#travauxApp { flex:1; display:none; flex-direction:column; min-height:0; }
-#travauxApp.open { display:flex; }
+/* ---------- Seeds + Suggestion Engine + Quotas strip ---------- */
 .tv-toolbar { padding:10px 16px 0; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
 .tv-toolbar-top { display:flex; align-items:center; gap:14px; margin-bottom:9px; }
 .tv-tabs { display:flex; gap:4px; margin-bottom:-1px; }
@@ -239,9 +256,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .id-move-row { display:flex; gap:3px; }
 .id-move-row button { padding:2px 7px; font-size:10px; }
 
-/* ---------- Architecture Navigator ---------- */
-#archApp { flex:1; display:none; flex-direction:column; min-height:0; }
-#archApp.open { display:flex; }
+/* ---------- Architecture (sub-tab) ---------- */
 .arch-toolbar { padding:8px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:14px; }
 .arch-toolbar .arch-title { font-size:13px; font-weight:600; }
 .arch-toolbar .arch-sub { font-size:11px; color:#6b645b; margin-left:2px; }
@@ -260,6 +275,35 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:3px; }
 .arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:#fbfaf8; }
 .arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+/* Tech Tree view — same .arch-node markup, laid out by prereq depth instead of territory. */
+.arch-tiers { display:flex; flex-direction:column; gap:30px; min-width:1180px; position:relative; }
+.arch-tier { display:flex; gap:18px; align-items:flex-start; }
+.arch-tier-label { width:74px; flex-shrink:0; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; font-weight:600; padding-top:10px; }
+.arch-tier-nodes { flex:1; display:flex; flex-wrap:wrap; gap:12px; }
+.arch-tier-nodes .arch-node { width:200px; margin-bottom:0; }
+.arch-node.tt-buildable { border-color:#c08a3e; box-shadow:0 0 0 2px rgba(192,138,62,.22); background:#fffdf8; }
+.arch-node.tt-locked { opacity:.5; border-style:dashed; background:#faf9f7; }
+.arch-node.tt-locked:hover { opacity:.78; }
+.tt-legend { display:flex; gap:14px; font-size:10.5px; color:#8a8378; margin-bottom:16px; align-items:center; }
+.tt-legend span.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+.arch-lockedreqs { font-size:11px; color:#6b645b; line-height:1.5; }
+.arch-lockedreqs a { color:#8a5a1e; cursor:pointer; text-decoration:underline; }
+.arch-buildbtn { width:100%; padding:9px 12px; border-radius:7px; border:none; background:#c08a3e; color:#fff; font-size:12px; font-weight:600; cursor:pointer; margin-bottom:10px; }
+.arch-buildbtn:hover { background:#a9762f; }
+/* Speculative nodes read as provisional — dashed and violet, distinct from the
+   grey dashed "locked" look so proposal and unreachability aren't confusable. */
+.arch-node.tt-spec { border-style:dashed; border-color:#7a5ea8; background:#faf8fd; opacity:1; }
+.tt-addbtn { margin-left:12px; padding:4px 10px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11px; cursor:pointer; }
+.tt-addbtn:hover { background:#f2efe9; }
+.tt-addform { border:1px solid #d9d3c9; border-radius:8px; padding:12px; margin-bottom:16px; background:#fff; display:flex; flex-direction:column; gap:8px; max-width:520px; }
+.tt-addform input, .tt-addform textarea, .tt-addform select { width:100%; padding:7px 8px; border:1px solid #d9d3c9; border-radius:6px; font-size:12px; font-family:inherit; }
+.tt-addform textarea { min-height:48px; resize:vertical; }
+.tt-addlabel { font-size:10.5px; color:#8a8378; text-transform:uppercase; letter-spacing:.05em; }
+.tt-specnote { border-left:3px solid #7a5ea8; padding-left:10px; font-size:11.5px; color:#6b645b; line-height:1.6; }
+.tt-specnote a { color:#7a5ea8; cursor:pointer; text-decoration:underline; }
+.arch-specbtn { width:100%; padding:8px 12px; border-radius:7px; border:1px dashed #7a5ea8; background:#faf8fd; color:#5f4788; font-size:12px; font-weight:600; cursor:pointer; margin-top:10px; }
+.arch-specbtn:hover { background:#f2ecfa; }
+.arch-specbtn:disabled { opacity:.55; cursor:default; }
 .arch-right { width:340px; border-left:1px solid #e4dfd8; background:#fbfaf8; overflow-y:auto; padding:14px; flex-shrink:0; }
 .arch-right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; margin:0 0 8px; }
 .arch-detail-name { font-size:16px; font-weight:700; margin-bottom:2px; }
@@ -276,11 +320,11 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .arch-actionrow { display:flex; gap:7px; margin-top:12px; }
 .arch-actionrow button { flex:1; padding:7px 6px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:11px; cursor:pointer; }
 .arch-actionrow button:hover { background:#f2efe9; }
-.queueform { margin-top:10px; padding:9px; border:1px solid #e4dfd8; border-radius:8px; background:#fff; }
-.queueform input, .queueform textarea { width:100%; border:1px solid #d9d3c9; border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; box-sizing:border-box; }
-.queueform textarea { resize:vertical; min-height:60px; }
-.queueform button { padding:6px 12px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
-.queueform .qf-status { font-size:10.5px; margin-top:5px; color:#6b645b; }
+.arch-queueform { margin-top:10px; padding:9px; border:1px solid #e4dfd8; border-radius:8px; background:#fff; }
+.arch-queueform input, .arch-queueform textarea { width:100%; border:1px solid #d9d3c9; border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; box-sizing:border-box; }
+.arch-queueform textarea { resize:vertical; min-height:60px; }
+.arch-queueform button { padding:6px 12px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
+.arch-qf-status { font-size:10.5px; margin-top:5px; color:#6b645b; }
 .arch-verified { font-size:10px; color:#8a8378; margin:-6px 0 10px; }
 .arch-suggestion { border:1px solid #e4dfd8; background:#fff; border-radius:8px; padding:8px 10px; margin-bottom:7px; cursor:pointer; }
 .arch-suggestion:hover { background:#f2efe9; }
@@ -328,12 +372,13 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 <div class="modebar">
   <button id="modeContentBtn" class="active">Content navigator</button>
   <button id="modeMapBtn">Map</button>
-  <button id="modeArchBtn">Architecture navigator</button>
-  <button id="modeQueueBtn">Queue</button>
-  <button id="modeTravauxBtn">Travaux</button>
+  <button id="modeCoreBtn">Core architecture</button>
+  <button id="inspectToggleBtn" title="Click a UI element to copy its source reference (component + file + backend endpoint) for pasting into a Claude Code request">🎯 Target</button>
 </div>
+<div id="inspectTooltip" class="inspect-tooltip" style="display:none;"></div>
+<div id="inspectToast" class="inspect-toast" style="display:none;"></div>
 <div class="wrap" id="app">
-  <div class="left">
+  <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls() | backend: GET /api/ontology/facets, /api/ontology/clusters">
     <h2>Entity types</h2>
     <div id="typeList"></div>
     <div id="sourceBlock" style="display:none;">
@@ -369,7 +414,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <h1>FMCNS — Fractal Navigator</h1>
       <p>One live graph across characters, films, and countries, grouped into cluster regions. Gold = shared director/writer (always visible). Violet = shared tags. Green dotted = continuum-proximity bridge across scale (Scale Echo). Hover or click a node to reveal its connections — everything else fades.</p>
     </div>
-    <div class="graph-controls">
+    <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near renderZoneLabels()">
       <span class="ctrl-label">View</span>
       <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
       <button class="ctrlbtn" id="viewListBtn">List</button>
@@ -384,98 +429,118 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <button class="ctrlbtn" id="resetBtn">Reset view</button>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:#8a8378;"></span>
     </div>
-    <div class="graph-stage">
+    <div class="graph-stage" data-src="Content navigator → main graph (nodes/edges/zones) | fmcns_navigator.html: #graphSvg rendering near renderZoneLabels()/renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
       <svg id="graphSvg" viewBox="0 0 1500 1080" preserveAspectRatio="xMidYMid meet">
         <g id="viewport"><g id="zoneLayer"></g><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
       </svg>
       <div class="legend" id="legend"></div>
     </div>
-    <div class="list-stage" id="listStage">
+    <div class="list-stage" id="listStage" data-src="Content navigator → list view of entities | fmcns_navigator.html: renderList() (~line 937)">
       <div class="list-summary" id="listSummary"></div>
       <div id="listHost"></div>
     </div>
   </div>
   <div class="right">
     <h2>Selected entity</h2>
-    <div id="cardHost"><div class="empty">Click a node to inspect it.</div></div>
+    <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
   </div>
 </div>
-<div id="archApp">
-  <div class="arch-toolbar">
-    <span class="arch-title">Architecture Navigator</span>
-    <span class="arch-sub">How FMCNS itself is built — click any component.</span>
-    <span id="archQueueBanner" style="font-size:10.5px;color:#6b645b;margin-left:14px;"></span>
-    <div class="arch-viewbtns">
-      <button class="active" data-arch-view="architecture">Architecture</button>
-      <button data-arch-view="development">Development</button>
-      <button data-arch-view="evolution">Evolution</button>
+<div id="coreApp" data-src="CORE ARCHITECTURE tab | fmcns_navigator.html: coreApp shell, initCore()/setCoreTab() | backend: services/architecture.js, services/promptQueue.js, routes/travaux.js, services/claudeUsage.js">
+  <div class="core-header">
+    <div class="core-header-top">
+      <span class="core-title">CORE ARCHITECTURE</span>
+      <span class="core-sub">envisioning → dispatch → build — one loop across four views.</span>
+    </div>
+    <div id="usageStripHost" data-src="CORE ARCHITECTURE → shared header → Quotas usage strip | fmcns_navigator.html: renders into #usageStripHost, startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
+    <div class="core-queueline" data-src="CORE ARCHITECTURE → shared header → queue state line | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status, GET /api/travaux/prompts">
+      <span id="archQueueBanner"></span>
+      <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
+      <button class="ctrlbtn" id="queuePauseBtn">Pause queue</button>
+    </div>
+    <div class="core-tabs" data-src="CORE ARCHITECTURE → sub-tab bar | fmcns_navigator.html: setCoreTab()">
+      <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
+      <button id="coreTabSeeds" data-core-tab="seeds">Seeds <span class="core-tab-count" id="coreCountSeeds"></span></button>
+      <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
+      <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
     </div>
   </div>
-  <div class="arch-body">
-    <div class="arch-stage" id="archStage"></div>
-    <div class="arch-right" id="archRight">
-      <h2>Component</h2>
-      <div class="empty">Click a component to inspect it.</div>
-    </div>
-  </div>
-</div>
-<div id="queueApp">
-  <div class="q-toolbar">
-    <span class="arch-title">Task queue</span>
-    <span class="arch-sub">Real tasks run by the server through Claude Code — implementation edits the actual repo, questions are read-only.</span>
-    <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
-    <button class="ctrlbtn" id="queuePauseBtn" style="margin-left:auto;">Pause queue</button>
-  </div>
-  <div class="q-body">
-    <div class="q-left">
-      <h2>New prompt</h2>
-      <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
-      <input class="q-input" id="qPromptTitle" placeholder="Title (optional — auto-generated if left blank)">
-      <div class="q-row">
-        <label>Mode
-          <select id="qMode">
-            <option value="implement">Implement (edits the repo)</option>
-            <option value="question">Question (read-only)</option>
-          </select>
-        </label>
-        <label>Speed / depth
-          <select id="qPreset">
-            <option value="fast">Fast (haiku)</option>
-            <option value="standard">Standard (sonnet)</option>
-            <option value="deep" selected>Deep (strongest model)</option>
-          </select>
-        </label>
+  <div class="core-panes">
+    <div id="corePaneArch" class="core-pane open" data-src="CORE ARCHITECTURE → Architecture sub-tab | fmcns_navigator.html: corePaneArch rendering, initArchNav() | backend: services/architecture.js, routes/architecture.js">
+      <div class="arch-toolbar">
+        <span class="arch-title">Architecture</span>
+        <span class="arch-sub">How FMCNS itself is built — click any component.</span>
+        <div class="arch-viewbtns">
+          <button class="active" data-arch-view="architecture">Architecture</button>
+          <button data-arch-view="development">Development</button>
+          <button data-arch-view="evolution">Evolution</button>
+          <button data-arch-view="techtree">Tech Tree</button>
+        </div>
       </div>
-      <div class="q-row">
-        <label class="q-check"><input type="checkbox" id="qSameContext"> Continue previous context</label>
-        <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
+      <div class="arch-body">
+        <div class="arch-stage" id="archStage"></div>
+        <div class="arch-right" id="archRight">
+          <h2>Component</h2>
+          <div class="empty">Click a component to inspect it.</div>
+        </div>
       </div>
-      <button class="q-addbtn" id="qAddBtn">Add to queue</button>
-      <div id="qAddErr" class="q-err"></div>
-      <h2 style="margin-top:20px;">Queue (<span id="qCount">0</span>)</h2>
-      <div id="qList"></div>
     </div>
-    <div class="q-right" id="qRight">
-      <h2>Task</h2>
-      <div class="empty">Select a queued item to see its thread.</div>
+    <div id="corePaneSeeds" class="core-pane" data-src="CORE ARCHITECTURE → Seeds sub-tab (Idées notebook) | fmcns_navigator.html: renders into #tvBodySeeds, loadIdeas()/renderIdeas() | backend: routes/travaux.js (/ideas*)">
+      <div class="tv-toolbar">
+        <div class="tv-toolbar-top">
+          <span class="arch-title">Seeds</span>
+          <span class="arch-sub">Ideas jotted down for later — nothing here executes on its own.</span>
+        </div>
+      </div>
+      <div class="tv-body" id="tvBodySeeds"></div>
+    </div>
+    <div id="corePaneSignals" class="core-pane" data-src="CORE ARCHITECTURE → Suggestion Engine sub-tab (Suggestions de Claude) | fmcns_navigator.html: renders into #tvBodySignals, loadSuggestions()/renderSuggestions() | backend: routes/travaux.js (/suggestions*)">
+      <div class="tv-toolbar">
+        <div class="tv-toolbar-top">
+          <span class="arch-title">Suggestion Engine</span>
+          <span class="arch-sub">Claude proposes work, you decide what runs.</span>
+        </div>
+      </div>
+      <div class="tv-body" id="tvBodySignals"></div>
+    </div>
+    <div id="corePaneQueue" class="core-pane" data-src="CORE ARCHITECTURE → Dispatch Queue sub-tab | fmcns_navigator.html: corePaneQueue rendering, qLoad()/startQueuePolling() | backend: services/promptQueue.js, services/taskRunner.js, routes/queue.js">
+      <div class="q-body">
+        <div class="q-left" data-src="CORE ARCHITECTURE → Dispatch Queue → new prompt form | fmcns_navigator.html: qAddBtn handler | backend: POST /api/travaux/prompts, services/promptQueue.js">
+          <h2>New prompt</h2>
+          <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
+          <input class="q-input" id="qPromptTitle" placeholder="Title (optional — auto-generated if left blank)">
+          <div class="q-row">
+            <label>Mode
+              <select id="qMode">
+                <option value="implement">Implement (edits the repo)</option>
+                <option value="question">Question (read-only)</option>
+              </select>
+            </label>
+            <label>Speed / depth
+              <select id="qPreset">
+                <option value="fast">Fast (haiku)</option>
+                <option value="standard">Standard (sonnet)</option>
+                <option value="deep" selected>Deep (strongest model)</option>
+              </select>
+            </label>
+          </div>
+          <div class="q-row">
+            <label class="q-check"><input type="checkbox" id="qSameContext"> Continue previous context</label>
+            <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
+          </div>
+          <button class="q-addbtn" id="qAddBtn">Add to queue</button>
+          <div id="qAddErr" class="q-err"></div>
+          <h2 style="margin-top:20px;">Queue (<span id="qCount">0</span>)</h2>
+          <div id="qList"></div>
+        </div>
+        <div class="q-right" id="qRight" data-src="CORE ARCHITECTURE → Dispatch Queue → selected task thread (reply/steer/pause) | fmcns_navigator.html: renderQueueDetail() (~line 1847) | backend: services/promptQueue.js reply/steer/pause endpoints">
+          <h2>Task</h2>
+          <div class="empty">Select a queued item to see its thread.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-<div id="travauxApp">
-  <div class="tv-toolbar">
-    <div class="tv-toolbar-top">
-      <span class="arch-title">Work items</span>
-      <span class="arch-sub">Claude proposes work, you decide what runs — nothing here executes on its own.</span>
-    </div>
-    <div id="usageStripHost"></div>
-    <div class="tv-tabs">
-      <button id="tvTabSuggestions" class="active">Suggestions de Claude</button>
-      <button id="tvTabIdeas">Idées</button>
-    </div>
-  </div>
-  <div class="tv-body" id="tvBody"></div>
-</div>
-<div id="mapApp">
+<div id="mapApp" data-src="Map tab | fmcns_navigator.html: mapApp rendering, initMap() | backend: GET /api/ontology/entities (country type)">
   <div class="mapcol">
     <div class="mapstage">
       <svg id="mapSvg" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet">
@@ -490,7 +555,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       </div>
     </div>
   </div>
-  <div class="map-sidepanel">
+  <div class="map-sidepanel" data-src="Map tab → country list + detail card | fmcns_navigator.html: renderMapList() (~line 1646), renderMapCard() (~line 1664)">
     <h2>Scored countries</h2>
     <ul class="map-entitylist" id="mapEntityList"></ul>
     <div id="mapCardHost"><div class="empty">Click a colored country to inspect it.</div></div>
@@ -565,7 +630,8 @@ async function boot() {
     renderAxisControls();
     renderClusterList();
     initGraph();
-    initArchNav();
+    // initArchNav() used to run here on every boot; it now runs lazily from
+    // setCoreTab('arch') the first time the Architecture sub-tab is opened.
   } catch (e) {
     // This used to report EVERY startup failure as "Session expired, log in again."
     // A plain JS bug in any init step therefore looked exactly like being locked out
@@ -1707,41 +1773,154 @@ function mapResetZoom() {
 let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
-document.getElementById('modeArchBtn').onclick = () => setMode('arch');
-document.getElementById('modeQueueBtn').onclick = () => setMode('queue');
-document.getElementById('modeTravauxBtn').onclick = () => setMode('travaux');
+document.getElementById('modeCoreBtn').onclick = () => setMode('core');
 function setMode(m) {
   document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
   document.getElementById('modeMapBtn').classList.toggle('active', m==='map');
-  document.getElementById('modeArchBtn').classList.toggle('active', m==='arch');
-  document.getElementById('modeQueueBtn').classList.toggle('active', m==='queue');
-  document.getElementById('modeTravauxBtn').classList.toggle('active', m==='travaux');
+  document.getElementById('modeCoreBtn').classList.toggle('active', m==='core');
   document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
   document.getElementById('mapApp').classList.toggle('open', m==='map');
-  document.getElementById('archApp').classList.toggle('open', m==='arch');
-  document.getElementById('queueApp').classList.toggle('open', m==='queue');
-  document.getElementById('travauxApp').classList.toggle('open', m==='travaux');
+  document.getElementById('coreApp').classList.toggle('open', m==='core');
   activeCardHost = m==='map' ? 'mapCardHost' : 'cardHost';
   if (m==='map') initMap();
-  if (m==='queue') initQueue(); else stopQueuePolling();
-  if (m==='travaux') initTravaux(); else stopUsagePolling();
+  if (m==='core') initCore(); else teardownCore();
 }
 
-// ---------- Task queue ----------
+// ---------- Inspect / target mode ----------
+let inspectMode = false;
+let inspectHitEl = null;
+const inspectToggleBtn = document.getElementById('inspectToggleBtn');
+const inspectTooltip = document.getElementById('inspectTooltip');
+const inspectToast = document.getElementById('inspectToast');
+let inspectToastTimer = null;
+
+inspectToggleBtn.onclick = () => {
+  inspectMode = !inspectMode;
+  inspectToggleBtn.classList.toggle('active', inspectMode);
+  document.body.style.cursor = inspectMode ? 'crosshair' : '';
+  if (!inspectMode) clearInspectHighlight();
+};
+
+function clearInspectHighlight() {
+  if (inspectHitEl) inspectHitEl.classList.remove('inspect-hit');
+  inspectHitEl = null;
+  inspectTooltip.style.display = 'none';
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!inspectMode) return;
+  const target = e.target.closest('[data-src]');
+  if (target === inspectHitEl) {
+    if (target) {
+      inspectTooltip.style.left = (e.clientX + 14) + 'px';
+      inspectTooltip.style.top = (e.clientY + 14) + 'px';
+    }
+    return;
+  }
+  clearInspectHighlight();
+  if (target) {
+    target.classList.add('inspect-hit');
+    inspectHitEl = target;
+    inspectTooltip.textContent = target.getAttribute('data-src');
+    inspectTooltip.style.left = (e.clientX + 14) + 'px';
+    inspectTooltip.style.top = (e.clientY + 14) + 'px';
+    inspectTooltip.style.display = 'block';
+  }
+}, true);
+
+document.addEventListener('click', (e) => {
+  if (!inspectMode) return;
+  const target = e.target.closest('[data-src]');
+  if (!target) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const ref = target.getAttribute('data-src');
+  navigator.clipboard.writeText(ref).catch(() => {});
+  inspectToast.textContent = 'Copied reference to clipboard — paste it into your request.';
+  inspectToast.style.display = 'block';
+  clearTimeout(inspectToastTimer);
+  inspectToastTimer = setTimeout(() => { inspectToast.style.display = 'none'; }, 2500);
+}, true);
+
+// ---------- CORE ARCHITECTURE shell ----------
+// Merges what used to be three separate top-level tabs (Architecture Navigator, Queue,
+// Travaux) into one, since they are in fact four stages of a single loop: Seeds/Suggestion
+// Engine feed the Dispatch Queue, which runs work that shows up in Architecture's history,
+// which is what Claude reads to propose the next suggestion. The header (quota strip +
+// queue-state line) is shared across all four sub-tabs since it governs all of them.
+let coreTab = 'arch';
+let coreInited = false;
+const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', signals:'coreTabSignals', queue:'coreTabQueue' };
+
+function initCore() {
+  if (!coreInited) {
+    coreInited = true;
+    Object.keys(CORE_TAB_IDS).forEach(t => { document.getElementById(CORE_TAB_IDS[t]).onclick = () => setCoreTab(t); });
+    document.getElementById('qAddBtn').onclick = qAddPrompt;
+    document.getElementById('queuePauseBtn').onclick = qTogglePause;
+  }
+  setCoreTab(coreTab);
+  startUsagePolling();
+  qLoad(); // keep the queue count + pause state fresh even off the Dispatch Queue sub-tab
+  startQueuePolling();
+}
+
+function teardownCore() {
+  stopUsagePolling();
+  stopQueuePolling();
+}
+
+function setCoreTab(t) {
+  coreTab = t;
+  Object.keys(CORE_TAB_IDS).forEach(x => document.getElementById(CORE_TAB_IDS[x]).classList.toggle('active', x === t));
+  document.getElementById('corePaneArch').classList.toggle('open', t === 'arch');
+  document.getElementById('corePaneSeeds').classList.toggle('open', t === 'seeds');
+  document.getElementById('corePaneSignals').classList.toggle('open', t === 'signals');
+  document.getElementById('corePaneQueue').classList.toggle('open', t === 'queue');
+  if (t === 'arch') initArchNav();
+  if (t === 'seeds') loadIdeas();
+  if (t === 'signals') loadSuggestions();
+  if (t === 'queue') qRenderList();
+  if (coreInited) startQueuePolling(); // rate depends on which sub-tab is now active
+}
+
+// Jump to the Dispatch Queue sub-tab and select a given item — used by the hand-off
+// confirmation after queuing a prompt from Architecture/Seeds/Suggestion Engine.
+function jumpToQueueItem(id) {
+  setMode('core');
+  setCoreTab('queue');
+  const item = qPrompts.find(p => p.id === id);
+  if (item) { qSelected = item; qRenderDetail(item); }
+  qRenderList();
+}
+
+// Mirror of jumpToQueueItem for the tech tree: switch to Architecture, force the
+// Tech Tree view (a planted Seed only appears there), and select the node.
+function jumpToArchNode(id) {
+  setMode('core');
+  setCoreTab('arch');
+  archView = 'techtree';
+  document.querySelectorAll('[data-arch-view]').forEach(x => {
+    x.classList.toggle('active', x.getAttribute('data-arch-view') === 'techtree');
+  });
+  renderArchStage();
+  selectArchNode(id);
+}
+
+// ---------- Task queue (Dispatch Queue sub-tab) ----------
 // A page for the /api/travaux/prompts API, which previously had no UI at all — adding
 // a task meant crafting a curl call by hand. Polls rather than using WebSocket events,
 // same reasoning as the rest of this app: simplicity over infra, and the poll interval
-// (4s) is short enough that "running" -> "done" feels prompt without being chatty.
+// (4s, while Dispatch Queue is the active sub-tab) is short enough that "running" ->
+// "done" feels prompt without being chatty; the other three sub-tabs throttle to 15s
+// since they only need the header/badge counts to stay roughly live.
 const Q_STATUS_COLORS = { queued:'#8a8378', running:'#2f7d63', done:'#4f9d7a', blocked:'#b23a2f', paused:'#a19a8e', cancelled:'#a19a8e' };
 const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', blocked:'Blocked', paused:'Set aside', cancelled:'Cancelled' };
 let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
 
-function initQueue() {
-  document.getElementById('qAddBtn').onclick = qAddPrompt;
-  document.getElementById('queuePauseBtn').onclick = qTogglePause;
-  qLoad();
+function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
-  qPollTimer = setInterval(qLoad, 4000);
+  qPollTimer = setInterval(qLoad, coreTab === 'queue' ? 4000 : 15000);
 }
 function stopQueuePolling() { if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; } }
 
@@ -1756,6 +1935,8 @@ async function qLoad() {
   badge.textContent = 'Queue paused' + (data.queue_paused_reason ? ` — ${data.queue_paused_reason}` : '');
   document.getElementById('queuePauseBtn').textContent = qPaused ? 'Resume queue' : 'Pause queue';
   document.getElementById('qCount').textContent = qPrompts.length;
+  const countEl = document.getElementById('coreCountQueue');
+  if (countEl) countEl.textContent = qPrompts.length || '';
   qRenderList();
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
@@ -1917,27 +2098,27 @@ async function qSteer(id, text) {
 // Ported from the "Portage — Suggestions de Claude, Idées et Quotas Claude" spec, adapted
 // from a multi-file React app into this single-file vanilla-JS one, same pattern as the
 // Queue page above. Nothing here ever runs on its own: a suggestion accepted or an idea
-// promoted becomes a 'paused' item in the existing task queue (Queue tab) — the human still
-// has to press start.
-let tvTab = 'suggestions';
+// promoted becomes a 'paused' item in the existing task queue (Dispatch Queue sub-tab) —
+// the human still has to press start. Suggestions and Ideas used to share one internal
+// tab strip (tv-tabs); each is now its own CORE ARCHITECTURE sub-tab (Suggestion Engine /
+// Seeds), so switching between them goes through setCoreTab() instead.
 let tvSuggestions = [], tvSuggestionFilter = { status: 'new', kind: 'all' };
 let tvIdeas = [];
 let usagePollTimer = null;
 
-function initTravaux() {
-  document.getElementById('tvTabSuggestions').onclick = () => { tvTab = 'suggestions'; renderTravauxTabs(); loadSuggestions(); };
-  document.getElementById('tvTabIdeas').onclick = () => { tvTab = 'ideas'; renderTravauxTabs(); loadIdeas(); };
-  renderTravauxTabs();
-  if (tvTab === 'suggestions') loadSuggestions(); else loadIdeas();
-  loadUsage();
+function startUsagePolling() {
+  refreshCoreHeader();
   if (usagePollTimer) clearInterval(usagePollTimer);
-  usagePollTimer = setInterval(loadUsage, 30000);
+  usagePollTimer = setInterval(refreshCoreHeader, 30000);
 }
 function stopUsagePolling() { if (usagePollTimer) { clearInterval(usagePollTimer); usagePollTimer = null; } }
 
-function renderTravauxTabs() {
-  document.getElementById('tvTabSuggestions').classList.toggle('active', tvTab === 'suggestions');
-  document.getElementById('tvTabIdeas').classList.toggle('active', tvTab === 'ideas');
+// Shared header refresh: quota strip + the arch/queue-status banner, both of which are
+// facts about the same underlying loop and now live in one place across all four sub-tabs.
+async function refreshCoreHeader() {
+  loadUsage();
+  try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
+  renderArchQueueBanner();
 }
 
 // ── Quotas Claude usage strip ──────────────────────────────────────────────────
@@ -2004,7 +2185,7 @@ const TV_KIND_LABEL = { chantier: 'Work item', integration: 'Integration' };
 const TV_STATUS_LABEL = { new: 'New', accepted: 'Accepted', dismissed: 'Dismissed' };
 
 async function loadSuggestions() {
-  const body = document.getElementById('tvBody');
+  const body = document.getElementById('tvBodySignals');
   body.innerHTML = '<div class="tv-empty">Loading…</div>';
   try {
     const q = [];
@@ -2013,11 +2194,13 @@ async function loadSuggestions() {
     const data = await api('/api/travaux/suggestions' + (q.length ? '?' + q.join('&') : ''));
     tvSuggestions = data.suggestions || [];
   } catch (e) { tvSuggestions = []; }
+  const countEl = document.getElementById('coreCountSignals');
+  if (countEl) countEl.textContent = tvSuggestions.filter(s => s.status === 'new').length || '';
   renderSuggestions();
 }
 
 function renderSuggestions() {
-  const body = document.getElementById('tvBody');
+  const body = document.getElementById('tvBodySignals');
   const statusOpts = [['new','New'],['accepted','Accepted'],['dismissed','Dismissed'],['all','All']];
   const kindOpts = [['all','All'],['chantier','Work items'],['integration','Integrations']];
   body.innerHTML = `
@@ -2056,17 +2239,19 @@ function renderSuggestions() {
           <button class="primary" data-action="accept">Accept → queue (set aside)</button>
           <button data-action="dismiss">Dismiss</button>
         </div>
-      ` : s.status === 'accepted' ? `<div class="sg-rationale">Already in the queue — see the Queue tab.</div>` : ''}
+      ` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Dispatch Queue</a>` : 'Already in the queue.'}</div>` : ''}
     </div>
   `).join('');
   list.querySelectorAll('.sg-card').forEach(card => {
     const id = card.getAttribute('data-sid');
     const acceptBtn = card.querySelector('[data-action="accept"]');
     const dismissBtn = card.querySelector('[data-action="dismiss"]');
+    const jumpLink = card.querySelector('[data-jump]');
+    if (jumpLink) jumpLink.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jumpLink.getAttribute('data-jump')); };
     if (acceptBtn) acceptBtn.onclick = async () => {
       const promptText = card.querySelector('[data-role="prompt"]').value;
-      acceptBtn.disabled = true; acceptBtn.textContent = 'Ajout…';
-      try { await apiWrite(`/api/travaux/suggestions/${id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); }
+      acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
+      try { await apiWrite(`/api/travaux/suggestions/${id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); await qLoad(); }
       catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accept → queue (set aside)'; alert('Error: ' + e.message); }
     };
     if (dismissBtn) dismissBtn.onclick = async () => {
@@ -2093,14 +2278,16 @@ async function generateSuggestionsNow() {
 
 // ── Idées ──────────────────────────────────────────────────────────────────────
 async function loadIdeas() {
-  const body = document.getElementById('tvBody');
+  const body = document.getElementById('tvBodySeeds');
   body.innerHTML = '<div class="tv-empty">Loading…</div>';
   try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
+  const countEl = document.getElementById('coreCountSeeds');
+  if (countEl) countEl.textContent = tvIdeas.filter(i => !i.work_prompt_id).length || '';
   renderIdeas();
 }
 
 function renderIdeas() {
-  const body = document.getElementById('tvBody');
+  const body = document.getElementById('tvBodySeeds');
   body.innerHTML = `
     <div class="id-form">
       <input id="idTitleInput" placeholder="The idea in one line…">
@@ -2123,7 +2310,8 @@ function renderIdeas() {
         <input data-role="title" value="${(idea.title||'').replace(/"/g,'&quot;')}">
         <textarea data-role="notes" rows="2">${idea.notes||''}</textarea>
         <input class="id-tag-input" data-role="tag" placeholder="tag" value="${(idea.tag||'').replace(/"/g,'&quot;')}" style="max-width:120px;">
-        ${idea.work_prompt_id ? '<span class="id-done-pill">Already in the queue</span>' : ''}
+        ${idea.work_prompt_id ? `<span class="id-done-pill">Queued — <a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">view in Dispatch Queue</a></span>` : ''}
+        ${idea.arch_node_id ? `<span class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></span>` : ''}
       </div>
       <div class="id-card-actions">
         <div class="id-move-row">
@@ -2131,6 +2319,7 @@ function renderIdeas() {
           <button data-action="down" ${i===tvIdeas.length-1?'disabled':''}>↓</button>
         </div>
         <button data-action="promote">→ Queue</button>
+        ${idea.arch_node_id ? '' : '<button data-action="plant">🌱 Plant in tree</button>'}
         <button class="danger" data-action="delete">Remove</button>
       </div>
     </div>
@@ -2149,9 +2338,24 @@ function renderIdeas() {
     };
     card.querySelector('[data-action="promote"]').onclick = async (e) => {
       e.target.disabled = true; e.target.textContent = '…';
-      try { await apiWrite(`/api/travaux/ideas/${id}/promote`, 'POST', {}); await loadIdeas(); }
+      try { await apiWrite(`/api/travaux/ideas/${id}/promote`, 'POST', {}); await loadIdeas(); await qLoad(); }
       catch (err) { e.target.disabled = false; e.target.textContent = '→ Queue'; alert('Error: ' + err.message); }
     };
+    // Phase 4: a Seed becomes a real tree node, so Idées is the list rendering of the
+    // same objects the tech tree renders spatially.
+    const plantBtn = card.querySelector('[data-action="plant"]');
+    if (plantBtn) plantBtn.onclick = async (e) => {
+      e.target.disabled = true; e.target.textContent = '…';
+      try { await apiWrite(`/api/travaux/ideas/${id}/plant`, 'POST', {}); await loadIdeas(); await loadArchNodes(); }
+      catch (err) { e.target.disabled = false; e.target.textContent = '🌱 Plant in tree'; alert('Error: ' + err.message); }
+    };
+    const plantJump = card.querySelector('[data-plantjump]');
+    if (plantJump) plantJump.onclick = (ev) => {
+      ev.preventDefault();
+      jumpToArchNode(plantJump.getAttribute('data-plantjump'));
+    };
+    const jumpLink = card.querySelector('[data-jump]');
+    if (jumpLink) jumpLink.onclick = (ev) => { ev.preventDefault(); jumpToQueueItem(jumpLink.getAttribute('data-jump')); };
     const upBtn = card.querySelector('[data-action="up"]'), downBtn = card.querySelector('[data-action="down"]');
     if (upBtn) upBtn.onclick = () => moveIdea(id, -1);
     if (downBtn) downBtn.onclick = () => moveIdea(id, 1);
@@ -2266,7 +2470,7 @@ const ARCH_DATA = [
     what:'Zooming from a wide view into one node revealing more structure nested inside it.',
     why:'The name of the whole system promises fractality — the same navigation logic should hold at every scale you zoom into.',
     input:'A click/scroll/zoom gesture on a node', output:'Camera reframes; in a true version, the node\'s own internal graph would appear',
-    now:'Prototype. Camera zoom/pan exists (mouse wheel + drag) in the graph views. It is NOT truly fractal yet — zooming in does not reveal a node\'s own internal substructure, it only moves the camera closer to the same flat graph. This Architecture Navigator\'s own territory→component drill-down is the first real instance of that pattern.',
+    now:'Prototype. Camera zoom/pan exists (mouse wheel + drag) in the graph views. It is NOT truly fractal yet — zooming in does not reveal a node\'s own internal substructure, it only moves the camera closer to the same flat graph. This CORE ARCHITECTURE → Architecture sub-tab\'s own territory→component drill-down is the first real instance of that pattern.',
     next:'True recursive zoom: clicking into a node reveals its own internal graph, not just a closer camera.',
     status:'Prototype', depends:['ontological-layer'] },
 
@@ -2311,19 +2515,50 @@ const ARCH_DATA = [
     status:'Prototype', depends:[] },
 
   { id:'per-view-polish', territory:'interface', name:'Per-view polish',
-    what:'A dedicated design pass, rated separately, for each major view: Map, Content graph, Architecture Navigator.',
+    what:'A dedicated design pass, rated separately, for each major view: Map, Content graph, CORE ARCHITECTURE → Architecture.',
     why:'Quality was uneven across views and there was no place tracking that unevenness — this component exists specifically to hold that.',
     input:'Each view\'s own layout, density, and interaction choices', output:'A per-view quality rating and a known-gaps list',
-    now:'Uneven. Architecture Navigator got a dedicated pass; Content graph did too this round (cluster-zone layout, spotlight/fade, reduced default edge/label density) but was flagged as too cluttered before that fix shipped, and legibility work is still open. Map mode has not had its own dedicated polish pass yet.',
+    now:'Uneven. CORE ARCHITECTURE → Architecture got a dedicated pass; Content graph did too this round (cluster-zone layout, spotlight/fade, reduced default edge/label density) but was flagged as too cluttered before that fix shipped, and legibility work is still open. Map mode has not had its own dedicated polish pass yet.',
     next:'Give Map mode the same kind of dedicated review Content graph just got.',
     status:'Prototype', depends:[],
     subviews:[
       { id:'map', label:'Map', rating:'Not yet reviewed', note:'Inherits Content mode\'s detail panel; its own layout hasn\'t had a dedicated pass.' },
       { id:'content-graph', label:'Content graph', rating:'Known gap logged, partially fixed', note:'Flagged as too cluttered to read (node overlap, label/edge noise). Cluster-zone layout + spotlight/fade shipped in response; further legibility and navigation work (trackpad gestures, stronger pattern-focus fade) still open.' },
-      { id:'architecture-nav', label:'Architecture Navigator', rating:'Reviewed', note:'Got a dedicated design pass this round: live NOW data, versioned evolution, build history, generated suggestions.' },
+      { id:'architecture-nav', label:'CORE ARCHITECTURE → Architecture', rating:'Reviewed', note:'Got a dedicated design pass this round: live NOW data, versioned evolution, build history, generated suggestions. Since merged with Queue and Travaux into one CORE ARCHITECTURE tab (Architecture / Seeds / Suggestion Engine / Dispatch Queue sub-tabs).' },
     ] },
 ];
 const ARCH_BY_ID = {}; ARCH_DATA.forEach(c => ARCH_BY_ID[c.id] = c);
+
+// ---------- Tech Tree state derivation ----------
+// Node state is *derived*, never authored: there is no lock/unlock field to keep in
+// sync with `status`. Because loadArchLiveData() overwrites `status` from the live
+// backend, the buildable frontier updates itself as components actually advance.
+const BUILT_STATUSES = new Set(['Working','Validated','Advanced']);
+const isBuilt = c => !!c && BUILT_STATUSES.has(c.status);
+// Unknown prereq ids are ignored rather than treated as unmet, so a node whose
+// dependency doesn't resolve degrades to buildable instead of being stuck locked.
+const archPrereqs = c => (c.depends || []).map(id => ARCH_BY_ID[id]).filter(Boolean);
+const archUnmet = c => archPrereqs(c).filter(p => !isBuilt(p));
+
+function archNodeState(c) {
+  if (isBuilt(c)) return 'built';
+  return archUnmet(c).length === 0 ? 'buildable' : 'locked';
+}
+
+// Longest prereq chain, memoised. The visited set guards against a dependency cycle
+// (impossible in today's hand-written data, but authored nodes are coming).
+const _archDepthCache = {};
+function archDepth(c, visited) {
+  if (!c) return 0;
+  if (_archDepthCache[c.id] !== undefined) return _archDepthCache[c.id];
+  const seen = visited || new Set();
+  if (seen.has(c.id)) return 0;
+  seen.add(c.id);
+  const d = archPrereqs(c).reduce((m, p) => Math.max(m, archDepth(p, seen) + 1), 0);
+  seen.delete(c.id);
+  if (!visited) _archDepthCache[c.id] = d;
+  return d;
+}
 const TERRITORIES = [
   { id:'perception', label:'Perception', sub:'Observation Layer — how anything gets in.' },
   { id:'knowledge', label:'Knowledge', sub:'Ontological, Semantic & Analogical Layers.' },
@@ -2352,7 +2587,37 @@ async function loadArchLiveData() {
       c.suggestions_generated_at = lc.suggestions_generated_at || null;
     });
   } catch (e) { /* fall back silently to the static ARCH_DATA text */ }
+  await loadArchNodes();
   try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
+}
+
+// Stored nodes (hand-authored + Claude-speculated) merged over the hardcoded trunk.
+// Merging by id means a stored row can either introduce a new node or override a
+// trunk node's fields; ARCH_DATA itself is never mutated, so a failed fetch simply
+// leaves the trunk as it was.
+async function loadArchNodes() {
+  let nodes = [];
+  try { nodes = (await api('/api/architecture/nodes')).nodes || []; }
+  catch (e) { return; } // offline / older backend — the trunk still renders
+  // Drop previously-merged rows so a deleted node actually disappears on reload.
+  for (let i = ARCH_DATA.length - 1; i >= 0; i--) {
+    if (ARCH_DATA[i]._stored) { delete ARCH_BY_ID[ARCH_DATA[i].id]; ARCH_DATA.splice(i, 1); }
+  }
+  nodes.forEach(n => {
+    const existing = ARCH_BY_ID[n.id];
+    if (existing) { Object.assign(existing, n); return; }
+    const node = {
+      id:n.id, territory:n.territory, name:n.name,
+      what:n.what || '', why:n.why || '',
+      input:'—', output:'—',
+      now:n.provenance === 'speculative' ? 'Speculative — proposed by Claude, not yet accepted.' : 'Concept. Added by hand; not built yet.',
+      next:n.next || '', status:n.status, depends:n.depends || [],
+      provenance:n.provenance, parent_node_id:n.parent_node_id, _stored:true,
+    };
+    ARCH_DATA.push(node); ARCH_BY_ID[n.id] = node;
+  });
+  // Depths are memoised, and the tree's shape just changed.
+  for (const k in _archDepthCache) delete _archDepthCache[k];
 }
 
 function renderArchQueueBanner() {
@@ -2375,8 +2640,96 @@ async function initArchNav() {
   if (archSelected) renderArchDetail(archSelected); // refresh detail panel with live data if already open
 }
 
+const TT_STATE_COLORS = { built:'#2f7d63', buildable:'#c08a3e', locked:'#8a8378' };
+const TT_STATE_LABELS = { built:'built', buildable:'buildable now', locked:'locked' };
+
+// Same components, same node markup, same #archnode-<id> ids — laid out by prereq
+// depth instead of by territory, so the dependency edges drawArchDeps() already
+// draws read top-to-bottom as an actual tech tree.
+function renderArchTechTree(stage) {
+  const tiers = {};
+  ARCH_DATA.forEach(c => { const d = archDepth(c); (tiers[d] = tiers[d] || []).push(c); });
+  const order = {}; TERRITORIES.forEach((t, i) => order[t.id] = i);
+
+  let html = '<div class="tt-legend">';
+  ['built','buildable','locked'].forEach(s => {
+    html += `<span><span class="dot" style="background:${TT_STATE_COLORS[s]}"></span>${TT_STATE_LABELS[s]}</span>`;
+  });
+  html += '<span class="dot" style="background:#7a5ea8"></span>speculative';
+  html += '<span style="margin-left:auto">Each row depends on the row above it.</span>';
+  html += '<button class="tt-addbtn" id="ttAddBtn">+ Add node</button></div>';
+  html += '<div id="ttAddHost"></div>';
+  html += '<div class="arch-tiers" id="archCols">';
+  Object.keys(tiers).map(Number).sort((a,b) => a-b).forEach(d => {
+    const nodes = tiers[d].slice().sort((a,b) => (order[a.territory]-order[b.territory]) || a.name.localeCompare(b.name));
+    html += `<div class="arch-tier"><div class="arch-tier-label">${d === 0 ? 'Roots' : 'Tier ' + d}</div><div class="arch-tier-nodes">`;
+    nodes.forEach(c => {
+      const st = archNodeState(c);
+      const spec = c.provenance === 'speculative';
+      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+        <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
+        <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  html += '<svg class="arch-svg-overlay" id="archOverlay"></svg></div>';
+  stage.innerHTML = html;
+
+  const addBtn = document.getElementById('ttAddBtn');
+  if (addBtn) addBtn.onclick = () => renderArchAddForm();
+}
+
+// Hand-authoring a node. Prerequisites are picked from the nodes that already exist,
+// which is what places the new node in the tree — depth (and therefore its row) is
+// derived from those picks, never chosen directly.
+function renderArchAddForm() {
+  const host = document.getElementById('ttAddHost');
+  if (!host) return;
+  if (host.innerHTML) { host.innerHTML = ''; return; } // second click closes it
+  const terrOpts = TERRITORIES.map(t => `<option value="${t.id}">${t.label}</option>`).join('');
+  const depOpts = ARCH_DATA.slice().sort((a,b)=>a.name.localeCompare(b.name))
+    .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  host.innerHTML = `<div class="tt-addform">
+      <input id="ttName" placeholder="Name — e.g. Cross-corpus inference">
+      <select id="ttTerritory">${terrOpts}</select>
+      <textarea id="ttWhat" placeholder="What is it? (one or two sentences)"></textarea>
+      <textarea id="ttWhy" placeholder="Why does it matter?"></textarea>
+      <textarea id="ttNext" placeholder="Concrete first step to build it"></textarea>
+      <label class="tt-addlabel">Depends on (ctrl/cmd-click for several — leave empty for a root)</label>
+      <select id="ttDepends" multiple size="7">${depOpts}</select>
+      <div class="arch-actionrow"><button id="ttSave">Add to tree</button><button id="ttCancel">Cancel</button></div>
+      <div class="arch-qf-status" id="ttStatus"></div>
+    </div>`;
+  document.getElementById('ttCancel').onclick = () => { host.innerHTML = ''; };
+  document.getElementById('ttSave').onclick = async () => {
+    const status = document.getElementById('ttStatus');
+    const name = document.getElementById('ttName').value.trim();
+    if (!name) { status.textContent = 'A name is required.'; return; }
+    status.textContent = 'Saving…';
+    try {
+      await apiWrite('/api/architecture/nodes', 'POST', {
+        name,
+        territory: document.getElementById('ttTerritory').value,
+        what: document.getElementById('ttWhat').value,
+        why: document.getElementById('ttWhy').value,
+        next: document.getElementById('ttNext').value,
+        depends: Array.from(document.getElementById('ttDepends').selectedOptions).map(o => o.value),
+      });
+      await loadArchNodes();
+      renderArchStage();
+    } catch (e) { status.textContent = 'Could not save: ' + (e.message || e); }
+  };
+}
+
 function renderArchStage() {
   const stage = document.getElementById('archStage');
+  if (archView === 'techtree') {
+    renderArchTechTree(stage);
+    document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
+    if (typeof requestAnimationFrame==='function') requestAnimationFrame(drawArchDeps); else setTimeout(drawArchDeps,0);
+    return;
+  }
   let html = '<div class="arch-cols" id="archCols">';
   TERRITORIES.forEach(t => {
     html += `<div class="arch-col"><div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div><div class="arch-col-sub">${t.sub}</div>`;
@@ -2413,7 +2766,9 @@ function drawArchDeps() {
       const x1 = ar.right - stageRect.left + stage.scrollLeft, y1 = ar.top + ar.height/2 - stageRect.top + stage.scrollTop;
       const x2 = br.left - stageRect.left + stage.scrollLeft, y2 = br.top + br.height/2 - stageRect.top + stage.scrollTop;
       const highlight = archSelected === c.id || archSelected === depId;
-      svgHtml += `<path d="M${x1},${y1} C${x1+40},${y1} ${x2-40},${y2} ${x2},${y2}" fill="none" stroke="${highlight?'#2a2621':'#d9d3c9'}" stroke-width="${highlight?1.6:1}" opacity="${highlight?0.9:0.45}"/>`;
+      // In tech-tree view, edges into a locked node fade with the node itself.
+      const dim = archView === 'techtree' && !highlight && archNodeState(c) === 'locked';
+      svgHtml += `<path d="M${x1},${y1} C${x1+40},${y1} ${x2-40},${y2} ${x2},${y2}" fill="none" stroke="${highlight?'#2a2621':'#d9d3c9'}" stroke-width="${highlight?1.6:1}" opacity="${highlight?0.9:(dim?0.2:0.45)}"/>`;
     });
   });
   overlay.innerHTML = svgHtml;
@@ -2422,7 +2777,7 @@ function drawArchDeps() {
 function selectArchNode(id) {
   archSelected = id;
   document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('selected', n.getAttribute('data-arch-id')===id));
-  if (archView === 'architecture') drawArchDeps();
+  if (archView === 'architecture' || archView === 'techtree') drawArchDeps();
   renderArchDetail(id);
 }
 
@@ -2437,14 +2792,21 @@ function fmtVerified(iso) {
 async function queuePromptDirect(title, promptText, componentId, statusHost) {
   if (statusHost) statusHost.textContent = 'Queuing...';
   try {
-    const resp = await fetch(API_BASE + '/api/travaux/prompts', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
-      body: JSON.stringify({ title, prompt: promptText, component_id: componentId }),
+    // Explicitly pass space/mode/preset like qAddPrompt does (the Dispatch Queue list
+    // filters on ?space=fmcns) — createPrompt() on the backend currently also defaults
+    // space to 'fmcns' when omitted, so this didn't reproduce as a live bug, but sending
+    // it explicitly matches qAddPrompt's payload and isn't dependent on that default.
+    const prompt = await apiWrite('/api/travaux/prompts', 'POST', {
+      title, prompt: promptText, component_id: componentId, mode: 'implement', preset: 'deep', space: 'fmcns',
     });
-    if (!resp.ok) throw new Error('failed');
-    if (statusHost) statusHost.textContent = 'Queued.';
-    return true;
-  } catch (e) { if (statusHost) statusHost.textContent = 'Could not reach the server.'; return false; }
+    await qLoad();
+    if (statusHost) {
+      statusHost.innerHTML = `Queued — <a href="#" class="core-handoff-link" data-jump="${prompt.id}">view in Dispatch Queue</a>`;
+      const a = statusHost.querySelector('[data-jump]');
+      if (a) a.onclick = (e) => { e.preventDefault(); jumpToQueueItem(prompt.id); };
+    }
+    return prompt;
+  } catch (e) { if (statusHost) statusHost.textContent = 'Could not reach the server.'; return null; }
 }
 
 function renderArchDetail(id) {
@@ -2452,15 +2814,21 @@ function renderArchDetail(id) {
   const host = document.getElementById('archRight');
   if (!c) { host.innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>'; return; }
   const verified = fmtVerified(c.last_verified_at);
+  const terr = TERRITORIES.find(t=>t.id===c.territory);
   let html = `<h2>Component</h2>
-    <div class="arch-detail-name">${c.name}</div>
-    <div class="arch-detail-territory">${TERRITORIES.find(t=>t.id===c.territory).label} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>`;
+    <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
+    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>`;
   html += verified ? `<div class="arch-verified">Last verified ${verified} (live)</div>` : `<div class="arch-verified">Not yet live-verified — static description</div>`;
   html += `<div class="arch-field"><div class="arch-field-label">What</div><div class="arch-field-body">${c.what}</div></div>
     <div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${c.why}</div></div>
-    <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input}</span><span class="arrow">→</span><span class="a">${c.output}</span></div></div>
-    <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${c.now}</div></div>
-    <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${c.next}</div></div>`;
+    <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
+    <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${c.now || '—'}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${c.next || '—'}</div></div>`;
+  if (c.provenance === 'speculative') {
+    const parent = ARCH_BY_ID[c.parent_node_id];
+    html += `<div class="arch-field tt-specnote">✦ Speculative branch${parent ? ` grown from <a data-arch-jump="${parent.id}">${parent.name}</a>` : ''}. Nothing is committed until you accept it.
+      <div class="arch-actionrow"><button id="ttAccept">Accept into the tree</button><button id="ttDismiss">Dismiss</button></div></div>`;
+  }
   if (c.versions && c.versions.length) {
     html += `<div class="arch-field"><div class="arch-field-label">Evolution path</div><div class="arch-versionladder">`;
     c.versions.forEach(([tag,desc]) => { html += `<div class="arch-vstep"><span class="vtag">${tag}</span>${desc}</div>`; });
@@ -2481,6 +2849,21 @@ function renderArchDetail(id) {
 
   html += `<div class="arch-field"><div class="arch-field-label">Build history</div><div id="archHistoryHost"><div class="empty">Loading…</div></div></div>`;
 
+  // Tech-tree affordances: one-click dispatch when the prereqs are met, and an
+  // explanation of *why* not when they aren't.
+  const ttState = archNodeState(c);
+  if (ttState === 'buildable') {
+    html += `<button class="arch-buildbtn" id="archBuildBtn">⚡ Build this — all prerequisites met</button>`;
+  } else if (ttState === 'locked') {
+    const links = archUnmet(c).map(p => `<a data-arch-jump="${p.id}">${p.name}</a> (${p.status})`).join(', ');
+    html += `<div class="arch-field"><div class="arch-field-label">Locked — waiting on</div><div class="arch-lockedreqs">${links}</div></div>`;
+  }
+
+  // Speculation is an explicit click and its result is stored, never regenerated on
+  // view — same cost discipline as the other Claude-backed features.
+  html += `<button class="arch-specbtn" id="archSpecBtn">✦ Speculate from here</button>
+    <div class="arch-qf-status" id="archSpecStatus"></div>`;
+
   html += `<div class="arch-actionrow">
       <button id="archAskBtn">💬 Ask about this</button>
       <button id="archQueueBtn">📋 Queue custom prompt</button>
@@ -2491,17 +2874,64 @@ function renderArchDetail(id) {
   renderArchSuggestions(c);
   loadArchHistory(id);
 
+  const buildBtn = document.getElementById('archBuildBtn');
+  if (buildBtn) buildBtn.onclick = () => queuePromptDirect(
+    `${c.name}: ${(c.next || 'build this').split('.')[0]}`,
+    `${c.next || ''}\n\nContext — ${c.name} (${c.territory}, ${c.status}): ${c.what}`,
+    c.id, document.getElementById('archQueueHost'),
+  );
+
+  const specBtn = document.getElementById('archSpecBtn');
+  if (specBtn) specBtn.onclick = async () => {
+    const st = document.getElementById('archSpecStatus');
+    specBtn.disabled = true;
+    st.textContent = 'Asking Claude what could grow from here… (up to a minute)';
+    try {
+      // The trunk lives in this file, not on the server, so the context travels with
+      // the request — without it the proposals come back generic.
+      const out = await apiWrite(`/api/architecture/nodes/${c.id}/speculate`, 'POST', {
+        node: { name:c.name, territory:c.territory, status:c.status, what:c.what, why:c.why, next:c.next },
+        prereqs: archPrereqs(c).map(p => ({ name:p.name, status:p.status, what:p.what })),
+        built: ARCH_DATA.filter(isBuilt).map(p => ({ name:p.name })),
+      });
+      await loadArchNodes();
+      renderArchStage();
+      st.textContent = `Added ${out.nodes.length} speculative branch${out.nodes.length===1?'':'es'} below this node.`;
+    } catch (e) {
+      st.textContent = e.message === 'all_duplicates'
+        ? 'Those branches were already proposed for this node.'
+        : 'Speculation failed: ' + (e.message || e);
+    }
+    specBtn.disabled = false;
+  };
+
+  const acceptBtn = document.getElementById('ttAccept');
+  if (acceptBtn) acceptBtn.onclick = async () => {
+    await apiWrite(`/api/architecture/nodes/${c.id}`, 'PATCH', { provenance:'canon' });
+    await loadArchNodes(); renderArchStage(); renderArchDetail(c.id);
+  };
+  const dismissBtn = document.getElementById('ttDismiss');
+  if (dismissBtn) dismissBtn.onclick = async () => {
+    await apiWrite(`/api/architecture/nodes/${c.id}`, 'DELETE');
+    archSelected = null;
+    await loadArchNodes(); renderArchStage();
+    document.getElementById('archRight').innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>';
+  };
+  host.querySelectorAll('[data-arch-jump]').forEach(a => {
+    a.onclick = (e) => { e.preventDefault(); selectArchNode(a.getAttribute('data-arch-jump')); };
+  });
+
   document.getElementById('archAskBtn').onclick = () => {
     const prompt = `About the "${c.name}" component (${c.territory}, currently ${c.status}): ${c.what} Current state: ${c.now}`;
     openChatWithPrompt(prompt);
   };
   document.getElementById('archQueueBtn').onclick = () => {
     const qhost = document.getElementById('archQueueHost');
-    qhost.innerHTML = `<div class="queueform">
+    qhost.innerHTML = `<div class="arch-queueform">
         <input id="qfTitle" value="${c.name}: ${c.next.split('.')[0]}">
         <textarea id="qfPrompt">${c.next}\n\nContext — ${c.name} (${c.territory}, ${c.status}): ${c.what}</textarea>
         <button id="qfSubmit">Create queued prompt</button>
-        <div class="qf-status" id="qfStatus"></div>
+        <div class="arch-qf-status" id="qfStatus"></div>
       </div>`;
     document.getElementById('qfSubmit').onclick = () => queuePromptDirect(
       document.getElementById('qfTitle').value, document.getElementById('qfPrompt').value, c.id,
@@ -2524,7 +2954,7 @@ function renderArchSuggestions(c) {
     html += `<div class="empty">No suggestions generated yet.</div>`;
   }
   html += `<button class="arch-regenbtn" id="archRegenBtn">✦ ${c.suggestions&&c.suggestions.length?'Regenerate':'Generate'} suggestions</button>`;
-  html += `<div class="qf-status" id="archRegenStatus"></div>`;
+  html += `<div class="arch-qf-status" id="archRegenStatus"></div>`;
   el.innerHTML = html;
 
   el.querySelectorAll('.arch-suggestion').forEach(node => {
@@ -2543,15 +2973,12 @@ function renderArchSuggestions(c) {
     const status = document.getElementById('archRegenStatus');
     btn.disabled = true; status.textContent = 'Generating (this calls the Claude API)…';
     try {
-      const resp = await fetch(API_BASE + '/api/architecture/components/' + c.id + '/suggestions/regenerate', {
-        method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN },
-      });
-      const data = await resp.json();
+      const data = await apiWrite('/api/architecture/components/' + c.id + '/suggestions/regenerate', 'POST');
       if (data.error) { status.textContent = 'Could not generate: ' + data.error; btn.disabled = false; return; }
       c.suggestions = data.suggestions;
       c.suggestions_generated_at = data.suggestions_generated_at;
       renderArchSuggestions(c);
-    } catch (e) { status.textContent = 'Could not reach the server.'; btn.disabled = false; }
+    } catch (e) { status.textContent = 'Could not reach the server: ' + e.message; btn.disabled = false; }
   };
 }
 

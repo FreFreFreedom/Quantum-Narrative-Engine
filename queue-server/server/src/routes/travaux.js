@@ -80,5 +80,12 @@ export function travauxRoutes() {
     res.json(out);
   });
 
+  router.post('/ideas/:id/plant', (req, res) => {
+    const out = ideas.plantIdea(req.params.id, req.body || {});
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    if (out.error) return res.status(400).json(out);
+    res.json(out);
+  });
+
   return router;
 }

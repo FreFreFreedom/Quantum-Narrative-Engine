@@ -3,6 +3,7 @@
 // promptQueue.createPrompt() instead of a generic seam.
 import { randomUUID } from 'node:crypto';
 import * as queue from './promptQueue.js';
+import { createNode } from './architectureNodes.js';
 
 let db = null;
 export function bindWorkIdeasDb(database) { db = database; }
@@ -58,6 +59,27 @@ export function reorderIdeas(ids) {
   const tx = db.prepare(`UPDATE work_ideas SET position=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`);
   ids.forEach((id, i) => tx.run(i + 1, id));
   return listIdeas();
+}
+
+// Plant a Seed into the tech tree: the idea becomes a real node, and keeps a
+// back-reference so Idées reads as the list view of the same objects the tree shows
+// spatially. Idempotent like promoteIdea — re-planting returns the existing link.
+export function plantIdea(id, { territory = 'reasoning', depends = [] } = {}) {
+  const idea = getIdea(id);
+  if (!idea) return null;
+  if (idea.arch_node_id) return { idea, node_id: idea.arch_node_id, already: true };
+  const out = createNode(db, {
+    name: idea.title,
+    territory,
+    what: idea.notes || '',
+    why: 'Planted from a Seed in Idées.',
+    depends,
+    status: 'Concept',
+    provenance: 'canon',
+  });
+  if (out.error) return { error: out.error };
+  db.prepare(`UPDATE work_ideas SET arch_node_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(out.node.id, id);
+  return { idea: getIdea(id), node: out.node, already: false };
 }
 
 export function promoteIdea(id, { userId = 'antoine', prompt = null } = {}) {

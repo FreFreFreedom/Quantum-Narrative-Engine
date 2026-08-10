@@ -399,4 +399,44 @@ export function initArchitectureSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_component_commits ON component_commits(component_id, committed_at)`); } catch {}
   try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_component_commits_sha ON component_commits(component_id, sha)`); } catch {}
+
+  // Nodes the tech tree grows beyond the hardcoded ARCH_DATA trunk in the frontend.
+  // Two provenances share the table because they are the same kind of object at
+  // different confidence: 'canon' is authored by hand (or a promoted speculation),
+  // 'speculative' is Claude-proposed and renders dashed until accepted. Accepting
+  // is therefore an UPDATE of provenance, not a copy between tables.
+  //
+  // Unlike everything else in this DB, these rows are NOT regenerable from source
+  // docs on boot — they are the only user-authored content here, which is why the
+  // Railway volume mount matters for this table specifically.
+  //
+  // `fingerprint` is a sha1 of the parent + normalised name, unique per parent, so
+  // re-running speculation on the same node can't pile up near-duplicate branches
+  // (same dedup approach as work_suggestions).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS architecture_nodes (
+      id TEXT PRIMARY KEY,
+      territory TEXT NOT NULL,
+      name TEXT NOT NULL,
+      what TEXT,
+      why TEXT,
+      next TEXT,
+      depends_json TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'Concept',
+      provenance TEXT NOT NULL DEFAULT 'canon',
+      parent_node_id TEXT,
+      fingerprint TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_nodes_parent ON architecture_nodes(parent_node_id)`); } catch {}
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_arch_nodes_fp ON architecture_nodes(parent_node_id, fingerprint)`); } catch {}
+
+  // Phase 4: a Seed can be planted directly into the tree, making Idées the list
+  // rendering of the same objects the tree renders spatially. Additive ALTER in a
+  // try/catch per this file's convention — it throws harmlessly once applied.
+  try { db.exec(`ALTER TABLE work_ideas ADD COLUMN arch_node_id TEXT`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_node ON work_ideas(arch_node_id)`); } catch {}
 }
