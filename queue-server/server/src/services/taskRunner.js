@@ -819,20 +819,26 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   // Writer tasks get their own git worktree (plan 2a): an isolated checkout on
   // its own branch, created at dispatch time. The task row records it
   // (worktree_path/branch/base_sha) so continuations can land on the same branch.
+  // A task that ALREADY carries a worktree_path (a continuation inheriting its
+  // parent's tree, plan 2d) reuses it — same worktree, same branch, no new tree.
   // On git failure the task still runs — in the main checkout, like before
   // worktrees existed — with a logged warning, so one broken git repo can never
   // wedge the queue.
   let execCwd = null;
   if (next.mode !== 'question') {
-    try {
-      const wt = createWorktree({ taskId: next.id, title: next.title, agentKey: next.agent_key || 'dev1' });
-      if (wt) {
-        const withWt = updateTask(next.id, { worktree_path: wt.worktreePath, branch: wt.branch, base_sha: wt.baseSha });
-        if (withWt) broadcastTask(withWt);
-        execCwd = wt.worktreePath;
+    if (next.worktree_path && existsSync(next.worktree_path)) {
+      execCwd = next.worktree_path;
+    } else {
+      try {
+        const wt = createWorktree({ taskId: next.id, title: next.title, agentKey: next.agent_key || 'dev1' });
+        if (wt) {
+          const withWt = updateTask(next.id, { worktree_path: wt.worktreePath, branch: wt.branch, base_sha: wt.baseSha });
+          if (withWt) broadcastTask(withWt);
+          execCwd = wt.worktreePath;
+        }
+      } catch (e) {
+        console.error(`[taskRunner] worktree setup failed for ${next.id} — running in main checkout: ${e.message}`);
       }
-    } catch (e) {
-      console.error(`[taskRunner] worktree setup failed for ${next.id} — running in main checkout: ${e.message}`);
     }
   }
 
@@ -860,6 +866,7 @@ export function enqueueAgentTask({
   title, description, kind = 'queue', mode = 'implement', model = 'opus', effort = 'high',
   priority = 0, author = '', work_prompt_id = null, resume_session_id = null,
   provider = 'claude-code', provider_model = null, agent_key = null,
+  worktree_path = null, branch = null,
 }) {
   const now = new Date().toISOString();
   const task = {
@@ -868,19 +875,20 @@ export function enqueueAgentTask({
     author, model, effort, status: 'approved', run_state: 'dispatched', priority,
     agent_result: null, user_summary: null, work_prompt_id, resume_session_id,
     provider, provider_model, agent_key,
+    worktree_path, branch,
     created_at: now, updated_at: now, started_at: null, completed_at: null, heartbeat_at: null,
   };
   db.prepare(`
     INSERT INTO agent_tasks (
       id, kind, mode, agent_key, title, description, author, status, run_state,
       model, effort, priority, provider, provider_model,
-      work_prompt_id, resume_session_id,
+      work_prompt_id, resume_session_id, worktree_path, branch,
       created_at, updated_at, started_at, completed_at, heartbeat_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(
     task.id, task.kind, task.mode, agent_key, task.title, task.description, task.author,
     task.status, task.run_state, model, effort, priority, provider, provider_model,
-    work_prompt_id, resume_session_id, now, now, null, null, null
+    work_prompt_id, resume_session_id, worktree_path, branch, now, now, null, null, null
   );
   broadcastTask(task);
   setImmediate(kick);
@@ -917,16 +925,22 @@ export function cancelPendingAgentTask(id) {
 export function initTaskRunner() {
   const timer = setTimeout(() => {
     // Boot-time worktree GC (plan 2a): prune stale metadata, remove worktrees
-    // whose task row is gone or which are older than 7 days.
+    // whose task row is gone or which are older than 7 days — EXCEPT any worktree
+    // still referenced by a task row's worktree_path (continuations share their
+    // parent's worktree, plan 2d).
+    const allTasks = readTasks();
     try {
-      gcWorktrees({ knownTaskIds: readTasks().map((t) => t.id) });
+      gcWorktrees({
+        knownTaskIds: allTasks.map((t) => t.id),
+        referencedPaths: allTasks.map((t) => t.worktree_path),
+      });
     } catch (e) { console.error('[taskRunner] worktree GC failed:', e.message); }
 
     // Re-attach monitors to tasks that were mid-flight when the server stopped —
     // AND re-register their slots, so a writer restarted by the monitor counts
     // against its agent's cap and the global MAX_CONCURRENT_WRITERS again
     // (otherwise a restart could let a third writer start).
-    for (const t of readTasks().filter((x) => x.status === 'in_progress')) {
+    for (const t of allTasks.filter((x) => x.status === 'in_progress')) {
       if (t.mode === 'question') _questionRuns.add(t.id);
       else addWriterRun(t.agent_key || 'dev1', t.id);
       monitorExecution(t.id, null, { lane: t.mode === 'question' ? 'question' : 'exec' });

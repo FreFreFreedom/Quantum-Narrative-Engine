@@ -133,14 +133,18 @@ export function removeWorktree(worktreePath) {
 // task row no longer exists (its task id is not in knownTaskIds), or whose directory
 // is older than 7 days. Branch refs are untouched — only the working tree goes.
 // Only ever touches directories that LOOK like task ids, so user files in the
-// worktree root are never at risk.
+// worktree root are never at risk. A worktree is also kept when it is referenced
+// by ANY task row's worktree_path — continuations share their parent's worktree
+// (plan 2d), so the row whose id names the directory may be gone while a
+// continuation still works inside it.
 const TASK_ID_RE = /^[0-9a-f-]{36}$/;
-export function gcWorktrees({ knownTaskIds = [] } = {}) {
+export function gcWorktrees({ knownTaskIds = [], referencedPaths = [] } = {}) {
   const main = mainRepo();
   const root = worktreeRoot();
   if (!main || !root || !existsSync(root)) return { removed: 0 };
   git(['-C', main, 'worktree', 'prune'], { quiet: true });
   const known = new Set(knownTaskIds);
+  const referenced = new Set(referencedPaths.map((p) => p && String(p)));
   let removed = 0;
   const now = Date.now();
   for (const entry of readdirSync(root)) {
@@ -148,7 +152,7 @@ export function gcWorktrees({ knownTaskIds = [] } = {}) {
     const full = join(root, entry);
     let old = false;
     try { old = now - statSync(full).mtimeMs > 7 * 24 * 3600 * 1000; } catch { continue; }
-    if (!known.has(entry) || old) {
+    if ((!known.has(entry) && !referenced.has(full)) || old) {
       removeWorktree(full);
       removed++;
     }

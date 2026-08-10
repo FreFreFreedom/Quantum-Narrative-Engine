@@ -84,6 +84,7 @@ export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
+  parent_prompt_id = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -95,6 +96,10 @@ export async function createPrompt({
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
   // Agent assignment (plan Part 1): NULL falls back to dev1 at dispatch time.
   const useAgentKey = String(agent_key || '').trim() || null;
+  // Explicit continuation link (plan 2d): chaining onto a parent implies the
+  // same-context semantics the old checkbox expressed.
+  const useParent = parent_prompt_id || null;
+  const chained = !!(same_context || useParent);
   const resolved = (preset === 'auto' && useProvider === 'claude-code')
     ? await resolvePreset({ mode, prompt: text }).catch(() => 'standard') : null;
   let useModel = provider_model || null;
@@ -104,15 +109,15 @@ export async function createPrompt({
     try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
   }
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), same_context ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey);
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
+    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent);
   broadcast();
   return getPrompt(id);
 }
 
-const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key'];
+const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
@@ -176,6 +181,12 @@ export function updatePrompt(id, patch) {
     vals.push(['same_context', 'stop_after'].includes(k) ? (v ? 1 : 0) : v);
   }
   if (!sets.length) return row;
+  // Chaining onto a parent (plan 2d) implies the same-context semantics the old
+  // checkbox expressed — the dropdown and the column must not disagree.
+  if (patch.parent_prompt_id !== undefined && patch.same_context === undefined) {
+    sets.push('same_context=?');
+    vals.push(patch.parent_prompt_id ? 1 : 0);
+  }
   db.prepare(`UPDATE work_prompts SET ${sets.join(', ')}, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(...vals, id);
   const swapped = patch.provider !== undefined && patch.provider !== row.provider;
   if (swapped) {
@@ -309,29 +320,56 @@ export function advanceQueue() {
   return { started: started[0], startedCount: started.length, reason: null };
 }
 
-function sessionOfPrevious(row) {
-  // Same-context chaining follows the task's OWN provider: an opencode task only
-  // resumes another opencode session (opencode_session_id), a claude-code task only
-  // a claude one (session_id) — the two CLIs cannot resume each other's sessions.
-  const prev = db.prepare(`
-    SELECT session_id, opencode_session_id FROM work_prompts
-    WHERE deleted_at IS NULL AND (session_id IS NOT NULL OR opencode_session_id IS NOT NULL) AND space = ?
-      AND (position < ? OR (position = ? AND created_at < ?))
-    ORDER BY position DESC, created_at DESC LIMIT 1
-  `).get(row.space, row.position, row.position, row.created_at);
-  if (!prev) return null;
-  return (row.provider === 'opencode' ? prev.opencode_session_id : prev.session_id) || null;
+// Continuation context (plan 2d): instead of inferring "the previous row in this
+// space" positionally (which under parallelism is somebody else's task), the row
+// carries an explicit parent_prompt_id. Resuming is only allowed when the parent
+// matches on BOTH the agent and the provider (the two CLIs cannot resume each
+// other's sessions). Parent missing or mismatched → fresh session, with a note
+// posted in the thread — NEVER a positional fallback. Also returns the parent's
+// worktree + branch (from its last agent task) so a continuation lands on the
+// same branch as the work it continues.
+function sessionOfParent(row) {
+  if (!row.parent_prompt_id) return null;
+  const parent = getPrompt(row.parent_prompt_id);
+  if (!parent) {
+    return { sessionId: null, note: 'The task this item was chained onto is gone — starting a fresh session.' };
+  }
+  if (String(parent.agent_key || 'dev1') !== String(row.agent_key || 'dev1')) {
+    return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it belongs to another agent. Starting a fresh session.` };
+  }
+  if ((parent.provider || 'claude-code') !== (row.provider || 'claude-code')) {
+    return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it ran on another provider. Starting a fresh session.` };
+  }
+  const sessionId = (row.provider === 'opencode' ? parent.opencode_session_id : parent.session_id) || null;
+  const lastTask = db.prepare(`SELECT worktree_path, branch FROM agent_tasks WHERE work_prompt_id=? ORDER BY created_at DESC LIMIT 1`).get(parent.id);
+  return {
+    sessionId,
+    worktreePath: lastTask?.worktree_path || null,
+    branch: lastTask?.branch || null,
+  };
 }
 
 function startPrompt(row, { forceFresh = false } = {}) {
   const isOpen = row.provider === 'opencode';
   const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
-  const resume = (!forceFresh && row.same_context) ? sessionOfPrevious(row) : null;
+  let resume = null;
+  let worktreePath = null;
+  let branch = null;
+  if (!forceFresh && row.parent_prompt_id) {
+    const ctx = sessionOfParent(row);
+    if (ctx) {
+      resume = ctx.sessionId;
+      worktreePath = ctx.worktreePath;
+      branch = ctx.branch;
+      if (ctx.note) addMessage(row.id, { role: 'agent', text: ctx.note });
+    }
+  }
   const task = enqueueAgentTask({
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue', work_prompt_id: row.id, resume_session_id: resume,
     provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
     agent_key: row.agent_key || 'dev1',
+    worktree_path: worktreePath, branch,
   });
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),

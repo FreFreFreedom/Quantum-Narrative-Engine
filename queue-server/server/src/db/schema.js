@@ -103,6 +103,12 @@ function initSchema(db) {
   // validated by node:sqlite (FKs on by default): an unknown agent key is
   // rejected at insert time rather than silently dispatching to dev1.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN agent_key TEXT REFERENCES agents(key)`); } catch {}
+  // Explicit continuation link (plan 2d): the prompt row this one chains onto
+  // ("Continuer : ⟨titre⟩" dropdown). Replaces the positional same_context
+  // inference, which breaks under parallelism — with several agents interleaved,
+  // "the previous row in this space" is somebody else's task. NULL = fresh
+  // session (the backfill value for every existing row).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN parent_prompt_id TEXT REFERENCES work_prompts(id)`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

@@ -12,6 +12,7 @@ Branch: `overnight/2026-08-10`. Nothing pushed, nothing merged, nothing publishe
 - [x] Step 1 — Frontend API_BASE local toggle.
 - [x] Step 2 — `agent-tasks.json` → SQLite; per-task pid files; 5-state `run_state` + heartbeat + UI.
 - [x] Step 3 — `gitOps.js` + worktree per task; `agents` table with dev1/dev2; per-agent slots, `MAX_CONCURRENT_WRITERS=2`.
+- [x] Step 4 — `parent_prompt_id` + `sessionOfParent` + "Continuer : ⟨tâche⟩" dropdown.
 - [ ] Step 3 — `gitOps.js` + worktree per task; `agents` table; per-agent slots, `MAX_CONCURRENT_WRITERS=2`.
 - [ ] Step 4 — `parent_prompt_id` + `sessionOfParent` + "Continuer : ⟨tâche⟩" dropdown.
 
@@ -169,6 +170,37 @@ None so far.
 - [x] Committed — pending.
 
 ### Step 4 — Session chaining
+
+- [x] `work_prompts.parent_prompt_id TEXT REFERENCES work_prompts(id)` (ALTER;
+      NULL for every existing row = "fresh session", the plan's backfill).
+- [x] `sessionOfParent(row)` replaces positional `sessionOfPrevious` (plan 2d):
+      resume only when `parent.agent_key === row.agent_key` AND
+      `parent.provider === row.provider` (the two CLIs cannot resume each
+      other's sessions); returns the parent's session id AND its last task's
+      `worktree_path` + `branch`. Parent missing or mismatched → fresh session
+      + a note posted in the thread — never a positional fallback.
+- [x] `startPrompt` passes the inherited worktree/branch into the agent task;
+      `executeTask` REUSES an existing worktree_path (continuation lands on the
+      same branch, same tree) instead of creating a new one.
+- [x] Boot GC keeps worktrees referenced by ANY task row's worktree_path, not
+      just dirs whose basename is a known task id (a shared parent tree must
+      survive while a continuation works inside it).
+- [x] `createPrompt` accepts `parent_prompt_id` (chaining implies
+      `same_context=1`); EDITABLE so a queued prompt can be re-chained.
+- [x] Frontend: "Continue previous context" checkbox → **"Continuer : ⟨titre⟩"**
+      dropdown — the selected agent's last 10 finished tasks, pre-selected to
+      the most recent, following the Agent picker.
+- [x] Verified live: dev2 heavy task running; dev1 task B created with
+      `parent_prompt_id` = finished dev1 task A. B resumed A's exact CLI session
+      (`resume_session_id` = A's `opencode_session_id`), ran in A's worktree on
+      A's branch (`agent/dev1/<A-id>-…`), its marker file landed beside A's in
+      the shared tree, main checkout untouched — while dev2's task was still
+      running. All test prompts/tasks cleaned up, test worktrees removed
+      (branches kept). node --check passed on server files + extracted inline
+      scripts.
+- [x] Committed — pending.
+
+### Step 5 — Reviews
 
 - [ ] Not started.
 
