@@ -581,6 +581,16 @@ export async function onAgentTaskFinalized(task) {
 
   const finished = finishPrompt(row.id, task);
 
+  // Step 5: an implement task that finished done on a branch enters the review
+  // gate — five deterministic checks run in its worktree; the human then merges
+  // (or reverts) from the queue UI. Fire-and-forget: the checks are slow (they
+  // boot a throwaway server) and must never block the queue loop.
+  if (finished.status === 'done' && task.mode !== 'question' && task.branch) {
+    import('./reviewRunner.js')
+      .then((m) => m.createReviewForTask(task))
+      .catch((e) => console.error('queue: review creation failed —', e.message));
+  }
+
   // Reliability valve for the auto policy: a blocked auto-resolved task probably ran
   // out of depth, not luck — bump the remembered tier so the next "Run again" retries
   // stronger instead of repeating the same (apparently insufficient) tier.

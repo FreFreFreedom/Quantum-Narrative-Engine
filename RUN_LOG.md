@@ -202,9 +202,70 @@ None so far.
 
 ### Step 5 — Reviews
 
-- [ ] Not started. (Outside tonight's requested scope — steps 0–4 only; the merge
-      gate, deterministic checks, review screen and one-click Revert remain for a
-      future run.)
+Implemented this session (after the deploy above).
+
+- [x] `reviews` table (additive `CREATE TABLE IF NOT EXISTS`): prompt/task/agent
+      refs, branch + base/head SHAs, status
+      (`pending|approved|changes_requested|rejected|merged|reverted`), verdict,
+      French `plain_summary`, concerns/checks/files/diff-stats/conflicts as JSON,
+      `merge_commit`, `merged_at`, `reverted_at` + status/prompt indexes.
+- [x] `services/reviewRunner.js` — the review + merge gate:
+      - `createReviewForTask` fired from `onAgentTaskFinalized` in promptQueue
+        when an implement task finishes `done` with a branch (question/branchless
+        tasks get no review; an open review for the same prompt is reused by
+        continuations instead of stacking duplicates). Checks run fire-and-forget
+        (never block the queue loop).
+      - Five deterministic checks, run in the author's worktree, ZERO API spend:
+        (1) syntax — `node --check` on changed `.js`; (2) boot — server from the
+        worktree on a throwaway port + temp DB with `WARMUP_DISABLED=1` /
+        `GIT_OPS_DISABLED=1` (also a `WARMUP_DISABLED` gate added in index.js);
+        (3) endpoints — login + ontology facets + travaux prompts + architecture
+        components, probed while that same server is still up; (4) html — inline
+        script `node --check` + structural anchors; (5) scope — path_allow/deny
+        + hard-fail on `queue-server/data/`, `.env`, `.github/`, plus (6)
+        conflict detection via `git merge-tree --write-tree` vs `origin/main`
+        and other open `agent/*` branches.
+      - Verdict derives from the checks alone for now — the plan's step-9
+        Reviewer agent is out of scope (plan's own "Cheaper 80%" recommendation).
+      - Merge gate: fetch → clean-status check → checkout main + ff-only
+        origin/main → dry-land `--no-ff --no-commit` (conflict ⇒ abort + mark
+        `changes_requested`/`unsafe`, nothing touched) → commit → **re-run
+        checks 1–4 on main post-merge** → only then push → remove worktree +
+        delete branch. `--no-ff` makes every merge a single revertable commit.
+      - Revert: `git revert -m 1 <merge_commit>` + push (aborts cleanly on
+        conflict). Plus `request-changes` and `reject` (removes worktree only).
+- [x] `routes/reviews.js` mounted at `/api/travaux/reviews` (GET list/detail,
+      POST merge/revert/request-changes/reject; merge is awaited).
+- [x] Frontend: `qRenderReviews()` above the queue list — « À valider » cards
+      with ✓/✗ check rows, French summary, conflict warnings, concerns, diff
+      stats; Merge button gated by typing `FUSIONNER`; Revert on merged cards;
+      Jeter to reject. Polled from `qLoad`. CSS added.
+- [x] **Sandbox verification (all pass)** — scratch clone + local bare origin in
+      `/tmp`, never the real remote: clean branch → approved → merge commit
+      pushed → worktree/branch cleaned → revert pushed; broken syntax → refused
+      + reject; approved-then-raced (a conflicting change lands before the
+      click) → dry-run merge aborts, main working tree clean, no MERGE_HEAD,
+      nothing pushed, review marked `changes_requested`/`unsafe`.
+- [x] **Two real bugs found and fixed by that sandbox:**
+      1. `gitOps.createWorktree` symlinks `queue-server/node_modules` into each
+         worktree, and git's directory ignore pattern `node_modules/` does NOT
+         match symlinks — agents' `git add -A` would have committed the symlink
+         and it could reach a merge. Fixed by appending `queue-server/node_modules`
+         to the main repo's `.git/info/exclude` (machine-local, never committed);
+         reviewRunner's syntax check also skips node_modules defensively.
+      2. `checkBoot` used to SIGKILL the throwaway server as soon as "listening"
+         appeared, so the endpoints probe hit a dead port. Now the child stays
+         up for the probe, then is killed. Also fixed: `git diff` outputs were
+         treated as arrays (now `lines:true` splits), the post-merge re-check was
+         missing an `await`, and a missing-worktree early-return returned a shape
+         that crashed the finalizer.
+- [x] Frontend rendered-card smoke test (approved / changes_requested / merged
+      states) + live API round-trip on :3000 (insert → listed with prompt title
+      → delete). Master synced to `queue-server/public/index.html` (byte-identical).
+- [ ] Not deployed — Antoine's call. Merge/revert actions in the UI run real
+      git against the repo on this Mac and push to GitHub, so the online
+      Railway instance keeps serving the last deployed code until the user
+      explicitly merges a review.
 
 ## Daytime follow-up (Antoine session) — serve the app from the server's own address
 

@@ -19,8 +19,10 @@ import { warmCaches } from './services/warmup.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
+import { reviewsRoutes } from './routes/reviews.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
+import { bindReviewsDb } from './services/reviewRunner.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
@@ -35,6 +37,7 @@ bindTaskDb(db);
 bindAgentsDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
+bindReviewsDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -50,8 +53,12 @@ try {
 // Fire-and-forget: pre-generate book suggestions + first-tag lens for every
 // character/country so they're already cached (instant) by the time a user
 // clicks, instead of everyone eating live Claude-API latency after each redeploy.
-warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
-  .catch((e) => console.error('Cache warm-up failed:', e.message));
+// WARMUP_DISABLED=1 is used by the review runner's ephemeral boot check — a
+// throwaway server that must not spend any API credits.
+if (process.env.WARMUP_DISABLED !== '1') {
+  warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
+    .catch((e) => console.error('Cache warm-up failed:', e.message));
+}
 
 const app = express();
 app.use(cors());
@@ -71,6 +78,7 @@ app.post('/api/auth/login', (req, res) => {
 app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
+app.use('/api/travaux', requireAuth, reviewsRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {

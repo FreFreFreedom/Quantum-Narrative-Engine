@@ -245,6 +245,34 @@ function initSchema(db) {
       ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
       ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
   `);
+
+  // ─── Reviews — the merge gate (plan Part 4, step 5) ───────────────────────────
+  // One row per finished dev/design task whose branch reached the review stage.
+  // status is the HUMAN-facing lifecycle: pending → approved | changes_requested |
+  // rejected | merged | reverted. checks holds the five deterministic check results
+  // as JSON; verdict is the machine verdict (safe|risky|unsafe) — the model second
+  // opinion is step 9 scope, so for now verdict derives from the checks alone.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id TEXT PRIMARY KEY,
+      prompt_id TEXT NOT NULL REFERENCES work_prompts(id),
+      task_id TEXT REFERENCES agent_tasks(id),
+      agent_key TEXT,
+      branch TEXT NOT NULL, base_sha TEXT, head_sha TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',   -- pending|approved|changes_requested|rejected|merged|reverted
+      verdict TEXT,                             -- safe|risky|unsafe
+      plain_summary TEXT,                       -- French, for the human
+      concerns TEXT,                            -- JSON array
+      checks TEXT,                              -- JSON {syntax,boot,endpoints,html,scope,conflict}
+      files_changed TEXT, insertions INTEGER, deletions INTEGER,
+      conflicts_with TEXT,                      -- JSON array of branch names
+      reviewer_task_id TEXT,
+      merge_commit TEXT, merged_at TEXT, reverted_at TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_prompt ON reviews(prompt_id)`); } catch {}
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

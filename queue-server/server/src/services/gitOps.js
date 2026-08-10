@@ -18,7 +18,7 @@
 // technical fallback so a missing network can't block dispatch entirely.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync, appendFileSync, readFileSync } from 'node:fs';
 import { resolve, join, basename } from 'node:path';
 
 let _mainRepo = null;
@@ -105,6 +105,18 @@ export function createWorktree({ taskId, title, agentKey }) {
     const wtModules = join(wtPath, 'queue-server', 'node_modules');
     if (existsSync(mainModules) && !existsSync(wtModules)) {
       try { symlinkSync(mainModules, wtModules, 'dir'); } catch (e) { console.warn('[gitOps] node_modules symlink failed:', e.message); }
+      // Directory ignore patterns ("node_modules/") do NOT match symlinks, so the
+      // shared symlink would be staged by agents' `git add -A` and could end up in
+      // a merge. Exclude it repo-wide via $GIT_DIR/info/exclude (worktrees share
+      // the main repo's git dir — their own `.git` is only a pointer file). This
+      // file is machine-local and never committed.
+      try {
+        const excludePath = join(main, '.git', 'info', 'exclude');
+        const excludeFile = readFileSync(excludePath, 'utf8');
+        if (!excludeFile.includes('queue-server/node_modules')) {
+          appendFileSync(excludePath, '\n# fmcns-gitops\nqueue-server/node_modules\n');
+        }
+      } catch (e) { console.warn('[gitOps] node_modules exclude failed:', e.message); }
     }
 
     console.log(`[gitOps] worktree ${branch} → ${wtPath} (base ${base}${baseSha ? ' ' + baseSha.slice(0, 8) : ''})`);

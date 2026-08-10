@@ -172,6 +172,21 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .q-addbtn:disabled { background:#c9c1b3; cursor:default; }
 .q-err { font-size:10.5px; color:#b23a2f; margin-top:5px; }
 .q-item { border:1px solid #e4dfd8; background:#fff; border-radius:8px; padding:9px 11px; margin-bottom:7px; cursor:pointer; }
+.q-review { border:1px solid #d8d2c6; border-left:4px solid #b8860b; background:#fffaf0; border-radius:8px; padding:9px 11px; margin-bottom:8px; }
+.q-review[data-review-status="approved"] { border-left-color:#2f7d63; }
+.q-review-plain { font-size:11px; color:#5c564c; margin-top:5px; }
+.q-review-checks { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px 12px; }
+.q-review-check { font-size:10.5px; color:#5c564c; display:flex; gap:4px; align-items:center; }
+.q-check-ok { color:#2f7d63; font-weight:700; }
+.q-check-bad { color:#b23a2f; font-weight:700; }
+.q-review-conflict { font-size:10.5px; color:#b23a2f; margin-top:5px; }
+.q-review-concerns { font-size:10.5px; color:#8a5a1e; margin-top:5px; background:#f6e7cf; border-radius:5px; padding:5px 7px; }
+.q-review-meta { font-size:10px; color:#8a8378; margin-top:5px; }
+.q-review-actions { margin-top:7px; display:flex; gap:6px; flex-wrap:wrap; }
+.q-mergebtn { background:#2f7d63; color:#fff; }
+.q-mergebtn:disabled { background:#c9c1b3; }
+.q-revertbtn { background:#b23a2f; color:#fff; }
+.q-revertbtn:disabled { background:#c9c1b3; }
 .q-item:hover { border-color:#c9c1b3; }
 .q-item.sel { border-color:#2a2621; box-shadow:0 0 0 1px #2a2621; }
 .q-item-top { display:flex; align-items:center; gap:7px; }
@@ -568,6 +583,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
           <button class="q-addbtn" id="qAddBtn">Add to queue</button>
           <div id="qAddErr" class="q-err"></div>
           <div id="qConnLost" style="display:none;color:#b23a2f;font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
+          <div id="qReviews" style="display:none;margin-top:14px;"></div>
           <h2 style="margin-top:20px;">Queue (<span id="qCount">0</span>)</h2>
           <div class="q-row" id="qFilterStrip" style="gap:6px;margin-bottom:8px;">
             <button class="ctrlbtn q-filterbtn" data-qfilter="active">Active</button>
@@ -2107,6 +2123,7 @@ async function qLoad() {
   const countEl = document.getElementById('coreCountQueue');
   if (countEl) countEl.textContent = activeCount || '';
   qRenderList();
+  qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   qParentOptions(); // keep the "Continuer : …" dropdown in sync with finished tasks
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
@@ -2208,6 +2225,114 @@ function qProviderLabel(p) {
 function qAgentLabel(p) {
   const a = qAgents.find(x => x.key === (p.agent_key || 'dev1'));
   return a ? `${a.emoji ? a.emoji + ' ' : ''}${a.label}` : (p.agent_key || 'dev1');
+}
+
+const REVIEW_ORDER = { pending: 0, approved: 1, changes_requested: 2, merged: 3, rejected: 4, reverted: 5 };
+const REVIEW_STATUS_LABELS = { pending: 'Vérification en cours…', approved: 'Prêt à fusionner', changes_requested: 'À corriger', merged: 'Fusionné', rejected: 'Jeté', reverted: 'Reverté' };
+const REVIEW_STATUS_COLORS = { pending: '#a19a8e', approved: '#2f7d63', changes_requested: '#b8860b', merged: '#4f9d7a', rejected: '#8a8378', reverted: '#8a8378' };
+let qReviews = [];
+
+function qReviewCard(r) {
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const checks = r.checks || {};
+  const rows = [
+    ['syntax', 'Syntaxe des fichiers modifiés'],
+    ['boot', 'Le serveur démarre'],
+    ['endpoints', 'Les pages répondent'],
+    ['html', 'Page principale intègre'],
+    ['scope', 'Périmètre respecté'],
+  ].map(([k, label]) => {
+    const c = checks[k];
+    if (!c) return '';
+    return `<div class="q-review-check"><span class="${c.ok ? 'q-check-ok' : 'q-check-bad'}">${c.ok ? '✓' : '✗'}</span><span>${label}</span></div>`;
+  }).join('');
+  const conflict = (r.conflicts_with && r.conflicts_with.length)
+    ? `<div class="q-review-conflict">⚠ En conflit avec : ${esc(r.conflicts_with.join(', '))}</div>` : '';
+  const concerns = (r.concerns && r.concerns.length)
+    ? `<div class="q-review-concerns">${r.concerns.map(c => esc(c)).join('<br>')}</div>` : '';
+  const stats = (r.files_changed && r.files_changed.length)
+    ? `<div class="q-review-meta">${r.files_changed.length} fichier(s) · +${r.insertions || 0} / −${r.deletions || 0}</div>` : '';
+  const canMerge = r.status === 'approved';
+  const canRevert = r.status === 'merged';
+  const canReject = ['pending', 'approved', 'changes_requested'].includes(r.status);
+  return `
+  <div class="q-review" data-review-id="${r.id}">
+    <div class="q-item-top">
+      <span class="q-item-title">${esc(r.prompt_title || r.branch || 'Travail')}</span>
+      <span class="q-badge" style="background:${REVIEW_STATUS_COLORS[r.status]||'#8a8378'};">${REVIEW_STATUS_LABELS[r.status]||r.status}</span>
+    </div>
+    <div class="q-review-plain">${esc(r.plain_summary || '')}</div>
+    <div class="q-review-checks">${rows}</div>
+    ${conflict}
+    ${concerns}
+    ${stats}
+    <div class="q-review-actions">
+      ${canMerge ? `<button class="ctrlbtn q-mergebtn" data-merge="${r.id}">Fusionner → envoyer en ligne</button>` : ''}
+      ${canRevert ? `<button class="ctrlbtn q-revertbtn" data-revert="${r.id}">Annuler cette fusion</button>` : ''}
+      ${canReject ? `<button class="ctrlbtn q-rejectbtn" data-reject="${r.id}">Jeter</button>` : ''}
+    </div>
+  </div>`;
+}
+
+async function qRenderReviews() {
+  const host = document.getElementById('qReviews');
+  if (!host) return;
+  try {
+    const data = await api('/api/travaux/reviews');
+    qReviews = data.reviews || [];
+  } catch { return; }
+  const visible = qReviews
+    .filter(r => ['pending', 'approved', 'changes_requested'].includes(r.status))
+    .sort((a, b) => (REVIEW_ORDER[a.status] || 9) - (REVIEW_ORDER[b.status] || 9));
+  if (!visible.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
+  host.style.display = '';
+  host.innerHTML = `<div style="font-size:13px;color:#8a8378;margin-bottom:6px;">À valider (${visible.length})</div>` + visible.map(qReviewCard).join('');
+  host.querySelectorAll('[data-merge]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const id = b.getAttribute('data-merge');
+      const typed = prompt('Tape FUSIONNER (majuscules) pour fusionner et envoyer en ligne :');
+      if (typed !== 'FUSIONNER') { alert('Fusion annulée.'); return; }
+      b.disabled = true; b.textContent = 'Fusion en cours…';
+      try {
+        const out = await apiWrite('/api/travaux/reviews/' + id + '/merge', 'POST', {});
+        alert('Fusionné ✓ Le travail est en ligne.');
+      } catch (err) {
+        alert('Fusion impossible : ' + (err.message === 'unauthorized' ? 'session expirée' : err.message));
+      }
+      b.disabled = false; b.textContent = 'Fusionner → envoyer en ligne';
+      qRenderReviews();
+    };
+  });
+  host.querySelectorAll('[data-revert]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const id = b.getAttribute('data-revert');
+      if (!confirm('Annuler cette fusion ? Le site en ligne reviendra en arrière.')) return;
+      b.disabled = true; b.textContent = 'Revert en cours…';
+      try {
+        await apiWrite('/api/travaux/reviews/' + id + '/revert', 'POST', {});
+        alert('Revert effectué ✓');
+      } catch (err) {
+        alert('Revert impossible : ' + (err.message === 'unauthorized' ? 'session expirée' : err.message));
+      }
+      b.disabled = false; b.textContent = 'Annuler cette fusion';
+      qRenderReviews();
+    };
+  });
+  host.querySelectorAll('[data-reject]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const id = b.getAttribute('data-reject');
+      if (!confirm('Jeter ce travail ? Son dossier de travail sera supprimé.')) return;
+      try {
+        await apiWrite('/api/travaux/reviews/' + id + '/reject', 'POST', {});
+      } catch (err) {
+        alert('Impossible : ' + (err.message === 'unauthorized' ? 'session expirée' : err.message));
+      }
+      qRenderReviews();
+    };
+  });
 }
 
 function qRenderList() {
