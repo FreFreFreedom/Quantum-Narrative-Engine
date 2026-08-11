@@ -7,7 +7,7 @@
 // is instructed to err upward, because a wrong cheap answer costs more (a blocked task,
 // re-run at a higher tier) than a right expensive one.
 
-import { runToollessClaude } from './taskRunner.js';
+import { generateText } from './ai/text.js';
 
 const TIERS = ['fast', 'standard', 'deep'];
 
@@ -44,9 +44,9 @@ export async function resolvePreset({ mode, prompt }) {
   if (guess) return guess;
 
   try {
-    const { code, text } = await runToollessClaude({ prompt: JUDGE_PROMPT(mode, prompt), model: 'haiku', timeoutMs: 60_000 });
-    if (code !== 0) return 'standard';
-    const tier = parseJudgeReply(text);
+    const out = await generateText({ prompt: JUDGE_PROMPT(mode, prompt), feature: 'judge', maxTokens: 20, label: 'modelPolicy:judge' });
+    if (out.error) return 'standard';
+    const tier = parseJudgeReply(out.text);
     return tier || 'standard';
   } catch {
     return 'standard';

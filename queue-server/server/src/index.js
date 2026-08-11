@@ -25,6 +25,7 @@ import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
+import { bindAiTextDb } from './services/ai/text.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -40,6 +41,7 @@ bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
 bindReviewsDb(db);
 bindBriefingDb(db);
+bindAiTextDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.

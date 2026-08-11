@@ -140,6 +140,66 @@ export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, mo
     ` < "${promptPath}" > "${logPath}" 2>&1; echo $? > "${codePath}"`;
 }
 
+// ─── Toolless call (ai/text.js free-fallback path) ────────────────────────────
+// Same read-before-run guard as ensureQuestionAgent: without --agent, opencode
+// silently falls back to its default (write-capable) agent, which is not
+// acceptable for a pure text-generation call. Uses the fmcns-text agent
+// (.opencode/agent/fmcns-text.md — read-only, no bash/webfetch/task).
+export function ensureTextAgent({ cwd }) {
+  const name = 'fmcns-text';
+  function findUp(rel) {
+    let dir = cwd;
+    for (let i = 0; i < 4; i++) {
+      const p = join(dir, rel);
+      if (existsSync(p)) return p;
+      const parent = resolve(dir, '..');
+      if (parent === dir) break;
+      dir = parent;
+    }
+    return null;
+  }
+  const candidates = [
+    findUp(join('.opencode', 'agent', `${name}.md`)),
+    findUp(join('.opencode', 'agents', `${name}.md`)),
+    join(homedir(), '.config', 'opencode', 'agent', `${name}.md`),
+    join(homedir(), '.config', 'opencode', 'agents', `${name}.md`),
+  ];
+  const found = candidates.find((p) => p && existsSync(p));
+  return found ? { ok: true, path: found } : { ok: false, error: `read-only agent '${name}' not found — opencode would silently fall back to its default (write-capable) agent. Add .opencode/agent/${name}.md to the repo root (it ships there).` };
+}
+
+export function runToolless({ prompt, model, timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env }) {
+  return new Promise((resolveP) => {
+    const guard = ensureTextAgent({ cwd });
+    if (!guard.ok) return resolveP({ code: -1, text: guard.error });
+    let proc;
+    try {
+      proc = spawn(bin, ['run', '--format', 'json', '--model', model, '--agent', 'fmcns-text', '--auto'], {
+        cwd, env, stdio: 'pipe',
+      });
+    } catch (e) {
+      return resolveP({ code: -1, text: e.message });
+    }
+    let out = '';
+    let settled = false;
+    const settle = (v) => { if (!settled) { settled = true; clearTimeout(timer); resolveP(v); } };
+    const timer = setTimeout(() => {
+      try { proc.kill('SIGKILL'); } catch {}
+      settle({ code: -1, text: `no response after ${timeoutMs / 1000}s` });
+    }, timeoutMs);
+    try { proc.stdin.write(prompt); proc.stdin.end(); } catch {}
+    proc.stdout.on('data', (c) => { out += c.toString(); });
+    proc.stderr.on('data', () => {});
+    proc.on('error', (e) => settle({ code: -1, text: e.message }));
+    proc.on('close', (code) => {
+      const { text, errorMessage } = parseTranscript(out);
+      const final = text.trim();
+      if (code === 0 && final) return settle({ code: 0, text: final });
+      settle({ code: code || -1, text: errorMessage || final || `exit ${code}` });
+    });
+  });
+}
+
 // ─── Model discovery (used by the UI model picker + default resolution) ──────
 // `opencode models --verbose` prints, per model, a `provider/id` line followed by
 // a JSON metadata block (includes `cost`). Parsed here into a flat, free-first

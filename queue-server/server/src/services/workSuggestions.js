@@ -12,7 +12,7 @@
 //     fallback) instead of a separate llm.js seam — this app already centralized
 //     that decision for every other short-text feature.
 import { randomUUID, createHash } from 'node:crypto';
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
 import * as queue from './promptQueue.js';
 
 let db = null;
@@ -157,7 +157,7 @@ Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
 
 export async function generateSuggestions() {
   const digest = buildContextDigest();
-  const out = await generateText({ prompt: SUGGESTION_PROMPT(digest), maxTokens: 1800, label: 'workSuggestions', cliModel: 'sonnet' });
+  const out = await generateText({ prompt: SUGGESTION_PROMPT(digest), feature: 'build', maxTokens: 1800, label: 'workSuggestions' });
   if (out.error) return { error: out.error, message: out.message, added: [] };
   const items = parseSuggestionsJson(out.text).slice(0, MAX_NEW_PER_RUN);
   const added = [];
@@ -203,7 +203,7 @@ Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
 
 export async function generateIntegrationSuggestions() {
   const digest = buildIntegrationDigest();
-  const out = await generateText({ prompt: INTEGRATION_PROMPT(digest), maxTokens: 1200, label: 'workSuggestions:integration', cliModel: 'sonnet' });
+  const out = await generateText({ prompt: INTEGRATION_PROMPT(digest), feature: 'build', maxTokens: 1200, label: 'workSuggestions:integration' });
   if (out.error) return { error: out.error, message: out.message, added: [] };
   const items = parseSuggestionsJson(out.text).slice(0, MAX_NEW_INTEGRATIONS_PER_RUN);
   const added = [];

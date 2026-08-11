@@ -13,7 +13,7 @@
 // a second speculation on the same node is an explicit user click, per the cost
 // rules in CLAUDE.md.
 import crypto from 'node:crypto';
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
 
 const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface'];
 const STATUS_LEVELS = ['Concept', 'Designed', 'Prototype', 'Working', 'Validated', 'Advanced'];
@@ -167,6 +167,7 @@ function parseProposals(text) {
 export async function speculate(db, parentId, ctx) {
   const out = await generateText({
     prompt: buildPrompt({ ...ctx, node: { ...(ctx.node || {}), id: parentId } }),
+    feature: 'quick',
     maxTokens: 900,
     label: 'arch-speculate',
   });

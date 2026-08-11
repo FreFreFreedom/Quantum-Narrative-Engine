@@ -11,9 +11,7 @@
 //   prompts are tagged with component_id at creation time from now on.
 
 import { randomUUID } from 'node:crypto';
-
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const SUGGESTIONS_TIMEOUT_MS = 60_000;
+import { generateText } from './ai/text.js';
 
 // ─── Static content: what doesn't change with live data ────────────────────────
 // WHAT/WHY/INPUT-OUTPUT/depends live in the frontend (fmcns_navigator.html) since
@@ -304,7 +302,6 @@ const KNOWN_GAPS = `
 `.trim();
 
 export async function generateSuggestions(db, id) {
-  if (!ANTHROPIC_API_KEY) return { error: 'no_api_key' };
   const rows = getComponents(db);
   const c = rows.find((r) => r.id === id);
   if (!c) return { error: 'not_found' };
@@ -327,24 +324,9 @@ export async function generateSuggestions(db, id) {
     `[{"title": "short label, under 8 words", "prompt": "the full ready-to-queue instruction"}]`,
   ].join('');
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 900,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-    signal: AbortSignal.timeout(SUGGESTIONS_TIMEOUT_MS),
-  }).catch((e) => ({ ok: false, _networkError: e.message }));
-
-  if (!resp || !resp.ok) return { error: 'network_error', message: resp?._networkError || `HTTP ${resp?.status}` };
-  const data = await resp.json();
-  const text = (data.content || []).map((b) => b.text || '').join('');
+  const out = await generateText({ prompt, feature: 'build', maxTokens: 900, label: 'architecture:suggestions' });
+  if (out.error) return { error: out.error, message: out.message };
+  const text = out.text || '';
   const match = text.match(/\[[\s\S]*\]/);
   if (!match) return { error: 'parse_error' };
   let suggestions;

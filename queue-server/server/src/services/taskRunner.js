@@ -35,6 +35,7 @@ import { defaultOpenCodeModel } from './providers/index.js';
 import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { roleBriefFor } from './briefing.js';
+import { generateText as generateAiText } from './ai/text.js';
 
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 // This directory was never guaranteed to exist (no bootstrap step created it), so every
@@ -409,11 +410,9 @@ async function runUserSummary(taskId) {
       `Original request:\n${task.description || task.title || '(unknown)'}\n\n`,
       `Technical report:\n${report.slice(-12000)}`,
     ].join('');
-    const { code, text } = await claudeCode.runToolless({
-      prompt, model: 'haiku', timeoutMs: SUMMARY_TIMEOUT_MS, cwd: SUMMARY_CWD(), env: claudeCode.spawnEnv(),
-    });
-    if (code === 0 && text) {
-      const updated = updateTask(taskId, { user_summary: text });
+    const out = await generateAiText({ prompt, feature: 'summary', maxTokens: 400, label: 'taskRunner:summary' });
+    if (out.text) {
+      const updated = updateTask(taskId, { user_summary: out.text });
       if (updated) broadcastTask(updated);
       return true;
     }
@@ -431,6 +430,24 @@ function agentRow(agentKey) {
   try { return db?.prepare(`SELECT * FROM agents WHERE key=?`).get(agentKey || 'dev1') || null; } catch { return null; }
 }
 
+// Quota cooldown gate (plan Part 7R): same ai_settings.cooldown_json the ai/text.js
+// seam writes to on a detected quota hit. Reads live (no cache) so a cooldown set
+// mid-session — or clearing on its own 30-min expiry — takes effect on the very
+// next kick, not after a stale TTL. Only claude-code is gated: opencode agents have
+// no auto-fallback and are the free tier itself, so they must keep running even
+// while claude-code is cooling down — that's the whole point of the fallback.
+function providerInCooldown(providerId) {
+  if (!db) return false;
+  try {
+    const row = db.prepare(`SELECT cooldown_json FROM ai_settings WHERE id='global'`).get();
+    if (!row) return false;
+    const cooldown = JSON.parse(row.cooldown_json || '{}');
+    const until = cooldown[providerId];
+    if (!until) return false;
+    return Date.now() < new Date(until).getTime();
+  } catch { return false; }
+}
+
 function kick() {
   if (!getSettings().enabled) return;
   const tasks = readTasks().filter((t) => !(isQueuePaused() && t.kind === 'queue'));
@@ -438,16 +455,21 @@ function kick() {
 
   for (const q of tasks.filter((t) => t.status === 'approved' && t.mode === 'question').sort(byPriority)) {
     if (_questionRuns.size >= MAX_PARALLEL_QUESTIONS) break;
+    if ((q.provider || 'claude-code') === 'claude-code' && providerInCooldown('claude-code')) continue;
     executeTask(q, { lane: 'question' });
   }
 
   // Writer lane (plan 2b): iterate queued implement tasks in priority order and
   // start each one whose agent has a free slot (agent enabled, not paused, under
   // its max_parallel) AND whose start keeps us under the global cap. Skipped
-  // agents stay 'approved' — a later kick picks them up.
+  // agents stay 'approved' — a later kick picks them up. A claude-code task is also
+  // skipped (not started) while that provider is in quota cooldown — it stays
+  // 'approved' and a later kick (post-cooldown, or once ai/text.js clears it) picks
+  // it up; opencode tasks are never gated here since they're the free-fallback tier.
   const writers = tasks.filter((t) => t.status === 'approved' && t.mode !== 'question').sort(byPriority);
   for (const next of writers) {
     if (totalWriterRuns() >= MAX_CONCURRENT_WRITERS) break;
+    if ((next.provider || 'claude-code') === 'claude-code' && providerInCooldown('claude-code')) continue;
     const agentKey = next.agent_key || 'dev1';
     const agent = agentRow(agentKey);
     if (agent && (!agent.enabled || agent.paused)) continue;

@@ -4,7 +4,7 @@
 // (see tagLens.js). Cached per tag so it's a one-time cost.
 
 import { searchEntities } from './ontologyQuery.js';
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
 
 function buildPrompt(tag, examples) {
   const names = examples.map((e) => `${e.name} (${e.type})`).join(', ');
@@ -27,7 +27,7 @@ export function makeTagPatternHandler(db) {
     }
     const examples = searchEntities(db, { tag }).slice(0, 4);
     const out = await generateText({
-      prompt: buildPrompt(tag, examples), maxTokens: 150, label: 'tagPattern', cliModel: 'sonnet',
+      prompt: buildPrompt(tag, examples), feature: 'quick', maxTokens: 150, label: 'tagPattern',
     });
     if (out.error) return out;
     const text = out.text;

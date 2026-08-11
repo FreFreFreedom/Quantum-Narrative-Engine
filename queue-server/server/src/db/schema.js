@@ -278,6 +278,27 @@ function initSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_prompt ON reviews(prompt_id)`); } catch {}
+
+  // ─── AI Settings (plan Part 7R) ───────────────────────────────────────────────
+  // Single-row table (id='global') holding the platform-wide provider configuration.
+  // All feature work-types reference this for defaults; per-task overrides remain in
+  // the queue form. Idempotent CREATE + seed with sane free-first defaults.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_settings (
+      id TEXT PRIMARY KEY DEFAULT 'global',
+      -- Per-work-type default model (feature -> {provider, model, preset})
+      defaults_json TEXT NOT NULL DEFAULT '{}',
+      -- Provider health cache (updated by /api/travaux/providers polling)
+      health_json TEXT NOT NULL DEFAULT '{}',
+      -- Global policy when a provider is exhausted: 'auto_free' | 'manual_only'
+      quota_policy TEXT NOT NULL DEFAULT 'auto_free',
+      -- Per-provider cooldown until timestamp (ISO) when limit was hit
+      cooldown_json TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  // Backfill: ensure the single row exists (idempotent, harmless on existing DBs).
+  try { db.prepare(`INSERT OR IGNORE INTO ai_settings (id, defaults_json, health_json, quota_policy, cooldown_json) VALUES ('global', '{}', '{}', 'auto_free', '{}')`).run(); } catch {}
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

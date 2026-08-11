@@ -3,7 +3,7 @@
 // (see books.js); this is what a user gets after clicking into a specific book to
 // go further. Same generate-once-and-cache pattern, keyed on (entity, book title).
 
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
 
 function buildPrompt(entity, book) {
   const tags = (entity.tags || []).join(', ');
@@ -30,7 +30,7 @@ export function makeBookDetailHandler(db) {
       if (cached) return { detail: cached.detail_text, cached: true };
     }
     const out = await generateText({
-      prompt: buildPrompt(entity, book), maxTokens: 220, label: 'bookDetail', cliModel: 'sonnet',
+      prompt: buildPrompt(entity, book), feature: 'quick', maxTokens: 220, label: 'bookDetail',
     });
     if (out.error) return out;
     const text = out.text;

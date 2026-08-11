@@ -10,7 +10,7 @@
 // Product Advertising API, which needs an approved Associates account with business/
 // tax info only the user could provide).
 
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
 
 const GOOGLE_BOOKS_URL = 'https://www.googleapis.com/books/v1/volumes';
 
@@ -53,13 +53,13 @@ async function lookupGoogleBooks(title, author) {
 }
 
 export function makeBooksHandler(db) {
-  return async function getBookSuggestions(entity, { force = false } = {}) {
+  return async function getBookSuggestions(entity, { force = false, feature = 'quick' } = {}) {
     if (!force) {
       const cached = db.prepare(`SELECT suggestions FROM entity_book_suggestions WHERE entity_id=?`).get(entity.id);
       if (cached) { try { return { books: JSON.parse(cached.suggestions), cached: true }; } catch {} }
     }
     const out = await generateText({
-      prompt: buildPrompt(entity), maxTokens: 1500, label: 'books', cliModel: 'sonnet',
+      prompt: buildPrompt(entity), feature, maxTokens: 1500, label: 'books',
     });
     if (out.error) return out;
     const text = out.text;
