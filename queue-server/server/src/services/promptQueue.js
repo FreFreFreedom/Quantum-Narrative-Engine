@@ -11,6 +11,14 @@
 // FMCNS has one space ('fmcns') where the spec had two ('finance'/'agent'); the
 // space column and per-space position/scheduling logic are kept as-is so a second
 // space can be added later without a migration.
+//
+// Provider support (see providers/README.md): every prompt carries a provider
+// ('claude-code' or 'opencode') and the provider-specific model picked at creation
+// (provider_model). Each provider keeps its OWN CLI session column (session_id vs
+// opencode_session_id) — the two CLIs cannot resume each other's sessions, so the
+// same-context chain follows the task's provider, and switching provider drops the
+// stale session link. 'auto' preset (judged by the model policy) applies to
+// claude-code tasks; opencode tasks default their model explicitly instead.
 
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
@@ -18,8 +26,11 @@ import {
   enqueueAgentTask, findAgentTask, getSettings, presetFor, getMaxParallelQuestions,
   generateUserSummary, isQueuePaused, setQueuePaused,
   updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage, stopTask,
+  MAX_CONCURRENT_WRITERS,
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
+import { defaultOpenCodeModel } from './providers/index.js';
+import { listAgents } from './agents.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -72,26 +83,41 @@ function effectivePreset(row) {
 export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
-  component_id = null,
+  component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
+  parent_prompt_id = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
+  const useProvider = provider === 'opencode' ? 'opencode' : 'claude-code';
   const id = randomUUID();
   const given = String(title || '').trim();
   const label = given || heuristicTitle(text);
   const initial = status === 'paused' ? 'paused' : 'queued';
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
-  const resolved = preset === 'auto' ? await resolvePreset({ mode, prompt: text }).catch(() => 'standard') : null;
+  // Agent assignment (plan Part 1): NULL falls back to dev1 at dispatch time.
+  const useAgentKey = String(agent_key || '').trim() || null;
+  // Explicit continuation link (plan 2d): chaining onto a parent implies the
+  // same-context semantics the old checkbox expressed.
+  const useParent = parent_prompt_id || null;
+  const chained = !!(same_context || useParent);
+  const resolved = (preset === 'auto' && useProvider === 'claude-code')
+    ? await resolvePreset({ mode, prompt: text }).catch(() => 'standard') : null;
+  let useModel = provider_model || null;
+  if (useProvider === 'opencode' && !useModel) {
+    // No model chosen — remember the best available default (free models first) at
+    // creation time, so the sync execution path never has to discover it lazily.
+    try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
+  }
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), same_context ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id);
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
+    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent);
   broadcast();
   return getPrompt(id);
 }
 
-const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after'];
+const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
@@ -129,7 +155,8 @@ function reclaimRunning(row) {
 
 function syncPendingTask(row) {
   if (!isPending(row)) return;
-  const { model, effort } = presetFor(effectivePreset(row));
+  const isOpen = row.provider === 'opencode';
+  const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   updatePendingAgentTask(row.agent_task_id, { title: row.title, description: row.prompt, mode: row.mode, model, effort });
 }
 
@@ -143,6 +170,7 @@ export function updatePrompt(id, patch) {
     if (!EDITABLE.includes(k)) continue;
     if (k === 'status' && !['queued', 'paused', 'cancelled'].includes(v)) continue;
     if (k === 'status' && row.status === 'running') continue;
+    if (k === 'provider' && !['claude-code', 'opencode'].includes(v)) continue;
     if (k === 'title') {
       const given = String(v ?? '').trim();
       sets.push('title=?', 'title_auto=?');
@@ -153,7 +181,20 @@ export function updatePrompt(id, patch) {
     vals.push(['same_context', 'stop_after'].includes(k) ? (v ? 1 : 0) : v);
   }
   if (!sets.length) return row;
+  // Chaining onto a parent (plan 2d) implies the same-context semantics the old
+  // checkbox expressed — the dropdown and the column must not disagree.
+  if (patch.parent_prompt_id !== undefined && patch.same_context === undefined) {
+    sets.push('same_context=?');
+    vals.push(patch.parent_prompt_id ? 1 : 0);
+  }
   db.prepare(`UPDATE work_prompts SET ${sets.join(', ')}, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(...vals, id);
+  const swapped = patch.provider !== undefined && patch.provider !== row.provider;
+  if (swapped) {
+    // Provider switch = fresh start on the other CLI's session store: the old
+    // provider's session id means nothing to the new one, and carrying it over
+    // would make the next same-context run try to resume a foreign session.
+    db.prepare(`UPDATE work_prompts SET session_id=NULL, opencode_session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+  }
   broadcast();
   const updated = getPrompt(id);
   syncPendingTask(updated);
@@ -239,7 +280,6 @@ export function advanceQueue() {
 
   const runningRows = db.prepare(`${SELECT()} AND status='running'`).all();
   const runningQuestions = runningRows.filter((r) => r.mode === 'question').length;
-  const implRunning = runningRows.some((r) => r.mode !== 'question');
   const started = [];
 
   const slots = getMaxParallelQuestions() - runningQuestions;
@@ -248,12 +288,29 @@ export function advanceQueue() {
     for (const q of questions) started.push(startPrompt(q));
   }
 
-  if (!implRunning) {
-    const next = PROMPT_SPACES
-      .map((sp) => db.prepare(`${SELECT()} AND status='queued' AND space=? AND (mode!='question' OR same_context=1) ORDER BY position, created_at LIMIT 1`).get(sp))
-      .filter(Boolean)
-      .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))[0];
-    if (next) started.push(startPrompt(next));
+  // Writer lane, per agent (plan 2b): instead of the old single-implement gate,
+  // start every queued implement prompt whose agent has a free slot and whose
+  // start keeps the global MAX_CONCURRENT_WRITERS cap intact. This is the prompt
+  // level of the same guard taskRunner's kick() applies at the task level — two
+  // agents can genuinely run in parallel; a paused/disabled agent's prompts wait.
+  const agents = new Map(listAgents().map((a) => [a.key, a]));
+  const runningImpl = runningRows.filter((r) => r.mode !== 'question');
+  const runningByAgent = new Map();
+  for (const r of runningImpl) {
+    const k = r.agent_key || 'dev1';
+    runningByAgent.set(k, (runningByAgent.get(k) || 0) + 1);
+  }
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) ORDER BY position, created_at`).all();
+  for (const next of queuedImpl) {
+    if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
+    const agentKey = next.agent_key || 'dev1';
+    const agent = agents.get(agentKey);
+    if (agent && (!agent.enabled || agent.paused)) continue;
+    const agentCap = agent ? Math.max(1, Math.min(4, agent.max_parallel || 1)) : 1;
+    if ((runningByAgent.get(agentKey) || 0) >= agentCap) continue;
+    started.push(startPrompt(next));
+    runningImpl.push(next);
+    runningByAgent.set(agentKey, (runningByAgent.get(agentKey) || 0) + 1);
   }
 
   if (!started.length) {
@@ -263,22 +320,56 @@ export function advanceQueue() {
   return { started: started[0], startedCount: started.length, reason: null };
 }
 
-function sessionOfPrevious(row) {
-  const prev = db.prepare(`
-    SELECT session_id FROM work_prompts
-    WHERE deleted_at IS NULL AND session_id IS NOT NULL AND space = ?
-      AND (position < ? OR (position = ? AND created_at < ?))
-    ORDER BY position DESC, created_at DESC LIMIT 1
-  `).get(row.space, row.position, row.position, row.created_at);
-  return prev?.session_id || null;
+// Continuation context (plan 2d): instead of inferring "the previous row in this
+// space" positionally (which under parallelism is somebody else's task), the row
+// carries an explicit parent_prompt_id. Resuming is only allowed when the parent
+// matches on BOTH the agent and the provider (the two CLIs cannot resume each
+// other's sessions). Parent missing or mismatched → fresh session, with a note
+// posted in the thread — NEVER a positional fallback. Also returns the parent's
+// worktree + branch (from its last agent task) so a continuation lands on the
+// same branch as the work it continues.
+function sessionOfParent(row) {
+  if (!row.parent_prompt_id) return null;
+  const parent = getPrompt(row.parent_prompt_id);
+  if (!parent) {
+    return { sessionId: null, note: 'The task this item was chained onto is gone — starting a fresh session.' };
+  }
+  if (String(parent.agent_key || 'dev1') !== String(row.agent_key || 'dev1')) {
+    return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it belongs to another agent. Starting a fresh session.` };
+  }
+  if ((parent.provider || 'claude-code') !== (row.provider || 'claude-code')) {
+    return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it ran on another provider. Starting a fresh session.` };
+  }
+  const sessionId = (row.provider === 'opencode' ? parent.opencode_session_id : parent.session_id) || null;
+  const lastTask = db.prepare(`SELECT worktree_path, branch FROM agent_tasks WHERE work_prompt_id=? ORDER BY created_at DESC LIMIT 1`).get(parent.id);
+  return {
+    sessionId,
+    worktreePath: lastTask?.worktree_path || null,
+    branch: lastTask?.branch || null,
+  };
 }
 
 function startPrompt(row, { forceFresh = false } = {}) {
-  const { model, effort } = presetFor(effectivePreset(row));
-  const resume = (!forceFresh && row.same_context) ? sessionOfPrevious(row) : null;
+  const isOpen = row.provider === 'opencode';
+  const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  let resume = null;
+  let worktreePath = null;
+  let branch = null;
+  if (!forceFresh && row.parent_prompt_id) {
+    const ctx = sessionOfParent(row);
+    if (ctx) {
+      resume = ctx.sessionId;
+      worktreePath = ctx.worktreePath;
+      branch = ctx.branch;
+      if (ctx.note) addMessage(row.id, { role: 'agent', text: ctx.note });
+    }
+  }
   const task = enqueueAgentTask({
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue', work_prompt_id: row.id, resume_session_id: resume,
+    provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
+    agent_key: row.agent_key || 'dev1',
+    worktree_path: worktreePath, branch,
   });
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
@@ -291,8 +382,10 @@ function startPrompt(row, { forceFresh = false } = {}) {
 function finishPrompt(id, task) {
   const status = task.status === 'done' ? 'done' : 'blocked';
   const q = task.pending_question && task.pending_question.question ? JSON.stringify(task.pending_question) : null;
+  const isOpen = (task.provider || 'claude-code') === 'opencode';
+  const sessionCol = isOpen ? 'opencode_session_id' : 'session_id';
   db.prepare(`
-    UPDATE work_prompts SET status=?, session_id=COALESCE(?, session_id), pending_question=?,
+    UPDATE work_prompts SET status=?, ${sessionCol}=COALESCE(?, ${sessionCol}), pending_question=?,
       cost_usd=COALESCE(?, cost_usd), tokens_in=COALESCE(?, tokens_in), tokens_out=COALESCE(?, tokens_out),
       run_model=COALESCE(?, run_model),
       completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
@@ -384,26 +477,31 @@ export function replyToPrompt(id, { text, userId = null }) {
 export function clearContext(id) {
   const row = getPrompt(id);
   if (!row) return null;
-  db.prepare(`UPDATE work_prompts SET session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+  db.prepare(`UPDATE work_prompts SET session_id=NULL, opencode_session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
   return getPrompt(id);
 }
 
 function relaunchWithThread(row) {
   const messages = listMessages(row.id);
-  const { model, effort } = presetFor(effectivePreset(row));
+  const isOpen = row.provider === 'opencode';
+  const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   const overThreshold = (row.context_turns || 0) >= contextResetThresholdFor(row);
-  const fresh = !row.session_id || overThreshold;
+  const activeSession = isOpen ? row.opencode_session_id : row.session_id;
+  const fresh = !activeSession || overThreshold;
   const task = enqueueAgentTask({
     title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
-    author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : row.session_id,
+    author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : activeSession,
+    provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
+    agent_key: row.agent_key || 'dev1',
   });
   const nextTurns = fresh ? 0 : (row.context_turns || 0) + 1;
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
       completed_at=NULL, pending_question=NULL, context_turns=?,
       session_id=CASE WHEN ? THEN NULL ELSE session_id END,
+      opencode_session_id=CASE WHEN ? THEN NULL ELSE opencode_session_id END,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(task.id, nextTurns, fresh ? 1 : 0, row.id);
+  `).run(task.id, nextTurns, fresh ? 1 : 0, fresh ? 1 : 0, row.id);
   broadcast();
   return { prompt: getPrompt(row.id), task };
 }
@@ -483,6 +581,16 @@ export async function onAgentTaskFinalized(task) {
 
   const finished = finishPrompt(row.id, task);
 
+  // Step 5: an implement task that finished done on a branch enters the review
+  // gate — five deterministic checks run in its worktree; the human then merges
+  // (or reverts) from the queue UI. Fire-and-forget: the checks are slow (they
+  // boot a throwaway server) and must never block the queue loop.
+  if (finished.status === 'done' && task.mode !== 'question' && task.branch) {
+    import('./reviewRunner.js')
+      .then((m) => m.createReviewForTask(task))
+      .catch((e) => console.error('queue: review creation failed —', e.message));
+  }
+
   // Reliability valve for the auto policy: a blocked auto-resolved task probably ran
   // out of depth, not luck — bump the remembered tier so the next "Run again" retries
   // stronger instead of repeating the same (apparently insufficient) tier.
@@ -517,6 +625,15 @@ export function onAgentTaskDeferred(task, { label = '' } = {}) {
     UPDATE work_prompts SET status='queued', started_at=NULL, agent_task_id=NULL, completed_at=NULL,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(row.id);
+  if ((task.provider || 'claude-code') === 'opencode') {
+    // OpenCode has no subscription quota to "wait out" — the fix is picking another
+    // model, so the thread note says exactly that instead of a vague usage hint.
+    addMessage(row.id, {
+      role: 'agent',
+      text: `Hit the usage limit on ${task.run_model || task.provider_model || 'the selected OpenCode model'}. Pick another model in the task panel (free models are listed first), then resume the queue.`,
+      agentTaskId: task.id,
+    });
+  }
   broadcast();
   notifyLimitOnce(label);
 }
@@ -526,7 +643,7 @@ async function notifyLimitOnce(label) {
   if (_limitNotified === label) return;
   _limitNotified = label;
   if (!NOTIFY_WEBHOOK_URL) return;
-  const text = `Queue paused — Claude quota reached, resuming at ${label || 'quota reset'}.`;
+  const text = `Queue paused — ${label ? `usage limit reached, resuming at ${label}` : 'usage limit reached, waiting for a slot'}.`;
   try { await fetch(NOTIFY_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }); }
   catch (e) { console.error('queue: quota notice not sent —', e.message); }
 }

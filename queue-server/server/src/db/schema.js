@@ -87,6 +87,29 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN tokens_in INTEGER`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN tokens_out INTEGER`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN run_model TEXT`); } catch {}
+  // Execution provider ('claude-code' | 'opencode') — which CLI actually runs this
+  // prompt. Defaults to claude-code so every pre-existing row keeps behaving exactly
+  // as before (a missing value IS claude-code). provider_model is the concrete
+  // OpenCode model id (e.g. 'opencode/deepseek-v4-flash-free') the user picked for
+  // this task; ignored for claude-code rows.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN provider TEXT NOT NULL DEFAULT 'claude-code'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN provider_model TEXT`); } catch {}
+  // OpenCode's own session id, for `opencode run --session` continuation. Separate
+  // from session_id (Claude's) because the two CLIs have incompatible session
+  // stores — a session is only ever resumable by the provider that created it.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN opencode_session_id TEXT`); } catch {}
+  // Agent roster link (plan Part 1): which agent this prompt is assigned to.
+  // NULL → the runner falls back to 'dev1'. ALTER, not in the CREATE, so
+  // pre-existing rows get NULL and behave exactly as before. The REFERENCES is
+  // validated by node:sqlite (FKs on by default): an unknown agent key is
+  // rejected at insert time rather than silently dispatching to dev1.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN agent_key TEXT REFERENCES agents(key)`); } catch {}
+  // Explicit continuation link (plan 2d): the prompt row this one chains onto
+  // ("Continuer : ⟨titre⟩" dropdown). Replaces the positional same_context
+  // inference, which breaks under parallelism — with several agents interleaved,
+  // "the previous row in this space" is somebody else's task. NULL = fresh
+  // session (the backfill value for every existing row).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN parent_prompt_id TEXT REFERENCES work_prompts(id)`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -135,6 +158,148 @@ function initSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_pos ON work_ideas(position)`); } catch {}
+
+  // Agent task executions — the runner's own record, previously a JSON file
+  // (data/agent-tasks.json). Moved to SQLite because an unlocked whole-file
+  // read-modify-write loses writes when two tasks finalize in the same tick;
+  // node:sqlite serializes writes for free (see plan 2c).
+  // run_state is the PROCESS state (idle|dispatched|working|awaiting_input|stopped)
+  // orthogonal to status (approved|in_progress|done|blocked|cancelled) — lets the
+  // UI tell a wedged agent from a busy one (plan Part 3, trimmed to 5 states).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_tasks (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL DEFAULT 'queue',
+      mode TEXT NOT NULL DEFAULT 'implement',
+      agent_key TEXT REFERENCES agents(key),
+      title TEXT,
+      description TEXT,
+      author TEXT,
+      status TEXT NOT NULL DEFAULT 'approved',
+      run_state TEXT NOT NULL DEFAULT 'idle',
+      model TEXT,
+      effort TEXT,
+      priority INTEGER NOT NULL DEFAULT 0,
+      provider TEXT NOT NULL DEFAULT 'claude-code',
+      provider_model TEXT,
+      run_model TEXT,
+      tried_models TEXT,
+      agent_result TEXT,
+      user_summary TEXT,
+      pending_question TEXT,
+      missed_user_message TEXT,
+      work_prompt_id TEXT,
+      resume_session_id TEXT,
+      session_id TEXT,
+      worktree_path TEXT,
+      branch TEXT,
+      base_sha TEXT,
+      stop_requested INTEGER NOT NULL DEFAULT 0,
+      cost_usd REAL,
+      tokens_in INTEGER,
+      tokens_out INTEGER,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      started_at TEXT,
+      completed_at TEXT,
+      heartbeat_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_queue ON agent_tasks(status, kind, priority, created_at)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_prompt ON agent_tasks(work_prompt_id)`); } catch {}
+
+  // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
+  // because node:sqlite enforces foreign keys by default — the REFERENCES above
+  // needs the table to exist. Seeded with the roster rows in step 3
+  // (services/agents.js + bootstrapData); an empty roster here changes nothing.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agents (
+      key            TEXT PRIMARY KEY,
+      label          TEXT NOT NULL,
+      emoji          TEXT,
+      role           TEXT NOT NULL DEFAULT 'dev'
+                     CHECK(role IN ('research','dev','design','test','reviewer','integrator')),
+      persona        TEXT NOT NULL DEFAULT '',
+      brief_file     TEXT,
+      provider       TEXT NOT NULL DEFAULT 'claude-code',
+      provider_model TEXT,
+      preset         TEXT NOT NULL DEFAULT 'standard',
+      tools          TEXT NOT NULL DEFAULT 'Bash,Read,Write,Edit,Glob,Grep',
+      path_allow     TEXT NOT NULL DEFAULT '["**"]',
+      path_deny      TEXT NOT NULL DEFAULT '[]',
+      max_parallel   INTEGER NOT NULL DEFAULT 1,
+      enabled        INTEGER NOT NULL DEFAULT 1,
+      paused         INTEGER NOT NULL DEFAULT 0,
+      sort_order     REAL NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  // Seed the two developer agents (step 3 scope — the full roster arrives in a
+  // later step). Seeded HERE rather than in bootstrapData.js because agent_tasks
+  // rows (legacy import + live queue) carry a REFERENCES agents(key) FK — the rows
+  // must exist before the first task is ever inserted, and openDb() runs before
+  // the bootstrap pass. INSERT OR IGNORE: a UI edit to an agent is never clobbered.
+  db.exec(`
+    INSERT OR IGNORE INTO agents (key, label, emoji, role, persona, brief_file, provider, provider_model, preset, tools, path_allow, path_deny, max_parallel, enabled, paused, sort_order)
+    VALUES
+      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', '.agents/roles/dev.md', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
+      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
+  `);
+  // Backfill brief_file on rows seeded before step 6 (INSERT OR IGNORE never
+  // clobbers a UI edit — this only fills NULLs for the two default devs).
+  try {
+    db.prepare(`UPDATE agents SET brief_file='.agents/roles/dev.md' WHERE key IN ('dev1','dev2') AND brief_file IS NULL`).run();
+  } catch {}
+
+  // ─── Reviews — the merge gate (plan Part 4, step 5) ───────────────────────────
+  // One row per finished dev/design task whose branch reached the review stage.
+  // status is the HUMAN-facing lifecycle: pending → approved | changes_requested |
+  // rejected | merged | reverted. checks holds the five deterministic check results
+  // as JSON; verdict is the machine verdict (safe|risky|unsafe) — the model second
+  // opinion is step 9 scope, so for now verdict derives from the checks alone.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id TEXT PRIMARY KEY,
+      prompt_id TEXT NOT NULL REFERENCES work_prompts(id),
+      task_id TEXT REFERENCES agent_tasks(id),
+      agent_key TEXT,
+      branch TEXT NOT NULL, base_sha TEXT, head_sha TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',   -- pending|approved|changes_requested|rejected|merged|reverted
+      verdict TEXT,                             -- safe|risky|unsafe
+      plain_summary TEXT,                       -- French, for the human
+      concerns TEXT,                            -- JSON array
+      checks TEXT,                              -- JSON {syntax,boot,endpoints,html,scope,conflict}
+      files_changed TEXT, insertions INTEGER, deletions INTEGER,
+      conflicts_with TEXT,                      -- JSON array of branch names
+      reviewer_task_id TEXT,
+      merge_commit TEXT, merged_at TEXT, reverted_at TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_prompt ON reviews(prompt_id)`); } catch {}
+
+  // ─── AI Settings (plan Part 7R) ───────────────────────────────────────────────
+  // Single-row table (id='global') holding the platform-wide provider configuration.
+  // All feature work-types reference this for defaults; per-task overrides remain in
+  // the queue form. Idempotent CREATE + seed with sane free-first defaults.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_settings (
+      id TEXT PRIMARY KEY DEFAULT 'global',
+      -- Per-work-type default model (feature -> {provider, model, preset})
+      defaults_json TEXT NOT NULL DEFAULT '{}',
+      -- Provider health cache (updated by /api/travaux/providers polling)
+      health_json TEXT NOT NULL DEFAULT '{}',
+      -- Global policy when a provider is exhausted: 'auto_free' | 'manual_only'
+      quota_policy TEXT NOT NULL DEFAULT 'auto_free',
+      -- Per-provider cooldown until timestamp (ISO) when limit was hit
+      cooldown_json TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  // Backfill: ensure the single row exists (idempotent, harmless on existing DBs).
+  try { db.prepare(`INSERT OR IGNORE INTO ai_settings (id, defaults_json, health_json, quota_policy, cooldown_json) VALUES ('global', '{}', '{}', 'auto_free', '{}')`).run(); } catch {}
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

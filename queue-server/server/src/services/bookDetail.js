@@ -3,7 +3,8 @@
 // (see books.js); this is what a user gets after clicking into a specific book to
 // go further. Same generate-once-and-cache pattern, keyed on (entity, book title).
 
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 function buildPrompt(entity, book) {
   const tags = (entity.tags || []).join(', ');
@@ -18,6 +19,7 @@ function buildPrompt(entity, book) {
     book.why ? `Brief reason already given: ${book.why}\n` : '',
     `\nGo deeper than that one-line reason. Write ONE tight paragraph (strict hard limit: 70-100 words) on specifically how this book exhibits the same pattern as ${entity.name} — name a concrete scene, character, or argument from the book itself, not just genre similarity, and draw one real point of contact between the book and this specific entity. `,
     `Cut anything not essential — no throat-clearing, no summary sentence restating the point.\n`,
+    `${USER_FACING_STYLE}\n`,
     `Respond with ONLY the paragraph text, no preamble, no quotes, no markdown.`,
   ].join('');
 }
@@ -30,7 +32,7 @@ export function makeBookDetailHandler(db) {
       if (cached) return { detail: cached.detail_text, cached: true };
     }
     const out = await generateText({
-      prompt: buildPrompt(entity, book), maxTokens: 220, label: 'bookDetail', cliModel: 'sonnet',
+      prompt: buildPrompt(entity, book), feature: 'quick', maxTokens: 220, label: 'bookDetail',
     });
     if (out.error) return out;
     const text = out.text;

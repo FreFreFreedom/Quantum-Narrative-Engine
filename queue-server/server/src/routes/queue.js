@@ -1,17 +1,59 @@
 // Routes for the work queue — subset of §9's HTTP contract, backed by promptQueue.js.
 import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
+import { listOpenCodeModels } from '../services/providers/index.js';
+import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
+import { findAgentTask } from '../services/taskRunner.js';
+import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 
 export function queueRoutes() {
   const router = Router();
 
+  router.get('/providers', async (req, res) => {
+    // Execution-provider picker data for the New-prompt form: the OpenCode model
+    // list (free first — sorted by the discovery code) plus a cheap liveness
+    // signal for each provider so the UI can show what's actually runnable.
+    const discovery = await listOpenCodeModels({ force: req.query.force === '1' }).catch((e) => ({ models: [], error: e.message }));
+    res.json({
+      claude: {
+        available: !!(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.CLAUDE_BIN),
+        bin: resolveClaudeBin(),
+      },
+      opencode: {
+        available: discovery.models.length > 0 || !discovery.error,
+        models: discovery.models,
+        error: discovery.error || null,
+      },
+    });
+  });
+
+  // AI Settings panel (plan Part 7R step 8): per-feature model defaults, quota
+  // policy, and live cooldown state. Backed by the same ai_settings row the
+  // ai/text.js seam reads on every generation call.
+  router.get('/ai-settings', (req, res) => {
+    res.json(getAiSettings());
+  });
+
+  router.put('/ai-settings', (req, res) => {
+    const { defaults, policy } = req.body || {};
+    res.json(updateAiSettings({ defaults, policy }));
+  });
+
   router.get('/prompts', (req, res) => {
     const space = req.query.space || 'fmcns';
-    const prompts = queue.listPrompts({ space }).map((p) => ({
-      ...p,
-      pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
-      messages: queue.listMessages(p.id),
-    }));
+    const prompts = queue.listPrompts({ space }).map((p) => {
+      // Surface the RUNNING task's process state (run_state + heartbeat) so the UI
+      // can tell a wedged agent from a busy one — plan Part 3. Null for prompts
+      // with no live agent task.
+      const task = p.agent_task_id ? findAgentTask(p.agent_task_id) : null;
+      return {
+        ...p,
+        pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
+        messages: queue.listMessages(p.id),
+        run_state: task?.run_state ?? null,
+        heartbeat_at: task?.heartbeat_at ?? null,
+      };
+    });
     res.json({
       prompts,
       queue_paused: queue.getQueuePauseState().paused,

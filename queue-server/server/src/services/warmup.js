@@ -66,8 +66,8 @@ export async function warmCaches(db, { getBooks, getTagLens }) {
 
   await runWithLimit(jobs, CONCURRENCY, async (job) => {
     const out = job.kind === 'books'
-      ? await getBooks(job.entity, { force: false })
-      : await getTagLens(job.entity, job.tag, { force: false });
+      ? await getBooks(job.entity, { force: false, feature: 'warmup' })
+      : await getTagLens(job.entity, job.tag, { force: false, feature: 'warmup' });
     done++;
     if (out && out.error) {
       failed++;

@@ -2,7 +2,8 @@
 // own archetypal tags, instead of a generic description. Same generate-once-and-cache
 // pattern as books.js: cheap after the first click on a given (entity, tag) pair.
 
-import { generateText } from './claudeText.js';
+import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 function buildPrompt(entity, tag) {
   const otherTags = (entity.tags || []).filter((t) => t !== tag).join(', ');
@@ -19,19 +20,20 @@ function buildPrompt(entity, tag) {
     `what does looking at ${entity.name} through THIS particular tag reveal that the general description doesn't foreground? `,
     `Ground it in one or two concrete, specific details about this entity rather than restating the tag's definition. Cut anything not essential — no throat-clearing, no summary sentence at the end restating the point. `,
     `No preamble, no "Through the lens of..." framing device — just the examination itself, one paragraph, no list.\n`,
+    `${USER_FACING_STYLE}\n`,
     `Respond with ONLY the examination text, no JSON, no markdown, no quotes around it.`,
   ].join('');
 }
 
 export function makeTagLensHandler(db) {
-  return async function getTagLens(entity, tag, { force = false } = {}) {
+  return async function getTagLens(entity, tag, { force = false, feature = 'quick' } = {}) {
     if (!tag || !(entity.tags || []).includes(tag)) return { error: 'invalid_tag' };
     if (!force) {
       const cached = db.prepare(`SELECT lens_text FROM entity_tag_lenses WHERE entity_id=? AND tag=?`).get(entity.id, tag);
       if (cached) return { lens: cached.lens_text, cached: true };
     }
     const out = await generateText({
-      prompt: buildPrompt(entity, tag), maxTokens: 200, label: 'tagLens', cliModel: 'sonnet',
+      prompt: buildPrompt(entity, tag), feature, maxTokens: 200, label: 'tagLens',
     });
     if (out.error) return out;
     const text = out.text;

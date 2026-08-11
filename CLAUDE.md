@@ -19,6 +19,29 @@ edited in place and tracked by commits; check `git log` for history rather than
 looking for dated changelog entries. `git log` / `git blame` are the source of
 truth for what changed and why — don't duplicate that into memory or docs.
 
+## Communicating with Antoine
+
+All communication aimed at Antoine follows the repo-root `AGENTS.md` policy
+("Working with Antoine"): plain English, short, no jargon without explanation,
+concrete choices with "Recommended" defaults. Internal agent-to-agent and code
+communication is unrestricted. Autonomous overnight runs follow the
+"Autonomous overnight runs" section there too.
+
+## Plan backlog (`plans/`)
+
+Approved implementation plans live in `plans/`, indexed by `plans/README.md` with a
+status per plan (PLANNED / IN PROGRESS / DONE / CANCELLED). Each plan is written to be
+self-contained — a coding agent should be able to execute it without the conversation
+that produced it.
+
+- **A plan in `plans/` is not a green light.** Never implement one unless the user
+  explicitly asks for it by name.
+- When a feature finishes being planned, save the final plan there and add its row to
+  `plans/README.md`.
+- On "implement `<plan name>`": read the plan, then verify it still fits the current
+  code (paths, function names and line references drift), report what changed, and only
+  then implement. Update the status in both the index and the plan's own header.
+
 ## Commands
 
 All commands run from `queue-server/` (there is no root `package.json`) — see its
@@ -141,7 +164,10 @@ whole thing).
   meta-view of FMCNS's own build), Queue, Travaux. Talks to the deployed backend
   via a hardcoded `API_BASE` / `FMCNS_CHAT_SERVER` constant near the top of the
   file (`https://quantum-narrative-engine-production.up.railway.app`) — update
-  both if the backend's Railway domain ever changes.
+  both if the backend's Railway domain ever changes. The server now serves the
+  app at its own root (`/`) from `queue-server/public/index.html`, which must be
+  kept in sync with the master copy before any deploy that ships frontend
+  changes (see AGENTS.md).
 - **`fmcns_char_navigator.html`** and **`fmcns_film_corpus.html`** — superseded
   prototypes. Their content already lives in Content mode of the unified app.
   Left in the repo for reference; don't edit going forward.

@@ -1,24 +1,32 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openDb } from './db/schema.js';
 import { requireAuth, issueToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
 import { queueRoutes } from './routes/queue.js';
+import { agentsRoutes } from './routes/agents.js';
 import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
+import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
-import { initTaskRunner } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
+import { reviewsRoutes } from './routes/reviews.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
+import { bindReviewsDb } from './services/reviewRunner.js';
+import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
+import { bindAiTextDb } from './services/ai/text.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -28,8 +36,13 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 const db = openDb();
 bindDb(db);
+bindTaskDb(db);
+bindAgentsDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
+bindReviewsDb(db);
+bindBriefingDb(db);
+bindAiTextDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -42,11 +55,19 @@ try {
   console.error('Bootstrap data load failed:', e.message);
 }
 
+// Regenerate the shared-knowledge briefing (.agents/current-state.md) at boot
+// (plan Part 6). Best-effort — it needs a git repo; on Railway there is none.
+try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate failed:', e.message); }
+
 // Fire-and-forget: pre-generate book suggestions + first-tag lens for every
 // character/country so they're already cached (instant) by the time a user
 // clicks, instead of everyone eating live Claude-API latency after each redeploy.
-warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
-  .catch((e) => console.error('Cache warm-up failed:', e.message));
+// WARMUP_DISABLED=1 is used by the review runner's ephemeral boot check — a
+// throwaway server that must not spend any API credits.
+if (process.env.WARMUP_DISABLED !== '1') {
+  warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
+    .catch((e) => console.error('Cache warm-up failed:', e.message));
+}
 
 const app = express();
 app.use(cors());
@@ -64,7 +85,9 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.use('/api/travaux', requireAuth, queueRoutes());
+app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
+app.use('/api/travaux', requireAuth, reviewsRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {
@@ -78,6 +101,11 @@ app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
 app.use('/api/discovery', requireAuth, discoveryRoutes(db));
+
+// Serve the single-file frontend app (fmcns_navigator.html, copied to
+// public/index.html) at the root address, so the whole app lives at one URL.
+const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
+app.use(express.static(PUBLIC_DIR));
 
 const server = http.createServer(app);
 attachRealtime(server);

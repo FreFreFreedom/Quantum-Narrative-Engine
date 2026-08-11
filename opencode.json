@@ -1,0 +1,42 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "snapshot": true,
+  "permission": {
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "edit": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
+    "task": "allow",
+    "question": "allow",
+    "bash": {
+      "*": "allow",
+      "git push*": "deny",
+      "git * push*": "deny",
+      "git reset --hard*": "deny",
+      "git clean -f*": "deny",
+      "git branch -D*": "deny",
+      "git * branch -D*": "deny",
+      "git merge*": "deny",
+      "git checkout -f*": "deny",
+      "rm -rf*": "deny",
+      "rm -r -f*": "deny",
+      "find * -delete*": "deny",
+      "sudo*": "deny",
+      "chmod*": "deny",
+      "passwd*": "deny",
+      "pkill*": "deny",
+      "kill -9*": "deny",
+      "kill -KILL*": "deny",
+      "railway*": "deny",
+      "kubectl*": "deny",
+      "docker*": "deny",
+      "heroku*": "deny",
+      "*credentials*": "deny",
+      "* .env*": "deny",
+      "*/.env*": "deny"
+    }
+  }
+}
