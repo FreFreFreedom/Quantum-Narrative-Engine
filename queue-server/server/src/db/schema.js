@@ -29,6 +29,7 @@ export function openDb() {
   initTagLensSchema(db);
   initTagPatternSchema(db);
   initBookDetailSchema(db);
+  initDiscoverySchema(db);
   return db;
 }
 
@@ -448,4 +449,75 @@ export function initArchitectureSchema(db) {
   // try/catch per this file's convention — it throws harmlessly once applied.
   try { db.exec(`ALTER TABLE work_ideas ADD COLUMN arch_node_id TEXT`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_node ON work_ideas(arch_node_id)`); } catch {}
+}
+
+// ─── Building blocks: evidence-backed discovery (GitHub search + AI-imagined
+// proposals for FMCNS's own tech tree) ───────────────────────────────────────────
+// Two independent flows share these tables: the curated "Discover" catalog (pure
+// GitHub search results, re-ranked by feedback) and the free-text "Idea box"
+// (a 2-pass AI call that returns both real repos and pure-imagined proposals).
+// No cascade FKs anywhere in this schema (see architecture_nodes) and tree nodes
+// are soft-deleted, so architecture_node_evidence rows are left as harmless
+// orphans on node delete rather than cleaned up explicitly.
+export function initDiscoverySchema(db) {
+  // One row per (query_id, repo) — refreshed on a 24h TTL (see codeDiscovery.js).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS github_discovery_cache (
+      query_id TEXT NOT NULL,
+      repo_full_name TEXT NOT NULL,
+      stars INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      html_url TEXT,
+      topics_json TEXT NOT NULL DEFAULT '[]',
+      fetched_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      rank_boost INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (query_id, repo_full_name)
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_gh_cache_query ON github_discovery_cache(query_id)`); } catch {}
+
+  // "Useful"/"Not useful" clicks. rank_boost above is a derived, denormalised copy
+  // updated whenever a feedback row is written, so results can sort with a single
+  // column read instead of a join on every list.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS github_discovery_feedback (
+      id TEXT PRIMARY KEY,
+      repo_full_name TEXT NOT NULL,
+      verdict TEXT NOT NULL CHECK(verdict IN ('useful','not_useful')),
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_gh_feedback_repo ON github_discovery_feedback(repo_full_name)`); } catch {}
+
+  // One row per Idea box run — saved even though the MVP has no History view yet,
+  // so Phase 2 can list/rerun them without a data migration.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS discovery_reports (
+      id TEXT PRIMARY KEY,
+      idea_text TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'idea_box',
+      source_id TEXT,
+      queries_json TEXT NOT NULL DEFAULT '[]',
+      picks_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      rerun_count INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_discovery_reports_created ON discovery_reports(created_at)`); } catch {}
+
+  // Written when a discovery pick (proven kind only) is planted into the tech tree —
+  // links the new architecture_node back to the repo evidence that justified it.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS architecture_node_evidence (
+      id TEXT PRIMARY KEY,
+      node_id TEXT NOT NULL REFERENCES architecture_nodes(id),
+      repo_full_name TEXT NOT NULL,
+      stars INTEGER NOT NULL DEFAULT 0,
+      why TEXT,
+      report_id TEXT REFERENCES discovery_reports(id),
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      accepted INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_node_evidence_node ON architecture_node_evidence(node_id)`); } catch {}
 }

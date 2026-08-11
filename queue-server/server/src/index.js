@@ -11,6 +11,7 @@ import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
 import { initTaskRunner } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
+import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
@@ -76,6 +77,7 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
+app.use('/api/discovery', requireAuth, discoveryRoutes(db));
 
 const server = http.createServer(app);
 attachRealtime(server);
