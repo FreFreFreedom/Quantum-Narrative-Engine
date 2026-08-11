@@ -299,6 +299,17 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .id-move-row { display:flex; gap:3px; }
 .id-move-row button { padding:2px 7px; font-size:10px; }
 
+/* building blocks */
+#bkViewBtns { margin-top:6px; }
+.bk-result-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid #f0ece4; font-size:11px; flex-wrap:wrap; }
+.bk-result-row:first-child { border-top:none; }
+.bk-result-row a { font-weight:600; color:#2a2621; text-decoration:none; }
+.bk-result-row a:hover { text-decoration:underline; }
+.bk-stars { color:#8a5a1e; font-size:10.5px; flex-shrink:0; }
+.bk-desc { color:#6b645b; flex:1; min-width:160px; }
+.bk-result-row button { padding:3px 8px; border-radius:6px; border:1px solid #d9d3c9; background:#fff; font-size:10px; cursor:pointer; flex-shrink:0; }
+.bk-result-row button:hover { background:#f2efe9; }
+
 /* ---------- Architecture (sub-tab) ---------- */
 .arch-toolbar { padding:8px 16px; border-bottom:1px solid #e4dfd8; background:#fbfaf8; display:flex; align-items:center; gap:14px; }
 .arch-toolbar .arch-title { font-size:13px; font-weight:600; }
@@ -510,6 +521,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
     <div class="core-tabs" data-src="CORE ARCHITECTURE → sub-tab bar | fmcns_navigator.html: setCoreTab()">
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabSeeds" data-core-tab="seeds">Seeds <span class="core-tab-count" id="coreCountSeeds"></span></button>
+      <button id="coreTabBlocks" data-core-tab="blocks">Building blocks</button>
       <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
       <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
       <button id="coreTabAi" data-core-tab="ai">AI Settings</button>
@@ -543,6 +555,19 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
         </div>
       </div>
       <div class="tv-body" id="tvBodySeeds"></div>
+    </div>
+    <div id="corePaneBlocks" class="core-pane" data-src="CORE ARCHITECTURE → Building blocks sub-tab (evidence-backed discovery) | fmcns_navigator.html: renders into #tvBodyBlocks, loadBlocks()/renderDiscover()/renderIdeaBox() | backend: routes/discovery.js">
+      <div class="tv-toolbar">
+        <div class="tv-toolbar-top">
+          <span class="arch-title">Building blocks</span>
+          <span class="arch-sub">Real GitHub repos and imagined proposals, evidence for what FMCNS could grow next.</span>
+        </div>
+        <div class="arch-viewbtns" id="bkViewBtns">
+          <button class="active" data-bk-view="discover">Discover</button>
+          <button data-bk-view="idea">Idea box</button>
+        </div>
+      </div>
+      <div class="tv-body" id="tvBodyBlocks"></div>
     </div>
     <div id="corePaneSignals" class="core-pane" data-src="CORE ARCHITECTURE → Suggestion Engine sub-tab (Suggestions de Claude) | fmcns_navigator.html: renders into #tvBodySignals, loadSuggestions()/renderSuggestions() | backend: routes/travaux.js (/suggestions*)">
       <div class="tv-toolbar">
@@ -1943,7 +1968,7 @@ document.addEventListener('click', (e) => {
 // queue-state line) is shared across all four sub-tabs since it governs all of them.
 let coreTab = 'arch';
 let coreInited = false;
-const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', signals:'coreTabSignals', queue:'coreTabQueue', ai:'coreTabAi' };
+const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', blocks:'coreTabBlocks', signals:'coreTabSignals', queue:'coreTabQueue', ai:'coreTabAi' };
 
 function initCore() {
   if (!coreInited) {
@@ -1988,11 +2013,13 @@ function setCoreTab(t) {
   Object.keys(CORE_TAB_IDS).forEach(x => document.getElementById(CORE_TAB_IDS[x]).classList.toggle('active', x === t));
   document.getElementById('corePaneArch').classList.toggle('open', t === 'arch');
   document.getElementById('corePaneSeeds').classList.toggle('open', t === 'seeds');
+  document.getElementById('corePaneBlocks').classList.toggle('open', t === 'blocks');
   document.getElementById('corePaneSignals').classList.toggle('open', t === 'signals');
   document.getElementById('corePaneQueue').classList.toggle('open', t === 'queue');
   document.getElementById('corePaneAi').classList.toggle('open', t === 'ai');
   if (t === 'arch') initArchNav();
   if (t === 'seeds') loadIdeas();
+  if (t === 'blocks') initBlocks();
   if (t === 'signals') loadSuggestions();
   if (t === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
   if (t === 'ai') loadAiSettings();
@@ -3052,6 +3079,206 @@ async function moveIdea(id, delta) {
   [next[i], next[j]] = [next[j], next[i]];
   tvIdeas = next; renderIdeas();
   try { await apiWrite('/api/travaux/ideas/reorder', 'POST', { ids: next.map(x => x.id) }); } catch (e) { await loadIdeas(); }
+}
+
+// ── Building blocks — evidence-backed discovery ─────────────────────────────────
+// Two independent views, an internal tab strip (bkView) inside the Building blocks
+// sub-tab: Discover (curated GitHub queries, cached, feedback-ranked) and Idea box
+// (free-text -> 2-pass AI -> real repos + imagined proposals, plantable into the
+// tech tree). MVP: no History view / no seeded entry points from elsewhere yet —
+// see plans/github-code-discovery.md Phase 2.
+let bkView = 'discover';
+let bkInited = false;
+let bkQueries = [];
+let bkCategory = 'all';
+let bkResultsCache = {}; // query_id -> results array, refetched on Discover open
+let bkReport = null; // last Idea box report shown
+
+function initBlocks() {
+  if (!bkInited) {
+    bkInited = true;
+    document.querySelectorAll('#bkViewBtns button').forEach(b => {
+      b.onclick = () => { bkView = b.getAttribute('data-bk-view'); renderBlocksViewButtons(); renderBlocks(); };
+    });
+  }
+  renderBlocksViewButtons();
+  if (bkView === 'discover') loadDiscover(); else renderBlocks();
+}
+
+function renderBlocksViewButtons() {
+  document.querySelectorAll('#bkViewBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-bk-view') === bkView));
+}
+
+function renderBlocks() {
+  if (bkView === 'discover') renderDiscover(); else renderIdeaBox();
+}
+
+// ── Discover ─────────────────────────────────────────────────────────────────
+async function loadDiscover() {
+  const body = document.getElementById('tvBodyBlocks');
+  if (!bkQueries.length) {
+    body.innerHTML = '<div class="tv-empty">Loading…</div>';
+    try { bkQueries = (await api('/api/discovery/queries')).queries || []; } catch (e) { bkQueries = []; }
+  }
+  renderDiscover();
+}
+
+function bkCategories() {
+  return ['all', ...new Set(bkQueries.map(q => q.category))];
+}
+
+function renderDiscover() {
+  const body = document.getElementById('tvBodyBlocks');
+  const cats = bkCategories();
+  const visible = bkQueries.filter(q => bkCategory === 'all' || q.category === bkCategory);
+  body.innerHTML = `
+    <div class="sg-filterbtns" id="bkCatBtns" style="margin-bottom:10px;">
+      ${cats.map(c => `<button data-v="${c}" class="${bkCategory===c?'active':''}">${c === 'all' ? 'All' : c}</button>`).join('')}
+    </div>
+    <div id="bkQueryList">${visible.map(q => `
+      <div class="sg-card" data-qid="${q.id}">
+        <div class="sg-card-top">
+          <span class="sg-card-title">${q.description}</span>
+          <span class="sg-kind-badge chantier">${q.category}</span>
+          <button data-action="refresh" style="margin-left:auto;">Refresh</button>
+        </div>
+        <div style="font-size:10.5px;color:#8a8378;margin:4px 0 8px;">${q.query}</div>
+        <div class="bk-results" id="bkResults-${q.id}">Loading…</div>
+      </div>
+    `).join('') || '<div class="tv-empty">No queries in this category.</div>'}</div>
+  `;
+  document.querySelectorAll('#bkCatBtns button').forEach(b => b.onclick = () => { bkCategory = b.getAttribute('data-v'); renderDiscover(); });
+  visible.forEach(q => {
+    loadDiscoverResults(q.id, false);
+    const card = body.querySelector(`.sg-card[data-qid="${q.id}"]`);
+    card.querySelector('[data-action="refresh"]').onclick = () => loadDiscoverResults(q.id, true);
+  });
+}
+
+async function loadDiscoverResults(queryId, forceRefresh) {
+  const host = document.getElementById(`bkResults-${queryId}`);
+  if (!host) return;
+  if (forceRefresh) host.innerHTML = 'Refreshing…';
+  try {
+    const data = await api(`/api/discovery/results?query_id=${encodeURIComponent(queryId)}${forceRefresh ? '&refresh=1' : ''}`);
+    bkResultsCache[queryId] = data.results || [];
+  } catch (e) { host.innerHTML = `<span style="color:#b23a2f;">Error: ${e.message}</span>`; return; }
+  renderDiscoverResults(queryId);
+}
+
+function renderDiscoverResults(queryId) {
+  const host = document.getElementById(`bkResults-${queryId}`);
+  if (!host) return;
+  const results = bkResultsCache[queryId] || [];
+  if (!results.length) { host.innerHTML = '<div class="tv-empty">No results.</div>'; return; }
+  host.innerHTML = results.map(r => `
+    <div class="bk-result-row" data-repo="${r.repo_full_name}">
+      <a href="${r.html_url}" target="_blank" rel="noopener">${r.repo_full_name}</a>
+      <span class="bk-stars">★ ${r.stars}</span>
+      <span class="bk-desc">${r.description || ''}</span>
+      <button data-fb="useful">Useful</button>
+      <button data-fb="not_useful">Not useful</button>
+    </div>
+  `).join('');
+  host.querySelectorAll('.bk-result-row').forEach(row => {
+    const repo = row.getAttribute('data-repo');
+    row.querySelectorAll('[data-fb]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true;
+      try { await apiWrite('/api/discovery/feedback', 'POST', { repo_full_name: repo, verdict: btn.getAttribute('data-fb') }); await loadDiscoverResults(queryId, false); }
+      catch (e) { btn.disabled = false; alert('Error: ' + e.message); }
+    });
+  });
+}
+
+// ── Idea box ─────────────────────────────────────────────────────────────────
+function renderIdeaBox() {
+  const body = document.getElementById('tvBodyBlocks');
+  body.innerHTML = `
+    <div class="id-form">
+      <textarea id="bkIdeaInput" placeholder="Describe an idea — FMCNS will search GitHub for real building blocks and propose its own if nothing fits…" rows="3"></textarea>
+      <div class="id-form-row">
+        <span class="id-form-hint" id="bkIdeaStatus">Two AI calls run only when you click Search — nothing on page load.</span>
+        <button class="id-addbtn" id="bkSearchBtn">Search</button>
+      </div>
+    </div>
+    <div id="bkReportHost"></div>
+  `;
+  document.getElementById('bkSearchBtn').onclick = runBkIdeaSearch;
+  if (bkReport) renderBkReport();
+}
+
+async function runBkIdeaSearch() {
+  const input = document.getElementById('bkIdeaInput');
+  const ideaText = input.value.trim();
+  if (!ideaText) return;
+  const btn = document.getElementById('bkSearchBtn');
+  const status = document.getElementById('bkIdeaStatus');
+  btn.disabled = true; btn.textContent = 'Searching…';
+  status.textContent = 'Running GitHub search + Claude — this can take a minute.';
+  try {
+    bkReport = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: ideaText });
+    status.textContent = '';
+    renderBkReport();
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Search';
+  }
+}
+
+function bkPickCard(pick, idx) {
+  return `
+    <div class="sg-card" data-pickidx="${idx}">
+      <div class="sg-card-top">
+        <span class="sg-card-title">${pick.kind === 'proven' ? (pick.repo || 'Repo') : (pick.tree_target?.name || 'Proposal')}</span>
+        ${pick.kind === 'proven' && pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
+      </div>
+      ${pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${pick.why_fits}</div>` : ''}
+      ${pick.use ? `<div class="sg-rationale"><b>How FMCNS would use it:</b> ${pick.use}</div>` : ''}
+      ${pick.kind === 'proven' && pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${pick.repo}" target="_blank" rel="noopener">github.com/${pick.repo}</a></div>` : ''}
+      <div class="sg-actions">
+        <button data-action="plant">🌱 Plant in tree</button>
+        ${pick.kind === 'proven' && pick.repo ? `<button data-action="useful">Useful</button><button data-action="not_useful">Not useful</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderBkReport() {
+  const host = document.getElementById('bkReportHost');
+  if (!host || !bkReport) return;
+  const proven = bkReport.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'proven');
+  const imagined = bkReport.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'imagined');
+  host.innerHTML = `
+    <div class="tv-toolbar-top" style="margin-top:10px;">
+      <span class="arch-title" style="font-size:13px;">"${bkReport.idea_text}"</span>
+    </div>
+    <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;margin:14px 0 6px;">Already-built options</h3>
+    ${proven.length ? proven.map(({p,i}) => bkPickCard(p,i)).join('') : '<div class="tv-empty">Nothing usable found on GitHub for this idea.</div>'}
+    <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;margin:14px 0 6px;">Build-it-ourselves options</h3>
+    ${imagined.length ? imagined.map(({p,i}) => bkPickCard(p,i)).join('') : '<div class="tv-empty">No imagined proposals — GitHub had good matches instead.</div>'}
+  `;
+  host.querySelectorAll('.sg-card').forEach(card => {
+    const idx = Number(card.getAttribute('data-pickidx'));
+    const pick = bkReport.picks[idx];
+    const plantBtn = card.querySelector('[data-action="plant"]');
+    if (plantBtn) plantBtn.onclick = async () => {
+      plantBtn.disabled = true; plantBtn.textContent = '…';
+      try {
+        await apiWrite('/api/discovery/plant', 'POST', { report_id: bkReport.id, pick_index: idx });
+        plantBtn.textContent = '✓ Planted';
+        await loadArchNodes();
+      } catch (e) { plantBtn.disabled = false; plantBtn.textContent = '🌱 Plant in tree'; alert('Error: ' + e.message); }
+    };
+    ['useful', 'not_useful'].forEach(v => {
+      const b = card.querySelector(`[data-action="${v}"]`);
+      if (b) b.onclick = async () => {
+        b.disabled = true;
+        try { await apiWrite('/api/discovery/feedback', 'POST', { repo_full_name: pick.repo, verdict: v }); }
+        catch (e) { b.disabled = false; alert('Error: ' + e.message); }
+      };
+    });
+  });
 }
 
 // ---------- Architecture Navigator ----------
