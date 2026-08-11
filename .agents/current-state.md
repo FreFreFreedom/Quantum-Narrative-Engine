@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-11T07:26:27.073Z
+Generated: 2026-08-11T21:10:40.583Z
 
 ## Components
 
@@ -34,6 +34,7 @@ Generated: 2026-08-11T07:26:27.073Z
 - agent/dev2/cebe2006-overnight-test-step4-dev
 - agent/dev2/eb356287-overnight-test-step4-dev
 - agent/github-code-discovery
+- agent/idea-box-decomposition
 
 ## Plan backlog
 

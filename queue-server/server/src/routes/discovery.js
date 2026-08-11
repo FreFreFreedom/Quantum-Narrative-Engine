@@ -2,7 +2,7 @@
 // pattern as routes/architecture.js.
 import { Router } from 'express';
 import {
-  listQueries, getResults, recordFeedback, runIdeaSearch, listReports, plant, CURATED_QUERIES,
+  listQueries, getResults, recordFeedback, runIdeaSearch, listReports, plant, plantProject, CURATED_QUERIES,
 } from '../services/codeDiscovery.js';
 
 export function discoveryRoutes(db) {
@@ -40,6 +40,12 @@ export function discoveryRoutes(db) {
 
   router.post('/plant', (req, res) => {
     const out = plant(db, req.body || {});
+    if (out.error) return res.status(400).json(out);
+    res.json(out);
+  });
+
+  router.post('/plant-project', (req, res) => {
+    const out = plantProject(db, req.body || {});
     if (out.error) return res.status(400).json(out);
     res.json(out);
   });

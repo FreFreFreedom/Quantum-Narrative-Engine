@@ -669,6 +669,11 @@ export function initDiscoverySchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_discovery_reports_created ON discovery_reports(created_at)`); } catch {}
+  // Multi-part reports (idea decomposed into sub-parts, each with its own picks) —
+  // new reports write here; picks_json stays for pre-existing single-part rows.
+  try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN project_name TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN project_territory TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN parts_json TEXT`); } catch {}
 
   // Written when a discovery pick (proven kind only) is planted into the tech tree —
   // links the new architecture_node back to the repo evidence that justified it.

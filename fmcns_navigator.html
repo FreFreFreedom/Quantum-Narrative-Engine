@@ -3195,9 +3195,9 @@ function renderIdeaBox() {
   const body = document.getElementById('tvBodyBlocks');
   body.innerHTML = `
     <div class="id-form">
-      <textarea id="bkIdeaInput" placeholder="Describe an idea — FMCNS will search GitHub for real building blocks and propose its own if nothing fits…" rows="3"></textarea>
+      <textarea id="bkIdeaInput" placeholder="Describe an idea — simple or complex. FMCNS will break it into parts if it combines multiple capabilities, search GitHub for real building blocks per part, and propose its own if nothing fits…" rows="3"></textarea>
       <div class="id-form-row">
-        <span class="id-form-hint" id="bkIdeaStatus">Two AI calls run only when you click Search — nothing on page load.</span>
+        <span class="id-form-hint" id="bkIdeaStatus">Runs only when you click Search — nothing on page load. Multi-part ideas take longer (a few AI calls per part).</span>
         <button class="id-addbtn" id="bkSearchBtn">Search</button>
       </div>
     </div>
@@ -3214,7 +3214,7 @@ async function runBkIdeaSearch() {
   const btn = document.getElementById('bkSearchBtn');
   const status = document.getElementById('bkIdeaStatus');
   btn.disabled = true; btn.textContent = 'Searching…';
-  status.textContent = 'Running GitHub search + Claude — this can take a minute.';
+  status.textContent = 'Running GitHub search + Claude — this can take a couple of minutes for multi-part ideas.';
   try {
     bkReport = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: ideaText });
     status.textContent = '';
@@ -3226,11 +3226,12 @@ async function runBkIdeaSearch() {
   }
 }
 
-function bkPickCard(pick, idx) {
+function bkPickCard(pick, partIdx, pickIdx, recommended) {
   return `
-    <div class="sg-card" data-pickidx="${idx}">
+    <div class="sg-card" data-partidx="${partIdx}" data-pickidx="${pickIdx}">
       <div class="sg-card-top">
         <span class="sg-card-title">${pick.kind === 'proven' ? (pick.repo || 'Repo') : (pick.tree_target?.name || 'Proposal')}</span>
+        ${recommended ? `<span class="bk-stars" title="AI-recommended pick for this part">★ AI pick</span>` : ''}
         ${pick.kind === 'proven' && pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
       </div>
       ${pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${pick.why_fits}</div>` : ''}
@@ -3244,28 +3245,51 @@ function bkPickCard(pick, idx) {
   `;
 }
 
+function bkPartSection(part, partIdx) {
+  const proven = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'proven');
+  const imagined = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'imagined');
+  const header = bkReport.parts.length > 1
+    ? `<div class="tv-toolbar-top" style="margin-top:16px;"><span class="arch-title" style="font-size:13px;">${partIdx + 1}. ${part.name}</span></div>
+       <div class="id-form-hint" style="margin-bottom:6px;">${part.description}</div>`
+    : '';
+  return `
+    ${header}
+    <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;margin:14px 0 6px;">Already-built options</h3>
+    ${proven.length ? proven.map(({p,i}) => bkPickCard(p, partIdx, i, i === part.recommended_index)).join('') : '<div class="tv-empty">Nothing usable found on GitHub for this part.</div>'}
+    <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;margin:14px 0 6px;">Build-it-ourselves options</h3>
+    ${imagined.length ? imagined.map(({p,i}) => bkPickCard(p, partIdx, i, i === part.recommended_index)).join('') : '<div class="tv-empty">No imagined proposals — GitHub had good matches instead.</div>'}
+  `;
+}
+
 function renderBkReport() {
   const host = document.getElementById('bkReportHost');
   if (!host || !bkReport) return;
-  const proven = bkReport.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'proven');
-  const imagined = bkReport.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'imagined');
+  const isProject = bkReport.parts.length > 1;
   host.innerHTML = `
     <div class="tv-toolbar-top" style="margin-top:10px;">
       <span class="arch-title" style="font-size:13px;">"${bkReport.idea_text}"</span>
+      ${isProject ? `<button class="id-addbtn" id="bkPlantProjectBtn">🏗️ Create project</button>` : ''}
     </div>
-    <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;margin:14px 0 6px;">Already-built options</h3>
-    ${proven.length ? proven.map(({p,i}) => bkPickCard(p,i)).join('') : '<div class="tv-empty">Nothing usable found on GitHub for this idea.</div>'}
-    <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b645b;margin:14px 0 6px;">Build-it-ourselves options</h3>
-    ${imagined.length ? imagined.map(({p,i}) => bkPickCard(p,i)).join('') : '<div class="tv-empty">No imagined proposals — GitHub had good matches instead.</div>'}
+    ${bkReport.parts.map((part, i) => bkPartSection(part, i)).join('')}
   `;
+  const projectBtn = document.getElementById('bkPlantProjectBtn');
+  if (projectBtn) projectBtn.onclick = async () => {
+    projectBtn.disabled = true; projectBtn.textContent = '…';
+    try {
+      await apiWrite('/api/discovery/plant-project', 'POST', { report_id: bkReport.id });
+      projectBtn.textContent = '✓ Project planted';
+      await loadArchNodes();
+    } catch (e) { projectBtn.disabled = false; projectBtn.textContent = '🏗️ Create project'; alert('Error: ' + e.message); }
+  };
   host.querySelectorAll('.sg-card').forEach(card => {
-    const idx = Number(card.getAttribute('data-pickidx'));
-    const pick = bkReport.picks[idx];
+    const partIdx = Number(card.getAttribute('data-partidx'));
+    const pickIdx = Number(card.getAttribute('data-pickidx'));
+    const pick = bkReport.parts[partIdx].picks[pickIdx];
     const plantBtn = card.querySelector('[data-action="plant"]');
     if (plantBtn) plantBtn.onclick = async () => {
       plantBtn.disabled = true; plantBtn.textContent = '…';
       try {
-        await apiWrite('/api/discovery/plant', 'POST', { report_id: bkReport.id, pick_index: idx });
+        await apiWrite('/api/discovery/plant', 'POST', { report_id: bkReport.id, part_index: partIdx, pick_index: pickIdx });
         plantBtn.textContent = '✓ Planted';
         await loadArchNodes();
       } catch (e) { plantBtn.disabled = false; plantBtn.textContent = '🌱 Plant in tree'; alert('Error: ' + e.message); }
