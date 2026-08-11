@@ -5,6 +5,7 @@
 
 import { searchEntities } from './ontologyQuery.js';
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 function buildPrompt(tag, examples) {
   const names = examples.map((e) => `${e.name} (${e.type})`).join(', ');
@@ -14,6 +15,7 @@ function buildPrompt(tag, examples) {
     names ? `A few entities currently carrying this tag: ${names}\n` : '',
     `\nExplain, in plain language (strict hard limit: 2 sentences, 40-55 words total, never more), what this tag represents as a recurring pattern — the underlying dynamic or structure it names, not just a paraphrase of the tag's words. `,
     `Write for someone who has never seen this tag before and wants to understand what actually connects entities that share it. Cut anything not essential — no throat-clearing, no restating the point at the end.\n`,
+    `${USER_FACING_STYLE}\n`,
     `Respond with ONLY the explanation text, no preamble, no quotes, no markdown.`,
   ].join('');
 }

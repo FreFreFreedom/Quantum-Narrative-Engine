@@ -14,6 +14,7 @@
 // rules in CLAUDE.md.
 import crypto from 'node:crypto';
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface'];
 const STATUS_LEVELS = ['Concept', 'Designed', 'Prototype', 'Working', 'Validated', 'Advanced'];
@@ -149,6 +150,8 @@ Already built elsewhere in the system:
 ${built}
 
 Propose 3 distinct capabilities that could be built ON TOP of this node — things that only become possible once it works. Each must be specific to FMCNS's actual subject matter (ontology of characters, fractal navigation, cross-corpus pattern inference, the graph itself), not generic software features like "add caching" or "improve testing". Prefer proposals that open a new kind of thinking for the user, not incremental polish.
+
+${USER_FACING_STYLE}
 
 Respond with ONLY a JSON array, no prose, no markdown fence:
 [{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence on what it is","why":"one sentence on why it matters","next":"the concrete first step to build it"}]`;

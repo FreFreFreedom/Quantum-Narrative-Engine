@@ -11,6 +11,7 @@
 // tax info only the user could provide).
 
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 const GOOGLE_BOOKS_URL = 'https://www.googleapis.com/books/v1/volumes';
 
@@ -25,6 +26,7 @@ function buildPrompt(entity) {
     tags ? `Tags: ${tags}\n` : '',
     continuumLines ? `Continuum position: ${continuumLines}\n` : '',
     `\nRecommend 10-12 books — a mix of fiction and nonfiction — that exhibit or illuminate the SAME archetypal pattern as this entity, not books merely "similar" in genre or subject. Favor real, findable, in-print or well-documented books (this list gets cross-checked against a real book database, so avoid inventing titles). For each: title, author, whether fiction or nonfiction, and one sentence on specifically how it reflects this same pattern.\n`,
+    `${USER_FACING_STYLE}\n`,
     `Respond ONLY with a JSON array, no prose before or after, in this exact shape:\n`,
     `[{"title":"...","author":"...","kind":"fiction|nonfiction","why":"..."}]`,
   ].join('');

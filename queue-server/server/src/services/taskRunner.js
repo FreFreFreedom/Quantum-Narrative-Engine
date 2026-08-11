@@ -36,6 +36,7 @@ import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { roleBriefFor } from './briefing.js';
 import { generateText as generateAiText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
 // This directory was never guaranteed to exist (no bootstrap step created it), so every
@@ -403,9 +404,10 @@ async function runUserSummary(taskId) {
     if (!report || report === '(finished without a report)') return false;
     const prompt = [
       'An autonomous agent just worked on a task in a personal project. ',
-      'Write a plain-language summary for the user, no jargon, no file names. ',
+      'Write a summary for the user. ',
       task.status === 'blocked' ? 'The task was BLOCKED: explain briefly why. ' : '',
       'Do NOT invent or assume: only state what the report actually shows. ',
+      `${USER_FACING_STYLE} `,
       'Produce ONLY the summary, no preamble.\n\n',
       `Original request:\n${task.description || task.title || '(unknown)'}\n\n`,
       `Technical report:\n${report.slice(-12000)}`,

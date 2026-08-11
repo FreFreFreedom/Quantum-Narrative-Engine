@@ -4,6 +4,7 @@ import * as queue from '../services/promptQueue.js';
 import { listOpenCodeModels } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
 import { findAgentTask } from '../services/taskRunner.js';
+import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 
 export function queueRoutes() {
   const router = Router();
@@ -24,6 +25,18 @@ export function queueRoutes() {
         error: discovery.error || null,
       },
     });
+  });
+
+  // AI Settings panel (plan Part 7R step 8): per-feature model defaults, quota
+  // policy, and live cooldown state. Backed by the same ai_settings row the
+  // ai/text.js seam reads on every generation call.
+  router.get('/ai-settings', (req, res) => {
+    res.json(getAiSettings());
+  });
+
+  router.put('/ai-settings', (req, res) => {
+    const { defaults, policy } = req.body || {};
+    res.json(updateAiSettings({ defaults, policy }));
   });
 
   router.get('/prompts', (req, res) => {

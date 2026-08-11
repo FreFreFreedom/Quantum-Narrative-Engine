@@ -36,6 +36,43 @@ function loadAiSettings() {
 
 export function refreshAiSettings() { settingsCache.at = 0; return loadAiSettings(); }
 
+const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup'];
+
+// Read-only snapshot for the AI Settings panel: per-feature defaults, the global
+// quota policy, and live cooldown state (with seconds-remaining, since the panel
+// shouldn't have to re-derive that from a raw ISO timestamp).
+export function getAiSettings() {
+  const { defaults, policy, cooldown } = refreshAiSettings();
+  const now = Date.now();
+  const cooldownOut = {};
+  for (const [providerId, until] of Object.entries(cooldown || {})) {
+    const untilMs = new Date(until).getTime();
+    cooldownOut[providerId] = { until, active: now < untilMs, seconds_remaining: Math.max(0, Math.round((untilMs - now) / 1000)) };
+  }
+  const defaultsOut = {};
+  for (const f of FEATURES) defaultsOut[f] = defaults[f] || {};
+  return { defaults: defaultsOut, policy, cooldown: cooldownOut, features: FEATURES };
+}
+
+// Update per-feature defaults and/or the quota policy. Partial: only the keys
+// present in `patch.defaults` are merged in, so the panel can save one feature's
+// row without clobbering the others.
+export function updateAiSettings({ defaults: defaultsPatch, policy } = {}) {
+  if (!db) return { error: 'no_db' };
+  const current = loadAiSettings();
+  const nextDefaults = { ...current.defaults };
+  if (defaultsPatch) {
+    for (const [feature, val] of Object.entries(defaultsPatch)) {
+      if (!FEATURES.includes(feature)) continue;
+      nextDefaults[feature] = { provider: val?.provider || 'claude-code', model: val?.model || null };
+    }
+  }
+  const nextPolicy = policy === 'manual_only' ? 'manual_only' : (policy === 'auto_free' ? 'auto_free' : current.policy);
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy);
+  return getAiSettings();
+}
+
 function isInCooldown(providerId, cooldown) {
   const until = cooldown[providerId];
   if (!until) return false;

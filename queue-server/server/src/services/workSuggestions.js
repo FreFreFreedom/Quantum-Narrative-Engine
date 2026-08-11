@@ -13,6 +13,7 @@
 //     that decision for every other short-text feature.
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE_FR } from './ai/style.js';
 import * as queue from './promptQueue.js';
 
 let db = null;
@@ -152,6 +153,8 @@ ${digest}
 
 Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers ») qui feraient avancer l'app — features, corrections, nettoyage de données, etc. Chaque piste doit être un vrai prompt actionnable, pas juste une idée vague.
 
+${USER_FACING_STYLE_FR}
+
 Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
 [{"title": "titre court (< 80 caractères)", "rationale": "1 phrase : pourquoi c'est utile maintenant", "prompt": "le prompt complet à donner à l'agent pour l'implémenter", "area": "zone concernée (ex: exploration, graph, queue, data)"}]`;
 
@@ -197,6 +200,8 @@ const INTEGRATION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS, un
 ${digest}
 
 Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrètes qui enrichiraient la recherche (nouvelles sources de données, APIs, outils) — pas des tâches internes.
+
+${USER_FACING_STYLE_FR}
 
 Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
 [{"title": "titre court", "rationale": "1 phrase : pourquoi", "prompt": "prompt complet pour l'implémenter", "area": "integration"}]`;
