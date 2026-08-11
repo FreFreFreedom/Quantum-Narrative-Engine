@@ -213,6 +213,26 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .q-replybox button { padding:0 14px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:11.5px; cursor:pointer; }
 .q-detail-row { display:flex; gap:14px; font-size:10.5px; color:#6b645b; margin-bottom:12px; flex-wrap:wrap; }
 
+/* ---------- AI Settings sub-tab ---------- */
+.ai-body { flex:1; overflow-y:auto; padding:16px; max-width:720px; }
+.ai-policy-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.ai-policy-row select { font-size:11.5px; padding:5px 8px; border:1px solid #d9d3c9; border-radius:6px; }
+.ai-health { display:flex; gap:18px; margin-bottom:18px; font-size:11px; color:#3a352e; }
+.ai-health-item { display:flex; align-items:center; gap:6px; }
+.ai-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:#b23a2f; }
+.ai-dot.up { background:#2f7d63; }
+.ai-cooldown { font-size:10px; color:#b3541e; margin-left:2px; }
+.ai-feature-table { width:100%; border-collapse:collapse; }
+.ai-feature-table th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:#8a8378; padding:4px 8px 6px; border-bottom:1px solid #e4dfd8; }
+.ai-feature-table td { padding:6px 8px; border-bottom:1px solid #f0ede7; font-size:11.5px; vertical-align:middle; }
+.ai-feature-table select { font-size:11px; padding:4px 6px; border:1px solid #d9d3c9; border-radius:5px; }
+.ai-feature-name { font-weight:600; }
+.ai-feature-note { font-size:10px; color:#8a8378; }
+.ai-savebtn { margin-top:16px; padding:8px 16px; border-radius:6px; border:none; background:#2a2621; color:#fbfaf8; font-size:12px; font-weight:600; cursor:pointer; }
+.ai-savebtn:hover { background:#3a352e; }
+.ai-savebtn:disabled { background:#c9c1b3; cursor:default; }
+.ai-savemsg { font-size:11px; color:#2f7d63; margin-left:10px; }
+
 /* ---------- Seeds + Suggestion Engine + Quotas strip ---------- */
 .tv-toolbar { padding:10px 16px 0; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
 .tv-toolbar-top { display:flex; align-items:center; gap:14px; margin-bottom:9px; }
@@ -492,6 +512,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <button id="coreTabSeeds" data-core-tab="seeds">Seeds <span class="core-tab-count" id="coreCountSeeds"></span></button>
       <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
       <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
+      <button id="coreTabAi" data-core-tab="ai">AI Settings</button>
     </div>
   </div>
   <div class="core-panes">
@@ -597,6 +618,15 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
           <div class="empty">Select a queued item to see its thread.</div>
         </div>
       </div>
+    </div>
+    <div id="corePaneAi" class="core-pane" data-src="CORE ARCHITECTURE → AI Settings sub-tab | fmcns_navigator.html: renders into #aiBody, loadAiSettings()/renderAiSettings() | backend: GET/PUT /api/travaux/ai-settings, GET /api/travaux/providers, services/ai/text.js">
+      <div class="tv-toolbar">
+        <div class="tv-toolbar-top">
+          <span class="arch-title">AI Settings</span>
+          <span class="arch-sub">Which model handles what, and what happens when the paid one runs out.</span>
+        </div>
+      </div>
+      <div class="ai-body" id="aiBody">Loading…</div>
     </div>
   </div>
 </div>
@@ -1913,7 +1943,7 @@ document.addEventListener('click', (e) => {
 // queue-state line) is shared across all four sub-tabs since it governs all of them.
 let coreTab = 'arch';
 let coreInited = false;
-const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', signals:'coreTabSignals', queue:'coreTabQueue' };
+const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', signals:'coreTabSignals', queue:'coreTabQueue', ai:'coreTabAi' };
 
 function initCore() {
   if (!coreInited) {
@@ -1960,10 +1990,12 @@ function setCoreTab(t) {
   document.getElementById('corePaneSeeds').classList.toggle('open', t === 'seeds');
   document.getElementById('corePaneSignals').classList.toggle('open', t === 'signals');
   document.getElementById('corePaneQueue').classList.toggle('open', t === 'queue');
+  document.getElementById('corePaneAi').classList.toggle('open', t === 'ai');
   if (t === 'arch') initArchNav();
   if (t === 'seeds') loadIdeas();
   if (t === 'signals') loadSuggestions();
   if (t === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
+  if (t === 'ai') loadAiSettings();
   if (coreInited) startQueuePolling(); // rate depends on which sub-tab is now active
 }
 
@@ -2087,6 +2119,124 @@ function qProviderUi() {
     const free = (qProviders.opencode?.models || []).find(m => m.free);
     if (free) modelSel.value = free.id;
   }
+}
+
+// ---------- AI Settings sub-tab ----------
+// Per-work-type default model + the quota policy that decides what happens when
+// the paid Claude subscription runs out — backed by services/ai/text.js's
+// ai_settings row (GET/PUT /api/travaux/ai-settings). Health dots and the
+// OpenCode model list are the same /api/travaux/providers data the Dispatch
+// Queue's New-prompt form already uses (qProviders), so this reuses loadProviders()
+// rather than fetching it twice.
+const AI_FEATURES = [
+  { key: 'quick', label: 'Quick reads', note: 'Book picks, tag lenses, pattern explanations' },
+  { key: 'build', label: 'Suggestions', note: 'Work-suggestion and architecture-node engines' },
+  { key: 'judge', label: 'Model judge', note: 'Picks how much depth an auto-speed task needs' },
+  { key: 'summary', label: 'Task summaries', note: 'Plain-language recap once a queued task finishes' },
+  { key: 'warmup', label: 'Cache warm-up', note: 'Pre-generates book picks/lenses right after boot' },
+];
+const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
+let aiSettings = null;
+
+async function loadAiSettings() {
+  const host = document.getElementById('aiBody');
+  try {
+    const [settings] = await Promise.all([
+      api('/api/travaux/ai-settings'),
+      qProviders.opencode ? Promise.resolve() : loadProviders(),
+    ]);
+    aiSettings = settings;
+    renderAiSettings();
+  } catch (e) {
+    host.innerHTML = `<div class="q-err">Could not load AI settings: ${e.message}</div>`;
+  }
+}
+
+function aiModelOptions(provider, selected) {
+  if (provider === 'opencode') {
+    const models = qProviders.opencode?.models || [];
+    if (!models.length) return `<option value="">(no OpenCode models found)</option>`;
+    return models.map(m => `<option value="${m.id}"${m.id === selected ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.id}</option>`).join('');
+  }
+  return AI_CLAUDE_MODELS.map(m => `<option value="${m}"${m === selected ? ' selected' : ''}>${m}</option>`).join('');
+}
+
+function renderAiSettings() {
+  const host = document.getElementById('aiBody');
+  if (!aiSettings) { host.innerHTML = 'Loading…'; return; }
+  const claudeUp = !!qProviders.claude?.available;
+  const opencodeUp = (qProviders.opencode?.models || []).length > 0;
+  const cd = aiSettings.cooldown || {};
+  const cooldownNote = (id) => cd[id]?.active
+    ? `<span class="ai-cooldown">cooling down ${Math.ceil(cd[id].seconds_remaining / 60)} min</span>` : '';
+
+  const rows = AI_FEATURES.map(f => {
+    const cur = (aiSettings.defaults && aiSettings.defaults[f.key]) || {};
+    const provider = cur.provider || 'claude-code';
+    return `
+      <tr data-feature="${f.key}">
+        <td><div class="ai-feature-name">${f.label}</div><div class="ai-feature-note">${f.note}</div></td>
+        <td>
+          <select class="ai-provider-sel">
+            <option value="claude-code"${provider === 'claude-code' ? ' selected' : ''}>Claude Code</option>
+            <option value="opencode"${provider === 'opencode' ? ' selected' : ''}>OpenCode (free)</option>
+          </select>
+        </td>
+        <td><select class="ai-model-sel">${aiModelOptions(provider, cur.model)}</select></td>
+      </tr>`;
+  }).join('');
+
+  host.innerHTML = `
+    <div class="ai-health">
+      <span class="ai-health-item"><span class="ai-dot${claudeUp ? ' up' : ''}"></span>Claude Code ${claudeUp ? 'reachable' : 'unreachable'} ${cooldownNote('claude-code')}</span>
+      <span class="ai-health-item"><span class="ai-dot${opencodeUp ? ' up' : ''}"></span>OpenCode ${opencodeUp ? 'reachable' : 'unreachable'} ${cooldownNote('opencode')}</span>
+    </div>
+    <div class="ai-policy-row">
+      <label style="font-size:11px;color:#6b645b;">When Claude Code runs out of quota:</label>
+      <select id="aiPolicySel">
+        <option value="auto_free"${aiSettings.policy === 'auto_free' ? ' selected' : ''}>Switch to the free OpenCode model automatically (recommended)</option>
+        <option value="manual_only"${aiSettings.policy === 'manual_only' ? ' selected' : ''}>Never switch — wait for quota to reset</option>
+      </select>
+    </div>
+    <table class="ai-feature-table">
+      <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <button class="ai-savebtn" id="aiSaveBtn">Save</button>
+    <span class="ai-savemsg" id="aiSaveMsg"></span>
+  `;
+
+  host.querySelectorAll('.ai-provider-sel').forEach(sel => {
+    sel.onchange = () => {
+      const tr = sel.closest('tr');
+      const modelSel = tr.querySelector('.ai-model-sel');
+      modelSel.innerHTML = aiModelOptions(sel.value, null);
+    };
+  });
+
+  document.getElementById('aiSaveBtn').onclick = async () => {
+    const btn = document.getElementById('aiSaveBtn');
+    const msg = document.getElementById('aiSaveMsg');
+    const defaults = {};
+    host.querySelectorAll('tr[data-feature]').forEach(tr => {
+      defaults[tr.dataset.feature] = {
+        provider: tr.querySelector('.ai-provider-sel').value,
+        model: tr.querySelector('.ai-model-sel').value || null,
+      };
+    });
+    const policy = document.getElementById('aiPolicySel').value;
+    btn.disabled = true; msg.textContent = '';
+    try {
+      aiSettings = await apiWrite('/api/travaux/ai-settings', 'PUT', { defaults, policy });
+      msg.textContent = 'Saved.';
+      setTimeout(() => { if (msg.textContent === 'Saved.') msg.textContent = ''; }, 3000);
+    } catch (e) {
+      msg.textContent = 'Could not save: ' + e.message;
+      msg.style.color = '#b23a2f';
+    } finally {
+      btn.disabled = false;
+    }
+  };
 }
 
 function startQueuePolling() {
