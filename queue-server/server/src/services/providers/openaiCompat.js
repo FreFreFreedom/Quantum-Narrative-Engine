@@ -186,12 +186,14 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
         messages,
         max_tokens: maxTokens,
         stream: true,
-        // Gemini 3.x "thinking" models spend the token budget on an internal
-        // reasoning trace (surfaced as extra_content.google.thought_signature)
-        // and can hit the end of the stream with zero actual answer tokens left.
-        // reasoning_effort is the widely-adopted OpenAI-compatible knob for this;
-        // harmless to send to providers that ignore unknown fields.
-        ...(providerId === 'google-ai-studio' ? { reasoning_effort: 'none' } : {}),
+        // KNOWN LIMITATION: Gemini 3.x "thinking" models can spend the whole
+        // reply on an internal reasoning trace (extra_content.google.thought_
+        // signature) and hit [DONE] with zero actual answer text — confirmed via
+        // raw SSE capture. Tried reasoning_effort:'none' to disable it; Google's
+        // endpoint rejected it outright ("invalid argument"), so it's reverted
+        // rather than left in place erroring on every call. Whatever the correct
+        // knob is (thinking_config? a different param name?) needs a check
+        // against Google's actual OpenAI-compat docs before trying again.
         ...(tools ? { tools } : {}),
       }),
       signal: controller.signal,
@@ -225,7 +227,6 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
             buffer = lines.pop() || '';
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed) console.log('[ai-router debug] raw line', trimmed.slice(0, 400));
               if (!trimmed || trimmed === 'data: [DONE]') continue;
               if (trimmed.startsWith('data: ')) {
                 const data = trimmed.slice(6);
