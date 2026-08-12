@@ -163,3 +163,114 @@ export function listModels(providerId) {
   if (!cat) return { models: [], error: 'unknown_provider' };
   return { models: cat.models.map((m) => ({ id: m.id, free: true, codingRank: m.codingRank })), error: null };
 }
+
+// ─── Streaming chat completions (for queue execution) ─────────────────────────
+// Returns an async iterator yielding parsed SSE events:
+// { type: 'content', text }, { type: 'tool_use', tool: { name, input } },
+// { type: 'usage', usage: { prompt_tokens, completion_tokens, cost } },
+// { type: 'session', sessionId }, { type: 'error', error: { message } }
+export async function postChatCompletionsStream({ providerId, model, messages, maxTokens, tools, timeoutMs = 60_000 }) {
+  const apiKey = apiKeyFor(providerId);
+  const endpoint = endpointFor(providerId);
+  if (!apiKey || !endpoint) return { error: 'no_api_key', message: `${providerId}: API key not configured` };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let resp;
+  try {
+    resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: maxTokens,
+        stream: true,
+        ...(tools ? { tools } : {}),
+      }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    return { error: 'network_error', message: e.message };
+  }
+  clearTimeout(timer);
+
+  if (!resp.ok) {
+    let detail = '';
+    try { detail = (await resp.text()).slice(0, 500); } catch {}
+    const limit = detectLimit(detail, resp.headers);
+    return { error: limit ? 'quota_error' : 'api_error', message: detail || `HTTP ${resp.status}`, status: resp.status, headers: resp.headers, limit };
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  return {
+    [Symbol.asyncIterator]() {
+      return {
+        async next() {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) return { done: true, value: undefined };
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed === 'data: [DONE]') continue;
+              if (trimmed.startsWith('data: ')) {
+                const data = trimmed.slice(6);
+                try {
+                  const parsed = JSON.parse(data);
+                  const choice = parsed.choices?.[0];
+                  if (!choice) continue;
+                  const delta = choice.delta || {};
+                  if (delta.content) {
+                    return { done: false, value: { type: 'content', text: delta.content, sessionId: parsed.id } };
+                  }
+                  if (delta.tool_calls) {
+                    for (const tc of delta.tool_calls) {
+                      if (tc.function?.name) {
+                        return {
+                          done: false,
+                          value: {
+                            type: 'tool_use',
+                            tool: { name: tc.function.name, input: JSON.parse(tc.function.arguments || '{}') },
+                            sessionId: parsed.id,
+                          },
+                        };
+                      }
+                    }
+                  }
+                  if (choice.finish_reason && parsed.usage) {
+                    return {
+                      done: false,
+                      value: {
+                        type: 'usage',
+                        usage: {
+                          prompt_tokens: parsed.usage.prompt_tokens,
+                          completion_tokens: parsed.usage.completion_tokens,
+                          cost: null,
+                        },
+                        sessionId: parsed.id,
+                      },
+                    };
+                  }
+                  if (parsed.id && !choice.delta?.content) {
+                    return { done: false, value: { type: 'session', sessionId: parsed.id } };
+                  }
+                } catch {}
+              }
+            }
+          }
+        },
+        async return() {
+          reader.cancel();
+          return { done: true, value: undefined };
+        },
+      };
+    },
+  };
+}

@@ -30,7 +30,7 @@ import {
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
-import { defaultOpenCodeModel } from './providers/index.js';
+import { defaultOpenCodeModel, getDefaultAiRouterModel } from './providers/index.js';
 import { listAgents } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
 
@@ -69,6 +69,12 @@ function frontPosition(space) {
 
 function broadcast() { broadcastAll('travaux:prompts:updated', {}); }
 
+// Providers whose task model is picked directly (provider_model), not resolved
+// from a Claude-Code preset tier — opencode and ai-router both work this way.
+function usesModelPicker(provider) {
+  return provider === 'opencode' || provider === 'ai-router';
+}
+
 function heuristicTitle(text) {
   const first = String(text || '').split('\n').map((l) => l.trim()).find(Boolean) || '';
   return first.length > 80 ? first.slice(0, 79) + '…' : first || '(untitled)';
@@ -102,7 +108,7 @@ export async function createPrompt({
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
   const useMode = mode === 'question' ? 'question' : 'implement';
-  const useProvider = provider === 'opencode' ? 'opencode' : 'claude-code';
+  const useProvider = ['opencode', 'ai-router'].includes(provider) ? provider : 'claude-code';
   const id = randomUUID();
   const given = String(title || '').trim();
   const label = given || heuristicTitle(text);
@@ -130,6 +136,8 @@ export async function createPrompt({
     // No model chosen — remember the best available default (free models first) at
     // creation time, so the sync execution path never has to discover it lazily.
     try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
+  } else if (useProvider === 'ai-router' && !useModel) {
+    try { useModel = await getDefaultAiRouterModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
   }
 
   // Plan-first queue (Part A): every implement-mode task is auto-drafted into an
@@ -253,8 +261,7 @@ function reclaimRunning(row) {
 
 function syncPendingTask(row) {
   if (!isPending(row)) return;
-  const isOpen = row.provider === 'opencode';
-  const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   updatePendingAgentTask(row.agent_task_id, { title: row.title, description: row.prompt, mode: row.mode, model, effort });
 }
 
@@ -268,7 +275,7 @@ export function updatePrompt(id, patch) {
     if (!EDITABLE.includes(k)) continue;
     if (k === 'status' && !['queued', 'paused', 'cancelled'].includes(v)) continue;
     if (k === 'status' && row.status === 'running') continue;
-    if (k === 'provider' && !['claude-code', 'opencode'].includes(v)) continue;
+    if (k === 'provider' && !['claude-code', 'opencode', 'ai-router'].includes(v)) continue;
     if (k === 'title') {
       const given = String(v ?? '').trim();
       sets.push('title=?', 'title_auto=?');
@@ -448,8 +455,7 @@ function sessionOfParent(row) {
 }
 
 function startPrompt(row, { forceFresh = false } = {}) {
-  const isOpen = row.provider === 'opencode';
-  const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   let resume = null;
   let worktreePath = null;
   let branch = null;
@@ -465,7 +471,7 @@ function startPrompt(row, { forceFresh = false } = {}) {
   const task = enqueueAgentTask({
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue', work_prompt_id: row.id, resume_session_id: resume,
-    provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
+    provider: row.provider || 'claude-code', provider_model: usesModelPicker(row.provider) ? model : null,
     agent_key: row.agent_key || 'dev1',
     worktree_path: worktreePath, branch,
   });
@@ -582,14 +588,14 @@ export function clearContext(id) {
 function relaunchWithThread(row) {
   const messages = listMessages(row.id);
   const isOpen = row.provider === 'opencode';
-  const { model, effort } = isOpen ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   const overThreshold = (row.context_turns || 0) >= contextResetThresholdFor(row);
   const activeSession = isOpen ? row.opencode_session_id : row.session_id;
   const fresh = !activeSession || overThreshold;
   const task = enqueueAgentTask({
     title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : activeSession,
-    provider: isOpen ? 'opencode' : 'claude-code', provider_model: isOpen ? model : null,
+    provider: row.provider || 'claude-code', provider_model: usesModelPicker(row.provider) ? model : null,
     agent_key: row.agent_key || 'dev1',
   });
   const nextTurns = fresh ? 0 : (row.context_turns || 0) + 1;
@@ -723,12 +729,14 @@ export function onAgentTaskDeferred(task, { label = '', resumeAfter = null } = {
     UPDATE work_prompts SET status='queued', started_at=NULL, agent_task_id=NULL, completed_at=NULL,
       resume_after=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(resumeAfter, row.id);
-  if ((task.provider || 'claude-code') === 'opencode') {
-    // OpenCode has no subscription quota to "wait out" — the fix is picking another
-    // model, so the thread note says exactly that instead of a vague usage hint.
+  if (usesModelPicker(task.provider || 'claude-code')) {
+    // OpenCode / AI Router have no subscription quota to "wait out" — the fix is
+    // picking another model, so the thread note says exactly that instead of a
+    // vague usage hint.
+    const label = task.provider === 'ai-router' ? 'AI Router model' : 'OpenCode model';
     addMessage(row.id, {
       role: 'agent',
-      text: `Hit the usage limit on ${task.run_model || task.provider_model || 'the selected OpenCode model'}. Pick another model in the task panel (free models are listed first), then resume the queue.`,
+      text: `Hit the usage limit on ${task.run_model || task.provider_model || `the selected ${label}`}. Pick another model in the task panel (free models are listed first), then resume the queue.`,
       agentTaskId: task.id,
     });
   }

@@ -1,7 +1,7 @@
 // Routes for the work queue — subset of §9's HTTP contract, backed by promptQueue.js.
 import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
-import { listOpenCodeModels } from '../services/providers/index.js';
+import { listOpenCodeModels, listAiRouterModels } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
 import { findAgentTask } from '../services/taskRunner.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
@@ -14,6 +14,9 @@ export function queueRoutes() {
     // list (free first — sorted by the discovery code) plus a cheap liveness
     // signal for each provider so the UI can show what's actually runnable.
     const discovery = await listOpenCodeModels({ force: req.query.force === '1' }).catch((e) => ({ models: [], error: e.message }));
+    let aiRouterModels = [];
+    let aiRouterError = null;
+    try { aiRouterModels = listAiRouterModels(); } catch (e) { aiRouterError = e.message; }
     res.json({
       claude: {
         available: !!(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.CLAUDE_BIN),
@@ -23,6 +26,11 @@ export function queueRoutes() {
         available: discovery.models.length > 0 || !discovery.error,
         models: discovery.models,
         error: discovery.error || null,
+      },
+      aiRouter: {
+        available: aiRouterModels.length > 0,
+        models: aiRouterModels,
+        error: aiRouterError,
       },
     });
   });
