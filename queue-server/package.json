@@ -9,11 +9,12 @@
     "dev": "node server/src/index.js"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^2.1.225",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "ws": "^8.18.0",
-    "@anthropic-ai/claude-code": "^2.1.225"
+    "opencode-ai": "^1.18.16",
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=22.5"

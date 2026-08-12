@@ -5,6 +5,7 @@
 
 import { generateText as legacyGenerateText } from '../claudeText.js';
 import { getProviderCapability, getProviderModule, getDefaultModel, isKnownProvider } from './providers.js';
+import * as router from './router.js';
 
 let db = null;
 export function bindAiTextDb(database) { db = database; }
@@ -73,20 +74,6 @@ export function updateAiSettings({ defaults: defaultsPatch, policy } = {}) {
   return getAiSettings();
 }
 
-function isInCooldown(providerId, cooldown) {
-  const until = cooldown[providerId];
-  if (!until) return false;
-  return Date.now() < new Date(until).getTime();
-}
-
-function setCooldown(providerId, untilIso) {
-  if (!db) return;
-  const { cooldown } = loadAiSettings();
-  cooldown[providerId] = untilIso;
-  db.prepare(`UPDATE ai_settings SET cooldown_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`).run(JSON.stringify(cooldown));
-  refreshAiSettings();
-}
-
 // Detect quota/limit from provider-specific error text
 function detectQuotaLimit(providerId, text) {
   const module = getProviderModule(providerId);
@@ -134,69 +121,68 @@ async function getFallbackChain(feature, providerId, model) {
  * @param {string} [opts.label] - Log label
  * @returns {Promise<{text:string,via:string}|{error:string,message:string}>}
  */
+// Run one attempt against a resolved {provider, model} pair. Shared by
+// generateText's chain loop and generateTextDirect.
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
+  if (p === 'claude-code') {
+    return legacyGenerateText({ prompt, maxTokens, label, cliModel: m });
+  }
+  if (p === 'opencode') {
+    const mod = getProviderModule('opencode');
+    const r = await mod.runToolless({ prompt, model: m, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv() });
+    if (r.code === 0 && r.text) return { text: r.text, via: 'opencode' };
+    return { error: 'opencode_failed', message: r.text || `exit ${r.code}` };
+  }
+  // Any catalogue (free OpenAI-compatible) provider
+  const mod = getProviderModule(p);
+  if (!mod) return { error: 'unknown_provider', message: p };
+  const r = await mod.runToolless({ prompt, model: m, providerId: p, maxTokens });
+  if (r.code === 0 && r.text) return { text: r.text, via: p };
+  return { error: `${p}_failed`, message: r.text || `exit ${r.code}` };
+}
+
 export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text' }) {
-  const { defaults, policy, cooldown } = loadAiSettings();
+  const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   const providerId = featureDefaults.provider || 'claude-code';
   const model = featureDefaults.model || null;
 
-  // Skip providers in cooldown
-  const availableProviders = [providerId].filter(p => !isInCooldown(p, cooldown));
-  if (policy === 'auto_free' && !availableProviders.includes('opencode') && !isInCooldown('opencode', cooldown)) {
-    availableProviders.push('opencode');
-  }
+  // Primary: the configured provider + its own tier chain (e.g. claude-code's
+  // sonnet -> opus -> haiku, or opencode's default free model as an add-on).
+  const primaryChain = isKnownProvider(providerId) && !router.isExhausted(providerId, model || '')
+    ? await getFallbackChain(feature, providerId, model)
+    : [];
 
+  // Catalogue tail: every free model with a key present, sorted by codingRank
+  // descending, skipping anything the ledger currently marks exhausted. This is
+  // the "always be able to run a model" guarantee — router.js is the single
+  // source of truth for what's live, shared by the queue and chat too.
+  const { chain: catalogueChain } = policy === 'auto_free'
+    ? router.pickChain({ exclude: primaryChain.map((a) => ({ provider: a.provider, model: a.model })) })
+    : { chain: [] };
+
+  const fullChain = [...primaryChain, ...catalogueChain];
   const failures = [];
 
-  for (const prov of availableProviders) {
-    if (!isKnownProvider(prov)) continue;
+  for (const attempt of fullChain) {
+    const { provider: p, model: m } = attempt;
+    if (router.isExhausted(p, m) || router.isExhausted(p, '')) {
+      failures.push(`${p}:${m}:cooldown`);
+      continue;
+    }
 
-    const cap = getProviderCapability(prov);
-    if (!cap) continue;
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label });
 
-    // Build fallback chain for this provider
-    const chain = await getFallbackChain(feature, prov, model);
+    if (result?.text) {
+      if (failures.length) console.warn(`[${label}] recovered via ${result.via} after ${failures.join(' | ')}`);
+      return result;
+    }
 
-    for (const attempt of chain) {
-      const { provider: p, model: m } = attempt;
+    const errMsg = result?.message || result?.error || 'unknown';
+    failures.push(`${p}:${m}:${errMsg}`);
 
-      // Skip if in cooldown
-      if (isInCooldown(p, cooldown)) {
-        failures.push(`${p}:${m}:cooldown`);
-        continue;
-      }
-
-      let result;
-      if (p === 'claude-code') {
-        // Use existing claudeText.js logic (CLI first, then API)
-        result = await legacyGenerateText({ prompt, maxTokens, label, cliModel: m });
-      } else if (p === 'opencode') {
-        // Use opencode CLI (toolless, read-only)
-        const mod = getProviderModule('opencode');
-        result = await mod.runToolless({ prompt, model: m, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv() });
-        if (result.code === 0 && result.text) {
-          result = { text: result.text, via: 'opencode' };
-        } else {
-          result = { error: 'opencode_failed', message: result.text || `exit ${result.code}` };
-        }
-      }
-
-      if (result?.text) {
-        if (failures.length) console.warn(`[${label}] recovered via ${result.via} after ${failures.join(' | ')}`);
-        return result;
-      }
-
-      const errMsg = result?.message || result?.error || 'unknown';
-      failures.push(`${p}:${m}:${errMsg}`);
-
-      // If quota/limit detected, set cooldown for this provider
-      if (detectQuotaLimit(p, errMsg)) {
-        const until = new Date(Date.now() + 30 * 60_000).toISOString(); // 30 min default
-        console.warn(`[${label}] ${p} quota limit detected — cooldown until ${until}`);
-        setCooldown(p, until);
-        // Break to next provider in availableProviders
-        break;
-      }
+    if (detectQuotaLimit(p, errMsg)) {
+      router.recordExhaustion({ providerId: p, model: m, detectedBy: 'text', errText: errMsg });
     }
   }
 
@@ -208,14 +194,11 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
 // want a specific model regardless of feature defaults)
 export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct' }) {
   if (!isKnownProvider(provider)) return { error: 'unknown_provider', message: provider };
-  if (provider === 'claude-code') {
-    return legacyGenerateText({ prompt, maxTokens, label, cliModel: model });
+  const result = await runAttempt({ provider, model, prompt, maxTokens, label });
+  if (result?.text) return result;
+  const errMsg = result?.message || result?.error || 'unknown';
+  if (detectQuotaLimit(provider, errMsg)) {
+    router.recordExhaustion({ providerId: provider, model, detectedBy: 'text', errText: errMsg });
   }
-  if (provider === 'opencode') {
-    const mod = getProviderModule('opencode');
-    const result = await mod.runToolless({ prompt, model, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv() });
-    if (result.code === 0 && result.text) return { text: result.text, via: 'opencode' };
-    return { error: 'opencode_failed', message: result.text || `exit ${result.code}` };
-  }
-  return { error: 'no_backend' };
+  return result;
 }

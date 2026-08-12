@@ -292,6 +292,12 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN strategy TEXT DEFAULT 'single'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN strategy_state TEXT DEFAULT 'idle'`); } catch {}
 
+  // Deferral with a known reset time (plan "Always-On Models"): when every model in
+  // the fallback chain is exhausted, a prompt is parked here instead of just being
+  // requeued and immediately retried — quotaScheduler.js clears it once resume_after
+  // passes.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN resume_after TEXT`); } catch {}
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS task_stages (
       id TEXT PRIMARY KEY,
@@ -333,6 +339,42 @@ function initSchema(db) {
   `);
   // Backfill: ensure the single row exists (idempotent, harmless on existing DBs).
   try { db.prepare(`INSERT OR IGNORE INTO ai_settings (id, defaults_json, health_json, quota_policy, cooldown_json) VALUES ('global', '{}', '{}', 'auto_free', '{}')`).run(); } catch {}
+
+  // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
+  // provider_quota_ledger: append-only history of every exhaustion event, so the
+  // router can defer work with a KNOWN reset time instead of discovering
+  // exhaustion mid-task. provider_quota_state: denormalised one-row-per
+  // provider+model fast lookup, read on every routing decision.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS provider_quota_ledger (
+      id TEXT PRIMARY KEY,
+      provider_id TEXT NOT NULL,
+      model TEXT,
+      scope TEXT NOT NULL DEFAULT 'provider',   -- 'provider'|'model'|'key'
+      exhausted_at TEXT NOT NULL,
+      resets_at TEXT,
+      resets_known INTEGER NOT NULL DEFAULT 0,
+      reason TEXT,
+      detected_by TEXT,                         -- 'text'|'queue'|'chat'
+      evidence TEXT,
+      cleared_at TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_quota_ledger_provider_resets ON provider_quota_ledger(provider_id, resets_at)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS provider_quota_state (
+      provider_id TEXT NOT NULL,
+      model TEXT NOT NULL DEFAULT '',
+      exhausted INTEGER NOT NULL DEFAULT 0,
+      resets_at TEXT,
+      resets_known INTEGER NOT NULL DEFAULT 0,
+      last_event_id TEXT,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      PRIMARY KEY (provider_id, model)
+    )
+  `);
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

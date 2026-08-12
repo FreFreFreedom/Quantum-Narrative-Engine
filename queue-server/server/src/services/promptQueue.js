@@ -84,7 +84,7 @@ export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
-  parent_prompt_id = null,
+  parent_prompt_id = null, strategy = 'single',
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -109,15 +109,16 @@ export async function createPrompt({
     try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
   }
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent);
+    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running');
+
   broadcast();
   return getPrompt(id);
 }
 
-const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id'];
+const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
@@ -284,7 +285,7 @@ export function advanceQueue() {
 
   const slots = getMaxParallelQuestions() - runningQuestions;
   if (slots > 0) {
-    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 ORDER BY position, created_at LIMIT ?`).all(slots);
+    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
     for (const q of questions) started.push(startPrompt(q));
   }
 
@@ -300,7 +301,7 @@ export function advanceQueue() {
     const k = r.agent_key || 'dev1';
     runningByAgent.set(k, (runningByAgent.get(k) || 0) + 1);
   }
-  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) ORDER BY position, created_at`).all();
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
     const agentKey = next.agent_key || 'dev1';
@@ -617,14 +618,14 @@ export async function onAgentTaskFinalized(task) {
   advanceQueue();
 }
 
-export function onAgentTaskDeferred(task, { label = '' } = {}) {
+export function onAgentTaskDeferred(task, { label = '', resumeAfter = null } = {}) {
   if (!task || task.kind !== 'queue' || !task.work_prompt_id) return;
   const row = getPrompt(task.work_prompt_id);
   if (!row) return;
   db.prepare(`
     UPDATE work_prompts SET status='queued', started_at=NULL, agent_task_id=NULL, completed_at=NULL,
-      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(row.id);
+      resume_after=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(resumeAfter, row.id);
   if ((task.provider || 'claude-code') === 'opencode') {
     // OpenCode has no subscription quota to "wait out" — the fix is picking another
     // model, so the thread note says exactly that instead of a vague usage hint.

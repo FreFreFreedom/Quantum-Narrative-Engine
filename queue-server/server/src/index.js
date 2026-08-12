@@ -20,14 +20,15 @@ import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
 import { reviewsRoutes } from './routes/reviews.js';
-import { strategiesRoutes } from './routes/strategies.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { bindAiTextDb } from './services/ai/text.js';
-import { bindOrchestratorDb } from './services/orchestrator.js';
+import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
+import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
+import { providersRoutes } from './routes/providers.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -51,7 +52,8 @@ bindWorkIdeasDb(db);
 bindReviewsDb(db);
 bindBriefingDb(db);
 bindAiTextDb(db);
-bindOrchestratorDb(db);
+bindRouterDb(db);
+bindQuotaSchedulerDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -97,16 +99,16 @@ app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
 app.use('/api/travaux', requireAuth, reviewsRoutes());
-app.use('/api/travaux', requireAuth, strategiesRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {
     const usage = await getClaudeUsage();
-    res.json({ ...usage, schedulerLimitResetAt: null });
+    res.json({ ...usage, schedulerLimitResetAt: earliestResetAt() });
   } catch (err) {
     res.status(500).json({ error: 'usage_failed', message: err.message });
   }
 });
+app.use('/api/travaux', requireAuth, providersRoutes());
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
@@ -127,6 +129,7 @@ attachRealtime(server);
 // mock script is configured).
 initTaskRunner();
 initPromptQueue();
+startQuotaScheduler();
 
 // One-off, env-gated: queues a single trivial real task on boot to verify the real
 // Claude Code execution path end to end. Only fires when RUN_QUEUE_SELFTEST=1 is set;

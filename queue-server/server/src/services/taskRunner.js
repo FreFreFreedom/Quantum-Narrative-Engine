@@ -9,15 +9,17 @@
 // plain work queue. Kept: kick(), releaseSlot(), getSettings() shape, task format — the
 // original spec warns these four are shared plumbing even if you strip the rest.
 //
-// §11 safety rail — model fallback chain (Claude provider only): on a detected
-// quota/usage-limit hit, the SAME task is retried in place on the next untried model in
-// the chain, preserving its resume_session_id and prompt so context isn't lost. Only
-// once every model in the chain has been tried does it defer back to the queue
-// (promptQueue.onAgentTaskDeferred) — and the whole queue is explicitly paused at that
-// point rather than left to silently sit there. The OpenCode provider deliberately has
-// NO automatic model fallback: a limit hit defers + pauses immediately with the model
-// named, and a different model runs only once the user picks one in the UI (explicit
-// requirement — see providers/opencode.js).
+// §11 safety rail — model fallback chain: on a detected quota/usage-limit hit, the SAME
+// task is retried in place on the next untried model, preserving its prompt so context
+// isn't lost. First it walks the Claude tiers (haiku → sonnet → opus), reusing
+// resume_session_id since Claude can resume its own prior session. Once every Claude
+// tier is exhausted, it keeps going onto OpenCode's free models (however many free
+// providers the user's OpenCode setup exposes), starting a fresh OpenCode session each
+// time since neither Claude nor a different OpenCode model can resume another model's
+// transcript. This is fully automatic — no pause-and-ask at any step. Only once every
+// Claude tier AND every free OpenCode model has been tried does it defer back to the
+// queue (promptQueue.onAgentTaskDeferred), pausing the whole queue only when no reset
+// time could be resolved for any of them.
 //
 // Seam vs. the original (§10.1): every hard-coded path (CLAUDE_BIN, CWD, DATA_DIR) is
 // env-configurable. Execution providers live in providers/ (claudeCode.js, opencode.js)
@@ -31,12 +33,14 @@ import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { getProvider } from './providers/index.js';
 import * as claudeCode from './providers/claudeCode.js';
-import { defaultOpenCodeModel } from './providers/index.js';
+import { defaultOpenCodeModel, listOpenCodeModels } from './providers/index.js';
 import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { roleBriefFor } from './briefing.js';
 import { generateText as generateAiText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { recordExhaustion, isExhausted } from './ai/router.js';
+import { getClaudeUsage } from './claudeUsage.js';
 
 // Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
 // before process.cwd(), so agent-tasks.json etc. land on durable storage even if DATA_DIR
@@ -280,6 +284,9 @@ export function setSettings(patch) {
   return next;
 }
 export function isQueuePaused() { return !!getSettings().queuePaused; }
+// Exposed for quotaScheduler.js: a resumed prompt (resume_after passed) needs a
+// kick even when the queue was never globally paused.
+export function kickQueue() { setImmediate(kick); }
 export function setQueuePaused(paused, { reason = null } = {}) {
   const next = setSettings({
     queuePaused: !!paused,
@@ -593,55 +600,95 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       const t = readTasks().find((x) => x.id === taskId);
       if (!t) { cleanup(); return; }
 
-      if (provider.id === 'opencode') {
-        // No automatic model switching, ever — explicit user requirement. Defer back
-        // to the queue and pause so nothing else runs on the same exhausted model;
-        // the UI shows a model picker (free first) + "Use this model & resume".
-        appendStreamChunk(taskId, { kind: 'system', text: `Usage limit reached on ${t.run_model || t.provider_model || 'the selected model'} — queue paused. Pick another model in the task panel, then resume.` });
-        setImmediate(() => {
-          import('./promptQueue.js')
-            .then((m) => m.onAgentTaskDeferred(t, { label: limit.label }))
-            .catch((e) => console.error('queue: deferral failed —', e.message));
-        });
-        setQueuePaused(true, {
-          reason: `OpenCode model ${t.run_model || t.provider_model || '(selected)'} hit its usage limit — switch models in the task panel (free models are listed first), then resume the queue.`,
-        });
-        cleanup();
-        return;
+      const currentProviderId = provider.id;
+      const currentModel = currentProviderId === 'opencode' ? (t.run_model || t.provider_model || t.model || '') : t.model;
+      const currentEntry = currentProviderId === 'opencode' ? `opencode:${currentModel}` : currentModel;
+      const triedList = Array.from(new Set([...(t.tried_models || [t.model]), currentEntry]));
+
+      // Fast path: same-provider Claude tier retry stays fully synchronous — no
+      // provider switch, so no need to wait on OpenCode discovery.
+      if (currentProviderId === 'claude-code') {
+        const fallback = claudeCode.nextFallbackModel(t);
+        if (fallback) {
+          // Same task, same prompt, same session — just a different model. Retry in
+          // place, do NOT release the slot or touch the queue: still "one task running".
+          const retried = updateTask(taskId, {
+            model: fallback, tried_models: triedList, run_model: fallback,
+            status: 'in_progress', started_at: new Date().toISOString(),
+          });
+          if (retried) broadcastTask(retried);
+          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${t.model} — retrying on ${fallback}.` });
+          let prevPrompt = '';
+          try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
+          runDetachedExecution(taskId, prevPrompt, {
+            model: fallback, effort: t.effort, tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
+            resumeSessionId: t.resume_session_id || sessionId || null, lane, provider: 'claude-code',
+          });
+          return;
+        }
       }
 
-      const fallback = claudeCode.nextFallbackModel(t);
-      if (fallback) {
-        // Same task, same prompt, same session — just a different model. Retry in place,
-        // do NOT release the slot or touch the queue: this is still "one task running".
-        const triedList = Array.from(new Set([...(t.tried_models || [t.model]), fallback]));
-        const retried = updateTask(taskId, {
-          model: fallback, tried_models: triedList, run_model: fallback,
-          status: 'in_progress', started_at: new Date().toISOString(),
-        });
-        if (retried) broadcastTask(retried);
-        appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${t.model} — retrying on ${fallback}.` });
-        let prevPrompt = '';
-        try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
-        runDetachedExecution(taskId, prevPrompt, {
-          model: fallback, effort: t.effort, tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
-          resumeSessionId: t.resume_session_id || sessionId || null, lane, provider: 'claude-code',
-        });
-        return;
-      }
+      // Every Claude tier is exhausted (or the task was already running on OpenCode
+      // and its current model just failed) — walk OpenCode's free models next, fully
+      // automatically, no confirmation. Record this exhaustion in the ledger, resolve
+      // OpenCode's live model list, and either continue the SAME task on the next free
+      // model or, if nothing is left anywhere, defer back to the queue.
+      setImmediate(async () => {
+        let evt = null;
+        try {
+          if (currentProviderId === 'claude-code') {
+            let usage = null;
+            try { usage = await getClaudeUsage(); } catch {}
+            evt = recordExhaustion({ providerId: 'claude-code', model: t.model, detectedBy: 'queue', errText: limit.label, subscriptionUsage: usage });
+          } else {
+            evt = recordExhaustion({ providerId: 'opencode', model: currentModel, detectedBy: 'queue', errText: limit.label });
+          }
+        } catch (e) { console.error('quota ledger: recordExhaustion failed —', e.message); }
 
-      // Every model in the chain hit quota for this task — stop trying automatically and
-      // make that explicit and visible rather than leaving it as an inert queued row.
-      setImmediate(() => {
+        let nextModel = null;
+        try {
+          const { models } = await listOpenCodeModels();
+          nextModel = (models || []).find((m) => m.free
+            && !triedList.includes(`opencode:${m.id}`)
+            && !isExhausted('opencode', m.id));
+        } catch (e) { console.error('[taskRunner] OpenCode model discovery failed —', e.message); }
+
+        if (nextModel) {
+          // OpenCode cannot resume a Claude session, and a model that just hit its own
+          // quota shouldn't have its (now-stale) session reused either — start fresh.
+          const finalTriedList = Array.from(new Set([...triedList, `opencode:${nextModel.id}`]));
+          const retried = updateTask(taskId, {
+            provider: 'opencode', model: nextModel.id, provider_model: nextModel.id, run_model: nextModel.id,
+            tried_models: finalTriedList, status: 'in_progress', started_at: new Date().toISOString(),
+          });
+          if (retried) broadcastTask(retried);
+          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${currentModel || currentProviderId} — switching to OpenCode (${nextModel.id}).` });
+          let prevPrompt = '';
+          try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
+          runDetachedExecution(taskId, prevPrompt, {
+            model: nextModel.id, providerModel: nextModel.id,
+            tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
+            resumeSessionId: null, lane, provider: 'opencode', question: t.mode === 'question',
+          });
+          return;
+        }
+
+        // Every Claude tier AND every free OpenCode model hit quota — defer with
+        // whatever reset window we can resolve. Global pause is now the fallback for
+        // only the case where that window is unknown — a known reset lets the queue
+        // keep running and simply wake this prompt on its own once quotaScheduler
+        // sees it pass.
         import('./promptQueue.js')
-          .then((m) => m.onAgentTaskDeferred(t, { label: limit.label }))
+          .then((m) => m.onAgentTaskDeferred(t, { label: limit.label, resumeAfter: evt?.known ? evt.resetsAt : null }))
           .catch((e) => console.error('queue: deferral failed —', e.message));
+        if (!evt?.known) {
+          setQueuePaused(true, {
+            reason: `Every free model (Claude tiers + OpenCode) hit its usage limit while running "${t.title}" — paused, resume manually once quota resets.`,
+          });
+        }
+        appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on every available model — deferred. ${limit.label}.` });
+        cleanup();
       });
-      setQueuePaused(true, {
-        reason: `Claude usage limit reached on every available model (${claudeCode.FALLBACK_CHAIN.join('/')}) while running "${t.title}" — paused, resume manually once quota resets.`,
-      });
-      appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on all fallback models — queue paused. ${limit.label}.` });
-      cleanup();
       return;
     }
 
