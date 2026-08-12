@@ -13,7 +13,11 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data', 'queue.db');
+// Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
+// before process.cwd(), so the DB lands on durable storage by default even if DB_PATH is
+// never explicitly set — process.cwd() alone sits in the container's ephemeral filesystem
+// and gets wiped on every redeploy on Railway's free tier.
+export const DB_PATH = process.env.DB_PATH || path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || process.cwd(), 'data', 'queue.db');
 
 export function openDb() {
   const dir = path.dirname(DB_PATH);
@@ -279,6 +283,36 @@ function initSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_reviews_prompt ON reviews(prompt_id)`); } catch {}
+
+  // ─── Collaboration strategies: task_stages + work_prompts strategy columns (plan Part 4B, P7) ───────
+  // task_stages holds the stage machine for multi-agent flows. Each row is one stage
+  // (research|build|test|judge|integrate) within a prompt. Stages at the SAME ordinal
+  // run CONCURRENTLY (e.g. two build variants in Competition). A judge stage (ordinal 2)
+  // waits for all ordinal-1 stages to complete.
+  // Strategy state on work_prompts tracks the overall flow: idle|running|awaiting_choice|done|abandoned.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN strategy TEXT DEFAULT 'single'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN strategy_state TEXT DEFAULT 'idle'`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS task_stages (
+      id TEXT PRIMARY KEY,
+      prompt_id  TEXT NOT NULL REFERENCES work_prompts(id),
+      stage      TEXT NOT NULL,        -- 'research'|'build'|'test'|'judge'|'integrate'
+      ordinal    INTEGER NOT NULL,     -- execution order; equal ordinals run CONCURRENTLY
+      variant    TEXT,                 -- 'A'|'B' in competition, NULL otherwise
+      agent_key  TEXT REFERENCES agents(key),
+      agent_task_id TEXT,              -- the actual run
+      branch     TEXT, worktree_path TEXT,
+      status     TEXT NOT NULL DEFAULT 'pending',
+                 -- pending|running|done|blocked|skipped|lost|won
+      input_json TEXT,                 -- what this stage was handed (e.g. the research brief)
+      output_text TEXT,                -- the stage's distilled output, fed forward
+      verdict_json TEXT,               -- judge stages only
+      cost_usd REAL,
+      created_at TEXT, started_at TEXT, completed_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_task_stages ON task_stages(prompt_id, ordinal)`); } catch {}
 
   // ─── AI Settings (plan Part 7R) ───────────────────────────────────────────────
   // Single-row table (id='global') holding the platform-wide provider configuration.

@@ -3,7 +3,7 @@ import cors from 'cors';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openDb } from './db/schema.js';
+import { openDb, DB_PATH } from './db/schema.js';
 import { requireAuth, issueToken } from './auth.js';
 import { attachRealtime } from './realtime.js';
 import { queueRoutes } from './routes/queue.js';
@@ -13,7 +13,7 @@ import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
-import { initTaskRunner, bindTaskDb } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb, DATA_DIR } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
@@ -21,18 +21,27 @@ import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
 import { reviewsRoutes } from './routes/reviews.js';
+import { strategiesRoutes } from './routes/strategies.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { bindAiTextDb } from './services/ai/text.js';
+import { bindOrchestratorDb } from './services/orchestrator.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
 
 const PORT = process.env.PORT || 8080;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+const volumeMount = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+const onVolume = (p) => !!volumeMount && p.startsWith(volumeMount);
+console.log('Storage paths:', JSON.stringify({
+  DB_PATH, DATA_DIR, RAILWAY_VOLUME_MOUNT_PATH: volumeMount || null,
+  dbOnVolume: onVolume(DB_PATH), dataDirOnVolume: onVolume(DATA_DIR),
+}));
 
 const db = openDb();
 bindDb(db);
@@ -43,6 +52,7 @@ bindWorkIdeasDb(db);
 bindReviewsDb(db);
 bindBriefingDb(db);
 bindAiTextDb(db);
+bindOrchestratorDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -88,6 +98,7 @@ app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
 app.use('/api/travaux', requireAuth, reviewsRoutes());
+app.use('/api/travaux', requireAuth, strategiesRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {
