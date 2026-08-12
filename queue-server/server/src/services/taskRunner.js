@@ -33,7 +33,7 @@ import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { getProvider } from './providers/index.js';
 import * as claudeCode from './providers/claudeCode.js';
-import { defaultOpenCodeModel, listOpenCodeModels } from './providers/index.js';
+import { defaultOpenCodeModel, listOpenCodeModels, getDefaultAiRouterModel } from './providers/index.js';
 import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { roleBriefFor } from './briefing.js';
@@ -605,34 +605,9 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       const currentEntry = currentProviderId === 'opencode' ? `opencode:${currentModel}` : currentModel;
       const triedList = Array.from(new Set([...(t.tried_models || [t.model]), currentEntry]));
 
-      // Fast path: same-provider Claude tier retry stays fully synchronous — no
-      // provider switch, so no need to wait on OpenCode discovery.
-      if (currentProviderId === 'claude-code') {
-        const fallback = claudeCode.nextFallbackModel(t);
-        if (fallback) {
-          // Same task, same prompt, same session — just a different model. Retry in
-          // place, do NOT release the slot or touch the queue: still "one task running".
-          const retried = updateTask(taskId, {
-            model: fallback, tried_models: triedList, run_model: fallback,
-            status: 'in_progress', started_at: new Date().toISOString(),
-          });
-          if (retried) broadcastTask(retried);
-          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${t.model} — retrying on ${fallback}.` });
-          let prevPrompt = '';
-          try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
-          runDetachedExecution(taskId, prevPrompt, {
-            model: fallback, effort: t.effort, tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
-            resumeSessionId: t.resume_session_id || sessionId || null, lane, provider: 'claude-code',
-          });
-          return;
-        }
-      }
-
-      // Every Claude tier is exhausted (or the task was already running on OpenCode
-      // and its current model just failed) — walk OpenCode's free models next, fully
-      // automatically, no confirmation. Record this exhaustion in the ledger, resolve
-      // OpenCode's live model list, and either continue the SAME task on the next free
-      // model or, if nothing is left anywhere, defer back to the queue.
+      // Skip Claude tier fallback (all share same quota bank) — go straight to OpenCode free models.
+      // Record this exhaustion in the ledger, resolve OpenCode's live model list,
+      // and either continue the SAME task on the next free model or defer back to the queue.
       setImmediate(async () => {
         let evt = null;
         try {
@@ -673,7 +648,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
           return;
         }
 
-        // Every Claude tier AND every free OpenCode model hit quota — defer with
+        // Every free OpenCode model hit quota — defer with
         // whatever reset window we can resolve. Global pause is now the fallback for
         // only the case where that window is unknown — a known reset lets the queue
         // keep running and simply wake this prompt on its own once quotaScheduler
@@ -683,7 +658,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
           .catch((e) => console.error('queue: deferral failed —', e.message));
         if (!evt?.known) {
           setQueuePaused(true, {
-            reason: `Every free model (Claude tiers + OpenCode) hit its usage limit while running "${t.title}" — paused, resume manually once quota resets.`,
+            reason: `Claude quota exhausted and every free OpenCode model hit its usage limit while running "${t.title}" — paused, resume manually once quota resets.`,
           });
         }
         appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on every available model — deferred. ${limit.label}.` });
@@ -794,6 +769,29 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
   const execCwd = cwd || SUMMARY_CWD();
   const pidFile = PID_FILE(taskId);
   const prov = getProvider(provider);
+
+  if (provider === 'ai-router') {
+    // No OS subprocess here — the HTTP call runs in-process, so there's nothing
+    // to spawn and no pid to write. stopTask()/the timeout path both no-op
+    // gracefully on a missing pid file (see monitorExecution's currentPid()),
+    // so a "Stop" click can't cancel an in-flight fetch — acceptable for these
+    // short, single-shot calls, unlike the long agentic CLI runs.
+    taskProviderCache.set(taskId, provider);
+    prov.executeAiRouterTask({
+      taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE,
+      model, providerModel, question,
+    }).catch((e) => {
+      // executeAiRouterTask already writes CODE in its own try/catch/finally —
+      // this only guards against a throw before that block runs at all.
+      try { writeFileSync(LOG, `[ai-router launch failure] ${e.message}\n`); } catch {}
+      try { writeFileSync(CODE, '1'); } catch {}
+    });
+    const spawned = updateTask(taskId, { heartbeat_at: new Date().toISOString() });
+    if (spawned) broadcastTask(spawned);
+    monitorExecution(taskId, null, { lane });
+    return;
+  }
+
   const bin = prov.resolveBin();
   const body = provider === 'claude-code'
     ? prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model, effort, tools, resumeSessionId })
@@ -893,9 +891,34 @@ async function executeTask(next, { lane = 'exec' } = {}) {
         return;
       }
     }
-  }
+   }
+   if (provider === 'ai-router') {
+     // AI Router providers are plain chat completions with no file-editing tool
+     // loop (no read/write/bash — unlike the Claude Code / OpenCode CLIs). They
+     // can only answer, not edit the repo, so implement-mode tasks must not run
+     // here — they'd "succeed" with a text answer and no code actually written.
+     if (next.mode !== 'question') {
+       failEarly(next, '(AI Router providers only support question-mode tasks — no file-editing tools)');
+       return;
+     }
+     // AI Router models are identified by "provider-id/model-id" (e.g.
+     // google-ai-studio/gemini-2.0-flash). They live in provider_model or model.
+     effort = null;
+     if (next.provider_model) {
+       model = next.provider_model;
+     } else if (next.model) {
+       model = next.model;
+     } else {
+       try { model = await getDefaultAiRouterModel(); }
+       catch (e) { console.error(`[taskRunner] no AI Router model resolvable for ${next.id}: ${e.message}`); model = null; }
+     }
+     if (!model) {
+       failEarly(next, '(no AI Router model available — set an API key for a free provider in Railway, then Run again)');
+       return;
+     }
+   }
 
-  // Writer tasks get their own git worktree (plan 2a): an isolated checkout on
+   // Writer tasks get their own git worktree (plan 2a): an isolated checkout on
   // its own branch, created at dispatch time. The task row records it
   // (worktree_path/branch/base_sha) so continuations can land on the same branch.
   // A task that ALREADY carries a worktree_path (a continuation inheriting its
@@ -942,7 +965,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   runDetachedExecution(next.id, prompt, {
     model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
     resumeSessionId: next.resume_session_id || null, lane,
-    provider, providerModel: provider === 'opencode' ? model : null, question: isQuestion,
+    provider, providerModel: (provider === 'opencode' || provider === 'ai-router') ? model : null, question: isQuestion,
     cwd: execCwd,
   });
 }

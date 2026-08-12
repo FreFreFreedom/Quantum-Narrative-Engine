@@ -596,6 +596,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
               <select id="qProvider">
                 <option value="claude-code">Claude Code</option>
                 <option value="opencode">OpenCode</option>
+                <option value="ai-router">AI Router (free — questions only)</option>
               </select>
             </label>
             <label>Model
@@ -2060,7 +2061,15 @@ let qFilter = 'active', qConnFails = 0, qDragId = null;
 // Execution-provider picker data (GET /api/travaux/providers): opencode model list
 // (free first) + provider liveness. Fetched once at init and again whenever the
 // Queue tab is opened, so a pick never happens against stale/empty options.
-let qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: null } };
+let qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: null }, aiRouter: { available: false, models: [], error: null } };
+// Models for whichever "extra" provider (opencode / ai-router) is currently
+// picked — both use the same qOpenModel/qDetailModel selects, so this is the
+// one place that knows how to map a provider value to its model list.
+function qModelsForProvider(providerVal) {
+  if (providerVal === 'opencode') return qProviders.opencode?.models || [];
+  if (providerVal === 'ai-router') return qProviders.aiRouter?.models || [];
+  return [];
+}
 // Agent roster (GET /api/travaux/agents): who can take a task. Each agent runs in
 // its own worktree; two agents can implement in parallel (dev1, dev2 by default).
 let qAgents = [];
@@ -2085,40 +2094,52 @@ async function loadProviders() {
   try {
     qProviders = await api('/api/travaux/providers');
   } catch (e) {
-    qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: 'unreachable' } };
+    qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: 'unreachable' }, aiRouter: { available: false, models: [], error: 'unreachable' } };
   }
-  const sel = document.getElementById('qOpenModel');
-  if (!sel) return;
-  const prev = sel.value;
-  const models = (qProviders.opencode?.models) || [];
-  sel.innerHTML = models.length
-    ? models.map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.id}</option>`).join('')
-    : `<option value="">${qProviders.opencode?.error ? 'unavailable — ' + qProviders.opencode.error : '(no models)'}</option>`;
-  sel.disabled = models.length === 0;
-  // Keep a user-chosen model across refreshes; only fall back to the free default
-  // when the old choice is gone (e.g. server can't reach that provider anymore).
-  if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
-  else if (models.length) {
-    const free = models.find(m => m.free);
-    sel.value = free ? free.id : models[0].id;
-  }
-  qProviderUi(); // disabled state must follow the form's current provider, not just model availability
+  qProviderUi(); // (re)populates the model select for whichever provider is currently chosen
 }
 
-// Picking OpenCode: its task model is fixed by the user in the model dropdown, and
-// the preset/auto tiering is a Claude-Code concept — so the preset select is
-// disabled (the row still stores a plain 'standard' so tier-aware bits don't choke).
+// Picking OpenCode or AI Router: the task's model is fixed by the user in the
+// model dropdown, and the preset/auto tiering is a Claude-Code concept — so the
+// preset select is disabled (the row still stores a plain 'standard' so
+// tier-aware bits don't choke). AI Router providers have no file-editing tools
+// (plain chat completions, not an agentic CLI), so Mode is locked to Question —
+// picking one for an implement task would "succeed" with a text answer and no
+// code actually written.
 function qProviderUi() {
   const prov = document.getElementById('qProvider');
   const preset = document.getElementById('qPreset');
   const modelSel = document.getElementById('qOpenModel');
+  const modeSel = document.getElementById('qMode');
   if (!prov) return;
-  const isOpen = prov.value === 'opencode';
-  if (preset) preset.disabled = isOpen;
-  if (modelSel) modelSel.disabled = !isOpen;
-  if (isOpen && !modelSel.value) {
-    const free = (qProviders.opencode?.models || []).find(m => m.free);
-    if (free) modelSel.value = free.id;
+  const val = prov.value;
+  const usesModelPicker = val === 'opencode' || val === 'ai-router';
+  if (preset) preset.disabled = usesModelPicker;
+  if (modelSel) {
+    modelSel.disabled = !usesModelPicker;
+    if (usesModelPicker) {
+      const models = qModelsForProvider(val);
+      const prev = modelSel.value;
+      const err = val === 'opencode' ? qProviders.opencode?.error : qProviders.aiRouter?.error;
+      modelSel.innerHTML = models.length
+        ? models.map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('')
+        : `<option value="">${err ? 'unavailable — ' + err : '(no models)'}</option>`;
+      // Keep a user-chosen model across refreshes; only fall back to the first
+      // (free / highest-ranked) one when the old choice is gone.
+      if (prev && [...modelSel.options].some(o => o.value === prev)) modelSel.value = prev;
+      else if (models.length) modelSel.value = models[0].id;
+    }
+  }
+  if (modeSel) {
+    if (val === 'ai-router') {
+      if (!modeSel.disabled) modeSel.dataset.prevMode = modeSel.value;
+      modeSel.value = 'question';
+      modeSel.disabled = true;
+    } else if (modeSel.disabled) {
+      modeSel.disabled = false;
+      modeSel.value = modeSel.dataset.prevMode || 'implement';
+      delete modeSel.dataset.prevMode;
+    }
   }
 }
 
@@ -2439,6 +2460,9 @@ function qProviderLabel(p) {
   if ((p.provider || 'claude-code') === 'opencode') {
     return `OpenCode${p.provider_model ? ' · ' + p.provider_model : ''}`;
   }
+  if ((p.provider || 'claude-code') === 'ai-router') {
+    return `AI Router${p.provider_model ? ' · ' + p.provider_model : ''}`;
+  }
   const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
   return `Claude Code · ${presetLabel}`;
 }
@@ -2721,8 +2745,10 @@ async function qAddPrompt() {
   btn.disabled = true; btn.textContent = 'Adding…';
   const provider = document.getElementById('qProvider').value;
   const isOpen = provider === 'opencode';
+  const isAiRouter = provider === 'ai-router';
+  const usesModelPicker = isOpen || isAiRouter;
   const modelSel = document.getElementById('qOpenModel');
-  if (isOpen && !modelSel.value) {
+  if (usesModelPicker && !modelSel.value) {
     errEl.textContent = 'Pick a model first (or wait for the list to load).';
     btn.disabled = false; btn.textContent = 'Add to queue';
     return;
@@ -2731,15 +2757,16 @@ async function qAddPrompt() {
     await apiWrite('/api/travaux/prompts', 'POST', {
       prompt: promptText,
       title: document.getElementById('qPromptTitle').value.trim(),
-      mode: document.getElementById('qMode').value,
-      preset: isOpen ? 'standard' : document.getElementById('qPreset').value,
+      // AI Router providers have no file-editing tools — always question-mode.
+      mode: isAiRouter ? 'question' : document.getElementById('qMode').value,
+      preset: usesModelPicker ? 'standard' : document.getElementById('qPreset').value,
       // Context (continue an earlier task's session, or start fresh) is decided
       // automatically server-side (contextPolicy.js) instead of a manual picker.
       context_mode: 'auto',
       priority: document.getElementById('qPriority').checked,
       space: 'fmcns',
       provider,
-      provider_model: isOpen ? modelSel.value : null,
+      provider_model: usesModelPicker ? modelSel.value : null,
       agent_key: document.getElementById('qAgent').value || 'dev1',
       strategy: document.getElementById('qStrategy').value,
     });
@@ -2765,7 +2792,10 @@ async function qTogglePause() {
 function qRenderDetail(p) {
   const host = document.getElementById('qRight');
   const messages = (p.messages || []);
-  const isOpen = (p.provider || 'claude-code') === 'opencode';
+  const provVal = p.provider || 'claude-code';
+  const isOpen = provVal === 'opencode';
+  const isAiRouter = provVal === 'ai-router';
+  const usesModelPicker = isOpen || isAiRouter;
   const tier = p.preset === 'auto' ? (p.resolved_preset || 'standard') : p.preset;
   const ctxLimit = Q_CONTEXT_LIMITS[tier] || 6;
   const ctxTurns = p.context_turns || 0;
@@ -2775,8 +2805,9 @@ function qRenderDetail(p) {
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
   const switchable = p.status !== 'running';
   const providerOpts = `
-    <option value="claude-code"${isOpen ? '' : ' selected'}>Claude Code</option>
-    <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode</option>`;
+    <option value="claude-code"${provVal === 'claude-code' ? ' selected' : ''}>Claude Code</option>
+    <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode</option>
+    <option value="ai-router"${isAiRouter ? ' selected' : ''}>AI Router (free — questions only)</option>`;
   const costParts = [];
   if (p.run_model) costParts.push(p.run_model);
   if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
@@ -2800,8 +2831,8 @@ function qRenderDetail(p) {
         <span><b>Provider:</b>
           <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
         </span>
-        <span><b>OpenCode model:</b>
-          <select id="qDetailModel" class="q-input" style="width:auto;" ${isOpen ? '' : 'disabled'}>
+        <span><b>Model:</b>
+          <select id="qDetailModel" class="q-input" style="width:auto;" ${usesModelPicker ? '' : 'disabled'}>
             <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
           </select>
         </span>
@@ -2846,8 +2877,8 @@ function qRenderDetail(p) {
     const provSel = document.getElementById('qDetailProvider');
     const modelSel = document.getElementById('qDetailModel');
     modelSel.innerHTML = '<option value="">— pick one —</option>' +
-      (qProviders.opencode?.models || []).map(m =>
-        `<option value="${m.id}"${m.id === p.provider_model ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.id}</option>`).join('');
+      qModelsForProvider(provVal).map(m =>
+        `<option value="${m.id}"${m.id === p.provider_model ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('');
     const commitPatch = async (patch) => {
       try {
         await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', patch);
@@ -2855,20 +2886,31 @@ function qRenderDetail(p) {
       } catch (e) { alert('Could not switch: ' + e.message); }
     };
     provSel.onchange = async () => {
-      if (provSel.value === (isOpen ? 'opencode' : 'claude-code')) {
-        modelSel.disabled = provSel.value !== 'opencode';
+      const newVal = provSel.value;
+      const newUsesModelPicker = newVal === 'opencode' || newVal === 'ai-router';
+      if (newVal === provVal) {
+        modelSel.disabled = !newUsesModelPicker;
         return;
       }
-      if (!confirm('Switch this task to the other CLI? Its session link resets — replies start fresh.')) {
-        provSel.value = isOpen ? 'opencode' : 'claude-code';
+      // AI Router can't edit the repo — refuse the switch for an implement task
+      // rather than silently letting it "succeed" with a text answer only.
+      if (newVal === 'ai-router' && p.mode !== 'question') {
+        alert('AI Router only runs question-mode tasks (no file-editing tools). Switch this task\'s Mode to Question first, or pick a different provider.');
+        provSel.value = provVal;
         return;
       }
-      modelSel.disabled = provSel.value !== 'opencode';
-      if (provSel.value === 'opencode' && !modelSel.value) {
-        const free = (qProviders.opencode?.models || []).find(m => m.free);
-        if (free) modelSel.value = free.id;
+      if (!confirm('Switch this task to a different provider? Its session link resets — replies start fresh.')) {
+        provSel.value = provVal;
+        return;
       }
-      await commitPatch({ provider: provSel.value, provider_model: provSel.value === 'opencode' ? modelSel.value : null });
+      modelSel.disabled = !newUsesModelPicker;
+      if (newUsesModelPicker) {
+        modelSel.innerHTML = '<option value="">— pick one —</option>' +
+          qModelsForProvider(newVal).map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('');
+        const models = qModelsForProvider(newVal);
+        if (models.length) modelSel.value = models[0].id;
+      }
+      await commitPatch({ provider: newVal, provider_model: newUsesModelPicker ? modelSel.value : null });
     };
     modelSel.onchange = async () => { if (modelSel.value) await commitPatch({ provider_model: modelSel.value }); };
   }
