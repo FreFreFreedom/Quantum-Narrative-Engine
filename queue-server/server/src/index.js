@@ -21,14 +21,12 @@ import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
 import { reviewsRoutes } from './routes/reviews.js';
-import { strategiesRoutes } from './routes/strategies.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { bindAiTextDb } from './services/ai/text.js';
-import { bindOrchestratorDb } from './services/orchestrator.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -52,7 +50,6 @@ bindWorkIdeasDb(db);
 bindReviewsDb(db);
 bindBriefingDb(db);
 bindAiTextDb(db);
-bindOrchestratorDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -98,7 +95,6 @@ app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
 app.use('/api/travaux', requireAuth, reviewsRoutes());
-app.use('/api/travaux', requireAuth, strategiesRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {
