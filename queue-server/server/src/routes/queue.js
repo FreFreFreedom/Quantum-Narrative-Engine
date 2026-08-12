@@ -114,6 +114,13 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  // Retroactive plan-first drafting for a task created before that feature existed.
+  router.post('/prompts/:id/backfill-plan', async (req, res) => {
+    const row = await queue.backfillPlan(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
   router.post('/prompts/:id/reply', (req, res) => {
     const out = queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });

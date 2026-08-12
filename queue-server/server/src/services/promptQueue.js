@@ -150,7 +150,30 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   if (targetStatus === 'queued') advanceQueue();
 }
 
-const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy'];
+// Retroactive plan-first drafting for a task created before that feature existed
+// (raw_prompt still NULL). Only touches implement-mode tasks sitting queued/paused
+// (never a running/finished one — a finished task's prompt is the historical record
+// of what actually ran). Reuses draftPlan() exactly like runPlanDraft() does, just
+// triggered manually instead of at creation time.
+export async function backfillPlan(id) {
+  const p = getPrompt(id);
+  if (!p) return null;
+  if (p.mode !== 'implement') return { ...p, backfill_skipped: 'not_implement' };
+  if (p.raw_prompt) return { ...p, backfill_skipped: 'already_drafted' };
+  if (!['queued', 'paused'].includes(p.status)) return { ...p, backfill_skipped: 'not_pending' };
+  db.prepare(`UPDATE work_prompts SET plan_pending=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+  broadcast();
+  const draft = await draftPlan({ title: p.title, prompt: p.prompt, mode: p.mode });
+  const finalTitle = draft?.title || p.title;
+  const finalPrompt = draft?.brief || p.prompt;
+  db.prepare(`
+    UPDATE work_prompts SET raw_prompt=?, title=?, prompt=?, plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(p.prompt, finalTitle, finalPrompt, id);
+  broadcast();
+  return getPrompt(id);
+}
+
+const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
