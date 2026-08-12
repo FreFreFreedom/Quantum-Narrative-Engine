@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED (MVP — see Phase 2 section for deferred scope) |
+| **Status** | DONE (MVP) — built and shipped independently by an overnight agent (branch `agent/github-code-discovery`, merged to `main` before this plan doc was picked up for implementation in this session). Its `codeDiscovery.js`/`discovery.js` may differ in detail from the design below; treat the live code as authoritative over this doc. Phase 2 (History view, Architecture entry points, evidence icons, Queue/Seeds wiring) not started. |
 | **Created** | 2026-08-11 |
 | **Updated** | 2026-08-11 — reviewed against codebase, corrected 3 factual issues, split into MVP + Phase 2 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
