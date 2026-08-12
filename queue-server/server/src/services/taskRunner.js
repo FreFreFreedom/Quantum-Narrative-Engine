@@ -38,7 +38,10 @@ import { roleBriefFor } from './briefing.js';
 import { generateText as generateAiText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 
-const DATA_DIR = process.env.DATA_DIR || resolve(process.cwd(), 'data');
+// Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
+// before process.cwd(), so agent-tasks.json etc. land on durable storage even if DATA_DIR
+// itself is never explicitly set — see the DB_PATH comment in db/schema.js for the same fix.
+export const DATA_DIR = process.env.DATA_DIR || resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH || process.cwd(), 'data');
 // This directory was never guaranteed to exist (no bootstrap step created it), so every
 // write here — agent-tasks.json, settings, PID files, exec logs — threw ENOENT the moment
 // a task tried to start. That exception propagated up through advanceQueue() into the

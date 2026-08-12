@@ -178,7 +178,7 @@ const ENV_VENDORS = [
   { name: 'Google Books API', envVar: 'GOOGLE_BOOKS_API_KEY' },
   { name: 'Anthropic API (pay-per-token)', envVar: 'ANTHROPIC_API_KEY' },
   { name: 'Claude Code subscription (CLI)', envVar: 'CLAUDE_CODE_OAUTH_TOKEN' },
-  { name: 'Railway persistent volume', envVar: 'DB_PATH' },
+  { name: 'Railway persistent volume', envVar: 'RAILWAY_VOLUME_ID' },
 ];
 
 function buildIntegrationDigest() {
