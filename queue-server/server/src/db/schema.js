@@ -33,6 +33,7 @@ export function openDb() {
   initTagLensSchema(db);
   initTagPatternSchema(db);
   initBookDetailSchema(db);
+  initDiscoverySchema(db);
   return db;
 }
 
@@ -702,4 +703,89 @@ export function initArchitectureSchema(db) {
   // try/catch per this file's convention — it throws harmlessly once applied.
   try { db.exec(`ALTER TABLE work_ideas ADD COLUMN arch_node_id TEXT`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_node ON work_ideas(arch_node_id)`); } catch {}
+}
+
+// Plan "github-code-discovery" (Building blocks — evidence-backed discovery) +
+// its "plan-first-queue-and-idea-composition" Part B extension (idea_parts).
+// Curated GitHub search results, feedback-driven re-ranking, saved idea-box
+// reports, and evidence links from tech-tree nodes back to the repos that
+// justified them.
+export function initDiscoverySchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS github_discovery_cache (
+      id TEXT PRIMARY KEY,
+      query_id TEXT NOT NULL,
+      repo_full_name TEXT NOT NULL,
+      stars INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      html_url TEXT,
+      topics_json TEXT NOT NULL DEFAULT '[]',
+      rank_boost INTEGER NOT NULL DEFAULT 0,
+      fetched_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_discovery_cache_query ON github_discovery_cache(query_id, fetched_at)`); } catch {}
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_discovery_cache_repo ON github_discovery_cache(query_id, repo_full_name)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS github_discovery_feedback (
+      id TEXT PRIMARY KEY,
+      repo_full_name TEXT NOT NULL,
+      verdict TEXT NOT NULL CHECK(verdict IN ('useful','not_useful')),
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_discovery_feedback_repo ON github_discovery_feedback(repo_full_name)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS discovery_reports (
+      id TEXT PRIMARY KEY,
+      idea_text TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'idea_box' CHECK(source IN ('idea_box','component','node')),
+      source_id TEXT,
+      queries_json TEXT NOT NULL DEFAULT '[]',
+      picks_json TEXT NOT NULL DEFAULT '[]',
+      rerun_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_discovery_reports_created ON discovery_reports(created_at)`); } catch {}
+
+  // No ON DELETE CASCADE — none exist anywhere in this schema, and tech-tree
+  // nodes are soft-deleted (deleted_at) so a delete-triggered cascade would
+  // never fire anyway. Evidence rows for a deleted node just stop surfacing
+  // once reads join through live nodes.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS architecture_node_evidence (
+      id TEXT PRIMARY KEY,
+      node_id TEXT NOT NULL REFERENCES architecture_nodes(id),
+      repo_full_name TEXT NOT NULL,
+      stars INTEGER NOT NULL DEFAULT 0,
+      why TEXT,
+      report_id TEXT REFERENCES discovery_reports(id),
+      accepted INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_node_evidence_node ON architecture_node_evidence(node_id)`); } catch {}
+
+  // Part B (plan-first-queue-and-idea-composition): breaking one Seed into
+  // several concrete parts, each resolved via a GitHub repo or a build-it-
+  // ourselves decision, tracked until the idea can be packaged as a whole.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS idea_parts (
+      id TEXT PRIMARY KEY,
+      idea_id TEXT NOT NULL REFERENCES work_ideas(id),
+      label TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','covered')),
+      resolution_kind TEXT CHECK(resolution_kind IN ('github','build')),
+      chosen_repo TEXT,
+      why TEXT,
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_idea_parts_idea ON idea_parts(idea_id, position)`); } catch {}
 }

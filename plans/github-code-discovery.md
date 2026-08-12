@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED (MVP — see Phase 2 section for deferred scope) |
+| **Status** | DONE (MVP) — implemented and locally verified 2026-08-12, built as the dependency for `plan-first-queue-and-idea-composition.md` Part B. Phase 2 (History view, Architecture entry points, evidence icons, Queue/Seeds wiring) still not started. |
 | **Created** | 2026-08-11 |
 | **Updated** | 2026-08-11 — reviewed against codebase, corrected 3 factual issues, split into MVP + Phase 2 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |

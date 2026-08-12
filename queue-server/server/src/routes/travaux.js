@@ -87,5 +87,34 @@ export function travauxRoutes() {
     res.json(out);
   });
 
+  // ── Frankenstein idea composition (Part B) ─────────────────────────────────
+  router.get('/ideas/:id/parts', (req, res) => {
+    res.json({ parts: ideas.listParts(req.params.id) });
+  });
+
+  router.post('/ideas/:id/parts/decompose', async (req, res) => {
+    const out = await ideas.decomposeIdea(req.params.id);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
+  router.post('/ideas/:id/parts/:partId/search', async (req, res) => {
+    const out = await ideas.searchPart(req.params.id, req.params.partId);
+    if (out.error) return res.status(404).json(out);
+    res.json(out);
+  });
+
+  router.post('/ideas/:id/parts/:partId/resolve', (req, res) => {
+    const out = ideas.resolvePart(req.params.id, req.params.partId, req.body || {});
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
+  router.post('/ideas/:id/package', async (req, res) => {
+    const out = await ideas.packageIdea(req.params.id);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
   return router;
 }

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | IN PROGRESS — Part A implemented and locally verified 2026-08-12 (not yet committed/deployed); Part B not started. |
+| **Status** | DONE — Part A shipped and deployed 2026-08-12. Part B implemented and locally verified 2026-08-12 (depends on `github-code-discovery.md`'s MVP, also built as part of this pass — see that plan's own status). |
 | **Created** | 2026-08-12 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Depends on** | Part B depends on `plans/github-code-discovery.md`'s MVP (`services/codeDiscovery.js` + its two-pass pipeline) — build that first if it isn't already implemented when this plan is picked up. Part A depends on nothing. |

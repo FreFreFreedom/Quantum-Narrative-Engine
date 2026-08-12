@@ -521,6 +521,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
     <div class="core-tabs" data-src="CORE ARCHITECTURE → sub-tab bar | fmcns_navigator.html: setCoreTab()">
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabSeeds" data-core-tab="seeds">Seeds <span class="core-tab-count" id="coreCountSeeds"></span></button>
+      <button id="coreTabBlocks" data-core-tab="blocks">Building blocks</button>
       <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
       <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
       <button id="coreTabAi" data-core-tab="ai">AI Settings</button>
@@ -554,6 +555,19 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
         </div>
       </div>
       <div class="tv-body" id="tvBodySeeds"></div>
+    </div>
+    <div id="corePaneBlocks" class="core-pane" data-src="CORE ARCHITECTURE → Building blocks sub-tab | fmcns_navigator.html: renders into #blocksBody, loadBlocks() | backend: routes/discovery.js (/api/discovery/*)">
+      <div class="tv-toolbar">
+        <div class="tv-toolbar-top">
+          <span class="arch-title">Building blocks</span>
+          <span class="arch-sub">Real GitHub projects that might already do this, or a case for building it ourselves.</span>
+        </div>
+        <div class="arch-viewbtns" style="margin-top:8px;">
+          <button class="active" data-blocks-view="discover">Discover</button>
+          <button data-blocks-view="ideabox">Idea box</button>
+        </div>
+      </div>
+      <div class="tv-body" id="blocksBody"></div>
     </div>
     <div id="corePaneSignals" class="core-pane" data-src="CORE ARCHITECTURE → Suggestion Engine sub-tab (Suggestions de Claude) | fmcns_navigator.html: renders into #tvBodySignals, loadSuggestions()/renderSuggestions() | backend: routes/travaux.js (/suggestions*)">
       <div class="tv-toolbar">
@@ -1964,7 +1978,7 @@ document.addEventListener('click', (e) => {
 // queue-state line) is shared across all four sub-tabs since it governs all of them.
 let coreTab = 'arch';
 let coreInited = false;
-const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', signals:'coreTabSignals', queue:'coreTabQueue', ai:'coreTabAi' };
+const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', blocks:'coreTabBlocks', signals:'coreTabSignals', queue:'coreTabQueue', ai:'coreTabAi' };
 
 function initCore() {
   if (!coreInited) {
@@ -2010,11 +2024,13 @@ function setCoreTab(t) {
   Object.keys(CORE_TAB_IDS).forEach(x => document.getElementById(CORE_TAB_IDS[x]).classList.toggle('active', x === t));
   document.getElementById('corePaneArch').classList.toggle('open', t === 'arch');
   document.getElementById('corePaneSeeds').classList.toggle('open', t === 'seeds');
+  document.getElementById('corePaneBlocks').classList.toggle('open', t === 'blocks');
   document.getElementById('corePaneSignals').classList.toggle('open', t === 'signals');
   document.getElementById('corePaneQueue').classList.toggle('open', t === 'queue');
   document.getElementById('corePaneAi').classList.toggle('open', t === 'ai');
   if (t === 'arch') initArchNav();
   if (t === 'seeds') loadIdeas();
+  if (t === 'blocks') initBlocks();
   if (t === 'signals') loadSuggestions();
   if (t === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
   if (t === 'ai') loadAiSettings();
@@ -3209,8 +3225,10 @@ function renderIdeas() {
         </div>
         <button data-action="promote">→ Queue</button>
         ${idea.arch_node_id ? '' : '<button data-action="plant">🌱 Plant in tree</button>'}
+        <button data-action="parts">🧩 Frankenstein</button>
         <button class="danger" data-action="delete">Remove</button>
       </div>
+      <div class="id-parts-host" id="idParts-${idea.id}" style="display:none;"></div>
     </div>
   `).join('');
 
@@ -3248,6 +3266,7 @@ function renderIdeas() {
     const upBtn = card.querySelector('[data-action="up"]'), downBtn = card.querySelector('[data-action="down"]');
     if (upBtn) upBtn.onclick = () => moveIdea(id, -1);
     if (downBtn) downBtn.onclick = () => moveIdea(id, 1);
+    card.querySelector('[data-action="parts"]').onclick = () => toggleIdeaParts(id);
   });
 }
 
@@ -3271,6 +3290,296 @@ async function moveIdea(id, delta) {
   [next[i], next[j]] = [next[j], next[i]];
   tvIdeas = next; renderIdeas();
   try { await apiWrite('/api/travaux/ideas/reorder', 'POST', { ids: next.map(x => x.id) }); } catch (e) { await loadIdeas(); }
+}
+
+// ---------- Building blocks (evidence-backed discovery) ----------
+// Two views sharing #blocksBody: Discover (curated, GitHub-only, cached) and
+// Idea box (hybrid — proven GitHub picks + imagined build-it-ourselves picks).
+// Zero AI calls on entering the tab; every model call is a direct result of a
+// click (Search / Refresh / Rerun), per CLAUDE.md's cost rules.
+let blocksView = 'discover';
+let blocksQueries = [];
+let blocksResultsCache = {}; // query_id -> results[]
+let blocksReports = [];
+
+function initBlocks() {
+  document.querySelectorAll('[data-blocks-view]').forEach(b => {
+    b.onclick = () => { blocksView = b.getAttribute('data-blocks-view'); renderBlocksViewButtons(); renderBlocksBody(); };
+  });
+  renderBlocksViewButtons();
+  renderBlocksBody();
+}
+
+function renderBlocksViewButtons() {
+  document.querySelectorAll('[data-blocks-view]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-blocks-view') === blocksView);
+  });
+}
+
+async function renderBlocksBody() {
+  const body = document.getElementById('blocksBody');
+  if (blocksView === 'discover') return renderDiscoverView(body);
+  return renderIdeaBoxView(body);
+}
+
+// ── Discover: curated, GitHub-only, cached ──────────────────────────────────
+async function renderDiscoverView(body) {
+  body.innerHTML = '<div class="tv-empty">Loading…</div>';
+  if (!blocksQueries.length) {
+    try { blocksQueries = (await api('/api/discovery/queries')).queries || []; } catch (e) { blocksQueries = []; }
+  }
+  const categories = ['all', ...new Set(blocksQueries.map(q => q.category))];
+  body.innerHTML = `
+    <div class="q-row" id="blocksCatStrip" style="gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      ${categories.map(c => `<button class="ctrlbtn blocks-catbtn${c===blocksCat?' active':''}" data-cat="${c}">${c[0].toUpperCase()+c.slice(1)}</button>`).join('')}
+    </div>
+    <div id="blocksQueryList"></div>
+  `;
+  body.querySelectorAll('.blocks-catbtn').forEach(b => {
+    b.onclick = () => { blocksCat = b.getAttribute('data-cat'); renderDiscoverView(body); };
+  });
+  const list = document.getElementById('blocksQueryList');
+  const visible = blocksCat === 'all' ? blocksQueries : blocksQueries.filter(q => q.category === blocksCat);
+  list.innerHTML = visible.map(q => `
+    <div class="arch-field" data-qid="${q.id}">
+      <div class="arch-field-label">${q.description} <button class="ctrlbtn" data-refresh="${q.id}" style="float:right;">Refresh</button></div>
+      <div class="arch-field-body" id="blocksResults-${q.id}">Click Refresh, or wait — loading…</div>
+    </div>
+  `).join('') || '<div class="tv-empty">No categories yet.</div>';
+  list.querySelectorAll('[data-refresh]').forEach(b => {
+    b.onclick = () => loadDiscoverResults(b.getAttribute('data-refresh'), { forceRefresh: true });
+  });
+  for (const q of visible) loadDiscoverResults(q.id, {});
+}
+let blocksCat = 'all';
+
+async function loadDiscoverResults(queryId, { forceRefresh = false }) {
+  const host = document.getElementById(`blocksResults-${queryId}`);
+  if (!host) return;
+  host.textContent = 'Loading…';
+  try {
+    const out = await api(`/api/discovery/results?query_id=${encodeURIComponent(queryId)}${forceRefresh ? '&refresh=1' : ''}`);
+    blocksResultsCache[queryId] = out.results || [];
+  } catch (e) { host.textContent = 'Could not load — ' + e.message; return; }
+  const results = blocksResultsCache[queryId];
+  if (!results.length) { host.innerHTML = '<span class="tv-empty">Nothing cached yet — click Refresh.</span>'; return; }
+  host.innerHTML = results.map(r => `
+    <div class="blocks-repo-row" data-repo="${r.repo_full_name}">
+      <a href="${r.html_url}" target="_blank" rel="noopener">${r.repo_full_name}</a>
+      <span style="color:#8a8378;"> · ${r.stars}★ · ${r.description||''}</span>
+      <button class="ctrlbtn" data-fb="useful">Useful</button>
+      <button class="ctrlbtn" data-fb="not_useful">Not useful</button>
+    </div>
+  `).join('');
+  host.querySelectorAll('[data-fb]').forEach(b => {
+    b.onclick = async () => {
+      const row = b.closest('.blocks-repo-row');
+      try {
+        await apiWrite('/api/discovery/feedback', 'POST', { repo_full_name: row.getAttribute('data-repo'), verdict: b.getAttribute('data-fb') });
+        loadDiscoverResults(queryId, {});
+      } catch (e) { alert('Error: ' + e.message); }
+    };
+  });
+}
+
+// ── Idea box: hybrid, two-channel report ────────────────────────────────────
+async function renderIdeaBoxView(body) {
+  body.innerHTML = `
+    <div class="id-form">
+      <textarea id="blocksIdeaInput" placeholder="Describe the idea — what should it do?"></textarea>
+      <div class="id-form-row">
+        <span class="id-form-hint">Search finds real GitHub projects, or proposes building the piece from scratch.</span>
+        <button class="id-addbtn" id="blocksSearchBtn">Search</button>
+      </div>
+    </div>
+    <div id="blocksIdeaErr" class="q-err"></div>
+    <div id="blocksReportHost"></div>
+  `;
+  document.getElementById('blocksSearchBtn').onclick = runBlocksIdeaSearch;
+}
+
+async function runBlocksIdeaSearch() {
+  const input = document.getElementById('blocksIdeaInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const btn = document.getElementById('blocksSearchBtn');
+  const err = document.getElementById('blocksIdeaErr');
+  err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Searching…';
+  try {
+    const report = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: text });
+    renderBlocksReport(report);
+  } catch (e) { err.textContent = 'Error: ' + e.message; }
+  finally { btn.disabled = false; btn.textContent = 'Search'; }
+}
+
+function renderBlocksReport(report) {
+  const host = document.getElementById('blocksReportHost');
+  if (!host || !report) return;
+  const proven = report.picks.filter(p => p.kind === 'proven');
+  const imagined = report.picks.filter(p => p.kind === 'imagined');
+  const pickCard = (p, idx) => `
+    <div class="arch-field">
+      <div class="arch-field-label">${p.kind === 'proven' ? p.repo + ' · ' + (p.stars||0) + '★' : (p.use || 'Build it ourselves')}</div>
+      <div class="arch-field-body">
+        ${p.why_fits || ''}${p.use && p.kind === 'proven' ? '<br><i>Use: ' + p.use + '</i>' : ''}
+        <div class="q-row" style="margin-top:6px;">
+          <button class="ctrlbtn" data-plant="${idx}">Plant in tree</button>
+        </div>
+      </div>
+    </div>`;
+  host.innerHTML = `
+    <div class="arch-field" style="margin-top:10px;">
+      <div class="arch-field-label">Idea <button class="ctrlbtn" id="blocksRerunBtn" style="float:right;">Rerun</button></div>
+      <div class="arch-field-body">${report.idea_text}</div>
+    </div>
+    <h3 style="margin-top:14px;">Already-built options</h3>
+    ${proven.length ? proven.map((p,i) => pickCard(p, report.picks.indexOf(p))).join('') : '<div class="tv-empty">Nothing found on GitHub for this.</div>'}
+    <h3 style="margin-top:14px;">Build-it-ourselves options</h3>
+    ${imagined.length ? imagined.map((p,i) => pickCard(p, report.picks.indexOf(p))).join('') : '<div class="tv-empty">Nothing proposed here.</div>'}
+  `;
+  document.getElementById('blocksRerunBtn').onclick = async () => {
+    try { renderBlocksReport(await apiWrite(`/api/discovery/reports/${report.id}/rerun`, 'POST', {})); }
+    catch (e) { alert('Error: ' + e.message); }
+  };
+  host.querySelectorAll('[data-plant]').forEach(b => {
+    b.onclick = async () => {
+      b.disabled = true; b.textContent = '…';
+      try {
+        await apiWrite('/api/discovery/plant', 'POST', { report_id: report.id, pick_index: Number(b.getAttribute('data-plant')) });
+        b.textContent = 'Planted ✓';
+      } catch (e) { b.disabled = false; b.textContent = 'Plant in tree'; alert('Error: ' + e.message); }
+    };
+  });
+}
+
+// ---------- Frankenstein idea composition (Seeds → parts → package) ----------
+// Break one Seed into concrete parts, resolve each via a real GitHub repo or a
+// build-it-ourselves decision (reusing the Building blocks discovery engine
+// scoped to one part), then package the whole idea once every part is covered.
+let tvIdeaParts = {};       // ideaId -> parts[]
+let tvIdeaPartReports = {}; // partId -> discovery report
+
+async function toggleIdeaParts(ideaId) {
+  const host = document.getElementById(`idParts-${ideaId}`);
+  if (!host) return;
+  const opening = host.style.display === 'none';
+  host.style.display = opening ? '' : 'none';
+  if (opening) await loadIdeaParts(ideaId);
+}
+
+async function loadIdeaParts(ideaId) {
+  const host = document.getElementById(`idParts-${ideaId}`);
+  if (!host) return;
+  host.innerHTML = '<div class="tv-empty">Loading…</div>';
+  try { tvIdeaParts[ideaId] = (await api(`/api/travaux/ideas/${ideaId}/parts`)).parts || []; }
+  catch (e) { host.innerHTML = 'Error: ' + e.message; return; }
+  renderIdeaParts(ideaId);
+}
+
+function renderIdeaParts(ideaId) {
+  const host = document.getElementById(`idParts-${ideaId}`);
+  if (!host) return;
+  const parts = tvIdeaParts[ideaId] || [];
+  if (!parts.length) {
+    host.innerHTML = `<button class="ctrlbtn" id="idDecomposeBtn-${ideaId}">Break into parts</button>`;
+    document.getElementById(`idDecomposeBtn-${ideaId}`).onclick = async (e) => {
+      e.target.disabled = true; e.target.textContent = 'Thinking…';
+      try {
+        const out = await apiWrite(`/api/travaux/ideas/${ideaId}/parts/decompose`, 'POST', {});
+        tvIdeaParts[ideaId] = out.parts || [];
+        renderIdeaParts(ideaId);
+      } catch (err) { e.target.disabled = false; e.target.textContent = 'Break into parts'; alert('Error: ' + err.message); }
+    };
+    return;
+  }
+  const covered = parts.filter(p => p.status === 'covered').length;
+  const allCovered = covered === parts.length;
+  host.innerHTML = `
+    <div class="id-form-hint" style="margin:6px 0;">${covered}/${parts.length} parts covered</div>
+    ${parts.map(p => renderIdeaPartRow(p)).join('')}
+    <div class="q-row" style="margin-top:8px;">
+      <button class="ctrlbtn" id="idPackageBtn-${ideaId}" ${allCovered ? '' : 'disabled'} title="${allCovered ? '' : 'Resolve every part first'}">Package project</button>
+    </div>
+    <div id="idPackageErr-${ideaId}" class="q-err"></div>
+  `;
+  parts.forEach(p => wireIdeaPartRow(ideaId, p));
+  const pkgBtn = document.getElementById(`idPackageBtn-${ideaId}`);
+  if (pkgBtn) pkgBtn.onclick = async () => {
+    pkgBtn.disabled = true; pkgBtn.textContent = 'Packaging…';
+    const err = document.getElementById(`idPackageErr-${ideaId}`);
+    try {
+      await apiWrite(`/api/travaux/ideas/${ideaId}/package`, 'POST', {});
+      await loadIdeas(); await qLoad();
+    } catch (e) { pkgBtn.disabled = false; pkgBtn.textContent = 'Package project'; err.textContent = 'Error: ' + e.message; }
+  };
+}
+
+function renderIdeaPartRow(p) {
+  const reportHost = tvIdeaPartReports[p.id] ? renderPartReportHtml(p) : '';
+  return `
+    <div class="arch-field" data-part="${p.id}">
+      <div class="arch-field-label">${p.status === 'covered' ? '✅' : '⬜'} ${p.label}
+        ${p.status === 'covered' ? `<span style="color:#8a8378;font-size:11px;"> — ${p.resolution_kind === 'github' ? 'using ' + p.chosen_repo : 'build ourselves'}</span>` : ''}
+      </div>
+      <div class="arch-field-body">
+        ${p.status === 'covered' ? '' : `<button class="ctrlbtn" data-search="${p.id}">Search</button>`}
+        <div id="idPartReport-${p.id}">${reportHost}</div>
+      </div>
+    </div>`;
+}
+
+function wireIdeaPartRow(ideaId, p) {
+  const btn = document.querySelector(`[data-search="${p.id}"]`);
+  if (!btn) return;
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Searching…';
+    try {
+      const out = await apiWrite(`/api/travaux/ideas/${ideaId}/parts/${p.id}/search`, 'POST', {});
+      tvIdeaPartReports[p.id] = out.report;
+      document.getElementById(`idPartReport-${p.id}`).innerHTML = renderPartReportHtml(p);
+      wirePartReportButtons(ideaId, p.id);
+    } catch (e) { btn.disabled = false; btn.textContent = 'Search'; alert('Error: ' + e.message); }
+  };
+}
+
+function renderPartReportHtml(p) {
+  const report = tvIdeaPartReports[p.id];
+  if (!report) return '';
+  const opt = (pick, idx) => `
+    <div class="blocks-repo-row">
+      ${pick.kind === 'proven' ? `<b>${pick.repo}</b> · ${pick.stars||0}★` : `<b>Build ourselves:</b> ${pick.use||''}`}
+      <span style="color:#8a8378;"> — ${pick.why_fits||''}</span>
+      <button class="ctrlbtn" data-resolve="${idx}">Use this</button>
+    </div>`;
+  const picks = report.picks || [];
+  const pickList = picks.length ? picks.map((pick, idx) => opt(pick, idx)).join('') : '<span class="tv-empty">Nothing found on GitHub for this part.</span>';
+  return pickList + `<div class="q-row" style="margin-top:4px;"><button class="ctrlbtn" data-resolve="build">Build ourselves</button></div>`;
+}
+
+function wirePartReportButtons(ideaId, partId) {
+  const host = document.getElementById(`idPartReport-${partId}`);
+  if (!host) return;
+  host.querySelectorAll('[data-resolve]').forEach(b => {
+    b.onclick = async () => {
+      const report = tvIdeaPartReports[partId];
+      const idx = b.getAttribute('data-resolve');
+      let payload;
+      if (idx === 'build') {
+        payload = { resolution_kind: 'build', why: 'No good fit found on GitHub.' };
+      } else {
+        const pick = report.picks[Number(idx)];
+        payload = pick.kind === 'proven'
+          ? { resolution_kind: 'github', chosen_repo: pick.repo, why: pick.why_fits || '' }
+          : { resolution_kind: 'build', why: pick.why_fits || '' };
+      }
+      b.disabled = true;
+      try {
+        await apiWrite(`/api/travaux/ideas/${ideaId}/parts/${partId}/resolve`, 'POST', payload);
+        await loadIdeaParts(ideaId);
+      } catch (e) { b.disabled = false; alert('Error: ' + e.message); }
+    };
+  });
 }
 
 // ---------- Architecture Navigator ----------
