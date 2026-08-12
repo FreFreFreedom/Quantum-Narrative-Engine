@@ -2853,7 +2853,7 @@ function qRenderDetail(p) {
       ${activeSession && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
       ${canRerun ? `<button class="ctrlbtn" id="qRerunBtn"${p.status==='blocked' ? ' title="Retries one tier stronger if this was on the auto policy — a block usually means the model ran out of depth, not luck."' : ''}>Run again</button>` : ''}
       ${canRerun ? `<button class="ctrlbtn" id="qRerunFreshBtn" title="Run again, but start a brand-new session instead of resuming the one that led here.">Run again fresh</button>` : ''}
-      ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qDeleteBtn">Remove</button>` : ''}
+      <button class="ctrlbtn" id="qDeleteBtn">Remove</button>
     </div>
   `;
 
