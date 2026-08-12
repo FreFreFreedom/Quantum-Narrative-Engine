@@ -46,8 +46,11 @@ export const PROVIDERS = [
     apiKeyEnv: 'GOOGLE_AI_STUDIO_API_KEY',
     limits: { rpm: 15, rpd: 1500 },
     models: [
-      { id: 'gemini-2.0-flash', codingRank: 70, contextTokens: 1000000 },
-      { id: 'gemini-2.0-flash-lite', codingRank: 55, contextTokens: 1000000 },
+      // '-latest' aliases (Google-maintained, hot-swapped to the current release)
+      // instead of pinned version ids — gemini-2.0-flash was retired outright and
+      // broke every call using it by fixed id; aliases avoid repeating that.
+      { id: 'gemini-flash-latest', codingRank: 70, contextTokens: 1000000 },
+      { id: 'gemini-flash-lite-latest', codingRank: 55, contextTokens: 1000000 },
     ],
   },
   {
