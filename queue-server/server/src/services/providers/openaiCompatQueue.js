@@ -105,9 +105,6 @@ export async function executeAiRouterTask({ taskId, promptPath, logPath, codePat
     }
 
     for await (const chunk of stream) {
-      // TEMP diagnostic (remove once the streaming parse is confirmed correct
-      // against a real provider's SSE shape) — surfaces in Railway deploy logs.
-      console.log('[ai-router debug] chunk', JSON.stringify(chunk).slice(0, 400));
       if (chunk.type === 'content' && chunk.text) {
         appendFileSync(logPath, JSON.stringify({ type: 'text', text: chunk.text, sessionId }) + '\n');
       } else if (chunk.type === 'tool_use' && chunk.tool) {

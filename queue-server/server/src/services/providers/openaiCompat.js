@@ -227,7 +227,6 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
             buffer = lines.pop() || '';
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed) console.log('[ai-router debug] raw line', trimmed.slice(0, 400));
               if (!trimmed || trimmed === 'data: [DONE]') continue;
               if (trimmed.startsWith('data: ')) {
                 const data = trimmed.slice(6);
