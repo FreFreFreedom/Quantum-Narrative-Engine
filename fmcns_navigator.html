@@ -615,11 +615,6 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
             <span id="qStrategyInfo" style="font-size:10px;color:#6b645b;align-self:center;"></span>
           </div>
           <div class="q-row">
-            <label>Context
-              <select id="qParent" title="Continue the session of a finished task by the same agent (resumes its CLI session and lands on the same branch).">
-                <option value="">Fresh session (no context)</option>
-              </select>
-            </label>
             <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
           </div>
           <button class="q-addbtn" id="qAddBtn">Add to queue</button>
@@ -1976,7 +1971,6 @@ function initCore() {
       b.onclick = () => { qFilter = b.getAttribute('data-qfilter'); qRenderList(); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
-    document.getElementById('qAgent').onchange = qParentOptions; // "Continuer : …" follows the chosen agent
     document.getElementById('qStrategy').onchange = qStrategyInfo; // update cost multiplier info
     // "Server: local / production" — writes the shared key both constants read,
     // then reloads so every fetch lands on the new backend. Initial value mirrors
@@ -2085,26 +2079,6 @@ async function loadAgents() {
     `<option value="${a.key}">${a.emoji ? a.emoji + ' ' : ''}${a.label}${a.paused ? ' (paused)' : ''}</option>`).join('');
   if (prev && qAgents.some(a => a.key === prev)) sel.value = prev;
   else sel.value = qAgents.length ? qAgents[0].key : '';
-  qParentOptions(); // the continuation dropdown follows the chosen agent
-}
-
-// "Continuer : ⟨titre⟩" (plan 2d): the last 10 finished tasks BY THE SELECTED
-// AGENT become chainable parents. Chaining resumes the parent's CLI session and
-// lands on the same branch. Pre-selected to the most recent finished task.
-function qParentOptions() {
-  const sel = document.getElementById('qParent');
-  if (!sel) return;
-  const agentKey = document.getElementById('qAgent')?.value || 'dev1';
-  const prev = sel.value;
-  const finished = qPrompts
-    .filter(p => (p.agent_key || 'dev1') === agentKey && ['done', 'blocked'].includes(p.status))
-    .sort((a, b) => String(b.completed_at || '').localeCompare(String(a.completed_at || '')))
-    .slice(0, 10);
-  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  sel.innerHTML = `<option value="">Fresh session (no context)</option>` +
-    finished.map(p => `<option value="${p.id}" title="${esc(p.title)}">Continuer : ${esc(p.title).slice(0, 60)}${p.title.length > 60 ? '…' : ''}</option>`).join('');
-  if (prev && finished.some(p => p.id === prev)) sel.value = prev;
-  else sel.value = finished.length ? finished[0].id : '';
 }
 
 async function loadProviders() {
@@ -2373,7 +2347,6 @@ async function qLoad() {
   if (countEl) countEl.textContent = activeCount || '';
   qRenderList();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
-  qParentOptions(); // keep the "Continuer : …" dropdown in sync with finished tasks
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
     if (fresh) { qSelected = fresh; qRenderDetail(fresh); }
@@ -2755,14 +2728,14 @@ async function qAddPrompt() {
     return;
   }
   try {
-    const parentId = document.getElementById('qParent').value || null;
     await apiWrite('/api/travaux/prompts', 'POST', {
       prompt: promptText,
       title: document.getElementById('qPromptTitle').value.trim(),
       mode: document.getElementById('qMode').value,
       preset: isOpen ? 'standard' : document.getElementById('qPreset').value,
-      same_context: !!parentId,
-      parent_prompt_id: parentId,
+      // Context (continue an earlier task's session, or start fresh) is decided
+      // automatically server-side (contextPolicy.js) instead of a manual picker.
+      context_mode: 'auto',
       priority: document.getElementById('qPriority').checked,
       space: 'fmcns',
       provider,
@@ -2772,7 +2745,6 @@ async function qAddPrompt() {
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
-    qParentOptions(); // re-select the most recent finished task after each add
     document.getElementById('qPriority').checked = false;
     await qLoad();
   } catch (e) {
@@ -2799,6 +2771,7 @@ function qRenderDetail(p) {
   const ctxTurns = p.context_turns || 0;
   const ctxAmber = ctxTurns >= ctxLimit - 1;
   const activeSession = isOpen ? p.opencode_session_id : p.session_id;
+  const autoParent = p.parent_prompt_id ? qPrompts.find(x => x.id === p.parent_prompt_id) : null;
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
   const switchable = p.status !== 'running';
   const providerOpts = `
@@ -2819,6 +2792,7 @@ function qRenderDetail(p) {
       ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
       ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
       ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
+      ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${autoParent.title}" (auto)</span>` : ''}
     </div>
     ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
     ${switchable ? `

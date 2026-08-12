@@ -29,6 +29,7 @@ import {
   MAX_CONCURRENT_WRITERS,
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
+import { resolveParent } from './contextPolicy.js';
 import { defaultOpenCodeModel } from './providers/index.js';
 import { listAgents } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
@@ -81,11 +82,22 @@ function effectivePreset(row) {
   return row.preset === 'auto' ? (row.resolved_preset || 'standard') : row.preset;
 }
 
+// Candidate parents for auto context resolution (contextPolicy.js) — same set
+// qParentOptions() used to offer manually: the last 10 finished/blocked tasks by
+// the same agent, on the same provider (sessions don't cross providers).
+function candidateParents({ agentKey, provider }) {
+  return db.prepare(`
+    SELECT id, title, prompt FROM work_prompts
+    WHERE deleted_at IS NULL AND COALESCE(agent_key,'dev1')=? AND provider=? AND status IN ('done','blocked')
+    ORDER BY completed_at DESC LIMIT 10
+  `).all(agentKey || 'dev1', provider);
+}
+
 export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
-  parent_prompt_id = null, strategy = 'single', plan_source = 'auto',
+  parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -100,7 +112,18 @@ export async function createPrompt({
   const useAgentKey = String(agent_key || '').trim() || null;
   // Explicit continuation link (plan 2d): chaining onto a parent implies the
   // same-context semantics the old checkbox expressed.
-  const useParent = parent_prompt_id || null;
+  let useParent = parent_prompt_id || null;
+  // Auto context resolution: only when the caller opted in (context_mode:'auto',
+  // used by the New-prompt form) and didn't already pin a parent explicitly.
+  // Implement-mode tasks resolve this later in runPlanDraft(), against the
+  // drafted brief rather than the raw text — skip here so it isn't judged twice.
+  let autoContextNote = null;
+  const willDraftPreCheck = useMode === 'implement' && plan_source !== 'skip';
+  if (context_mode === 'auto' && !useParent && !willDraftPreCheck) {
+    const candidates = candidateParents({ agentKey: useAgentKey, provider: useProvider });
+    const picked = await resolveParent({ mode: useMode, text, candidates }).catch(() => null);
+    if (picked) { useParent = picked.id; autoContextNote = `Auto-continuing the session of "${picked.title}".`; }
+  }
   const chained = !!(same_context || useParent);
   let useModel = provider_model || null;
   if (useProvider === 'opencode' && !useModel) {
@@ -114,7 +137,7 @@ export async function createPrompt({
   // already produced a deliberated plan (plan_source:'skip', e.g. a future
   // conversation handoff) skip this and behave exactly as before — resolvePreset
   // runs synchronously against the text as submitted.
-  const willDraft = useMode === 'implement' && plan_source !== 'skip';
+  const willDraft = willDraftPreCheck;
   const resolved = (!willDraft && preset === 'auto' && useProvider === 'claude-code')
     ? await resolvePreset({ mode: useMode, prompt: text }).catch(() => 'standard') : null;
 
@@ -125,8 +148,14 @@ export async function createPrompt({
     useMode, preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
     willDraft ? text : null, plan_source, willDraft ? 1 : 0);
 
+  if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
-  if (willDraft) runPlanDraft(id, { title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial });
+  if (willDraft) {
+    runPlanDraft(id, {
+      title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial,
+      agentKey: useAgentKey, contextMode: context_mode, explicitParent: !!useParent,
+    });
+  }
   return getPrompt(id);
 }
 
@@ -136,16 +165,29 @@ export async function createPrompt({
 // the final text, clears plan_pending, and — only if the requested status was
 // 'queued' — kicks the queue. Never throws past draftPlan(), which already
 // swallows its own failures; on a null draft the raw text just stays as-is.
-async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus }) {
+async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus, agentKey = null, contextMode = 'manual', explicitParent = false }) {
   const draft = await draftPlan({ title, prompt, mode });
   const finalTitle = draft?.title || title;
   const finalPrompt = draft?.brief || prompt;
   const resolved = (preset === 'auto' && provider === 'claude-code')
     ? await resolvePreset({ mode, prompt: finalPrompt }).catch(() => 'standard') : null;
+
+  // Auto context resolution (deferred from createPrompt): decided against the
+  // drafted brief, which is a cleaner signal than the raw voice-transcribed text.
+  let parentId = null;
+  let contextNote = null;
+  if (contextMode === 'auto' && !explicitParent) {
+    const candidates = candidateParents({ agentKey, provider });
+    const picked = await resolveParent({ mode, text: finalPrompt, candidates }).catch(() => null);
+    if (picked) { parentId = picked.id; contextNote = `Auto-continuing the session of "${picked.title}".`; }
+  }
+
   db.prepare(`
     UPDATE work_prompts SET title=?, prompt=?, resolved_preset=COALESCE(?, resolved_preset),
+      ${parentId ? 'parent_prompt_id=?, same_context=1,' : ''}
       plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(finalTitle, finalPrompt, resolved, id);
+  `).run(finalTitle, finalPrompt, resolved, ...(parentId ? [parentId] : []), id);
+  if (contextNote) addMessage(id, { role: 'agent', text: contextNote });
   broadcast();
   if (targetStatus === 'queued') advanceQueue();
 }
