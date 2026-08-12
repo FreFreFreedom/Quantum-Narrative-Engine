@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | IN PROGRESS — Part A implemented and locally verified 2026-08-12 (not yet committed/deployed); Part B not started. |
+| **Status** | Part A: DONE — shipped and deployed 2026-08-12. Part B: SUPERSEDED — while implementing this, discovered an overnight agent had already independently built and shipped an idea-decomposition feature covering the same need (branches `agent/github-code-discovery` + `agent/idea-box-decomposition`, merged to `main` before this session; see `codeDiscovery.js`'s part-handling and commit "Idea box: decompose complex ideas into a multi-repo project"). Its design differs from Part B below (auto-recommends one pick per part with a single "Create project" action, vs. this doc's manual per-part search/resolve/package flow) — kept live as-is rather than overwritten. Part B's design here is not built. |
 | **Created** | 2026-08-12 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Depends on** | Part B depends on `plans/github-code-discovery.md`'s MVP (`services/codeDiscovery.js` + its two-pass pipeline) — build that first if it isn't already implemented when this plan is picked up. Part A depends on nothing. |
