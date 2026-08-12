@@ -13,6 +13,7 @@ later without the conversation that produced it.
 | [universal-conversations-core-architecture.md](universal-conversations-core-architecture.md) | Make conversation a universal primitive across the whole CORE ARCHITECTURE tab — chat with any Architecture component, tech-tree node, Seed or Suggestion to understand what it would actually do, refine it in dialogue, then send the resulting plan to the Dispatch Queue as a paused task. | PLANNED |
 | [always-on-models.md](always-on-models.md) | Free-provider gateway + quota-exhaustion ledger so every FMCNS feature (text seam, Dispatch Queue, chat) always has a model to run, falling through a codingRank-ordered catalogue of free OpenAI-compatible providers when the Claude Code subscription is exhausted — no paid fallback ever. | DONE |
 | [dispatch-queue-free-model-fallback.md](dispatch-queue-free-model-fallback.md) | Closes always-on-models.md's one gap: Dispatch Queue coding jobs now automatically walk Claude's tiers then every free OpenCode model (no confirmation) instead of pausing once Claude quota runs out. | DONE |
+| [plan-first-queue-and-idea-composition.md](plan-first-queue-and-idea-composition.md) | Part A: every Dispatch Queue task, from any entry point, is auto-drafted into an unambiguous plan before it runs. Part B: Idea box "Frankenstein" flow — break an idea into parts, resolve each via GitHub repo or build-ourselves (on top of github-code-discovery.md), package into one queue item + tech-tree node once all parts are covered. | IN PROGRESS (Part A done) |
 
 ## Statuses
 
