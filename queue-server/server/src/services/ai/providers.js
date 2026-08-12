@@ -3,6 +3,8 @@
 
 import * as claudeCode from '../providers/claudeCode.js';
 import * as opencode from '../providers/opencode.js';
+import * as openaiCompat from '../providers/openaiCompat.js';
+import { listProviders as listCatalogProviders } from './catalog.js';
 
 export const PROVIDER_CAPABILITIES = {
   'claude-code': {
@@ -41,21 +43,43 @@ export const PROVIDER_CAPABILITIES = {
   },
 };
 
-// Resolve a provider module by id
+// Resolve a provider module by id. Any id from the catalogue (catalog.js) —
+// the free OpenAI-compatible providers — resolves to the one generic adapter,
+// parameterised per-call by providerId; only claude-code and opencode are
+// distinct spawn-based modules.
 export function getProviderModule(id) {
   if (id === 'claude-code') return claudeCode;
   if (id === 'opencode') return opencode;
+  if (isCatalogProvider(id)) return openaiCompat;
   return null;
 }
 
-// Check if a provider id is known
-export function isKnownProvider(id) {
-  return id === 'claude-code' || id === 'opencode';
+function isCatalogProvider(id) {
+  return listCatalogProviders().some((p) => p.id === id);
 }
 
-// Get capability object for a provider
+// Check if a provider id is known — table-driven off the catalogue instead of
+// a hard-coded pair, so adding a provider to catalog.js is enough to make it
+// routable everywhere that calls this.
+export function isKnownProvider(id) {
+  return id === 'claude-code' || id === 'opencode' || isCatalogProvider(id);
+}
+
+// Get capability object for a provider. Catalogue (free) providers synthesize
+// one on the fly rather than being hand-listed in PROVIDER_CAPABILITIES, since
+// the catalogue is the single source of truth for what free providers exist.
 export function getProviderCapability(id) {
-  return PROVIDER_CAPABILITIES[id] || null;
+  if (PROVIDER_CAPABILITIES[id]) return PROVIDER_CAPABILITIES[id];
+  const cat = listCatalogProviders().find((p) => p.id === id);
+  if (!cat) return null;
+  return {
+    id: cat.id, label: cat.label,
+    hasCliText: false, cliModels: [],
+    hasApiText: true, apiModels: cat.models.map((m) => m.id),
+    hasQueueExecution: false, queueModels: [],
+    hasAutoFallback: false,
+    freeModels: cat.models.map((m) => m.id),
+  };
 }
 
 // List all known provider ids

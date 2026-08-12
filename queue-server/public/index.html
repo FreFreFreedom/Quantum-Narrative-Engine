@@ -232,6 +232,17 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
 .ai-savebtn:hover { background:#3a352e; }
 .ai-savebtn:disabled { background:#c9c1b3; cursor:default; }
 .ai-savemsg { font-size:11px; color:#2f7d63; margin-left:10px; }
+.ai-fp-section { margin-top:26px; padding-top:16px; border-top:1px solid #e4dfd8; }
+.ai-fp-title { font-size:12px; font-weight:600; margin-bottom:2px; }
+.ai-fp-sub { font-size:10.5px; color:#8a8378; margin-bottom:10px; }
+.ai-fp-table { width:100%; border-collapse:collapse; }
+.ai-fp-table th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:#8a8378; padding:4px 8px 6px; border-bottom:1px solid #e4dfd8; }
+.ai-fp-table td { padding:5px 8px; border-bottom:1px solid #f0ede7; font-size:11px; vertical-align:middle; }
+.ai-fp-table tr.ai-fp-nokey td { color:#b3ab9e; }
+.ai-fp-rank { font-variant-numeric:tabular-nums; color:#6b645b; }
+.ai-fp-exhausted { color:#b23a2f; font-size:10px; }
+.ai-fp-live { color:#2f7d63; font-size:10px; }
+.ai-fp-nokeytag { font-size:10px; color:#b3ab9e; }
 
 /* ---------- Seeds + Suggestion Engine + Quotas strip ---------- */
 .tv-toolbar { padding:10px 16px 0; border-bottom:1px solid #e4dfd8; background:#fbfaf8; }
@@ -617,6 +628,16 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
                 <option value="">(loading models…)</option>
               </select>
             </label>
+          </div>
+          <div class="q-row">
+            <label>Strategy
+              <select id="qStrategy">
+                <option value="single" selected>Single (one agent, normal review)</option>
+                <option value="competition">Competition (two devs, judge compares, you pick)</option>
+                <option value="team">Team (research → build → test → judge → integrate)</option>
+              </select>
+            </label>
+            <span id="qStrategyInfo" style="font-size:10px;color:#6b645b;align-self:center;"></span>
           </div>
           <div class="q-row">
             <label>Context
@@ -1981,6 +2002,7 @@ function initCore() {
     });
     document.getElementById('qProvider').onchange = qProviderUi;
     document.getElementById('qAgent').onchange = qParentOptions; // "Continuer : …" follows the chosen agent
+    document.getElementById('qStrategy').onchange = qStrategyInfo; // update cost multiplier info
     // "Server: local / production" — writes the shared key both constants read,
     // then reloads so every fetch lands on the new backend. Initial value mirrors
     // what the constants resolved to before this element existed.
@@ -2148,6 +2170,23 @@ function qProviderUi() {
   }
 }
 
+// Strategy info: show the cost multiplier and a plain-French explanation
+const STRATEGY_INFO = {
+  single: { mult: '1×', text: 'One agent does the task, then the normal review gate.' },
+  competition: { mult: '~2.5×', text: 'Two developers solve the same task separately. A judge compares both and recommends a winner. You pick which to merge.' },
+  team: { mult: '~3–4×', text: 'Explorer researches → Developer builds → Tester tries to break it → Judge reviews → Integrator prepares the merge. Research and test run on free models.' },
+};
+
+function qStrategyInfo() {
+  const sel = document.getElementById('qStrategy');
+  const info = document.getElementById('qStrategyInfo');
+  if (!sel || !info) return;
+  const s = STRATEGY_INFO[sel.value] || { mult: '', text: '' };
+  info.textContent = s.mult ? `Cost: ${s.mult} — ${s.text}` : '';
+}
+// Call once on init so the default shows
+qStrategyInfo();
+
 // ---------- AI Settings sub-tab ----------
 // Per-work-type default model + the quota policy that decides what happens when
 // the paid Claude subscription runs out — backed by services/ai/text.js's
@@ -2164,15 +2203,18 @@ const AI_FEATURES = [
 ];
 const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
 let aiSettings = null;
+let aiFreeProviders = null;
 
 async function loadAiSettings() {
   const host = document.getElementById('aiBody');
   try {
-    const [settings] = await Promise.all([
+    const [settings, , freeProviders] = await Promise.all([
       api('/api/travaux/ai-settings'),
       qProviders.opencode ? Promise.resolve() : loadProviders(),
+      api('/api/travaux/free-providers').catch(() => null),
     ]);
     aiSettings = settings;
+    aiFreeProviders = freeProviders;
     renderAiSettings();
   } catch (e) {
     host.innerHTML = `<div class="q-err">Could not load AI settings: ${e.message}</div>`;
@@ -2186,6 +2228,57 @@ function aiModelOptions(provider, selected) {
     return models.map(m => `<option value="${m.id}"${m.id === selected ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.id}</option>`).join('');
   }
   return AI_CLAUDE_MODELS.map(m => `<option value="${m}"${m === selected ? ' selected' : ''}>${m}</option>`).join('');
+}
+
+// "Providers & quota" — read-only view of the free-provider catalogue
+// (services/ai/catalog.js) plus live quota-ledger state (services/ai/router.js),
+// backed by GET /api/travaux/free-providers. Models within a provider are shown
+// in codingRank order (the fallback order the router actually uses).
+function renderFreeProvidersSection() {
+  if (!aiFreeProviders) return '';
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const stateByKey = {};
+  for (const s of aiFreeProviders.state || []) stateByKey[`${s.provider_id}::${s.model}`] = s;
+  const fmtCountdown = (iso) => {
+    if (!iso) return '';
+    const ms = new Date(iso).getTime() - Date.now();
+    if (ms <= 0) return 'resetting…';
+    const mins = Math.round(ms / 60000);
+    return mins < 60 ? `${mins}m` : `${Math.round(mins / 60)}h`;
+  };
+  const rows = (aiFreeProviders.providers || []).flatMap((p) => {
+    const providerState = stateByKey[`${p.id}::`]; // whole-provider exhaustion, if any
+    if (!p.models.length) {
+      return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${esc(p.label)}</td><td colspan="3">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
+    }
+    return p.models.map((m, i) => {
+      const st = stateByKey[`${p.id}::${m.id}`] || providerState;
+      const exhausted = !!(st && st.exhausted);
+      const statusHtml = !p.keyPresent
+        ? (i === 0 ? `<span class="ai-fp-nokeytag">no API key set</span>` : '')
+        : (exhausted
+          ? `<span class="ai-fp-exhausted">exhausted${st.resets_known ? ` — resets in ${fmtCountdown(st.resets_at)}` : ' (reset time unknown)'}</span>`
+          : `<span class="ai-fp-live">live</span>`);
+      return `
+        <tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}">
+          <td>${i === 0 ? esc(p.label) : ''}</td>
+          <td>${esc(m.id)}</td>
+          <td class="ai-fp-rank">${m.codingRank}</td>
+          <td>${statusHtml}</td>
+        </tr>`;
+    });
+  }).join('');
+
+  const earliest = aiFreeProviders.earliestResetAt;
+  return `
+    <div class="ai-fp-section">
+      <div class="ai-fp-title">Providers &amp; quota</div>
+      <div class="ai-fp-sub">Free fallback models the router (services/ai/router.js) can reach for once the Claude Code subscription is exhausted, ordered by coding-intelligence rank.${earliest ? ` Next reset: ${fmtCountdown(earliest)}.` : ''}</div>
+      <table class="ai-fp-table">
+        <thead><tr><th>Provider</th><th>Model</th><th>Rank</th><th>Status</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4">No free providers configured.</td></tr>'}</tbody>
+      </table>
+    </div>`;
 }
 
 function renderAiSettings() {
@@ -2231,6 +2324,7 @@ function renderAiSettings() {
     </table>
     <button class="ai-savebtn" id="aiSaveBtn">Save</button>
     <span class="ai-savemsg" id="aiSaveMsg"></span>
+    ${renderFreeProvidersSection()}
   `;
 
   host.querySelectorAll('.ai-provider-sel').forEach(sel => {
@@ -2410,7 +2504,7 @@ const REVIEW_STATUS_COLORS = { pending: '#a19a8e', approved: '#2f7d63', changes_
 let qReviews = [];
 
 function qReviewCard(r) {
-  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c]));
   const checks = r.checks || {};
   const rows = [
     ['syntax', 'Changed files parse'],
@@ -2451,65 +2545,168 @@ function qReviewCard(r) {
   </div>`;
 }
 
+// Competition comparison card — shows both variants side by side
+function qCompetitionCard(p) {
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c]));
+  const stages = p.stages || [];
+  const buildStages = stages.filter(s => s.stage === 'build');
+  const judgeStage = stages.find(s => s.stage === 'judge');
+  const variantA = buildStages.find(s => s.variant === 'A');
+  const variantB = buildStages.find(s => s.variant === 'B');
+  const verdict = judgeStage?.verdict_json || {};
+  const winner = verdict.winner || 'neither';
+  const why = verdict.why || '';
+  const tradeoffs = verdict.tradeoffs || {};
+  const verdictA = verdict.verdict_A || '';
+  const verdictB = verdict.verdict_B || '';
+  
+  const aStats = variantA ? `${variantA.files_changed?.length || 0} files · +${variantA.insertions || 0} / −${variantA.deletions || 0}` : '—';
+  const bStats = variantB ? `${variantB.files_changed?.length || 0} files · +${variantB.insertions || 0} / −${variantB.deletions || 0}` : '—';
+  const aCost = variantA?.cost_usd != null ? `~$${variantA.cost_usd.toFixed(2)}` : '—';
+  const bCost = variantB?.cost_usd != null ? `~$${variantB.cost_usd.toFixed(2)}` : '—';
+  const aChecks = variantA?.checks ? Object.values(variantA.checks).filter(c => c.ok).length + '/' + Object.keys(variantA.checks).length : '—';
+  const bChecks = variantB?.checks ? Object.values(variantB.checks).filter(c => c.ok).length + '/' + Object.keys(variantB.checks).length : '—';
+
+  return `
+  <div class="q-review" data-review-id="competition-${p.id}" style="border-left-color:#8a5a1e;">
+    <div class="q-item-top">
+      <span class="q-item-title">⚔️ Compétition — ${esc(p.title)}</span>
+      <span class="q-badge" style="background:#8a5a1e;">Judge recommends ${winner === 'A' ? 'Version A' : winner === 'B' ? 'Version B' : 'neither'}</span>
+    </div>
+    <div class="q-review-plain">${esc(why)}</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+        <thead>
+          <tr style="background:#f6e7cf;">
+            <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #d4c4a0;"></th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #d4c4a0;">Version A (Dev 1)</th>
+            <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #d4c4a0;">Version B (Dev 2) ${winner === 'B' ? '⭐' : winner === 'A' ? '⭐' : ''}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;font-weight:600;">Files / changes</td><td style="padding:6px 8px;">${esc(aStats)}</td><td style="padding:6px 8px;">${esc(bStats)}</td></tr>
+          <tr style="background:#fbfaf8;"><td style="padding:6px 8px;font-weight:600;">Checks passed</td><td style="padding:6px 8px;">${esc(aChecks)}</td><td style="padding:6px 8px;">${esc(bChecks)}</td></tr>
+          <tr><td style="padding:6px 8px;font-weight:600;">Judge verdict</td><td style="padding:6px 8px;color:${verdictA==='safe'?'#2f7d63':verdictA==='risky'?'#b8860b':'#b23a2f'}">${esc(verdictA)}</td><td style="padding:6px 8px;color:${verdictB==='safe'?'#2f7d63':verdictB==='risky'?'#b8860b':'#b23a2f'}">${esc(verdictB)}</td></tr>
+          <tr style="background:#fbfaf8;"><td style="padding:6px 8px;font-weight:600;">Cost</td><td style="padding:6px 8px;">${esc(aCost)}</td><td style="padding:6px 8px;">${esc(bCost)}</td></tr>
+          <tr><td style="padding:6px 8px;font-weight:600;vertical-align:top;">Trade-offs</td><td style="padding:6px 8px;">${(tradeoffs.A || []).map(t => '• ' + esc(t)).join('<br>')}</td><td style="padding:6px 8px;">${(tradeoffs.B || []).map(t => '• ' + esc(t)).join('<br>')}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="q-review-actions">
+      ${['A','B'].includes(winner) ? `
+        <button class="ctrlbtn q-mergebtn" data-choose="${p.id}" data-variant="${winner}">Choose ${winner} and publish</button>
+        <button class="ctrlbtn" data-choose="${p.id}" data-variant="${winner === 'A' ? 'B' : 'A'}">Choose ${winner === 'A' ? 'B' : 'A'} instead</button>
+      ` : `
+        <button class="ctrlbtn q-mergebtn" data-choose="${p.id}" data-variant="A">Choose A and publish</button>
+        <button class="ctrlbtn q-mergebtn" data-choose="${p.id}" data-variant="B">Choose B and publish</button>
+      `}
+      <button class="ctrlbtn q-rejectbtn" data-abandon="${p.id}">Discard both</button>
+    </div>
+  </div>`;
+}
+
 async function qRenderReviews() {
   const host = document.getElementById('qReviews');
   if (!host) return;
   try {
-    const data = await api('/api/travaux/reviews');
-    qReviews = data.reviews || [];
+    const [reviewsData, strategiesData] = await Promise.all([
+      api('/api/travaux/reviews'),
+      api('/api/travaux/prompts?space=fmcns'),
+    ]);
+    qReviews = reviewsData.reviews || [];
+    const strategyPrompts = (strategiesData.prompts || []).filter(p => p.strategy === 'competition' && p.strategy_state === 'awaiting_choice');
+    
+    const visible = qReviews
+      .filter(r => ['pending', 'approved', 'changes_requested'].includes(r.status))
+      .sort((a, b) => (REVIEW_ORDER[a.status] || 9) - (REVIEW_ORDER[b.status] || 9));
+    
+    const competitionCards = strategyPrompts.map(qCompetitionCard).join('');
+    const normalCards = visible.map(qReviewCard).join('');
+    
+    if (!visible.length && !competitionCards) { host.style.display = 'none'; host.innerHTML = ''; return; }
+    host.style.display = '';
+    host.innerHTML = `<div style="font-size:13px;color:#8a8378;margin-bottom:6px;">Ready to merge (${visible.length})</div>` + normalCards + competitionCards;
+    
+    // Normal review actions
+    host.querySelectorAll('[data-merge]').forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-merge');
+        const typed = prompt('Type MERGE (capital letters) to merge and publish online:');
+        if (typed !== 'MERGE') { alert('Merge cancelled.'); return; }
+        b.disabled = true; b.textContent = 'Merging…';
+        try {
+          const out = await apiWrite('/api/travaux/reviews/' + id + '/merge', 'POST', {});
+          alert('Merged ✓ The work is online.');
+        } catch (err) {
+          alert('Merge failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
+        }
+        b.disabled = false; b.textContent = 'Merge → publish online';
+        qRenderReviews();
+      };
+    });
+    host.querySelectorAll('[data-revert]').forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-revert');
+        if (!confirm('Undo this merge? The online site will go back to how it was before.')) return;
+        b.disabled = true; b.textContent = 'Reverting…';
+        try {
+          await apiWrite('/api/travaux/reviews/' + id + '/revert', 'POST', {});
+          alert('Reverted ✓');
+        } catch (err) {
+          alert('Revert failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
+        }
+        b.disabled = false; b.textContent = 'Undo this merge';
+        qRenderReviews();
+      };
+    });
+    host.querySelectorAll('[data-reject]').forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        const id = b.getAttribute('data-reject');
+        if (!confirm('Discard this work? Its working folder will be removed.')) return;
+        try {
+          await apiWrite('/api/travaux/reviews/' + id + '/reject', 'POST', {});
+        } catch (err) {
+          alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
+        }
+        qRenderReviews();
+      };
+    });
+    
+    // Competition actions
+    host.querySelectorAll('[data-choose]').forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        const promptId = b.getAttribute('data-choose');
+        const variant = b.getAttribute('data-variant');
+        if (!confirm(`Choose variant ${variant} and merge? This will publish variant ${variant} and discard the other.`)) return;
+        b.disabled = true; b.textContent = 'Merging…';
+        try {
+          const out = await apiWrite('/api/travaux/strategies/' + promptId + '/choose-winner', 'POST', { variant });
+          alert('Winner chosen and merged ✓ The work is online.');
+        } catch (err) {
+          alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
+        }
+        b.disabled = false; b.textContent = `Choose ${variant} and publish`;
+        qRenderReviews();
+      };
+    });
+    host.querySelectorAll('[data-abandon]').forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        const promptId = b.getAttribute('data-abandon');
+        if (!confirm('Discard both variants? Their working folders will be removed.')) return;
+        try {
+          await apiWrite('/api/travaux/strategies/' + promptId + '/abandon', 'POST', {});
+        } catch (err) {
+          alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
+        }
+        qRenderReviews();
+      };
+    });
   } catch { return; }
-  const visible = qReviews
-    .filter(r => ['pending', 'approved', 'changes_requested'].includes(r.status))
-    .sort((a, b) => (REVIEW_ORDER[a.status] || 9) - (REVIEW_ORDER[b.status] || 9));
-  if (!visible.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
-  host.style.display = '';
-  host.innerHTML = `<div style="font-size:13px;color:#8a8378;margin-bottom:6px;">Ready to merge (${visible.length})</div>` + visible.map(qReviewCard).join('');
-  host.querySelectorAll('[data-merge]').forEach(b => {
-    b.onclick = async (e) => {
-      e.stopPropagation();
-      const id = b.getAttribute('data-merge');
-      const typed = prompt('Type MERGE (capital letters) to merge and publish online:');
-      if (typed !== 'MERGE') { alert('Merge cancelled.'); return; }
-      b.disabled = true; b.textContent = 'Merging…';
-      try {
-        const out = await apiWrite('/api/travaux/reviews/' + id + '/merge', 'POST', {});
-        alert('Merged ✓ The work is online.');
-      } catch (err) {
-        alert('Merge failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-      }
-      b.disabled = false; b.textContent = 'Merge → publish online';
-      qRenderReviews();
-    };
-  });
-  host.querySelectorAll('[data-revert]').forEach(b => {
-    b.onclick = async (e) => {
-      e.stopPropagation();
-      const id = b.getAttribute('data-revert');
-      if (!confirm('Undo this merge? The online site will go back to how it was before.')) return;
-      b.disabled = true; b.textContent = 'Reverting…';
-      try {
-        await apiWrite('/api/travaux/reviews/' + id + '/revert', 'POST', {});
-        alert('Reverted ✓');
-      } catch (err) {
-        alert('Revert failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-      }
-      b.disabled = false; b.textContent = 'Undo this merge';
-      qRenderReviews();
-    };
-  });
-  host.querySelectorAll('[data-reject]').forEach(b => {
-    b.onclick = async (e) => {
-      e.stopPropagation();
-      const id = b.getAttribute('data-reject');
-      if (!confirm('Discard this work? Its working folder will be removed.')) return;
-      try {
-        await apiWrite('/api/travaux/reviews/' + id + '/reject', 'POST', {});
-      } catch (err) {
-        alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-      }
-      qRenderReviews();
-    };
-  });
 }
 
 function qRenderList() {
@@ -2593,6 +2790,7 @@ async function qAddPrompt() {
       provider,
       provider_model: isOpen ? modelSel.value : null,
       agent_key: document.getElementById('qAgent').value || 'dev1',
+      strategy: document.getElementById('qStrategy').value,
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';

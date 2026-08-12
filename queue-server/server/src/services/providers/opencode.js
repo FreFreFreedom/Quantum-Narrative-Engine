@@ -14,10 +14,10 @@
 //     "reason":"stop","tokens":{"input":…,"output":…,"reasoning":…,"cache":{…}},"cost":0}}
 //   {"type":"error", "error":{"data":{"message":"…"}}}
 //
-// Deliberate safety rail: on a detected quota/limit hit this provider NEVER
-// switches models or retries on its own — a different model runs only when the
-// user picks one in the UI (free models are listed first) and resumes. That is an
-// explicit user requirement, unlike the Claude provider's automatic tier chain.
+// Model fallback: on a detected quota/limit hit, taskRunner.js's finalize() walks
+// this provider's free model list automatically (same mechanism as the Claude
+// provider's tier chain) — see taskRunner.js's §11 comment block. This module only
+// detects the limit (detectLimit below); the switch-or-defer decision lives there.
 
 import { spawn } from 'node:child_process';
 import { resolve, join } from 'node:path';
