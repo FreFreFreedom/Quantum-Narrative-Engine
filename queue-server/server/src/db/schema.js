@@ -113,6 +113,19 @@ function initSchema(db) {
   // "the previous row in this space" is somebody else's task. NULL = fresh
   // session (the backfill value for every existing row).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN parent_prompt_id TEXT REFERENCES work_prompts(id)`); } catch {}
+  // Plan-first queue (plan "plan-first-queue-and-idea-composition", Part A): every
+  // implement-mode task is auto-drafted into an unambiguous brief before it runs.
+  // raw_prompt keeps what was actually submitted (for the "Originally submitted"
+  // toggle); plan_source lets a future caller that already produced a deliberated
+  // plan (e.g. a finished conversation handoff) opt out with 'skip' instead of
+  // paying for a redundant second drafting pass. plan_pending is a plain flag, not
+  // a new status value — status stays 'queued'/'paused' as set at creation time,
+  // and advanceQueue()'s queued-selection queries skip rows still drafting, the
+  // same pattern already used for resume_after. This avoids touching the
+  // work_prompts.status CHECK constraint, which SQLite cannot ALTER in place.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN raw_prompt TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN plan_source TEXT DEFAULT 'auto'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN plan_pending INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

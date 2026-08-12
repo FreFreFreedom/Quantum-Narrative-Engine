@@ -31,6 +31,7 @@ import {
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { defaultOpenCodeModel } from './providers/index.js';
 import { listAgents } from './agents.js';
+import { draftPlan } from './taskPlanner.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -84,10 +85,11 @@ export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
-  parent_prompt_id = null, strategy = 'single',
+  parent_prompt_id = null, strategy = 'single', plan_source = 'auto',
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
+  const useMode = mode === 'question' ? 'question' : 'implement';
   const useProvider = provider === 'opencode' ? 'opencode' : 'claude-code';
   const id = randomUUID();
   const given = String(title || '').trim();
@@ -100,22 +102,52 @@ export async function createPrompt({
   // same-context semantics the old checkbox expressed.
   const useParent = parent_prompt_id || null;
   const chained = !!(same_context || useParent);
-  const resolved = (preset === 'auto' && useProvider === 'claude-code')
-    ? await resolvePreset({ mode, prompt: text }).catch(() => 'standard') : null;
   let useModel = provider_model || null;
   if (useProvider === 'opencode' && !useModel) {
     // No model chosen — remember the best available default (free models first) at
     // creation time, so the sync execution path never has to discover it lazily.
     try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
   }
+
+  // Plan-first queue (Part A): every implement-mode task is auto-drafted into an
+  // unambiguous brief before it runs. Question-mode tasks and any caller that
+  // already produced a deliberated plan (plan_source:'skip', e.g. a future
+  // conversation handoff) skip this and behave exactly as before — resolvePreset
+  // runs synchronously against the text as submitted.
+  const willDraft = useMode === 'implement' && plan_source !== 'skip';
+  const resolved = (!willDraft && preset === 'auto' && useProvider === 'claude-code')
+    ? await resolvePreset({ mode: useMode, prompt: text }).catch(() => 'standard') : null;
+
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
-    mode === 'question' ? 'question' : 'implement', preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running');
+    useMode, preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
+    willDraft ? text : null, plan_source, willDraft ? 1 : 0);
 
   broadcast();
+  if (willDraft) runPlanDraft(id, { title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial });
   return getPrompt(id);
+}
+
+// Background continuation for the plan-first drafting stage: the row already
+// exists (status queued/paused as requested, plan_pending=1 so advanceQueue()
+// skips it) — this fills in the drafted title/prompt, resolves the preset against
+// the final text, clears plan_pending, and — only if the requested status was
+// 'queued' — kicks the queue. Never throws past draftPlan(), which already
+// swallows its own failures; on a null draft the raw text just stays as-is.
+async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus }) {
+  const draft = await draftPlan({ title, prompt, mode });
+  const finalTitle = draft?.title || title;
+  const finalPrompt = draft?.brief || prompt;
+  const resolved = (preset === 'auto' && provider === 'claude-code')
+    ? await resolvePreset({ mode, prompt: finalPrompt }).catch(() => 'standard') : null;
+  db.prepare(`
+    UPDATE work_prompts SET title=?, prompt=?, resolved_preset=COALESCE(?, resolved_preset),
+      plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(finalTitle, finalPrompt, resolved, id);
+  broadcast();
+  if (targetStatus === 'queued') advanceQueue();
 }
 
 const EDITABLE = ['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy'];
@@ -285,7 +317,7 @@ export function advanceQueue() {
 
   const slots = getMaxParallelQuestions() - runningQuestions;
   if (slots > 0) {
-    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
+    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
     for (const q of questions) started.push(startPrompt(q));
   }
 
@@ -301,7 +333,7 @@ export function advanceQueue() {
     const k = r.agent_key || 'dev1';
     runningByAgent.set(k, (runningByAgent.get(k) || 0) + 1);
   }
-  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
     const agentKey = next.agent_key || 'dev1';

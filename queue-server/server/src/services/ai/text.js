@@ -37,7 +37,7 @@ function loadAiSettings() {
 
 export function refreshAiSettings() { settingsCache.at = 0; return loadAiSettings(); }
 
-const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup'];
+const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft'];
 
 // Read-only snapshot for the AI Settings panel: per-feature defaults, the global
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
