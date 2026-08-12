@@ -55,7 +55,12 @@ export function parseTranscript(raw) {
       errorMessage = String(evt.error.message);
     }
   }
-  return { text, resultText: '', sessionId, usage, errorMessage };
+  // Fold the error into the visible text when there's no assistant output to show —
+  // otherwise finalize() in taskRunner.js only ever shows a bare "(exit code: 1)"
+  // with zero indication of what actually went wrong (bad API key, bad model id,
+  // provider outage, etc).
+  const visibleText = text || (errorMessage ? `(AI Router error: ${errorMessage})` : '');
+  return { text: visibleText, resultText: '', sessionId, usage, errorMessage };
 }
 
 // Quota / rate-limit detection for API errors
