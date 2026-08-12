@@ -29,8 +29,6 @@ import { bindAiTextDb } from './services/ai/text.js';
 import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
-import { bindDiscoveryDb } from './services/codeDiscovery.js';
-import { discoveryRoutes } from './routes/discovery.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -56,7 +54,6 @@ bindBriefingDb(db);
 bindAiTextDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
-bindDiscoveryDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -112,7 +109,6 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
   }
 });
 app.use('/api/travaux', requireAuth, providersRoutes());
-app.use('/api/discovery', requireAuth, discoveryRoutes());
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
