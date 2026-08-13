@@ -29,6 +29,8 @@ import { bindAiTextDb } from './services/ai/text.js';
 import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
+import { conversationsRoutes } from './routes/conversations.js';
+import { bindConversationsDb } from './services/conversations.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -54,6 +56,7 @@ bindBriefingDb(db);
 bindAiTextDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
+bindConversationsDb(db);
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -112,6 +115,7 @@ app.use('/api/travaux', requireAuth, providersRoutes());
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
+app.use('/api/convos', requireAuth, conversationsRoutes());
 
 // Serve the single-file frontend app (fmcns_navigator.html, copied to
 // public/index.html) at the root address, so the whole app lives at one URL.
