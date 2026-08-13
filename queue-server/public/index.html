@@ -213,6 +213,14 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .ws-map { flex:1; min-width:0; display:none; flex-direction:column; min-height:0; }
 .ws-map.open { display:flex; }
 .ws-map-body { flex:1; min-height:0; display:flex; }
+.ws-map.blocks-tab .arch-toolbar, .ws-map.blocks-tab .ws-map-body { display:none; }
+.ws-map.blocks-tab #archBlocksPane { display:flex; }
+.arch-inner-tabs { display:flex; align-items:center; gap:8px; padding:8px 14px 0; flex-shrink:0; }
+.ws-map.blocks-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
+.arch-inner-tabs button { font-size:12px; padding:4px 10px; border-radius:10px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); cursor:pointer; }
+.arch-inner-tabs button:hover { background:var(--c-surface-2); }
+.arch-inner-tabs button.active { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
+#archBlocksPane { flex:1; min-height:0; display:none; flex-direction:column; }
 .ws-archdetail { display:none; width:330px; min-width:300px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; }
 .ws-archdetail.open { display:block; }
 .ws-archdetail h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
@@ -642,7 +650,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     <div class="core-tabs" data-src="CORE ARCHITECTURE → view chips | fmcns_navigator.html: switchCoreView()/renderWorkspace()">
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabFlow" data-core-tab="flow">Flow <span class="core-tab-count" id="coreCountFlow"></span></button>
-      <button id="coreTabBlocks" data-core-tab="blocks">Building blocks</button>
     </div>
     <div id="usageStripHost" data-src="CORE ARCHITECTURE → slim header → Quotas usage strip (compact) | fmcns_navigator.html: renders into #usageStripHost, startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
     <span id="archQueueBanner" class="core-banner" data-src="CORE ARCHITECTURE → slim header → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
@@ -658,7 +665,11 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     <button class="core-hbtn" id="aiSheetBtn" title="AI Settings — which model handles what, and what happens when the paid one runs out">⚙</button>
   </div>
   <div class="ws-shell">
-    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the architecture graph, full width | fmcns_navigator.html: renderArchStage()/initArchNav() | backend: services/architecture.js, routes/architecture.js">
+    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage(), initBlocks() into #tvBodyBlocks | backend: services/architecture.js, routes/architecture.js, routes/discovery.js">
+      <div class="arch-inner-tabs">
+        <button class="active" data-arch-tab="graph">Graph</button>
+        <button data-arch-tab="blocks">Building blocks</button>
+      </div>
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
         <span class="arch-sub">How FMCNS itself is built — click a component, drag to pan, scroll to zoom.</span>
@@ -694,6 +705,19 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           <h2>Component</h2>
           <div class="empty">Click a component to inspect it.</div>
         </div>
+      </div>
+      <div id="archBlocksPane" class="core-pane" data-src="CORE ARCHITECTURE → graph zone → Building blocks (Discover / Idea box) | fmcns_navigator.html: initBlocks() into #tvBodyBlocks | backend: routes/discovery.js">
+        <div class="tv-toolbar">
+          <div class="tv-toolbar-top">
+            <span class="arch-title">Building blocks</span>
+            <span class="arch-sub">Real GitHub repos and imagined proposals, evidence for what FMCNS could grow next.</span>
+          </div>
+          <div class="arch-viewbtns" id="bkViewBtns">
+            <button class="active" data-bk-view="discover">Discover</button>
+            <button data-bk-view="idea">Idea box</button>
+          </div>
+        </div>
+        <div class="tv-body" id="tvBodyBlocks"></div>
       </div>
     </div>
     <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done) + the New-prompt composer | fmcns_navigator.html: renderFlow(), qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js">
@@ -784,19 +808,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           </div>
         </div>
         <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
-      </div>
-      <div id="corePaneBlocks" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Building blocks | fmcns_navigator.html: renders into #tvBodyBlocks, loadBlocks()/renderDiscover()/renderIdeaBox() | backend: routes/discovery.js">
-        <div class="tv-toolbar">
-          <div class="tv-toolbar-top">
-            <span class="arch-title">Building blocks</span>
-            <span class="arch-sub">Real GitHub repos and imagined proposals, evidence for what FMCNS could grow next.</span>
-          </div>
-          <div class="arch-viewbtns" id="bkViewBtns">
-            <button class="active" data-bk-view="discover">Discover</button>
-            <button data-bk-view="idea">Idea box</button>
-          </div>
-        </div>
-        <div class="tv-body" id="tvBodyBlocks"></div>
       </div>
     </div>
     <div class="ws-detail" id="wsDetail" data-src="CORE ARCHITECTURE → workspace right zone: the shared detail pane (task thread / seed / suggestion — Flow view)">
@@ -2134,7 +2145,7 @@ document.addEventListener('click', (e) => {
 // the center zone shows, and which detail slot the right zone displays.
 let coreView = 'arch';
 let coreInited = false;
-const CORE_VIEW_PANES = { flow: 'corePaneFlow', blocks: 'corePaneBlocks' };
+const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
 let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
@@ -2203,9 +2214,9 @@ function teardownCore() {
 
 // The one path that lays out the workspace zones for the current view: the
 // architecture graph fills the whole workspace on arch (its detail panel is
-// docked inside the graph zone and driven by selection, not by view); the
-// center shows the Flow / Building blocks list; the right detail zone is the
-// shared item detail on Flow and stays closed on the pure-list views.
+// docked inside the graph zone and driven by selection, not by view; the Graph
+// and Building blocks are inner tabs of the Architecture view); the center
+// shows the Flow list; the right detail zone is the shared item detail on Flow.
 function renderWorkspace() {
   const v = coreView;
   document.querySelectorAll('[data-core-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-core-tab') === v));
@@ -2216,12 +2227,21 @@ function renderWorkspace() {
   document.getElementById('qRight').classList.toggle('open', v === 'flow');
 }
 
+// Architecture view inner tabs: Graph (the canvas) or Building blocks
+// (Discover / Idea box). Building blocks lazy-init on first open.
+let archTab = 'graph';
+function setArchTab(t) {
+  archTab = t;
+  document.getElementById('wsMap').classList.toggle('blocks-tab', t === 'blocks');
+  document.querySelectorAll('[data-arch-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-tab') === t));
+  if (t === 'blocks') initBlocks();
+}
+
 function switchCoreView(v) {
   coreView = v;
   renderWorkspace();
-  if (v === 'arch') initArchNav();
+  if (v === 'arch') { initArchNav(); setArchTab(archTab); }
   if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); }
-  if (v === 'blocks') initBlocks();
   if (coreInited) startQueuePolling(); // rate depends on which view is now active
 }
 
@@ -2239,6 +2259,7 @@ function jumpToQueueItem(id) {
 // Tree layout (a planted Seed only appears there), and select the node.
 function jumpToArchNode(id) {
   setMode('core');
+  archTab = 'graph';
   switchCoreView('arch');
   archLayout = 'tree';
   syncArchControls();
@@ -4091,6 +4112,9 @@ function renderArchQueueBanner() {
 async function initArchNav() {
   if (archInited) return; archInited = true;
   syncArchControls();
+  document.querySelectorAll('[data-arch-tab]').forEach(b => {
+    b.onclick = () => setArchTab(b.getAttribute('data-arch-tab'));
+  });
   document.querySelectorAll('[data-arch-layout]').forEach(b => {
     b.onclick = () => { archLayout = b.getAttribute('data-arch-layout'); syncArchControls(); renderArchStage(); };
   });

@@ -314,3 +314,14 @@ Stage A first.
 Plan file (this document) + `plans/README.md` row · `BUILD_STATUS.md` update ·
 `RUN_LOG.md` notes · per-phase commits on `overnight/2026-08-10` (never push,
 never merge — publishing is Antoine's call).
+
+## Implementation note — Phase 6 (2026-08-13): Architecture = the idea place
+
+Landed in frontend only (no backend changes): Building blocks (Discover / Idea
+box) moved from its own workspace chip into the Architecture view as inner
+tabs (Graph | Building blocks). The chips row is now just Architecture | Flow.
+Architecture is the idea place (graph canvas + building-blocks evidence);
+Flow is the execution place. Blockers that remain for Phase 6 as originally
+sketched: the "Frankenstein" tab inside Building blocks (open slot, unbuilt)
+and the Idea box reports / Library chip (idea-box reports per prompt, proposed
+Phase-6 deliverable; still unimplemented).

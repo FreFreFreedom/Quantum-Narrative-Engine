@@ -655,3 +655,27 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
     Building blocks as a tab inside it: Discover / Idea box / Frankenstein),
     Flow = queue place (questions · running · ready · suggestions · parked ·
     done).
+- C4 — ARCHITECTURE = THE IDEA PLACE (follow-up round, 2026-08-13; pending
+  eyeball):
+  - Chips are now just Architecture | Flow. Building blocks moved INSIDE the
+    Architecture view as inner tabs: Graph | Building blocks (Discover / Idea
+    box). Architecture = the idea place (the graph canvas where speculative
+    nodes land, plus the toolbox of evidence for what comes next); Flow stays
+    the execution place (questions · running · ready · suggested · seeds ·
+    parked · done).
+  - Implementation: new .arch-inner-tabs row (Graph | Building blocks) at the
+    top of the Architecture zone; #archBlocksPane (the old Building-blocks pane
+    with its Discover / Idea box strip) now lives inside the map zone and shows
+    only when its tab is active (wsMap gets a .blocks-tab class; toolbar+stage
+    hide). setArchTab() drives it; Building blocks lazy-inits on first open
+    (no load cost until clicked). Jump-to-tree links force the Graph tab so
+    planted seeds always appear. flow pane untouched.
+  - Removed: Building blocks chip, switchCoreView('blocks') case,
+    corePaneBlocks from the Flow zone, CORE_VIEW_PANES.blocks. flow view,
+    badges, composer and polling unchanged.
+  - Verified: node --check ×5, CSS 485/485 + 68/68 + 1/1, html divs balanced
+    (stack empty), no stale refs (coreTabBlocks/corePaneBlocks gone), synced
+    (200). No headless browser — needs Antoine's eyeball.
+  - NEXT: when this ships — the Idea box reports (Phase 6, Library chip) and
+    the floating window idea; the "Frankenstein" tab is still the open slot in
+    Building blocks.
