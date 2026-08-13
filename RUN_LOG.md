@@ -487,3 +487,13 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`. Committed and d
 - Added a contextual `.studio-actions` bar to the studio widget (both `fmcns_navigator.html` and the served `queue-server/public/index.html`): Draft the plan → Send to Dispatch Queue → Already sent / view in Dispatch Queue. Dropped the redundant "Run /handoff…" hint text.
 - Bug found on first pass: the button was rendered while the turn's busy flag was still set, then never re-rendered after the flag cleared — stuck disabled, unclickable. Fixed by re-running `renderStudioActions()` when the turn ends.
 - Verified live with Antoine on :3000 (both files in sync, all scripts syntax-checked).
+
+---
+
+# RUN_LOG — Suggestion Engine "Discuss first" button crash, 2026-08-12
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Committed and deployed to main by Antoine's request.
+
+- The "💬 Discuss first" button on Suggestion Engine cards did nothing: clicking threw `ReferenceError: s is not defined` (the handler referenced `s.title`, but `s` only exists inside the card template literal, not in the click closure). This shipped with the studio widget (f75d443) — the button never worked.
+- Fixed by resolving the title from the module-level `tvSuggestions` list (`tvSuggestions.find(x => x.id === id)`).
+- Reproduced + verified with a headless-browser (CDP) test against a scratch server + seeded temp DB: modal now opens with the suggestion's title, zero JS errors. Both `fmcns_navigator.html` and `queue-server/public/index.html` synced.
