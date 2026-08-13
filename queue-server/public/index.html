@@ -524,6 +524,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
       <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
       <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
       <button id="coreTabAi" data-core-tab="ai">AI Settings</button>
+      <button class="core-newidea ctrlbtn" id="coreNewIdeaBtn" title="Shape an idea in conversation, then queue it">💬 New idea</button>
     </div>
   </div>
   <div class="core-panes">
@@ -595,7 +596,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
             <label>Runs on
               <select id="qProvider">
                 <option value="claude-code">Claude Code</option>
-                <option value="opencode">OpenCode</option>
+                <option value="opencode">OpenCode (supports free models for implement)</option>
                 <option value="ai-router">AI Router (free — questions only)</option>
               </select>
             </label>
@@ -619,6 +620,7 @@ body { margin:0; background:#f7f5f2; color:#2a2621; font-family:-apple-system,Bl
             <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
           </div>
           <button class="q-addbtn" id="qAddBtn">Add to queue</button>
+          <button class="ctrlbtn" id="shapeFirstBtn" style="margin-top:6px;width:100%;" title="Open this text in the Idea Studio, discuss and shape it, then queue the result">💬 Shape it in conversation first</button>
           <div id="qAddErr" class="q-err"></div>
           <div id="qConnLost" style="display:none;color:#b23a2f;font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
           <div id="qReviews" style="display:none;margin-top:14px;"></div>
@@ -2048,6 +2050,11 @@ function jumpToArchNode(id) {
 // since they only need the header/badge counts to stay roughly live.
 const Q_STATUS_COLORS = { queued:'#8a8378', running:'#2f7d63', done:'#4f9d7a', blocked:'#b23a2f', paused:'#a19a8e', cancelled:'#a19a8e' };
 const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', blocked:'Blocked', paused:'Set aside', cancelled:'Cancelled' };
+// Plan-first queue: drafting is a flag (plan_pending), not a status value, so it
+// doesn't collide with the status column's own set of allowed values — this just
+// overrides the label/color shown while it's set.
+function qStatusLabel(p) { return p.plan_pending ? 'Drafting plan…' : (Q_STATUS_LABELS[p.status] || p.status); }
+function qStatusColor(p) { return p.plan_pending ? '#7a7568' : (Q_STATUS_COLORS[p.status] || '#8a8378'); }
 const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
 const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
 const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
@@ -2100,7 +2107,9 @@ async function loadProviders() {
 // tier-aware bits don't choke). AI Router providers have no file-editing tools
 // (plain chat completions, not an agentic CLI), so Mode is locked to Question —
 // picking one for an implement task would "succeed" with a text answer and no
-// code actually written.
+// code actually written. OpenCode IS an agentic CLI (full file/bash tools), so
+// it supports BOTH Question and Implement modes — free models like
+// opencode/deepseek-v4-flash-free work for implement tasks with no API key.
 function qProviderUi() {
   const prov = document.getElementById('qProvider');
   const preset = document.getElementById('qPreset');
@@ -2697,7 +2706,7 @@ function qRenderList() {
       <div class="q-item-top">
         ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
         <span class="q-item-title">${p.title || '(untitled)'}</span>
-        <span class="q-badge" style="background:${Q_STATUS_COLORS[p.status]||'#8a8378'};">${Q_STATUS_LABELS[p.status]||p.status}</span>
+        <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
       </div>
       <div class="q-item-meta">
         <span>${qAgentLabel(p)} · ${p.mode==='question'?'Question':'Implement'} · ${qProviderLabel(p)}</span>
@@ -2801,7 +2810,7 @@ function qRenderDetail(p) {
   const switchable = p.status !== 'running';
   const providerOpts = `
     <option value="claude-code"${provVal === 'claude-code' ? ' selected' : ''}>Claude Code</option>
-    <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode</option>
+    <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode (free models supported)</option>
     <option value="ai-router"${isAiRouter ? ' selected' : ''}>AI Router (free — questions only)</option>`;
   const costParts = [];
   if (p.run_model) costParts.push(p.run_model);
@@ -2811,7 +2820,7 @@ function qRenderDetail(p) {
     <h2>Task</h2>
     <div class="arch-detail-name">${p.title || '(untitled)'}</div>
     <div class="q-detail-row">
-      <span><b>Status:</b> ${Q_STATUS_LABELS[p.status]||p.status}</span>
+      <span><b>Status:</b> ${qStatusLabel(p)}</span>
       <span><b>Mode:</b> ${p.mode}</span>
       <span><b>Agent:</b> ${qAgentLabel(p)}</span>
       <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
@@ -2834,6 +2843,11 @@ function qRenderDetail(p) {
         <span style="font-size:11px;color:#8a8378;">Switching provider drops the old session link and starts fresh.</span>
       </div>` : ''}
     <div class="arch-field"><div class="arch-field-label">Original prompt</div><div class="arch-field-body">${p.prompt}</div></div>
+    ${p.raw_prompt && p.raw_prompt !== p.prompt ? `
+    <div class="arch-field">
+      <div class="arch-field-label"><a href="#" id="qRawToggle" style="text-decoration:underline;">Originally submitted ▾</a></div>
+      <div class="arch-field-body" id="qRawBody" style="display:none;">${p.raw_prompt}</div>
+    </div>` : ''}
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
     <div id="qThread"></div>
     ${p.pending_question ? `<div id="qQuestionHost"></div>` : ''}
@@ -2851,6 +2865,17 @@ function qRenderDetail(p) {
       <button class="ctrlbtn" id="qDeleteBtn">Remove</button>
     </div>
   `;
+
+  const rawToggle = document.getElementById('qRawToggle');
+  if (rawToggle) {
+    rawToggle.onclick = (e) => {
+      e.preventDefault();
+      const body = document.getElementById('qRawBody');
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : '';
+      rawToggle.textContent = open ? 'Originally submitted ▾' : 'Originally submitted ▴';
+    };
+  }
 
   if (switchable) {
     const provSel = document.getElementById('qDetailProvider');
@@ -3121,6 +3146,7 @@ function renderSuggestions() {
         <textarea class="sg-prompt" data-role="prompt">${s.prompt}</textarea>
         <div class="sg-actions">
           <button class="primary" data-action="accept">Accept → queue (set aside)</button>
+          <button data-action="discuss">💬 Discuss first</button>
           <button data-action="dismiss">Dismiss</button>
         </div>
       ` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Dispatch Queue</a>` : 'Already in the queue.'}</div>` : ''}
@@ -3130,8 +3156,17 @@ function renderSuggestions() {
     const id = card.getAttribute('data-sid');
     const acceptBtn = card.querySelector('[data-action="accept"]');
     const dismissBtn = card.querySelector('[data-action="dismiss"]');
+    const discussBtn = card.querySelector('[data-action="discuss"]');
     const jumpLink = card.querySelector('[data-jump]');
     if (jumpLink) jumpLink.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jumpLink.getAttribute('data-jump')); };
+    if (discussBtn) discussBtn.onclick = () => {
+      openStudio({
+        type: 'suggestion',
+        subjectId: id,
+        title: s.title,
+        onDone: () => { loadSuggestions(); qLoad(); },
+      });
+    };
     if (acceptBtn) acceptBtn.onclick = async () => {
       const promptText = card.querySelector('[data-role="prompt"]').value;
       acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
@@ -3202,6 +3237,7 @@ function renderIdeas() {
           <button data-action="up" ${i===0?'disabled':''}>↑</button>
           <button data-action="down" ${i===tvIdeas.length-1?'disabled':''}>↓</button>
         </div>
+        <button data-action="discuss">💬 Discuss</button>
         <button data-action="promote">→ Queue</button>
         ${idea.arch_node_id ? '' : '<button data-action="plant">🌱 Plant in tree</button>'}
         <button class="danger" data-action="delete">Remove</button>
@@ -3216,6 +3252,15 @@ function renderIdeas() {
     const tagEl = card.querySelector('[data-role="tag"]');
     const save = () => apiWrite(`/api/travaux/ideas/${id}`, 'PATCH', { title: titleEl.value, notes: notesEl.value, tag: tagEl.value }).catch(() => {});
     titleEl.onblur = save; notesEl.onblur = save; tagEl.onblur = save;
+    const discussBtn = card.querySelector('[data-action="discuss"]');
+    if (discussBtn) discussBtn.onclick = () => {
+      openStudio({
+        type: 'seed',
+        subjectId: id,
+        title: (titleEl.value || 'Seed').trim(),
+        onDone: () => { loadIdeas(); qLoad(); },
+      });
+    };
     card.querySelector('[data-action="delete"]').onclick = async () => {
       tvIdeas = tvIdeas.filter(x => x.id !== id); renderIdeas();
       try { await apiWrite(`/api/travaux/ideas/${id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
@@ -3749,7 +3794,8 @@ function renderArchDetail(id) {
     <div class="arch-qf-status" id="archSpecStatus"></div>`;
 
   html += `<div class="arch-actionrow">
-      <button id="archAskBtn">💬 Ask about this</button>
+      <button id="archDiscussBtn">💬 Discuss in Idea Studio</button>
+      <button id="archAskBtn">✦ Ask about this</button>
       <button id="archQueueBtn">📋 Queue custom prompt</button>
     </div>
     <div id="archQueueHost"></div>`;
@@ -3808,6 +3854,16 @@ function renderArchDetail(id) {
   document.getElementById('archAskBtn').onclick = () => {
     const prompt = `About the "${c.name}" component (${c.territory}, currently ${c.status}): ${c.what} Current state: ${c.now}`;
     openChatWithPrompt(prompt);
+  };
+  document.getElementById('archDiscussBtn').onclick = () => {
+    const terr = TERRITORIES.find(t=>t.id===c.territory);
+    openStudio({
+      type: 'arch_component',
+      subjectId: c.id,
+      title: (c.provenance === 'speculative' ? '✦ ' : '') + c.name + (terr ? ' · ' + terr.label : ''),
+      hint: { name:c.name, territory:terr?terr.label:c.territory, status:c.status, what:c.what, why:c.why, input:c.input, output:c.output, next:c.next },
+      onDone: () => { renderArchDetail(c.id); },
+    });
   };
   document.getElementById('archQueueBtn').onclick = () => {
     const qhost = document.getElementById('archQueueHost');
@@ -3914,6 +3970,47 @@ function openChatWithPrompt(text) {
 #fmcns-chat-login { padding: 14px; font-size: 12.5px; }
 #fmcns-chat-login input { width: 100%; padding: 7px 9px; border: 1px solid #d9d3c9; border-radius: 6px; font-size: 12.5px; margin: 8px 0; }
 #fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: #2a2621; color: #fbfaf8; font-size: 12.5px; cursor: pointer; }
+
+/* ── Idea Studio — conversational task creation ─────────────────────────── */
+.core-newidea { margin-left:auto; background:#2a2621; color:#fbfaf8; border:none; }
+.core-newidea:hover { background:#3a352e; }
+.studio-overlay { position:fixed; inset:0; background:rgba(42,38,33,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:18px; }
+.studio-modal { background:#fbfaf8; border:1px solid #e4dfd8; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.28); width:720px; max-width:100%; height:80vh; max-height:820px; display:flex; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; color:#2a2621; overflow:hidden; }
+.studio-head { padding:12px 16px; border-bottom:1px solid #e4dfd8; display:flex; align-items:center; gap:10px; }
+.studio-head .studio-eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#8a8378; }
+.studio-head .studio-title { font-size:14.5px; font-weight:700; }
+.studio-head button { background:none; border:none; cursor:pointer; color:#8a8378; font-size:14px; padding:4px 7px; border-radius:6px; }
+.studio-head button:hover { background:#f2efe9; color:#2a2621; }
+.studio-head .studio-actions { margin-left:auto; display:flex; gap:4px; }
+.studio-body { flex:1; display:flex; flex-direction:column; min-height:0; }
+.studio-log { flex:1; overflow-y:auto; padding:14px 16px; }
+.studio-msg { max-width:88%; margin-bottom:10px; font-size:12.5px; line-height:1.55; }
+.studio-msg .studio-bubble { border-radius:10px; padding:8px 12px; white-space:pre-wrap; word-break:break-word; background:#fff; border:1px solid #e4dfd8; }
+.studio-msg.user { margin-left:auto; }
+.studio-msg.user .studio-bubble { background:#2f7d63; border-color:#2f7d63; color:#fbfaf8; }
+.studio-msg.agent .studio-bubble { background:#fff; border:1px solid #e4dfd8; }
+.studio-msg.plan .studio-bubble { background:#fdf8ec; border:1px solid #e0d0a4; }
+.studio-msg.pin .studio-bubble { background:#eef4f6; border:1px solid #cfe0e6; }
+.studio-msg .studio-meta { font-size:10px; color:#8a8378; margin-bottom:2px; text-transform:uppercase; letter-spacing:.04em; }
+.studio-msg.user .studio-meta { text-align:right; }
+.studio-plan-pre { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; margin:0; white-space:pre-wrap; }
+.studio-chips { display:flex; gap:6px; padding:0 16px 10px; flex-wrap:wrap; }
+.studio-chip { font-size:11px; border:1px solid #d9d3c9; background:#fff; border-radius:20px; padding:4px 10px; cursor:pointer; color:#6b645b; }
+.studio-chip:hover { border-color:#2a2621; color:#2a2621; }
+.studio-input-row { border-top:1px solid #e4dfd8; padding:10px 12px; display:flex; gap:8px; align-items:flex-end; background:#fbfaf8; }
+.studio-input { flex:1; border:1px solid #d9d3c9; border-radius:8px; padding:8px 10px; font-size:12.5px; resize:none; font-family:inherit; line-height:1.4; max-height:120px; }
+.studio-send { border:none; background:#2a2621; color:#fbfaf8; border-radius:8px; padding:8px 16px; font-size:12.5px; cursor:pointer; }
+.studio-send:disabled { opacity:.5; cursor:default; }
+.studio-status { font-size:11.5px; color:#8a8378; padding:0 16px 4px; }
+.studio-status.err { color:#b23a2f; }
+.studio-hint { font-size:10.5px; color:#8a8378; padding:0 16px 4px; }
+.studio-draft { padding:20px; display:flex; flex-direction:column; gap:10px; flex:1; }
+.studio-draft input, .studio-draft textarea { border:1px solid #d9d3c9; border-radius:8px; padding:9px 11px; font-size:13px; font-family:inherit; }
+.studio-draft textarea { flex:1; resize:none; }
+.studio-draft .studio-dr { display:flex; gap:8px; justify-content:flex-end; }
+.studio-draft button { border-radius:8px; padding:8px 16px; font-size:12.5px; cursor:pointer; }
+.studio-draft .primary { background:#2a2621; color:#fbfaf8; border:none; }
+.studio-draft .ghost { background:#fff; border:1px solid #d9d3c9; color:#2a2621; }
 </style>
 <button id="fmcns-chat-btn" title="FMCNS Assistant">✦</button>
 <div id="fmcns-chat-panel">
@@ -4085,6 +4182,248 @@ function openChatWithPrompt(text) {
   }
   sendBtn.onclick = send;
   input.onkeydown = function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+})();
+</script>
+
+<style>
+  #studioRoot[hidden] { display:none; }
+</style>
+<div id="studioRoot" hidden>
+  <div class="studio-overlay" id="studioOverlay">
+    <div class="studio-modal" role="dialog" aria-label="Idea Studio">
+      <div class="studio-head">
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <span class="studio-eyebrow">Idea Studio</span>
+          <span class="studio-title" id="studioTitle">New idea</span>
+        </div>
+        <div class="studio-actions">
+          <button id="studioResetBtn" title="Reset conversation (fold into recap)">⟳</button>
+          <button id="studioCloseBtn" title="Close">✕</button>
+        </div>
+      </div>
+      <div id="studioBody"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  // ── Idea Studio — conversational task creation ─────────────────────────────
+  // Opens on any subject (seed / suggestion / arch component / new idea), with
+  // commands /grill-me, /plan, /handoff, /help handled by the backend before any
+  // model cost. Everything here is global-window glue over /api/convos.
+  var S = { convoId:null, type:null, subjectId:null, title:'Idea studio', msgs:[], busy:false, promptId:null, onDone:null };
+
+  function escapeHtml(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  window.escapeHtmlSt = escapeHtml; // harmless alias for other scripts
+
+  function fmtBody(text){
+    var t = escapeHtml(text);
+    t = t.replace(/`([^`\n]*)`/g, '<code style="font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#f0ece4;padding:0 3px;border-radius:3px;">$1</code>');
+    t = t.replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noreferrer" style="color:#2f7d63;">$2</a>');
+    return t;
+  }
+
+  function studioEl(id){ return document.getElementById(id); }
+
+  function openModal(html){
+    var body = studioEl('studioBody');
+    body.innerHTML = html;
+    studioEl('studioRoot').hidden = false;
+  }
+
+  function blankStudio(){ renderDraft(); }
+
+  function renderDraft(){
+    openModal(`<div class="studio-draft">
+      <div style="font-size:12.5px;color:#6b645b;">Nothing is queued or executed from here — you just shape an idea until it is ready. Start with a one-line idea, then talk it into a plan.</div>
+      <input id="studioDraftTitle" placeholder="The idea in one line…">
+      <textarea id="studioDraftNotes" placeholder="Expand (optional) — why, angles, what it would change…"></textarea>
+      <div class="studio-dr">
+        <button class="ghost" id="studioDraftCancel">Cancel</button>
+        <button class="primary" id="studioDraftStart">Open the studio →</button>
+      </div>
+    </div>`);
+    studioEl('studioTitle').textContent = 'New idea';
+    studioEl('studioDraftCancel').onclick = closeStudio;
+    var startBtn = studioEl('studioDraftStart');
+    var start = function(){
+      var title = (studioEl('studioDraftTitle').value||'').trim();
+      if(!title){ studioEl('studioDraftTitle').focus(); return; }
+      startBtn.disabled = true; startBtn.textContent = 'Creating…';
+      apiWrite('/api/travaux/ideas', 'POST', { title: title, notes: (studioEl('studioDraftNotes').value||'').trim() })
+        .then(function(idea){
+          startStudioOf({ type:'seed', subjectId: idea.id, title: title, onDone: function(){ loadIdeas(); qLoad(); } });
+        })
+        .catch(function(e){ startBtn.disabled=false; startBtn.textContent='Open the studio →'; alert('Could not create the idea: ' + e.message); });
+    };
+    startBtn.onclick = start;
+    studioEl('studioDraftTitle').onkeydown = function(e){ if(e.key==='Enter') start(); };
+  }
+
+  function startStudioOf(opts){
+    S.convoId = null; S.type = opts.type; S.subjectId = opts.subjectId;
+    S.title = opts.title || 'Idea studio'; S.msgs = []; S.promptId = null; S.busy = false;
+    S.onDone = opts.onDone || null;
+    studioEl('studioTitle').textContent = S.title;
+    openModal(`<div class="studio-body">
+      <div class="studio-log" id="studioLog"><div class="studio-status">Loading…</div></div>
+      <div class="studio-hint" id="studioHint"></div>
+      <div class="studio-chips" id="studioChips"></div>
+      <div class="studio-input-row">
+        <textarea class="studio-input" id="studioInput" rows="1" placeholder="Type to discuss — or use a command below…"></textarea>
+        <button class="studio-send" id="studioSend">Send</button>
+      </div>
+    </div>`);
+    wireStudioControls();
+    studioFetch();
+  }
+
+  function wireStudioControls(){
+    var input = studioEl('studioInput'), sendBtn = studioEl('studioSend');
+    sendBtn.onclick = function(){ studioSend(input.value); };
+    input.onkeydown = function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); if(!S.busy) studioSend(input.value); } };
+    input.oninput = function(){ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,120)+'px'; };
+    studioEl('studioCloseBtn').onclick = closeStudio;
+    studioEl('studioOverlay').onclick = function(e){ if(e.target===this) closeStudio(); };
+    studioEl('studioResetBtn').onclick = function(){
+      if(!S.convoId) return;
+      apiWrite('/api/convos/'+S.convoId+'/reset','POST',{}).then(studioFetch).catch(function(){});
+    };
+    var hint = studioEl('studioHint');
+    hint.innerHTML = 'Commands: <b>/grill-me</b> · <b>/plan</b> (coder brief) · <b>/handoff</b> (queue, paused) · <b>/help</b>';
+    var chips = studioEl('studioChips');
+    [['/grill-me','Me interrogate you'],['/plan','Write the brief'],['/handoff','Queue it (paused)']].forEach(function(pair){
+      var b = document.createElement('button');
+      b.className = 'studio-chip';
+      b.textContent = pair[0];
+      b.title = pair[1];
+      b.onclick = function(){ studioSend(pair[0]); };
+      chips.appendChild(b);
+    });
+  }
+
+  function hintQuery(type, subjectId){
+    // arch_component rows live in the HTML, not the DB — the what/why/input/output
+    // must travel with the request or the advisor is blind.
+    if(type === 'arch_component'){
+      var c = (typeof ARCH_BY_ID !== 'undefined' && ARCH_BY_ID[subjectId]) || null;
+      if(c){
+        var terr = (typeof TERRITORIES !== 'undefined' && TERRITORIES.find(function(t){return t.id===c.territory;})) || null;
+        return { name:c.name, territory:terr?terr.label:c.territory, status:c.status, what:c.what, why:c.why, input:c.input, output:c.output, next:c.next };
+      }
+    }
+    return null;
+  }
+
+  function studioFetch(){
+    var log = studioEl('studioLog');
+    log.innerHTML = '<div class="studio-status">Loading…</div>';
+    var q = encodeURIComponent(hintQuery(S.type, S.subjectId) ? JSON.stringify(hintQuery(S.type, S.subjectId)) : '');
+    return api('/api/convos/subject/' + S.type + '/' + encodeURIComponent(S.subjectId) + '?hint=' + q)
+      .then(function(data){
+        if(data.error) throw new Error(data.error);
+        S.convoId = data.convo.id;
+        S.title = data.convo.title || S.title;
+        S.promptId = data.convo.work_prompt_id || null;
+        S.msgs = data.messages || [];
+        studioEl('studioTitle').textContent = S.title;
+        renderLog();
+      })
+      .catch(function(e){ log.innerHTML = '<div class="studio-status err">Could not open this conversation: ' + escapeHtml(e.message||e) + '</div>'; });
+  }
+
+  function renderLog(){
+    var log = studioEl('studioLog');
+    var html = '';
+    if(S.promptId){
+      html += '<div class="studio-msg pin"><div class="studio-bubble"><b>✓ Handed off to the Dispatch Queue</b> (set aside) — <a href="#" class="core-handoff-link" data-studio-jump="' + escapeHtml(S.promptId) + '" style="color:#2f7d63;">view task</a></div></div>';
+    }
+    S.msgs.forEach(function(m){
+      var kind = m.kind === 'plan' ? 'plan' : 'agent';
+      html += '<div class="studio-msg ' + (m.role==='user'?'user':'agent') + (kind==='plan'?' plan':'') + '">'
+           + '<div class="studio-meta">' + (m.role==='user'?'You':(kind==='plan'?'Plan':'Assistant')) + '</div>'
+           + (kind==='plan'
+              ? '<div class="studio-bubble"><pre class="studio-plan-pre">' + escapeHtml(m.text) + '</pre></div>'
+              : '<div class="studio-bubble">' + fmtBody(m.text) + '</div>')
+           + '</div>';
+    });
+    if(!S.msgs.length && !S.promptId){
+      html += '<div class="studio-status">No messages yet. Tell the studio what you are thinking about this subject, or start with /grill-me for interrogation.</div>';
+    }
+    log.innerHTML = html;
+    log.querySelectorAll('[data-studio-jump]').forEach(function(a){
+      a.onclick = function(e){ e.preventDefault(); closeStudio(); jumpToQueueItem(a.getAttribute('data-studio-jump')); };
+    });
+    log.scrollTop = log.scrollHeight;
+    if(studioEl('studioInput')) studioEl('studioInput').focus();
+  }
+
+  function studioSend(text){
+    text = String(text||'').trim();
+    if(!text || !S.convoId || S.busy) return;
+    S.busy = true;
+    var input = studioEl('studioInput'), sendBtn = studioEl('studioSend');
+    input.value = ''; input.style.height='auto';
+    sendBtn.disabled = true; sendBtn.textContent = '…';
+    S.msgs.push({ role:'user', kind:'chat', text:text });
+    renderLog();
+    fetch(API_BASE + '/api/convos/' + S.convoId + '/message', {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + TOKEN},
+      body: JSON.stringify({ text:text }),
+    })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return {status:r.status, data:d}; }); })
+      .then(function(res){
+        var d = res.data;
+        if(d.error && !d.ok){
+          if(d.error === 'no_plan') d  = { text: 'No plan yet — run /plan first to write the coder brief, then /handoff to queue it.' };
+          else if(d.message) d = { text: d.message };
+          else d = { text: 'Something went wrong (' + d.error + ').' };
+          S.msgs.push({ role:'assistant', kind:'chat', text:d.text });
+        } else if(d.prompt){
+          S.promptId = (d.prompt && (d.prompt.id || d.prompt.prompt_id)) || S.promptId;
+          S.msgs.push({ role:'assistant', kind:'chat', text: d.already ? 'Already handed off — the task is safely set aside in the Dispatch Queue.' : 'Handed off — the plan is now a task, set aside (paused) in the Dispatch Queue for you to approve.' });
+          if(S.onDone) S.onDone();
+        } else if(d.text){
+          S.msgs.push({ role:'assistant', kind: d.planId ? 'plan' : 'chat', text:d.text });
+          if(d.planId) S.msgs.push({ role:'assistant', kind:'chat', text:'Run /handoff to queue this brief as a task (set aside), or keep refining with more messages.' });
+        }
+        renderLog();
+      })
+      .catch(function(e){
+        S.msgs.push({ role:'assistant', kind:'chat', text:'Could not reach the server: ' + escapeHtml(e.message||e) });
+        renderLog();
+      })
+      .then(function(){ S.busy = false; sendBtn.disabled = false; sendBtn.textContent = 'Send'; });
+  }
+
+  function closeStudio(){ studioEl('studioRoot').hidden = true; }
+
+  window.openStudio = function(opts){
+    if(!opts || !opts.type || !opts.subjectId){ blankStudio(); return; }
+    startStudioOf(opts);
+  };
+  window.openNewIdeaStudio = function(){ blankStudio(); };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var nb = document.getElementById('coreNewIdeaBtn');
+    if(nb) nb.onclick = function(){ openNewIdeaStudio(); };
+    var sf = document.getElementById('shapeFirstBtn');
+    if(sf) sf.onclick = function(){
+      // seed a real idea from the form text, then open its studio
+      var title = (document.getElementById('qPromptTitle').value||'').trim() || 'Idea to shape';
+      var notes = (document.getElementById('qPromptText').value||'').trim();
+      apiWrite('/api/travaux/ideas', 'POST', { title: title, notes: notes })
+        .then(function(idea){
+          openStudio({ type:'seed', subjectId: idea.id, title: title, onDone: function(){ loadIdeas(); qLoad(); } });
+        })
+        .catch(function(e){ alert('Could not create the idea: ' + e.message); });
+    };
+  });
 })();
 </script>
 
