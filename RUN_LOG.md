@@ -476,3 +476,14 @@ Idea Studio chat turns failed with "every free provider is currently exhausted".
 - `/handoff`: created the `paused` queue task; idempotency + convo back-links intact.
 - Test convo + handoff task deleted afterwards.
 - Drawer chat / other consumers untouched (shared `runToolLoop`; behaviour only changed when the catalogue previously produced a dead end).
+
+---
+
+# RUN_LOG — Idea Studio next-step buttons, 2026-08-12
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Committed and deployed to main by Antoine's request.
+
+- Antoine found the studio had no visible "next step" after brainstorming — the plan (`universal-conversations-core-architecture.md` §9) calls for **Draft the plan** once there's ≥1 reply and **Send to Dispatch Queue** once a plan exists; the implemented widget only had `/plan` `/handoff` command chips and a text hint.
+- Added a contextual `.studio-actions` bar to the studio widget (both `fmcns_navigator.html` and the served `queue-server/public/index.html`): Draft the plan → Send to Dispatch Queue → Already sent / view in Dispatch Queue. Dropped the redundant "Run /handoff…" hint text.
+- Bug found on first pass: the button was rendered while the turn's busy flag was still set, then never re-rendered after the flag cleared — stuck disabled, unclickable. Fixed by re-running `renderStudioActions()` when the turn ends.
+- Verified live with Antoine on :3000 (both files in sync, all scripts syntax-checked).

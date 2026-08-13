@@ -4004,6 +4004,13 @@ function openChatWithPrompt(text) {
 .studio-status { font-size:11.5px; color:#8a8378; padding:0 16px 4px; }
 .studio-status.err { color:#b23a2f; }
 .studio-hint { font-size:10.5px; color:#8a8378; padding:0 16px 4px; }
+.studio-actions { display:flex; gap:6px; padding:0 16px 4px; flex-wrap:wrap; }
+.studio-actions button { border-radius:8px; padding:7px 14px; font-size:12px; cursor:pointer; }
+.studio-actions .primary { background:#2a2621; color:#fbfaf8; border:none; }
+.studio-actions .primary:hover { background:#3a352e; }
+.studio-actions .ghost { background:#fff; border:1px solid #d9d3c9; color:#2a2621; }
+.studio-actions .ghost:hover { border-color:#2a2621; color:#2a2621; }
+.studio-actions button:disabled { opacity:.5; cursor:default; }
 .studio-draft { padding:20px; display:flex; flex-direction:column; gap:10px; flex:1; }
 .studio-draft input, .studio-draft textarea { border:1px solid #d9d3c9; border-radius:8px; padding:9px 11px; font-size:13px; font-family:inherit; }
 .studio-draft textarea { flex:1; resize:none; }
@@ -4272,6 +4279,7 @@ function openChatWithPrompt(text) {
     openModal(`<div class="studio-body">
       <div class="studio-log" id="studioLog"><div class="studio-status">Loading…</div></div>
       <div class="studio-hint" id="studioHint"></div>
+      <div class="studio-actions" id="studioActions"></div>
       <div class="studio-chips" id="studioChips"></div>
       <div class="studio-input-row">
         <textarea class="studio-input" id="studioInput" rows="1" placeholder="Type to discuss — or use a command below…"></textarea>
@@ -4358,8 +4366,32 @@ function openChatWithPrompt(text) {
     log.querySelectorAll('[data-studio-jump]').forEach(function(a){
       a.onclick = function(e){ e.preventDefault(); closeStudio(); jumpToQueueItem(a.getAttribute('data-studio-jump')); };
     });
+    renderStudioActions();
     log.scrollTop = log.scrollHeight;
     if(studioEl('studioInput')) studioEl('studioInput').focus();
+  }
+
+  function renderStudioActions(){
+    var host = studioEl('studioActions');
+    if(!host) return;
+    var hasReply = S.msgs.some(function(m){ return m.role === 'assistant'; });
+    var hasPlan = S.msgs.some(function(m){ return m.kind === 'plan'; });
+    var html = '';
+    if(S.promptId){
+      html += '<button class="ghost" id="studioViewTaskBtn">✓ Already sent — view in Dispatch Queue</button>';
+    } else if(hasPlan){
+      html += '<button class="primary" id="studioHandoffBtn">→ Send to Dispatch Queue</button>';
+    } else if(hasReply){
+      html += '<button class="ghost" id="studioPlanBtn">✍️ Draft the plan</button>';
+    }
+    host.innerHTML = html;
+    var planBtn = studioEl('studioPlanBtn');
+    if(planBtn) planBtn.onclick = function(){ studioSend('/plan'); };
+    var handoffBtn = studioEl('studioHandoffBtn');
+    if(handoffBtn) handoffBtn.onclick = function(){ studioSend('/handoff'); };
+    var viewBtn = studioEl('studioViewTaskBtn');
+    if(viewBtn) viewBtn.onclick = function(){ closeStudio(); jumpToQueueItem(S.promptId); };
+    if(S.busy) host.querySelectorAll('button').forEach(function(b){ b.disabled = true; });
   }
 
   function studioSend(text){
@@ -4390,7 +4422,6 @@ function openChatWithPrompt(text) {
           if(S.onDone) S.onDone();
         } else if(d.text){
           S.msgs.push({ role:'assistant', kind: d.planId ? 'plan' : 'chat', text:d.text });
-          if(d.planId) S.msgs.push({ role:'assistant', kind:'chat', text:'Run /handoff to queue this brief as a task (set aside), or keep refining with more messages.' });
         }
         renderLog();
       })
@@ -4398,7 +4429,7 @@ function openChatWithPrompt(text) {
         S.msgs.push({ role:'assistant', kind:'chat', text:'Could not reach the server: ' + escapeHtml(e.message||e) });
         renderLog();
       })
-      .then(function(){ S.busy = false; sendBtn.disabled = false; sendBtn.textContent = 'Send'; });
+      .then(function(){ S.busy = false; sendBtn.disabled = false; sendBtn.textContent = 'Send'; renderStudioActions(); });
   }
 
   function closeStudio(){ studioEl('studioRoot').hidden = true; }
