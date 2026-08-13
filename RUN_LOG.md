@@ -497,3 +497,16 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`. Committed and d
 - The "💬 Discuss first" button on Suggestion Engine cards did nothing: clicking threw `ReferenceError: s is not defined` (the handler referenced `s.title`, but `s` only exists inside the card template literal, not in the click closure). This shipped with the studio widget (f75d443) — the button never worked.
 - Fixed by resolving the title from the module-level `tvSuggestions` list (`tvSuggestions.find(x => x.id === id)`).
 - Reproduced + verified with a headless-browser (CDP) test against a scratch server + seeded temp DB: modal now opens with the suggestion's title, zero JS errors. Both `fmcns_navigator.html` and `queue-server/public/index.html` synced.
+
+---
+
+# RUN_LOG — Dark mode + design tokens, 2026-08-13
+
+Interactive session with Antoine. Branch: `overnight/2026-08-13`. Not yet committed; pending visual check.
+
+- Phase 0/1 of the theme plan: converted all themeable colors in `fmcns_navigator.html` to CSS variables via a property-aware tokenizer script (442 replacements, no manual hex edits). Kept literal on purpose: the map-mode palette/geography fills, chromatic status colors (status badges, TYPE/CLUSTER color maps — they survive dark mode as-is), gradients.
+- Added `:root` (light) and `.dark` (dark) token blocks: surfaces, borders, ink ladder (5 steps), solid-button trio, halo, 6 chromatic tokens + tints, and an 8-step plot palette (pre-wired for later chart use).
+- Added an anti-flash inline script in `<head>` (applies stored/system theme before first paint), a 🌙/☀️ toggle in the modebar, and persisted choice in `localStorage['fmcns-theme']` (falls back to system preference).
+- Two CSS spot-fixes along the way: node label halo now uses a dedicated `--c-halo` token, and the amber "Target" toggle uses `--c-ink-solid` so its text inverts correctly in dark.
+- Verified: all 5 inline script blocks pass `node --check`; CSS braces balanced; map region untouched.
+- PENDING Antoine: eyeball both themes (open the file, toggle the button top-right). If a color looks wrong in dark, name the element — token table lives at top of the file.
