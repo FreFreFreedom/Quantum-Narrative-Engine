@@ -184,6 +184,16 @@ Stage A first.
 
 ## Phase 4 — The Flow + Detail pane
 
+> IMPLEMENTATION NOTE (Build C2, built 2026-08-13, pending eyeball): the Flow
+> view ships as designed below — chips are Architecture | Flow | Building blocks,
+> one aggregated renderFlow() with the seven sections, type chips + search,
+> Generate-now and a collapsed "＋ New prompt" composer (with First/Last placement
+> and a "Set aside" → paused button), and one shared right-zone detail pane
+> (task thread / seed / suggestion). Review-gate cards sit in a bar above the
+> composer. Deferred: component filter (feeds don't carry component ids; graph
+> selection doesn't yet travel between views), drag-to-reorder (arrows kept),
+> Library chip, parked-ideas section (seeds show Queued/Planted pills instead).
+
 - Client-side aggregation of feeds the app already loads: `qLoad` (2346–2379,
   prompts), `loadSuggestions` (3096–3109), `loadIdeas` (3199–3206), plus
   architecture component link (`component_id`) and idea-box reports (Phase 6).
@@ -208,6 +218,15 @@ Stage A first.
   chip badges.
 
 ## Phase 5 — Floating window (merged chat + new task + new idea + queue panel)
+
+> IMPLEMENTATION NOTE (Build C3, 2026-08-13, pending eyeball): the single idea
+> door landed ahead of the full floating window — the bottom-right assistant
+> bubble (smaller) is now the one place to type anything everywhere: a free
+> heuristic shows a "💡 This sounds like an idea — Save it" chip under idea-like
+> messages, routing through the shared submitIdea door (speculative node or
+> seed, one model call on click). The header 💬 and graph 💡 buttons are retired
+> and the New-prompt composer is minimal (text + Add / Set aside; title/mode/
+> agent/speed/provider/model/strategy/placement behind ⚙ More).
 
 - Replace the chat bubble (`#fmcns-chat-btn` 4022, IIFE 4040–4193) with one
   resizable panel: drag-to-resize (JS, min ~360×440, max 90vw/85vh), size + open

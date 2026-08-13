@@ -589,3 +589,69 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
     (sections ❓ Questions · ▶ Running · ⏳ Ready · ✨ Suggested · 🌱 Seeds · ⏸ Parked ·
     ✓ Done; search/filters/Generate-now/composer; one detail pane; chips Architecture |
     Flow | Building blocks).
+- C2 — THE FLOW (2026-08-13, built; pending Antoine's eyeball then ship):
+  - Goal (agreed with Antoine): one view merging the Dispatch Queue, Suggestion
+    Engine and Seeds into a single "Flow", with one shared detail pane.
+  - View chips are now Architecture | Flow | Building blocks. The Flow chip badge
+    shows the live queue count (running+queued+paused). Seeds/Suggestion Engine
+    chips and their standalone panes are gone — their content lives in the Flow.
+  - renderFlow() aggregates what the app already polls (qLoad, loadSuggestions,
+    loadIdeas) into sections, in order: ❓ Questions to answer (pending questions)
+    · ▶ Running now · ⏳ Ready to start (queued) · ✨ Suggested by Claude ·
+    🌱 Seeds & ideas · ⏸ Parked (paused tasks) · ✓ Done (folded, expands on click;
+    auto-expands while searching). Each section hides when empty.
+  - Controls: type chips (All / Queue / Suggestions / Seeds) + a search box that
+    matches tasks (title/prompt), suggestions (title/rationale/prompt) and seeds
+    (title/notes/tag). ✨ Generate now + "＋ Keep a seed" inline in their sections
+    (one Claude call per explicit click, as before). New-prompt composer is a
+    collapsed "＋ New prompt" bar holding the old full form (mode/agent/preset/
+    provider/model/strategy) + a First/Last placement toggle (replacing the "put
+    first in line" checkbox) + a "Set aside" button (creates the task paused —
+    POST /prompts already supported status:'paused').
+  - Shared right-zone detail pane: tasks keep the full thread/steer/reply/rerun
+    detail (qRenderDetail, unchanged), seeds get renderSeedDetail (title/notes/
+    tag inline edit, Discuss/Queue/Plant/Remove), suggestions get
+    renderSuggestionDetail (editable prompt, Accept/Discuss/Dismiss). Actions are
+    the same handlers as the old list cards, re-hosted — no behavior change.
+    Detail re-opens after a refresh while the item still exists.
+  - Review gate cards (Ready to merge) re-hosted into a bar above the composer.
+  - Queue polling: 4s while the Flow view is active (was the Queue view), 15s
+    elsewhere. jumpToQueueItem now jumps to the Flow + opens the task detail.
+  - Deferred (noted, not skipped): component filter from graph selection (needs
+    selection to travel across views + most feeds don't carry component ids),
+    drag-to-reorder (▲▼ arrows kept), Library type chip (Phase 6 idea box),
+    paused/parked ideas as a distinct section (seeds show Queued/Planted pills).
+  - Verified: node --check ×5, CSS braces 487/487, html divs 100/100, no stale
+    refs (tvBodySeeds/tvBodySignals/coreCountSeeds/coreCountSignals/qRenderList/
+    renderIdeas/renderSuggestions/generateSuggestionsNow/qPriority/qCount all
+    gone), synced (200). No headless browser — needs Antoine's eyeball.
+- C3 — ONE IDEA DOOR, EVERYWHERE (Antoine's consolidation feedback, 2026-08-13; pending eyeball):
+  - He found the header 💬 and the graph 💡 idea buttons redundant. Agreed shape
+    (his recommendations accepted): the bottom-right assistant bubble becomes THE
+    single idea door; Architecture-as-idea-place restructure is a follow-up round.
+  - Assistant bubble: smaller (52→40px, bottom-right, still visible in every
+    mode). After a chat message that sounds like an idea, a free heuristic (word
+    markers like "what about / we should / add a / build a / new view…", ≤220
+    chars, no AI call) shows a "💡 This sounds like an idea — Save it" chip under
+    the exchange. Clicking routes the message through the existing submitIdea
+    door (POST /api/architecture/ideas): one model call, Claude decides — a
+    speculative node in the tree ("✓ In the tree — view it" → jumps to the arch
+    graph) or a seed ("✓ Saved as a seed — view in Flow"). Plain questions stay
+    conversations. Heuristic unit-tested (7 cases: questions stay chat, ideas
+    chip).
+  - Retired: header 💬 button (and its popover composer openIdeaComposer), graph
+    toolbar 💡 button (renderArchIdeaForm + ttAddHost + their CSS). submitIdea /
+    archCatalog / escS kept — they are the shared door now.
+  - Minimal New-prompt composer: textarea + Add to queue + Set aside + "⚙ More"
+    toggle. Title, mode, agent, speed/depth, provider, model, strategy, placement
+    and "Shape it in conversation first" all move behind ⚙ More (rare cases
+    only); defaults unchanged (title auto, agent dev1, preset auto, provider
+    claude-code, free-model fallback via AI Settings).
+  - Verified: node --check ×5, CSS braces 477/477 + 68/68, html divs 100/100, no
+    stale refs (openIdeaComposer/archIdeaBtn/coreNewIdeaBtn/renderArchIdeaForm/
+    ttAddHost/tt-addform/core-newidea all gone), heuristic unit-checked, synced
+    (200). No headless browser — needs Antoine's eyeball.
+  - NEXT (agreed follow-up round): Architecture = the idea place (graph +
+    Building blocks as a tab inside it: Discover / Idea box / Frankenstein),
+    Flow = queue place (questions · running · ready · suggestions · parked ·
+    done).

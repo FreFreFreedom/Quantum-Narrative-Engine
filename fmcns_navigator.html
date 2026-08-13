@@ -329,6 +329,35 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .tv-toolbar .arch-title, .arch-toolbar .arch-title { font-size:13px; font-weight:600; }
 .tv-toolbar .arch-sub, .arch-toolbar .arch-sub { font-size:11px; color:var(--c-ink-3); }
 .tv-body { flex:1; overflow-y:auto; padding:16px; }
+.flow-controls { display:flex; align-items:center; gap:10px; }
+.flow-typecips { display:flex; gap:2px; }
+.flow-typecips button { padding:4px 10px; font-size:10.5px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; border-radius:6px; }
+.flow-typecips button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
+.flow-search { border:1px solid var(--c-border-2); border-radius:6px; padding:5px 9px; font-size:11.5px; background:var(--c-surface); color:var(--c-ink); width:170px; }
+.flow-composer { border-bottom:1px solid var(--c-border); padding:10px 14px; flex-shrink:0; }
+.flow-composer-form h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:6px 0 8px; }
+.q-place-seg { display:flex; border:1px solid var(--c-border-2); border-radius:6px; overflow:hidden; align-self:center; }
+.q-place-seg button { padding:5px 14px; font-size:11px; border:none; background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; }
+.q-place-seg button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
+.flow-reviews { border-bottom:1px solid var(--c-border); padding:10px 14px; flex-shrink:0; max-height:240px; overflow-y:auto; }
+.flow-section { margin-bottom:18px; }
+.flow-sec-head { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.flow-sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); }
+.flow-sec-count { font-family:monospace; font-size:10px; color:var(--c-ink-4); background:var(--c-surface-2); border-radius:9px; padding:1px 7px; }
+.flow-donehead { cursor:pointer; }
+.flow-donehead:hover .flow-sec-title { color:var(--c-ink); }
+.flow-done-chev { color:var(--c-ink-4); }
+.flow-row { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:6px; cursor:pointer; }
+.flow-row:hover { border-color:var(--c-border-2); }
+.flow-row.sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
+.flow-row .q-item-top { gap:8px; }
+.flow-sgrow .q-item-title, .flow-idrow .q-item-title { font-size:12px; font-weight:600; }
+.id-tag-pill { font-size:9.5px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:9px; padding:1px 8px; }
+.flow-genrow { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.flow-genhint { font-size:10.5px; color:var(--c-ink-4); }
+.flow-genstatus { font-size:10.5px; color:var(--c-ink-4); }
+.flow-seedadd { border:1px dashed var(--c-border-2); border-radius:8px; padding:10px; margin-bottom:8px; }
+.flow-seedadd input, .flow-seedadd textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; background:var(--c-surface); color:var(--c-ink); box-sizing:border-box; }
 .tv-empty { font-size:11.5px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:18px; text-align:center; }
 /* usage strip */
 .usage-strip { border:1px solid var(--c-border); background:var(--c-surface-2); border-radius:8px; padding:8px 12px; font-size:10.5px; margin-bottom:12px; }
@@ -429,13 +458,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-zoombtns button.off { opacity:.45; }
 .arch-node { transition:opacity .15s ease; }
 .arch-node.arch-dim { opacity:.4; }
-.arch-addhost { border-bottom:1px solid var(--c-border); padding:10px 14px; display:none; flex-shrink:0; }
-.arch-addhost.open { display:block; }
-.idea-composer { position:fixed; top:52px; right:14px; z-index:120; display:none; width:min(360px, calc(100vw - 28px)); }
-.idea-composer.open { display:block; }
-.idea-composer-inner { padding:12px; border-radius:10px; border:1px solid var(--c-border-2); background:var(--c-surface); box-shadow:0 10px 34px rgba(0,0,0,.22); }
-.idea-composer-title { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); font-weight:600; margin-bottom:8px; }
-.idea-composer textarea { width:100%; padding:7px 8px; border:1px solid var(--c-border-2); border-radius:6px; font-size:12px; font-family:inherit; resize:vertical; color:var(--c-ink); background:var(--c-bg); }
 .arch-cols { display:flex; gap:18px; min-width:0; position:relative; }
 .arch-col { flex:1; min-width:170px; }
 .arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin-bottom:4px; font-weight:600; }
@@ -464,9 +486,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-node.tt-spec { border-style:dashed; border-color:var(--c-violet); background:var(--c-violet-tint-2); opacity:1; }
 .tt-addbtn { margin-left:12px; padding:4px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .tt-addbtn:hover { background:var(--c-surface-2); }
-.tt-addform { border:1px solid var(--c-border-2); border-radius:8px; padding:12px; margin-bottom:16px; background:var(--c-surface); display:flex; flex-direction:column; gap:8px; max-width:520px; }
-.tt-addform input, .tt-addform textarea, .tt-addform select { width:100%; padding:7px 8px; border:1px solid var(--c-border-2); border-radius:6px; font-size:12px; font-family:inherit; }
-.tt-addform textarea { min-height:48px; resize:vertical; }
 .tt-addlabel { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.05em; }
 .tt-specnote { border-left:3px solid #7a5ea8; padding-left:10px; font-size:11.5px; color:var(--c-ink-3); line-height:1.6; }
 .tt-specnote a { color:var(--c-violet); cursor:pointer; text-decoration:underline; }
@@ -622,10 +641,8 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
   <div class="core-header">
     <div class="core-tabs" data-src="CORE ARCHITECTURE → view chips | fmcns_navigator.html: switchCoreView()/renderWorkspace()">
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
-      <button id="coreTabSeeds" data-core-tab="seeds">Seeds <span class="core-tab-count" id="coreCountSeeds"></span></button>
+      <button id="coreTabFlow" data-core-tab="flow">Flow <span class="core-tab-count" id="coreCountFlow"></span></button>
       <button id="coreTabBlocks" data-core-tab="blocks">Building blocks</button>
-      <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
-      <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
     </div>
     <div id="usageStripHost" data-src="CORE ARCHITECTURE → slim header → Quotas usage strip (compact) | fmcns_navigator.html: renders into #usageStripHost, startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
     <span id="archQueueBanner" class="core-banner" data-src="CORE ARCHITECTURE → slim header → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
@@ -639,7 +656,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       </select>
     </span>
     <button class="core-hbtn" id="aiSheetBtn" title="AI Settings — which model handles what, and what happens when the paid one runs out">⚙</button>
-    <button class="core-newidea ctrlbtn" id="coreNewIdeaBtn" title="Shape an idea in conversation, then queue it">💬 New idea</button>
   </div>
   <div class="ws-shell">
     <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the architecture graph, full width | fmcns_navigator.html: renderArchStage()/initArchNav() | backend: services/architecture.js, routes/architecture.js">
@@ -656,10 +672,8 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
             <button data-arch-layer="status" title="Color by build status">Status</button>
             <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
           </span>
-          <button class="tt-addbtn" id="archIdeaBtn" title="One line — Claude decides: a new component in the tree, or a seed">💡 Add an idea</button>
         </div>
       </div>
-      <div class="arch-addhost" id="ttAddHost"></div>
       <div class="ws-map-body">
         <div class="arch-stage" id="archStage">
           <div class="arch-ask" id="archAsk">
@@ -682,15 +696,94 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
         </div>
       </div>
     </div>
-    <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: list views (Seeds / Building blocks / Suggestion Engine / Dispatch Queue composer+list)">
-      <div id="corePaneSeeds" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Seeds | fmcns_navigator.html: renders into #tvBodySeeds, loadIdeas()/renderIdeas() | backend: routes/travaux.js (/ideas*)">
+    <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done) + the New-prompt composer | fmcns_navigator.html: renderFlow(), qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js">
+      <div id="corePaneFlow" class="core-pane" data-src="CORE ARCHITECTURE → Flow | fmcns_navigator.html: renderFlow() into #tvBodyFlow, item detail into the right zone | backend: services/promptQueue.js, services/suggestions.js, services/workIdeas.js">
         <div class="tv-toolbar">
           <div class="tv-toolbar-top">
-            <span class="arch-title">Seeds</span>
-            <span class="arch-sub">Ideas jotted down for later — nothing here executes on its own.</span>
+            <span class="arch-title">Flow</span>
+            <span class="arch-sub">Everything in flight — questions, running work, what's queued, Claude's suggestions, your seeds.</span>
+          </div>
+          <span class="flow-controls">
+            <span class="flow-typecips" id="flowTypeBtns">
+              <button class="active" data-ftype="all">All</button>
+              <button data-ftype="queue">Queue</button>
+              <button data-ftype="suggestions">Suggestions</button>
+              <button data-ftype="seeds">Seeds</button>
+            </span>
+            <input id="flowSearch" class="flow-search" placeholder="Search the flow…" autocomplete="off">
+          </span>
+        </div>
+        <div id="flowReviews" class="flow-reviews" style="display:none;"></div>
+        <div class="flow-composer" id="flowComposer" data-src="CORE ARCHITECTURE → Flow → New-prompt composer (collapsed by default) | fmcns_navigator.html: qAddBtn/qSetAsideBtn handlers, qAddPrompt() | backend: POST /api/travaux/prompts, services/promptQueue.js">
+          <button class="q-addbtn" id="flowComposerToggle">＋ New prompt</button>
+          <div class="flow-composer-form" style="display:none;">
+            <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
+            <div class="q-row">
+              <button class="q-addbtn" id="qAddBtn">Add to queue</button>
+              <button class="ctrlbtn" id="qSetAsideBtn" title="Create the task without running it — it waits in Parked until you start it">Set aside</button>
+              <button class="ctrlbtn" id="qMoreToggle" title="Rare options — everything here has a smart default">⚙ More</button>
+            </div>
+            <div id="qAdvanced" style="display:none;margin-top:4px;">
+              <input class="q-input" id="qPromptTitle" placeholder="Title (leave blank — auto-generated)">
+              <div class="q-row">
+                <label>Mode
+                  <select id="qMode">
+                    <option value="implement">Implement (edits the repo)</option>
+                    <option value="question">Question (read-only)</option>
+                  </select>
+                </label>
+                <label>Agent
+                  <select id="qAgent">
+                    <option value="">(loading agents…)</option>
+                  </select>
+                </label>
+                <label>Speed / depth
+                  <select id="qPreset">
+                    <option value="auto" selected>Auto (judges the task — recommended)</option>
+                    <option value="fast">Fast (haiku)</option>
+                    <option value="standard">Standard (sonnet)</option>
+                    <option value="deep">Deep (strongest model)</option>
+                  </select>
+                </label>
+              </div>
+              <div class="q-row">
+                <label>Runs on
+                  <select id="qProvider">
+                    <option value="claude-code">Claude Code</option>
+                    <option value="opencode">OpenCode (supports free models for implement)</option>
+                    <option value="ai-router">AI Router (free — questions only)</option>
+                  </select>
+                </label>
+                <label>Model
+                  <select id="qOpenModel" disabled>
+                    <option value="">(loading models…)</option>
+                  </select>
+                </label>
+              </div>
+              <div class="q-row">
+                <label>Strategy
+                  <select id="qStrategy">
+                    <option value="single" selected>Single (one agent, normal review)</option>
+                    <option value="competition">Competition (two devs, judge compares, you pick)</option>
+                    <option value="team">Team (research → build → test → judge → integrate)</option>
+                  </select>
+                </label>
+                <span id="qStrategyInfo" style="font-size:10px;color:var(--c-ink-3);align-self:center;"></span>
+              </div>
+              <div class="q-row">
+                <span class="q-place-seg" id="qPlaceSeg" title="Where in the queue it lands">
+                  <button data-pl="first">First</button>
+                  <button class="active" data-pl="last">Last</button>
+                </span>
+                <span style="font-size:10px;color:var(--c-ink-4);align-self:center;">Placement in line — Last is the default.</span>
+                <button class="ctrlbtn" id="shapeFirstBtn" title="Open this text in the Idea Studio, discuss and shape it, then queue the result">💬 Shape it in conversation first</button>
+              </div>
+            </div>
+            <div id="qAddErr" class="q-err"></div>
+            <div id="qConnLost" style="display:none;color:var(--c-danger);font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
           </div>
         </div>
-        <div class="tv-body" id="tvBodySeeds"></div>
+        <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
       </div>
       <div id="corePaneBlocks" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Building blocks | fmcns_navigator.html: renders into #tvBodyBlocks, loadBlocks()/renderDiscover()/renderIdeaBox() | backend: routes/discovery.js">
         <div class="tv-toolbar">
@@ -705,87 +798,11 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
         </div>
         <div class="tv-body" id="tvBodyBlocks"></div>
       </div>
-      <div id="corePaneSignals" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Suggestion Engine | fmcns_navigator.html: renders into #tvBodySignals, loadSuggestions()/renderSuggestions() | backend: routes/travaux.js (/suggestions*)">
-        <div class="tv-toolbar">
-          <div class="tv-toolbar-top">
-            <span class="arch-title">Suggestion Engine</span>
-            <span class="arch-sub">Claude proposes work, you decide what runs.</span>
-          </div>
-        </div>
-        <div class="tv-body" id="tvBodySignals"></div>
-      </div>
-      <div id="corePaneQueue" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Dispatch Queue (composer + list) | fmcns_navigator.html: qAddBtn handler, qLoad()/startQueuePolling() | backend: services/promptQueue.js, services/taskRunner.js, routes/queue.js">
-        <div class="q-left" data-src="CORE ARCHITECTURE → Dispatch Queue → new prompt form | fmcns_navigator.html: qAddBtn handler | backend: POST /api/travaux/prompts, services/promptQueue.js">
-          <h2>New prompt</h2>
-          <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
-          <input class="q-input" id="qPromptTitle" placeholder="Title (optional — auto-generated if left blank)">
-          <div class="q-row">
-            <label>Mode
-              <select id="qMode">
-                <option value="implement">Implement (edits the repo)</option>
-                <option value="question">Question (read-only)</option>
-              </select>
-            </label>
-            <label>Agent
-              <select id="qAgent">
-                <option value="">(loading agents…)</option>
-              </select>
-            </label>
-            <label>Speed / depth
-              <select id="qPreset">
-                <option value="auto" selected>Auto (judges the task — recommended)</option>
-                <option value="fast">Fast (haiku)</option>
-                <option value="standard">Standard (sonnet)</option>
-                <option value="deep">Deep (strongest model)</option>
-              </select>
-            </label>
-          </div>
-          <div class="q-row">
-            <label>Runs on
-              <select id="qProvider">
-                <option value="claude-code">Claude Code</option>
-                  <option value="opencode">OpenCode (supports free models for implement)</option>
-                <option value="ai-router">AI Router (free — questions only)</option>
-              </select>
-            </label>
-            <label>Model
-              <select id="qOpenModel" disabled>
-                <option value="">(loading models…)</option>
-              </select>
-            </label>
-          </div>
-          <div class="q-row">
-            <label>Strategy
-              <select id="qStrategy">
-                <option value="single" selected>Single (one agent, normal review)</option>
-                <option value="competition">Competition (two devs, judge compares, you pick)</option>
-                <option value="team">Team (research → build → test → judge → integrate)</option>
-              </select>
-            </label>
-            <span id="qStrategyInfo" style="font-size:10px;color:var(--c-ink-3);align-self:center;"></span>
-          </div>
-          <div class="q-row">
-            <label class="q-check"><input type="checkbox" id="qPriority"> Put first in line</label>
-          </div>
-          <button class="q-addbtn" id="qAddBtn">Add to queue</button>
-          <button class="ctrlbtn" id="shapeFirstBtn" style="margin-top:6px;width:100%;" title="Open this text in the Idea Studio, discuss and shape it, then queue the result">💬 Shape it in conversation first</button>
-          <div id="qAddErr" class="q-err"></div>
-          <div id="qConnLost" style="display:none;color:var(--c-danger);font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
-          <div id="qReviews" style="display:none;margin-top:14px;"></div>
-          <h2 style="margin-top:20px;">Queue (<span id="qCount">0</span>)</h2>
-          <div class="q-row" id="qFilterStrip" style="gap:6px;margin-bottom:8px;">
-            <button class="ctrlbtn q-filterbtn" data-qfilter="active">Active</button>
-            <button class="ctrlbtn q-filterbtn" data-qfilter="all">All</button>
-            <button class="ctrlbtn q-filterbtn" data-qfilter="finished">Finished</button>
-          </div>
-          <div id="qList"></div>
-        </div>
-      </div>
     </div>
-    <div class="ws-detail" id="wsDetail" data-src="CORE ARCHITECTURE → workspace right zone: selected task thread (Dispatch Queue view)">
-      <div class="ws-slot" id="qRight" data-src="CORE ARCHITECTURE → right zone → selected task thread (reply/steer/pause) | fmcns_navigator.html: renderQueueDetail() | backend: services/promptQueue.js reply/steer/pause endpoints">
-        <h2>Task</h2>
-        <div class="empty">Select a queued item to see its thread.</div>
+    <div class="ws-detail" id="wsDetail" data-src="CORE ARCHITECTURE → workspace right zone: the shared detail pane (task thread / seed / suggestion — Flow view)">
+      <div class="ws-slot" id="qRight" data-src="CORE ARCHITECTURE → right zone → selected Flow item (task thread, seed, suggestion) | fmcns_navigator.html: qRenderDetail()/renderSeedDetail()/renderSuggestionDetail() | backend: services/promptQueue.js reply/steer/pause endpoints, routes/travaux.js">
+        <h2>Detail</h2>
+        <div class="empty">Select an item in the Flow to see it here.</div>
       </div>
     </div>
   </div>
@@ -2117,16 +2134,38 @@ document.addEventListener('click', (e) => {
 // the center zone shows, and which detail slot the right zone displays.
 let coreView = 'arch';
 let coreInited = false;
-const CORE_VIEW_PANES = { seeds:'corePaneSeeds', blocks:'corePaneBlocks', signals:'corePaneSignals', queue:'corePaneQueue' };
+const CORE_VIEW_PANES = { flow: 'corePaneFlow', blocks: 'corePaneBlocks' };
+// Flow view state: type filter, search text, folded Done section, and the item
+// currently open in the shared right-zone detail pane.
+let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
 
 function initCore() {
   if (!coreInited) {
     coreInited = true;
     document.querySelectorAll('[data-core-tab]').forEach(b => { b.onclick = () => switchCoreView(b.getAttribute('data-core-tab')); });
-    document.getElementById('qAddBtn').onclick = qAddPrompt;
+    document.getElementById('qAddBtn').onclick = () => qAddPrompt(false);
+    document.getElementById('qSetAsideBtn').onclick = () => qAddPrompt(true);
     document.getElementById('queuePauseBtn').onclick = qTogglePause;
-    document.querySelectorAll('.q-filterbtn').forEach(b => {
-      b.onclick = () => { qFilter = b.getAttribute('data-qfilter'); qRenderList(); };
+    document.querySelectorAll('#flowTypeBtns button').forEach(b => {
+      b.onclick = () => { flowType = b.getAttribute('data-ftype'); renderFlow(); };
+    });
+    const searchEl = document.getElementById('flowSearch');
+    if (searchEl) searchEl.oninput = () => { flowSearch = searchEl.value.trim(); renderFlow(); };
+    document.getElementById('flowComposerToggle').onclick = () => {
+      const form = document.querySelector('#flowComposer .flow-composer-form');
+      const open = form.style.display !== 'none';
+      form.style.display = open ? 'none' : 'block';
+      document.getElementById('flowComposerToggle').textContent = open ? '＋ New prompt' : '✕ Close';
+      if (!open) document.getElementById('qPromptText').focus();
+    };
+    document.getElementById('qMoreToggle').onclick = () => {
+      const adv = document.getElementById('qAdvanced');
+      const open = adv.style.display !== 'none';
+      adv.style.display = open ? 'none' : 'block';
+      document.getElementById('qMoreToggle').textContent = open ? '⚙ More' : '⚙ Less';
+    };
+    document.querySelectorAll('#qPlaceSeg button').forEach(b => {
+      b.onclick = () => { document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x === b)); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
     document.getElementById('qStrategy').onchange = qStrategyInfo; // update cost multiplier info
@@ -2153,7 +2192,7 @@ function initCore() {
   startUsagePolling();
   loadProviders(); // model picker + provider liveness for the New-prompt form
   loadAgents(); // agent roster for the New-prompt form
-  qLoad(); // keep the queue count + pause state fresh even off the Dispatch Queue view
+  qLoad(); // keep the Flow badge + pause state fresh even off the Flow view
   startQueuePolling();
 }
 
@@ -2165,37 +2204,35 @@ function teardownCore() {
 // The one path that lays out the workspace zones for the current view: the
 // architecture graph fills the whole workspace on arch (its detail panel is
 // docked inside the graph zone and driven by selection, not by view); the
-// center shows one list view; the right detail zone shows the task thread on
-// queue and stays closed on the pure-list views.
+// center shows the Flow / Building blocks list; the right detail zone is the
+// shared item detail on Flow and stays closed on the pure-list views.
 function renderWorkspace() {
   const v = coreView;
   document.querySelectorAll('[data-core-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-core-tab') === v));
   document.getElementById('wsMap').classList.toggle('open', v === 'arch');
   document.getElementById('wsFlow').classList.toggle('open', v !== 'arch');
   Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
-  document.getElementById('wsDetail').classList.toggle('open', v === 'queue');
-  document.getElementById('qRight').classList.toggle('open', v === 'queue');
+  document.getElementById('wsDetail').classList.toggle('open', v === 'flow');
+  document.getElementById('qRight').classList.toggle('open', v === 'flow');
 }
 
 function switchCoreView(v) {
   coreView = v;
   renderWorkspace();
   if (v === 'arch') initArchNav();
-  if (v === 'seeds') loadIdeas();
+  if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); }
   if (v === 'blocks') initBlocks();
-  if (v === 'signals') loadSuggestions();
-  if (v === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
   if (coreInited) startQueuePolling(); // rate depends on which view is now active
 }
 
-// Jump to the Dispatch Queue view and select a given item — used by the hand-off
-// confirmation after queuing a prompt from Architecture/Seeds/Suggestion Engine.
+// Jump to the Flow view and open a given task in the detail pane — used by the
+// hand-off confirmation after queuing a prompt from Architecture/Seeds/Studio.
 function jumpToQueueItem(id) {
   setMode('core');
-  switchCoreView('queue');
+  switchCoreView('flow');
   const item = qPrompts.find(p => p.id === id);
   if (item) { qSelected = item; qRenderDetail(item); }
-  qRenderList();
+  renderFlow();
 }
 
 // Mirror of jumpToQueueItem for the tech tree: switch to Architecture, force the
@@ -2227,7 +2264,7 @@ const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
 const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
 const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
 let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
-let qFilter = 'active', qConnFails = 0, qDragId = null;
+let qConnFails = 0;
 // Execution-provider picker data (GET /api/travaux/providers): opencode model list
 // (free first) + provider liveness. Fetched once at init and again whenever the
 // Queue tab is opened, so a pick never happens against stale/empty options.
@@ -2507,7 +2544,7 @@ function renderAiSettings() {
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
-  qPollTimer = setInterval(qLoad, coreView === 'queue' ? 4000 : 15000);
+  qPollTimer = setInterval(qLoad, coreView === 'flow' ? 4000 : 15000);
 }
 function stopQueuePolling() { if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; } }
 
@@ -2535,21 +2572,14 @@ async function qLoad() {
   // "Work still waiting" is the useful count — finished/cancelled items no longer move
   // the number, so it stops meaning something once the list never shrinks.
   const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
-  document.getElementById('qCount').textContent = activeCount;
-  const countEl = document.getElementById('coreCountQueue');
+  const countEl = document.getElementById('coreCountFlow');
   if (countEl) countEl.textContent = activeCount || '';
-  qRenderList();
+  if (coreView === 'flow') renderFlow();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
     if (fresh) { qSelected = fresh; qRenderDetail(fresh); }
   }
-}
-
-function qVisiblePrompts() {
-  if (qFilter === 'all') return qPrompts;
-  if (qFilter === 'finished') return qPrompts.filter(p => !Q_ACTIVE_STATUSES.includes(p.status));
-  return qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status));
 }
 
 function qReorderableIds() {
@@ -2576,18 +2606,6 @@ function qMoveStep(id, dir) {
   if (idx === -1 || t < 0 || t >= ord.length) return;
   [ord[idx], ord[t]] = [ord[t], ord[idx]];
   qPersistReorder(qRebuildFullOrder(ord));
-}
-function qDropOn(targetId) {
-  if (!qDragId || qDragId === targetId) { qDragId = null; return; }
-  const ord = qReorderableIds();
-  const from = ord.indexOf(qDragId);
-  if (from === -1) { qDragId = null; return; }
-  ord.splice(from, 1);
-  const to = ord.indexOf(targetId);
-  if (to === -1) { qDragId = null; return; }
-  ord.splice(to, 0, qDragId);
-  qPersistReorder(qRebuildFullOrder(ord));
-  qDragId = null;
 }
 
 function qElapsed(p) {
@@ -2785,7 +2803,7 @@ function qCompetitionCard(p) {
 }
 
 async function qRenderReviews() {
-  const host = document.getElementById('qReviews');
+  const host = document.getElementById('flowReviews');
   if (!host) return;
   try {
     const [reviewsData, strategiesData] = await Promise.all([
@@ -2888,65 +2906,309 @@ async function qRenderReviews() {
   } catch { return; }
 }
 
-function qRenderList() {
-  document.querySelectorAll('.q-filterbtn').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-qfilter') === qFilter);
-  });
-  const host = document.getElementById('qList');
-  const visible = qVisiblePrompts();
-  if (!visible.length) {
-    host.innerHTML = `<div class="empty">${qFilter === 'finished' ? 'Nothing finished yet.' : 'Nothing queued yet — add a prompt above.'}</div>`;
-    return;
-  }
-  host.innerHTML = visible.map(p => {
-    const reorderable = Q_REORDERABLE_STATUSES.includes(p.status);
-    const finished = !Q_ACTIVE_STATUSES.includes(p.status);
-    return `
-    <div class="q-item${qSelected && qSelected.id===p.id ? ' sel':''}" data-qid="${p.id}" ${reorderable ? 'draggable="true"' : ''}>
-      <div class="q-item-top">
-        ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
-        <span class="q-item-title">${p.title || '(untitled)'}</span>
-        <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
-      </div>
-      <div class="q-item-meta">
-        <span>${qAgentLabel(p)} · ${p.mode==='question'?'Question':'Implement'} · ${qProviderLabel(p)}</span>
-        <span>${qElapsed(p)}</span>
-      </div>
-      ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
-      ${finished ? qCostLine(p) : ''}
-      ${p.status === 'paused' ? `<div class="q-item-meta"><span>Set aside — not running. Click in, then hit Start.</span></div>` : ''}
-      ${p.pending_question ? `<div class="q-item-q">🙋 ${p.pending_question.question}</div>` : ''}
-      ${reorderable ? `
-        <div class="q-item-arrows">
-          <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
-          <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>
-        </div>` : ''}
+// ── The Flow — one aggregated list over the feeds the app already loads ────────
+// Sections (in order): Questions to answer · Running · Ready · Suggested by Claude
+// · Seeds & ideas · Parked · Done. Type chips + search filter across them; the Done
+// section folds. Clicking any row opens its detail in the shared right zone.
+
+function flowMatches(parts) {
+  if (!flowSearch) return true;
+  return parts.join(' ').toLowerCase().includes(flowSearch.toLowerCase());
+}
+
+function flowQueueRow(p, reorderable) {
+  const sel = qSelected && qSelected.id === p.id;
+  const finished = !Q_ACTIVE_STATUSES.includes(p.status);
+  return `
+  <div class="flow-row q-item${sel ? ' sel' : ''}" data-qid="${p.id}">
+    <div class="q-item-top">
+      ${reorderable ? '<span class="q-drag-handle" title="Reorder (▲▼ on hover)">⠿</span>' : ''}
+      <span class="q-item-title">${p.title || '(untitled)'}</span>
+      <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
     </div>
-  `;
-  }).join('');
+    <div class="q-item-meta">
+      <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}</span>
+      <span>${qElapsed(p)}</span>
+    </div>
+    ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
+    ${finished ? qCostLine(p) : ''}
+    ${p.pending_question ? `<div class="q-item-q">🙋 ${p.pending_question.question}</div>` : ''}
+    ${reorderable ? `
+      <div class="q-item-arrows">
+        <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
+        <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>
+      </div>` : ''}
+  </div>`;
+}
+
+function flowSection(icon, title, count, rowsHtml) {
+  return `<div class="flow-section"><div class="flow-sec-head"><span class="flow-sec-title">${icon} ${title}</span><span class="flow-sec-count">${count}</span></div>${rowsHtml}</div>`;
+}
+
+function renderFlow() {
+  const host = document.getElementById('tvBodyFlow');
+  if (!host) return;
+  document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
+
+  const showQueue = flowType === 'all' || flowType === 'queue';
+  const showSg = flowType === 'all' || flowType === 'suggestions';
+  const showSeeds = flowType === 'all' || flowType === 'seeds';
+  let html = '';
+
+  if (showQueue) {
+    const questions = qPrompts.filter(p => p.pending_question && flowMatches([p.title, p.prompt]));
+    const running = qPrompts.filter(p => p.status === 'running' && flowMatches([p.title, p.prompt]));
+    const ready = qPrompts.filter(p => p.status === 'queued' && flowMatches([p.title, p.prompt]));
+    const parked = qPrompts.filter(p => p.status === 'paused' && flowMatches([p.title, p.prompt]));
+    const done = qPrompts.filter(p => !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
+    const showDone = flowDoneOpen || flowSearch !== '';
+    if (questions.length) html += flowSection('❓', 'Questions to answer', questions.length, questions.map(p => flowQueueRow(p, false)).join(''));
+    if (running.length) html += flowSection('▶', 'Running now', running.length, running.map(p => flowQueueRow(p, false)).join(''));
+    if (ready.length) html += flowSection('⏳', 'Ready to start', ready.length, ready.map(p => flowQueueRow(p, true)).join(''));
+    if (parked.length) html += flowSection('⏸', 'Parked', parked.length, parked.map(p => flowQueueRow(p, true)).join(''));
+    if (done.length) {
+      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span><span class="flow-done-chev">${showDone ? '▾' : '▸'}</span></div>${showDone ? done.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+    }
+  }
+
+  if (showSg && tvSuggestions.length) {
+    const sg = tvSuggestions.filter(s => flowMatches([s.title, s.rationale, s.prompt]));
+    if (sg.length) {
+      html += flowSection('✨', 'Suggested by Claude', sg.length, `
+        <div class="flow-genrow">
+          <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
+          <button class="ctrlbtn" id="flowGenBtn">✨ Generate now</button>
+          <span id="flowGenStatus" class="flow-genstatus"></span>
+        </div>` + sg.map(s => `
+        <div class="flow-row flow-sgrow${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? ' sel' : ''}" data-sid="${s.id}">
+          <div class="q-item-top">
+            <span class="q-item-title">${s.title}</span>
+            <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
+            <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
+          </div>
+          ${s.rationale ? `<div class="sg-rationale">${s.rationale}</div>` : ''}
+        </div>`).join(''));
+      const genBtn = document.getElementById('flowGenBtn');
+      if (genBtn) genBtn.onclick = () => flowGenerateNow();
+    }
+  }
+
+  if (showSeeds) {
+    const ideas = tvIdeas.filter(i => flowMatches([i.title, i.notes, i.tag]));
+    html += flowSection('🌱', 'Seeds & ideas', tvIdeas.length, `
+        <div class="flow-genrow"><button class="ctrlbtn" id="flowSeedToggle">＋ Keep a seed</button></div>
+        <div class="flow-seedadd" id="flowSeedAdd" style="display:none;">
+          <input id="idTitleInput" placeholder="The idea in one line…">
+          <textarea id="idNotesInput" rows="2" placeholder="Expand (optional) — why, angles, what it would change…"></textarea>
+          <div class="id-form-row">
+            <span class="id-form-hint">Nothing runs from an idea — they just sit here to be revisited.</span>
+            <button class="id-addbtn" id="idAddBtn">+ Keep the idea</button>
+          </div>
+        </div>` + (ideas.length ? ideas.map(i => `
+        <div class="flow-row flow-idrow${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? ' sel' : ''}" data-iid="${i.id}">
+          <div class="q-item-top">
+            <span class="q-item-title">${i.title || '(untitled)'}</span>
+            ${i.tag ? `<span class="id-tag-pill">${i.tag}</span>` : ''}
+            ${i.work_prompt_id ? '<span class="q-badge" style="background:#4f9d7a;">Queued</span>' : ''}
+            ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
+          </div>
+          ${i.notes ? `<div class="sg-rationale">${i.notes}</div>` : ''}
+        </div>`).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
+      const seedToggle = document.getElementById('flowSeedToggle');
+      if (seedToggle) seedToggle.onclick = () => {
+        const box = document.getElementById('flowSeedAdd');
+        const open = box.style.display !== 'none';
+        box.style.display = open ? 'none' : 'block';
+        seedToggle.textContent = open ? '＋ Keep a seed' : '✕ Close';
+        if (!open) document.getElementById('idTitleInput').focus();
+      };
+      const addBtn = document.getElementById('idAddBtn');
+      if (addBtn) {
+        addBtn.onclick = addIdea;
+        document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
+      }
+  }
+
+  if (!html) {
+    html = '<div class="empty">' + (flowSearch ? 'Nothing in the Flow matches that search.' : 'The Flow is empty — start with "＋ New prompt", or tell Claude an idea and it will land here or in the tree.') + '</div>';
+  }
+  host.innerHTML = html;
+
+  // Row wiring
   host.querySelectorAll('.q-item').forEach(el => {
     const id = el.getAttribute('data-qid');
     el.onclick = (e) => {
       if (e.target.closest('.q-arrow')) return;
-      qSelected = qPrompts.find(p => p.id === id); qRenderList(); qRenderDetail(qSelected);
+      flowSideSel = null;
+      qSelected = qPrompts.find(p => p.id === id);
+      qRenderDetail(qSelected);
+      renderFlow();
     };
-    if (el.hasAttribute('draggable')) {
-      el.addEventListener('dragstart', () => { qDragId = id; });
-      el.addEventListener('dragover', (e) => { e.preventDefault(); });
-      el.addEventListener('drop', (e) => { e.preventDefault(); qDropOn(id); });
-    }
   });
   host.querySelectorAll('[data-qup]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qup'), -1); }; });
   host.querySelectorAll('[data-qdown]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qdown'), 1); }; });
+  host.querySelectorAll('.flow-sgrow').forEach(el => {
+    el.onclick = () => {
+      const id = el.getAttribute('data-sid');
+      const s = tvSuggestions.find(x => x.id === id);
+      if (!s) return;
+      flowSideSel = { kind: 'suggestion', id };
+      qSelected = null;
+      renderSuggestionDetail(s);
+      renderFlow();
+    };
+  });
+  host.querySelectorAll('.flow-idrow').forEach(el => {
+    el.onclick = () => {
+      const id = el.getAttribute('data-iid');
+      const idea = tvIdeas.find(x => x.id === id);
+      if (!idea) return;
+      flowSideSel = { kind: 'seed', id };
+      qSelected = null;
+      renderSeedDetail(idea);
+      renderFlow();
+    };
+  });
+  const doneToggle = document.getElementById('flowDoneToggle');
+  if (doneToggle) doneToggle.onclick = () => { flowDoneOpen = !flowDoneOpen; renderFlow(); };
 }
 
-async function qAddPrompt() {
+async function flowGenerateNow() {
+  const btn = document.getElementById('flowGenBtn');
+  const status = document.getElementById('flowGenStatus');
+  if (!btn) return;
+  btn.disabled = true; btn.textContent = '✨ Generating…';
+  if (status) status.textContent = 'Claude is thinking about what to work on next — this takes a minute or two.';
+  try {
+    await apiWrite('/api/travaux/suggestions/generate', 'POST', {});
+    setTimeout(async () => {
+      await loadSuggestions();
+      if (status) status.textContent = '';
+      btn.disabled = false; btn.textContent = '✨ Generate now';
+    }, 20000);
+  } catch (e) {
+    if (status) status.textContent = 'Error: ' + e.message;
+    btn.disabled = false; btn.textContent = '✨ Generate now';
+  }
+}
+
+// Shared detail pane, right zone. The task detail (qRenderDetail) already lives
+// there; seeds and suggestions get their own light renderers with the same actions
+// the old list cards had — moved, not changed.
+function renderSeedDetail(idea) {
+  const host = document.getElementById('qRight');
+  if (!host) return;
+  const title = (idea.title || '').replace(/"/g, '&quot;');
+  const notes = (idea.notes || '');
+  const tag = (idea.tag || '').replace(/"/g, '&quot;');
+  host.innerHTML = `
+    <h2>Seed</h2>
+    <input class="q-input" data-role="title" value="${title}">
+    <textarea class="q-input" data-role="notes" rows="4">${notes}</textarea>
+    <input class="q-input" data-role="tag" placeholder="tag" value="${tag}" style="max-width:140px;">
+    <div class="id-form-hint" style="margin:6px 0;">Nothing runs from an idea — they sit here to be revisited, queued, planted, or discussed.</div>
+    ${idea.work_prompt_id ? `<div class="id-done-pill">Queued — <a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">view in Flow</a></div>` : ''}
+    ${idea.arch_node_id ? `<div class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></div>` : ''}
+    <div class="arch-actionrow">
+      <button id="seedDiscussBtn">💬 Discuss</button>
+      <button id="seedPromoteBtn">→ Queue</button>
+      ${idea.arch_node_id ? '' : '<button id="seedPlantBtn">🌱 Plant in tree</button>'}
+      <button class="danger" id="seedDeleteBtn">Remove</button>
+    </div>
+    <div class="arch-qf-status" id="seedDetailStatus"></div>`;
+  const save = () => apiWrite(`/api/travaux/ideas/${idea.id}`, 'PATCH', {
+    title: host.querySelector('[data-role="title"]').value,
+    notes: host.querySelector('[data-role="notes"]').value,
+    tag: host.querySelector('[data-role="tag"]').value,
+  }).catch(() => {});
+  host.querySelector('[data-role="title"]').onblur = save;
+  host.querySelector('[data-role="notes"]').onblur = save;
+  host.querySelector('[data-role="tag"]').onblur = save;
+  document.getElementById('seedDiscussBtn').onclick = () => {
+    openStudio({
+      type: 'seed',
+      subjectId: idea.id,
+      title: (host.querySelector('[data-role="title"]').value || 'Seed').trim(),
+      onDone: () => { loadIdeas(); qLoad(); },
+    });
+  };
+  document.getElementById('seedPromoteBtn').onclick = async (e) => {
+    e.target.disabled = true; e.target.textContent = '…';
+    try { await apiWrite(`/api/travaux/ideas/${idea.id}/promote`, 'POST', {}); await loadIdeas(); await qLoad(); }
+    catch (err) { e.target.disabled = false; e.target.textContent = '→ Queue'; alert('Error: ' + err.message); }
+  };
+  const plantBtn = document.getElementById('seedPlantBtn');
+  if (plantBtn) plantBtn.onclick = async (e) => {
+    e.target.disabled = true; e.target.textContent = '…';
+    try { await apiWrite(`/api/travaux/ideas/${idea.id}/plant`, 'POST', {}); await loadIdeas(); await loadArchNodes(); }
+    catch (err) { e.target.disabled = false; e.target.textContent = '🌱 Plant in tree'; alert('Error: ' + err.message); }
+  };
+  document.getElementById('seedDeleteBtn').onclick = async () => {
+    tvIdeas = tvIdeas.filter(x => x.id !== idea.id);
+    flowSideSel = null;
+    renderFlow();
+    host.innerHTML = '<h2>Detail</h2><div class="empty">Select an item in the Flow to see it here.</div>';
+    try { await apiWrite(`/api/travaux/ideas/${idea.id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
+  };
+  const jump = host.querySelector('[data-jump]');
+  if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
+  const plantJump = host.querySelector('[data-plantjump]');
+  if (plantJump) plantJump.onclick = (e) => { e.preventDefault(); jumpToArchNode(plantJump.getAttribute('data-plantjump')); };
+}
+
+function renderSuggestionDetail(s) {
+  const host = document.getElementById('qRight');
+  if (!host) return;
+  host.innerHTML = `
+    <h2>Suggestion</h2>
+    <div class="arch-detail-name">${s.title}</div>
+    <div class="q-item-meta" style="margin:6px 0 10px;">
+      <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
+      <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
+    </div>
+    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${s.rationale}</div></div>` : ''}
+    ${s.status === 'new' ? `
+      <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
+      <textarea class="q-input" data-role="prompt" rows="6">${s.prompt}</textarea></div>
+      <div class="arch-actionrow">
+        <button class="primary" id="sgAcceptBtn">Accept → queue (set aside)</button>
+        <button id="sgDiscussBtn">💬 Discuss first</button>
+        <button id="sgDismissBtn">Dismiss</button>
+      </div>` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Flow</a>` : 'Already in the queue.'}</div>` : ''}
+    <div class="arch-qf-status" id="sgDetailStatus"></div>`;
+  const discussBtn = document.getElementById('sgDiscussBtn');
+  if (discussBtn) discussBtn.onclick = () => {
+    openStudio({
+      type: 'suggestion',
+      subjectId: s.id,
+      title: s.title || 'Suggestion',
+      onDone: () => { loadSuggestions(); qLoad(); },
+    });
+  };
+  const acceptBtn = document.getElementById('sgAcceptBtn');
+  if (acceptBtn) acceptBtn.onclick = async () => {
+    const promptText = host.querySelector('[data-role="prompt"]').value;
+    acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
+    try { await apiWrite(`/api/travaux/suggestions/${s.id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); await qLoad(); }
+    catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accept → queue (set aside)'; alert('Error: ' + e.message); }
+  };
+  const dismissBtn = document.getElementById('sgDismissBtn');
+  if (dismissBtn) dismissBtn.onclick = async () => {
+    dismissBtn.disabled = true;
+    try { await apiWrite(`/api/travaux/suggestions/${s.id}/dismiss`, 'POST', {}); await loadSuggestions(); }
+    catch (e) { dismissBtn.disabled = false; alert('Error: ' + e.message); }
+  };
+  const jump = host.querySelector('[data-jump]');
+  if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
+}
+
+async function qAddPrompt(asPaused) {
   const promptText = document.getElementById('qPromptText').value.trim();
   const errEl = document.getElementById('qAddErr');
   errEl.textContent = '';
   if (!promptText) { errEl.textContent = 'Write a prompt first.'; return; }
   const btn = document.getElementById('qAddBtn');
-  btn.disabled = true; btn.textContent = 'Adding…';
+  btn.disabled = true; btn.textContent = asPaused ? 'Setting aside…' : 'Adding…';
   const provider = document.getElementById('qProvider').value;
   const isOpen = provider === 'opencode';
   const isAiRouter = provider === 'ai-router';
@@ -2967,7 +3229,8 @@ async function qAddPrompt() {
       // Context (continue an earlier task's session, or start fresh) is decided
       // automatically server-side (contextPolicy.js) instead of a manual picker.
       context_mode: 'auto',
-      priority: document.getElementById('qPriority').checked,
+      priority: (document.querySelector('#qPlaceSeg .active') || { dataset: { pl: 'last' } }).dataset.pl === 'first',
+      status: asPaused ? 'paused' : undefined, // "Set aside" — waits in Parked until started
       space: 'fmcns',
       provider,
       provider_model: usesModelPicker ? modelSel.value : null,
@@ -2976,7 +3239,7 @@ async function qAddPrompt() {
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
-    document.getElementById('qPriority').checked = false;
+    document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x.getAttribute('data-pl') === 'last'));
     await qLoad();
   } catch (e) {
     errEl.textContent = 'Could not add: ' + e.message;
@@ -3161,7 +3424,7 @@ function qRenderDetail(p) {
   if (delBtn) delBtn.onclick = async () => {
     await apiWrite(`/api/travaux/prompts/${p.id}`, 'DELETE');
     qSelected = null;
-    document.getElementById('qRight').innerHTML = '<h2>Task</h2><div class="empty">Select a queued item to see its thread.</div>';
+    document.getElementById('qRight').innerHTML = '<h2>Detail</h2><div class="empty">Select an item in the Flow to see it here.</div>';
     await qLoad();
   };
   const rerunBtn = document.getElementById('qRerunBtn');
@@ -3301,8 +3564,6 @@ const TV_KIND_LABEL = { chantier: 'Work item', integration: 'Integration' };
 const TV_STATUS_LABEL = { new: 'New', accepted: 'Accepted', dismissed: 'Dismissed' };
 
 async function loadSuggestions() {
-  const body = document.getElementById('tvBodySignals');
-  body.innerHTML = '<div class="tv-empty">Loading…</div>';
   try {
     const q = [];
     if (tvSuggestionFilter.status !== 'all') q.push('status=' + tvSuggestionFilter.status);
@@ -3310,204 +3571,40 @@ async function loadSuggestions() {
     const data = await api('/api/travaux/suggestions' + (q.length ? '?' + q.join('&') : ''));
     tvSuggestions = data.suggestions || [];
   } catch (e) { tvSuggestions = []; }
-  const countEl = document.getElementById('coreCountSignals');
-  if (countEl) countEl.textContent = tvSuggestions.filter(s => s.status === 'new').length || '';
-  renderSuggestions();
-}
-
-function renderSuggestions() {
-  const body = document.getElementById('tvBodySignals');
-  const statusOpts = [['new','New'],['accepted','Accepted'],['dismissed','Dismissed'],['all','All']];
-  const kindOpts = [['all','All'],['chantier','Work items'],['integration','Integrations']];
-  body.innerHTML = `
-    <div class="sg-toolbar-row">
-      <div class="sg-filterbtns" id="sgStatusBtns">
-        ${statusOpts.map(([v,l]) => `<button data-v="${v}" class="${tvSuggestionFilter.status===v?'active':''}">${l}</button>`).join('')}
-      </div>
-      <div class="sg-filterbtns" id="sgKindBtns">
-        ${kindOpts.map(([v,l]) => `<button data-v="${v}" class="${tvSuggestionFilter.kind===v?'active':''}">${l}</button>`).join('')}
-      </div>
-      <button class="sg-genbtn" id="sgGenBtn" style="margin-left:auto;">✨ Generate now</button>
-    </div>
-    <div id="sgGenStatus" style="font-size:10.5px;color:var(--c-ink-4);margin-bottom:10px;"></div>
-    <div id="sgList"></div>
-  `;
-  document.querySelectorAll('#sgStatusBtns button').forEach(b => b.onclick = () => { tvSuggestionFilter.status = b.getAttribute('data-v'); loadSuggestions(); });
-  document.querySelectorAll('#sgKindBtns button').forEach(b => b.onclick = () => { tvSuggestionFilter.kind = b.getAttribute('data-v'); loadSuggestions(); });
-  document.getElementById('sgGenBtn').onclick = generateSuggestionsNow;
-
-  const list = document.getElementById('sgList');
-  if (!tvSuggestions.length) {
-    list.innerHTML = '<div class="tv-empty">No suggestions here. Click "Generate now" to ask for new ones.</div>';
-    return;
+  // Re-open the suggestion detail after a refresh (accept/dismiss/regenerate) if it
+  // is still in the list — the detail pane survives the Flow re-render.
+  if (flowSideSel && flowSideSel.kind === 'suggestion') {
+    const fresh = tvSuggestions.find(x => x.id === flowSideSel.id);
+    if (fresh) renderSuggestionDetail(fresh); else flowSideSel = null;
   }
-  list.innerHTML = tvSuggestions.map(s => `
-    <div class="sg-card" data-sid="${s.id}">
-      <div class="sg-card-top">
-        <span class="sg-card-title">${s.title}</span>
-        <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind]||s.kind}</span>
-        <span class="sg-status-badge">${TV_STATUS_LABEL[s.status]||s.status}</span>
-      </div>
-      ${s.rationale ? `<div class="sg-rationale">${s.rationale}</div>` : ''}
-      ${s.status === 'new' ? `
-        <textarea class="sg-prompt" data-role="prompt">${s.prompt}</textarea>
-        <div class="sg-actions">
-          <button class="primary" data-action="accept">Accept → queue (set aside)</button>
-          <button data-action="discuss">💬 Discuss first</button>
-          <button data-action="dismiss">Dismiss</button>
-        </div>
-      ` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Dispatch Queue</a>` : 'Already in the queue.'}</div>` : ''}
-    </div>
-  `).join('');
-  list.querySelectorAll('.sg-card').forEach(card => {
-    const id = card.getAttribute('data-sid');
-    const acceptBtn = card.querySelector('[data-action="accept"]');
-    const dismissBtn = card.querySelector('[data-action="dismiss"]');
-    const discussBtn = card.querySelector('[data-action="discuss"]');
-    const jumpLink = card.querySelector('[data-jump]');
-    if (jumpLink) jumpLink.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jumpLink.getAttribute('data-jump')); };
-    if (discussBtn) discussBtn.onclick = () => {
-      openStudio({
-        type: 'suggestion',
-        subjectId: id,
-        title: ((tvSuggestions.find(x => x.id === id) || {}).title || 'Suggestion'),
-        onDone: () => { loadSuggestions(); qLoad(); },
-      });
-    };
-    if (acceptBtn) acceptBtn.onclick = async () => {
-      const promptText = card.querySelector('[data-role="prompt"]').value;
-      acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
-      try { await apiWrite(`/api/travaux/suggestions/${id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); await qLoad(); }
-      catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accept → queue (set aside)'; alert('Error: ' + e.message); }
-    };
-    if (dismissBtn) dismissBtn.onclick = async () => {
-      dismissBtn.disabled = true;
-      try { await apiWrite(`/api/travaux/suggestions/${id}/dismiss`, 'POST', {}); await loadSuggestions(); }
-      catch (e) { dismissBtn.disabled = false; alert('Error: ' + e.message); }
-    };
-  });
-}
-
-async function generateSuggestionsNow() {
-  const btn = document.getElementById('sgGenBtn');
-  const status = document.getElementById('sgGenStatus');
-  btn.disabled = true; btn.textContent = '✨ Génération…';
-  status.textContent = 'Claude is thinking about what to work on next — this takes a minute or two.';
-  try {
-    await apiWrite('/api/travaux/suggestions/generate', 'POST', {});
-    setTimeout(async () => { await loadSuggestions(); status.textContent = ''; btn.disabled = false; btn.textContent = '✨ Generate now'; }, 20000);
-  } catch (e) {
-    status.textContent = 'Error: ' + e.message;
-    btn.disabled = false; btn.textContent = '✨ Generate now';
-  }
+  if (coreView === 'flow') renderFlow();
 }
 
 // ── Idées ──────────────────────────────────────────────────────────────────────
 async function loadIdeas() {
-  const body = document.getElementById('tvBodySeeds');
-  body.innerHTML = '<div class="tv-empty">Loading…</div>';
   try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
-  const countEl = document.getElementById('coreCountSeeds');
-  if (countEl) countEl.textContent = tvIdeas.filter(i => !i.work_prompt_id).length || '';
-  renderIdeas();
-}
-
-function renderIdeas() {
-  const body = document.getElementById('tvBodySeeds');
-  body.innerHTML = `
-    <div class="id-form">
-      <input id="idTitleInput" placeholder="The idea in one line…">
-      <textarea id="idNotesInput" placeholder="Expand (optional) — why, angles, what it would change…"></textarea>
-      <div class="id-form-row">
-        <span class="id-form-hint">Nothing runs from an idea — they just sit here to be revisited.</span>
-        <button class="id-addbtn" id="idAddBtn">+ Keep the idea</button>
-      </div>
-    </div>
-    <div id="idList"></div>
-  `;
-  document.getElementById('idAddBtn').onclick = addIdea;
-  document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
-
-  const list = document.getElementById('idList');
-  if (!tvIdeas.length) { list.innerHTML = '<div class="tv-empty">No ideas yet. Jot down above whatever you want to keep on hand.</div>'; return; }
-  list.innerHTML = tvIdeas.map((idea, i) => `
-    <div class="id-card" data-iid="${idea.id}">
-      <div class="id-card-main">
-        <input data-role="title" value="${(idea.title||'').replace(/"/g,'&quot;')}">
-        <textarea data-role="notes" rows="2">${idea.notes||''}</textarea>
-        <input class="id-tag-input" data-role="tag" placeholder="tag" value="${(idea.tag||'').replace(/"/g,'&quot;')}" style="max-width:120px;">
-        ${idea.work_prompt_id ? `<span class="id-done-pill">Queued — <a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">view in Dispatch Queue</a></span>` : ''}
-        ${idea.arch_node_id ? `<span class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></span>` : ''}
-      </div>
-      <div class="id-card-actions">
-        <div class="id-move-row">
-          <button data-action="up" ${i===0?'disabled':''}>↑</button>
-          <button data-action="down" ${i===tvIdeas.length-1?'disabled':''}>↓</button>
-        </div>
-        <button data-action="discuss">💬 Discuss</button>
-        <button data-action="promote">→ Queue</button>
-        ${idea.arch_node_id ? '' : '<button data-action="plant">🌱 Plant in tree</button>'}
-        <button class="danger" data-action="delete">Remove</button>
-      </div>
-    </div>
-  `).join('');
-
-  list.querySelectorAll('.id-card').forEach(card => {
-    const id = card.getAttribute('data-iid');
-    const titleEl = card.querySelector('[data-role="title"]');
-    const notesEl = card.querySelector('[data-role="notes"]');
-    const tagEl = card.querySelector('[data-role="tag"]');
-    const save = () => apiWrite(`/api/travaux/ideas/${id}`, 'PATCH', { title: titleEl.value, notes: notesEl.value, tag: tagEl.value }).catch(() => {});
-    titleEl.onblur = save; notesEl.onblur = save; tagEl.onblur = save;
-    const discussBtn = card.querySelector('[data-action="discuss"]');
-    if (discussBtn) discussBtn.onclick = () => {
-      openStudio({
-        type: 'seed',
-        subjectId: id,
-        title: (titleEl.value || 'Seed').trim(),
-        onDone: () => { loadIdeas(); qLoad(); },
-      });
-    };
-    card.querySelector('[data-action="delete"]').onclick = async () => {
-      tvIdeas = tvIdeas.filter(x => x.id !== id); renderIdeas();
-      try { await apiWrite(`/api/travaux/ideas/${id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
-    };
-    card.querySelector('[data-action="promote"]').onclick = async (e) => {
-      e.target.disabled = true; e.target.textContent = '…';
-      try { await apiWrite(`/api/travaux/ideas/${id}/promote`, 'POST', {}); await loadIdeas(); await qLoad(); }
-      catch (err) { e.target.disabled = false; e.target.textContent = '→ Queue'; alert('Error: ' + err.message); }
-    };
-    // Phase 4: a Seed becomes a real tree node, so Idées is the list rendering of the
-    // same objects the tech tree renders spatially.
-    const plantBtn = card.querySelector('[data-action="plant"]');
-    if (plantBtn) plantBtn.onclick = async (e) => {
-      e.target.disabled = true; e.target.textContent = '…';
-      try { await apiWrite(`/api/travaux/ideas/${id}/plant`, 'POST', {}); await loadIdeas(); await loadArchNodes(); }
-      catch (err) { e.target.disabled = false; e.target.textContent = '🌱 Plant in tree'; alert('Error: ' + err.message); }
-    };
-    const plantJump = card.querySelector('[data-plantjump]');
-    if (plantJump) plantJump.onclick = (ev) => {
-      ev.preventDefault();
-      jumpToArchNode(plantJump.getAttribute('data-plantjump'));
-    };
-    const jumpLink = card.querySelector('[data-jump]');
-    if (jumpLink) jumpLink.onclick = (ev) => { ev.preventDefault(); jumpToQueueItem(jumpLink.getAttribute('data-jump')); };
-    const upBtn = card.querySelector('[data-action="up"]'), downBtn = card.querySelector('[data-action="down"]');
-    if (upBtn) upBtn.onclick = () => moveIdea(id, -1);
-    if (downBtn) downBtn.onclick = () => moveIdea(id, 1);
-  });
+  // Re-open the seed detail after a refresh (promote/plant/delete/add) if it is
+  // still in the list — the detail pane survives the Flow re-render.
+  if (flowSideSel && flowSideSel.kind === 'seed') {
+    const fresh = tvIdeas.find(x => x.id === flowSideSel.id);
+    if (fresh) renderSeedDetail(fresh); else flowSideSel = null;
+  }
+  if (coreView === 'flow') renderFlow();
 }
 
 async function addIdea() {
-  const title = document.getElementById('idTitleInput').value.trim();
+  const titleEl = document.getElementById('idTitleInput');
+  if (!titleEl) return;
+  const title = titleEl.value.trim();
   if (!title) return;
-  const notes = document.getElementById('idNotesInput').value.trim();
+  const notesEl = document.getElementById('idNotesInput');
+  const notes = notesEl ? notesEl.value.trim() : '';
   const btn = document.getElementById('idAddBtn');
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
     await apiWrite('/api/travaux/ideas', 'POST', { title, notes });
     await loadIdeas();
-  } catch (e) { alert('Error: ' + e.message); } finally { btn.disabled = false; }
+  } catch (e) { alert('Error: ' + e.message); } finally { if (btn) btn.disabled = false; }
 }
 
 async function moveIdea(id, delta) {
@@ -3516,7 +3613,7 @@ async function moveIdea(id, delta) {
   if (i < 0 || j < 0 || j >= tvIdeas.length) return;
   const next = tvIdeas.slice();
   [next[i], next[j]] = [next[j], next[i]];
-  tvIdeas = next; renderIdeas();
+  tvIdeas = next; renderFlow();
   try { await apiWrite('/api/travaux/ideas/reorder', 'POST', { ids: next.map(x => x.id) }); } catch (e) { await loadIdeas(); }
 }
 
@@ -4000,8 +4097,6 @@ async function initArchNav() {
   document.querySelectorAll('[data-arch-layer]').forEach(b => {
     b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); syncArchControls(); renderArchStage(); };
   });
-  const ideaBtn = document.getElementById('archIdeaBtn');
-  if (ideaBtn) ideaBtn.onclick = () => renderArchIdeaForm();
   const askInput = document.getElementById('archAskInput');
   const askGo = document.getElementById('archAskGo');
   if (askInput && askGo) {
@@ -4180,9 +4275,9 @@ async function submitIdea(concept, statusEl) {
       selectArchNode(out.node.id); // speculative node, docked detail explains it
     } else {
       await loadIdeas();
-      statusEl.innerHTML = `Saved as a seed — <a href="#" class="core-handoff-link" data-seedjump>view it in Seeds</a>.`;
+      statusEl.innerHTML = `Saved as a seed — <a href="#" class="core-handoff-link" data-seedjump>view it in the Flow</a>.`;
       const a = statusEl.querySelector('[data-seedjump]');
-      if (a) a.onclick = (e) => { e.preventDefault(); setMode('core'); switchCoreView('seeds'); };
+      if (a) a.onclick = (e) => { e.preventDefault(); setMode('core'); switchCoreView('flow'); };
     }
     return out;
   } catch (e) {
@@ -4191,63 +4286,6 @@ async function submitIdea(concept, statusEl) {
     return null;
   }
 }
-
-// Inline composer for the Architecture graph ("💡 Add an idea").
-function renderArchIdeaForm() {
-  const host = document.getElementById('ttAddHost');
-  if (!host) return;
-  const open = !host.classList.contains('open');
-  host.classList.toggle('open', open);
-  if (!open) { host.innerHTML = ''; return; } // second click closes it
-  host.innerHTML = `<div class="tt-addform">
-      <textarea id="ttIdea" rows="2" placeholder="One line about the idea — Claude places it: a component in the tree, or a seed."></textarea>
-      <div class="arch-actionrow"><button id="ttIdeaGo">Add</button><button id="ttIdeaCancel">Cancel</button></div>
-      <div class="arch-qf-status" id="ttIdeaStatus"></div>
-    </div>`;
-  const status = document.getElementById('ttIdeaStatus');
-  document.getElementById('ttIdeaCancel').onclick = () => { host.innerHTML = ''; host.classList.remove('open'); };
-  const go = async () => {
-    const out = await submitIdea(document.getElementById('ttIdea').value.trim(), status);
-    if (out && out.kind === 'node') { host.innerHTML = ''; host.classList.remove('open'); }
-  };
-  document.getElementById('ttIdeaGo').onclick = go;
-  document.getElementById('ttIdea').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); }
-  });
-}
-
-// Popover composer for the header "💬 New idea" button — same door, same brains.
-function openIdeaComposer() {
-  let host = document.getElementById('ideaComposer');
-  if (!host) {
-    host = document.createElement('div');
-    host.id = 'ideaComposer';
-    host.className = 'idea-composer';
-    host.innerHTML = `<div class="idea-composer-inner">
-        <div class="idea-composer-title">New idea</div>
-        <textarea id="ideaCompInput" rows="2" placeholder="One line about the idea — Claude decides where it belongs."></textarea>
-        <div class="arch-actionrow"><button id="ideaCompGo">Add</button><button id="ideaCompCancel">Cancel</button></div>
-        <div class="arch-qf-status" id="ideaCompStatus"></div>
-      </div>`;
-    document.body.appendChild(host);
-    document.getElementById('ideaCompCancel').onclick = () => { host.classList.remove('open'); };
-    const go = async () => {
-      const out = await submitIdea(document.getElementById('ideaCompInput').value.trim(), document.getElementById('ideaCompStatus'));
-      if (out && out.kind === 'node') { host.classList.remove('open'); document.getElementById('ideaCompInput').value = ''; }
-    };
-    document.getElementById('ideaCompGo').onclick = go;
-    document.getElementById('ideaCompInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); }
-    });
-  }
-  host.classList.toggle('open', !host.classList.contains('open'));
-  if (host.classList.contains('open')) {
-    document.getElementById('ideaCompStatus').textContent = '';
-    const inp = document.getElementById('ideaCompInput');
-    inp.focus();
-  }
-}
-window.openIdeaComposer = openIdeaComposer;
 
 // Error-code → friendly line, shared by the ask flow.
 function archFriendlyError(e) {
@@ -4684,7 +4722,7 @@ function openChatWithPrompt(text) {
 }
 </script>
 <style>
-#fmcns-chat-btn { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); border: none; font-size: 22px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+#fmcns-chat-btn { position: fixed; bottom: 18px; right: 18px; width: 40px; height: 40px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); border: none; font-size: 15px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
 #fmcns-chat-panel { position: fixed; bottom: 84px; right: 20px; width: 360px; max-width: calc(100vw - 40px); height: 480px; max-height: calc(100vh - 120px); background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); display: none; flex-direction: column; z-index: 9999; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; overflow: hidden; }
 #fmcns-chat-panel.open { display: flex; }
 #fmcns-chat-header { padding: 10px 14px; border-bottom: 1px solid var(--c-border); font-size: 12.5px; font-weight: 600; color: var(--c-ink); display: flex; justify-content: space-between; align-items: center; }
@@ -4695,6 +4733,12 @@ function openChatWithPrompt(text) {
 #fmcns-chat-log .msg.assistant { color: var(--c-ink-2); }
 #fmcns-chat-log .msg .role { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--c-ink-4); display: block; margin-bottom: 2px; }
 #fmcns-chat-log .msg.pending { color: var(--c-ink-4); font-style: italic; }
+.idea-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; margin-bottom: 10px; border: 1px dashed var(--c-border-2); border-radius: 8px; font-size: 12px; color: var(--c-ink-3); background: var(--c-surface-2); }
+.idea-chip-btn { padding: 3px 12px; border: 1px solid var(--c-border-2); border-radius: 6px; background: var(--c-surface); color: var(--c-ink); font-size: 11.5px; cursor: pointer; }
+.idea-chip-btn:hover { background: var(--c-ink-solid); color: var(--c-on-solid); }
+.idea-chip-status { font-size: 11px; color: var(--c-ink-4); }
+.idea-chip.ok { border-style: solid; border-color: var(--c-border-2); color: var(--c-ink-2); }
+.idea-chip a { color: var(--c-ink-3); }
 #fmcns-chat-input-row { border-top: 1px solid var(--c-border); padding: 8px; display: flex; gap: 6px; align-items: center; }
 #fmcns-chat-input { flex: 1; border: 1px solid var(--c-border-2); border-radius: 6px; padding: 7px 9px; font-size: 12.5px; resize: none; font-family: inherit; }
 #fmcns-chat-send, #fmcns-chat-attach { border: 1px solid var(--c-border-2); background: #fff; border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
@@ -4704,8 +4748,6 @@ function openChatWithPrompt(text) {
 #fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: var(--c-ink); color: var(--c-bg); font-size: 12.5px; cursor: pointer; }
 
 /* ── Idea Studio — conversational task creation ─────────────────────────── */
-.core-newidea { margin-left:auto; background:var(--c-ink-solid); color:var(--c-on-solid); border:none; }
-.core-newidea:hover { background:var(--c-ink-solid-2); }
 .studio-overlay { position:fixed; inset:0; background:rgba(42,38,33,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:18px; }
 .studio-modal { background:var(--c-bg); border:1px solid var(--c-border); border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.28); width:720px; max-width:100%; height:80vh; max-height:820px; display:flex; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; color:var(--c-ink); overflow:hidden; }
 .studio-head { padding:12px 16px; border-bottom:1px solid var(--c-border); display:flex; align-items:center; gap:10px; }
@@ -4807,6 +4849,40 @@ function openChatWithPrompt(text) {
     log.appendChild(d);
     log.scrollTop = log.scrollHeight;
     return d;
+  }
+
+  // The single idea door. A free heuristic judges the message the human just sent:
+  // if it reads like an idea (not a plain question), offer to save it — one model
+  // call, only on the click. Routine chat stays routine chat.
+  function soundsLikeIdea(text) {
+    var t = (text || '').trim().toLowerCase();
+    if (!t || t.length > 220) return false;
+    var markers = ['what about', "wouldn", "would it be", "it would be cool", 'it could be', 'we should', "let's", 'idea', 'imagine', 'add a ', 'add an ', 'add the ', 'make a ', 'make an ', 'make the ', 'build a ', 'build an ', 'build the ', 'create a ', 'create an ', 'create the ', 'introduce a ', 'feature', 'button', 'new view', 'new tab', 'a way to '];
+    return markers.some(function (m) { return t.indexOf(m) !== -1; });
+  }
+
+  function ideaChipFor(text) {
+    var w = document.createElement('div');
+    w.className = 'msg';
+    w.innerHTML = '<span class="idea-chip">💡 This sounds like an idea — <button class="idea-chip-btn" id="ideaChipSave">Save it</button><span class="idea-chip-status" id="ideaChipStatus"></span></span>';
+    log.appendChild(w);
+    log.scrollTop = log.scrollHeight;
+    w.querySelector('#ideaChipSave').onclick = function () {
+      var st = w.querySelector('#ideaChipStatus');
+      var saveBtn = w.querySelector('#ideaChipSave');
+      saveBtn.disabled = true;
+      if (!window.submitIdea) { st.textContent = 'Ideas live in the Core tab — open it and use the tool there.'; return; }
+      submitIdea(text, st).then(function (out) {
+        if (!out) { saveBtn.disabled = false; return; }
+        if (out.kind === 'node') {
+          w.innerHTML = '<span class="idea-chip ok">✓ In the tree — <b>' + (out.node.name || '') + '</b> (proposed). <a href="#" id="ideaChipJump">View it</a></span>';
+          w.querySelector('#ideaChipJump').onclick = function (e) { e.preventDefault(); window.jumpToArchNode(out.node.id); };
+        } else {
+          w.innerHTML = '<span class="idea-chip ok">✓ Saved as a seed. <a href="#" id="ideaChipSeed">View in Flow</a></span>';
+          w.querySelector('#ideaChipSeed').onclick = function (e) { e.preventDefault(); window.setMode('core'); window.switchCoreView('flow'); };
+        }
+      });
+    };
   }
 
   async function api(path, opts) {
@@ -4913,7 +4989,10 @@ function openChatWithPrompt(text) {
       }
       pending.remove();
       if (data.error) addMsg('assistant', 'Error: ' + (data.message || data.error));
-      else addMsg('assistant', data.text);
+      else {
+        addMsg('assistant', data.text);
+        if (soundsLikeIdea(msgText)) ideaChipFor(msgText);
+      }
     } catch (e) {
       pending.remove();
       addMsg('assistant', 'Could not reach the assistant.');
@@ -5173,8 +5252,6 @@ function openChatWithPrompt(text) {
   window.openNewIdeaStudio = function(){ blankStudio(); };
 
   document.addEventListener('DOMContentLoaded', function(){
-    var nb = document.getElementById('coreNewIdeaBtn');
-    if(nb) nb.onclick = function(){ window.openIdeaComposer(); };
     var sf = document.getElementById('shapeFirstBtn');
     if(sf) sf.onclick = function(){
       // seed a real idea from the form text, then open its studio
