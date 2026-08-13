@@ -339,3 +339,12 @@ blocks tab of the Architecture view; the Flow remains the execution place
 box's runIdeaSearch already implements its design (decompose into parts, per-
 part GitHub search, build-ourselves proposal), so the open slot is closed by
 the library, not by a duplicate feature.
+
+## Implementation note — Floating window (2026-08-13, C6)
+
+The chat bubble became a resizable three-tab floating window (Chat · New task ·
+Queue) with size/open/tab persistence and a ⌘/Ctrl+` shortcut. The New task and
+Queue tabs reuse backend createPrompt/reply/advance directly — no new backend
+code. Deferred from the Phase-5 sketch: the element picker (port of
+lib/pageContext.jsx), the "Turn this into a task" smart chip (idea chip owns
+smart detection per C3), and a New idea tab (absent by design — one idea door).

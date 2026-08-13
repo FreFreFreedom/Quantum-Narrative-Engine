@@ -707,3 +707,34 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
   - NEXT: the floating window (Chat · New task · Queue panel, Phase 5) when he
     wants it; Flow library chip stays folded into Architecture (reports live in
     the idea place).
+- C6 — THE FLOATING WINDOW (Phase 5, frontend-only, 2026-08-13; pending eyeball):
+  - The assistant bubble is now a real floating window: three tabs (Chat · New
+    task · Queue), drag-to-resize from the corner (min 360×440, max 90vw/85vh),
+    size + open tab + open state persisted (localStorage fmcns_window_state),
+    ⌘/Ctrl+` opens it from anywhere, violet dot on the button whenever a
+    question is waiting.
+  - Chat tab: the existing assistant untouched (sessions, PDF attach, history,
+    stale-session retry, the 💡 Save-it idea chip). New task tab: one textarea
+    + Implement/Question toggle + "First in line" + Add to queue (same backend
+    createPrompt as the Flow composer; zero AI cost). Queue tab: 20-second
+    poll while open — questions cards (choice buttons + free reply), running
+    with elapsed, numbered queue, ⚠ Blocked rows with "Run again", parked and
+    done counts, plus a drop-a-prompt composer with First-in-line.
+  - Kept out on purpose: the "Turn this into a task" smart chip (the C3 idea
+    chip already owns the smart-detection slot), a New idea tab (contradicts
+    the one-idea-door decision — save ideas from chat), and the click-an-element
+    picker (biggest risk, least used; deferred to a later round if wanted).
+  - Verified: node --check ×5, CSS braces 491/491 + 107/107 + 1/1, divs balanced,
+    all getElementById targets exist, live feed shape checked (statuses incl.
+    blocked → handled with Run again), synced (200). No headless browser —
+    needs Antoine's eyeball (open the ✦ window, try tabs, resize, ⌘+`).
+- C6 FIX — FLOW BUTTONS WIRED BEFORE RENDER (bug Antoine found while eyeballing
+  C6, 2026-08-13):
+  - "＋ Keep a seed" (and "+ Keep the idea") did nothing. Root cause: in
+    renderFlow() the buttons were wired with getElementById BEFORE host.innerHTML
+    was set — the elements didn't exist yet, so the handlers silently never
+    attached (the if-guards swallowed it). Same bug hit "✨ Generate now".
+    The Done-fold toggle was wired after innerHTML, which is why it worked.
+  - Fix: moved flowGenBtn / flowSeedToggle / idAddBtn + Enter-key wiring into
+    the post-render section next to the Done toggle. Verified node --check ×5,
+    braces, divs balanced, synced (200). Antoine to re-test the seed button.

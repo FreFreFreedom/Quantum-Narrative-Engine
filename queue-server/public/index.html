@@ -3015,8 +3015,6 @@ function renderFlow() {
           </div>
           ${s.rationale ? `<div class="sg-rationale">${s.rationale}</div>` : ''}
         </div>`).join(''));
-      const genBtn = document.getElementById('flowGenBtn');
-      if (genBtn) genBtn.onclick = () => flowGenerateNow();
     }
   }
 
@@ -3041,19 +3039,6 @@ function renderFlow() {
           </div>
           ${i.notes ? `<div class="sg-rationale">${i.notes}</div>` : ''}
         </div>`).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
-      const seedToggle = document.getElementById('flowSeedToggle');
-      if (seedToggle) seedToggle.onclick = () => {
-        const box = document.getElementById('flowSeedAdd');
-        const open = box.style.display !== 'none';
-        box.style.display = open ? 'none' : 'block';
-        seedToggle.textContent = open ? '＋ Keep a seed' : '✕ Close';
-        if (!open) document.getElementById('idTitleInput').focus();
-      };
-      const addBtn = document.getElementById('idAddBtn');
-      if (addBtn) {
-        addBtn.onclick = addIdea;
-        document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
-      }
   }
 
   if (!html) {
@@ -3098,6 +3083,21 @@ function renderFlow() {
   });
   const doneToggle = document.getElementById('flowDoneToggle');
   if (doneToggle) doneToggle.onclick = () => { flowDoneOpen = !flowDoneOpen; renderFlow(); };
+  const genBtn = document.getElementById('flowGenBtn');
+  if (genBtn) genBtn.onclick = () => flowGenerateNow();
+  const seedToggle = document.getElementById('flowSeedToggle');
+  if (seedToggle) seedToggle.onclick = () => {
+    const box = document.getElementById('flowSeedAdd');
+    const open = box.style.display !== 'none';
+    box.style.display = open ? 'none' : 'block';
+    seedToggle.textContent = open ? '＋ Keep a seed' : '✕ Close';
+    if (!open) document.getElementById('idTitleInput').focus();
+  };
+  const addBtn = document.getElementById('idAddBtn');
+  if (addBtn) {
+    addBtn.onclick = addIdea;
+    document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
+  }
 }
 
 async function flowGenerateNow() {
@@ -4810,6 +4810,7 @@ async function loadArchHistory(id) {
 }
 
 function openChatWithPrompt(text) {
+  if (window.fwShowTab) window.fwShowTab('chat');
   const panel = document.getElementById('fmcns-chat-panel');
   const btn = document.getElementById('fmcns-chat-btn');
   if (!panel.classList.contains('open')) btn.click();
@@ -4821,10 +4822,18 @@ function openChatWithPrompt(text) {
 </script>
 <style>
 #fmcns-chat-btn { position: fixed; bottom: 18px; right: 18px; width: 40px; height: 40px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); border: none; font-size: 15px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
-#fmcns-chat-panel { position: fixed; bottom: 84px; right: 20px; width: 360px; max-width: calc(100vw - 40px); height: 480px; max-height: calc(100vh - 120px); background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); display: none; flex-direction: column; z-index: 9999; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; overflow: hidden; }
+#fw-badge { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--c-violet); border: 2px solid var(--c-bg); display: none; }
+#fmcns-chat-panel { position: fixed; bottom: 72px; right: 20px; width: 400px; height: 520px; max-width: calc(100vw - 40px); max-height: calc(100vh - 100px); background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); display: none; flex-direction: column; z-index: 9999; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; overflow: hidden; }
 #fmcns-chat-panel.open { display: flex; }
-#fmcns-chat-header { padding: 10px 14px; border-bottom: 1px solid var(--c-border); font-size: 12.5px; font-weight: 600; color: var(--c-ink); display: flex; justify-content: space-between; align-items: center; }
-#fmcns-chat-header button { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--c-ink-4); }
+#fmcns-chat-header { padding: 0 6px 0 2px; border-bottom: 1px solid var(--c-border); font-size: 12.5px; font-weight: 600; color: var(--c-ink); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+#fmcns-chat-header .fw-tabs { display: flex; gap: 2px; padding: 6px 6px 6px 8px; }
+#fmcns-chat-header .fw-tabs button { background: none; border: none; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--c-ink-3); cursor: pointer; }
+#fmcns-chat-header .fw-tabs button:hover { color: var(--c-ink); }
+#fmcns-chat-header .fw-tabs button.active { background: var(--c-surface-2); color: var(--c-ink); }
+#fmcns-chat-header button.fw-close { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--c-ink-4); padding: 6px 10px; border-radius: 8px; }
+#fmcns-chat-header button.fw-close:hover { background: var(--c-surface-2); color: var(--c-ink); }
+.fw-tab { flex: 1; min-height: 0; display: none; flex-direction: column; }
+.fw-tab.active-tab { display: flex; }
 #fmcns-chat-log { flex: 1; overflow-y: auto; padding: 10px 14px; font-size: 12.5px; line-height: 1.5; }
 #fmcns-chat-log .msg { margin-bottom: 10px; white-space: pre-wrap; }
 #fmcns-chat-log .msg.user { color: var(--c-ink); }
@@ -4844,6 +4853,37 @@ function openChatWithPrompt(text) {
 #fmcns-chat-login { padding: 14px; font-size: 12.5px; }
 #fmcns-chat-login input { width: 100%; padding: 7px 9px; border: 1px solid var(--c-border-2); border-radius: 6px; font-size: 12.5px; margin: 8px 0; }
 #fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: var(--c-ink); color: var(--c-bg); font-size: 12.5px; cursor: pointer; }
+.fw-resize { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; cursor: nwse-resize; z-index: 1; }
+.fw-task-form { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+.fw-task-form textarea { border: 1px solid var(--c-border-2); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; resize: none; font-family: inherit; min-height: 80px; line-height: 1.45; }
+.fw-task-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fw-mode-seg { display: flex; gap: 2px; }
+.fw-mode-seg button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--c-ink-3); }
+.fw-mode-seg button.active { background: var(--c-ink-solid); color: var(--c-on-solid); border-color: var(--c-ink-solid); }
+.fw-task-status { font-size: 11px; color: var(--c-ink-4); margin-left: auto; }
+.fw-task-status a { color: var(--c-ink-3); }
+.fw-task-submit { border: none; background: var(--c-ink-solid); color: var(--c-on-solid); border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; }
+.fw-task-submit:disabled { opacity: .5; cursor: default; }
+#fw-tab-queue { overflow: hidden; }
+#fw-queue-list { flex: 1; overflow-y: auto; padding: 10px 12px; }
+.fw-q-sec { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--c-ink-4); margin: 10px 0 6px; }
+.fw-q-sec:first-child { margin-top: 0; }
+.fw-q-card { border: 1px solid var(--c-border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: var(--c-surface); font-size: 12px; }
+.fw-q-card .fw-q-title { font-weight: 600; color: var(--c-ink); margin-bottom: 4px; }
+.fw-q-q { color: var(--c-ink-2); margin-bottom: 6px; font-size: 12.5px; }
+.fw-q-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+.fw-q-opts button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--c-ink); }
+.fw-q-opts button:hover { border-color: var(--c-ink-3); }
+.fw-q-reply { display: flex; gap: 6px; margin-top: 6px; }
+.fw-q-reply input { flex: 1; border: 1px solid var(--c-border-2); border-radius: 6px; padding: 5px 8px; font-size: 11.5px; font-family: inherit; }
+.fw-q-reply button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
+.fw-q-row { display: flex; align-items: center; gap: 8px; padding: 5px 2px; font-size: 11.5px; border-bottom: 1px solid var(--c-border); }
+.fw-q-row:last-child { border-bottom: none; }
+.fw-q-row .fw-q-num { color: var(--c-ink-4); font-size: 10px; width: 16px; flex-shrink: 0; text-align: right; }
+.fw-q-row .fw-q-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-ink-2); }
+.fw-q-meta { color: var(--c-ink-4); font-size: 10px; flex-shrink: 0; }
+.fw-q-row button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; flex-shrink: 0; }
+.fw-q-row button:hover { border-color: var(--c-ink-3); }
 
 /* ── Idea Studio — conversational task creation ─────────────────────────── */
 .studio-overlay { position:fixed; inset:0; background:rgba(42,38,33,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:18px; }
@@ -4891,23 +4931,60 @@ function openChatWithPrompt(text) {
 .studio-draft .primary { background:var(--c-ink-solid); color:var(--c-on-solid); border:none; }
 .studio-draft .ghost { background:var(--c-surface); border:1px solid var(--c-border-2); color:var(--c-ink); }
 </style>
-<button id="fmcns-chat-btn" title="FMCNS Assistant">✦</button>
+<button id="fmcns-chat-btn" title="FMCNS Assistant (⌘/Ctrl+`)">✦<span id="fw-badge"></span></button>
 <div id="fmcns-chat-panel">
-  <div id="fmcns-chat-header"><span>FMCNS Assistant</span><button id="fmcns-chat-close">✕</button></div>
-  <div id="fmcns-chat-login" style="display:none;">
-    <div>Enter the app password to connect:</div>
-    <input type="password" id="fmcns-chat-pw" placeholder="Password">
-    <button id="fmcns-chat-pw-submit">Connect</button>
-    <div id="fmcns-chat-pw-error" style="color:var(--c-danger);margin-top:6px;"></div>
+  <div id="fmcns-chat-header">
+    <div class="fw-tabs">
+      <button data-fw-tab="chat" class="active">Chat</button>
+      <button data-fw-tab="task">New task</button>
+      <button data-fw-tab="queue">Queue</button>
+    </div>
+    <button class="fw-close" id="fmcns-chat-close" title="Close">✕</button>
   </div>
-  <div id="fmcns-chat-log"></div>
-  <div id="fmcns-chat-attach-label"></div>
-  <div id="fmcns-chat-input-row">
-    <button id="fmcns-chat-attach" title="Attach PDF">📎</button>
-    <input type="file" id="fmcns-chat-file" accept="application/pdf" style="display:none;">
-    <textarea id="fmcns-chat-input" rows="1" placeholder="Ask the assistant..."></textarea>
-    <button id="fmcns-chat-send">Send</button>
+  <div class="fw-tab active-tab" id="fw-tab-chat">
+    <div id="fmcns-chat-login" style="display:none;">
+      <div>Enter the app password to connect:</div>
+      <input type="password" id="fmcns-chat-pw" placeholder="Password">
+      <button id="fmcns-chat-pw-submit">Connect</button>
+      <div id="fmcns-chat-pw-error" style="color:var(--c-danger);margin-top:6px;"></div>
+    </div>
+    <div id="fmcns-chat-log"></div>
+    <div id="fmcns-chat-attach-label"></div>
+    <div id="fmcns-chat-input-row">
+      <button id="fmcns-chat-attach" title="Attach PDF">📎</button>
+      <input type="file" id="fmcns-chat-file" accept="application/pdf" style="display:none;">
+      <textarea id="fmcns-chat-input" rows="1" placeholder="Ask the assistant..."></textarea>
+      <button id="fmcns-chat-send">Send</button>
+    </div>
   </div>
+  <div class="fw-tab" id="fw-tab-task">
+    <div class="fw-task-form">
+      <div class="fw-task-row">
+        <div class="fw-mode-seg">
+          <button class="active" data-task-mode="implement">Implement</button>
+          <button data-task-mode="question">Question</button>
+        </div>
+      </div>
+      <textarea id="fw-task-input" rows="3" placeholder="Describe the task for the coding agent…"></textarea>
+      <div class="fw-task-row">
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-ink-3);"><input type="checkbox" id="fw-task-first"> First in line</label>
+        <span class="fw-task-status" id="fw-task-status"></span>
+        <button class="fw-task-submit" id="fw-task-submit">Add to queue</button>
+      </div>
+    </div>
+  </div>
+  <div class="fw-tab" id="fw-tab-queue">
+    <div id="fw-queue-list"></div>
+    <div class="fw-task-form" style="border-top:1px solid var(--c-border);">
+      <textarea id="fw-queue-input" rows="2" placeholder="Drop a prompt…"></textarea>
+      <div class="fw-task-row">
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-ink-3);"><input type="checkbox" id="fw-queue-first"> First in line</label>
+        <span class="fw-task-status" id="fw-queue-status"></span>
+        <button class="fw-task-submit" id="fw-queue-add">Add</button>
+      </div>
+    </div>
+  </div>
+  <div class="fw-resize" id="fw-resize" title="Drag to resize"></div>
 </div>
 <script>
 (function() {
@@ -5034,13 +5111,195 @@ function openChatWithPrompt(text) {
 
   btn.onclick = async function() {
     panel.classList.toggle('open');
-    if (!panel.classList.contains('open')) return;
-    if (!getToken()) { showLogin(); return; }
-    showChat();
-    await ensureSession();
-    if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; }
+    saveWindowState();
+    if (!panel.classList.contains('open')) { stopQueueTimer(); return; }
+    if (currentFwTab === 'chat' && !getToken()) { showLogin(); return; }
+    if (currentFwTab === 'chat') { showChat(); await ensureSession(); if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; } }
+    if (currentFwTab === 'queue') { pollQueueNow(); startQueueTimer(); }
   };
-  closeBtn.onclick = function() { panel.classList.remove('open'); };
+  closeBtn.onclick = function() { panel.classList.remove('open'); saveWindowState(); stopQueueTimer(); };
+
+  // ── Floating window: tabs, resize, persistence, shortcut ──────────────────
+  var fwTabs = Array.prototype.slice.call(document.querySelectorAll('[data-fw-tab]'));
+  var fwTabIds = { chat: 'fw-tab-chat', task: 'fw-tab-task', queue: 'fw-tab-queue' };
+  var badge = document.getElementById('fw-badge');
+  var resizeHandle = document.getElementById('fw-resize');
+  var fwQueueTimer = null;
+  var fwPrompts = [];
+  var fwTaskMode = 'implement';
+  var currentFwTab = 'chat';
+  var fwWindowState = (function() { try { return JSON.parse(localStorage.getItem('fmcns_window_state') || 'null') || {}; } catch (e) { return {}; } })();
+
+  function saveWindowState() {
+    try { localStorage.setItem('fmcns_window_state', JSON.stringify({ open: panel.classList.contains('open'), w: panel.offsetWidth, h: panel.offsetHeight, tab: currentFwTab })); } catch (e) {}
+  }
+
+  function startQueueTimer() { if (!fwQueueTimer) fwQueueTimer = setInterval(pollQueueNow, 20000); }
+  function stopQueueTimer() { if (fwQueueTimer) { clearInterval(fwQueueTimer); fwQueueTimer = null; } }
+
+  function showFwTab(t) {
+    currentFwTab = t;
+    fwTabs.forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-fw-tab') === t); });
+    Object.keys(fwTabIds).forEach(function(k) { document.getElementById(fwTabIds[k]).classList.toggle('active-tab', k === t); });
+    if (t === 'queue') { pollQueueNow(); startQueueTimer(); }
+    else stopQueueTimer();
+    saveWindowState();
+  }
+  window.fwShowTab = showFwTab;
+
+  fwTabs.forEach(function(b) { b.onclick = function() { showFwTab(b.getAttribute('data-fw-tab')); }; });
+  document.querySelectorAll('[data-task-mode]').forEach(function(b) {
+    b.onclick = function() {
+      fwTaskMode = b.getAttribute('data-task-mode');
+      document.querySelectorAll('[data-task-mode]').forEach(function(x) { x.classList.toggle('active', x === b); });
+    };
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === '`') { e.preventDefault(); btn.click(); }
+  });
+
+  resizeHandle.addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+    var startX = e.clientX, startY = e.clientY, startW = panel.offsetWidth, startH = panel.offsetHeight;
+    function move(ev) {
+      var w = Math.min(Math.max(360, startW + ev.clientX - startX), Math.round(window.innerWidth * 0.9) - 40);
+      var h = Math.min(Math.max(440, startH + ev.clientY - startY), Math.round(window.innerHeight * 0.85) - 100);
+      panel.style.width = w + 'px';
+      panel.style.height = h + 'px';
+    }
+    function up() { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); saveWindowState(); }
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  });
+
+  // ── New task tab ──────────────────────────────────────────────────────────
+  function apiWrite(path, method, body) {
+    return api(path, { method: method, body: JSON.stringify(body || {}) });
+  }
+  function fwStatusDone(el, linkId) {
+    el.innerHTML = '✓ Added — <a href="#" id="' + linkId + '">View in Flow</a>';
+    var a = el.querySelector('#' + linkId);
+    if (a) a.onclick = function(e) { e.preventDefault(); if (window.setMode) window.setMode('core'); if (window.switchCoreView) window.switchCoreView('flow'); };
+  }
+  function submitFwTask() {
+    var inputEl = document.getElementById('fw-task-input');
+    var statusEl = document.getElementById('fw-task-status');
+    var firstEl = document.getElementById('fw-task-first');
+    var submitBtn = document.getElementById('fw-task-submit');
+    var text = inputEl.value.trim();
+    if (!text) return;
+    submitBtn.disabled = true;
+    apiWrite('/api/travaux/prompts', 'POST', { title: '', prompt: text, mode: fwTaskMode, status: 'queued', priority: !!firstEl.checked, space: 'fmcns' })
+      .then(function(resp) { return resp.json(); })
+      .then(function() { inputEl.value = ''; fwStatusDone(statusEl, 'fwViewFlow1'); })
+      .catch(function(e) { statusEl.textContent = 'Error: ' + e.message; })
+      .finally(function() { submitBtn.disabled = false; });
+  }
+  document.getElementById('fw-task-submit').onclick = submitFwTask;
+  document.getElementById('fw-task-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitFwTask(); }
+  });
+
+  // ── Queue tab ─────────────────────────────────────────────────────────────
+  function escFw(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+  function fwElapsed(iso) {
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    var m = Math.floor(s / 60), r = s % 60;
+    return (m > 0 ? m + 'm ' : '') + r + 's';
+  }
+  async function pollQueueNow() {
+    try {
+      var resp = await api('/api/travaux/prompts?space=fmcns');
+      if (!resp.ok) return;
+      fwPrompts = (await resp.json()).prompts || [];
+      renderFwQueue();
+    } catch (e) {}
+  }
+  function renderFwQueue() {
+    var asking = fwPrompts.filter(function(p) { return p.pending_question; });
+    var running = fwPrompts.filter(function(p) { return p.status === 'running'; });
+    var queued = fwPrompts.filter(function(p) { return p.status === 'queued'; });
+    var paused = fwPrompts.filter(function(p) { return p.status === 'paused'; });
+    var blocked = fwPrompts.filter(function(p) { return p.status === 'blocked'; });
+    var done = fwPrompts.filter(function(p) { return p.status === 'done'; });
+    badge.style.display = asking.length ? '' : 'none';
+    var list = document.getElementById('fw-queue-list');
+    if (!list) return;
+    var html = '';
+    html += '<div class="fw-q-sec">❓ Questions (' + asking.length + ')</div>';
+    html += asking.map(function(p) {
+      var q = p.pending_question;
+      return '<div class="fw-q-card" data-qid="' + escFw(p.id) + '">' +
+        '<div class="fw-q-title">' + escFw(p.title) + '</div>' +
+        '<div class="fw-q-q">🙋 ' + escFw(q.question) + '</div>' +
+        '<div class="fw-q-opts">' + (q.options || []).map(function(o) { return '<button data-opt="' + escFw(o) + '">' + escFw(o) + '</button>'; }).join('') + '</div>' +
+        '<div class="fw-q-reply"><input placeholder="Or type your own reply…"><button>Send</button></div>' +
+      '</div>';
+    }).join('') || '<div class="fw-q-sec" style="margin-top:0;">No questions waiting.</div>';
+    html += '<div class="fw-q-sec">▶ Running (' + running.length + ')</div>';
+    html += running.map(function(p) { return '<div class="fw-q-row"><span class="fw-q-num">▶</span><span class="fw-q-title">' + escFw(p.title) + '</span><span class="fw-q-meta">' + (p.started_at ? fwElapsed(p.started_at) : '') + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing running.</div>';
+    html += '<div class="fw-q-sec">⏳ Queued (' + queued.length + ')</div>';
+    html += queued.map(function(p, i) { return '<div class="fw-q-row"><span class="fw-q-num">' + (i + 1) + '.</span><span class="fw-q-title">' + escFw(p.title) + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Queue is empty.</div>';
+    html += '<div class="fw-q-sec">⚠ Blocked (' + blocked.length + ')</div>';
+    html += blocked.map(function(p) { return '<div class="fw-q-row" data-bid="' + escFw(p.id) + '"><span class="fw-q-num">⚠</span><span class="fw-q-title">' + escFw(p.title) + '</span><button data-action="rerun" title="Put it back in the queue">Run again</button></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing blocked.</div>';
+    if (paused.length) html += '<div class="fw-q-sec">⏸ Parked: ' + paused.length + '</div>';
+    if (done.length) html += '<div class="fw-q-sec">✓ Done: ' + done.length + '</div>';
+    list.innerHTML = html;
+    list.querySelectorAll('[data-action="rerun"]').forEach(function(b) {
+      b.onclick = async function() {
+        b.disabled = true; b.textContent = '…';
+        try {
+          var id = b.closest('.fw-q-row').getAttribute('data-bid');
+          await apiWrite('/api/travaux/prompts/' + id, 'PATCH', { status: 'queued' });
+          await apiWrite('/api/travaux/prompts/advance', 'POST');
+          await pollQueueNow();
+        } catch (e) { b.disabled = false; b.textContent = 'Run again'; alert('Error: ' + e.message); }
+      };
+    });
+    list.querySelectorAll('.fw-q-card').forEach(function(card) {
+      var qid = card.getAttribute('data-qid');
+      card.querySelectorAll('[data-opt]').forEach(function(b) {
+        b.onclick = function() { sendFwReply(qid, b.getAttribute('data-opt')); };
+      });
+      var inp = card.querySelector('.fw-q-reply input');
+      var send = card.querySelector('.fw-q-reply button');
+      send.onclick = function() { var v = inp.value.trim(); if (v) sendFwReply(qid, v); };
+      inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { var v = inp.value.trim(); if (v) sendFwReply(qid, v); } });
+    });
+  }
+  async function sendFwReply(id, text) {
+    try {
+      await apiWrite('/api/travaux/prompts/' + id + '/reply', 'POST', { text: text });
+      await pollQueueNow();
+    } catch (e) { alert('Could not send: ' + e.message); }
+  }
+  function addFwPrompt() {
+    var inputEl = document.getElementById('fw-queue-input');
+    var statusEl = document.getElementById('fw-queue-status');
+    var firstEl = document.getElementById('fw-queue-first');
+    var addBtn = document.getElementById('fw-queue-add');
+    var text = inputEl.value.trim();
+    if (!text) return;
+    addBtn.disabled = true;
+    apiWrite('/api/travaux/prompts', 'POST', { title: '', prompt: text, mode: 'implement', status: 'queued', priority: !!firstEl.checked, space: 'fmcns' })
+      .then(function(resp) { return resp.json(); })
+      .then(function() { inputEl.value = ''; fwStatusDone(statusEl, 'fwViewFlow2'); return pollQueueNow(); })
+      .catch(function(e) { statusEl.textContent = 'Error: ' + e.message; })
+      .finally(function() { addBtn.disabled = false; });
+  }
+  document.getElementById('fw-queue-add').onclick = addFwPrompt;
+
+  // Restore the saved window size/tab/open state.
+  if (fwWindowState.w) panel.style.width = fwWindowState.w + 'px';
+  if (fwWindowState.h) panel.style.height = fwWindowState.h + 'px';
+  showFwTab(fwWindowState.tab || 'chat');
+  if (fwWindowState.open) {
+    panel.classList.add('open');
+    if (currentFwTab === 'chat' && !getToken()) showLogin();
+    if (currentFwTab === 'chat' && getToken()) { showChat(); ensureSession(); if (!log.dataset.loaded) loadHistory(); }
+    if (currentFwTab === 'queue') { pollQueueNow(); startQueueTimer(); }
+  }
 
   attachBtn.onclick = function() { fileInput.click(); };
   fileInput.onchange = function() {
