@@ -430,6 +430,12 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 
 /* building blocks */
 #bkViewBtns { margin-top:6px; }
+.bk-lib-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--c-border); font-size:11px; }
+.bk-lib-row:first-of-type { border-top:none; }
+.bk-lib-text { flex:1; min-width:0; font-weight:600; color:var(--c-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bk-lib-meta { color:var(--c-ink-4); font-size:10px; flex-shrink:0; }
+.bk-lib-row button { padding:3px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10px; cursor:pointer; flex-shrink:0; }
+.bk-lib-row button:hover { background:var(--c-surface-2); }
 .bk-result-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--c-border); font-size:11px; flex-wrap:wrap; }
 .bk-result-row:first-child { border-top:none; }
 .bk-result-row a { font-weight:600; color:var(--c-ink); text-decoration:none; }
@@ -3649,7 +3655,8 @@ let bkInited = false;
 let bkQueries = [];
 let bkCategory = 'all';
 let bkResultsCache = {}; // query_id -> results array, refetched on Discover open
-let bkReport = null; // last Idea box report shown
+let bkOpenReport = null; // full report currently shown in the Idea box
+let bkReports = null;    // library list of past reports (null = not loaded yet)
 
 function initBlocks() {
   if (!bkInited) {
@@ -3747,7 +3754,7 @@ function renderDiscoverResults(queryId) {
   });
 }
 
-// ── Idea box ─────────────────────────────────────────────────────────────────
+// ── Idea box (library of search reports) ─────────────────────────────────────
 function renderIdeaBox() {
   const body = document.getElementById('tvBodyBlocks');
   body.innerHTML = `
@@ -3761,7 +3768,62 @@ function renderIdeaBox() {
     <div id="bkReportHost"></div>
   `;
   document.getElementById('bkSearchBtn').onclick = runBkIdeaSearch;
-  if (bkReport) renderBkReport();
+  if (bkOpenReport) renderBkReportView(bkOpenReport);
+  else loadBkReports();
+}
+
+async function loadBkReports() {
+  const host = document.getElementById('bkReportHost');
+  if (!host) return;
+  if (!bkReports) {
+    host.innerHTML = '<div class="tv-empty">Loading past reports…</div>';
+    try { bkReports = (await api('/api/discovery/reports')).reports || []; } catch (e) { bkReports = []; host.innerHTML = `<span style="color:var(--c-danger);">Error: ${e.message}</span>`; return; }
+  }
+  renderBkLibrary();
+}
+
+function renderBkLibrary() {
+  const host = document.getElementById('bkReportHost');
+  if (!host || bkOpenReport) return;
+  if (!bkReports.length) { host.innerHTML = '<div class="tv-empty">No past reports yet — describe an idea above and search. Every report is kept here.</div>'; return; }
+  host.innerHTML = `
+    <div class="tv-toolbar-top" style="margin-top:12px;">
+      <span class="arch-title" style="font-size:13px;">Past reports (${bkReports.length})</span>
+    </div>
+    ${bkReports.map(r => `
+      <div class="bk-lib-row" data-report-id="${r.id}">
+        <span class="bk-lib-text">${r.idea_text}</span>
+        <span class="bk-lib-meta">${r.pick_count} option${r.pick_count === 1 ? '' : 's'} · ${new Date(r.created_at).toLocaleString()}</span>
+        <button data-action="open">Open</button>
+      </div>
+    `).join('')}
+  `;
+  host.querySelectorAll('[data-action="open"]').forEach(b => b.onclick = async () => {
+    const id = b.closest('.bk-lib-row').getAttribute('data-report-id');
+    b.disabled = true; b.textContent = '…';
+    try { await bkOpenReportById(id); }
+    catch (e) { b.disabled = false; b.textContent = 'Open'; alert('Error: ' + e.message); }
+  });
+}
+
+async function bkOpenReportById(id) {
+  const data = await api(`/api/discovery/reports/${encodeURIComponent(id)}`);
+  if (!data.report) throw new Error('report_not_found');
+  bkOpenReport = data.report;
+  renderBlocks();
+}
+
+async function bkSaveReportAsSeed(report) {
+  await apiWrite('/api/travaux/ideas', 'POST', {
+    title: report.project_name || report.idea_text.slice(0, 60),
+    notes: report.idea_text,
+  });
+  const host = document.getElementById('bkReportHost');
+  if (host) {
+    const btn = host.querySelector('[data-action="save-seed"]');
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Saved as a seed'; }
+  }
+  loadIdeas();
 }
 
 async function runBkIdeaSearch() {
@@ -3773,9 +3835,12 @@ async function runBkIdeaSearch() {
   btn.disabled = true; btn.textContent = 'Searching…';
   status.textContent = 'Running GitHub search + Claude — this can take a couple of minutes for multi-part ideas.';
   try {
-    bkReport = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: ideaText });
+    const report = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: ideaText });
+    if (report.error) throw new Error(report.message || report.error);
+    bkOpenReport = report;
+    bkReports = null;
     status.textContent = '';
-    renderBkReport();
+    renderBkReportView(report);
   } catch (e) {
     status.textContent = 'Error: ' + e.message;
   } finally {
@@ -3802,10 +3867,10 @@ function bkPickCard(pick, partIdx, pickIdx, recommended) {
   `;
 }
 
-function bkPartSection(part, partIdx) {
+function bkPartSection(part, partIdx, report) {
   const proven = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'proven');
   const imagined = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'imagined');
-  const header = bkReport.parts.length > 1
+  const header = report.parts.length > 1
     ? `<div class="tv-toolbar-top" style="margin-top:16px;"><span class="arch-title" style="font-size:13px;">${partIdx + 1}. ${part.name}</span></div>
        <div class="id-form-hint" style="margin-bottom:6px;">${part.description}</div>`
     : '';
@@ -3818,22 +3883,31 @@ function bkPartSection(part, partIdx) {
   `;
 }
 
-function renderBkReport() {
+function renderBkReportView(report) {
   const host = document.getElementById('bkReportHost');
-  if (!host || !bkReport) return;
-  const isProject = bkReport.parts.length > 1;
+  if (!host || !report) return;
+  const isProject = report.parts.length > 1;
   host.innerHTML = `
     <div class="tv-toolbar-top" style="margin-top:10px;">
-      <span class="arch-title" style="font-size:13px;">"${bkReport.idea_text}"</span>
+      <button class="id-addbtn" id="bkBackBtn">← All reports</button>
+      <span class="arch-title" style="font-size:13px;">"${report.idea_text}"</span>
       ${isProject ? `<button class="id-addbtn" id="bkPlantProjectBtn">🏗️ Create project</button>` : ''}
+      <button class="id-addbtn" data-action="save-seed">⇩ Save as seed</button>
     </div>
-    ${bkReport.parts.map((part, i) => bkPartSection(part, i)).join('')}
+    ${report.parts.map((part, i) => bkPartSection(part, i, report)).join('')}
   `;
+  document.getElementById('bkBackBtn').onclick = () => { bkOpenReport = null; renderBlocks(); };
+  const seedBtn = host.querySelector('[data-action="save-seed"]');
+  if (seedBtn) seedBtn.onclick = async () => {
+    seedBtn.disabled = true; seedBtn.textContent = '…';
+    try { await bkSaveReportAsSeed(report); seedBtn.textContent = '✓ Saved as a seed — view in Flow'; }
+    catch (e) { seedBtn.disabled = false; seedBtn.textContent = '⇩ Save as seed'; alert('Error: ' + e.message); }
+  };
   const projectBtn = document.getElementById('bkPlantProjectBtn');
   if (projectBtn) projectBtn.onclick = async () => {
     projectBtn.disabled = true; projectBtn.textContent = '…';
     try {
-      await apiWrite('/api/discovery/plant-project', 'POST', { report_id: bkReport.id });
+      await apiWrite('/api/discovery/plant-project', 'POST', { report_id: report.id });
       projectBtn.textContent = '✓ Project planted';
       await loadArchNodes();
     } catch (e) { projectBtn.disabled = false; projectBtn.textContent = '🏗️ Create project'; alert('Error: ' + e.message); }
@@ -3841,12 +3915,12 @@ function renderBkReport() {
   host.querySelectorAll('.sg-card').forEach(card => {
     const partIdx = Number(card.getAttribute('data-partidx'));
     const pickIdx = Number(card.getAttribute('data-pickidx'));
-    const pick = bkReport.parts[partIdx].picks[pickIdx];
+    const pick = report.parts[partIdx].picks[pickIdx];
     const plantBtn = card.querySelector('[data-action="plant"]');
     if (plantBtn) plantBtn.onclick = async () => {
       plantBtn.disabled = true; plantBtn.textContent = '…';
       try {
-        await apiWrite('/api/discovery/plant', 'POST', { report_id: bkReport.id, part_index: partIdx, pick_index: pickIdx });
+        await apiWrite('/api/discovery/plant', 'POST', { report_id: report.id, part_index: partIdx, pick_index: pickIdx });
         plantBtn.textContent = '✓ Planted';
         await loadArchNodes();
       } catch (e) { plantBtn.disabled = false; plantBtn.textContent = '🌱 Plant in tree'; alert('Error: ' + e.message); }

@@ -679,3 +679,31 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
   - NEXT: when this ships — the Idea box reports (Phase 6, Library chip) and
     the floating window idea; the "Frankenstein" tab is still the open slot in
     Building blocks.
+- C5 — IDEA BOX BECOMES A LIBRARY (2026-08-13; pending eyeball):
+  - Antoine green-lit "Idea box reports (Library chip) + Frankenstein". On
+    checking the plan: Frankenstein (part B of plan-first-queue-and-idea-
+    composition) is SUPERSEDED by design — the Idea box already does exactly
+    that job (break the idea into parts, find per-part GitHub building blocks,
+    propose its own when nothing fits); the "Search" flavour text even says so.
+    So not rebuilt — the honest reading of "the open slot" was the invisible
+    past reports, and that's what shipped.
+  - The real gap: reports were kept in memory only (the last one), all past
+    reports invisible. Now: every report is saved server-side and browsable —
+    the Idea box tab shows a "Past reports" library (text + options count +
+    date); Open fetches the full report (parts, proven/imagined options, plant
+    buttons, Create project) via NEW additive route GET /api/discovery/reports/:id;
+    "⇩ Save as seed" files the report's idea into the Flow (no AI call) so an
+    idea-box discovery can move into execution; after a search the fresh report
+    opens immediately and the library list refreshes.
+  - Backend: one additive route in routes/discovery.js (getReport already
+    existed). Frontend: renderIdeaBox shows form + library or open report;
+    bkReport global replaced by bkOpenReport/bkReports; bkPartSection/
+    renderBkReportView now take the report object; CSS .bk-lib-row.
+  - Verified: node --check route + ×5 script blocks, CSS braces 491/491 + 68/68,
+    divs balanced, no stale bkReport refs, server restarted + /reports + /reports/:id
+    + 404 path confirmed (DB currently empty — new search needed to see one
+    full report end-to-end), synced (200). No headless browser — needs
+    Antoine's eyeball.
+  - NEXT: the floating window (Chat · New task · Queue panel, Phase 5) when he
+    wants it; Flow library chip stays folded into Architecture (reports live in
+    the idea place).

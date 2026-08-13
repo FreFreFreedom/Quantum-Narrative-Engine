@@ -325,3 +325,17 @@ Flow is the execution place. Blockers that remain for Phase 6 as originally
 sketched: the "Frankenstein" tab inside Building blocks (open slot, unbuilt)
 and the Idea box reports / Library chip (idea-box reports per prompt, proposed
 Phase-6 deliverable; still unimplemented).
+
+## Implementation note — Idea box library (2026-08-13, C5)
+
+Delivers the "Idea box reports / Library chip" strand of Phase 6: the Idea box
+tab is now a browsable library of past reports (list, open, plant, create
+project, save as seed) backed by a new additive route
+GET /api/discovery/reports/:id (getReport already existed in codeDiscovery.js).
+The "Library chip in the Flow" of the original Phase-4 sketch stays folded: per
+the C4 Architecture-is-the-idea-place restructure, reports live in the Building
+blocks tab of the Architecture view; the Flow remains the execution place
+(seeds carry reports forward). Frankenstein is confirmed superseded — the Idea
+box's runIdeaSearch already implements its design (decompose into parts, per-
+part GitHub search, build-ourselves proposal), so the open slot is closed by
+the library, not by a duplicate feature.
