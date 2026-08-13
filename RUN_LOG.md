@@ -523,4 +523,4 @@ Interactive session with Antoine. Branch `overnight/2026-08-10` (main already at
 - Part 3 (chart palette): no charts exist in the app yet; the 8-step `--c-plot-*` palette is defined in both themes, dormant until a chart lands. Nothing to wire.
 - Escape hatches: audited all fixed overlays (inspect tooltip/toast, chat bubble, modals, shadows) — every one inverts readably, no hatch needed.
 - Verified: 5 script blocks `node --check`, CSS braces balanced, copy synced to `queue-server/public/index.html`, served page confirmed on :3000.
-- PENDING Antoine: eyeball the Map tab in dark mode on http://localhost:3000 (switch theme, click a country, check legend/panel/list). If good → ship.
+- SHIPPED: Antoine verified and said "ship it". Committed `8975e51`, fast-forwarded `main`, pushed — Railway auto-deploys; the live site picks up the themed Map tab. Review worktree main ref updated. (This fast-forward also carried the pre-staged agent bookkeeping onto main — safe config/docs, verified no secrets.)
