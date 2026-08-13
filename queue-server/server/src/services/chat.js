@@ -14,16 +14,9 @@
 // Attachments are stored as base64 in chat_attachments and passed through as-is.
 
 import { randomUUID } from 'node:crypto';
-import { pickChain, recordExhaustion } from './ai/router.js';
-import { chatCompletion as freeChatCompletion, detectLimit as freeDetectLimit } from './providers/openaiCompat.js';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CHAT_MODEL = process.env.CHAT_MODEL || 'claude-sonnet-4-5';
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const PRIMING_SESSION_LIMIT = 5;
-// Chat needs a coding-capable model (it reasons over the ontology + tool use),
-// not the weakest free model available — floor picks are rank >= sonnet-ish.
-const CHAT_MIN_RANK = 55;
 
 const SYSTEM_PROMPT = `You are the embedded assistant inside FMCNS (Fractal Mythic Consciousness Navigation System), a private research platform mapping archetypal patterns across scales — individual, family, institution, nation, civilization — through film, geography, and myth.
 
@@ -174,50 +167,8 @@ function readKnowledgeDoc(db, title, offset, length) {
 }
 
 // ─── Chat turn ───────────────────────────────────────────────────────────────────
-// Anthropic call for one round — returns the raw `content` block array (Anthropic
-// shape) on success, or { error, message, quota } on failure. `quota: true` means
-// the failure looked like a rate/usage limit, not a hard error.
-async function callAnthropic({ system, tools, messages }) {
-  if (!ANTHROPIC_API_KEY) return { error: 'no_api_key', message: 'ANTHROPIC_API_KEY not set' };
-  let resp;
-  try {
-    resp = await fetch(ANTHROPIC_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: CHAT_MODEL, max_tokens: 1500, system, tools, messages }),
-    });
-  } catch (e) {
-    return { error: 'network_error', message: `Could not reach the Anthropic API: ${e.message}` };
-  }
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    const quota = resp.status === 429 || /rate.?limit|quota|usage limit/i.test(errText);
-    return { error: 'api_error', message: `Anthropic API HTTP ${resp.status}: ${errText.slice(0, 500)}`, quota, headers: resp.headers };
-  }
-  const data = await resp.json();
-  return { content: data.content || [] };
-}
 
-// Free-provider fallback for one round — tries the router's live chain in
-// codingRank order until one answers, recording exhaustion on quota-shaped
-// failures so the next call (and the text seam, and the queue) skip it too.
-async function callFreeProvider({ system, tools, messages }) {
-  const { chain } = pickChain({ minRank: CHAT_MIN_RANK });
-  if (!chain.length) return { error: 'no_free_provider', message: 'every free provider is currently exhausted' };
-  const failures = [];
-  for (const { provider: providerId, model } of chain) {
-    const out = await freeChatCompletion({ providerId, model, system, messages, tools });
-    if (out.error) {
-      failures.push(`${providerId}:${model}:${out.message || out.error}`);
-      if (out.limit || freeDetectLimit(out.message)) {
-        recordExhaustion({ providerId, model, detectedBy: 'chat', errText: out.message || '' });
-      }
-      continue;
-    }
-    return { content: out.content, providerId, model };
-  }
-  return { error: 'all_free_providers_failed', message: failures.join(' | ') };
-}
+import { runToolLoop } from './anthropicLoop.js';
 
 export function makeChatHandler(db) {
   return async function handleChat({ sessionId, text, attachments = [] }) {
@@ -276,50 +227,14 @@ export function makeChatHandler(db) {
       : '';
     const system = SYSTEM_PROMPT + priorContext + trimNote;
 
-    let messages = [...history, { role: 'user', content: userContent }];
-    let finalText = '';
-    let backend = ANTHROPIC_API_KEY ? 'anthropic' : 'free'; // sticky for the whole tool-round loop
-    let usedFallbackVia = null;
-    for (let round = 0; round < 6; round++) {
-      let content;
-      if (backend === 'anthropic') {
-        const out = await callAnthropic({ system, tools: TOOLS, messages });
-        if (out.error) {
-          if (out.quota) recordExhaustion({ providerId: 'claude-code-api', model: CHAT_MODEL, detectedBy: 'chat', errText: out.message, headers: out.headers });
-          // API key missing, network trouble, or quota — fall through to a free
-          // provider for the rest of this turn rather than hard-failing the chat.
-          const free = await callFreeProvider({ system, tools: TOOLS, messages });
-          if (free.error) return { error: 'no_backend', message: `Anthropic: ${out.message}; free providers: ${free.message}` };
-          content = free.content;
-          backend = 'free';
-          usedFallbackVia = `${free.providerId}:${free.model}`;
-        } else {
-          content = out.content;
-        }
-      } else {
-        const free = await callFreeProvider({ system, tools: TOOLS, messages });
-        if (free.error) return { error: 'no_backend', message: free.message };
-        content = free.content;
-        usedFallbackVia = `${free.providerId}:${free.model}`;
-      }
-
-      const toolUses = (content || []).filter((b) => b.type === 'tool_use');
-      if (!toolUses.length) {
-        finalText = (content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
-        break;
-      }
-      messages.push({ role: 'assistant', content });
-      const toolResults = toolUses.map((tu) => {
-        let result;
-        try { result = dispatch(tu.name, tu.input); } catch (e) { result = { error: e.message }; }
-        return { type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify(result ?? null).slice(0, 8000) };
-      });
-      messages.push({ role: 'user', content: toolResults });
-    }
-
-    if (!finalText) return { error: 'too_many_tool_rounds' };
-    addMessage(db, sessionId, 'assistant', finalText);
-    touchSessionSummary(db, sessionId);
-    return { text: finalText, sessionId, via: usedFallbackVia || 'anthropic' };
-  };
+     let messages = [...history, { role: 'user', content: userContent }];
+     const result = await runToolLoop({
+       model: CHAT_MODEL, system, tools: TOOLS, messages,
+       dispatch, maxTokens: 1500, maxRounds: 6, toolResultCap: 8000,
+     });
+     if (result.error) return result;
+     addMessage(db, sessionId, 'assistant', result.text);
+     touchSessionSummary(db, sessionId);
+     return { text: result.text, sessionId, via: result.via || 'anthropic' };
+   };
 }

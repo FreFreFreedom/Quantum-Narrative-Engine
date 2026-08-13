@@ -368,3 +368,122 @@ Express serves the single-file app at `/` from `queue-server/public/index.html`.
   ("No external decision required…" / "Should the marker file be committed to
   git?"). Harmless (question shows in the thread, answerable), but worth rewording
   the instruction at some point — noted for Antoine, not blocking.
+
+---
+
+# RUN_LOG — Idea Studio (Phase 1), 2026-08-12 continuation
+
+Plan: `plans/universal-conversations-core-architecture.md` ("Idea Studio — conversational
+task creation", Phase 1). Branch: `overnight/2026-08-10` (same branch as the previous
+overnight run; the plan file was already researched there). Nothing pushed, nothing
+merged, nothing published.
+
+## Status
+
+- [x] Backend foundation (committed 46c9ba5): convo schema, shared Anthropic loop,
+      subject registry (seed / suggestion / arch component / tech-tree node).
+- [x] Conversation service + routes + handoff (committed fbab181).
+- [x] Frontend studio widget + all entry points (committed f75d443).
+- [x] Smoke-verified on a throwaway DB (never touched `queue-server/data/`).
+
+> Note: the saved plan file re-covered some groundwork that had NOT persisted from the
+> earlier research session — `conversations.js`, the convos routes, and the `index.js`
+> wiring were missing from the working tree. They were rebuilt to match the existing
+> `anthropicLoop.js` / `subjectContext.js` APIs and re-verified. No loss of design intent.
+
+## Pending decisions
+
+One item is parked for Antoine (it costs real model quota to close, so it was not run
+unattended):
+
+1. **Live model turn (grill → plan → handoff) not executed during this run.**
+   Why: running it needs a real model key and spends API quota; per cost discipline the
+   automated check was limited to the free structural paths (help/handoff/reset/delete/
+   handoff-with-supplied-prompt). Recommended: Antoine clicks through one subject
+   ("Discuss" on any Seed / suggestion / architecture component, send a message, then
+   `/grill-me`, `/plan`, `/handoff`). Status: `PENDING`. Blocks: full confidence that
+   the model-backed chat + plan text renders well in the modal.
+
+## Decisions taken (routine technical)
+
+- **Handoff creates the task as `paused` (set aside) with `plan_source:'skip'`.**
+  The conversation has already deliberated the brief, so the auto-draft stage is
+  skipped and nothing auto-dispatches — Antoine approves via the queue as usual.
+- **A supplied `/handoff` prompt or existing plan overrides nothing; `/handoff`
+  without a plan returns `no_plan`.** The frontend shows a friendly prompt to run
+  `/plan` first. Idempotent: a second `/handoff` returns the existing task.
+- **Subject hint travel.** Architecture components live in the HTML (ARCH_DATA), not
+  the DB, so the frontend sends a what/why/input/output hint with the conversation
+  request; the advisor's context is built from it. Seeds/suggestions/nodes read from
+  the DB directly.
+- **Test DB isolated.** All smoke tests ran against a temp DB_PATH; the live
+  `queue-server/data/` directory was not written to by the conversation feature
+  (gitOps GC on boot is pre-existing behaviour, not this run's data).
+
+## Verification notes (this run)
+
+- Backend: `node --check` clean on every changed file; server boots on a fresh DB,
+  `initConversationsSchema` runs.
+- API smoke tests (all free, no model calls):
+  - `GET /api/convos/subject/seed/:id` creates the convo, idempotent on re-fetch.
+  - `/help` returns the command list; `/handoff` without a plan returns `no_plan`.
+  - An ordinary chat message with no API key returns a clean `no_backend` error
+    (no crash), and the user message is persisted.
+  - `/handoff` with a supplied prompt creates a `paused` implement task, writes
+    `convo_id` back on the task row, sets the convo's `work_prompt_id` +
+    `handed_off_at`, and sets the seed owner's `work_prompt_id` via the registry
+    hook. Second `/handoff` returns `already:true` with the same task.
+  - Reset folds history into a recap and clears messages; delete soft-deletes
+    (subsequent GET → 404).
+- Frontend: all three `<script>` blocks parse; widget + entry points wired; file
+  synced to `queue-server/public/index.html` (identical via `cmp`).
+- Server stopped after the run; port released; temp DB removed.
+
+## Left untouched (not this plan's files)
+
+- `fmcns_navigator.html` / `public/index.html` also carry pre-existing uncommitted
+  edits from the AI-router/OpenCode free-model session (provider labels, plan-pending
+  badge, raw-prompt toggle); those were included in the frontend commit f75d443
+  because the files are single-file apps — committing the studio widget necessarily
+  carries them along. Call them out at merge review.
+- `queue-server/.env.example`, `services/orchestrator.js`, `routes/strategies.js`, the
+  two `.opencode/agent/*.md` edits, and junk files (`.DS_Store`, `.claude/`,
+  `fix_escape.py`) remain uncommitted — they belong to other sessions' work-in-progress.
+
+
+---
+
+# RUN_LOG — daytime fix, 2026-08-12/13 (Idea Studio chat → "every free provider is currently exhausted")
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Not committed, not pushed, not deployed.
+
+## Bug
+
+Idea Studio chat turns failed with "every free provider is currently exhausted". Root cause: `services/anthropicLoop.js#callFreeProvider` walked only the static catalogue (`ai/catalog.js` — Groq/Cerebras/Google/Mistral/OpenRouter/Cohere/NVIDIA/Zhipu), each of which requires its own API key. Locally none are set → empty chain → misleading "exhausted" error. The quota ledger was actually empty (verified: `provider_quota_state`/`provider_quota_ledger` have zero rows). The OpenCode dynamic free-model list (`opencode/laguna-s-2.1-free` etc., confirmed live via `/api/travaux/providers`) was never consulted on this path.
+
+## Fix (`services/anthropicLoop.js`)
+
+- `callFreeProvider` now falls through to `callOpenCodeFallback()` when the catalogue chain is empty or all entries fail.
+- Fallback lists OpenCode free models via the existing `listOpenCodeModels()` discovery (5-min cache), skips ledger-exhausted ones, and runs each through `opencode.runToolless` (read-only fmcns-text agent) — text-only turns, since the CLI can't do the tool-calling protocol. `messagesToText()` serializes both string and content-block message forms.
+- The misleading "exhausted" string is gone; failures now report the real reason.
+- Model choice matches the rest of the app (first free model in the shared list — currently gemma-4-26b, before laguna alphabetically).
+
+## Verification (live, real free-model turns, cost $0)
+
+- `node --check` clean. Server restarted on :3000.
+- Studio chat message: replied `{"via":"opencode:google/gemma-4-26b-a4b-it"}` (~5 s).
+- `/plan`: generated a sensible refusal brief for the empty "test" seed.
+- `/handoff`: created the `paused` queue task; idempotency + convo back-links intact.
+- Test convo + handoff task deleted afterwards.
+- Drawer chat / other consumers untouched (shared `runToolLoop`; behaviour only changed when the catalogue previously produced a dead end).
+
+---
+
+# RUN_LOG — Idea Studio next-step buttons, 2026-08-12
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Committed and deployed to main by Antoine's request.
+
+- Antoine found the studio had no visible "next step" after brainstorming — the plan (`universal-conversations-core-architecture.md` §9) calls for **Draft the plan** once there's ≥1 reply and **Send to Dispatch Queue** once a plan exists; the implemented widget only had `/plan` `/handoff` command chips and a text hint.
+- Added a contextual `.studio-actions` bar to the studio widget (both `fmcns_navigator.html` and the served `queue-server/public/index.html`): Draft the plan → Send to Dispatch Queue → Already sent / view in Dispatch Queue. Dropped the redundant "Run /handoff…" hint text.
+- Bug found on first pass: the button was rendered while the turn's busy flag was still set, then never re-rendered after the flag cleared — stuck disabled, unclickable. Fixed by re-running `renderStudioActions()` when the turn ends.
+- Verified live with Antoine on :3000 (both files in sync, all scripts syntax-checked).
