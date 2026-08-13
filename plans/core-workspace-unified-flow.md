@@ -110,20 +110,41 @@ styles that use surfaces/ink/borders.
   fix stale `data-src` comments. Existing behaviors untouched; `smoketest.js`
   passes.
 
-## Phase 3 — Architecture: one graph with layers + "Add an idea"
+## Phase 3 — Architecture: one scalable graph + graph intelligence
 
-- Consolidate `renderArchStage` (3654–3679), `renderArchTechTree` (3578–3610),
-  `renderArchAddForm` (3615–3652), `drawArchDeps` (3681–3704), `selectArchNode`
-  (3706–3711) into one graph renderer:
-  - Layout toggle: Map (territory columns, today's non-tree layout) / Tree
-    (dependency tiers). Same `#archnode-<id>` markup and ids for `drawArchDeps`.
-  - Color layer: Territory | Status (default). Version badge in Evolution-only
-    spirit — always visible as a small tag when the node has `versions`.
-  - Dependency-edge toggle for `drawArchDeps` (on by default).
-  - Legend row with the layer controls, the state legend (built/buildable/
-    locked/speculative), and the Add-an-idea control.
-  - `archView` variable (3498) keeps only layout + layer (remove 'development'/
-    'evolution' modes); `jumpToArchNode` (2033–2042) forces Tree layout.
+Agreed shape (Antoine, 2026-08-13): the architecture graph becomes a
+Content-Navigator-style scalable canvas, then a reasoning surface. Two stages,
+Stage A first.
+
+### Stage A — the canvas graph (DONE in-session 2026-08-13, pending eyeball)
+
+- One scalable canvas (`.arch-canvas` inside the full-width `#archStage`
+  viewport, `transform: translate(px,px) scale(k)`), built from one unified
+  renderer (`renderArchStage` + `buildMapHtml`/`buildTreeHtml` — replaced
+  `renderArchStage`/`renderArchTechTree`'s separate paths):
+  - **Layout toggle**: Map (territory columns) | Tree (dependency tiers, the old
+    tech-tree). `#archnode-<id>` ids kept, so `drawArchDeps` and
+    select/jump/queue links keep working unchanged.
+  - **Color layer**: Territory | Status | Evolution (badge = latest version).
+    `archNodeBadge()` decides card badge color/text; legend row in the toolbar
+    matches the layer.
+  - **Pan** (drag empty canvas, drag-vs-click threshold 4px so click-to-deselect
+    still works), **zoom** (wheel, cursor-anchored; +/− buttons; ⌂ fit).
+    `archViewport {x,y,k}` state + `applyArchTransform`/`zoomArchCanvas`/
+    `fitArchCanvas`; fit on every render (view/layer/layout switch + data
+    reload).
+  - `drawArchDeps` now draws in canvas content coordinates (dividing the
+    transformed rect delta by `k`); overlay sized to `canvas.scrollWidth/Height`
+    — edges stay glued to nodes while panning/zooming.
+  - `archView` split into `archLayout` ('map'|'tree') + `archLayer`
+    ('territory'|'status'|'evolution'); `jumpToArchNode` forces Tree layout.
+  - "+ Add node" (manual authoring form) moved out of the tree legend into the
+    toolbar, so it works in both layouts; form hosts in a slim `.arch-addhost`
+    bar under the toolbar.
+- Backend: unchanged (all graph data already lives on the frontend).
+
+### Stage B — "Add an idea" auto-placement + graph intelligence (next session)
+
 - **"Add an idea"**: one textarea + "Add to tree" button (no other fields).
   Frontend → `POST /api/architecture/nodes/auto { concept }`. Backend
   (`services/architectureNodes.js`, new `autoPlaceNode(db, concept)` +
@@ -133,16 +154,20 @@ styles that use surfaces/ink/borders.
      a strict JSON schema: `{ name, what, why, next, territory, depends: [ids] }`.
   2. Validate territory against the 5 ids; filter `depends` to existing node ids
      (all invalid → root node). Never trust model ids blindly.
-  3. `createNode` (existing, 71–90) with the derived fields; provenance follows
-     the manual-add convention (speculative/dashed display, consistent with
-     today's "+ Add node").
-  4. Returns the node; frontend re-renders the graph and selects the new node
-     (detail pane shows it, PATCH editing already exists for polish).
+  3. `createNode` (existing) with the derived fields; provenance follows the
+     manual-add convention (speculative/dashed display).
+  4. Returns the node; frontend re-renders the graph and selects the new node.
   - Cost: one model call, only on explicit click — nothing on view (CLAUDE.md
     rule). Model failure → clean error message + retry, no dead form.
-- Detail pane (3741–3881) unchanged in content; renderArchSuggestions
-  (3883–3923), loadArchHistory (3925–3942), `queuePromptDirect` (3721–3739) keep
-  working.
+- **Graph intelligence**: the deep-graph-reasoning capability the Map mode has,
+  applied to FMCNS's own architecture — ask a question about the architecture
+  ("what would adding this touch?", "what depends on X?", "how did this area
+  evolve?"), the agent walks the graph (territories, prereqs, history), and the
+  answer is a highlighted trail on the canvas + flows into New idea. One shared
+  reasoning engine so the character map and the architecture graph reason
+  across both. Design first, then reuse the Map mode's engine pattern.
+- Detail pane unchanged in content; renderArchSuggestions, loadArchHistory,
+  `queuePromptDirect` keep working.
 
 ## Phase 4 — The Flow + Detail pane
 

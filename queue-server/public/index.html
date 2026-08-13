@@ -402,11 +402,22 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .bk-result-row button { padding:3px 8px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10px; cursor:pointer; flex-shrink:0; }
 .bk-result-row button:hover { background:var(--c-surface-2); }
 
-.arch-toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:8px 14px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
-.arch-viewbtns { display:flex; gap:6px; margin-left:auto; }
+.arch-viewbtns { display:flex; gap:6px; margin-left:auto; align-items:center; }
 .arch-viewbtns button { padding:5px 11px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .arch-viewbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
-.arch-stage { flex:1; overflow:auto; padding:16px; position:relative; }
+.arch-layoutseg, .arch-layersel { display:flex; gap:6px; }
+.arch-layersel { margin-left:2px; }
+.arch-layersel button { opacity:.85; }
+.arch-stage { flex:1; overflow:hidden; position:relative; }
+.arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
+.arch-zoombtns { position:absolute; right:14px; bottom:14px; display:flex; gap:6px; z-index:6; }
+.arch-zoombtns button { width:30px; height:30px; border-radius:8px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:14px; line-height:1; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.14); color:var(--c-ink); }
+.arch-zoombtns button:hover { background:var(--c-surface-2); }
+.arch-zoombtns button.off { opacity:.45; }
+.arch-node { transition:opacity .15s ease; }
+.arch-node.arch-dim { opacity:.4; }
+.arch-addhost { border-bottom:1px solid var(--c-border); padding:10px 14px; display:none; flex-shrink:0; }
+.arch-addhost.open { display:block; }
 .arch-cols { display:flex; gap:18px; min-width:0; position:relative; }
 .arch-col { flex:1; min-width:170px; }
 .arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin-bottom:4px; font-weight:600; }
@@ -426,8 +437,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-node.tt-buildable { border-color:#c08a3e; box-shadow:0 0 0 2px rgba(192,138,62,.22); background:var(--c-warm-tint); }
 .arch-node.tt-locked { opacity:.5; border-style:dashed; background:var(--c-surface-2); }
 .arch-node.tt-locked:hover { opacity:.78; }
-.tt-legend { display:flex; gap:14px; font-size:10.5px; color:var(--c-ink-4); margin-bottom:16px; align-items:center; }
-.tt-legend span.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
 .arch-lockedreqs { font-size:11px; color:var(--c-ink-3); line-height:1.5; }
 .arch-lockedreqs a { color:var(--c-warn); cursor:pointer; text-decoration:underline; }
 .arch-buildbtn { width:100%; padding:9px 12px; border-radius:7px; border:none; background:#c08a3e; color:#fff; font-size:12px; font-weight:600; cursor:pointer; margin-bottom:10px; }
@@ -614,16 +623,30 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the architecture graph, full width | fmcns_navigator.html: renderArchStage()/initArchNav() | backend: services/architecture.js, routes/architecture.js">
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
-        <span class="arch-sub">How FMCNS itself is built — click any component.</span>
+        <span class="arch-sub">How FMCNS itself is built — click a component, drag to pan, scroll to zoom.</span>
         <div class="arch-viewbtns">
-          <button class="active" data-arch-view="architecture">Architecture</button>
-          <button data-arch-view="development">Development</button>
-          <button data-arch-view="evolution">Evolution</button>
-          <button data-arch-view="techtree">Tech Tree</button>
+          <span class="arch-layoutseg">
+            <button class="active" data-arch-layout="map" title="Territories side by side">Map</button>
+            <button data-arch-layout="tree" title="Dependency tiers — each row depends on the row above">Tree</button>
+          </span>
+          <span class="arch-layersel">
+            <button class="active" data-arch-layer="territory" title="Color by territory">Territory</button>
+            <button data-arch-layer="status" title="Color by build status">Status</button>
+            <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
+          </span>
+          <button class="tt-addbtn" id="ttAddBtn" title="Add a component by hand">+ Add node</button>
         </div>
       </div>
+      <div class="arch-addhost" id="ttAddHost"></div>
       <div class="ws-map-body">
-        <div class="arch-stage" id="archStage"></div>
+        <div class="arch-stage" id="archStage">
+          <div class="arch-zoombtns">
+            <button data-arch-zoom="out" title="Zoom out">−</button>
+            <button data-arch-zoom="in" title="Zoom in">+</button>
+            <button data-arch-zoom="fit" title="Fit the graph to the screen">⌂</button>
+            <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on">∿</button>
+          </div>
+        </div>
         <div class="ws-archdetail" id="archRight" data-src="CORE ARCHITECTURE → graph zone → selected component detail (docked, auto-hides) | fmcns_navigator.html: selectArchNode()/renderArchDetail() | backend: services/architecture.js">
           <h2>Component</h2>
           <div class="empty">Click a component to inspect it.</div>
@@ -2147,14 +2170,12 @@ function jumpToQueueItem(id) {
 }
 
 // Mirror of jumpToQueueItem for the tech tree: switch to Architecture, force the
-// Tech Tree view (a planted Seed only appears there), and select the node.
+// Tree layout (a planted Seed only appears there), and select the node.
 function jumpToArchNode(id) {
   setMode('core');
   switchCoreView('arch');
-  archView = 'techtree';
-  document.querySelectorAll('[data-arch-view]').forEach(x => {
-    x.classList.toggle('active', x.getAttribute('data-arch-view') === 'techtree');
-  });
+  archLayout = 'tree';
+  syncArchControls();
   renderArchStage();
   selectArchNode(id);
 }
@@ -3876,7 +3897,9 @@ const TERRITORIES = [
   { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
   { id:'interface', label:'Interface', sub:'Layout & spacing, Typography & color, Interaction patterns, Per-view polish.' },
 ];
-let archView = 'architecture', archSelected = null;
+let archLayout = 'map', archLayer = 'territory', archSelected = null;
+const archViewport = { x: 0, y: 0, k: 1 };
+let archEdgesOn = true, archHover = null;
 let archInited = false;
 let archQueueStatus = null;
 
@@ -3940,14 +3963,61 @@ function renderArchQueueBanner() {
 
 async function initArchNav() {
   if (archInited) return; archInited = true;
-  document.querySelectorAll('[data-arch-view]').forEach(b => {
-    b.onclick = () => { archView = b.getAttribute('data-arch-view'); document.querySelectorAll('[data-arch-view]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderArchStage(); };
+  syncArchControls();
+  document.querySelectorAll('[data-arch-layout]').forEach(b => {
+    b.onclick = () => { archLayout = b.getAttribute('data-arch-layout'); syncArchControls(); renderArchStage(); };
   });
-  const archStageEl = document.getElementById('archStage');
-  archStageEl.addEventListener('click', (e) => {
-    if (e.target.closest('.arch-node')) return;
-    deselectArchNode();
+  document.querySelectorAll('[data-arch-layer]').forEach(b => {
+    b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); syncArchControls(); renderArchStage(); };
   });
+  const addBtn = document.getElementById('ttAddBtn');
+  if (addBtn) addBtn.onclick = () => renderArchAddForm();
+  document.querySelectorAll('[data-arch-zoom]').forEach(b => {
+    b.onclick = () => {
+      if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
+      else zoomArchCanvas(b.getAttribute('data-arch-zoom') === 'in' ? 1.3 : 1 / 1.3, null);
+    };
+  });
+  const edgesBtn = document.getElementById('archEdgesBtn');
+  if (edgesBtn) edgesBtn.onclick = () => {
+    archEdgesOn = !archEdgesOn;
+    edgesBtn.classList.toggle('off', !archEdgesOn);
+    edgesBtn.title = archEdgesOn ? 'Dependency lines: on' : 'Dependency lines: off';
+    drawArchDeps();
+  };
+  const stage = document.getElementById('archStage');
+  stage.addEventListener('mousemove', (e) => {
+    const node = e.target.closest('.arch-node');
+    const id = node ? node.getAttribute('data-arch-id') : null;
+    if (id !== archHover) { archHover = id; if (archEdgesOn) drawArchDeps(); }
+  });
+  let drag = null;
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button, select, input, textarea, .arch-node')) return;
+    drag = { sx: e.clientX, sy: e.clientY, ox: archViewport.x, oy: archViewport.y, moved: false };
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    if (!drag.moved && Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (drag.moved) {
+      archViewport.x = drag.ox + dx; archViewport.y = drag.oy + dy;
+      applyArchTransform();
+    }
+  });
+  stage.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const wasDrag = drag.moved;
+    drag = null;
+    if (!wasDrag) deselectArchNode();
+  });
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = stage.getBoundingClientRect();
+    zoomArchCanvas(Math.exp(-e.deltaY * 0.002), { x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }, { passive: false });
   renderArchStage();
   await loadArchLiveData();
   renderArchStage();
@@ -3955,27 +4025,86 @@ async function initArchNav() {
   if (archSelected) renderArchDetail(archSelected); // refresh detail panel with live data if already open
 }
 
+function syncArchControls() {
+  document.querySelectorAll('[data-arch-layout]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-layout') === archLayout));
+  document.querySelectorAll('[data-arch-layer]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-layer') === archLayer));
+  const sub = document.querySelector('#wsMap .arch-sub');
+  if (sub) sub.textContent = archLayer === 'evolution'
+    ? 'How FMCNS itself is built — the badge shows the latest version. Click a component, drag to pan, scroll to zoom.'
+    : 'How FMCNS itself is built — click a component, drag to pan, scroll to zoom.';
+}
+
+// Zoom around a point in the stage's coordinate space (null = stage center), clamped.
+function zoomArchCanvas(ratio, at) {
+  const stage = document.getElementById('archStage');
+  if (!stage) return;
+  const rect = stage.getBoundingClientRect();
+  const vx = at ? at.x : rect.width / 2, vy = at ? at.y : rect.height / 2;
+  const k = Math.min(Math.max(archViewport.k * ratio, 0.18), 4);
+  const cxp = (vx - archViewport.x) / archViewport.k, cyp = (vy - archViewport.y) / archViewport.k;
+  archViewport.x = vx - cxp * k; archViewport.y = vy - cyp * k; archViewport.k = k;
+  applyArchTransform();
+}
+
+// Center the whole graph in the stage at a comfortable scale.
+function fitArchCanvas() {
+  const stage = document.getElementById('archStage');
+  const canvas = document.getElementById('archCanvas');
+  if (!stage || !canvas) return;
+  const sw = canvas.scrollWidth, sh = canvas.scrollHeight;
+  if (!sw || !sh) return;
+  const vr = stage.getBoundingClientRect();
+  const k = Math.min(Math.max(Math.min(vr.width / sw, vr.height / sh) * 0.94, 0.18), 2);
+  archViewport.k = k;
+  archViewport.x = (vr.width - sw * k) / 2;
+  archViewport.y = (vr.height - sh * k) / 2;
+  applyArchTransform();
+}
+
+function applyArchTransform() {
+  const canvas = document.getElementById('archCanvas');
+  if (canvas) canvas.style.transform = `translate(${archViewport.x}px, ${archViewport.y}px) scale(${archViewport.k})`;
+}
+
 const TT_STATE_COLORS = { built:'#2f7d63', buildable:'#c08a3e', locked:'#8a8378' };
 const TT_STATE_LABELS = { built:'built', buildable:'buildable now', locked:'locked' };
 
-// Same components, same node markup, same #archnode-<id> ids — laid out by prereq
-// depth instead of by territory, so the dependency edges drawArchDeps() already
-// draws read top-to-bottom as an actual tech tree.
-function renderArchTechTree(stage) {
+// Badge color + text follow the chosen layer: territory color, build status, or
+// the latest version tag. Speculative nodes always read provisional.
+function archNodeBadge(c) {
+  if (archLayer === 'status') return { text: c.status || 'Concept', color: STATUS_COLORS[c.status] || '#8a8378' };
+  if (archLayer === 'evolution') return c.versions && c.versions.length ? { text: c.versions[0][0], color: TERRITORY_COLORS[c.territory] } : { text: '—', color: 'var(--c-ink-4)' };
+  return { text: (TERRITORIES.find(t => t.id === c.territory) || {}).label || c.territory, color: TERRITORY_COLORS[c.territory] };
+}
+
+// Map layout — the five territories side by side. Same node ids as ever, so the
+// dependency edges draw across the whole canvas.
+function buildMapHtml() {
+  let html = '<div class="arch-cols" id="archCols">';
+  TERRITORIES.forEach(t => {
+    html += `<div class="arch-col"><div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div><div class="arch-col-sub">${t.sub}</div>`;
+    ARCH_DATA.filter(c => c.territory === t.id).forEach(c => {
+      const b = archNodeBadge(c);
+      const spec = c.provenance === 'speculative';
+      html += `<div class="arch-node${spec?' tt-spec':''}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+        <div class="an-name">${spec?'✦ ':''}${c.name}</div>
+        <span class="an-badge" style="background:${b.color}">${b.text}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+// Tree layout — same components, same node markup, same #archnode-<id> ids, laid
+// out by prereq depth instead of territory, so the dependency edges read
+// top-to-bottom as an actual tech tree.
+function buildTreeHtml() {
   const tiers = {};
   ARCH_DATA.forEach(c => { const d = archDepth(c); (tiers[d] = tiers[d] || []).push(c); });
   const order = {}; TERRITORIES.forEach((t, i) => order[t.id] = i);
-
-  let html = '<div class="tt-legend">';
-  ['built','buildable','locked'].forEach(s => {
-    html += `<span><span class="dot" style="background:${TT_STATE_COLORS[s]}"></span>${TT_STATE_LABELS[s]}</span>`;
-  });
-  html += '<span class="dot" style="background:#7a5ea8"></span>speculative';
-  html += '<span style="margin-left:auto">Each row depends on the row above it.</span>';
-  html += '<button class="tt-addbtn" id="ttAddBtn">+ Add node</button></div>';
-  html += '<div id="ttAddHost"></div>';
-  html += '<div class="arch-tiers" id="archCols">';
-  Object.keys(tiers).map(Number).sort((a,b) => a-b).forEach(d => {
+  let html = '<div class="arch-tiers" id="archCols">';
+  Object.keys(tiers).map(Number).sort((a,b) => a - b).forEach(d => {
     const nodes = tiers[d].slice().sort((a,b) => (order[a.territory]-order[b.territory]) || a.name.localeCompare(b.name));
     html += `<div class="arch-tier"><div class="arch-tier-label">${d === 0 ? 'Roots' : 'Tier ' + d}</div><div class="arch-tier-nodes">`;
     nodes.forEach(c => {
@@ -3988,11 +4117,7 @@ function renderArchTechTree(stage) {
     });
     html += '</div></div>';
   });
-  html += '<svg class="arch-svg-overlay" id="archOverlay"></svg></div>';
-  stage.innerHTML = html;
-
-  const addBtn = document.getElementById('ttAddBtn');
-  if (addBtn) addBtn.onclick = () => renderArchAddForm();
+  return html;
 }
 
 // Hand-authoring a node. Prerequisites are picked from the nodes that already exist,
@@ -4001,6 +4126,7 @@ function renderArchTechTree(stage) {
 function renderArchAddForm() {
   const host = document.getElementById('ttAddHost');
   if (!host) return;
+  host.classList.toggle('open', !host.innerHTML);
   if (host.innerHTML) { host.innerHTML = ''; return; } // second click closes it
   const terrOpts = TERRITORIES.map(t => `<option value="${t.id}">${t.label}</option>`).join('');
   const depOpts = ARCH_DATA.slice().sort((a,b)=>a.name.localeCompare(b.name))
@@ -4016,7 +4142,7 @@ function renderArchAddForm() {
       <div class="arch-actionrow"><button id="ttSave">Add to tree</button><button id="ttCancel">Cancel</button></div>
       <div class="arch-qf-status" id="ttStatus"></div>
     </div>`;
-  document.getElementById('ttCancel').onclick = () => { host.innerHTML = ''; };
+  document.getElementById('ttCancel').onclick = () => { host.innerHTML = ''; document.getElementById('ttAddHost').classList.remove('open'); };
   document.getElementById('ttSave').onclick = async () => {
     const status = document.getElementById('ttStatus');
     const name = document.getElementById('ttName').value.trim();
@@ -4032,6 +4158,8 @@ function renderArchAddForm() {
         depends: Array.from(document.getElementById('ttDepends').selectedOptions).map(o => o.value),
       });
       await loadArchNodes();
+      host.innerHTML = '';
+      document.getElementById('ttAddHost').classList.remove('open');
       renderArchStage();
     } catch (e) { status.textContent = 'Could not save: ' + (e.message || e); }
   };
@@ -4039,60 +4167,82 @@ function renderArchAddForm() {
 
 function renderArchStage() {
   const stage = document.getElementById('archStage');
-  if (archView === 'techtree') {
-    renderArchTechTree(stage);
-    document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
-    if (typeof requestAnimationFrame==='function') requestAnimationFrame(drawArchDeps); else setTimeout(drawArchDeps,0);
-    return;
-  }
-  let html = '<div class="arch-cols" id="archCols">';
-  TERRITORIES.forEach(t => {
-    html += `<div class="arch-col"><div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div><div class="arch-col-sub">${t.sub}</div>`;
-    ARCH_DATA.filter(c => c.territory === t.id).forEach(c => {
-      const badgeColor = archView === 'development' ? STATUS_COLORS[c.status] : TERRITORY_COLORS[t.id];
-      const badgeText = archView === 'development' ? c.status : (archView === 'evolution' && c.versions ? c.versions[0][0] : t.label);
-      html += `<div class="arch-node${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
-        <div class="an-name">${c.name}</div>
-        <span class="an-badge" style="background:${badgeColor}">${badgeText}</span>
-      </div>`;
-    });
-    html += '</div>';
-  });
-  html += '<svg class="arch-svg-overlay" id="archOverlay"></svg></div>';
-  stage.innerHTML = html;
+  if (!stage) return;
+  // The overlay svg comes first in the DOM so it paints BELOW the cards: lines
+  // run in the gaps between cards instead of across their faces.
+  stage.innerHTML = `<div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>`;
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
-  if (archView === 'architecture') { if (typeof requestAnimationFrame==='function') requestAnimationFrame(drawArchDeps); else setTimeout(drawArchDeps,0); }
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { drawArchDeps(); fitArchCanvas(); });
+  else { drawArchDeps(); fitArchCanvas(); }
 }
 
+// Direct neighbours in the dependency graph (prereqs + dependents), used for the
+// hover/selection focus set.
+function archNeighbors(id) {
+  const out = new Set([id]);
+  ARCH_DATA.forEach(n => {
+    if ((n.depends || []).includes(id)) out.add(n.id);
+  });
+  const self = ARCH_BY_ID[id];
+  if (self) (self.depends || []).forEach(d => out.add(d));
+  return out;
+}
+
+// Dependency edges, drawn once into the canvas's own coordinate space. The canvas
+// is panned/zoomed as one unit, so edges always stay glued to their nodes. At
+// rest the lines are thin and faint; hovering or selecting a component lights up
+// its neighbourhood and fades everything else (Content Navigator focus feel).
 function drawArchDeps() {
   const overlay = document.getElementById('archOverlay');
-  const stage = document.getElementById('archStage');
-  if (!overlay || !stage) return;
-  const stageRect = stage.getBoundingClientRect();
-  overlay.setAttribute('width', stage.scrollWidth);
-  overlay.setAttribute('height', stage.scrollHeight);
-  let svgHtml = '';
+  const canvas = document.getElementById('archCanvas');
+  if (!overlay || !canvas) return;
+  document.querySelectorAll('.arch-node.arch-dim').forEach(n => n.classList.remove('arch-dim'));
+  if (!archEdgesOn) { overlay.innerHTML = ''; return; }
+  overlay.setAttribute('width', canvas.scrollWidth);
+  overlay.setAttribute('height', canvas.scrollHeight);
+  const cr = canvas.getBoundingClientRect();
+  const X = r => (r.left - cr.left) / archViewport.k;
+  const Y = r => (r.top - cr.top) / archViewport.k;
+  const focus = archHover ? archNeighbors(archHover) : (archSelected ? archNeighbors(archSelected) : null);
+  const activeFocus = !!(focus && focus.size);
+  let svgHtml = '<defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>';
   ARCH_DATA.forEach(c => {
     (c.depends || []).forEach(depId => {
       const a = document.getElementById('archnode-' + depId);
       const b = document.getElementById('archnode-' + c.id);
       if (!a || !b) return;
       const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
-      const x1 = ar.right - stageRect.left + stage.scrollLeft, y1 = ar.top + ar.height/2 - stageRect.top + stage.scrollTop;
-      const x2 = br.left - stageRect.left + stage.scrollLeft, y2 = br.top + br.height/2 - stageRect.top + stage.scrollTop;
-      const highlight = archSelected === c.id || archSelected === depId;
-      // In tech-tree view, edges into a locked node fade with the node itself.
-      const dim = archView === 'techtree' && !highlight && archNodeState(c) === 'locked';
-      svgHtml += `<path d="M${x1},${y1} C${x1+40},${y1} ${x2-40},${y2} ${x2},${y2}" fill="none" stroke="${highlight?'var(--c-ink)':'var(--c-border-2)'}" stroke-width="${highlight?1.6:1}" opacity="${highlight?0.9:(dim?0.2:0.45)}"/>`;
+      let d;
+      if (archLayout === 'tree') {
+        const x1 = X(ar) + ar.width / archViewport.k / 2, y1 = Y(ar) + ar.height / archViewport.k;
+        const x2 = X(br) + br.width / archViewport.k / 2, y2 = Y(br);
+        const cy = Math.max(20, (y2 - y1) * 0.45);
+        d = `M${x1},${y1} C${x1},${y1 + cy} ${x2},${y2 - cy} ${x2},${y2}`;
+      } else {
+        const x1 = X(ar) + ar.width / archViewport.k, y1 = Y(ar) + ar.height / archViewport.k / 2;
+        const x2 = X(br), y2 = Y(br) + br.height / archViewport.k / 2;
+        const cx = Math.max(24, (x2 - x1) * 0.4);
+        d = `M${x1},${y1} C${x1 + cx},${y1} ${x2 - cx},${y2} ${x2},${y2}`;
+      }
+      const dimLocked = !activeFocus && archLayout === 'tree' && archNodeState(c) === 'locked';
+      let stroke = 'var(--c-border-2)', width = '0.9', op = dimLocked ? 0.12 : 0.32;
+      if (activeFocus && (focus.has(c.id) || focus.has(depId))) { stroke = 'var(--c-ink)'; width = '1.5'; op = 0.95; }
+      else if (activeFocus) op = 0.05;
+      svgHtml += `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" opacity="${op}" marker-end="url(#arch-arrow)"/>`;
     });
   });
   overlay.innerHTML = svgHtml;
+  if (activeFocus) {
+    document.querySelectorAll('.arch-node').forEach(n => {
+      if (!focus.has(n.getAttribute('data-arch-id'))) n.classList.add('arch-dim');
+    });
+  }
 }
 
 function selectArchNode(id) {
   archSelected = id;
   document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('selected', n.getAttribute('data-arch-id')===id));
-  if (archView === 'architecture' || archView === 'techtree') drawArchDeps();
+  drawArchDeps();
   renderArchDetail(id);
   document.getElementById('archRight').classList.add('open'); // dock the detail panel beside the graph
 }
@@ -4103,7 +4253,7 @@ function deselectArchNode() {
   archSelected = null;
   document.querySelectorAll('.arch-node').forEach(n => n.classList.remove('selected'));
   document.getElementById('archRight').classList.remove('open');
-  if (archView === 'architecture' || archView === 'techtree') drawArchDeps();
+  drawArchDeps();
 }
 
 function fmtVerified(iso) {
