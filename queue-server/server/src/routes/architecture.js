@@ -1,7 +1,7 @@
 // Routes for the Architecture Navigator's live backend surface.
 import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
-import { listNodes, createNode, updateNode, deleteNode, speculate } from '../services/architectureNodes.js';
+import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea } from '../services/architectureNodes.js';
 
 export function architectureRoutes(db) {
   const router = Router();
@@ -34,6 +34,40 @@ export function architectureRoutes(db) {
   router.post('/nodes/:id/speculate', async (req, res) => {
     const out = await speculate(db, req.params.id, req.body || {});
     if (out.error) return res.status(out.error === 'all_duplicates' ? 409 : 502).json(out);
+    res.json(out);
+  });
+
+  // "Add an idea": one free-text concept -> one speculative, structurally-placed node.
+  // Frontend sends { concept, catalog } (the trunk lives in the HTML, not the DB).
+  router.post('/nodes/auto', async (req, res) => {
+    const out = await autoPlaceNode(db, req.body?.concept || '', req.body || {});
+    if (out.error) {
+      if (out.error === 'concept_required') return res.status(400).json(out);
+      if (out.error === 'duplicate') return res.status(409).json(out);
+      return res.status(502).json(out);
+    }
+    res.json(out);
+  });
+
+  // "Ask about this architecture": a question in, an answer + highlighted ids out.
+  router.post('/graph/ask', async (req, res) => {
+    const out = await askGraph(req.body?.question || '', req.body || {});
+    if (out.error) {
+      if (out.error === 'question_required') return res.status(400).json(out);
+      return res.status(502).json(out);
+    }
+    res.json(out);
+  });
+
+  // The one idea door: any entry point can POST here with { concept, catalog }.
+  // One AI call routes the idea — speculative tree node or Seed.
+  router.post('/ideas', async (req, res) => {
+    const out = await routeIdea(db, req.body?.concept || '', req.body || {});
+    if (out.error) {
+      if (out.error === 'concept_required') return res.status(400).json(out);
+      if (out.error === 'duplicate') return res.status(409).json(out);
+      return res.status(502).json(out);
+    }
     res.json(out);
   });
 

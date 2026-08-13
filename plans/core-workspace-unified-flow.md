@@ -138,12 +138,25 @@ Stage A first.
     — edges stay glued to nodes while panning/zooming.
   - `archView` split into `archLayout` ('map'|'tree') + `archLayer`
     ('territory'|'status'|'evolution'); `jumpToArchNode` forces Tree layout.
-  - "+ Add node" (manual authoring form) moved out of the tree legend into the
-    toolbar, so it works in both layouts; form hosts in a slim `.arch-addhost`
-    bar under the toolbar.
+  - "💡 Add an idea" (see Stage B/C1) replaced the manual "+ Add node" form in
+    the toolbar — one line in, Claude places it; form hosts in a slim
+    `.arch-addhost` bar under the toolbar.
 - Backend: unchanged (all graph data already lives on the frontend).
 
-### Stage B — "Add an idea" auto-placement + graph intelligence (next session)
+### Stage B — "Add an idea" auto-placement + graph intelligence (built 2026-08-13)
+
+> IMPLEMENTATION NOTE (C1 superset): as agreed with Antoine, the idea entry
+> points consolidated into ONE IDEA DOOR (Build C1, built 2026-08-13): a single
+> `POST /api/architecture/ideas { concept, catalog }` route
+> (`routeIdea` in services/architectureNodes.js) that either places a
+> speculative node in the tree (kind 'node') or files a Seed (kind 'seed').
+> Both the header 💬 button (one-line popover composer) and the arch toolbar
+> ("💡 Add an idea") call the same frontend `submitIdea`. `/nodes/auto` is kept
+> but unused; the six-field "+ Add node" manual form was retired (placement is
+> Claude's job now); stored nodes get "✎ Edit placement" (territory + depends)
+> in the detail panel instead. Seeds land in the Seeds view until the Flow
+> (Phase 4) exists. `renderArchSuggestions`, `loadArchHistory`,
+> `queuePromptDirect` unchanged.
 
 - **"Add an idea"**: one textarea + "Add to tree" button (no other fields).
   Frontend → `POST /api/architecture/nodes/auto { concept }`. Backend

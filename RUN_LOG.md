@@ -544,7 +544,13 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
 - PENDING Antoine: eyeball both follow-ups on http://localhost:3000 (Core → Architecture, and the top-right of the header). If good → ship (commit pathspec fmcns_navigator.html + queue-server/public/index.html + RUN_LOG.md, push branch→main).
 - FOLLOW-UP (Antoine's third feedback, 2026-08-13): the architecture graph was still stuck on the left half of the screen. Root cause: a leftover from the three-zone shell — the empty center/right zone stayed visible beside the graph on the Architecture view, eating half the workspace. Fixed: `.ws-flow` now hides unless a list view is active (was always `display:flex`), toggled in `renderWorkspace()` alongside `.ws-map`; `#wsFlow` id added. The Architecture view now occupies the whole workspace; the docked detail panel still appears over the right edge on selection. Verified (node --check ×5, braces 492/492, synced, served 200).
 - AGREEMENT (Antoine, 2026-08-13): Phase 3 = the Content Navigator-style scalable SVG graph for the architecture, in two stages — Stage A (canvas: pan/zoom, territory color layers, Map/Tree switch, the three arch views become lenses of one canvas) then Stage B (deep graph intelligence on the arch graph, reusing the Map mode's reasoning engine; reasoning lights up a trail on the canvas + flows into New idea). One plan, two stages, Stage A first. Plan write-up still to come in plans/.
-- SHIPPED (Antoine "thats good! lets go", 2026-08-13): commit c4cb060 → pushed to main (Railway deploys). merge-check worktree fast-forwarded to c4cb060 (its auto-generated .agents/current-state.md was dirty — snapshot kept on workers/snapshot-2026-08-13, main reset to origin/main; next fresh checkout regenerates it).
+- SHIPPED (Antoine, 2026-08-13): commit 93b43aa → main (Railway deploys); merge-check worktree fast-forwarded.
+- STAGE B (2026-08-13, built; pending Antoine's eyeball then ship):
+  - "✦ Add an idea": one-line idea → `POST /api/architecture/nodes/auto { concept, catalog }` → `autoPlaceNode` in services/architectureNodes.js (new; generateText seam feature 'quick', label 'arch-node-auto', strict JSON `{name,territory,what,why,next,depends}`; territory validated against the 5 ids; model-chosen `depends` filtered to catalog ids, all-invalid → root; created via existing createNode as speculative 'Concept'). Frontend: toolbar ✦ button + one-field form in the add-host; on success re-renders, selects the new node (docked detail explains it as speculative); duplicate → friendly message.
+  - "Ask about this architecture" (graph intelligence v1): floating ask input bottom-left of the stage → `POST /api/architecture/graph/ask { question, catalog }` → `askGraph` (label 'arch-graph-ask'): model reasons over the catalog (names/territories/statuses/dependency edges) and returns `{answer, ids}`; ids validated against the catalog. The frontend lights the answered components as a violet ring + their neighbourhood edges (new `archTrail` state; focus priority hover > trail > selection; clicking a component clears the trail). Answer card has "Turn into a task" (queues via queuePromptDirect) and "Clear". Costs: one model call per explicit click only.
+  - Server restarted on :3000 (it had been started with PORT=3000; restart with same env, nohup log /tmp/fmcns-server.log). Routes verified without spending quota: 400 validation paths + auth + nodes list. Model path left to Antoine's first real clicks (cost discipline).
+  - Verified: node --check ×5 frontend + 2 backend files, CSS braces 514/514, coreApp divs 45/45, synced (200).
+- PENDING Antoine: eyeball Stage B on http://localhost:3000 (Core → Architecture): ✦ Add an idea (try one), Ask bottom-left (try one question), trail lighting, Turn into a task, Clear, both themes. If good → ship.
 - PHASE 3 STAGE A (2026-08-13, committed-session work pending eyewall then ship): the Architecture graph is now one scalable canvas, Content-Navigator feel:
   - Pan by dragging empty space, zoom with the wheel (cursor-anchored), +/−/⌂ controls bottom-right, fit on every view change.
   - Layout toggle: Map (territory columns) | Tree (dependency tiers). Color layer: Territory | Status | Evolution; toolbar legend matches the layer. `archView` → `archLayout`/`archLayer`; `jumpToArchNode` forces Tree. Node ids unchanged so detail/select/queue-jump keep working; `drawArchDeps` redrawn in canvas coordinates (edges stay glued while panning/zooming).
@@ -553,3 +559,33 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
   - Stage B (auto "Add an idea" + graph intelligence) is the explicit next step; plan doc updated (plans/core-workspace-unified-flow.md Phase 3).
 - PENDING Antoine: eyeball Phase 3 Stage A on http://localhost:3000 (Core → Architecture: pan/zoom/fit, Map↔Tree, three layers, legend, + Add node in both layouts, detail panel, both themes). If good → ship.
 - REDESIGN (Antoine's feedback + Option A, 2026-08-13): (1) the dependency lines were drawn ON TOP of the cards and all at full strength — now the overlay svg comes FIRST in the canvas DOM so lines paint BEHIND the cards; curves have arrowheads (context-stroke marker) so direction is obvious; resting state is thin/faint (opacity .32, .12 for locked-in-tree); hovering or selecting a component lights up its neighbourhood edges (ink, 1.5px, .95) and fades everything else to .05 plus dims non-neighbour cards (.arch-dim, transition) — the Content Navigator focus feel; Tree layout edges flow vertically (dependent top ↔ prereq bottom). (2) The toolbar legend dots row is gone (redundant with the colored badges); speculative nodes now show ✦ + dashed violet in BOTH layouts; the Evolution layer gets a one-line text hint in the subtitle. (3) Small ∿ toggle in the bottom-right zoom cluster switches dependency lines on/off (state `archEdgesOn`). Verified: node --check ×5, braces 501/501, coreApp divs 42/42, no stale refs; synced (200). Needs Antoine's eyeball in both themes.
+- C1 — ONE IDEA DOOR (2026-08-13, built; pending Antoine's eyeball then ship):
+  - Goal (agreed with Antoine): every idea entry point funnels through one route — the
+    header 💬 button, the arch toolbar, and (later) the Flow view all feed one AI call
+    that decides: a new speculative component placed in the tree, or a Seed.
+  - Backend: new `POST /api/architecture/ideas { concept, catalog }` → `routeIdea` in
+    services/architectureNodes.js (new; generateText seam feature 'quick', label
+    'arch-idea-route'). Returns `{kind:'node', node}` (created via existing createNode,
+    speculative 'Concept', depends filtered to catalog ids, all-invalid → root;
+    duplicate → 409) or `{kind:'seed', idea}` (created via existing createIdea from
+    workIdeas.js). Route in routes/architecture.js. Server restarted on :3000; 400
+    validation paths verified (concept_required), model path left to Antoine's first
+    real clicks (cost discipline).
+  - Frontend: one shared `submitIdea(concept, statusEl)` — node kind → reloads the
+    graph, selects the new node (docked detail explains it as speculative); seed kind
+    → "Saved as a seed — view it in Seeds" link. Two entry points:
+    - Architecture toolbar: single "💡 Add an idea" button (replaces both the old
+      "+ Add node" six-field form — `renderArchAddForm` and the ttAddBtn removed —
+      and the previous "✦ Add an idea" endpoint, `/nodes/auto` kept but unused now).
+      Form opens in the slim bar under the toolbar, closes on cancel or node placement.
+    - Header 💬 New idea: now opens a one-line popover composer top-right (same
+      submitIdea). Idea Studio stays reachable via the per-component "💬 Discuss in
+      Idea Studio" buttons and will return as a seed card in C2's Flow view.
+    - Detail panel: stored nodes gain "✎ Edit placement" (territory + depends
+      multiselect → PATCH, reuses existing updateNode; trunk nodes stay as authored).
+  - Verified: node --check ×5 frontend + 2 backend files, CSS braces 522/522, coreApp
+    divs 105/105, no stale ttAddBtn/renderArchAddForm/ttName refs; synced (200).
+  - Next: C2 — unified Flow view merging Seeds + Suggestion Engine + Dispatch Queue
+    (sections ❓ Questions · ▶ Running · ⏳ Ready · ✨ Suggested · 🌱 Seeds · ⏸ Parked ·
+    ✓ Done; search/filters/Generate-now/composer; one detail pane; chips Architecture |
+    Flow | Building blocks).

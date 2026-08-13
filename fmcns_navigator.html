@@ -411,6 +411,19 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-stage { flex:1; overflow:hidden; position:relative; }
 .arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
 .arch-zoombtns { position:absolute; right:14px; bottom:14px; display:flex; gap:6px; z-index:6; }
+.arch-ask { position:absolute; left:14px; bottom:14px; z-index:6; width:min(440px, calc(100% - 160px)); }
+.arch-ask-inputrow { display:flex; gap:6px; }
+.arch-ask-inputrow input { flex:1; padding:7px 10px; border:1px solid var(--c-border-2); border-radius:8px; background:var(--c-surface); font-size:12px; color:var(--c-ink); box-shadow:0 2px 10px rgba(0,0,0,.14); font-family:inherit; }
+.arch-ask-inputrow input:focus { outline:none; border-color:var(--c-ink); }
+.arch-ask-inputrow button { padding:7px 12px; border-radius:8px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:12px; cursor:pointer; color:var(--c-ink); box-shadow:0 2px 10px rgba(0,0,0,.14); }
+.arch-ask-inputrow button:hover { background:var(--c-surface-2); }
+.arch-ask-inputrow button:disabled { opacity:.55; cursor:default; }
+.arch-ask-answer { margin-top:8px; padding:11px 13px; border-radius:9px; background:var(--c-surface); border:1px solid var(--c-border-2); box-shadow:0 4px 18px rgba(0,0,0,.16); font-size:12px; line-height:1.55; color:var(--c-ink); max-height:220px; overflow-y:auto; }
+.arch-ask-answer .arch-ask-tools { display:flex; gap:8px; margin-top:9px; align-items:center; }
+.arch-ask-answer .arch-ask-tools button { padding:5px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-bg-2); font-size:11px; cursor:pointer; color:var(--c-ink); }
+.arch-ask-answer .arch-ask-tools button:hover { background:var(--c-surface-2); }
+.arch-ask-answer .arch-ask-status { font-size:11px; color:var(--c-ink-4); margin-top:6px; }
+.arch-hot { box-shadow:0 0 0 2px var(--c-violet); }
 .arch-zoombtns button { width:30px; height:30px; border-radius:8px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:14px; line-height:1; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.14); color:var(--c-ink); }
 .arch-zoombtns button:hover { background:var(--c-surface-2); }
 .arch-zoombtns button.off { opacity:.45; }
@@ -418,6 +431,11 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-node.arch-dim { opacity:.4; }
 .arch-addhost { border-bottom:1px solid var(--c-border); padding:10px 14px; display:none; flex-shrink:0; }
 .arch-addhost.open { display:block; }
+.idea-composer { position:fixed; top:52px; right:14px; z-index:120; display:none; width:min(360px, calc(100vw - 28px)); }
+.idea-composer.open { display:block; }
+.idea-composer-inner { padding:12px; border-radius:10px; border:1px solid var(--c-border-2); background:var(--c-surface); box-shadow:0 10px 34px rgba(0,0,0,.22); }
+.idea-composer-title { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); font-weight:600; margin-bottom:8px; }
+.idea-composer textarea { width:100%; padding:7px 8px; border:1px solid var(--c-border-2); border-radius:6px; font-size:12px; font-family:inherit; resize:vertical; color:var(--c-ink); background:var(--c-bg); }
 .arch-cols { display:flex; gap:18px; min-width:0; position:relative; }
 .arch-col { flex:1; min-width:170px; }
 .arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin-bottom:4px; font-weight:600; }
@@ -470,6 +488,10 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-actionrow { display:flex; gap:7px; margin-top:12px; }
 .arch-actionrow button { flex:1; padding:7px 6px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .arch-actionrow button:hover { background:var(--c-surface-2); }
+.arch-linkbtn { background:none; border:none; color:var(--c-ink-3); font-size:10.5px; cursor:pointer; padding:0; margin-top:6px; text-decoration:underline; }
+.arch-place-static { font-size:11.5px; color:var(--c-ink-2); }
+.arch-placehint { font-size:9.5px; color:var(--c-ink-4); margin:8px 0 3px; }
+#archPlaceEdit select { width:100%; padding:6px; border:1px solid var(--c-border-2); border-radius:6px; font-size:11.5px; background:var(--c-surface); color:var(--c-ink); margin-top:6px; }
 .arch-queueform { margin-top:10px; padding:9px; border:1px solid var(--c-border); border-radius:8px; background:var(--c-surface); }
 .arch-queueform input, .arch-queueform textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; box-sizing:border-box; }
 .arch-queueform textarea { resize:vertical; min-height:60px; }
@@ -634,12 +656,19 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
             <button data-arch-layer="status" title="Color by build status">Status</button>
             <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
           </span>
-          <button class="tt-addbtn" id="ttAddBtn" title="Add a component by hand">+ Add node</button>
+          <button class="tt-addbtn" id="archIdeaBtn" title="One line — Claude decides: a new component in the tree, or a seed">💡 Add an idea</button>
         </div>
       </div>
       <div class="arch-addhost" id="ttAddHost"></div>
       <div class="ws-map-body">
         <div class="arch-stage" id="archStage">
+          <div class="arch-ask" id="archAsk">
+            <div class="arch-ask-inputrow">
+              <input id="archAskInput" placeholder="Ask about this architecture…" autocomplete="off">
+              <button id="archAskGo">Ask</button>
+            </div>
+            <div class="arch-ask-answer" id="archAskAnswer" hidden></div>
+          </div>
           <div class="arch-zoombtns">
             <button data-arch-zoom="out" title="Zoom out">−</button>
             <button data-arch-zoom="in" title="Zoom in">+</button>
@@ -3900,6 +3929,7 @@ const TERRITORIES = [
 let archLayout = 'map', archLayer = 'territory', archSelected = null;
 const archViewport = { x: 0, y: 0, k: 1 };
 let archEdgesOn = true, archHover = null;
+let archTrail = null; // ids highlighted by the last "ask about this architecture" answer
 let archInited = false;
 let archQueueStatus = null;
 
@@ -3970,8 +4000,14 @@ async function initArchNav() {
   document.querySelectorAll('[data-arch-layer]').forEach(b => {
     b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); syncArchControls(); renderArchStage(); };
   });
-  const addBtn = document.getElementById('ttAddBtn');
-  if (addBtn) addBtn.onclick = () => renderArchAddForm();
+  const ideaBtn = document.getElementById('archIdeaBtn');
+  if (ideaBtn) ideaBtn.onclick = () => renderArchIdeaForm();
+  const askInput = document.getElementById('archAskInput');
+  const askGo = document.getElementById('archAskGo');
+  if (askInput && askGo) {
+    askGo.onclick = askArchGraph;
+    askInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') askArchGraph(); });
+  }
   document.querySelectorAll('[data-arch-zoom]').forEach(b => {
     b.onclick = () => {
       if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
@@ -4120,49 +4156,146 @@ function buildTreeHtml() {
   return html;
 }
 
-// Hand-authoring a node. Prerequisites are picked from the nodes that already exist,
-// which is what places the new node in the tree — depth (and therefore its row) is
-// derived from those picks, never chosen directly.
-function renderArchAddForm() {
+// The live graph for the backend's idea endpoints — the trunk lives here in the
+// HTML, so the server works from what the user sees.
+function archCatalog() {
+  return ARCH_DATA.map(c => ({
+    id: c.id, name: c.name, territory: c.territory,
+    status: c.status || 'Concept', what: c.what || '', depends: c.depends || [],
+  }));
+}
+
+const escS = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+// The one idea door: every entry point funnels here. One AI call routes the idea
+// — a new speculative component in the tree, or a Seed. Never on page load.
+async function submitIdea(concept, statusEl) {
+  if (!concept) { statusEl.textContent = 'Describe the idea first.'; return null; }
+  statusEl.textContent = 'Thinking…';
+  try {
+    const out = await apiWrite('/api/architecture/ideas', 'POST', { concept, catalog: archCatalog() });
+    if (out.kind === 'node') {
+      await loadArchNodes();
+      renderArchStage();
+      selectArchNode(out.node.id); // speculative node, docked detail explains it
+    } else {
+      await loadIdeas();
+      statusEl.innerHTML = `Saved as a seed — <a href="#" class="core-handoff-link" data-seedjump>view it in Seeds</a>.`;
+      const a = statusEl.querySelector('[data-seedjump]');
+      if (a) a.onclick = (e) => { e.preventDefault(); setMode('core'); switchCoreView('seeds'); };
+    }
+    return out;
+  } catch (e) {
+    const friendly = { concept_required:'An idea is required.', duplicate:'This idea is already in the tree.', unparseable:'Claude did not return a usable routing — retry.' };
+    statusEl.textContent = friendly[e.message] || (String(e.message).startsWith('HTTP') ? 'Could not reach the server.' : 'The model did not answer — retry.');
+    return null;
+  }
+}
+
+// Inline composer for the Architecture graph ("💡 Add an idea").
+function renderArchIdeaForm() {
   const host = document.getElementById('ttAddHost');
   if (!host) return;
-  host.classList.toggle('open', !host.innerHTML);
-  if (host.innerHTML) { host.innerHTML = ''; return; } // second click closes it
-  const terrOpts = TERRITORIES.map(t => `<option value="${t.id}">${t.label}</option>`).join('');
-  const depOpts = ARCH_DATA.slice().sort((a,b)=>a.name.localeCompare(b.name))
-    .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const open = !host.classList.contains('open');
+  host.classList.toggle('open', open);
+  if (!open) { host.innerHTML = ''; return; } // second click closes it
   host.innerHTML = `<div class="tt-addform">
-      <input id="ttName" placeholder="Name — e.g. Cross-corpus inference">
-      <select id="ttTerritory">${terrOpts}</select>
-      <textarea id="ttWhat" placeholder="What is it? (one or two sentences)"></textarea>
-      <textarea id="ttWhy" placeholder="Why does it matter?"></textarea>
-      <textarea id="ttNext" placeholder="Concrete first step to build it"></textarea>
-      <label class="tt-addlabel">Depends on (ctrl/cmd-click for several — leave empty for a root)</label>
-      <select id="ttDepends" multiple size="7">${depOpts}</select>
-      <div class="arch-actionrow"><button id="ttSave">Add to tree</button><button id="ttCancel">Cancel</button></div>
-      <div class="arch-qf-status" id="ttStatus"></div>
+      <textarea id="ttIdea" rows="2" placeholder="One line about the idea — Claude places it: a component in the tree, or a seed."></textarea>
+      <div class="arch-actionrow"><button id="ttIdeaGo">Add</button><button id="ttIdeaCancel">Cancel</button></div>
+      <div class="arch-qf-status" id="ttIdeaStatus"></div>
     </div>`;
-  document.getElementById('ttCancel').onclick = () => { host.innerHTML = ''; document.getElementById('ttAddHost').classList.remove('open'); };
-  document.getElementById('ttSave').onclick = async () => {
-    const status = document.getElementById('ttStatus');
-    const name = document.getElementById('ttName').value.trim();
-    if (!name) { status.textContent = 'A name is required.'; return; }
-    status.textContent = 'Saving…';
-    try {
-      await apiWrite('/api/architecture/nodes', 'POST', {
-        name,
-        territory: document.getElementById('ttTerritory').value,
-        what: document.getElementById('ttWhat').value,
-        why: document.getElementById('ttWhy').value,
-        next: document.getElementById('ttNext').value,
-        depends: Array.from(document.getElementById('ttDepends').selectedOptions).map(o => o.value),
-      });
-      await loadArchNodes();
-      host.innerHTML = '';
-      document.getElementById('ttAddHost').classList.remove('open');
-      renderArchStage();
-    } catch (e) { status.textContent = 'Could not save: ' + (e.message || e); }
+  const status = document.getElementById('ttIdeaStatus');
+  document.getElementById('ttIdeaCancel').onclick = () => { host.innerHTML = ''; host.classList.remove('open'); };
+  const go = async () => {
+    const out = await submitIdea(document.getElementById('ttIdea').value.trim(), status);
+    if (out && out.kind === 'node') { host.innerHTML = ''; host.classList.remove('open'); }
   };
+  document.getElementById('ttIdeaGo').onclick = go;
+  document.getElementById('ttIdea').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); }
+  });
+}
+
+// Popover composer for the header "💬 New idea" button — same door, same brains.
+function openIdeaComposer() {
+  let host = document.getElementById('ideaComposer');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'ideaComposer';
+    host.className = 'idea-composer';
+    host.innerHTML = `<div class="idea-composer-inner">
+        <div class="idea-composer-title">New idea</div>
+        <textarea id="ideaCompInput" rows="2" placeholder="One line about the idea — Claude decides where it belongs."></textarea>
+        <div class="arch-actionrow"><button id="ideaCompGo">Add</button><button id="ideaCompCancel">Cancel</button></div>
+        <div class="arch-qf-status" id="ideaCompStatus"></div>
+      </div>`;
+    document.body.appendChild(host);
+    document.getElementById('ideaCompCancel').onclick = () => { host.classList.remove('open'); };
+    const go = async () => {
+      const out = await submitIdea(document.getElementById('ideaCompInput').value.trim(), document.getElementById('ideaCompStatus'));
+      if (out && out.kind === 'node') { host.classList.remove('open'); document.getElementById('ideaCompInput').value = ''; }
+    };
+    document.getElementById('ideaCompGo').onclick = go;
+    document.getElementById('ideaCompInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); }
+    });
+  }
+  host.classList.toggle('open', !host.classList.contains('open'));
+  if (host.classList.contains('open')) {
+    document.getElementById('ideaCompStatus').textContent = '';
+    const inp = document.getElementById('ideaCompInput');
+    inp.focus();
+  }
+}
+window.openIdeaComposer = openIdeaComposer;
+
+// Error-code → friendly line, shared by the ask flow.
+function archFriendlyError(e) {
+  if (e && (e.message === 'question_required')) return 'A question is required.';
+  if (e && (e.message === 'unparseable')) return 'Claude did not return a usable answer — retry.';
+  if (e && String(e.message).startsWith('HTTP')) return 'Could not reach the server.';
+  return 'The model did not answer — retry.';
+}
+
+// "Ask about this architecture": a question in, an answer out; the components the
+// answer touches light up as a trail on the graph. One model call per click.
+async function askArchGraph() {
+  const input = document.getElementById('archAskInput');
+  const go = document.getElementById('archAskGo');
+  const answerEl = document.getElementById('archAskAnswer');
+  const q = (input && input.value || '').trim();
+  if (!q) return;
+  go.disabled = true;
+  answerEl.hidden = false;
+  answerEl.textContent = 'Thinking…';
+  try {
+    const out = await apiWrite('/api/architecture/graph/ask', 'POST', { question: q, catalog: archCatalog() });
+    archTrail = new Set(out.ids || []);
+    drawArchDeps();
+    answerEl.innerHTML = '';
+    const txt = document.createElement('div');
+    txt.textContent = out.answer || '';
+    answerEl.appendChild(txt);
+    const tools = document.createElement('div');
+    tools.className = 'arch-ask-tools';
+    const taskBtn = document.createElement('button');
+    taskBtn.textContent = 'Turn into a task';
+    taskBtn.onclick = async () => {
+      let status = answerEl.querySelector('.arch-ask-status');
+      if (!status) { status = document.createElement('div'); status.className = 'arch-ask-status'; answerEl.appendChild(status); }
+      await queuePromptDirect('Architecture question — ' + q, out.answer || q, null, status);
+    };
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = 'Clear';
+    clearBtn.onclick = () => { archTrail = null; drawArchDeps(); answerEl.hidden = true; answerEl.innerHTML = ''; };
+    tools.appendChild(taskBtn);
+    tools.appendChild(clearBtn);
+    answerEl.appendChild(tools);
+  } catch (e) {
+    answerEl.textContent = archFriendlyError(e);
+  } finally {
+    go.disabled = false;
+  }
 }
 
 function renderArchStage() {
@@ -4196,15 +4329,26 @@ function drawArchDeps() {
   const overlay = document.getElementById('archOverlay');
   const canvas = document.getElementById('archCanvas');
   if (!overlay || !canvas) return;
-  document.querySelectorAll('.arch-node.arch-dim').forEach(n => n.classList.remove('arch-dim'));
+  // Focus: hover (mouse) > trail (ask answer) > selection (click). The trail is
+  // the union of the answered components' neighbourhoods.
+  let trailSet = null;
+  if (archTrail && archTrail.size) {
+    trailSet = new Set();
+    archTrail.forEach(id => archNeighbors(id).forEach(x => trailSet.add(x)));
+  }
+  const focus = archHover ? archNeighbors(archHover) : (trailSet || (archSelected ? archNeighbors(archSelected) : null));
+  const activeFocus = !!(focus && focus.size);
+  document.querySelectorAll('.arch-node').forEach(n => {
+    const id = n.getAttribute('data-arch-id');
+    n.classList.toggle('arch-dim', activeFocus && !focus.has(id));
+    n.classList.toggle('arch-hot', !!(archTrail && archTrail.has(id)));
+  });
   if (!archEdgesOn) { overlay.innerHTML = ''; return; }
   overlay.setAttribute('width', canvas.scrollWidth);
   overlay.setAttribute('height', canvas.scrollHeight);
   const cr = canvas.getBoundingClientRect();
   const X = r => (r.left - cr.left) / archViewport.k;
   const Y = r => (r.top - cr.top) / archViewport.k;
-  const focus = archHover ? archNeighbors(archHover) : (archSelected ? archNeighbors(archSelected) : null);
-  const activeFocus = !!(focus && focus.size);
   let svgHtml = '<defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>';
   ARCH_DATA.forEach(c => {
     (c.depends || []).forEach(depId => {
@@ -4241,6 +4385,7 @@ function drawArchDeps() {
 
 function selectArchNode(id) {
   archSelected = id;
+  archTrail = null; // clicking a component supersedes the ask trail
   document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('selected', n.getAttribute('data-arch-id')===id));
   drawArchDeps();
   renderArchDetail(id);
@@ -4308,6 +4453,24 @@ function renderArchDetail(id) {
     html += `<div class="arch-field"><div class="arch-field-label">Evolution path</div><div class="arch-versionladder">`;
     c.versions.forEach(([tag,desc]) => { html += `<div class="arch-vstep"><span class="vtag">${tag}</span>${desc}</div>`; });
     html += `</div></div>`;
+  }
+
+  // Stored nodes can be re-placed in the tree (territory + what they depend on).
+  // Trunk nodes are hardcoded in the app file, so they stay as authored.
+  if (c._stored) {
+    const deps = archPrereqs(c).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const cands = ARCH_DATA.filter(x => x.id !== c.id).slice().sort((a,b)=>a.name.localeCompare(b.name))
+      .map(x => `<option value="${x.id}" ${(c.depends||[]).includes(x.id)?'selected':''}>${x.name}</option>`).join('');
+    html += `<div class="arch-field"><div class="arch-field-label">Placement</div>
+      <div class="arch-place-static" id="archPlaceStatic">${terr ? terr.label : c.territory} · ${deps ? 'depends: ' + archPrereqs(c).map(p=>p.name).join(', ') : 'root'}</div>
+      <button class="arch-linkbtn" id="archPlaceToggle">✎ Edit placement</button>
+      <div id="archPlaceEdit" style="display:none;">
+        <select id="archPlaceTerr">${TERRITORIES.map(t => `<option value="${t.id}" ${t.id===c.territory?'selected':''}>${t.label}</option>`).join('')}</select>
+        <div class="arch-placehint">Depends on (ctrl/cmd-click for several — empty keeps it a root)</div>
+        <select id="archPlaceDeps" multiple size="5">${cands}</select>
+        <div class="arch-actionrow"><button id="archPlaceSave">Accept</button><button id="archPlaceCancel">Cancel</button></div>
+        <div class="arch-qf-status" id="archPlaceStatus"></div>
+      </div></div>`;
   }
 
   // Suggested next steps — Claude-generated, ready-to-queue prompts. Regeneration is
@@ -4397,6 +4560,28 @@ function renderArchDetail(id) {
   host.querySelectorAll('[data-arch-jump]').forEach(a => {
     a.onclick = (e) => { e.preventDefault(); selectArchNode(a.getAttribute('data-arch-jump')); };
   });
+
+  const toggle = document.getElementById('archPlaceToggle');
+  if (toggle) toggle.onclick = () => {
+    const box = document.getElementById('archPlaceEdit');
+    const shown = box.style.display !== 'none';
+    box.style.display = shown ? 'none' : 'block';
+    toggle.textContent = shown ? '✎ Edit placement' : '✕ Close';
+  };
+  const saveP = document.getElementById('archPlaceSave');
+  if (saveP) saveP.onclick = async () => {
+    const status = document.getElementById('archPlaceStatus');
+    status.textContent = 'Saving…';
+    try {
+      await apiWrite(`/api/architecture/nodes/${c.id}`, 'PATCH', {
+        territory: document.getElementById('archPlaceTerr').value,
+        depends: Array.from(document.getElementById('archPlaceDeps').selectedOptions).map(o => o.value),
+      });
+      await loadArchNodes(); renderArchStage(); renderArchDetail(c.id); selectArchNode(c.id);
+    } catch (e) { status.textContent = 'Could not save: ' + (e.message || e); }
+  };
+  const cancelP = document.getElementById('archPlaceCancel');
+  if (cancelP) cancelP.onclick = () => { document.getElementById('archPlaceEdit').style.display = 'none'; toggle.textContent = '✎ Edit placement'; };
 
   document.getElementById('archAskBtn').onclick = () => {
     const prompt = `About the "${c.name}" component (${c.territory}, currently ${c.status}): ${c.what} Current state: ${c.now}`;
@@ -4989,7 +5174,7 @@ function openChatWithPrompt(text) {
 
   document.addEventListener('DOMContentLoaded', function(){
     var nb = document.getElementById('coreNewIdeaBtn');
-    if(nb) nb.onclick = function(){ openNewIdeaStudio(); };
+    if(nb) nb.onclick = function(){ window.openIdeaComposer(); };
     var sf = document.getElementById('shapeFirstBtn');
     if(sf) sf.onclick = function(){
       // seed a real idea from the form text, then open its studio
