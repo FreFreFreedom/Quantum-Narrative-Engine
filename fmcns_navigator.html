@@ -3163,7 +3163,7 @@ function renderSuggestions() {
       openStudio({
         type: 'suggestion',
         subjectId: id,
-        title: s.title,
+        title: ((tvSuggestions.find(x => x.id === id) || {}).title || 'Suggestion'),
         onDone: () => { loadSuggestions(); qLoad(); },
       });
     };
