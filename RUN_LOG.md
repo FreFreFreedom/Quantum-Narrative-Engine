@@ -510,3 +510,4 @@ Interactive session with Antoine. Branch: `overnight/2026-08-13`. Not yet commit
 - Two CSS spot-fixes along the way: node label halo now uses a dedicated `--c-halo` token, and the amber "Target" toggle uses `--c-ink-solid` so its text inverts correctly in dark.
 - Verified: all 5 inline script blocks pass `node --check`; CSS braces balanced; map region untouched.
 - PENDING Antoine: eyeball both themes (open the file, toggle the button top-right). If a color looks wrong in dark, name the element — token table lives at top of the file.
+- SHIPPED: Antoine verified on :3000 and said "ship it". Committed `2ed9e18` (only the 3 intended files; pre-staged agent bookkeeping files left out of the commit and returned to their staged state), fast-forwarded `main`, pushed — Railway auto-deploys `queue-server/` from main, so the live site will pick up the toggle. Review worktree main ref updated to match.

@@ -13,8 +13,6 @@
     "question": "allow",
     "bash": {
       "*": "allow",
-      "git push*": "deny",
-      "git * push*": "deny",
       "git reset --hard*": "deny",
       "git clean -f*": "deny",
       "git branch -D*": "deny",
