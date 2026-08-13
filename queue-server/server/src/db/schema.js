@@ -35,6 +35,7 @@ export function openDb() {
   initBookDetailSchema(db);
   initDiscoverySchema(db);
   initConversationsSchema(db);
+  initFilmEnrichmentSchema(db);
   return db;
 }
 
@@ -477,6 +478,11 @@ export function initOntologySchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag)`); } catch {}
 
+  // Salient facts: which verified TMDb facts a tag/cluster lens foregrounds. The
+  // lens call returns prose + a short JSON list of salient facts; stored here so
+  // the client can highlight/dim the entity's fact sheet through the active lens.
+  try { db.exec(`ALTER TABLE entity_tag_lenses ADD COLUMN salient_json TEXT`); } catch {}
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS continuum_axes (
       key TEXT PRIMARY KEY,
@@ -821,4 +827,55 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
+}
+
+// ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────
+// Two tables, both keyed off TMDb, following the generate-once-and-cache pattern
+// (see books.js / codeDiscovery.js's github_discovery_cache):
+// - tmdb_enrichments: the RESULT, one row per film entity. Deliberately keyed by
+//   entity_id and NOT written into entities.meta, because migrateOntology()
+//   re-seeds/overwrites every entity's meta on every boot (ON CONFLICT DO UPDATE)
+//   — data written into meta would be erased at the next deploy. This table
+//   survives reseeds and is merged client-side at boot.
+// - tmdb_cache: raw API responses keyed by request hash (search/detail), so a
+//   batch re-run reuses earlier answers. 30-day TTL enforced in the service
+//   (filmEnrichment.js). Negative results ("movie not found") are cached too —
+//   otherwise every boot would re-query the same missing titles.
+export function initFilmEnrichmentSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tmdb_enrichments (
+      entity_id TEXT PRIMARY KEY REFERENCES entities(id),
+      -- matched | not_found | ambiguous | error — see filmEnrichment.js for the
+      -- matching rules (year-scoped search + director validation vs. meta.auteurs).
+      status TEXT NOT NULL DEFAULT 'error',
+      tmdb_id INTEGER,
+      match_confidence INTEGER NOT NULL DEFAULT 0,
+      title TEXT,
+      title_en TEXT,
+      original_language TEXT,
+      year INTEGER,
+      release_date TEXT,
+      -- Overview pulled with language=en-US (the corpus is partly non-English
+      -- films; the enrichment block always shows the English synopsis plus the
+      -- original-language title).
+      synopsis_en TEXT DEFAULT '',
+      genres_json TEXT NOT NULL DEFAULT '[]',
+      keywords_json TEXT NOT NULL DEFAULT '[]',
+      countries_json TEXT NOT NULL DEFAULT '[]',
+      cast_json TEXT NOT NULL DEFAULT '[]',
+      director TEXT,
+      poster_path TEXT,
+      fetched_at TEXT,
+      attempted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_tmdb_enrich_status ON tmdb_enrichments(status)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tmdb_cache (
+      request_key TEXT PRIMARY KEY,
+      payload TEXT NOT NULL,
+      fetched_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
 }

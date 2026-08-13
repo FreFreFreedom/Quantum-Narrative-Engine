@@ -753,3 +753,58 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`. Antoine said "s
 - Sync rule added to AGENTS.md (hard rule): after every frontend round, copy the master to `queue-server/public/index.html` and verify checksums — Antoine tests on :3000, which serves the copy, not the master.
 - Verified: 5 script blocks `node --check`, CSS braces balanced, HTML balanced, master ↔ served copy checksums identical.
 - SHIPPED: committed (intended files only), fast-forwarded `main`, pushed — Railway auto-deploys from main; Antoine hard-refreshes :3000.
+
+---
+
+# RUN_LOG — TMDb film enrichment (all 199 films), 2026-08-13
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Built per approved plan (backend service, NOT a queue task; all 199 films).
+
+- New `services/filmEnrichment.js`: hand-rolled TMDb client (v3 `api_key` query param — Bearer header is v4-only and 401s), 15 s timeout, search by title+year with a yearless retry (TMDb's year filter is exact; seed dates drift ±1), candidate scoring (release-year window ±2), and director validation against the seed's auteurs (match_confidence: 3 = title+year+director, 2 = year+single candidate).
+- Language rule (Antoine): `original_title` shown (native language), synopsis + all other metadata via `language=en-US`, `title_en` kept when it differs. Verified live: Nattvardsgästerna (sv), جدایی نادر از سیمین (fa), La Pianiste (fr), 아가씨 (ko).
+- Two new tables in schema.js (`initFilmEnrichmentSchema`): `tmdb_enrichments` (keyed by entity_id — survives the boot reseed that clobbers `entities.meta`) and `tmdb_cache` (raw responses, 30-day TTL, negatives cached as `__missing` so misses don't re-hit the API every boot).
+- Routes in `routes/ontology.js`: GET /enrichments, POST /entities/:id/enrich-film (force flag), POST /enrich-films/all, GET /enrich-films/status (in-memory batch state).
+- Frontend: film detail cards get a 🎬 TMDb block (poster, original title, year, language, director, genre chips, production countries, top-12 cast, English synopsis; statuses for not-found/ambiguous with Retry); "🎬 Enrich all films" button + live progress in the graph toolbar; enrichments merged at boot into entities.
+- Two bugs found and fixed during live testing: (1) empty search results were being cached as a valid response, poisoning the cache — empty sets now store as "missing"; (2) found the stale not_found status short-circuit (by design — Retry/force re-queries).
+- LIVE RESULTS: 199/199 films processed, 196 at confidence 3, 2 at confidence 2, 1 not_found (`f_the_righteous_gemstones` — a TV series, correctly absent from TMDb's movie search). 399 raw responses cached. Zero failures.
+- Antoine's TMDb v3 key set locally as TMDB_API_KEY. On Railway: set the same env var, then deploy. Nothing committed/pushed — Antoine's call.
+
+---
+
+# RUN_LOG — TMDb "through the lens" + elegant fact sheet, 2026-08-13
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Antoine said "go".
+
+- Backend `tagLens.js`: lens reads for film entities now get a "Verified facts (TMDb database…)" block in the prompt (genres, countries, original language, director, top-8 cast, top-10 keywords, release date) so reads anchor in real data. Cluster codes are now valid lens keys (films have no tags; their thematic clusters are the lenses): cluster lenses get cluster-aware phrasing with the cluster name from the clusters table.
+- Frontend: film detail header is now a fact-sheet card — verified year · language badge · production country chips · genre chips inline under the name, original-language title line when it differs, poster tucked in the corner. The TMDb block below is a quiet sheet: English synopsis, "Starring" small-caps line, facts fold (release, language, production, keywords).
+- Lens-reactive: while a tag/cluster lens is active, the fact sheet collapses to a one-line "Verified facts vs TMDb · N genres · M keywords · N cast [Show all]" strip; toggling the lens off or clicking Show all restores it.
+- Films get "Themes" chip row (their clusters, violet) acting as lenses; auto-open first cluster lens on select, like characters' first tag.
+- New "Connected by cast" section on film cards: other corpus films sharing ≥1 actor from verified cast (teal dot, clickable rows; directors excluded — that's what the gold Diagonal is for).
+- Verified live: cluster lens on f_a_separation (code III) generated a fresh read (cached:false) grounded in the film's real details; characters' tag-lens path unaffected (cached hit). All 5 script blocks node --check clean, CSS/HTML balanced, copies synced + checksums identical.
+- NOT YET SHIPPED — Antoine to test on :3000 (hard refresh) and say the word.
+
+---
+
+# RUN_LOG — Lens filtering of verified facts + junk purge + movie-click fix, 2026-08-13
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`.
+
+- Diagnosis first: 214/216 cached lens reads and 214/221 cached book lists were machine garbage (raw model envelopes, "Mock run." stubs) left over from the old mock era. Purged both tables; kept the 2 real lenses and 7 real book lists. Database swept again at the end of this round — zero junk rows remain.
+- Junk guard (permanent): `tagLens.js` now refuses to serve or cache corrupt text (envelope JSON, "USER SUMMARY"/"Mock run" markers) — a corrupt cached row is deleted on sight and regenerated; `books.js` validates every suggested entry and drops anything that isn't a real book.
+- Through-the-lens now actually FILTERS: a lens generation returns its prose plus a short list of the verified facts it foregrounds ("salient" — e.g. Genres: Drama · Director: Asghar Farhadi · Keywords: …), stored in a new `salient_json` column. The film fact sheet then highlights exactly those facts (genres, countries, keywords, cast, director, language, release date) and dims the rest, with a "Filtered through «lens»" strip and Show all.
+- FIX — "clicking a movie, nothing appears": (1) the film header rewrite could crash when a film had no enrichment row, blanking the whole panel — now null-safe with a plain-card fallback; (2) the fact sheet used to collapse the instant a lens was clicked, so while the (slow/flaky) model generated, the panel showed only a tiny strip and "Loading…" — the sheet now stays fully visible until the lens's salient facts actually arrive; (3) lens and book requests had no timeout and could hang forever — both now cap at 90 s with a plain-English message. Verified with a headless render harness: 8/8 scenarios pass, including the previously-crashing one.
+- Local server restarted with `WARMUP_DISABLED=1` (existing flag): the boot cache warm-up's 427 background generations were crowding the flaky local CLI backends and making live reads fail/hang.
+- Verified live: fresh lens on f_a_separation (code III) — clean prose + salient parsed and cached; corrupt row injected on purpose → dropped and regenerated, never served; cached reads return salient. All 5 script blocks node --check clean, CSS/HTML balanced, master ↔ served copy checksums identical.
+- NOT YET SHIPPED — Antoine to test on :3000 (hard refresh) and say the word.
+
+---
+
+# RUN_LOG — FIX: movies blank on click (two root causes), 2026-08-13
+
+Antoine reported: clicking a movie shows nothing; characters work. Reproduced in a full headless-DOM harness (real server data, simulated clicks) — the movie click died with `ReferenceError`, the character click rendered fine.
+
+- ROOT CAUSE 1: the movie "Themes" chip row (added in the lens round) calls `escapeHtml`, which is only defined inside the Idea Studio closure at the bottom of the file — invisible to the navigator code. Every movie click threw, the catch rendered a tiny gray error line, which read as "nothing appears". Fix: top-level `escapeHtml` in the navigator section; the panel error message is now visually prominent so a future failure can't pass for "nothing". Earlier verification missed this because the function-level test harness stubbed `escapeHtml` itself, and `node --check` only catches syntax.
+- ROOT CAUSE 2: `listEnrichments` (the boot endpoint feeding the frontend) returned the genre/country/keyword/cast columns as raw JSON strings while the rest of the code expected arrays — so even a rendered movie card would have shown no chips, no keywords, no cast connections. Fix: `listEnrichments` now parses like `getEnrichment` (shared `safeArr`).
+- Verified: harness now renders the full movie panel (header card + chips, synopsis, director, keywords, cast section — 3019 chars, no error) and the character panel unchanged; live API returns parsed arrays (f_a_separation: genres [Drama], countries [Iran, France], 12 cast). All 5 blocks node --check clean, CSS balanced, master ↔ served copy ↔ served response checksums identical.
+- Lesson recorded: frontend changes get verified with the headless click harness (no stubbed app functions), not just syntax checks.
+- NOT YET SHIPPED — Antoine to hard-refresh and click movies again.

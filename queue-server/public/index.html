@@ -121,6 +121,28 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
 .dot.diag { background:#d99a3d; } .dot.ent { background:#8b6fb0; } .dot.bridge { background:#4f9d7a; }
 .empty { font-size:11.5px; color:var(--c-ink-4); }
+.card.film-card { position:relative; }
+.card.film-card .fposter { position:absolute; right:10px; top:8px; height:50px; width:33px; object-fit:cover; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.35); }
+.card.film-card .name, .card.film-card .sub, .card.film-card .tmdb-origtitle { padding-right:46px; }
+.tmdb-origtitle { font-size:11px; color:var(--c-ink-3); margin-top:2px; }
+.tmdb-alt { font-size:10.5px; color:var(--c-ink-4); font-weight:400; }
+.film-facts { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
+.tmdb-lang { text-transform:uppercase; font-weight:600; font-size:10px; color:var(--c-violet); }
+.tmdb-chip { display:inline-block; padding:1px 7px; border:1px solid var(--c-border-2); border-radius:10px; font-size:10px; color:var(--c-ink-2); background:var(--c-surface); }
+.tmdb-block { margin:8px 0; }
+.tmdb-synopsis { font-size:11.5px; color:var(--c-ink-2); line-height:1.55; border-left:2px solid var(--c-border-3); padding-left:8px; }
+.tmdb-starring { font-size:10.5px; color:var(--c-ink-4); margin-top:7px; font-variant:small-caps; letter-spacing:.4px; }
+.tmdb-facts { margin-top:6px; font-size:10.5px; color:var(--c-ink-4); line-height:1.6; }
+.tmdb-facts b { color:var(--c-ink-3); font-weight:600; }
+.tmdb-strip { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--c-ink-3); padding:6px 0; }
+.tmdb-preview { color:var(--c-violet); }
+.tmdb-hit { color:var(--c-ink); font-weight:600; }
+.tmdb-dim { opacity:.35; }
+.tmdb-none { font-size:11.5px; color:var(--c-ink-3); margin:8px 0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.dot.cast { background:#2f9e8f; }
+.section-title.cast { color:#2f9e8f; }
+.tagrow-label { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); margin-right:2px; vertical-align:middle; }
+.tag.cluster-lens { border-color:var(--c-brand); color:var(--c-brand); }
 .bookbtn { width:100%; padding:7px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11.5px; cursor:pointer; margin:8px 0; }
 .bookbtn:hover { background:var(--c-surface-2); }
 /* ─── Exploration: continuum filter/sort controls + list view ─────────────── */
@@ -644,6 +666,8 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       <button class="ctrlbtn" id="toggleBridges">Bridges: on</button>
       <button class="ctrlbtn" id="toggleShowAll">Show all connections</button>
       <button class="ctrlbtn" id="resetBtn">Reset view</button>
+      <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)">🎬 Enrich all films</button>
+      <span id="enrichStatus" style="font-size:10.5px;color:var(--c-ink-4);"></span>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
     </div>
     <div class="graph-stage" data-src="Content navigator → main graph (nodes/edges/zones) | fmcns_navigator.html: #graphSvg rendering near renderZoneLabels()/renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
@@ -876,6 +900,7 @@ const API_BASE = localStorage.getItem('fmcns_api_base')
       : 'https://quantum-narrative-engine-production.up.railway.app');
 let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
 let ENTITIES = [], CLUSTERS = {}, AXES = {};
+let ENRICHMENTS = {}; // entity_id -> tmdb_enrichments row (merged into entities as e.enrichment)
 const byId = {};
 
 async function api(path) {
@@ -915,13 +940,16 @@ document.getElementById('loginBtn').onclick = async function() {
 
 async function boot() {
   try {
-    const [entRes, clRes, axRes, facetRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes, enrichRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
       // Tolerate an older backend that predates /facets rather than failing to boot.
       api('/api/ontology/facets').catch(() => null),
+      api('/api/ontology/enrichments').catch(() => null),
     ]);
     ENTITIES = entRes.entities;
-    ENTITIES.forEach(e => byId[e.id] = e);
+    ENRICHMENTS = {};
+    if (enrichRes && enrichRes.enrichments) enrichRes.enrichments.forEach(r => ENRICHMENTS[r.entity_id] = r);
+    ENTITIES.forEach(e => { byId[e.id] = e; if (ENRICHMENTS[e.id]) e.enrichment = ENRICHMENTS[e.id]; });
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
     axRes.axes.forEach(a => AXES[a.key] = a);
 
@@ -1667,6 +1695,7 @@ function initGraph(){
     drawGraph();
   };
   document.getElementById('resetBtn').onclick = function(){ camera.x=0;camera.y=0;camera.scale=1; applyCamera(); focusedId=null; hoveredId=null; layoutAndDraw(); };
+  document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
 }
 
 function applyCamera(){ document.getElementById('viewport').setAttribute('transform', `translate(${camera.x},${camera.y}) scale(${camera.scale})`); }
@@ -1720,6 +1749,254 @@ function setupZoomPan(){
 }
 
 // ---------- Detail panel ----------
+function posterUrl(path) { return path ? 'https://image.tmdb.org/t/p/w342' + path : null; }
+
+// TMDb block for film entities — objective scaffolding (original-language title,
+// English synopsis and metadata), per data-seed/docs/ontology.md. Pure client
+// rendering: the data comes from /api/ontology/enrichments merged at boot.
+//
+// Lens filtering: when a tag/cluster lens is active, the fact sheet renders
+// FILTERED through that lens — the verified facts the lens foregrounded
+// (returned by the backend as `salient`, e.g. ["Genres: Drama","Director: X"])
+// are highlighted and the rest dimmed, with a "Filtered through «lens»" strip.
+let tmdbForceExpand = false;
+let activeLensSalient = null; // salient facts of the active lens (backend-provided)
+let activeLensLabel = '';     // human label of the active lens
+let activeLensFailed = false; // lens generation failed/timed out — stop promising a read
+
+// Parse the backend's salient list into per-category match sets.
+function salientMap(salient) {
+  const m = { genres: new Set(), keywords: new Set(), countries: new Set(), cast: new Set(), director: null, language: null, release: null };
+  (salient || []).forEach(s => {
+    const i = String(s).indexOf(': ');
+    if (i < 0) return;
+    const key = String(s).slice(0, i).toLowerCase();
+    const vals = String(s).slice(i + 2).split(',').map(v => v.trim()).filter(Boolean);
+    if (key === 'genres') vals.forEach(v => m.genres.add(normPerson(v)));
+    else if (key === 'keywords') vals.forEach(v => m.keywords.add(normPerson(v)));
+    else if (key === 'production countries') vals.forEach(v => m.countries.add(normPerson(v)));
+    else if (key === 'main cast') vals.forEach(v => m.cast.add(normPerson(v)));
+    else if (key === 'director') m.director = normPerson(vals[0] || '');
+    else if (key === 'original language') m.language = String(vals[0] || '').toLowerCase();
+    else if (key === 'theatrical release date') m.release = vals[0];
+  });
+  return m;
+}
+
+// Wrap an item in hit/dim styling when the fact sheet is lens-filtered.
+function salStyle(name, set, sm, lensActive) {
+  if (!lensActive || !sm) return name;
+  return set.has(normPerson(name)) ? `<span class="tmdb-hit">${name}</span>` : `<span class="tmdb-dim">${name}</span>`;
+}
+
+// One-line preview of what the active lens foregrounds (used in the strip).
+function salientPreview(sm) {
+  const parts = [];
+  const list = (s) => [...s].slice(0, 2).join(', ');
+  if (sm.genres.size) parts.push('genres ' + list(sm.genres));
+  if (sm.keywords.size) parts.push('keywords ' + list(sm.keywords));
+  if (sm.countries.size) parts.push('countries ' + list(sm.countries));
+  if (sm.cast.size) parts.push('cast ' + list(sm.cast));
+  if (sm.director) parts.push('director ' + sm.director);
+  return parts.join(' · ');
+}
+
+// Film header card (fact-sheet style). Built by selectEntity and re-rendered by
+// refreshTmdbBlock so lens-filtering reaches the chips too. Null-safe: a film
+// with no enrichment row still renders a plain header instead of crashing the
+// whole panel.
+function filmHeaderHtml(e) {
+  const enr = e.enrichment;
+  const matched = !!(enr && enr.status === 'matched');
+  const color = TYPE_COLORS[e.type] || 'var(--c-ink-4)';
+  const filmYear = (matched && enr.year) || (e.meta && e.meta.year) || '';
+  const sm = salientMap(activeLensSalient);
+  const filtered = !!activeLensTag && !!activeLensSalient;
+  const poster = matched ? posterUrl(enr.poster_path) : null;
+  const chips = [];
+  if (matched) {
+    if (enr.original_language) chips.push(`<span class="tmdb-lang ${filtered && sm.language !== enr.original_language.toLowerCase() ? 'tmdb-dim' : ''}">${enr.original_language}</span>`);
+    (enr.countries || []).slice(0, 2).forEach(c => chips.push(`<span class="tmdb-chip ${filtered ? (sm.countries.has(normPerson(c)) ? 'tmdb-hit' : 'tmdb-dim') : ''}">${c}</span>`));
+    (enr.genres || []).slice(0, 4).forEach(g => chips.push(`<span class="tmdb-chip ${filtered ? (sm.genres.has(normPerson(g)) ? 'tmdb-hit' : 'tmdb-dim') : ''}">${g}</span>`));
+  }
+  const origTitle = matched && enr.title && enr.title.toLowerCase() !== e.name.toLowerCase()
+    ? `<div class="tmdb-origtitle">${enr.title}${enr.title_en ? ` <span class="tmdb-alt">(${enr.title_en})</span>` : ''}</div>` : '';
+  return `<div class="card film-card" style="background:linear-gradient(160deg, ${color}, var(--c-ink));">
+      <span class="type-badge">${e.type}</span>
+      ${poster ? `<img class="fposter" src="${poster}" alt="" loading="lazy">` : ''}
+      <div class="name">${e.name}</div>
+      <div class="sub">${filmYear}</div>
+      ${origTitle}
+      ${chips.length ? `<div class="film-facts">${chips.join('')}</div>` : ''}
+    </div>`;
+}
+
+function filmEnrichmentHtml(e, lensActive) {
+  const r = e && e.enrichment;
+  const lab = `<div class="section-title" style="color:var(--c-ink-3);">🎬 Verified metadata (TMDb)</div>`;
+  if (!r) {
+    return lab + `<div class="tmdb-none">No TMDb data yet. <button class="ctrlbtn" id="enrichFilmBtn">Enrich with TMDb</button></div>`;
+  }
+  if (r.status === 'not_found') {
+    return lab + `<div class="tmdb-none">Not found on TMDb. <button class="ctrlbtn" id="enrichFilmBtn">Retry</button></div>`;
+  }
+  if (r.status === 'error') {
+    return lab + `<div class="tmdb-none">Enrichment failed. <button class="ctrlbtn" id="enrichFilmBtn">Retry</button></div>`;
+  }
+  // matched / ambiguous
+  const warn = r.status === 'ambiguous'
+    ? `<div class="tmdb-none">⚠ Ambiguous match (several candidates) — verify this is the intended film.</div>` : '';
+  const nGenres = (r.genres || []).length, nKw = (r.keywords || []).length, nCast = (r.cast || []).length;
+  const sm = salientMap(activeLensSalient);
+  const filtered = lensActive && !!activeLensSalient;
+  // Collapse to the filtered strip ONLY once the lens has actually returned its
+  // salient facts. While the read is still loading (or failed), the full fact
+  // sheet stays visible — a slow model must never make the film's data vanish.
+  if (filtered && !tmdbForceExpand) {
+    const preview = salientPreview(sm) || `${nGenres} genres · ${nKw} keywords · ${nCast} cast names`;
+    return lab +
+      `<div class="tmdb-strip">Filtered through «${activeLensLabel || ''}» — <span class="tmdb-preview">${preview}</span>
+        <button class="ctrlbtn" id="tmdbToggle">Show all</button>
+        <button class="ctrlbtn" id="enrichFilmBtn" title="Re-query TMDb">↻</button>
+      </div>${warn}`;
+  }
+  const loadingNote = (lensActive && !filtered && !activeLensFailed)
+    ? `<div class="tmdb-strip">Reading this film through «${activeLensLabel || ''}»…</div>` : '';
+  const castLine = (r.cast || []).length
+    ? `<div class="tmdb-starring">Starring — ${r.cast.map(c => salStyle(c, sm.cast, sm, filtered)).join(', ')}</div>` : '';
+  const dirLine = r.director
+    ? `<div class="tmdb-facts"><b>Director</b> — ${salStyle(r.director, new Set(sm.director ? [sm.director] : []), sm, filtered)}</div>` : '';
+  const facts = [];
+  if (r.release_date) facts.push(['Release', salStyle(r.release_date, new Set(sm.release ? [sm.release] : []), sm, filtered)]);
+  if (r.original_language) facts.push(['Original language', salStyle(r.original_language.toUpperCase(), new Set(sm.language ? [sm.language.toUpperCase()] : []), sm, filtered)]);
+  if ((r.countries || []).length) facts.push(['Production', r.countries.map(c => salStyle(c, sm.countries, sm, filtered)).join(', ')]);
+  if ((r.keywords || []).length) facts.push(['Keywords', r.keywords.map(k => salStyle(k, sm.keywords, sm, filtered)).join(', ')]);
+  const factsRows = facts.length
+    ? `<div class="tmdb-facts">${facts.map(f => `<div><b>${f[0]}</b> — ${f[1]}</div>`).join('')}</div>` : '';
+  return lab +
+    `<div class="tmdb-block">
+      ${filtered ? `<div class="tmdb-strip">Filtered through «${activeLensLabel || ''}» — highlighted facts are what this lens foregrounds.</div>` : ''}
+      ${loadingNote}
+      <div class="tmdb-synopsis">${r.synopsis_en || ''}</div>
+      ${castLine}
+      ${dirLine}
+      ${factsRows}
+      ${warn}
+      <div class="tmdb-strip"><button class="ctrlbtn" id="enrichFilmBtn">↻ Re-query TMDb</button></div>
+    </div>`;
+}
+
+// Re-render the film header + fact sheet in place (used after enrichment, batch
+// refresh, and whenever the active tag lens changes). Respects the lens-collapse rule.
+function refreshTmdbBlock() {
+  const host = document.getElementById('tmdbBlock');
+  if (!host || !focusedId) return;
+  const ent = byId[focusedId];
+  if (!ent || ent.type !== 'film') return;
+  const hhost = document.getElementById('filmHeaderHost');
+  if (hhost) hhost.innerHTML = filmHeaderHtml(ent);
+  host.innerHTML = filmEnrichmentHtml(ent, !!activeLensTag);
+  const nb = document.getElementById('enrichFilmBtn');
+  if (nb) nb.onclick = () => enrichFilmNow(ent.id, nb);
+  const tg = document.getElementById('tmdbToggle');
+  if (tg) tg.onclick = () => { tmdbForceExpand = true; refreshTmdbBlock(); };
+}
+
+function normPerson(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+
+// "Connected by cast" — other corpus films sharing at least one actor with this
+// one (from the verified TMDb cast). The corpus already links films by shared
+// director/writer ("diagonal"); this is the cast analogue, so directors are
+// deliberately excluded here to keep the two sections non-redundant.
+function castConnections(e) {
+  const mine = new Set((e.enrichment && e.enrichment.cast || []).map(normPerson).filter(Boolean));
+  if (!mine.size) return [];
+  const out = [];
+  ENTITIES.forEach(o => {
+    if (o.id === e.id || o.type !== 'film' || !o.enrichment || !o.enrichment.cast || o.enrichment.status !== 'matched') return;
+    const shared = [];
+    (o.enrichment.cast || []).forEach(n => { if (mine.has(normPerson(n)) && !shared.includes(n)) shared.push(n); });
+    if (shared.length) out.push({ o, shared });
+  });
+  return out.sort((a, b) => b.shared.length - a.shared.length).slice(0, 8);
+}
+
+async function enrichFilmNow(entityId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Working…'; }
+  try {
+    const data = await apiWrite('/api/ontology/entities/' + entityId + '/enrich-film', 'POST', {});
+    if (focusedId !== entityId) return;
+    if (data.error) {
+      const host = document.getElementById('tmdbBlock');
+      if (host) host.innerHTML = `<div class="tmdb-none">TMDb unavailable — ${data.error === 'no_tmdb_key' ? 'server key not configured' : (data.detail || data.error)}.</div>`;
+      return;
+    }
+    const ent = byId[entityId];
+    if (ent) { ent.enrichment = data.enrichment; ENRICHMENTS[entityId] = data.enrichment; }
+    tmdbForceExpand = false;
+    refreshTmdbBlock();
+  } catch (err) {
+    if (focusedId === entityId) {
+      const host = document.getElementById('tmdbBlock');
+      if (host) host.innerHTML = `<div class="tmdb-none">Could not reach the server.</div>`;
+    }
+  } finally {
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+// ── "Enrich all films" batch (graph-controls button) ─────────────────────────
+let enrichAllTimer = null;
+async function enrichAllFilms() {
+  const statusEl = document.getElementById('enrichStatus');
+  if (statusEl) statusEl.textContent = 'Starting…';
+  try {
+    const data = await apiWrite('/api/ontology/enrich-films/all', 'POST', {});
+    if (statusEl && data.error) {
+      statusEl.textContent = data.error === 'no_tmdb_key' ? 'TMDb key not configured on the server.' : ('Batch failed: ' + (data.detail || data.error));
+      return;
+    }
+    pollEnrichAll();
+  } catch (err) {
+    if (statusEl) statusEl.textContent = 'Could not reach the server.';
+  }
+}
+
+async function pollEnrichAll() {
+  clearTimeout(enrichAllTimer);
+  const statusEl = document.getElementById('enrichStatus');
+  try {
+    const s = await api('/api/ontology/enrich-films/status');
+    if (!statusEl) return;
+    statusEl.textContent = s.running
+      ? `Enriching films… ${s.done}/${s.total} (${s.matched} matched, ${s.not_found} not found, ${s.ambiguous} ambiguous, ${s.failed} failed)`
+      : s.total
+        ? `Done — ${s.matched} matched, ${s.not_found} not found, ${s.ambiguous} ambiguous, ${s.failed} failed.`
+        : '';
+    if (s.running) enrichAllTimer = setTimeout(pollEnrichAll, 2500);
+    else refreshEnrichedEntities();
+  } catch { /* server briefly unreachable during batch — keep polling */ }
+}
+
+// After a batch finishes, refresh the entities' enrichment data so already-open
+// or next-clicked film cards show the new metadata without a reload.
+async function refreshEnrichedEntities() {
+  try {
+    const res = await api('/api/ontology/enrichments');
+    if (!res || !res.enrichments) return;
+    ENRICHMENTS = {};
+    res.enrichments.forEach(r => ENRICHMENTS[r.entity_id] = r);
+    ENTITIES.forEach(e => { if (ENRICHMENTS[e.id]) e.enrichment = ENRICHMENTS[e.id]; });
+    const host = document.getElementById('tmdbBlock');
+    if (host && focusedId) {
+      const ent = byId[focusedId];
+      if (ent && ent.type === 'film') host.innerHTML = filmEnrichmentHtml(ent, !!activeLensTag);
+      const nb = document.getElementById('enrichFilmBtn');
+      if (nb) nb.onclick = () => enrichFilmNow(focusedId, nb);
+    }
+  } catch { /* non-fatal */ }
+}
+
 function continuumHtml(e){
   const keys = Object.keys(e.continuum||{});
   if (!keys.length) return '';
@@ -1735,6 +2012,10 @@ function continuumHtml(e){
 async function selectEntity(id){
   focusedId = id;
   activeLensTag = null;
+  activeLensSalient = null;
+  activeLensLabel = '';
+  activeLensFailed = false;
+  tmdbForceExpand = false;
   focusedEdge = null;
   drawGraph();
   let e = byId[id];
@@ -1745,23 +2026,49 @@ async function selectEntity(id){
     // server-side can't silently blank out the whole detail panel again.
     const fetched = (r && r.entity) ? r.entity : r;
     if (fetched && fetched.id) e = fetched;
+    // Server-side entities carry no enrichment (it lives in its own table) — attach
+    // the client-merged copy so the TMDb block always renders.
+    const merged = byId[e.id] || {};
+    if (merged.enrichment) e.enrichment = merged.enrichment;
   } catch(err) { console.error('selectEntity fetch failed, using local fallback:', err); }
   if (!e) { document.getElementById(activeCardHost).innerHTML = '<div class="empty">Could not load this entity.</div>'; return; }
   try {
     const color = TYPE_COLORS[e.type] || 'var(--c-ink-4)';
+    const enr = (e.type === 'film') ? e.enrichment : null;
+    const filmYear = (enr && enr.status === 'matched' && enr.year) || (e.meta && e.meta.year) || '';
     const sub = e.type==='character' ? ((e.meta&&e.meta.filmTitle)||'') + (e.meta&&e.meta.filmYear? ' ('+e.meta.filmYear+')':'')
-      : e.type==='film' ? ((e.meta&&e.meta.year)||'') : 'Country';
-    let html = `<div class="card" style="background:linear-gradient(160deg, ${color}, var(--c-ink));">
-      <span class="type-badge">${e.type}</span>
-      <div class="name">${e.name}</div>
-      <div class="sub">${sub}</div>
-    </div>`;
+      : e.type==='film' ? String(filmYear) : 'Country';
+    let html;
+    if (e.type === 'film') {
+      // Fact-sheet header (filmHeaderHtml keeps the chips lens-filterable —
+      // refreshTmdbBlock re-renders this host whenever the active lens changes).
+      html = `<div id="filmHeaderHost">${filmHeaderHtml(e)}</div>`;
+    } else {
+      html = `<div class="card" style="background:linear-gradient(160deg, ${color}, var(--c-ink));">
+        <span class="type-badge">${e.type}</span>
+        <div class="name">${e.name}</div>
+        <div class="sub">${sub}</div>
+      </div>`;
+    }
     const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
     if (lensText) html += `<div class="note">${lensText}</div>`;
     else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
     if (e.tags && e.tags.length) {
       html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
       html += `<div id="lensHost"></div>`;
+    } else if (e.type === 'film' && e.clusters && e.clusters.length) {
+      // Films carry no archetype tags — their thematic clusters are the lenses
+      // (cluster codes work as lens keys; the backend phrases the read accordingly).
+      html += `<div class="tagrow"><span class="tagrow-label">Themes</span>${e.clusters.map(c => `<span class="tag cluster-lens" data-cluster="${c}" title="${escapeHtml(CLUSTERS[c] ? CLUSTERS[c].name : c)}">${escapeHtml(clusterLensLabel(c))}</span>`).join('')}</div>`;
+      html += `<div id="lensHost"></div>`;
+    }
+    if (e.type === 'film') {
+      html += `<div id="tmdbBlock">${filmEnrichmentHtml(e, !!activeLensTag)}</div>`;
+      const ccast = castConnections(e);
+      html += `<div class="section-title cast">Connected by cast (${ccast.length})</div>`;
+      html += ccast.length
+        ? ccast.map(c => `<div class="conn cast" data-goto="${c.o.id}"><span class="dot cast"></span>${c.o.name} — ${c.shared.slice(0, 3).join(', ')}${c.shared.length > 3 ? ' +' + (c.shared.length - 3) : ''}</div>`).join('')
+        : '<div class="empty">No other corpus films share cast.</div>';
     }
     html += continuumHtml(e);
     // Same corpus-wide echo search as the list cards, available without leaving the
@@ -1787,6 +2094,12 @@ async function selectEntity(id){
     document.getElementById(activeCardHost).innerHTML = html;
     document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
+    document.querySelectorAll('.tag[data-cluster]').forEach(elx => {
+      const code = elx.getAttribute('data-cluster');
+      elx.onclick = () => toggleTagLens(e, code, elx, clusterLensLabel(code));
+    });
+    const eb = document.getElementById('enrichFilmBtn');
+    if (eb) eb.onclick = () => enrichFilmNow(e.id, eb);
     document.querySelectorAll(`[data-echo="${e.id}"]`).forEach(btn => {
       btn.onclick = (ev) => { ev.stopPropagation(); toggleEchoes(e.id, btn); };
     });
@@ -1798,12 +2111,15 @@ async function selectEntity(id){
     if (e.tags && e.tags.length) {
       const firstTagEl = document.querySelector('.tag[data-tag]');
       if (firstTagEl) toggleTagLens(e, e.tags[0], firstTagEl);
+    } else if (e.type === 'film' && e.clusters && e.clusters.length) {
+      const firstClusterEl = document.querySelector('.tag[data-cluster]');
+      if (firstClusterEl) toggleTagLens(e, e.clusters[0], firstClusterEl, clusterLensLabel(e.clusters[0]));
     }
 
     loadBooksFor(e.id); // auto-loads (cached server-side after the first real generation per entity)
   } catch (err) {
     console.error('selectEntity render failed:', err);
-    document.getElementById(activeCardHost).innerHTML = `<div class="empty">Something went wrong rendering this entity (${err.message}).</div>`;
+    document.getElementById(activeCardHost).innerHTML = `<div class="empty" style="color:var(--c-warn);border:1px solid var(--c-warn);border-radius:8px;padding:10px;">Something went wrong rendering this entity (${err.message}).</div>`;
   }
 }
 
@@ -1867,40 +2183,82 @@ async function selectEdgeConnection(e) {
 
 // Tags as lenses: clicking a tag examines the currently-selected entity specifically
 // through that tag, rather than showing the same general description every time.
+// Films carry no tags — their thematic cluster chips (data-cluster) are the lenses;
+// `label` is the human-friendly name shown in the lens header.
+// NOTE: escapeHtml lives in the Idea Studio closure at the bottom of this file and is
+// NOT visible here — this top-level copy is what the navigator's own templates use.
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function clusterLensLabel(code) {
+  return CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
+}
+
 let activeLensTag = null;
-async function toggleTagLens(entity, tag, tagEl) {
+async function toggleTagLens(entity, tag, tagEl, label) {
   const lensHost = document.getElementById('lensHost');
   if (!lensHost) return;
-  const allTagEls = document.querySelectorAll('.tag[data-tag]');
+  const display = label || tag;
+  const allTagEls = document.querySelectorAll('.tag[data-tag], .tag[data-cluster]');
   if (activeLensTag === tag) {
     activeLensTag = null;
+    activeLensSalient = null;
+    activeLensLabel = '';
+    activeLensFailed = false;
     allTagEls.forEach(t => t.classList.remove('active'));
     lensHost.innerHTML = '';
+    refreshTmdbBlock();
     return;
   }
   activeLensTag = tag;
-  allTagEls.forEach(t => t.classList.toggle('active', t.getAttribute('data-tag') === tag));
-  lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div><div class="empty" style="margin:0;">Loading…</div></div>`;
+  activeLensLabel = display;
+  activeLensSalient = null; // known only once the lens text arrives
+  activeLensFailed = false;
+  allTagEls.forEach(t => t.classList.toggle('active', (t.getAttribute('data-tag') || t.getAttribute('data-cluster')) === tag));
+  refreshTmdbBlock(); // fact sheet stays fully visible until the lens's salient facts arrive
+  lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div><div class="empty" style="margin:0;">Loading…</div></div>`;
+  // The model call can be slow or hang entirely (CLI backends have no timeout of
+  // their own). Cap the wait so the panel never sits on "Loading…" forever.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 90000);
   try {
     const resp = await fetch(API_BASE + '/api/ontology/entities/' + entity.id + '/tag-lens', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
-      body: JSON.stringify({ tag }),
+      body: JSON.stringify({ tag }), signal: ctrl.signal,
     });
+    clearTimeout(timer);
     const data = await resp.json();
     if (activeLensTag !== tag) return; // user switched tags before this resolved
-    if (data.error) { lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div><div class="empty" style="margin:0;">Could not generate: ${data.error}</div></div>`; return; }
-    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div>${data.lens}</div>`;
+    if (data.error) {
+      activeLensFailed = true;
+      lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div><div class="empty" style="margin:0;">Could not generate: ${data.error}</div></div>`;
+      refreshTmdbBlock();
+      return;
+    }
+    activeLensSalient = data.salient || null;
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div>${data.lens}</div>`;
+    refreshTmdbBlock(); // now that the lens's salient facts are known, filter the fact sheet
   } catch (err) {
+    clearTimeout(timer);
     if (activeLensTag !== tag) return;
-    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${tag}"</div><div class="empty" style="margin:0;">Could not reach the server.</div></div>`;
+    activeLensFailed = true;
+    const msg = (err && err.name === 'AbortError')
+      ? 'The read is taking too long — the model may be busy. The verified facts stay visible above; try the lens again in a moment.'
+      : 'Could not reach the server.';
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div><div class="empty" style="margin:0;">${msg}</div></div>`;
+    refreshTmdbBlock();
   }
 }
 
 async function loadBooksFor(entityId) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 90000);
   try {
     const resp = await fetch(API_BASE + '/api/ontology/entities/' + entityId + '/books', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN }, body: '{}',
+      signal: ctrl.signal,
     });
+    clearTimeout(timer);
     const data = await resp.json();
     if (focusedId !== entityId) return; // user already moved on to a different entity — drop this response
     const host = document.getElementById('booksHost');
@@ -1922,9 +2280,10 @@ async function loadBooksFor(entityId) {
       });
     }
   } catch (err) {
+    clearTimeout(timer);
     if (focusedId !== entityId) return;
     const host = document.getElementById('booksHost');
-    if (host) host.innerHTML = '<div class="empty">Could not reach the server.</div>';
+    if (host) host.innerHTML = '<div class="empty">' + ((err && err.name === 'AbortError') ? 'Book suggestions are taking too long — the model may be busy. Try again in a moment.' : 'Could not reach the server.') + '</div>';
   }
 }
 
