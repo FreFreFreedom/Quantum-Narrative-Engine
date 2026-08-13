@@ -13,7 +13,7 @@
 <style>
 :root {
   color-scheme: light;
-  --c-bg: #fbfaf8; --c-bg-2: #f7f5f2; --c-stage: #f0ede6;
+  --c-bg: #fbfaf8; --c-bg-2: #f7f5f2; --c-stage: #f0ede6; --c-mapstage: #eef2f4;
   --c-surface: #fff; --c-surface-2: #f2efe9; --c-surface-3: #eee9df;
   --c-surface-rgb: 255 255 255;
   --c-border: #e4dfd8; --c-border-2: #d9d3c9; --c-border-3: #c9c1b3;
@@ -34,7 +34,7 @@
 }
 .dark {
   color-scheme: dark;
-  --c-bg: #0d1117; --c-bg-2: #14181c; --c-stage: #10151b;
+  --c-bg: #0d1117; --c-bg-2: #14181c; --c-stage: #10151b; --c-mapstage: #0d1117;
   --c-surface: #111623; --c-surface-2: #161c2c; --c-surface-3: #1b2233;
   --c-surface-rgb: 17 22 35;
   --c-border: #252d3b; --c-border-2: #303a4a; --c-border-3: #3d4859;
@@ -466,7 +466,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 #mapApp { flex:1; display:none; min-height:0; }
 #mapApp.open { display:flex; }
 .mapcol { flex:1; position:relative; display:flex; flex-direction:column; min-width:0; }
-.mapstage { flex:1; position:relative; overflow:hidden; background:#eef2f4; }
+.mapstage { flex:1; position:relative; overflow:hidden; background:var(--c-mapstage); }
 .mapstage svg { width:100%; height:100%; display:block; }
 .country-bg { fill:#dcd8d0; stroke:#ffffff; stroke-width:0.4; }
 .country-active { stroke:#ffffff; stroke-width:0.6; cursor:pointer; transition:filter .15s; }
@@ -474,15 +474,15 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .country-active.selected { stroke:#2a2621; stroke-width:1.4; }
 #mapworldg, #mapdetailg { transition: transform 0.6s cubic-bezier(.2,.8,.2,1); }
 .map-controls { position:absolute; top:14px; right:14px; display:flex; gap:8px; }
-.map-legend { position:absolute; left:14px; bottom:14px; background:rgba(255,255,255,.92); border:1px solid #e4dfd8; border-radius:8px; padding:10px 12px; width:250px; font-size:11.5px; z-index:5; }
+.map-legend { position:absolute; left:14px; bottom:14px; background:rgba(var(--c-surface-rgb),.92); border:1px solid var(--c-border); border-radius:8px; padding:10px 12px; width:250px; font-size:11.5px; z-index:5; }
 .map-legend-title { font-weight:600; margin-bottom:6px; font-size:12px; }
 .map-legend-bar { height:10px; border-radius:5px; background:linear-gradient(to right,#b23a2f,#d99a3d,#dcb84a,#4f9d7a,#2f7d63); }
-.map-legend-labels { display:flex; justify-content:space-between; color:#6b645b; margin-top:4px; }
-.map-sidepanel { width:320px; border-left:1px solid #e4dfd8; background:#fbfaf8; padding:14px; overflow-y:auto; flex-shrink:0; }
+.map-legend-labels { display:flex; justify-content:space-between; color:var(--c-ink-3); margin-top:4px; }
+.map-sidepanel { width:320px; border-left:1px solid var(--c-border); background:var(--c-bg); padding:14px; overflow-y:auto; flex-shrink:0; }
 .map-entitylist { list-style:none; margin:0 0 14px; padding:0; }
 .map-entitylist li { padding:7px 9px; border-radius:6px; margin-bottom:3px; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:7px; }
-.map-entitylist li:hover { background:#f2efe9; }
-.map-entitylist li.selected { background:#eee9df; font-weight:600; }
+.map-entitylist li:hover { background:var(--c-surface-2); }
+.map-entitylist li.selected { background:var(--c-surface-3); font-weight:600; }
 .map-entitylist .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
 </style>
 </head>
@@ -1932,7 +1932,7 @@ function renderMapCard(name) {
   if (e) { selectEntity(e.id); return; } // full live card: tags, continuum, connections, books
   const entry = mapPaths[name];
   const p = entry.feature.properties;
-  document.getElementById('mapCardHost').innerHTML = `<div class="card" style="background:#3f6b85;"><div class="name">${p.name}</div><div class="sub">Not yet in the live ontology — showing prototype data.</div></div><div class="note">${p.note||''}</div>`;
+  document.getElementById('mapCardHost').innerHTML = `<div class="card" style="background:var(--c-info);"><div class="name">${p.name}</div><div class="sub">Not yet in the live ontology — showing prototype data.</div></div><div class="note">${p.note||''}</div>`;
 }
 
 function mapSelectByName(name) {

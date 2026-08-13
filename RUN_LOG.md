@@ -511,3 +511,16 @@ Interactive session with Antoine. Branch: `overnight/2026-08-13`. Not yet commit
 - Verified: all 5 inline script blocks pass `node --check`; CSS braces balanced; map region untouched.
 - PENDING Antoine: eyeball both themes (open the file, toggle the button top-right). If a color looks wrong in dark, name the element — token table lives at top of the file.
 - SHIPPED: Antoine verified on :3000 and said "ship it". Committed `2ed9e18` (only the 3 intended files; pre-staged agent bookkeeping files left out of the commit and returned to their staged state), fast-forwarded `main`, pushed — Railway auto-deploys `queue-server/` from main, so the live site will pick up the toggle. Review worktree main ref updated to match.
+
+---
+
+# RUN_LOG — Dark mode part 2 (Map mode surfaces), 2026-08-13
+
+Interactive session with Antoine. Branch `overnight/2026-08-10` (main already at `2ed9e18`). Not yet committed; pending visual check.
+
+- Map mode was excluded from the Phase-1 sweep, so its panes stayed light in dark mode. Now themed: map stage, legend (background + border + labels), side panel, entity-list hover/selected states, and the "prototype data" blue card → tokens (new `--c-mapstage` token: `#eef2f4` light / `#0d1117` dark).
+- Geography stays constant per plan: country fills/strokes untouched; the `.selected` country outline intentionally stays `#2a2621` — it sits on light country fills, so it stays visible in both themes.
+- Part 3 (chart palette): no charts exist in the app yet; the 8-step `--c-plot-*` palette is defined in both themes, dormant until a chart lands. Nothing to wire.
+- Escape hatches: audited all fixed overlays (inspect tooltip/toast, chat bubble, modals, shadows) — every one inverts readably, no hatch needed.
+- Verified: 5 script blocks `node --check`, CSS braces balanced, copy synced to `queue-server/public/index.html`, served page confirmed on :3000.
+- PENDING Antoine: eyeball the Map tab in dark mode on http://localhost:3000 (switch theme, click a country, check legend/panel/list). If good → ship.
