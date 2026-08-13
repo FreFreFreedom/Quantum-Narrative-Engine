@@ -121,7 +121,7 @@ function parseSuggestionsJson(text) {
 }
 
 // ─── Chantier engine: "what should I work on next" ──────────────────────────────
-function buildContextDigest() {
+export function buildContextDigest() {
   const lines = [];
   try {
     const total = db.prepare(`SELECT COUNT(*) n FROM entities`).get().n;

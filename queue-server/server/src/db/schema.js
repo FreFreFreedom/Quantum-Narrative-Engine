@@ -33,6 +33,7 @@ export function openDb() {
   initTagLensSchema(db);
   initTagPatternSchema(db);
   initBookDetailSchema(db);
+  initConversationsSchema(db);
   return db;
 }
 
@@ -126,6 +127,9 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN raw_prompt TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN plan_source TEXT DEFAULT 'auto'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN plan_pending INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Link a Dispatch Queue task back to the conversation that produced it (Idea Studio
+  // handoff — see plans/universal-conversations-core-architecture.md §7).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN convo_id TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -702,4 +706,41 @@ export function initArchitectureSchema(db) {
   // try/catch per this file's convention — it throws harmlessly once applied.
   try { db.exec(`ALTER TABLE work_ideas ADD COLUMN arch_node_id TEXT`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_node ON work_ideas(arch_node_id)`); } catch {}
+}
+
+// ─── Idea Studio conversations (plan "universal-conversations-core-architecture") ──
+// One conversation per subject (architecture component / tech-tree node / seed /
+// suggestion). Messages accumulate as turns; the model is called per-turn (not per
+// message), and the conversation history is windowed + recap'd for cost control.
+export function initConversationsSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convos (
+      id TEXT PRIMARY KEY,
+      subject_type TEXT NOT NULL,
+      subject_id   TEXT NOT NULL,
+      title TEXT,
+      subject_hint TEXT,
+      recap TEXT,
+      turns INTEGER NOT NULL DEFAULT 0,
+      work_prompt_id TEXT,
+      handed_off_at TEXT,
+      created_by TEXT REFERENCES users(id),
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_convos_subject ON convos(subject_type, subject_id) WHERE deleted_at IS NULL`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convo_messages (
+      id TEXT PRIMARY KEY,
+      convo_id TEXT NOT NULL REFERENCES convos(id),
+      role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+      kind TEXT NOT NULL DEFAULT 'chat' CHECK(kind IN ('chat','plan')),
+      text TEXT NOT NULL DEFAULT '',
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
 }
