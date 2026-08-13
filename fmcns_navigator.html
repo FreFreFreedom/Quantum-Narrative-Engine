@@ -191,26 +191,45 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 /* ---------- CORE ARCHITECTURE shell (merged Architecture/Seeds/Suggestion Engine/Dispatch Queue) ---------- */
 #coreApp { flex:1; display:none; flex-direction:column; min-height:0; }
 #coreApp.open { display:flex; }
-.core-header { border-bottom:1px solid var(--c-border); background:var(--c-bg); padding:10px 16px 0; flex-shrink:0; }
-.core-header-top { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
-.core-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-family:monospace; }
-.core-sub { font-size:11px; color:var(--c-ink-3); }
-.core-queueline { display:flex; align-items:center; gap:10px; font-size:10.5px; color:var(--c-ink-3); margin:6px 0 8px; }
-.core-serverpick { margin-left:auto; display:flex; align-items:center; gap:4px; }
-.core-serverpick select { font-size:10.5px; padding:1px 4px; }
-.core-tabs { display:flex; gap:4px; margin-bottom:-1px; }
-.core-tabs button { padding:7px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; border:1px solid transparent; border-bottom:none; background:transparent; color:var(--c-ink-3); cursor:pointer; border-radius:6px 6px 0 0; }
-.core-tabs button.active { background:var(--c-surface); border-color:var(--c-border); color:var(--c-ink); font-weight:600; }
+.core-header { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding:6px 12px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
+.core-tabs { display:flex; align-items:center; gap:2px; }
+.core-tabs button { padding:5px 10px; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; border:1px solid transparent; background:transparent; color:var(--c-ink-3); cursor:pointer; border-radius:6px; }
+.core-tabs button:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.core-tabs button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
 .core-tab-count { font-family:monospace; font-size:10px; color:var(--c-warn); }
-.core-handoff-link { color:var(--c-warn); text-decoration:underline; cursor:pointer; }
-.core-panes { flex:1; min-height:0; display:flex; }
+.core-tabs button.active .core-tab-count { color:var(--c-amber); }
+.core-banner { font-size:10px; color:var(--c-ink-4); white-space:nowrap; }
+.core-serverpick { display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--c-ink-4); }
+.core-serverpick select { font-size:10.5px; padding:1px 4px; }
+.core-hbtn { padding:4px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:10.5px; cursor:pointer; }
+.core-hbtn:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.core-header .usage-strip { border:none; background:none; border-radius:0; padding:0; margin:0; font-size:10px; }
+.core-header .usage-strip-row { gap:10px; }
+.core-header .usage-note { display:none; }
+.core-header .usage-alert { padding:4px 8px; margin:0; font-size:10px; }
+
+/* ---------- Core workspace shell (three zones) ---------- */
+.ws-shell { flex:1; min-height:0; display:flex; }
+.ws-map { flex:1; min-width:0; display:none; flex-direction:column; min-height:0; }
+.ws-map.open { display:flex; }
+.ws-map-body { flex:1; min-height:0; display:flex; }
+.ws-archdetail { display:none; width:330px; min-width:300px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; }
+.ws-archdetail.open { display:block; }
+.ws-archdetail h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
+.ws-flow { flex:1; min-width:0; min-height:0; display:none; flex-direction:column; }
+.ws-flow.open { display:flex; }
+.ws-detail { width:330px; min-width:280px; flex-shrink:0; display:none; flex-direction:column; min-height:0; border-left:1px solid var(--c-border); background:var(--c-bg); }
+.ws-detail.open { display:flex; }
+.ws-slot { display:none; flex:1; min-height:0; overflow-y:auto; padding:14px; }
+.ws-slot.open { display:block; }
+.ws-slot h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
+
 .core-pane { flex:1; display:none; flex-direction:column; min-height:0; min-width:0; }
 .core-pane.open { display:flex; }
 
 /* ---------- Task queue (Dispatch Queue sub-tab) ---------- */
 .q-pausebadge { font-size:10.5px; padding:3px 9px; border-radius:20px; background:var(--c-warn-tint); color:var(--c-warn); }
-.q-body { flex:1; display:flex; min-height:0; }
-.q-left { width:400px; flex-shrink:0; border-right:1px solid var(--c-border); overflow-y:auto; padding:14px; }
+.q-left { flex:1; overflow-y:auto; padding:14px; }
 .q-left h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .q-textarea, .q-input, .q-row select { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; margin-bottom:7px; box-sizing:border-box; }
 .q-textarea { resize:vertical; min-height:70px; }
@@ -262,7 +281,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .q-item-arrows { display:flex; gap:5px; margin-top:6px; }
 .q-item-arrows .q-arrow { padding:1px 7px; font-size:9px; }
 .q-right { flex:1; overflow-y:auto; padding:16px; background:var(--c-bg); }
-.q-right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
 .q-thread-msg.user { background:var(--c-info-tint); margin-left:auto; }
 .q-thread-msg.agent { background:var(--c-surface); border:1px solid var(--c-border); }
@@ -306,11 +324,10 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .ai-fp-nokeytag { font-size:10px; color:var(--c-ink-5); }
 
 /* ---------- Seeds + Suggestion Engine + Quotas strip ---------- */
-.tv-toolbar { padding:10px 16px 0; border-bottom:1px solid var(--c-border); background:var(--c-bg); }
-.tv-toolbar-top { display:flex; align-items:center; gap:14px; margin-bottom:9px; }
-.tv-tabs { display:flex; gap:4px; margin-bottom:-1px; }
-.tv-tabs button { padding:7px 14px; font-size:11.5px; border:1px solid transparent; border-bottom:none; background:transparent; color:var(--c-ink-3); cursor:pointer; border-radius:6px 6px 0 0; }
-.tv-tabs button.active { background:var(--c-surface); border-color:var(--c-border); color:var(--c-ink); font-weight:600; }
+.tv-toolbar, .arch-toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:8px 14px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
+.tv-toolbar-top { display:flex; align-items:center; gap:14px; }
+.tv-toolbar .arch-title, .arch-toolbar .arch-title { font-size:13px; font-weight:600; }
+.tv-toolbar .arch-sub, .arch-toolbar .arch-sub { font-size:11px; color:var(--c-ink-3); }
 .tv-body { flex:1; overflow-y:auto; padding:16px; }
 .tv-empty { font-size:11.5px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:18px; text-align:center; }
 /* usage strip */
@@ -325,6 +342,9 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .usage-pct { font-weight:700; color:var(--c-ink); }
 .usage-reset { color:var(--c-ink-4); }
 .usage-note { font-size:10px; color:var(--c-ink-4); margin-top:5px; }
+.usage-mini { font-size:10px; color:var(--c-ink-4); white-space:nowrap; cursor:default; }
+.usage-mini.warn { color:var(--c-warn); font-weight:600; }
+.usage-mini.hot { color:var(--c-danger); font-weight:700; }
 .usage-alert { margin-top:6px; padding:6px 9px; border-radius:6px; background:var(--c-danger-tint); color:var(--c-danger); font-size:10.5px; }
 /* suggestions */
 .sg-toolbar-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
@@ -382,23 +402,19 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .bk-result-row button { padding:3px 8px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10px; cursor:pointer; flex-shrink:0; }
 .bk-result-row button:hover { background:var(--c-surface-2); }
 
-/* ---------- Architecture (sub-tab) ---------- */
-.arch-toolbar { padding:8px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); display:flex; align-items:center; gap:14px; }
-.arch-toolbar .arch-title { font-size:13px; font-weight:600; }
-.arch-toolbar .arch-sub { font-size:11px; color:var(--c-ink-3); margin-left:2px; }
+.arch-toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:8px 14px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
 .arch-viewbtns { display:flex; gap:6px; margin-left:auto; }
 .arch-viewbtns button { padding:5px 11px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .arch-viewbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
-.arch-body { flex:1; display:flex; min-height:0; }
-.arch-stage { flex:1; overflow:auto; padding:22px; position:relative; }
-.arch-cols { display:flex; gap:26px; min-width:1180px; position:relative; }
-.arch-col { flex:1; min-width:210px; }
+.arch-stage { flex:1; overflow:auto; padding:16px; position:relative; }
+.arch-cols { display:flex; gap:18px; min-width:0; position:relative; }
+.arch-col { flex:1; min-width:170px; }
 .arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin-bottom:4px; font-weight:600; }
 .arch-col-sub { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; line-height:1.4; }
-.arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:9px 11px; margin-bottom:10px; cursor:pointer; position:relative; }
+.arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:8px 10px; margin-bottom:9px; cursor:pointer; position:relative; }
+.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .arch-node:hover { border-color:var(--c-border-3); }
 .arch-node.selected { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
-.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:3px; }
 .arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:var(--c-on-solid); }
 .arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
 /* Tech Tree view — same .arch-node markup, laid out by prereq depth instead of territory. */
@@ -430,8 +446,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-specbtn { width:100%; padding:8px 12px; border-radius:7px; border:1px dashed #7a5ea8; background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; cursor:pointer; margin-top:10px; }
 .arch-specbtn:hover { background:#f2ecfa; }
 .arch-specbtn:disabled { opacity:.55; cursor:default; }
-.arch-right { width:340px; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; flex-shrink:0; }
-.arch-right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
+.ws-slot h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .arch-detail-name { font-size:16px; font-weight:700; margin-bottom:2px; }
 .arch-detail-territory { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; }
 .arch-field { margin-bottom:11px; }
@@ -572,37 +587,31 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
   </div>
 </div>
-<div id="coreApp" data-src="CORE ARCHITECTURE tab | fmcns_navigator.html: coreApp shell, initCore()/setCoreTab() | backend: services/architecture.js, services/promptQueue.js, routes/travaux.js, services/claudeUsage.js">
+<div id="coreApp" data-src="CORE ARCHITECTURE tab | fmcns_navigator.html: coreApp shell (slim header + three-zone workspace), initCore()/switchCoreView()/renderWorkspace() | backend: services/architecture.js, services/promptQueue.js, routes/travaux.js, services/claudeUsage.js">
   <div class="core-header">
-    <div class="core-header-top">
-      <span class="core-title">CORE ARCHITECTURE</span>
-      <span class="core-sub">envisioning → dispatch → build — one loop across four views.</span>
-    </div>
-    <div id="usageStripHost" data-src="CORE ARCHITECTURE → shared header → Quotas usage strip | fmcns_navigator.html: renders into #usageStripHost, startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
-    <div class="core-queueline" data-src="CORE ARCHITECTURE → shared header → queue state line | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status, GET /api/travaux/prompts">
-      <span id="archQueueBanner"></span>
-      <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
-      <button class="ctrlbtn" id="queuePauseBtn">Pause queue</button>
-      <span class="core-serverpick" title="Which backend this page talks to: the local server on this Mac, or the deployed site. Choosing one saves it and reloads.">
-        Server:
-        <select id="serverToggle">
-          <option value="local">local</option>
-          <option value="production">production</option>
-        </select>
-      </span>
-    </div>
-    <div class="core-tabs" data-src="CORE ARCHITECTURE → sub-tab bar | fmcns_navigator.html: setCoreTab()">
+    <div class="core-tabs" data-src="CORE ARCHITECTURE → view chips | fmcns_navigator.html: switchCoreView()/renderWorkspace()">
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabSeeds" data-core-tab="seeds">Seeds <span class="core-tab-count" id="coreCountSeeds"></span></button>
       <button id="coreTabBlocks" data-core-tab="blocks">Building blocks</button>
       <button id="coreTabSignals" data-core-tab="signals">Suggestion Engine <span class="core-tab-count" id="coreCountSignals"></span></button>
       <button id="coreTabQueue" data-core-tab="queue">Dispatch Queue <span class="core-tab-count" id="coreCountQueue"></span></button>
-      <button id="coreTabAi" data-core-tab="ai">AI Settings</button>
-      <button class="core-newidea ctrlbtn" id="coreNewIdeaBtn" title="Shape an idea in conversation, then queue it">💬 New idea</button>
     </div>
+    <div id="usageStripHost" data-src="CORE ARCHITECTURE → slim header → Quotas usage strip (compact) | fmcns_navigator.html: renders into #usageStripHost, startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
+    <span id="archQueueBanner" class="core-banner" data-src="CORE ARCHITECTURE → slim header → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
+    <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
+    <button class="core-hbtn" id="queuePauseBtn" title="Pause / resume the task queue">Pause queue</button>
+    <span class="core-serverpick" title="Which backend this page talks to: the local server on this Mac, or the deployed site. Choosing one saves it and reloads.">
+      Server:
+      <select id="serverToggle">
+        <option value="local">local</option>
+        <option value="production">production</option>
+      </select>
+    </span>
+    <button class="core-hbtn" id="aiSheetBtn" title="AI Settings — which model handles what, and what happens when the paid one runs out">⚙</button>
+    <button class="core-newidea ctrlbtn" id="coreNewIdeaBtn" title="Shape an idea in conversation, then queue it">💬 New idea</button>
   </div>
-  <div class="core-panes">
-    <div id="corePaneArch" class="core-pane open" data-src="CORE ARCHITECTURE → Architecture sub-tab | fmcns_navigator.html: corePaneArch rendering, initArchNav() | backend: services/architecture.js, routes/architecture.js">
+  <div class="ws-shell">
+    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the architecture graph, full width | fmcns_navigator.html: renderArchStage()/initArchNav() | backend: services/architecture.js, routes/architecture.js">
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
         <span class="arch-sub">How FMCNS itself is built — click any component.</span>
@@ -613,47 +622,47 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           <button data-arch-view="techtree">Tech Tree</button>
         </div>
       </div>
-      <div class="arch-body">
+      <div class="ws-map-body">
         <div class="arch-stage" id="archStage"></div>
-        <div class="arch-right" id="archRight">
+        <div class="ws-archdetail" id="archRight" data-src="CORE ARCHITECTURE → graph zone → selected component detail (docked, auto-hides) | fmcns_navigator.html: selectArchNode()/renderArchDetail() | backend: services/architecture.js">
           <h2>Component</h2>
           <div class="empty">Click a component to inspect it.</div>
         </div>
       </div>
     </div>
-    <div id="corePaneSeeds" class="core-pane" data-src="CORE ARCHITECTURE → Seeds sub-tab (Idées notebook) | fmcns_navigator.html: renders into #tvBodySeeds, loadIdeas()/renderIdeas() | backend: routes/travaux.js (/ideas*)">
-      <div class="tv-toolbar">
-        <div class="tv-toolbar-top">
-          <span class="arch-title">Seeds</span>
-          <span class="arch-sub">Ideas jotted down for later — nothing here executes on its own.</span>
+    <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: list views (Seeds / Building blocks / Suggestion Engine / Dispatch Queue composer+list)">
+      <div id="corePaneSeeds" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Seeds | fmcns_navigator.html: renders into #tvBodySeeds, loadIdeas()/renderIdeas() | backend: routes/travaux.js (/ideas*)">
+        <div class="tv-toolbar">
+          <div class="tv-toolbar-top">
+            <span class="arch-title">Seeds</span>
+            <span class="arch-sub">Ideas jotted down for later — nothing here executes on its own.</span>
+          </div>
         </div>
+        <div class="tv-body" id="tvBodySeeds"></div>
       </div>
-      <div class="tv-body" id="tvBodySeeds"></div>
-    </div>
-    <div id="corePaneBlocks" class="core-pane" data-src="CORE ARCHITECTURE → Building blocks sub-tab (evidence-backed discovery) | fmcns_navigator.html: renders into #tvBodyBlocks, loadBlocks()/renderDiscover()/renderIdeaBox() | backend: routes/discovery.js">
-      <div class="tv-toolbar">
-        <div class="tv-toolbar-top">
-          <span class="arch-title">Building blocks</span>
-          <span class="arch-sub">Real GitHub repos and imagined proposals, evidence for what FMCNS could grow next.</span>
+      <div id="corePaneBlocks" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Building blocks | fmcns_navigator.html: renders into #tvBodyBlocks, loadBlocks()/renderDiscover()/renderIdeaBox() | backend: routes/discovery.js">
+        <div class="tv-toolbar">
+          <div class="tv-toolbar-top">
+            <span class="arch-title">Building blocks</span>
+            <span class="arch-sub">Real GitHub repos and imagined proposals, evidence for what FMCNS could grow next.</span>
+          </div>
+          <div class="arch-viewbtns" id="bkViewBtns">
+            <button class="active" data-bk-view="discover">Discover</button>
+            <button data-bk-view="idea">Idea box</button>
+          </div>
         </div>
-        <div class="arch-viewbtns" id="bkViewBtns">
-          <button class="active" data-bk-view="discover">Discover</button>
-          <button data-bk-view="idea">Idea box</button>
-        </div>
+        <div class="tv-body" id="tvBodyBlocks"></div>
       </div>
-      <div class="tv-body" id="tvBodyBlocks"></div>
-    </div>
-    <div id="corePaneSignals" class="core-pane" data-src="CORE ARCHITECTURE → Suggestion Engine sub-tab (Suggestions de Claude) | fmcns_navigator.html: renders into #tvBodySignals, loadSuggestions()/renderSuggestions() | backend: routes/travaux.js (/suggestions*)">
-      <div class="tv-toolbar">
-        <div class="tv-toolbar-top">
-          <span class="arch-title">Suggestion Engine</span>
-          <span class="arch-sub">Claude proposes work, you decide what runs.</span>
+      <div id="corePaneSignals" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Suggestion Engine | fmcns_navigator.html: renders into #tvBodySignals, loadSuggestions()/renderSuggestions() | backend: routes/travaux.js (/suggestions*)">
+        <div class="tv-toolbar">
+          <div class="tv-toolbar-top">
+            <span class="arch-title">Suggestion Engine</span>
+            <span class="arch-sub">Claude proposes work, you decide what runs.</span>
+          </div>
         </div>
+        <div class="tv-body" id="tvBodySignals"></div>
       </div>
-      <div class="tv-body" id="tvBodySignals"></div>
-    </div>
-    <div id="corePaneQueue" class="core-pane" data-src="CORE ARCHITECTURE → Dispatch Queue sub-tab | fmcns_navigator.html: corePaneQueue rendering, qLoad()/startQueuePolling() | backend: services/promptQueue.js, services/taskRunner.js, routes/queue.js">
-      <div class="q-body">
+      <div id="corePaneQueue" class="core-pane" data-src="CORE ARCHITECTURE → center zone → Dispatch Queue (composer + list) | fmcns_navigator.html: qAddBtn handler, qLoad()/startQueuePolling() | backend: services/promptQueue.js, services/taskRunner.js, routes/queue.js">
         <div class="q-left" data-src="CORE ARCHITECTURE → Dispatch Queue → new prompt form | fmcns_navigator.html: qAddBtn handler | backend: POST /api/travaux/prompts, services/promptQueue.js">
           <h2>New prompt</h2>
           <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
@@ -719,21 +728,26 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           </div>
           <div id="qList"></div>
         </div>
-        <div class="q-right" id="qRight" data-src="CORE ARCHITECTURE → Dispatch Queue → selected task thread (reply/steer/pause) | fmcns_navigator.html: renderQueueDetail() (~line 1847) | backend: services/promptQueue.js reply/steer/pause endpoints">
-          <h2>Task</h2>
-          <div class="empty">Select a queued item to see its thread.</div>
-        </div>
       </div>
     </div>
-    <div id="corePaneAi" class="core-pane" data-src="CORE ARCHITECTURE → AI Settings sub-tab | fmcns_navigator.html: renders into #aiBody, loadAiSettings()/renderAiSettings() | backend: GET/PUT /api/travaux/ai-settings, GET /api/travaux/providers, services/ai/text.js">
-      <div class="tv-toolbar">
-        <div class="tv-toolbar-top">
-          <span class="arch-title">AI Settings</span>
-          <span class="arch-sub">Which model handles what, and what happens when the paid one runs out.</span>
-        </div>
+    <div class="ws-detail" id="wsDetail" data-src="CORE ARCHITECTURE → workspace right zone: selected task thread (Dispatch Queue view)">
+      <div class="ws-slot" id="qRight" data-src="CORE ARCHITECTURE → right zone → selected task thread (reply/steer/pause) | fmcns_navigator.html: renderQueueDetail() | backend: services/promptQueue.js reply/steer/pause endpoints">
+        <h2>Task</h2>
+        <div class="empty">Select a queued item to see its thread.</div>
       </div>
-      <div class="ai-body" id="aiBody">Loading…</div>
     </div>
+  </div>
+</div>
+<div id="aiSheetRoot" class="studio-overlay" style="display:none;" data-src="CORE ARCHITECTURE → ⚙ → AI Settings sheet | fmcns_navigator.html: renders into #aiBody, loadAiSettings()/renderAiSettings() | backend: GET/PUT /api/travaux/ai-settings, GET /api/travaux/providers, services/ai/text.js">
+  <div class="studio-modal" style="width:640px;max-height:76vh;">
+    <div class="studio-head">
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <span class="studio-eyebrow">Core</span>
+        <span class="studio-title">AI Settings</span>
+      </div>
+      <div class="studio-actions"><button id="aiSheetCloseBtn" title="Close">✕</button></div>
+    </div>
+    <div class="ai-body" id="aiBody" style="max-width:none;flex:1;">Loading…</div>
   </div>
 </div>
 <div id="mapApp" data-src="Map tab | fmcns_navigator.html: mapApp rendering, initMap() | backend: GET /api/ontology/entities (country type)">
@@ -830,7 +844,7 @@ async function boot() {
     renderClusterList();
     initGraph();
     // initArchNav() used to run here on every boot; it now runs lazily from
-    // setCoreTab('arch') the first time the Architecture sub-tab is opened.
+    // switchCoreView('arch') the first time the Architecture view is opened.
   } catch (e) {
     // This used to report EVERY startup failure as "Session expired, log in again."
     // A plain JS bug in any init step therefore looked exactly like being locked out
@@ -2047,14 +2061,16 @@ document.addEventListener('click', (e) => {
 // Engine feed the Dispatch Queue, which runs work that shows up in Architecture's history,
 // which is what Claude reads to propose the next suggestion. The header (quota strip +
 // queue-state line) is shared across all four sub-tabs since it governs all of them.
-let coreTab = 'arch';
+// The workspace shell (three zones) is driven by one view state: which list view
+// the center zone shows, and which detail slot the right zone displays.
+let coreView = 'arch';
 let coreInited = false;
-const CORE_TAB_IDS = { arch:'coreTabArch', seeds:'coreTabSeeds', blocks:'coreTabBlocks', signals:'coreTabSignals', queue:'coreTabQueue', ai:'coreTabAi' };
+const CORE_VIEW_PANES = { seeds:'corePaneSeeds', blocks:'corePaneBlocks', signals:'corePaneSignals', queue:'corePaneQueue' };
 
 function initCore() {
   if (!coreInited) {
     coreInited = true;
-    Object.keys(CORE_TAB_IDS).forEach(t => { document.getElementById(CORE_TAB_IDS[t]).onclick = () => setCoreTab(t); });
+    document.querySelectorAll('[data-core-tab]').forEach(b => { b.onclick = () => switchCoreView(b.getAttribute('data-core-tab')); });
     document.getElementById('qAddBtn').onclick = qAddPrompt;
     document.getElementById('queuePauseBtn').onclick = qTogglePause;
     document.querySelectorAll('.q-filterbtn').forEach(b => {
@@ -2062,6 +2078,11 @@ function initCore() {
     });
     document.getElementById('qProvider').onchange = qProviderUi;
     document.getElementById('qStrategy').onchange = qStrategyInfo; // update cost multiplier info
+    document.getElementById('aiSheetBtn').onclick = () => {
+      document.getElementById('aiSheetRoot').style.display = 'flex';
+      loadAiSettings();
+    };
+    document.getElementById('aiSheetCloseBtn').onclick = () => { document.getElementById('aiSheetRoot').style.display = 'none'; };
     // "Server: local / production" — writes the shared key both constants read,
     // then reloads so every fetch lands on the new backend. Initial value mirrors
     // what the constants resolved to before this element existed.
@@ -2076,11 +2097,11 @@ function initCore() {
       };
     }
   }
-  setCoreTab(coreTab);
+  switchCoreView(coreView); // lays out the shell and lazy-inits the arch view (default)
   startUsagePolling();
   loadProviders(); // model picker + provider liveness for the New-prompt form
   loadAgents(); // agent roster for the New-prompt form
-  qLoad(); // keep the queue count + pause state fresh even off the Dispatch Queue sub-tab
+  qLoad(); // keep the queue count + pause state fresh even off the Dispatch Queue view
   startQueuePolling();
 }
 
@@ -2089,29 +2110,37 @@ function teardownCore() {
   stopQueuePolling();
 }
 
-function setCoreTab(t) {
-  coreTab = t;
-  Object.keys(CORE_TAB_IDS).forEach(x => document.getElementById(CORE_TAB_IDS[x]).classList.toggle('active', x === t));
-  document.getElementById('corePaneArch').classList.toggle('open', t === 'arch');
-  document.getElementById('corePaneSeeds').classList.toggle('open', t === 'seeds');
-  document.getElementById('corePaneBlocks').classList.toggle('open', t === 'blocks');
-  document.getElementById('corePaneSignals').classList.toggle('open', t === 'signals');
-  document.getElementById('corePaneQueue').classList.toggle('open', t === 'queue');
-  document.getElementById('corePaneAi').classList.toggle('open', t === 'ai');
-  if (t === 'arch') initArchNav();
-  if (t === 'seeds') loadIdeas();
-  if (t === 'blocks') initBlocks();
-  if (t === 'signals') loadSuggestions();
-  if (t === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
-  if (t === 'ai') loadAiSettings();
-  if (coreInited) startQueuePolling(); // rate depends on which sub-tab is now active
+// The one path that lays out the workspace zones for the current view: the
+// architecture graph fills the whole workspace on arch (its detail panel is
+// docked inside the graph zone and driven by selection, not by view); the
+// center shows one list view; the right detail zone shows the task thread on
+// queue and stays closed on the pure-list views.
+function renderWorkspace() {
+  const v = coreView;
+  document.querySelectorAll('[data-core-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-core-tab') === v));
+  document.getElementById('wsMap').classList.toggle('open', v === 'arch');
+  document.getElementById('wsFlow').classList.toggle('open', v !== 'arch');
+  Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
+  document.getElementById('wsDetail').classList.toggle('open', v === 'queue');
+  document.getElementById('qRight').classList.toggle('open', v === 'queue');
 }
 
-// Jump to the Dispatch Queue sub-tab and select a given item — used by the hand-off
+function switchCoreView(v) {
+  coreView = v;
+  renderWorkspace();
+  if (v === 'arch') initArchNav();
+  if (v === 'seeds') loadIdeas();
+  if (v === 'blocks') initBlocks();
+  if (v === 'signals') loadSuggestions();
+  if (v === 'queue') { qRenderList(); loadProviders(); loadAgents(); }
+  if (coreInited) startQueuePolling(); // rate depends on which view is now active
+}
+
+// Jump to the Dispatch Queue view and select a given item — used by the hand-off
 // confirmation after queuing a prompt from Architecture/Seeds/Suggestion Engine.
 function jumpToQueueItem(id) {
   setMode('core');
-  setCoreTab('queue');
+  switchCoreView('queue');
   const item = qPrompts.find(p => p.id === id);
   if (item) { qSelected = item; qRenderDetail(item); }
   qRenderList();
@@ -2121,7 +2150,7 @@ function jumpToQueueItem(id) {
 // Tech Tree view (a planted Seed only appears there), and select the node.
 function jumpToArchNode(id) {
   setMode('core');
-  setCoreTab('arch');
+  switchCoreView('arch');
   archView = 'techtree';
   document.querySelectorAll('[data-arch-view]').forEach(x => {
     x.classList.toggle('active', x.getAttribute('data-arch-view') === 'techtree');
@@ -2428,7 +2457,7 @@ function renderAiSettings() {
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
-  qPollTimer = setInterval(qLoad, coreTab === 'queue' ? 4000 : 15000);
+  qPollTimer = setInterval(qLoad, coreView === 'queue' ? 4000 : 15000);
 }
 function stopQueuePolling() { if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; } }
 
@@ -3129,10 +3158,10 @@ async function qSteer(id, text) {
 // Ported from the "Portage — Suggestions de Claude, Idées et Quotas Claude" spec, adapted
 // from a multi-file React app into this single-file vanilla-JS one, same pattern as the
 // Queue page above. Nothing here ever runs on its own: a suggestion accepted or an idea
-// promoted becomes a 'paused' item in the existing task queue (Dispatch Queue sub-tab) —
+// promoted becomes a 'paused' item in the existing task queue (Dispatch Queue view) —
 // the human still has to press start. Suggestions and Ideas used to share one internal
-// tab strip (tv-tabs); each is now its own CORE ARCHITECTURE sub-tab (Suggestion Engine /
-// Seeds), so switching between them goes through setCoreTab() instead.
+// tab strip (tv-tabs); each is now its own center-zone list view (Suggestion Engine /
+// Seeds), so switching between them goes through switchCoreView() instead.
 let tvSuggestions = [], tvSuggestionFilter = { status: 'new', kind: 'all' };
 let tvIdeas = [];
 let usagePollTimer = null;
@@ -3196,17 +3225,23 @@ async function loadUsage() {
   let u;
   try { u = await api('/api/agent/usage'); } catch (e) { host.innerHTML = ''; return; }
   const scoped = u.weekScoped;
+  const pctOf = b => (b && typeof b.utilizationPct === 'number') ? Math.max(0, Math.min(100, Math.round(b.utilizationPct))) : null;
+  const fmt = b => { const p = pctOf(b); return p != null ? p + '%' : (b && b.totalTokens ? fmtTokens(b.totalTokens) + ' tokens' : '—'); };
+  const toneOf = b => usageTone(pctOf(b) ?? 0, b ? b.severity : null);
+  const tone = toneOf(u.session) || toneOf(u.week) || toneOf(scoped) || '';
   const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
+  const tip = [
+    'Claude usage',
+    u.session ? `5h window: ${fmt(u.session)}${u.session.resetsAt ? ` (resets in ${fmtResetIn(u.session.resetsAt)})` : ''}` : '',
+    u.week ? `Week: ${fmt(u.week)}` : '',
+    scoped ? `Week (${scoped.label||'model'}): ${fmt(scoped)}` : '',
+    `Tokens today: ${fmtTokens(u.today && u.today.totalTokens)}`,
+    'No daily limit — Claude caps by rolling 5h window and by week.',
+  ].filter(Boolean).join(' · ').replace(/"/g, '&quot;');
+  const line = `Claude · 5h ${fmt(u.session)} · week ${fmt(u.week)}${scoped ? ` · ${(scoped.label||'model').toLowerCase()} ${fmt(scoped)}` : ''} · ${fmtTokens(u.today && u.today.totalTokens)} today`;
   host.innerHTML = `
     <div class="usage-strip">
-      <div class="usage-strip-row">
-        <b style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--c-ink-3);">Quotas Claude</b>
-        ${usageBarHtml('⏱', '5h window', u.session, 'Rolling 5-hour window — the limit that hits most often.')}
-        ${usageBarHtml('📅', 'Week', u.week, 'Total over the last 7 days, all models combined.')}
-        ${scoped ? usageBarHtml('⚙️', `Week (${scoped.label||'model'})`, scoped, 'Weekly cap specific to this model.') : ''}
-        <span class="usage-item"><span class="ui-label">tokens today</span><span class="usage-pct">${fmtTokens(u.today && u.today.totalTokens)}</span></span>
-      </div>
-      <div class="usage-note">No daily limit — Claude caps by rolling 5h window and by week.${u.subscriptionAvailable ? '' : ' (subscription quota % unavailable right now — token counts only)'}</div>
+      <span class="usage-mini ${tone}" title="${tip}">${line}</span>
       ${(u.schedulerLimitResetAt || hot.length) ? `<div class="usage-alert">${u.schedulerLimitResetAt ? 'Limit reached — the queue is force-paused, it will resume automatically at reset.' : 'Claude usage is running low on one of the limits.'}</div>` : ''}
     </div>`;
 }
@@ -3908,6 +3943,11 @@ async function initArchNav() {
   document.querySelectorAll('[data-arch-view]').forEach(b => {
     b.onclick = () => { archView = b.getAttribute('data-arch-view'); document.querySelectorAll('[data-arch-view]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderArchStage(); };
   });
+  const archStageEl = document.getElementById('archStage');
+  archStageEl.addEventListener('click', (e) => {
+    if (e.target.closest('.arch-node')) return;
+    deselectArchNode();
+  });
   renderArchStage();
   await loadArchLiveData();
   renderArchStage();
@@ -4054,6 +4094,16 @@ function selectArchNode(id) {
   document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('selected', n.getAttribute('data-arch-id')===id));
   if (archView === 'architecture' || archView === 'techtree') drawArchDeps();
   renderArchDetail(id);
+  document.getElementById('archRight').classList.add('open'); // dock the detail panel beside the graph
+}
+
+// Clicking empty space on the graph clears the selection and retracts the docked panel.
+function deselectArchNode() {
+  if (!archSelected) return;
+  archSelected = null;
+  document.querySelectorAll('.arch-node').forEach(n => n.classList.remove('selected'));
+  document.getElementById('archRight').classList.remove('open');
+  if (archView === 'architecture' || archView === 'techtree') drawArchDeps();
 }
 
 function fmtVerified(iso) {
@@ -4192,6 +4242,7 @@ function renderArchDetail(id) {
     archSelected = null;
     await loadArchNodes(); renderArchStage();
     document.getElementById('archRight').innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>';
+    document.getElementById('archRight').classList.remove('open');
   };
   host.querySelectorAll('[data-arch-jump]').forEach(a => {
     a.onclick = (e) => { e.preventDefault(); selectArchNode(a.getAttribute('data-arch-jump')); };
