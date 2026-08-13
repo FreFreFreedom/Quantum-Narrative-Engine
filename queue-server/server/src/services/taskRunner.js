@@ -27,7 +27,7 @@
 // related is provider-agnostic.
 
 import { spawn } from 'node:child_process';
-import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync, mkdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
@@ -353,6 +353,14 @@ function appendStreamChunk(taskId, chunk) {
   broadcastAll('agent:task:stream', { taskId, chunk });
 }
 export function getStreamBuffer(taskId) { return streamBuffers.get(taskId) || []; }
+
+// Live progress for the UI's work meter: how much transcript output the running
+// agent has produced so far (bytes on the exec log). 0 when the task has no log
+// (not running, or a runt that never wrote), null-safe and cheap — one stat.
+export function execOutputBytes(taskId) {
+  try { return existsSync(EXEC_LOG(taskId)) ? statSync(EXEC_LOG(taskId)).size : 0; } catch { return 0; }
+}
+export function getExecTimeoutMinutes() { return Math.round(EXEC_TIMEOUT_MS / 60_000); }
 
 export function isRunnerBusy() { return totalWriterRuns() > 0 || _questionRuns.size > 0; }
 export function getMaxParallelQuestions() { return MAX_PARALLEL_QUESTIONS; }

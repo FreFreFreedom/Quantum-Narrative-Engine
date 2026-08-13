@@ -3,7 +3,7 @@ import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
 import { listOpenCodeModels, listAiRouterModels } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
-import { findAgentTask } from '../services/taskRunner.js';
+import { findAgentTask, execOutputBytes, getExecTimeoutMinutes } from '../services/taskRunner.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 
 export function queueRoutes() {
@@ -54,12 +54,17 @@ export function queueRoutes() {
       // can tell a wedged agent from a busy one — plan Part 3. Null for prompts
       // with no live agent task.
       const task = p.agent_task_id ? findAgentTask(p.agent_task_id) : null;
+      const running = p.status === 'running';
       return {
         ...p,
         pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
         messages: queue.listMessages(p.id),
         run_state: task?.run_state ?? null,
         heartbeat_at: task?.heartbeat_at ?? null,
+        // Work-meter data for the UI's progress bar: real output volume so far,
+        // plus the run's time budget (both only meaningful while running).
+        output_bytes: running ? execOutputBytes(p.agent_task_id) : null,
+        timeout_minutes: running ? getExecTimeoutMinutes() : null,
       };
     });
     res.json({
