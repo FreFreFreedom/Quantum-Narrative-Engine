@@ -365,6 +365,17 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .flow-genhint { font-size:10.5px; color:var(--c-ink-4); }
 .flow-genstatus { font-size:10.5px; color:var(--c-ink-4); }
 .flow-seedadd { border:1px dashed var(--c-border-2); border-radius:8px; padding:10px; margin-bottom:8px; }
+.flow-filterchip { display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:8px; border:1px solid var(--c-border-2); border-radius:8px; background:var(--c-surface-2); font-size:11px; color:var(--c-ink-2); }
+.flow-filterchip b { font-weight:600; }
+.flow-filterchip .ctrlbtn { margin-left:auto; }
+.q-item-title.unread { font-weight:700; }
+.q-unread-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--c-violet); margin-left:6px; vertical-align:middle; }
+.q-title-inline { flex:1; min-width:0; border:1px solid transparent; border-radius:4px; padding:2px 4px; font-size:12px; font-weight:600; font-family:inherit; color:var(--c-ink); background:transparent; }
+.q-title-inline:hover { border-color:var(--c-border-2); background:var(--c-surface); }
+.q-title-inline:focus { border-color:var(--c-accent); background:var(--c-surface); outline:none; }
+.q-ahead { color:var(--c-ink-4); font-size:10.5px; font-style:italic; }
+.flow-row.drag { opacity:.45; }
+.flow-row.drag-over { outline:1px dashed var(--c-accent); outline-offset:-1px; }
 .flow-seedadd input, .flow-seedadd textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; background:var(--c-surface); color:var(--c-ink); box-sizing:border-box; }
 .tv-empty { font-size:11.5px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:18px; text-align:center; }
 /* usage strip */
@@ -2155,6 +2166,8 @@ const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
 let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
+let flowComponentFilter = null; // architecture node id → only its related prompts show
+let qDragQId = null;             // prompt id being drag-reordered
 
 function initCore() {
   if (!coreInited) {
@@ -2257,7 +2270,10 @@ function jumpToQueueItem(id) {
   setMode('core');
   switchCoreView('flow');
   const item = qPrompts.find(p => p.id === id);
-  if (item) { qSelected = item; qRenderDetail(item); }
+  if (item) {
+    if (!item.seen_at) { item.seen_at = '1'; apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {}); }
+    qSelected = item; qRenderDetail(item);
+  }
   renderFlow();
 }
 
@@ -2943,23 +2959,28 @@ function flowMatches(parts) {
   return parts.join(' ').toLowerCase().includes(flowSearch.toLowerCase());
 }
 
-function flowQueueRow(p, reorderable) {
+function flowQueueRow(p, reorderable, busy, ahead) {
   const sel = qSelected && qSelected.id === p.id;
   const finished = !Q_ACTIVE_STATUSES.includes(p.status);
+  const unread = finished && !p.seen_at;
+  const titleHtml = reorderable
+    ? `<input class="q-title-inline" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
+    : `<span class="q-item-title${unread ? ' unread' : ''}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
   return `
-  <div class="flow-row q-item${sel ? ' sel' : ''}" data-qid="${p.id}">
+  <div class="flow-row q-item${sel ? ' sel' : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="q-item-top">
-      ${reorderable ? '<span class="q-drag-handle" title="Reorder (▲▼ on hover)">⠿</span>' : ''}
-      <span class="q-item-title">${p.title || '(untitled)'}</span>
+      ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder (or ▲▼ on hover)">⠿</span>' : ''}
+      ${titleHtml}
       <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
     </div>
     <div class="q-item-meta">
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}</span>
       <span>${qElapsed(p)}</span>
     </div>
+    ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
     ${finished ? qCostLine(p) : ''}
-    ${p.pending_question ? `<div class="q-item-q">🙋 ${p.pending_question.question}</div>` : ''}
+    ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
     ${reorderable ? `
       <div class="q-item-arrows">
         <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
@@ -2968,13 +2989,28 @@ function flowQueueRow(p, reorderable) {
   </div>`;
 }
 
+function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
 function flowSection(icon, title, count, rowsHtml) {
   return `<div class="flow-section"><div class="flow-sec-head"><span class="flow-sec-title">${icon} ${title}</span><span class="flow-sec-count">${count}</span></div>${rowsHtml}</div>`;
+}
+
+function qDragMove(id, overId) {
+  const ord = qReorderableIds();
+  if (!ord.includes(id) || !ord.includes(overId)) return;
+  const next = ord.slice();
+  next.splice(ord.indexOf(id), 1);
+  next.splice(ord.indexOf(overId), 0, id);
+  qPersistReorder(qRebuildFullOrder(next));
 }
 
 function renderFlow() {
   const host = document.getElementById('tvBodyFlow');
   if (!host) return;
+  // Never rebuild the list while the human is typing a title or mid-drag — the
+  // data below stays current (polls update it) and renders again right after.
+  const ae = document.activeElement;
+  if (ae && ae.classList && (ae.classList.contains('q-title-inline') || qDragQId)) return;
   document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
 
   const showQueue = flowType === 'all' || flowType === 'queue';
@@ -2983,18 +3019,23 @@ function renderFlow() {
   let html = '';
 
   if (showQueue) {
-    const questions = qPrompts.filter(p => p.pending_question && flowMatches([p.title, p.prompt]));
-    const running = qPrompts.filter(p => p.status === 'running' && flowMatches([p.title, p.prompt]));
-    const ready = qPrompts.filter(p => p.status === 'queued' && flowMatches([p.title, p.prompt]));
-    const parked = qPrompts.filter(p => p.status === 'paused' && flowMatches([p.title, p.prompt]));
-    const done = qPrompts.filter(p => !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
+    const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
+    const questions = qPrompts.filter(p => rel(p) && p.pending_question && flowMatches([p.title, p.prompt]));
+    const running = qPrompts.filter(p => rel(p) && p.status === 'running' && flowMatches([p.title, p.prompt]));
+    const ready = qPrompts.filter(p => rel(p) && p.status === 'queued' && flowMatches([p.title, p.prompt]));
+    const parked = qPrompts.filter(p => rel(p) && p.status === 'paused' && flowMatches([p.title, p.prompt]));
+    const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
+    const busy = running.length > 0;
     const showDone = flowDoneOpen || flowSearch !== '';
     if (questions.length) html += flowSection('❓', 'Questions to answer', questions.length, questions.map(p => flowQueueRow(p, false)).join(''));
     if (running.length) html += flowSection('▶', 'Running now', running.length, running.map(p => flowQueueRow(p, false)).join(''));
-    if (ready.length) html += flowSection('⏳', 'Ready to start', ready.length, ready.map(p => flowQueueRow(p, true)).join(''));
+    if (ready.length) html += flowSection('⏳', 'Ready to start', ready.length, ready.map((p, i) => flowQueueRow(p, true, busy, i)).join(''));
     if (parked.length) html += flowSection('⏸', 'Parked', parked.length, parked.map(p => flowQueueRow(p, true)).join(''));
     if (done.length) {
       html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span><span class="flow-done-chev">${showDone ? '▾' : '▸'}</span></div>${showDone ? done.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+    }
+    if (flowType === 'queue' && !questions.length && !running.length && !ready.length && !parked.length && !done.length) {
+      html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
     }
   }
 
@@ -3016,6 +3057,10 @@ function renderFlow() {
           ${s.rationale ? `<div class="sg-rationale">${s.rationale}</div>` : ''}
         </div>`).join(''));
     }
+  }
+
+  if (flowType === 'suggestions' && !tvSuggestions.length) {
+    html += '<div class="empty">No suggestions yet — when one is pending, click "✨ Generate now" (it uses the Claude API), or ask the assistant.</div>';
   }
 
   if (showSeeds) {
@@ -3041,21 +3086,75 @@ function renderFlow() {
         </div>`).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
   }
 
+  if (flowComponentFilter) {
+    const fnode = ARCH_BY_ID[flowComponentFilter] || {};
+    html = `<div class="flow-filterchip">🔎 Showing only what touches <b>${qEsc(fnode.name || flowComponentFilter)}</b> <button class="ctrlbtn" id="flowFilterClear">✕ Clear</button></div>` + html;
+  }
+
   if (!html) {
-    html = '<div class="empty">' + (flowSearch ? 'Nothing in the Flow matches that search.' : 'The Flow is empty — start with "＋ New prompt", or tell Claude an idea and it will land here or in the tree.') + '</div>';
+    const guide = flowComponentFilter
+      ? 'Nothing in the Flow is tied to this component yet — queue a prompt from its detail page and it will show here.'
+      : (flowSearch ? 'Nothing in the Flow matches that search.' : 'The Flow is empty — start with "＋ New prompt", or tell Claude an idea and it will land here or in the tree.');
+    html = '<div class="empty">' + guide + '</div>';
   }
   host.innerHTML = html;
 
   // Row wiring
+  const filterClear = document.getElementById('flowFilterClear');
+  if (filterClear) filterClear.onclick = () => { flowComponentFilter = null; renderFlow(); };
   host.querySelectorAll('.q-item').forEach(el => {
     const id = el.getAttribute('data-qid');
     el.onclick = (e) => {
       if (e.target.closest('.q-arrow')) return;
+      if (e.target.closest('.q-title-inline')) return;
       flowSideSel = null;
       qSelected = qPrompts.find(p => p.id === id);
+      if (qSelected && !qSelected.seen_at) {
+        qSelected.seen_at = '1';
+        apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
+      }
       qRenderDetail(qSelected);
       renderFlow();
     };
+  });
+  // Inline title autosave on reorderable rows (debounced PATCH, no cursor jumping).
+  host.querySelectorAll('.q-title-inline').forEach(inp => {
+    let timer = null;
+    inp.oninput = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const p = qPrompts.find(x => x.id === inp.getAttribute('data-pid'));
+        if (p && inp.value.trim() !== '' && inp.value !== p.title) {
+          apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { title: inp.value.trim() }).catch(() => {});
+        }
+      }, 800);
+    };
+    inp.onfocus = () => { inp.dataset.orig = inp.value; };
+    inp.onblur = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      const p = qPrompts.find(x => x.id === inp.getAttribute('data-pid'));
+      if (p && inp.value.trim() !== '' && inp.value !== (inp.dataset.orig || p.title)) {
+        apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { title: inp.value.trim() }).then(() => { p.title = inp.value.trim(); }).catch(() => {});
+      }
+    };
+  });
+  // Drag to reorder (reorderable rows only — same backend as the ▲▼ arrows).
+  host.querySelectorAll('.flow-row[draggable="true"]').forEach(el => {
+    el.addEventListener('dragstart', (e) => { qDragQId = el.getAttribute('data-qid'); el.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; });
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const over = e.target.closest('.flow-row[draggable="true"]');
+      if (over) host.querySelectorAll('.flow-row[draggable="true"]').forEach(x => x.classList.remove('drag-over'));
+      if (over) over.classList.add('drag-over');
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const over = e.target.closest('.flow-row[draggable="true"]');
+      if (over && qDragQId && over.getAttribute('data-qid') !== qDragQId) qDragMove(qDragQId, over.getAttribute('data-qid'));
+      qDragQId = null;
+      host.querySelectorAll('.flow-row').forEach(x => x.classList.remove('drag-over', 'drag'));
+    });
+    el.addEventListener('dragend', () => { qDragQId = null; host.querySelectorAll('.flow-row').forEach(x => x.classList.remove('drag-over', 'drag')); });
   });
   host.querySelectorAll('[data-qup]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qup'), -1); }; });
   host.querySelectorAll('[data-qdown]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qdown'), 1); }; });
@@ -4642,9 +4741,17 @@ function renderArchDetail(id) {
       <button id="archDiscussBtn">💬 Discuss in Idea Studio</button>
       <button id="archAskBtn">✦ Ask about this</button>
       <button id="archQueueBtn">📋 Queue custom prompt</button>
+      <button id="archFlowBtn">🔎 Show related in Flow</button>
     </div>
     <div id="archQueueHost"></div>`;
   host.innerHTML = html;
+
+  const flowBtn = document.getElementById('archFlowBtn');
+  if (flowBtn) flowBtn.onclick = () => {
+    flowComponentFilter = c.id;
+    setMode('core');
+    switchCoreView('flow');
+  };
 
   renderArchSuggestions(c);
   loadArchHistory(id);
@@ -4884,6 +4991,13 @@ function openChatWithPrompt(text) {
 .fw-q-meta { color: var(--c-ink-4); font-size: 10px; flex-shrink: 0; }
 .fw-q-row button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; flex-shrink: 0; }
 .fw-q-row button:hover { border-color: var(--c-ink-3); }
+.fw-pick-btn { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--c-ink-2); }
+.fw-pick-btn:hover { border-color: var(--c-ink-3); }
+.fw-pick-btn.active { border-color: var(--c-danger); color: var(--c-danger); }
+.fw-pick-ctx { font-size: 10.5px; color: var(--c-ink-4); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fw-pick-banner { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: var(--c-ink-solid); color: var(--c-on-solid); padding: 8px 14px; border-radius: 10px; font-size: 12.5px; z-index: 10001; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+.fw-pick-banner button { border: 1px solid var(--c-border-2); background: transparent; color: inherit; border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
+.fw-hover-hl { position: fixed; border: 1.5px solid var(--c-accent); border-radius: 4px; pointer-events: none; z-index: 10000; }
 
 /* ── Idea Studio — conversational task creation ─────────────────────────── */
 .studio-overlay { position:fixed; inset:0; background:rgba(42,38,33,.35); z-index:10000; display:flex; align-items:center; justify-content:center; padding:18px; }
@@ -4967,6 +5081,10 @@ function openChatWithPrompt(text) {
       </div>
       <textarea id="fw-task-input" rows="3" placeholder="Describe the task for the coding agent…"></textarea>
       <div class="fw-task-row">
+        <button class="fw-pick-btn" id="fw-pick-btn">✏️ Point at an element</button>
+        <span class="fw-pick-ctx" id="fw-pick-ctx"></span>
+      </div>
+      <div class="fw-task-row">
         <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-ink-3);"><input type="checkbox" id="fw-task-first"> First in line</label>
         <span class="fw-task-status" id="fw-task-status"></span>
         <button class="fw-task-submit" id="fw-task-submit">Add to queue</button>
@@ -5034,6 +5152,26 @@ function openChatWithPrompt(text) {
     if (!t || t.length > 220) return false;
     var markers = ['what about', "wouldn", "would it be", "it would be cool", 'it could be', 'we should', "let's", 'idea', 'imagine', 'add a ', 'add an ', 'add the ', 'make a ', 'make an ', 'make the ', 'build a ', 'build an ', 'build the ', 'create a ', 'create an ', 'create the ', 'introduce a ', 'feature', 'button', 'new view', 'new tab', 'a way to '];
     return markers.some(function (m) { return t.indexOf(m) !== -1; });
+  }
+
+  // Task detection (sister of the idea chip): message reads like a change request
+  // for the coding agent → offer to hand it to the New task tab. Never auto-sends.
+  function soundsLikeTask(text) {
+    var t = (text || '').trim().toLowerCase();
+    if (!t || t.length > 220) return false;
+    var markers = ['fix', 'change', 'remove', 'make it ', 'get it working', "doesn't work", 'does not work', 'broken', 'bug', 'update the ', 'the button', 'the page', 'when i click', 'the header', 'the flow', 'the queue', 'the graph', 'the tab ', 'add a ', 'add an ', 'add the ', 'build a ', 'create a ', 'implement'];
+    return markers.some(function (m) { return t.indexOf(m) !== -1; });
+  }
+
+  function taskChipFor(text) {
+    var w = document.createElement('div');
+    w.className = 'msg';
+    w.innerHTML = '<span class="idea-chip">🛠 This sounds like a task for the coding agent — <button class="idea-chip-btn" id="taskChipBtn">Turn it into a task</button></span>';
+    log.appendChild(w);
+    log.scrollTop = log.scrollHeight;
+    w.querySelector('#taskChipBtn').onclick = function() {
+      if (window.fwPrefillTask) window.fwPrefillTask(text);
+    };
   }
 
   function ideaChipFor(text) {
@@ -5189,10 +5327,16 @@ function openChatWithPrompt(text) {
     var submitBtn = document.getElementById('fw-task-submit');
     var text = inputEl.value.trim();
     if (!text) return;
+    var fullText = text + (fwPicked ? '\n\n(context: ' + fwPicked + ')' : '');
     submitBtn.disabled = true;
-    apiWrite('/api/travaux/prompts', 'POST', { title: '', prompt: text, mode: fwTaskMode, status: 'queued', priority: !!firstEl.checked, space: 'fmcns' })
+    apiWrite('/api/travaux/prompts', 'POST', { title: '', prompt: fullText, mode: fwTaskMode, status: 'queued', priority: !!firstEl.checked, space: 'fmcns' })
       .then(function(resp) { return resp.json(); })
-      .then(function() { inputEl.value = ''; fwStatusDone(statusEl, 'fwViewFlow1'); })
+      .then(function() {
+        inputEl.value = '';
+        fwPicked = null;
+        document.getElementById('fw-pick-ctx').textContent = '';
+        fwStatusDone(statusEl, 'fwViewFlow1');
+      })
       .catch(function(e) { statusEl.textContent = 'Error: ' + e.message; })
       .finally(function() { submitBtn.disabled = false; });
   }
@@ -5200,6 +5344,100 @@ function openChatWithPrompt(text) {
   document.getElementById('fw-task-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitFwTask(); }
   });
+
+  // ── Element picker (New task tab) ─────────────────────────────────────────
+  var fwPickActive = false;
+  var fwPicked = null;
+  var fwPickBanner = null;
+  var fwPickBtn = document.getElementById('fw-pick-btn');
+  function fwDescribe(el) {
+    var parts = [];
+    ['id', 'data-src', 'data-testid', 'aria-label', 'placeholder', 'name', 'title'].forEach(function(k) {
+      var v = el.getAttribute(k);
+      if (v && !parts.length) parts.push((k === 'id' ? '#' : '[') + String(v).slice(0, 60) + (k === 'id' ? '' : ']'));
+    });
+    var cls = (typeof el.className === 'string' ? el.className : '').split(/\s+/).filter(Boolean).slice(0, 3).join('.');
+    if (cls && !parts.length) parts.push('.' + cls);
+    if (!parts.length) {
+      var txt = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50);
+      parts.push(txt ? '"' + txt + '"' : el.tagName.toLowerCase());
+    }
+    var path = [];
+    var node = el;
+    while (node && node !== document.body && path.length < 4) {
+      if (node.id) { path.unshift('#' + node.id); break; }
+      var ds = node.getAttribute && node.getAttribute('data-src');
+      if (ds) { path.unshift('[' + ds.slice(0, 40) + ']'); break; }
+      if (node.nodeType === 1 && node.tagName) path.unshift(node.tagName.toLowerCase());
+      node = node.parentNode;
+    }
+    return parts.join(' · ') + ' — inside ' + (path.join(' > ') || 'page');
+  }
+  function fwStopPicking() {
+    if (!fwPickActive) return;
+    fwPickActive = false;
+    document.removeEventListener('mouseover', fwHover, true);
+    document.removeEventListener('click', fwClick, true);
+    if (fwPickBanner) { fwPickBanner.remove(); fwPickBanner = null; }
+    if (fwPickBtn) { fwPickBtn.textContent = '✏️ Point at an element'; fwPickBtn.classList.remove('active'); }
+    document.querySelectorAll('.fw-hover-hl').forEach(function(x) { x.remove(); });
+    var ctx = document.getElementById('fw-pick-ctx');
+    if (ctx) ctx.textContent = fwPicked ? '🎯 ' + fwPicked : '';
+  }
+  function fwHover(e) {
+    if (!fwPickActive) return;
+    var t = e.target;
+    if (!t || t.nodeType !== 1) return;
+    if (t === fwPickBanner || (fwPickBanner && t.closest('.fw-pick-banner'))) return;
+    if (t === panel || panel.contains(t)) return;
+    document.querySelectorAll('.fw-hover-hl').forEach(function(x) { x.remove(); });
+    var hl = document.createElement('div');
+    hl.className = 'fw-hover-hl';
+    var r = t.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return;
+    hl.style.left = r.left + 'px'; hl.style.top = r.top + 'px';
+    hl.style.width = r.width + 'px'; hl.style.height = r.height + 'px';
+    document.body.appendChild(hl);
+  }
+  function fwClick(e) {
+    if (!fwPickActive) return;
+    var t = e.target;
+    if (t === fwPickBanner || (fwPickBanner && t.closest('.fw-pick-banner'))) return;
+    if (t === panel || panel.contains(t)) return;
+    if (t === fwPickBtn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelectorAll('.fw-hover-hl').forEach(function(x) { x.remove(); });
+    fwPicked = fwDescribe(t);
+    fwStopPicking();
+  }
+  if (fwPickBtn) fwPickBtn.onclick = function() {
+    if (fwPickActive) { fwStopPicking(); return; }
+    fwPickActive = true;
+    fwPicked = null;
+    fwPickBtn.textContent = '✕ Cancel';
+    fwPickBtn.classList.add('active');
+    var ctx = document.getElementById('fw-pick-ctx');
+    if (ctx) ctx.textContent = 'Click the element to point at — Esc or this button cancels.';
+    fwPickBanner = document.createElement('div');
+    fwPickBanner.className = 'fw-pick-banner';
+    fwPickBanner.innerHTML = '<span>🎯 Point at an element — click it to capture</span><button id="fwPickSkip">Skip</button>';
+    document.body.appendChild(fwPickBanner);
+    fwPickBanner.querySelector('#fwPickSkip').onclick = fwStopPicking;
+    document.addEventListener('mouseover', fwHover, true);
+    document.addEventListener('click', fwClick, true);
+  };
+  document.addEventListener('keydown', function(e) { if (fwPickActive && e.key === 'Escape') fwStopPicking(); });
+
+  // Prefill the New task tab from anywhere (the "Turn it into a task" chip).
+  window.fwPrefillTask = function(text) {
+    showFwTab('task');
+    if (!panel.classList.contains('open')) btn.click();
+    if (document.getElementById('fw-task-input')) {
+      document.getElementById('fw-task-input').value = text;
+      document.getElementById('fw-task-input').focus();
+    }
+  };
 
   // ── Queue tab ─────────────────────────────────────────────────────────────
   function escFw(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
@@ -5349,6 +5587,7 @@ function openChatWithPrompt(text) {
       else {
         addMsg('assistant', data.text);
         if (soundsLikeIdea(msgText)) ideaChipFor(msgText);
+        if (soundsLikeTask(msgText)) taskChipFor(msgText);
       }
     } catch (e) {
       pending.remove();

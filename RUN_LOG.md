@@ -738,3 +738,18 @@ Interactive session with Antoine ("lets go"). Branch `overnight/2026-08-10` (mai
   - Fix: moved flowGenBtn / flowSeedToggle / idAddBtn + Enter-key wiring into
     the post-render section next to the Done toggle. Verified node --check ×5,
     braces, divs balanced, synced (200). Antoine to re-test the seed button.
+
+---
+
+# RUN_LOG — Flow + New-task round: unread dots, element picker, task chip, 2026-08-13
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Antoine said "ship the new elements".
+
+- All changes are frontend-first (`fmcns_navigator.html`, master at repo root) with a small backend tail for the unread feature (`seen_at` column + `POST /api/travaux/prompts/:id/seen` + `markSeen()`).
+- New Flow list elements: unread items bold with a violet dot (marked seen on open, including via handoff links), inline title edit (pencil, Enter/blur saves), drag-and-drop reordering (client-side, no backend), component filter chip (from Architecture "Show related in Flow"), seed → component back-link chip, whitespace-preserving previews.
+- Architecture detail gained "🔎 Show related in Flow" (sets the component filter and jumps to the Flow view).
+- New task tab gained an element picker: "✏️ Point at an element" hover-highlights any element on the page, click captures an `#id · .class — inside path` description appended to the queued prompt as `(context: …)`.
+- Idea Studio chat gained a task chip: replies that read like change requests ("fix", "the button doesn't work", …) show "🛠 Turn it into a task", which prefills the New task tab.
+- Sync rule added to AGENTS.md (hard rule): after every frontend round, copy the master to `queue-server/public/index.html` and verify checksums — Antoine tests on :3000, which serves the copy, not the master.
+- Verified: 5 script blocks `node --check`, CSS braces balanced, HTML balanced, master ↔ served copy checksums identical.
+- SHIPPED: committed (intended files only), fast-forwarded `main`, pushed — Railway auto-deploys from main; Antoine hard-refreshes :3000.

@@ -58,6 +58,14 @@ export function getPrompt(id) {
   return db.prepare(`${SELECT()} AND id=?`).get(id) || null;
 }
 
+// Mark a prompt as read by the human (the unread dot on finished items).
+export function markSeen(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  db.prepare(`UPDATE work_prompts SET seen_at=COALESCE(seen_at,strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE id=?`).run(id);
+  return getPrompt(id);
+}
+
 function nextPosition(space) {
   const row = db.prepare(`SELECT MAX(position) AS m FROM work_prompts WHERE deleted_at IS NULL AND space=?`).get(space);
   return (row?.m ?? 0) + 1;

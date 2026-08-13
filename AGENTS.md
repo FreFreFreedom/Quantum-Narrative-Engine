@@ -67,6 +67,13 @@ questions come first.
   its checks actually ran.
 - Keep `RUN_LOG.md` current as you go — Antoine reads it in the morning, not
   your memory.
+- **Frontend sync rule (hard)**: Antoine tests the app at `localhost:3000`,
+  which is served from a copy at `queue-server/public/index.html` — NOT the
+  master `fmcns_navigator.html` at the repo root. After **every** round of
+  frontend changes, copy the master over the copy
+  (`cp fmcns_navigator.html queue-server/public/index.html`) and verify the
+  checksums match. Never leave a session with the two diverged. Tell Antoine
+  to hard-refresh (Shift+Cmd+R) when testing the server copy.
 
 ## Repository essentials
 

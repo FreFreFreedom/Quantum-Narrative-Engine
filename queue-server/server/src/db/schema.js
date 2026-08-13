@@ -131,6 +131,7 @@ function initSchema(db) {
   // Link a Dispatch Queue task back to the conversation that produced it (Idea Studio
   // handoff — see plans/universal-conversations-core-architecture.md §7).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN convo_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN seen_at TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

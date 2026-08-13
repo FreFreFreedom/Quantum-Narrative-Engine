@@ -111,6 +111,12 @@ export function queueRoutes() {
     res.json({ prompts: queue.reorderPrompts(ids) });
   });
 
+  router.post('/prompts/:id/seen', (req, res) => {
+    const row = queue.markSeen(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json({ ok: true });
+  });
+
   router.post('/prompts/:id/first', (req, res) => {
     const row = queue.moveToFront(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });
