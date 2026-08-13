@@ -10,8 +10,10 @@
 // means the failure looked like a rate/usage limit, not a hard error (used by the
 // caller to record exhaustion in the ledger).
 
-import { pickChain, recordExhaustion } from './ai/router.js';
+import { isExhausted, pickChain, recordExhaustion } from './ai/router.js';
 import { chatCompletion as freeChatCompletion, detectLimit as freeDetectLimit } from './providers/openaiCompat.js';
+import * as opencode from './providers/opencode.js';
+import { listOpenCodeModels } from './providers/index.js';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -40,21 +42,63 @@ export async function callAnthropic({ model, system, tools, messages, maxTokens 
   return { content: data.content || [] };
 }
 
+// Flatten a message array (string or content-block form) into plain text for the
+// OpenCode CLI path, which takes a single prompt rather than a message list.
+function messagesToText(messages) {
+  return (messages || []).map((m) => {
+    const role = m.role === 'assistant' ? 'Assistant' : 'User';
+    if (typeof m.content === 'string') return `${role}: ${m.content}`;
+    const parts = (m.content || []).map((b) => {
+      if (b.type === 'text') return b.text;
+      if (b.type === 'tool_result') return `[tool result: ${JSON.stringify(b.content)}]`;
+      if (b.type === 'tool_use') return `[tool call: ${b.name}]`;
+      return '';
+    }).filter(Boolean);
+    return `${role}: ${parts.join('\n')}`;
+  }).join('\n\n');
+}
+
+// OpenCode CLI fallback — the dynamic free model list (e.g. laguna) that the rest
+// of the app uses but the static catalogue doesn't know about. The CLI cannot do
+// the tool-calling protocol, so this path degrades to text-only turns.
+async function callOpenCodeFallback({ system, messages }) {
+  let models = [];
+  try {
+    const out = await listOpenCodeModels();
+    models = out.models || [];
+  } catch (e) {
+    return { error: 'opencode_unavailable', message: e.message };
+  }
+  const freeModels = models.some((m) => m.free) ? models.filter((m) => m.free) : models;
+  for (const m of freeModels) {
+    if (isExhausted('opencode', m.id)) continue;
+    const prompt = `${system}\n\nNote: project-lookup tools are unavailable on this backend — answer from the context given.\n\n${messagesToText(messages)}`;
+    const r = await opencode.runToolless({ prompt, model: m.id, cwd: process.env.AGENT_CWD || process.cwd(), env: opencode.spawnEnv() });
+    if (r.code === 0 && r.text) return { content: [{ type: 'text', text: r.text }], providerId: 'opencode', model: m.id };
+    if (opencode.detectLimit(r.text)) recordExhaustion({ providerId: 'opencode', model: m.id, detectedBy: 'chat', errText: r.text });
+  }
+  return { error: 'opencode_failed', message: 'all opencode free models failed' };
+}
+
 export async function callFreeProvider({ system, tools, messages, maxTokens }) {
   const { chain } = pickChain({ minRank: CHAT_MIN_RANK });
-  if (!chain.length) return { error: 'no_free_provider', message: 'every free provider is currently exhausted' };
   const failures = [];
-  for (const { provider: providerId, model } of chain) {
-    const out = await freeChatCompletion({ providerId, model, system, messages, tools, maxTokens });
-    if (out.error) {
-      failures.push(`${providerId}:${model}:${out.message || out.error}`);
-      if (out.limit || freeDetectLimit(out.message)) {
-        recordExhaustion({ providerId, model, detectedBy: 'chat', errText: out.message || '' });
+  if (chain.length) {
+    for (const { provider: providerId, model } of chain) {
+      const out = await freeChatCompletion({ providerId, model, system, messages, tools, maxTokens });
+      if (out.error) {
+        failures.push(`${providerId}:${model}:${out.message || out.error}`);
+        if (out.limit || freeDetectLimit(out.message)) {
+          recordExhaustion({ providerId, model, detectedBy: 'chat', errText: out.message || '' });
+        }
+        continue;
       }
-      continue;
+      return { content: out.content, providerId, model };
     }
-    return { content: out.content, providerId, model };
   }
+  const oc = await callOpenCodeFallback({ system, messages });
+  if (!oc.error) return oc;
+  failures.push(`opencode:${oc.message}`);
   return { error: 'all_free_providers_failed', message: failures.join(' | ') };
 }
 

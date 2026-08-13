@@ -450,3 +450,29 @@ unattended):
   two `.opencode/agent/*.md` edits, and junk files (`.DS_Store`, `.claude/`,
   `fix_escape.py`) remain uncommitted — they belong to other sessions' work-in-progress.
 
+
+---
+
+# RUN_LOG — daytime fix, 2026-08-12/13 (Idea Studio chat → "every free provider is currently exhausted")
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Not committed, not pushed, not deployed.
+
+## Bug
+
+Idea Studio chat turns failed with "every free provider is currently exhausted". Root cause: `services/anthropicLoop.js#callFreeProvider` walked only the static catalogue (`ai/catalog.js` — Groq/Cerebras/Google/Mistral/OpenRouter/Cohere/NVIDIA/Zhipu), each of which requires its own API key. Locally none are set → empty chain → misleading "exhausted" error. The quota ledger was actually empty (verified: `provider_quota_state`/`provider_quota_ledger` have zero rows). The OpenCode dynamic free-model list (`opencode/laguna-s-2.1-free` etc., confirmed live via `/api/travaux/providers`) was never consulted on this path.
+
+## Fix (`services/anthropicLoop.js`)
+
+- `callFreeProvider` now falls through to `callOpenCodeFallback()` when the catalogue chain is empty or all entries fail.
+- Fallback lists OpenCode free models via the existing `listOpenCodeModels()` discovery (5-min cache), skips ledger-exhausted ones, and runs each through `opencode.runToolless` (read-only fmcns-text agent) — text-only turns, since the CLI can't do the tool-calling protocol. `messagesToText()` serializes both string and content-block message forms.
+- The misleading "exhausted" string is gone; failures now report the real reason.
+- Model choice matches the rest of the app (first free model in the shared list — currently gemma-4-26b, before laguna alphabetically).
+
+## Verification (live, real free-model turns, cost $0)
+
+- `node --check` clean. Server restarted on :3000.
+- Studio chat message: replied `{"via":"opencode:google/gemma-4-26b-a4b-it"}` (~5 s).
+- `/plan`: generated a sensible refusal brief for the empty "test" seed.
+- `/handoff`: created the `paused` queue task; idempotency + convo back-links intact.
+- Test convo + handoff task deleted afterwards.
+- Drawer chat / other consumers untouched (shared `runToolLoop`; behaviour only changed when the catalogue previously produced a dead end).
