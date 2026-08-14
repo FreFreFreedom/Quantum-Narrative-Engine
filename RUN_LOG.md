@@ -846,3 +846,17 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`.
 - No backend/DB change — `pending_question` was already delivered on every row of GET /api/travaux/prompts. The legacy forward-workspace queue view already surfaces questions with its own count; left as-is.
 - Verified: `node --check` on the extracted inline JS, master ↔ `queue-server/public/index.html` checksums identical, local :3000 serving the new code, live Railway site serving it (health 200 + new identifiers present).
 - SHIPPED per Antoine: commit 70b90a3 (only the two frontend files) → main via `update-ref` fast-forward → pushed; Railway auto-deploys from main. Merge-check worktree main ref updated. Antoine hard-refreshes :3000.
+
+---
+
+# RUN_LOG — Mode bar redesign + global Queue access, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`.
+
+- Antoine asked for (1) a way to open the Dispatch Queue from anywhere in the app (Content navigator, Map, Core) and (2) a redesign of the top bar — he found the old dark strip with flat text buttons and mismatched right-side controls ugly.
+- Redesigned the `.modebar` (light + airy, per his choice, no wordmark): a floating segmented control on the left (`mode-tabs`: Content navigator / Map / Core architecture, active mode = raised pill with soft shadow), and a uniform right action cluster (`mode-actions`: 🎯 Target / 📋 Queue / 🌙 theme, consistent 30px rounded-square icon buttons). All CSS vars — works in both themes automatically.
+- Global Queue access: 📋 button jumps to the queue (`setMode('core'); switchCoreView('flow')` — the proven hand-off pattern) and carries the amber "waiting for you" count as a corner pill (`modeQueueBadge`, hidden at 0), fed by the same `qIsAsking()` filter.
+- Live everywhere: queue polling now starts in `boot()` after login and no longer stops on mode switch (`teardownCore()` restarts it instead of stopping) — rate follows visibility (4s on the Flow view, 15s otherwise) via a `coreApp.open` check in `startQueuePolling()`. Dead `stopQueuePolling()` removed.
+- Note: an overnight agent (`fmcns-text`) had uncommitted work in the same files (backend pre-generation feature + a complete `qElapsed` removal in the HTML). Antoine chose "ship now anyway": the frontend commit includes the agent's `qElapsed` removal; their backend files were left uncommitted for them to finish.
+- Verified: `node --check` on extracted inline JS, master ↔ served copy identical, local :3000 and live Railway both serving the new bar (health 200).
+- SHIPPED per Antoine: commit 36a0bf4 (only the two frontend files) → main fast-forward → pushed; merge-check worktree main ref updated. Antoine hard-refreshes :3000.
