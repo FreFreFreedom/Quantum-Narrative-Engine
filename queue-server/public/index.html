@@ -198,12 +198,17 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .loginbox button { padding:8px 16px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:13px; cursor:pointer; }
 
 /* ---------- Top-level mode switch ---------- */
-.modebar { display:flex; align-items:center; gap:0; border-bottom:1px solid var(--c-border); background:var(--c-ink-solid); flex-shrink:0; }
-.modebar button { flex:none; padding:9px 18px; font-size:12px; border:none; background:transparent; color:var(--c-ink-5); cursor:pointer; letter-spacing:.02em; }
-.modebar button.active { color:var(--c-on-solid); box-shadow: inset 0 -2px 0 #c08a3e; }
-#inspectToggleBtn { margin-left:auto; background:#3f6b85; color:#fff; border-radius:5px; padding:6px 12px; }
-#inspectToggleBtn.active { background:#c08a3e; color:var(--c-ink-solid); font-weight:600; }
-#themeToggleBtn { margin-left:8px; padding:6px 12px; border-radius:5px; border:1px solid var(--c-border-3); background:var(--c-surface); color:var(--c-ink); font-size:12px; }
+.modebar { display:flex; align-items:center; gap:14px; padding:0 14px; height:46px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
+.mode-tabs { display:flex; align-items:center; gap:2px; padding:3px; background:var(--c-surface-2); border:1px solid var(--c-border); border-radius:10px; }
+.mode-tabs button { flex:none; padding:5px 14px; border:none; background:transparent; border-radius:7px; font-size:11.5px; font-weight:500; color:var(--c-ink-4); cursor:pointer; letter-spacing:.02em; transition:background .15s ease, color .15s ease; }
+.mode-tabs button:hover { color:var(--c-ink); }
+.mode-tabs button.active { background:var(--c-surface); color:var(--c-ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.10); }
+.mode-actions { margin-left:auto; display:flex; align-items:center; gap:6px; }
+.mode-icon { position:relative; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:8px; color:var(--c-ink-2); font-size:13px; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease; }
+.mode-icon:hover { border-color:var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink); }
+.mode-icon.active { background:var(--c-amber); border-color:var(--c-amber); color:#fff; }
+.mode-badge { position:absolute; top:-5px; right:-6px; min-width:16px; height:16px; padding:0 4px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:9.5px; font-weight:700; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.25); display:none; }
+.mode-badge.on { display:flex; align-items:center; justify-content:center; }
 .inspect-hit { outline:2px solid #c08a3e !important; outline-offset:-2px; cursor:crosshair !important; }
 .inspect-tooltip { position:fixed; z-index:9999; max-width:420px; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:11px; line-height:1.4; padding:7px 10px; border-radius:6px; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,.25); }
 .inspect-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12.5px; padding:9px 16px; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
@@ -591,11 +596,16 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 </div>
 <div class="app-shell" id="appShell" style="display:none;">
 <div class="modebar">
-  <button id="modeContentBtn" class="active">Content navigator</button>
-  <button id="modeMapBtn">Map</button>
-  <button id="modeCoreBtn">Core architecture</button>
-  <button id="inspectToggleBtn" title="Click a UI element to copy its source reference (component + file + backend endpoint) for pasting into a Claude Code request">🎯 Target</button>
-  <button id="themeToggleBtn" title="Toggle light/dark theme" style="margin-left:auto;">🌙</button>
+  <div class="mode-tabs" role="tablist" aria-label="App modes">
+    <button id="modeContentBtn" class="active" role="tab" aria-selected="true">Content navigator</button>
+    <button id="modeMapBtn" role="tab" aria-selected="false">Map</button>
+    <button id="modeCoreBtn" role="tab" aria-selected="false">Core architecture</button>
+  </div>
+  <div class="mode-actions">
+    <button id="inspectToggleBtn" class="mode-icon" title="Click a UI element to copy its source reference (component + file + backend endpoint) for pasting into a Claude Code request">🎯</button>
+    <button id="modeQueueBtn" class="mode-icon" title="Open the Dispatch Queue — the badge counts tasks waiting for your answer">📋<span id="modeQueueBadge" class="mode-badge"></span></button>
+    <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme">🌙</button>
+  </div>
 </div>
 <div id="inspectTooltip" class="inspect-tooltip" style="display:none;"></div>
 <div id="inspectToast" class="inspect-toast" style="display:none;"></div>
@@ -950,6 +960,10 @@ async function boot() {
     renderAxisControls();
     renderClusterList();
     initGraph();
+    // Queue polling runs from app start so the global Queue badge in the mode
+    // bar stays live in every mode, not only inside Core architecture.
+    startQueuePolling();
+    qLoad();
     // initArchNav() used to run here on every boot; it now runs lazily from
     // switchCoreView('arch') the first time the Architecture view is opened.
   } catch (e) {
@@ -2425,6 +2439,7 @@ let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
 document.getElementById('modeCoreBtn').onclick = () => setMode('core');
+document.getElementById('modeQueueBtn').onclick = () => { setMode('core'); switchCoreView('flow'); };
 function setMode(m) {
   document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
   document.getElementById('modeMapBtn').classList.toggle('active', m==='map');
@@ -2569,7 +2584,9 @@ function initCore() {
 
 function teardownCore() {
   stopUsagePolling();
-  stopQueuePolling();
+  // Queue polling deliberately keeps running across modes — the global Queue
+  // badge in the mode bar must stay live from anywhere in the app.
+  startQueuePolling();
 }
 
 // The one path that lays out the workspace zones for the current view: the
@@ -2948,9 +2965,9 @@ function renderAiSettings() {
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
-  qPollTimer = setInterval(qLoad, coreView === 'flow' ? 4000 : 15000);
+  const flowVisible = coreView === 'flow' && document.getElementById('coreApp').classList.contains('open');
+  qPollTimer = setInterval(qLoad, flowVisible ? 4000 : 15000);
 }
-function stopQueuePolling() { if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; } }
 
 async function qLoad() {
   let data;
@@ -2979,8 +2996,14 @@ async function qLoad() {
   const countEl = document.getElementById('coreCountFlow');
   if (countEl) countEl.textContent = activeCount || '';
   // "Waiting for you" count — how many tasks have an unanswered question.
+  const askingCount = qPrompts.filter(qIsAsking).length;
   const askCountEl = document.getElementById('coreCountAsking');
-  if (askCountEl) askCountEl.textContent = qPrompts.filter(qIsAsking).length || '';
+  if (askCountEl) askCountEl.textContent = askingCount || '';
+  const modeBadgeEl = document.getElementById('modeQueueBadge');
+  if (modeBadgeEl) {
+    modeBadgeEl.textContent = askingCount || '';
+    modeBadgeEl.classList.toggle('on', askingCount > 0);
+  }
   if (coreView === 'flow') renderFlow();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
@@ -3013,13 +3036,6 @@ function qMoveStep(id, dir) {
   if (idx === -1 || t < 0 || t >= ord.length) return;
   [ord[idx], ord[t]] = [ord[t], ord[idx]];
   qPersistReorder(qRebuildFullOrder(ord));
-}
-
-function qElapsed(p) {
-  if (p.status !== 'running' || !p.started_at) return '';
-  const secs = Math.max(0, Math.round((Date.now() - new Date(p.started_at).getTime()) / 1000));
-  const m = Math.floor(secs / 60), s = secs % 60;
-  return ` · ${m}:${String(s).padStart(2,'0')}`;
 }
 
 // Live work meter for a running task (plan: one element, two layers). The bar
@@ -3071,7 +3087,7 @@ function qRunStateLine(p) {
     const mins = (Date.now() - new Date(p.heartbeat_at).getTime()) / 60000;
     if (mins > 5) warn = `<span class="q-heartbeat-warn" title="No agent output received in a while"> · no activity for ${Math.round(mins)} min</span>`;
   }
-  return `<div class="q-item-meta"><span class="q-runstate">${label}</span><span>${qElapsed(p)}</span>${warn}</div>`;
+  return `<div class="q-item-meta"><span class="q-runstate">${label}</span>${warn}</div>`;
 }
 
 function qCostLine(p) {
@@ -3339,7 +3355,6 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     </div>
     <div class="q-item-meta">
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}</span>
-      <span>${qElapsed(p)}</span>
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
