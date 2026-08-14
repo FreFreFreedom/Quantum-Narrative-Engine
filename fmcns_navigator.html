@@ -753,7 +753,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           <span class="flow-controls">
             <span class="flow-typecips" id="flowTypeBtns">
               <button class="active" data-ftype="all">All</button>
-              <button data-ftype="queue">Queue</button>
+              <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
               <button data-ftype="suggestions">Suggestions</button>
               <button data-ftype="seeds">Seeds</button>
             </span>
@@ -2642,8 +2642,9 @@ const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', block
 // Plan-first queue: drafting is a flag (plan_pending), not a status value, so it
 // doesn't collide with the status column's own set of allowed values — this just
 // overrides the label/color shown while it's set.
-function qStatusLabel(p) { return p.plan_pending ? 'Drafting plan…' : (Q_STATUS_LABELS[p.status] || p.status); }
-function qStatusColor(p) { return p.plan_pending ? '#7a7568' : (Q_STATUS_COLORS[p.status] || '#8a8378'); }
+function qIsAsking(p) { return !!p.pending_question?.question && ['done', 'blocked'].includes(p.status); }
+function qStatusLabel(p) { return qIsAsking(p) ? 'Waiting for you' : (p.plan_pending ? 'Drafting plan…' : (Q_STATUS_LABELS[p.status] || p.status)); }
+function qStatusColor(p) { return qIsAsking(p) ? '#b8860b' : (p.plan_pending ? '#7a7568' : (Q_STATUS_COLORS[p.status] || '#8a8378')); }
 const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
 const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
 const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
@@ -2977,6 +2978,9 @@ async function qLoad() {
   const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
   const countEl = document.getElementById('coreCountFlow');
   if (countEl) countEl.textContent = activeCount || '';
+  // "Waiting for you" count — how many tasks have an unanswered question.
+  const askCountEl = document.getElementById('coreCountAsking');
+  if (askCountEl) askCountEl.textContent = qPrompts.filter(qIsAsking).length || '';
   if (coreView === 'flow') renderFlow();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
@@ -3769,7 +3773,7 @@ function qRenderDetail(p) {
     <h2>Task</h2>
     <div class="arch-detail-name">${p.title || '(untitled)'}</div>
     <div class="q-detail-row">
-      <span><b>Status:</b> ${qStatusLabel(p)}</span>
+      <span><b>Status:</b> ${qIsAsking(p) ? `<span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>` : qStatusLabel(p)}</span>
       <span><b>Mode:</b> ${p.mode}</span>
       <span><b>Agent:</b> ${qAgentLabel(p)}</span>
       <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
