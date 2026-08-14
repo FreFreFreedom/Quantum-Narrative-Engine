@@ -860,3 +860,19 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`.
 - Note: an overnight agent (`fmcns-text`) had uncommitted work in the same files (backend pre-generation feature + a complete `qElapsed` removal in the HTML). Antoine chose "ship now anyway": the frontend commit includes the agent's `qElapsed` removal; their backend files were left uncommitted for them to finish.
 - Verified: `node --check` on extracted inline JS, master ↔ served copy identical, local :3000 and live Railway both serving the new bar (health 200).
 - SHIPPED per Antoine: commit 36a0bf4 (only the two frontend files) → main fast-forward → pushed; merge-check worktree main ref updated. Antoine hard-refreshes :3000.
+
+---
+
+# RUN_LOG — Speed round + Google key Fast Lane, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`.
+
+- Antoine asked: queued tasks and the small model features (suggestion engine, idea box, tag lenses, book picks…) felt slow — wanted them "way faster, ideally instant". He set GOOGLE_AI_STUDIO_API_KEY in Railway. I planned four pieces of speed work with him, then implemented and verified all of them end-to-end.
+- 1. **Parallel pre-task checks** (`promptQueue.js` `runPlanDraft`): plan draft + preset judge + auto context match were three serial model calls before a task could start; now one `Promise.all`. Judge/context judge the raw submitted text instead of the drafted brief (fine signal — brief is mostly reformatting; the judge errs upward).
+- 2. **Fast Lane** (`ai/text.js`): for small features (`quick`/`judge`/`plan_draft`/`summary`/`warmup`) with no explicit user choice, the direct-HTTP catalogue providers are tried BEFORE any opencode/Claude CLI boot; explicit AI-Settings choices still win, Claude/opencode stay as safety net.
+- 3. **Background pre-generation** (new `services/preGen.js` + `index.js`): after boot and every 6h, runs the two suggestion engines and regenerates architecture "what's next" for stale components so those tabs open as instant DB reads. Same WARMUP_DISABLED gate as warmup (review runner spends nothing).
+- 4. **Gemini empty-reply fix** (`openaiCompat.js`): gemini-flash is a thinking model — small max_tokens budgets were consumed entirely by thoughts, leaving an empty visible reply (verified live: a 50-token call returned zero visible text). `reasoning_effort:"low"` now sent for google-ai-studio calls under 512 tokens.
+- **Bug found while testing end-to-end** (fresh scratch DB): `entity_tag_lenses` was created WITHOUT `salient_json` (the ALTER ran before the table existed) — every tag-lens call crashed on any fresh DB and the request hung. Fixed: column added to CREATE TABLE + in-place ALTER kept for existing DBs.
+- **Key test**: added `scripts/test-google-key.mjs` (exercises the real catalogue adapter, prints only the reply, never the key). Live results: real authenticated tag-lens through Google in ~5s (vs ~10–15s via CLI boot), repeat click 0.001s (cache). Antoine's key is valid; nothing blocked.
+- Verified: `node --check` on all changed server files; full local boot on a scratch DB (live `data/` never touched) + real Fast Lane call + cache hit; deployed-site health 200.
+- SHIPPED per Antoine: commit cc41512 (backend only — the two frontend files had already shipped with the Waiting-for-you / mode-bar rounds) → main via `update-ref` fast-forward → pushed; Railway auto-deploys from main. Merge-check worktree has its own uncommitted review state — left untouched (its main ref will catch up on its next review cycle).
