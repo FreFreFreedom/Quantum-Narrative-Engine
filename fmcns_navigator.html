@@ -93,6 +93,27 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .legend .swatch.e { border-top:2.5px dashed #8b6fb0; }
 .legend .swatch.b { border-top:2px dotted #4f9d7a; }
 .legend .dotswatch { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.intel-panel { position:absolute; top:12px; right:12px; width:320px; max-height:calc(100% - 24px); overflow-y:auto; background:rgba(var(--c-surface-rgb),.96); border:1px solid var(--c-border); border-radius:10px; padding:10px 12px; font-size:10.5px; z-index:6; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 18px rgba(0,0,0,.18); }
+.intel-panel h3 { margin:0; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); }
+.intel-panel .intel-actions { display:flex; gap:6px; flex-wrap:wrap; }
+.intel-panel .intel-actions button { font-size:10px; padding:3px 8px; border-radius:6px; border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-ink); cursor:pointer; }
+.intel-panel .intel-actions button:active { transform:translateY(1px); }
+.intel-panel .intel-tools { display:flex; align-items:center; gap:6px; margin-top:2px; }
+.intel-note { color:var(--c-ink-4); font-style:italic; }
+.intel-signal { border-left:3px solid #8a8378; padding:6px 8px; background:rgba(var(--c-surface-rgb),.6); border-radius:0 6px 6px 0; }
+.intel-signal .is-title { font-weight:600; color:var(--c-ink); }
+.intel-signal .is-detail { color:var(--c-ink-3); margin-top:2px; }
+.intel-signal .is-actions { margin-top:4px; }
+.intel-signal .is-actions button { font-size:9.5px; padding:2px 7px; border-radius:5px; border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; }
+.intel-thought { border:1px solid var(--c-border); border-left:3px solid var(--c-accent,#6b8fd0); padding:6px 8px; border-radius:0 6px 6px 0; background:rgba(var(--c-surface-rgb),.6); }
+.intel-thought .it-title { font-weight:600; color:var(--c-ink); }
+.intel-thought .it-body { color:var(--c-ink-3); margin-top:2px; }
+.intel-thought .it-actions { margin-top:4px; display:flex; gap:6px; }
+.intel-thought .it-actions button { font-size:9.5px; padding:2px 7px; border-radius:5px; border:1px solid var(--c-border); background:var(--c-surface); cursor:pointer; }
+.intel-thought .it-actions .ia-accept { border-color:#4f9d7a; color:#4f9d7a; }
+.intel-thought .it-actions .ia-dismiss { border-color:#c98a8a; color:#c98a8a; }
+.intel-thought.dimmed { opacity:.55; }
+#toggleIntel.active { background:var(--c-accent,#6b8fd0); color:#fff; }
 .right { width:360px; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; flex-shrink:0; }
 .right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .card { border-radius:10px; padding:12px; color:var(--c-on-solid); margin-bottom:10px; }
@@ -206,12 +227,14 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .mode-actions { margin-left:auto; display:flex; align-items:center; gap:6px; }
 .mode-icon { position:relative; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:8px; color:var(--c-ink-2); font-size:13px; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease; }
 .mode-icon:hover { border-color:var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink); }
-.mode-icon.active { background:var(--c-amber); border-color:var(--c-amber); color:#fff; }
-.mode-badge { position:absolute; top:-5px; right:-6px; min-width:16px; height:16px; padding:0 4px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:9.5px; font-weight:700; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.25); display:none; }
-.mode-badge.on { display:flex; align-items:center; justify-content:center; }
-.inspect-hit { outline:2px solid #c08a3e !important; outline-offset:-2px; cursor:crosshair !important; }
-.inspect-tooltip { position:fixed; z-index:9999; max-width:420px; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:11px; line-height:1.4; padding:7px 10px; border-radius:6px; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,.25); }
-.inspect-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12.5px; padding:9px 16px; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+.mode-pill { display:flex; align-items:center; gap:7px; height:32px; padding:0 12px; border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:16px; color:var(--c-ink-2); font-size:11.5px; font-weight:600; letter-spacing:.02em; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.mode-pill svg { width:14px; height:14px; color:var(--c-ink-3); }
+.mode-pill:hover { border-color:var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink); transform:translateY(-1px); }
+.mode-pill:hover svg { color:var(--c-ink-2); }
+.mode-pill.warm { background:var(--c-amber-tint); border-color:var(--c-amber); color:var(--c-warn); box-shadow:0 1px 6px rgba(192,138,62,.25); }
+.mode-pill.warm svg { color:var(--c-amber); }
+.mode-pill-count { display:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; }
+.mode-pill-count.on { display:inline-flex; }
 .app-shell { display:flex; flex-direction:column; height:100vh; min-height:640px; }
 .app-shell .wrap { flex:1; min-height:0; }
 
@@ -650,14 +673,14 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     <button id="modeCoreBtn" role="tab" aria-selected="false">Core architecture</button>
   </div>
   <div class="mode-actions">
-    <button id="inspectToggleBtn" class="mode-icon" title="Click a UI element to copy its source reference (component + file + backend endpoint) for pasting into a Claude Code request">🎯</button>
-    <button id="modeQueueBtn" class="mode-icon" title="Open the Dispatch Queue — the badge counts tasks waiting for your answer">📋<span id="modeQueueBadge" class="mode-badge"></span></button>
+    <button id="modeQueueBtn" class="mode-pill" title="Open the Dispatch Queue — the count is tasks waiting for your answer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+      <span>Queue</span><span id="modeQueueBadge" class="mode-pill-count"></span>
+    </button>
     <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme">🌙</button>
   </div>
 </div>
-<div id="inspectTooltip" class="inspect-tooltip" style="display:none;"></div>
-<div id="inspectToast" class="inspect-toast" style="display:none;"></div>
-<div class="wrap" id="app">
+  <div class="wrap" id="app">
   <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls() | backend: GET /api/ontology/facets, /api/ontology/clusters">
     <h2>Entity types</h2>
     <div id="typeList"></div>
@@ -707,6 +730,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       <button class="ctrlbtn" id="toggleBridges">Bridges: on</button>
       <button class="ctrlbtn" id="toggleShowAll">Show all connections</button>
       <button class="ctrlbtn" id="resetBtn">Reset view</button>
+      <button class="ctrlbtn" id="toggleIntel" title="Intelligence: the Mind watching the content corpus — signals + thoughts about the material itself">🧠 Intelligence</button>
       <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)">🎬 Enrich all films</button>
       <span id="enrichStatus" style="font-size:10.5px;color:var(--c-ink-4);"></span>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
@@ -716,6 +740,10 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
         <g id="viewport"><g id="zoneLayer"></g><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
       </svg>
       <div class="legend" id="legend"></div>
+      <div class="intel-panel" id="contentIntel" style="display:none;" data-src="Content navigator → Intelligence panel (Part 5): content signals + thoughts, ack/accept/dismiss, Think buttons | fmcns_navigator.html: initContentIntel()/loadContentIntel()/renderContentIntel() | backend: GET /api/architecture/intel/signals, /thoughts, POST /content-pulse">
+        <h3>Content intelligence</h3>
+        <div id="contentIntelBody" class="intel-note">Opening…</div>
+      </div>
     </div>
     <div class="list-stage" id="listStage" data-src="Content navigator → list view of entities | fmcns_navigator.html: renderList() (~line 937)">
       <div class="list-summary" id="listSummary"></div>
@@ -1121,7 +1149,7 @@ function setContentView(v) {
   document.querySelector('.graph-stage').style.display = v === 'graph' ? '' : 'none';
   document.getElementById('listStage').style.display = v === 'list' ? 'flex' : 'none';
   // Colour-mode and bridge buttons only mean something on the canvas.
-  document.querySelectorAll('[data-color], #toggleBridges, #toggleShowAll, #resetBtn')
+  document.querySelectorAll('[data-color], #toggleBridges, #toggleShowAll, #resetBtn, #toggleIntel')
     .forEach(b => { b.style.display = v === 'graph' ? '' : 'none'; });
   document.querySelectorAll('.ctrl-label').forEach(l => {
     if (l.textContent === 'Color by') l.style.display = v === 'graph' ? '' : 'none';
@@ -1130,6 +1158,127 @@ function setContentView(v) {
 }
 document.getElementById('viewGraphBtn').onclick = () => setContentView('graph');
 document.getElementById('viewListBtn').onclick = () => setContentView('list');
+
+// ---------- Content Intelligence (Part 5) ----------
+// The same Mind that watches the architecture, turned on the material corpus:
+// content-scope signals and thoughts, ack/accept/dismiss, and two "Think"
+// buttons (themes / bridges). Zones flagged by signals are highlighted on the
+// canvas by renderZoneLabels().
+const CONTENT_INTEL = { signals: [], thoughts: [], meta: {} };
+let contentIntelOn = false;
+let contentIntelTimer = null;
+
+function initContentIntel() {
+  const toggle = document.getElementById('toggleIntel');
+  toggle.addEventListener('click', () => {
+    contentIntelOn = !contentIntelOn;
+    toggle.classList.toggle('active', contentIntelOn);
+    document.getElementById('contentIntel').style.display = contentIntelOn ? '' : 'none';
+    if (contentIntelOn) {
+      loadContentIntel();
+      contentIntelTimer = setInterval(loadContentIntel, 15000);
+    } else {
+      clearInterval(contentIntelTimer);
+      contentIntelTimer = null;
+      renderZoneLabels();
+    }
+  });
+}
+
+async function loadContentIntel() {
+  if (!contentIntelOn) return;
+  const body = document.getElementById('contentIntelBody');
+  try {
+    const sig = await api('/api/architecture/intel/signals');
+    const th = await api('/api/architecture/intel/thoughts?scope=content');
+    CONTENT_INTEL.signals = (sig.signals || []).filter(s => s.scope === 'content');
+    CONTENT_INTEL.meta = sig.meta || {};
+    CONTENT_INTEL.thoughts = (th.thoughts || []).filter(t => t.scope === 'content');
+    renderContentIntel();
+    renderZoneLabels();
+  } catch (e) {
+    body.innerHTML = '<div class="intel-note">Could not reach the server. Check that it is running.</div>';
+  }
+}
+
+function renderContentIntel() {
+  const body = document.getElementById('contentIntelBody');
+  const sigs = CONTENT_INTEL.signals.filter(s => !MIND_ACKED.has(`${s.type}|${s.scope}|${s.target_id || ''}`));
+  const thoughts = CONTENT_INTEL.thoughts;
+  if (!sigs.length && !thoughts.length) {
+    body.innerHTML = '<div class="intel-note">The corpus looks healthy — no signals, no thoughts yet. Try "Think".</div>';
+    return;
+  }
+  const signalHtml = sigs.map(s => `
+    <div class="intel-signal" style="border-left-color:${(CONTENT_INTEL.meta[s.type] || {}).color || '#8a8378'}">
+      <div class="is-title">${escapeHtml(s.title)}${s.target_id && CLUSTER_COLORS[s.target_id] ? ` <span style="color:${CLUSTER_COLORS[s.target_id]};font-size:9px">zone ${s.target_id}</span>` : ''}</div>
+      <div class="is-detail">${escapeHtml(s.detail)}</div>
+      <div class="is-actions"><button data-sig-ack="${escapeHtml(s.type)}|${escapeHtml(s.scope)}|${escapeHtml(s.target_id || '')}">Acknowledge</button></div>
+    </div>`).join('');
+  const thoughtHtml = thoughts.map(t => `
+    <div class="intel-thought ${t.status === 'accepted' || t.status === 'dismissed' ? 'dimmed' : ''}">
+      <div class="it-title">${escapeHtml(t.title)}${t.target_id && CLUSTER_COLORS[t.target_id] ? ` <span style="color:${CLUSTER_COLORS[t.target_id]};font-size:9px">zone ${t.target_id}</span>` : ''}</div>
+      <div class="it-body">${escapeHtml(t.body)}</div>
+      <div class="it-actions">
+        ${t.status === 'new' ? `<button class="ia-accept" data-intel-accept="${t.id}">Accept</button><button class="ia-dismiss" data-intel-dismiss="${t.id}">Dismiss</button>` : `<span class="intel-note">${t.status}</span>`}
+      </div>
+    </div>`).join('');
+  body.innerHTML = `
+    <div class="intel-tools">
+      <button id="intelThinkThemes" title="The Mind proposes up to 3 under-explored themes in the corpus">💭 Think — themes</button>
+      <button id="intelThinkBridges" title="The Mind proposes up to 3 cross-scale bridge pairs">🌉 Think — bridges</button>
+      <span style="margin-left:auto" class="intel-note" id="intelBusy"></span>
+    </div>
+    ${sigs.length ? `<h3>Signals (${sigs.length})</h3>${signalHtml}` : ''}
+    ${thoughts.length ? `<h3>Thoughts</h3>${thoughtHtml}` : ''}`;
+  body.querySelectorAll('[data-sig-ack]').forEach(b => b.addEventListener('click', async () => {
+    const [type, scope, target] = b.dataset.sigAck.split('|');
+    try {
+      await apiWrite('/api/architecture/intel/signals/ack', 'POST', { type, scope, target_id: target });
+      MIND_ACKED.add(`${type}|${scope}|${target}`);
+      loadContentIntel();
+    } catch (e) { /* leave as-is */ }
+  }));
+  body.querySelectorAll('[data-intel-accept]').forEach(b => b.addEventListener('click', async () => {
+    const btn = b;
+    btn.textContent = 'Working…';
+    try {
+      const r = await apiWrite(`/api/architecture/intel/thoughts/${b.dataset.intelAccept}/accept`, 'POST', {});
+      if (r.thought) loadContentIntel();
+    } catch (e) { btn.textContent = 'Accept'; }
+  }));
+  body.querySelectorAll('[data-intel-dismiss]').forEach(b => b.addEventListener('click', async () => {
+    const btn = b;
+    btn.textContent = 'Working…';
+    try {
+      await apiWrite(`/api/architecture/intel/thoughts/${b.dataset.intelDismiss}/dismiss`, 'POST', { reason: 'dismissed in content graph' });
+      loadContentIntel();
+    } catch (e) { btn.textContent = 'Dismiss'; }
+  }));
+  const busy = document.getElementById('intelBusy');
+  document.getElementById('intelThinkThemes').addEventListener('click', () => thinkContent('themes', busy));
+  document.getElementById('intelThinkBridges').addEventListener('click', () => thinkContent('bridges', busy));
+}
+
+async function thinkContent(focus, busyEl) {
+  busyEl.textContent = 'Thinking…';
+  try {
+    await apiWrite('/api/architecture/intel/content-pulse', 'POST', { focus });
+    await loadContentIntel();
+  } catch (e) {
+    busyEl.textContent = e.message === 'cap' ? 'That budget is spent for this hour — try later.' : 'Failed. Try again.';
+  }
+}
+
+function flaggedContentZones() {
+  const zones = new Set();
+  for (const s of CONTENT_INTEL.signals) {
+    if (s.scope === 'content' && s.target_id && CLUSTER_COLORS[s.target_id] && !MIND_ACKED.has(`${s.type}|${s.scope}|${s.target_id}`)) zones.add(s.target_id);
+  }
+  return zones;
+}
+
+document.addEventListener('DOMContentLoaded', initContentIntel);
 
 document.getElementById('axisSelect').addEventListener('change', (e) => {
   axisFilter.key = e.target.value;
@@ -1235,12 +1384,17 @@ function renderZoneLabels() {
   layer.innerHTML = '';
   layer.setAttribute('style', 'pointer-events:none;');
   const zoneR = activeClusterCodes.length <= 1 ? 260 : 150;
+  const flagged = flaggedContentZones();
   activeClusterCodes.forEach(code => {
     if (code === 'other') return;
     const c = CLUSTER_CENTROIDS[code];
     const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
-    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR,fill:CLUSTER_COLORS[code]||'var(--c-border-3)',opacity:0.05}));
-    layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-8,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:0.5;letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
+    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR,fill:CLUSTER_COLORS[code]||'var(--c-border-3)',opacity:flagged.has(code)?0.16:0.05}));
+    if (flagged.has(code)) {
+      layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR+6,fill:'none',stroke:CLUSTER_COLORS[code]||'#8a8378','stroke-width':2.5,'stroke-dasharray':'10 7',opacity:0.85}));
+      layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-22,'text-anchor':'middle',style:'font-size:12px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:0.95;letter-spacing:.03em;'})).textContent = '⚠ flagged';
+    }
+    layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-8,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:'+(flagged.has(code)?1:0.5)+';letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
   });
 }
 
@@ -2519,62 +2673,6 @@ function setMode(m) {
   if (m==='core') initCore(); else teardownCore();
 }
 
-// ---------- Inspect / target mode ----------
-let inspectMode = false;
-let inspectHitEl = null;
-const inspectToggleBtn = document.getElementById('inspectToggleBtn');
-const inspectTooltip = document.getElementById('inspectTooltip');
-const inspectToast = document.getElementById('inspectToast');
-let inspectToastTimer = null;
-
-inspectToggleBtn.onclick = () => {
-  inspectMode = !inspectMode;
-  inspectToggleBtn.classList.toggle('active', inspectMode);
-  document.body.style.cursor = inspectMode ? 'crosshair' : '';
-  if (!inspectMode) clearInspectHighlight();
-};
-
-function clearInspectHighlight() {
-  if (inspectHitEl) inspectHitEl.classList.remove('inspect-hit');
-  inspectHitEl = null;
-  inspectTooltip.style.display = 'none';
-}
-
-document.addEventListener('mousemove', (e) => {
-  if (!inspectMode) return;
-  const target = e.target.closest('[data-src]');
-  if (target === inspectHitEl) {
-    if (target) {
-      inspectTooltip.style.left = (e.clientX + 14) + 'px';
-      inspectTooltip.style.top = (e.clientY + 14) + 'px';
-    }
-    return;
-  }
-  clearInspectHighlight();
-  if (target) {
-    target.classList.add('inspect-hit');
-    inspectHitEl = target;
-    inspectTooltip.textContent = target.getAttribute('data-src');
-    inspectTooltip.style.left = (e.clientX + 14) + 'px';
-    inspectTooltip.style.top = (e.clientY + 14) + 'px';
-    inspectTooltip.style.display = 'block';
-  }
-}, true);
-
-document.addEventListener('click', (e) => {
-  if (!inspectMode) return;
-  const target = e.target.closest('[data-src]');
-  if (!target) return;
-  e.preventDefault();
-  e.stopPropagation();
-  const ref = target.getAttribute('data-src');
-  navigator.clipboard.writeText(ref).catch(() => {});
-  inspectToast.textContent = 'Copied reference to clipboard — paste it into your request.';
-  inspectToast.style.display = 'block';
-  clearTimeout(inspectToastTimer);
-  inspectToastTimer = setTimeout(() => { inspectToast.style.display = 'none'; }, 2500);
-}, true);
-
 // ---------- CORE ARCHITECTURE shell ----------
 // Merges what used to be three separate top-level tabs (Architecture Navigator, Queue,
 // Travaux) into one, since they are in fact four stages of a single loop: Seeds/Suggestion
@@ -3070,10 +3168,12 @@ async function qLoad() {
   const askCountEl = document.getElementById('coreCountAsking');
   if (askCountEl) askCountEl.textContent = askingCount || '';
   const modeBadgeEl = document.getElementById('modeQueueBadge');
+  const modeBtnEl = document.getElementById('modeQueueBtn');
   if (modeBadgeEl) {
     modeBadgeEl.textContent = askingCount || '';
     modeBadgeEl.classList.toggle('on', askingCount > 0);
   }
+  if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
   if (coreView === 'flow') renderFlow();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
