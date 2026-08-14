@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Parts 1–2 DONE (shipped 2026-08-14, commits `448c27e` + `f627ee7` on main) · Parts 3–6 PLANNED (not started) |
+| **Status** | Parts 1–2 DONE (shipped 2026-08-14, commits `448c27e` + `f627ee7` on main) · Parts 3–6 IMPLEMENTED on `overnight/2026-08-10` (`5aa29c1` + `356956f`, not yet merged — Antoine's call). Remaining: Part 5 content-graph UI + content deliberative pass, overnight-agent drain workflow, and the plan's 6.1–6.6 verification pass in the live app. |
 | **Created** | 2026-08-13 |
 | **Updated** | 2026-08-14 — status corrected to reality; Part 6 added (inspiration round, Antoine approved all six) |
 | **Project** | FMCNS — `quantum-narrative-engine` (frontend `fmcns_navigator.html`, backend `queue-server/`) |
@@ -73,25 +73,32 @@
 This section exists so an agent picking up this plan with **no prior conversation** knows what
 is already in the tree and what is still to build.
 
-**Shipped to main (2026-08-14, commit `448c27e` "Free-first policy" + `f627ee7` "Claude usage
-strip removed"):**
+**Shipped (2026-08-14):**
 
-- **Part 1 — DONE.** `services/ai/text.js`: unspecified feature defaults resolve to the free
+- **Part 1 — DONE (main `448c27e`).** `services/ai/text.js`: unspecified feature defaults resolve to the free
   OpenCode lane; `migrateFreeFirstDefaults()` runs at boot (idempotent); AI Settings
   (GET/PUT `/api/travaux/ai-settings`) stores `defaults` + `queue` + `intel` separately
   (`queue_go_budget_usd`, `intel_json` columns); the Claude usage strip was removed from the
   top bar entirely (a small drift from Part 1 §3, which assumed a readout stays).
-- **Part 2 — DONE.** `taskRunner.js`/`promptQueue.js`: provider fallback is `opencode`
+- **Part 2 — DONE (main `f627ee7`).** `taskRunner.js`/`promptQueue.js`: provider fallback is `opencode`
   everywhere; `finalize()` (~line 600) walks Go pool first (paid, cost > 0, cheapest-first,
   gated by the daily spend guard `goLaneAllowed()` reading `queue_go_budget_usd`, default
   0.33) then the free floor, with session continuity (`resumeSessionId`) and defer-with-wake
   (`onAgentTaskDeferred` + `quotaScheduler`) instead of any manual resume.
-- **Part 4 groundwork — schema only.** `db/schema.js` has `intel_thoughts` (with the
-  dedup unique index on scope/target/kind/state_hash and feed index). No service writes or
-  reads it yet.
-- **Not in the tree at all:** Part 3 (no `architectureIntelligence.js`, no
-  `/api/architecture/intel/signals`, no vitals UI), Part 4 behaviour (no thought generation,
-  no Mind pane, no Accept→paused-task), Part 5, Part 6.
+- **Parts 3–6 — IMPLEMENTED (`overnight/2026-08-10` `5aa29c1`, not yet merged).**
+  - `services/architectureIntelligence.js` (new): deterministic signals (bottleneck, aging,
+    orphan, unbuilt dep, no next step, stale speculation, never-touched, territory isolation +
+    content signals), health scores 0–100 with daily snapshots + history, acknowledgements,
+    thoughts (create/get/accept/dismiss, auto-adopt), Deepen / Pulse / Growth passes (free-first,
+    budgeted), retrospectives into `intel_task_lessons` with failure fingerprinting, adoption
+    meter, ranked drain. `routes/intel.js` (new) at `/api/architecture/intel/*`.
+  - `promptQueue.js`: `createPrompt` persists `thought_id` — Accept → paused task linked back.
+  - Frontend: Mind tab (pulse ring + history sparkline + meter + Pulse/Growth buttons, signal
+    feed with Acknowledge/Think-deeper, thought feed with Accept/Dismiss), per-node health
+    rings on graph cards, signals + score in the component detail panel.
+  - Remaining: Part 5 content-graph UI (Intelligence toggle + feed panel + canvas highlighting)
+    and content-scope deliberative pass; overnight-agent drain workflow (6.6 runner); the
+    plan's 6.1–6.6 verification pass in the live app.
 - Unrelated WIP lying in the working tree (untracked, from the multi-agent team plan, NOT this
   plan): `queue-server/server/src/routes/strategies.js`,
   `queue-server/server/src/services/orchestrator.js`. Leave them alone.
