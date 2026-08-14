@@ -254,10 +254,14 @@ export function listModels({ bin, cwd }) {
         if (depth <= 0) flush();
       }
       flush();
-      // Dedup (id may repeat), free first, then name.
+      // Dedup (id may repeat), free first, then name — with one deliberate bias:
+      // among free models, the OpenCode-hosted ones (opencode/*) rank before
+      // third-party free models, and opencode/deepseek-v4-flash-free ranks first
+      // (verified ~2-3s for a toolless call, vs minutes on some slow free lanes).
       const seen = new Set();
       const unique = models.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
-      unique.sort((a, b) => (Number(b.free) - Number(a.free)) || String(a.id).localeCompare(String(b.id)));
+      const freeRank = (id) => (id === 'opencode/deepseek-v4-flash-free' ? 0 : id.startsWith('opencode/') ? 1 : 2);
+      unique.sort((a, b) => (Number(b.free) - Number(a.free)) || (freeRank(a.id) - freeRank(b.id)) || String(a.id).localeCompare(String(b.id)));
       resolveP({ models: unique, error: null });
     });
   });

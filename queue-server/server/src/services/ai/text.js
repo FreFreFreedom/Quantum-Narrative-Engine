@@ -187,15 +187,13 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
   return { error: `${p}_failed`, message: r.text || `exit ${r.code}` };
 }
 
-// Fast Lane: small, high-frequency features with no explicit user choice try the
-// direct-HTTP catalogue providers BEFORE any CLI boot. The catalogue (catalog.js)
-// is plain HTTPS chat completions — no spawn, no program boot — so a tag lens or
-// a 20-token judge reply lands in ~1-2s instead of paying an opencode/Claude CLI
-// start-up each time. Claude/opencode still sit right behind as the safety net,
-// and an explicit per-feature choice in AI Settings always wins (isPlatformDefault
-// is false the moment the user picked a provider or model).
-const FAST_FEATURES = new Set(['quick', 'judge', 'plan_draft', 'summary', 'warmup']);
-
+// Model-lane policy: unconfigured features run on the OpenCode lane FIRST (the
+// user's subscription — no API keys, already proven), with the direct-HTTP
+// catalogue providers (Google AI Studio etc.) as the automatic fallback. A
+// catalogue hit gets skipped for its reset window by the router's quota ledger,
+// so Google's free-tier 429s can't slow the lane down. An explicit per-feature
+// choice in AI Settings always wins (the moment the user picked a provider or
+// model, this ordering is irrelevant — their choice is first in primaryChain).
 export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text' }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
@@ -218,12 +216,10 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     ? router.pickChain({ exclude: primaryChain.map((a) => ({ provider: a.provider, model: a.model })) })
     : { chain: [] };
 
-  // Fast-lane ordering (see FAST_FEATURES above): catalogue first for small
-  // platform-default features; everything else keeps configured-provider-first.
-  const isPlatformDefault = !featureDefaults.provider && !featureDefaults.model;
-  const fullChain = (FAST_FEATURES.has(feature) && isPlatformDefault)
-    ? [...catalogueChain, ...primaryChain]
-    : [...primaryChain, ...catalogueChain];
+  // OpenCode-first ordering: the configured provider (default: opencode free
+  // lane) is tried before the catalogue fallback (see the policy comment above
+  // generateText).
+  const fullChain = [...primaryChain, ...catalogueChain];
   const failures = [];
 
   for (const attempt of fullChain) {
