@@ -833,3 +833,16 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`.
 - Removed: the header's usage strip (5h/week/today Claude token usage + low-quota alert), its 30s polling, and all now-dead JS/CSS (loadUsage, usageBarHtml, usageTone, fmtResetIn, fmtTokens, usage-* styles). The header's queue-status banner polling stays. The backend /api/agent/usage endpoint is untouched (harmless, may still be useful later).
 - Verified: usage strip fully gone from the served copy, script brace balance clean, master ↔ served copy checksums identical.
 - SHIPPED per Antoine: committed, fast-forwarded main, pushed — Railway auto-deploys from main. Antoine hard-refreshes :3000.
+
+---
+
+# RUN_LOG — "Waiting for you" badge + Queue-chip count, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`.
+
+- Antoine asked: when a running task stops to ask him a question, it was indistinguishable from an ordinary Blocked/Done card — only a small 🙋 line in the body hinted at it, with no count anywhere.
+- Added `qIsAsking()` (pending_question set on a done/blocked task, mirroring the reference `isAsking()` in SPEC.md) and branched `qStatusLabel`/`qStatusColor` on it: an asking card now shows an amber "Waiting for you" pill in the list row and in the detail header, instead of the normal green/red label. Underlying `p.status`, reply eligibility, ordering — all untouched.
+- Added a live count on the Queue chip (`coreCountAsking`, reusing the existing `.core-tab-count` style): how many tasks have an unanswered question. Updated on every `qLoad()` poll (4s on the Flow view, 15s elsewhere).
+- No backend/DB change — `pending_question` was already delivered on every row of GET /api/travaux/prompts. The legacy forward-workspace queue view already surfaces questions with its own count; left as-is.
+- Verified: `node --check` on the extracted inline JS, master ↔ `queue-server/public/index.html` checksums identical, local :3000 serving the new code, live Railway site serving it (health 200 + new identifiers present).
+- SHIPPED per Antoine: commit 70b90a3 (only the two frontend files) → main via `update-ref` fast-forward → pushed; Railway auto-deploys from main. Merge-check worktree main ref updated. Antoine hard-refreshes :3000.
