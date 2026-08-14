@@ -17,6 +17,7 @@ import { initTaskRunner, bindTaskDb, DATA_DIR } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
+import { startPreGen } from './services/preGen.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
@@ -89,6 +90,10 @@ try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate fai
 if (process.env.WARMUP_DISABLED !== '1') {
   warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
     .catch((e) => console.error('Cache warm-up failed:', e.message));
+  // Background pre-generation (suggestions + architecture "what's next") so those
+  // tabs open instantly from the DB instead of waiting on a live generation.
+  // Same WARMUP_DISABLED gate: the review runner's ephemeral boot must not spend.
+  startPreGen(db);
 }
 
 const app = express();

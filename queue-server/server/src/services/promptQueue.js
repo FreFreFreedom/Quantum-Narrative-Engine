@@ -181,26 +181,39 @@ export async function createPrompt({
 
 // Background continuation for the plan-first drafting stage: the row already
 // exists (status queued/paused as requested, plan_pending=1 so advanceQueue()
-// skips it) — this fills in the drafted title/prompt, resolves the preset against
-// the final text, clears plan_pending, and — only if the requested status was
-// 'queued' — kicks the queue. Never throws past draftPlan(), which already
-// swallows its own failures; on a null draft the raw text just stays as-is.
+// skips it) — this fills in the drafted title/prompt, resolves the preset, clears
+// plan_pending, and — only if the requested status was 'queued' — kicks the queue.
+// Never throws past draftPlan(), which already swallows its own failures; on a
+// null draft the raw text just stays as-is.
+//
+// Speed note: the draft, the preset judge and the auto context match used to run
+// one after another — three serial model calls of invisible warm-up before the
+// task could even start. All three are now fired in parallel (Promise.all); the
+// judge and the context match judge the RAW submitted text instead of the drafted
+// brief (a fine signal — the brief is mostly reformatting of the same content, and
+// the judge is explicitly instructed to err upward). Total warm-up drops to the
+// slowest single call.
 async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus, agentKey = null, contextMode = 'manual', explicitParent = false }) {
-  const draft = await draftPlan({ title, prompt, mode });
+  const needPreset = preset === 'auto' && provider === 'claude-code';
+  const needParent = contextMode === 'auto' && !explicitParent;
+
+  const [draft, presetOut, parentOut] = await Promise.all([
+    draftPlan({ title, prompt, mode }),
+    needPreset ? resolvePreset({ mode, prompt }).catch(() => 'standard') : Promise.resolve(null),
+    needParent
+      ? (async () => {
+          const candidates = candidateParents({ agentKey, provider });
+          const picked = await resolveParent({ mode, text: prompt, candidates }).catch(() => null);
+          return picked;
+        })()
+      : Promise.resolve(null),
+  ]);
+
   const finalTitle = draft?.title || title;
   const finalPrompt = draft?.brief || prompt;
-  const resolved = (preset === 'auto' && provider === 'claude-code')
-    ? await resolvePreset({ mode, prompt: finalPrompt }).catch(() => 'standard') : null;
-
-  // Auto context resolution (deferred from createPrompt): decided against the
-  // drafted brief, which is a cleaner signal than the raw voice-transcribed text.
-  let parentId = null;
-  let contextNote = null;
-  if (contextMode === 'auto' && !explicitParent) {
-    const candidates = candidateParents({ agentKey, provider });
-    const picked = await resolveParent({ mode, text: finalPrompt, candidates }).catch(() => null);
-    if (picked) { parentId = picked.id; contextNote = `Auto-continuing the session of "${picked.title}".`; }
-  }
+  const resolved = needPreset ? presetOut : null;
+  const parentId = parentOut ? parentOut.id : null;
+  const contextNote = parentOut ? `Auto-continuing the session of "${parentOut.title}".` : null;
 
   db.prepare(`
     UPDATE work_prompts SET title=?, prompt=?, resolved_preset=COALESCE(?, resolved_preset),

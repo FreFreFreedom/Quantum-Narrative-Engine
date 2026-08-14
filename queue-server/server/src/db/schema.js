@@ -648,10 +648,15 @@ export function initTagLensSchema(db) {
       entity_id TEXT NOT NULL REFERENCES entities(id),
       tag TEXT NOT NULL,
       lens_text TEXT NOT NULL,
+      salient_json TEXT,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       PRIMARY KEY (entity_id, tag)
     )
   `);
+  // Existing DBs created before salient_json shipped: patch the table in place.
+  // (The parallel ALTER in initSchema can't cover fresh DBs — the table didn't
+  // exist yet when it ran.)
+  try { db.exec(`ALTER TABLE entity_tag_lenses ADD COLUMN salient_json TEXT`); } catch {}
 }
 
 // ─── Tag PATTERN explanations: what a tag means as a general pattern, not tied to

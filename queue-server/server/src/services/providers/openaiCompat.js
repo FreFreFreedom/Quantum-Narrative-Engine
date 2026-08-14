@@ -51,6 +51,13 @@ async function postChatCompletions({ providerId, model, messages, maxTokens, too
         model,
         messages,
         max_tokens: maxTokens,
+        // Gemini-flash is a thinking model: with a small max_tokens budget its
+        // "thoughts" can consume the whole budget and leave the visible answer
+        // empty (verified live — a 50-token call returned zero visible text).
+        // reasoning_effort "low" caps the thinking share so the answer fits.
+        // Only Google's endpoint understands this field, and only small-budget
+        // calls need it — large generations keep full thinking quality.
+        ...(providerId === 'google-ai-studio' && maxTokens < 512 ? { reasoning_effort: 'low' } : {}),
         ...(tools ? { tools } : {}),
       }),
       signal: controller.signal,
