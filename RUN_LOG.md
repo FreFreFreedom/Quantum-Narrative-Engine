@@ -931,3 +931,27 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`. Documents only 
 - **Fixed**: fixed the leftover "aging" signal condition bug in `architectureIntelligence.js` (operator-precedence mess — would have flagged recently-verified components as stale); restarted the local server (old PID 25383 + stray 28865 stopped, fresh process on :3000). Boot created the 4 intel tables + `thought_id` automatically.
 - **Verified on the live server**: login → signals 200 with real data (orphan/no_next_step + content signals, graph health 90, daily snapshot recorded); thoughts list; create+dismiss round-trip; meter reflects state.
 - Note: the server now runs as a background process with JWT_SECRET=dev / ADMIN_PASSWORD=dev (the repo's dev convention). If Antoine's login password isn't "dev", he should restart with his own env.
+
+## 2026-08-14 — Part 5: the Content graph wakes up (backend + frontend)
+
+- **Backend** (`services/architectureIntelligence.js`, `routes/intel.js`):
+  - Two new mechanical content signals, both verified against real and synthetic data: `continuum_band_gap` (an axis whose low/mid/high band is almost empty while another band is full — fires on a synthetic lopsided DB; stays correctly quiet on the real corpus, whose two axes are fully populated) and `no_scale_echo` (entities scored on an axis but with no cross-type partner within the 0.07 echo range — fires on the real corpus).
+  - New deliberative endpoint `POST /api/architecture/intel/content-pulse {focus: 'themes'|'bridges'}` — the same Mind turned on the corpus itself (clusters, axes, band coverage, tag landscape, entity counts). Explicit clicks, never capped.
+  - **Fixed a latent dedup bug**: `state_hash` (UNIQUE) was shared by all thoughts from one run, so 2 of every 3 suggestions were silently discarded — in `contentPulse` and the same pattern in `pulseGraph`'s graph-scope branch. Hash is now per-thought (state + focus + normalized title): all 3 suggestions survive a run (verified: created 3 / skipped 0), re-runs still dedupe same-state repeats.
+- **Frontend** (`fmcns_navigator.html`): "🧠 Intelligence" toggle button in the Content graph controls (hidden in list view). Opens the Intelligence panel over the canvas: content signals (with Acknowledge), content thoughts (Accept → paused task, Dismiss), two Think buttons (themes / bridges), 15 s auto-refresh while open. Zones flagged by a signal are marked on the canvas by `renderZoneLabels()` (⚠ label + dashed ring + brighter fill). Ack state is shared with the Mind tab (single source of truth).
+- **Verified**: `node --check` on all 5 script blocks; scratch-server boot with full UI payload shapes (signals meta lists all 13 types, page serves the new UI); content-pulse created 3 real thoughts (one themes run, one bridges run); accept on a content thought → paused task linked by `thought_id` (verified in the DB). No browser available here — Antoine should hard-refresh (Shift+Cmd+R) and click through the panel.
+- **Frontend sync rule**: master copied to `queue-server/public/index.html`, SHA-256 identical.
+- **Not committed** — pending Antoine's word after he tests.
+
+---
+
+# RUN_LOG — Queue pill + Target button removal, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`.
+
+- Antoine disliked the 📋 emoji queue button and the 🎯 Target button in the redesigned mode bar. After discussing options he picked a designed pill and confirmed the Target feature's point-at-element already exists in the chat assistant (verified: `fwPickBtn` "🎯 Point at an element — click it to capture").
+- Replaced the 📋 icon button with a designed **Queue pill** (`mode-pill`): inline SVG tray icon (no emoji), "Queue" label, integrated amber count chip (`mode-pill-count`) that appears only when > 0; the pill warms (amber tint, border, soft glow) while tasks wait. Click → `setMode('core'); switchCoreView('flow')`. Badge write in `qLoad()` now also toggles the `warm` class.
+- Removed the **Target (inspect) feature** from the bar entirely: button, the inspect JS block (toggle/crosshair/tooltip/toast), the two overlay divs, and the `.inspect-hit`/`.inspect-tooltip`/`.inspect-toast`/`.mode-badge`/`.mode-icon.active` CSS. `data-src` attributes left in place as harmless metadata. The chat assistant's point-at-element covers the same need.
+- Mode bar is now: segmented control (Content / Map / Core) · right cluster `[ ◧ Queue ] [ 🌙 ]`.
+- Verified: `node --check` on extracted inline JS, master ↔ served copy checksums identical, local :3000 serving the new pill (no inspect refs), live Railway serving it (health 200).
+- SHIPPED per Antoine: commit f150cfb (only the two frontend files) → main fast-forward → pushed. Note: origin/main had advanced (overnight agent's work 733304d) — fast-forwarded on top, no conflict. Merge-check worktree main ref updated. Antoine hard-refreshes :3000.
