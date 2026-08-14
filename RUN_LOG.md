@@ -822,3 +822,14 @@ Overnight run on `overnight/2026-08-10`, plan `plans/self-aware-platform.md` Par
 - Frontend AI Settings sheet (master `fmcns_navigator.html` + synced `queue-server/public/index.html`): cleared feature defaults now show OpenCode (free) as the selected backend, and a new "Advanced — queue budget & intel (JSON)" fold prefills the current stored JSON; Save validates and writes it back.
 - LIVE-VERIFIED (temp DB, no spend): fresh GET shows `queue: {goBudgetUsd: 0.33}`, PUT round-trip persists `defaults` + `queue` + `intel` exactly, migration flips a claude-code default to opencode on the next boot; providers endpoint still lists the full free/paid model catalogue; all edited JS files `node --check` clean; master ↔ served copy checksums identical after the frontend sync.
 - Not included in this commit (WIP from earlier in the run, untouched): `services/orchestrator.js`, `routes/strategies.js`, the `intel_thoughts` table and the unified-flow work. Never pushed/merged — Antoine reviews and decides.
+
+---
+
+# RUN_LOG — Claude usage strip removed, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`.
+
+- Antoine asked to drop the Claude quota display in the top bar — no longer needed.
+- Removed: the header's usage strip (5h/week/today Claude token usage + low-quota alert), its 30s polling, and all now-dead JS/CSS (loadUsage, usageBarHtml, usageTone, fmtResetIn, fmtTokens, usage-* styles). The header's queue-status banner polling stays. The backend /api/agent/usage endpoint is untouched (harmless, may still be useful later).
+- Verified: usage strip fully gone from the served copy, script brace balance clean, master ↔ served copy checksums identical.
+- SHIPPED per Antoine: committed, fast-forwarded main, pushed — Railway auto-deploys from main. Antoine hard-refreshes :3000.

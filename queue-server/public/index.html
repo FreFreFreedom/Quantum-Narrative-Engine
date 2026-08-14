@@ -225,10 +225,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .core-serverpick select { font-size:10.5px; padding:1px 4px; }
 .core-hbtn { padding:4px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:10.5px; cursor:pointer; }
 .core-hbtn:hover { background:var(--c-surface-2); color:var(--c-ink); }
-.core-header .usage-strip { border:none; background:none; border-radius:0; padding:0; margin:0; font-size:10px; }
-.core-header .usage-strip-row { gap:10px; }
-.core-header .usage-note { display:none; }
-.core-header .usage-alert { padding:4px 8px; margin:0; font-size:10px; }
 
 /* ---------- Core workspace shell (three zones) ---------- */
 .ws-shell { flex:1; min-height:0; display:flex; }
@@ -403,22 +399,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .flow-row.drag-over { outline:1px dashed var(--c-accent); outline-offset:-1px; }
 .flow-seedadd input, .flow-seedadd textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; background:var(--c-surface); color:var(--c-ink); box-sizing:border-box; }
 .tv-empty { font-size:11.5px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:18px; text-align:center; }
-/* usage strip */
-.usage-strip { border:1px solid var(--c-border); background:var(--c-surface-2); border-radius:8px; padding:8px 12px; font-size:10.5px; margin-bottom:12px; }
-.usage-strip-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
-.usage-item { display:flex; align-items:center; gap:6px; min-width:0; }
-.usage-item .ui-label { color:var(--c-ink-4); }
-.usage-bar { width:64px; height:6px; border-radius:4px; background:var(--c-border); overflow:hidden; flex-shrink:0; }
-.usage-bar-fill { display:block; height:100%; border-radius:4px; background:#4f9d7a; }
-.usage-bar-fill.warn { background:#d99a3d; }
-.usage-bar-fill.hot { background:var(--c-danger); }
-.usage-pct { font-weight:700; color:var(--c-ink); }
-.usage-reset { color:var(--c-ink-4); }
-.usage-note { font-size:10px; color:var(--c-ink-4); margin-top:5px; }
-.usage-mini { font-size:10px; color:var(--c-ink-4); white-space:nowrap; cursor:default; }
-.usage-mini.warn { color:var(--c-warn); font-weight:600; }
-.usage-mini.hot { color:var(--c-danger); font-weight:700; }
-.usage-alert { margin-top:6px; padding:6px 9px; border-radius:6px; background:var(--c-danger-tint); color:var(--c-danger); font-size:10.5px; }
 /* suggestions */
 .sg-toolbar-row { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
 .sg-filterbtns { display:flex; gap:5px; }
@@ -695,7 +675,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabFlow" data-core-tab="flow">Flow <span class="core-tab-count" id="coreCountFlow"></span></button>
     </div>
-    <div id="usageStripHost" data-src="CORE ARCHITECTURE → slim header → Quotas usage strip (compact) | fmcns_navigator.html: renders into #usageStripHost, startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
     <span id="archQueueBanner" class="core-banner" data-src="CORE ARCHITECTURE → slim header → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
     <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
     <button class="core-hbtn" id="queuePauseBtn" title="Pause / resume the task queue">Pause queue</button>
@@ -2518,8 +2497,8 @@ document.addEventListener('click', (e) => {
 // Merges what used to be three separate top-level tabs (Architecture Navigator, Queue,
 // Travaux) into one, since they are in fact four stages of a single loop: Seeds/Suggestion
 // Engine feed the Dispatch Queue, which runs work that shows up in Architecture's history,
-// which is what Claude reads to propose the next suggestion. The header (quota strip +
-// queue-state line) is shared across all four sub-tabs since it governs all of them.
+// which is what Claude reads to propose the next suggestion. The header
+// (queue-state line) is shared across all four sub-tabs since it governs all of them.
 // The workspace shell (three zones) is driven by one view state: which list view
 // the center zone shows, and which detail slot the right zone displays.
 let coreView = 'arch';
@@ -3993,77 +3972,11 @@ function startUsagePolling() {
 }
 function stopUsagePolling() { if (usagePollTimer) { clearInterval(usagePollTimer); usagePollTimer = null; } }
 
-// Shared header refresh: quota strip + the arch/queue-status banner, both of which are
-// facts about the same underlying loop and now live in one place across all four sub-tabs.
+// Shared header refresh: the arch/queue-status banner, which lives in the slim
+// header across all four sub-tabs.
 async function refreshCoreHeader() {
-  loadUsage();
   try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
   renderArchQueueBanner();
-}
-
-// ── Quotas Claude usage strip ──────────────────────────────────────────────────
-function usageTone(pct, severity) {
-  if (severity && severity !== 'normal') return 'hot';
-  if (pct >= 90) return 'hot';
-  if (pct >= 70) return 'warn';
-  return '';
-}
-function fmtResetIn(iso) {
-  if (!iso) return '';
-  const ms = new Date(iso).getTime() - Date.now();
-  if (!(ms > 0)) return '';
-  const totalMin = Math.round(ms / 60000);
-  const days = Math.floor(totalMin / 1440), hours = Math.floor((totalMin % 1440) / 60), mins = totalMin % 60;
-  if (days >= 1) return `resets in ${days}d ${hours}h`;
-  if (hours >= 1) return `resets in ${hours}h ${mins}m`;
-  return `resets in ${mins}m`;
-}
-function fmtTokens(n) {
-  if (!(n > 0)) return '0';
-  if (n >= 1000000) return (n/1000000).toFixed(n >= 10000000 ? 0 : 1) + ' M';
-  if (n >= 1000) return (n/1000).toFixed(n >= 100000 ? 0 : 1) + ' k';
-  return String(Math.round(n));
-}
-function usageBarHtml(icon, label, bucket, hint) {
-  const b = bucket || {};
-  const pct = typeof b.utilizationPct === 'number' ? Math.max(0, Math.min(100, b.utilizationPct)) : null;
-  if (pct == null) {
-    return `<div class="usage-item" title="${hint}"><span class="ui-label">${icon} ${label}</span><span class="usage-pct">${fmtTokens(b.totalTokens)} tokens</span></div>`;
-  }
-  const tone = usageTone(pct, b.severity);
-  const resetIn = fmtResetIn(b.resetsAt);
-  return `<div class="usage-item" title="${hint}">
-    <span class="ui-label">${icon} ${label}</span>
-    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
-    <span class="usage-pct">reste ${100-pct}%</span>
-    ${resetIn ? `<span class="usage-reset">· ${resetIn}</span>` : ''}
-  </div>`;
-}
-async function loadUsage() {
-  const host = document.getElementById('usageStripHost');
-  if (!host) return;
-  let u;
-  try { u = await api('/api/agent/usage'); } catch (e) { host.innerHTML = ''; return; }
-  const scoped = u.weekScoped;
-  const pctOf = b => (b && typeof b.utilizationPct === 'number') ? Math.max(0, Math.min(100, Math.round(b.utilizationPct))) : null;
-  const fmt = b => { const p = pctOf(b); return p != null ? p + '%' : (b && b.totalTokens ? fmtTokens(b.totalTokens) + ' tokens' : '—'); };
-  const toneOf = b => usageTone(pctOf(b) ?? 0, b ? b.severity : null);
-  const tone = toneOf(u.session) || toneOf(u.week) || toneOf(scoped) || '';
-  const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
-  const tip = [
-    'Claude usage',
-    u.session ? `5h window: ${fmt(u.session)}${u.session.resetsAt ? ` (resets in ${fmtResetIn(u.session.resetsAt)})` : ''}` : '',
-    u.week ? `Week: ${fmt(u.week)}` : '',
-    scoped ? `Week (${scoped.label||'model'}): ${fmt(scoped)}` : '',
-    `Tokens today: ${fmtTokens(u.today && u.today.totalTokens)}`,
-    'No daily limit — Claude caps by rolling 5h window and by week.',
-  ].filter(Boolean).join(' · ').replace(/"/g, '&quot;');
-  const line = `Claude · 5h ${fmt(u.session)} · week ${fmt(u.week)}${scoped ? ` · ${(scoped.label||'model').toLowerCase()} ${fmt(scoped)}` : ''} · ${fmtTokens(u.today && u.today.totalTokens)} today`;
-  host.innerHTML = `
-    <div class="usage-strip">
-      <span class="usage-mini ${tone}" title="${tip}">${line}</span>
-      ${(u.schedulerLimitResetAt || hot.length) ? `<div class="usage-alert">${u.schedulerLimitResetAt ? 'Limit reached — the queue is force-paused, it will resume automatically at reset.' : 'Claude usage is running low on one of the limits.'}</div>` : ''}
-    </div>`;
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
