@@ -876,3 +876,58 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`.
 - **Key test**: added `scripts/test-google-key.mjs` (exercises the real catalogue adapter, prints only the reply, never the key). Live results: real authenticated tag-lens through Google in ~5s (vs ~10–15s via CLI boot), repeat click 0.001s (cache). Antoine's key is valid; nothing blocked.
 - Verified: `node --check` on all changed server files; full local boot on a scratch DB (live `data/` never touched) + real Fast Lane call + cache hit; deployed-site health 200.
 - SHIPPED per Antoine: commit cc41512 (backend only — the two frontend files had already shipped with the Waiting-for-you / mode-bar rounds) → main via `update-ref` fast-forward → pushed; Railway auto-deploys from main. Merge-check worktree has its own uncommitted review state — left untouched (its main ref will catch up on its next review cycle).
+
+---
+
+# RUN_LOG — plan status correction + inspiration round, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10`. Documents only — no app code.
+
+- **Status correction**: `plans/self-aware-platform.md` still claimed "implementation not
+  started", but Parts 1–2 shipped on 2026-08-14 (`448c27e` free-first policy + queue
+  Go-first/spend-guard/zero-touch switching; `f627ee7` Claude usage strip removed). Verified
+  in the tree: `intel_thoughts` schema committed with `448c27e` (Part 4 groundwork only);
+  Parts 3/4 behaviour, 5 and everything in Part 6 do not exist yet. Plan header + scope +
+  `plans/README.md` row now say: Parts 1–2 DONE, Parts 3–6 PLANNED.
+- **Part 6 — The inspiration round** added to the plan (Antoine approved all six): (6.1)
+  health score 0–100 + daily snapshots + pulse history, (6.2) one-click signal
+  acknowledgements ("intentional, not a problem"), (6.3) retrospective thoughts from finished
+  tasks + failure fingerprinting, (6.4) Growth Hormone — feature proposals from usage
+  patterns, (6.5) adoption-rate meter + self-correction when thoughts are never accepted,
+  (6.6) nightly ranked drain for the overnight agent.
+- **No-context guarantee**: the plan now carries a "Where we are today (verified 2026-08-14)"
+  snapshot, a fresh-start checklist, and a References & inspiration appendix (sentrux,
+  git-intelligence, CSNS, Archie, nexus, heal, GenomeGuard, forgegod, metaswarm, Letta/Mem0,
+  Arize Phoenix/PXI — concepts to borrow, not code). `plans/README.md` feeds
+  `.agents/current-state.md` at boot, so overnight agents will see the corrected status
+  automatically.
+- Untouched: app code, `queue-server/data/`, the untracked orchestration WIP
+  (`routes/strategies.js`, `services/orchestrator.js` — belongs to the multi-agent team plan).
+- No commit made — pending Antoine's word.
+
+## 2026-08-14 — Intelligence engine: service layer, routes, verified end-to-end
+
+- **`services/architectureIntelligence.js`** written (703 lines): deterministic signals (bottleneck, aging, unbuilt_dep, no_next_step, orphan, territory_isolated, stale_speculation, never_touched + content signals), health score 0–100 with daily snapshots, signal acknowledgements, thoughts (list/create/get/accept/dismiss), adoption meter + auto-adopt, Deepen per-node, whole-graph Pulse (+ growth focus), task retrospectives into lessons with failure fingerprinting, ranked drain. All free-first, budgeted, cached ~20s.
+- **`createPrompt`** in `promptQueue.js` now accepts and persists `thought_id`, so an accepted thought creates a **paused** task linked back to the thought (knows which thought it came from).
+- **`routes/intel.js`** wired at `/api/architecture/intel/*`: signals (+ ack), thoughts (list/get/create/accept/dismiss), deepen, pulse (explicit clicks uncapped), meter, lessons, drain.
+- Fixed: components query in `unifiedNodes` referenced a non-existent `deleted_at` column (would have 500'd the signals endpoint).
+- **Verified by booting a scratch server** (scratch DB, `WARMUP_DISABLED=1`, no model calls spent): signals return real data; ack hides a signal permanently; accept → paused queue task with `thought_id` linked; re-accept idempotent; dismiss with reason; meter reflects state; drain + lessons empty-but-working.
+- **Not done yet**: the Mind pane UI in `fmcns_navigator.html` (Graph | Building blocks | Mind tab) — backend is fully there, frontend is the next step.
+- No commit made — pending Antoine's word.
+
+## 2026-08-14 — Mind pane frontend + implementation complete
+
+- **Mind tab** added as the third inner tab of Architecture (Graph | Building blocks | Mind) in `fmcns_navigator.html`: toolbar with platform-pulse ring + daily-history sparkline (6.1), adoption meter ("accepted · adopted · proposed", 6.5), and two explicit-click buttons — "Think about the whole graph" (Pulse) and "Growth radar" (6.4 feature proposals). Feed shows mechanical signals on top (each with "Acknowledge — intentional" + optional reason, 6.2, plus "Think deeper" on node signals), deliberative thoughts below (Accept → paused task linked back to the thought, Dismiss with optional reason, Think deeper on node thoughts, accepted ones link into the Flow).
+- **Graph cards** now carry a small per-node health score ring (6.1), and the component detail panel shows the node's score + firing signals with Acknowledge buttons (6.2).
+- **Server**: `routes/intel.js` signals route now parses the frontend's JSON `?catalog=` param; removed a dead loop in `healthFor`. All 5 inline script blocks pass `node --check`.
+- **Verified** on a scratch server with the exact payloads the UI sends (catalog-shaped JSON): signals + health score compute (single Concept node → orphan/no_next_step/never_touched, graph 85), ack hides a signal permanently, accept → paused task with `thought_id` link, dismiss with reason, meter/drain/lessons respond. Pulse/Deepen/Growth make real model calls — not fired in verification (cost discipline); they reuse the already-verified generateText → createThought seam.
+- **Frontend sync rule**: master copied to `queue-server/public/index.html`, SHA-256 identical.
+- Not tested: the actual rendered UI in a browser (no headless browser here) — Antoine should hard-refresh (Shift+Cmd+R) and click through the Mind tab.
+- No commit made — pending Antoine's word.
+
+## 2026-08-14 — Mind tab "Could not reach the server" diagnosed + fixed
+
+- **Root cause**: the server process serving localhost:3000 had been started at 03:29, before the intel backend existed. It served the new page (read from disk) but ran old API code — Mind API calls got HTML 404s, which the frontend reported as "Could not reach the server." Proof: that process's live DB had no `intel_*` tables and no `work_prompts.thought_id` column.
+- **Fixed**: fixed the leftover "aging" signal condition bug in `architectureIntelligence.js` (operator-precedence mess — would have flagged recently-verified components as stale); restarted the local server (old PID 25383 + stray 28865 stopped, fresh process on :3000). Boot created the 4 intel tables + `thought_id` automatically.
+- **Verified on the live server**: login → signals 200 with real data (orphan/no_next_step + content signals, graph health 90, daily snapshot recorded); thoughts list; create+dismiss round-trip; meter reflects state.
+- Note: the server now runs as a background process with JWT_SECRET=dev / ADMIN_PASSWORD=dev (the repo's dev convention). If Antoine's login password isn't "dev", he should restart with his own env.
