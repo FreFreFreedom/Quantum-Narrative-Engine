@@ -15,6 +15,7 @@ import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
 import { initTaskRunner, bindTaskDb, DATA_DIR } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
+import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
 import { startPreGen } from './services/preGen.js';
@@ -128,6 +129,7 @@ app.use('/api/travaux', requireAuth, providersRoutes());
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
+app.use('/api/architecture/intel', requireAuth, intelRoutes(db));
 app.use('/api/discovery', requireAuth, discoveryRoutes(db));
 app.use('/api/convos', requireAuth, conversationsRoutes());
 

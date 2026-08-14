@@ -430,6 +430,58 @@ function initSchema(db) {
   `);
   try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_thoughts_dedup ON intel_thoughts(scope, target_id, kind, state_hash) WHERE deleted_at IS NULL AND state_hash IS NOT NULL`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_intel_thoughts_feed ON intel_thoughts(status, created_at)`); } catch {}
+
+  // ─── Intelligence round 2 (plan self-aware-platform.md, Parts 3 & 6) ─────────
+  // intel_signal_acknowledgements: one-click "intentional, not a problem" — once a
+  // signal type is acknowledged for a target it is filtered out forever (6.2).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS intel_signal_acknowledgements (
+      id TEXT PRIMARY KEY,
+      signal_type TEXT NOT NULL,
+      scope TEXT NOT NULL DEFAULT 'node',
+      target_id TEXT NOT NULL DEFAULT '',
+      reason TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_acks ON intel_signal_acknowledgements(signal_type, scope, target_id)`); } catch {}
+
+  // intel_health_snapshots: one deterministic daily snapshot per target (node or
+  // graph) so the platform's health has a history and a trend, not just a number
+  // (6.1). day = YYYY-MM-DD UTC; upsert per (scope, target, day).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS intel_health_snapshots (
+      id TEXT PRIMARY KEY,
+      scope TEXT NOT NULL DEFAULT 'node',
+      target_id TEXT NOT NULL DEFAULT '',
+      score INTEGER NOT NULL,
+      signals_json TEXT NOT NULL DEFAULT '[]',
+      day TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_snapshots ON intel_health_snapshots(scope, target_id, day)`); } catch {}
+
+  // intel_task_lessons: post-mortem notes from finished queue tasks (6.3).
+  // Separate table on purpose — retrospectives are not "thoughts" the user
+  // accepts or dismisses; they are durable learned context, deduped by a
+  // fingerprint of the lesson so the same lesson is never re-learned.
+
+  // Delay the ALTER until the table exists.
+  try { db.exec(`CREATE TABLE IF NOT EXISTS intel_task_lessons (
+      id TEXT PRIMARY KEY,
+      work_prompt_id TEXT,
+      title TEXT NOT NULL,
+      lesson TEXT NOT NULL DEFAULT '',
+      outcome TEXT NOT NULL DEFAULT '',
+      fingerprint TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )`); } catch {}
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_lessons_fp ON intel_task_lessons(fingerprint) WHERE fingerprint IS NOT NULL`); } catch {}
+
+  // Link from a queue task back to the Mind thought that produced it (Accept →
+  // paused Flow task, Part 4), mirroring suggestion_id.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN thought_id TEXT`); } catch {}
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

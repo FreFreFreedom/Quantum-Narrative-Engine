@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-14T01:57:02.323Z
+Generated: 2026-08-14T22:29:20.444Z
 
 ## Components
 
@@ -47,4 +47,4 @@ Generated: 2026-08-14T01:57:02.323Z
 - github-code-discovery — DONE (MVP)
 - plan-first-queue-and-idea-composition — Part A DONE, Part B SUPERSEDED
 - core-workspace-unified-flow — IN PROGRESS
-- self-aware-platform — PLANNED
+- self-aware-platform — Parts 1–2 DONE (2026-08-14) · Parts 3–6 PLANNED

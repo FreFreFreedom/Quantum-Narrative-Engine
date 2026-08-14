@@ -2,11 +2,12 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED — approved by Antoine 2026-08-13, implementation not started |
+| **Status** | Parts 1–2 DONE (shipped 2026-08-14, commits `448c27e` + `f627ee7` on main) · Parts 3–6 PLANNED (not started) |
 | **Created** | 2026-08-13 |
+| **Updated** | 2026-08-14 — status corrected to reality; Part 6 added (inspiration round, Antoine approved all six) |
 | **Project** | FMCNS — `quantum-narrative-engine` (frontend `fmcns_navigator.html`, backend `queue-server/`) |
 | **Depends on** | `plans/always-on-models.md` (DONE — the free-router), `plans/dispatch-queue-free-model-fallback.md` (DONE — queue fallback skeleton) |
-| **Scope** | Policy flip across every model lane + queue engine hardening (Go-first, spend guard, zero-touch model switching) + new architecture intelligence (vitals + thought files + feed) + content-navigator intelligence |
+| **Scope** | Policy flip across every model lane + queue engine hardening (Go-first, spend guard, zero-touch model switching) + new architecture intelligence (vitals + thought files + feed) + content-navigator intelligence + inspiration round (Part 6) |
 
 ---
 
@@ -64,6 +65,41 @@
   `renderArchStage` 4363, `drawArchDeps` 4390, `buildMapHtml` 4237 / `buildTreeHtml` 4257,
   `archNodeBadge` 4229, `TERRITORIES` 4040), and the content graph physics (`runSim` 1590,
   `computeCentroids` 1099, `renderZoneLabels` 1124, `layoutAndDraw` 1622).
+
+---
+
+## Where we are today (verified 2026-08-14)
+
+This section exists so an agent picking up this plan with **no prior conversation** knows what
+is already in the tree and what is still to build.
+
+**Shipped to main (2026-08-14, commit `448c27e` "Free-first policy" + `f627ee7` "Claude usage
+strip removed"):**
+
+- **Part 1 — DONE.** `services/ai/text.js`: unspecified feature defaults resolve to the free
+  OpenCode lane; `migrateFreeFirstDefaults()` runs at boot (idempotent); AI Settings
+  (GET/PUT `/api/travaux/ai-settings`) stores `defaults` + `queue` + `intel` separately
+  (`queue_go_budget_usd`, `intel_json` columns); the Claude usage strip was removed from the
+  top bar entirely (a small drift from Part 1 §3, which assumed a readout stays).
+- **Part 2 — DONE.** `taskRunner.js`/`promptQueue.js`: provider fallback is `opencode`
+  everywhere; `finalize()` (~line 600) walks Go pool first (paid, cost > 0, cheapest-first,
+  gated by the daily spend guard `goLaneAllowed()` reading `queue_go_budget_usd`, default
+  0.33) then the free floor, with session continuity (`resumeSessionId`) and defer-with-wake
+  (`onAgentTaskDeferred` + `quotaScheduler`) instead of any manual resume.
+- **Part 4 groundwork — schema only.** `db/schema.js` has `intel_thoughts` (with the
+  dedup unique index on scope/target/kind/state_hash and feed index). No service writes or
+  reads it yet.
+- **Not in the tree at all:** Part 3 (no `architectureIntelligence.js`, no
+  `/api/architecture/intel/signals`, no vitals UI), Part 4 behaviour (no thought generation,
+  no Mind pane, no Accept→paused-task), Part 5, Part 6.
+- Unrelated WIP lying in the working tree (untracked, from the multi-agent team plan, NOT this
+  plan): `queue-server/server/src/routes/strategies.js`,
+  `queue-server/server/src/services/orchestrator.js`. Leave them alone.
+
+**Frontend reality check (lines drift fast):** `initArchNav` ~4112, `renderArchStage` 4363,
+`drawArchDeps` 4390, `buildMapHtml` 4237 / `buildTreeHtml` 4257, `archNodeBadge` 4229,
+`TERRITORIES` 4040, `runSim` 1590 / `computeCentroids` 1099 / `renderZoneLabels` 1124 /
+`layoutAndDraw` 1622. Re-verify before coding.
 
 ---
 
@@ -175,6 +211,92 @@ Same engine, `scope='content'`:
 - UI: "Intelligence" toggle in the content graph controls + a feed panel; signals highlight the
   relevant clusters/zones on the canvas (reuse `renderZoneLabels`/cluster coloring).
 
+## Part 6 — Phase 4: The inspiration round (approved by Antoine 2026-08-14)
+
+Six additions folded in from a survey of the "self-observing / living software" ecosystem
+(see the References appendix at the end). All extend Parts 3–4; nothing reopens Parts 1–2.
+Cost rules, Antoine's gate, and free-first routing all still apply. Each item is self-contained
+enough to implement without the research conversation.
+
+### 6.1 — Health score & history (the pulse gets a number and a trend)
+
+- Composite score 0–100 per component and for the whole graph. Deterministic, zero model
+  calls, same cache as Part 3 signals (~20 s).
+- New table `intel_health_snapshots` (`id`, `scope` 'node'|'graph', `target_id`, `score`,
+  `signals_json`, `day`, unique on scope/target/day, upsert). One snapshot per day per target.
+- Score formula: start at 100, subtract per active Part 3 signal — bottleneck −15, aging −10,
+  depends-on-unbuilt −10, no-next-step −5, orphan −5, territory-isolated −10, stale-speculation
+  −5; floor 0. Weights stored in `ai_settings` (`health_weights_json`) so Antoine can tune.
+- Frontend: score ring on graph cards (an arc next to the vitals ring); the Mind pane header
+  shows the whole-platform pulse score with a small SVG polyline history of the last N daily
+  snapshots. Vanilla SVG only, no chart library.
+- Verification: generate two snapshots for a component (or fake a day apart), confirm the
+  trend renders; ring renders on cards; `node --check` clean.
+
+### 6.2 — "Intentional, not a problem" (acknowledged signals)
+
+- New table `intel_signal_acknowledgements` (`signal_type`, `scope`, `target_id`, `reason`,
+  `created_at`, unique across the four). Additive/idempotent schema like the rest.
+- The signals endpoint (`/api/architecture/intel/signals`) filters out acknowledged
+  (type, scope, target) combinations. Every signal card in the docked detail panel gets an
+  "Acknowledge" button with an optional one-line reason.
+- Purpose: Antoine's intentional design choices (single-file frontend, no test suite, private
+  project) must not be flagged forever. Acknowledged once, a signal never fires again.
+- Verification: acknowledge a signal, confirm it disappears from the endpoint and stays gone
+  across re-polls and restarts.
+
+### 6.3 — Learning from outcomes (post-mortems + failure memory)
+
+- New thought kind `retrospective`, `scope` 'task', `target_id` = the `work_prompts` id.
+- Trigger: whenever a queue task finishes (done/blocked/failed), run a small free-first
+  deliberation (Part 4 budget caps apply): what worked, what didn't, why, one reusable lesson.
+  Reuse the digest pattern from `workSuggestions.js`.
+- Failure memory: lessons from blocked/failed tasks are keyed by a fingerprint of the task's
+  prompt/plan. When a future thought or task has a matching fingerprint, the stored lesson is
+  attached as context ("you tried this before, here is what happened") — the same idea is
+  never proposed the same way twice.
+- The platform also learns about itself: when a thought is `adopted` (its target's
+  `state_hash` advanced past it), record the outcome; this feeds the adoption meter (6.5).
+- Verification: finish a task on a scratch DB, confirm a retrospective thought appears and its
+  fingerprint dedups on a repeat; confirm adopted thoughts are linked to outcomes.
+
+### 6.4 — Growth Hormone (feature proposals from usage patterns)
+
+- New mechanical signal source, zero cost, always on, over server-visible data: components
+  that never got a queue task; speculations with high acceptance (children that became real
+  nodes); territories with few components/edges; ideas that became nodes; quiet components
+  adjacent to busy ones.
+- Deliberative pass on top (Part 4 caps): a pattern digest produces "next logical feature"
+  thoughts (`scope` node or graph) — blind spots, integration opportunities, features that
+  make logical sense. This is Antoine's radar: development-focused intelligence, not content
+  analytics.
+- Verification: seed usage data on a scratch DB, confirm pattern signals appear in the Mind
+  feed and the deliberative pass emits proposals.
+
+### 6.5 — The loop watching itself (adoption-rate meter)
+
+- Pure computation over `intel_thoughts` + `work_prompts`: acceptance rate
+  (accepted / (new + accepted + dismissed)) and adoption rate (adopted / accepted), plus
+  proposal→adoption latency in days.
+- UI: a small meter in the Mind pane header ("This week: 3 accepted, 1 adopted").
+- The self-awareness touch: if acceptance+adoption is zero for N consecutive thoughts (N in
+  `ai_settings`, default ~5), the platform surfaces one honest thought: "I've proposed N
+  thoughts and none were accepted — what should I look at differently?" It visibly notices
+  when it is being unhelpful.
+- Verification: transition some thoughts through the statuses, confirm the meter and the
+  self-correction trigger.
+
+### 6.6 — Nightly ranked drain (the overnight agent works the list)
+
+- `intel_thoughts` gains a rank score (priority × recency × inverse tries), computed on read;
+  a "drain" endpoint returns the top unaccepted thoughts.
+- The overnight agent (`fmcns-overnight`, AGENTS.md rules) works down the drain list on its
+  `overnight/<date>` branch: highest first, one per cycle, each converted to a paused queue
+  task via the existing `workSuggestions.acceptSuggestion` mechanism. Never touches main;
+  Antoine's merge gate stays absolute.
+- Verification: rank a mix of thoughts, confirm drain order and that the overnight run
+  converts the top items to paused tasks.
+
 ## Risks & working rules
 
 - Single-file frontend, no build step, no chart libraries — vanilla JS + SVG only.
@@ -202,5 +324,61 @@ Same engine, `scope='content'`:
 
 - Analytics about the ontology content itself (cluster stats dashboards) — Antoine chose
   app-health, not content analytics.
-- History sparklines on each node / thought timelines in the graph.
+- Per-node history sparklines and thought timelines on the graph (the whole-platform pulse
+  history from 6.1 is in scope; per-node trails are not).
 - Per-node "adopted-thought" trails in the UI (the data will exist; viz comes later).
+
+## Fresh-start checklist (for an agent with no prior conversation)
+
+1. A plan in `plans/` is not a green light — nothing here is implemented until Antoine
+   explicitly asks for this plan by name.
+2. Verify Parts 1–2 really shipped before assuming: `git log` for `448c27e` / `f627ee7`;
+   confirm `queue_go_budget_usd` + `intel_json` exist in `ai_settings`, and
+   `goLaneAllowed()` / Go-pool-first exists in `taskRunner.js`.
+3. Confirm `intel_thoughts` is in `db/schema.js` (it was committed with `448c27e`) — Parts
+   3–6 build on it; do not recreate it.
+4. File paths, function names and line numbers in this doc drift — re-verify each against
+   the current tree before coding (repo rule).
+5. Frontend sync rule (hard): every frontend change must be copied
+   `fmcns_navigator.html` → `queue-server/public/index.html` and checksums compared.
+6. Cost discipline: deliberation is always free-first and budgeted (Part 1); never let any
+   new lane route to Claude automatically.
+7. Never touch `queue-server/data/`. No test suite exists: `node --check` + local boot +
+   `curl` + Antoine's eyeball are the verification.
+8. When done, keep this header and `plans/README.md` in agreement.
+
+## References & inspiration (surveyed 2026-08-14)
+
+Nothing below is directly importable into a single-file vanilla-JS app — borrow concepts and
+data shapes, not code. The six Part 6 items trace to these:
+
+- **sentrux** (github.com/sentrux/sentrux) — live architecture sensor with one continuous
+  health score (modularity/acyclicity/depth/equality/redundancy) and a real-time structure
+  map; quality gate. Closest existing thing to the Part 3 pulse (→ 6.1).
+- **git-intelligence** (github.com/ucsandman/git-intelligence) — "living codebase": Sensory
+  Cortex (health), Prefrontal Cortex (planning), Immune System (adversarial review), Growth
+  Hormone (feature proposals from usage patterns) (→ 6.4).
+- **project-consciousness / CSNS** (github.com/BarisSozen/project-consciousness) — audit
+  engine with a health score and "acknowledged design decision vs real problem" logic (→ 6.2);
+  MISSION/ARCHITECTURE/DECISIONS/STATE four-file memory.
+- **Archie** (github.com/bitraptors/archie) — architecture blueprint + findings store with
+  id-stable upserts and `confirmed_in_scan` counters; health history across scans (→ 6.1, the
+  thought-store dedup pattern).
+- **nexus** (github.com/camilooscargbaptista/nexus) — Perception→Reasoning→Validation→Action
+  pipeline; architecture score 0–100 with trend tracking and auto-remediation.
+- **heal** (github.com/kechol/heal) — codebase decay measured between commits, severity-ranked
+  TODO list handed to a coding agent, one fix per commit (→ 6.6).
+- **GenomeGuard** (github.com/FatinShadab/GenomeGuard) — immune-system loop over a live
+  dependency graph (Sensor→Critic→Verifier→Surgeon) with safe reviewable `.patch` output by
+  default (the safety pattern for any auto-fix path).
+- **forgegod** (github.com/waitdeadai/forgegod) — five-tier memory (episodic/semantic/
+  procedural/graph/error-solution) with decay, consolidation, reinforcement; budget modes;
+  self-improving strategy (→ thought lifecycle, 6.5).
+- **metaswarm** (github.com/dsifry/metaswarm) — post-merge self-reflection extracts lessons
+  into a knowledge base; repeated human corrections become rules (→ 6.3).
+- **Memory research** — MemGPT/Letta (github.com/letta-ai/letta), Mem0 (github.com/mem0ai/mem0),
+  Zep/Graphiti: context engineering, memory decay/consolidation, conflict detection,
+  bitemporal facts (informs the `intel_thoughts` lifecycle).
+- **Observability** — Arize Phoenix (github.com/arize-ai/phoenix) and its PXI agent: traces as
+  evidence, LLM-as-judge evals, an agent that operates the product UI and stages changes for
+  approval (the pattern behind Accept→paused task).

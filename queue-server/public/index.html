@@ -244,6 +244,54 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-inner-tabs button:hover { background:var(--c-surface-2); }
 .arch-inner-tabs button.active { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
 #archBlocksPane { flex:1; min-height:0; display:none; flex-direction:column; }
+.ws-map.mind-tab .arch-toolbar, .ws-map.mind-tab .ws-map-body { display:none; }
+.ws-map.mind-tab #archMindPane { display:flex; }
+.ws-map.mind-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
+
+/* ---------- Mind pane (architecture intel feed) ---------- */
+#archMindPane { flex:1; min-height:0; display:none; flex-direction:column; }
+.mind-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:10px 16px; padding:10px 14px; border-bottom:1px solid var(--c-border); flex-shrink:0; }
+.mind-pulsewrap { display:flex; align-items:center; gap:10px; }
+.mind-pulsewrap svg.mind-pulsering { display:block; }
+.mind-pulsetext { display:flex; flex-direction:column; font-size:11px; color:var(--c-ink-3); line-height:1.25; }
+.mind-pulsetext b { font-size:12.5px; color:var(--c-ink); }
+.mind-pulsesub { font-size:9.5px; color:var(--c-ink-4); }
+.mind-history { width:150px; height:34px; flex-shrink:0; }
+.mind-meter { font-size:10.5px; color:var(--c-ink-3); background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:8px; padding:5px 9px; }
+.mind-meter b { color:var(--c-ink); }
+.mind-toolbtns { display:flex; gap:6px; flex-wrap:wrap; }
+.mind-toolbtns button { padding:5px 11px; border-radius:8px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:11px; cursor:pointer; }
+.mind-toolbtns button:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.mind-toolbtns button:disabled { opacity:.6; cursor:default; }
+.mind-selfnote { margin:12px 14px 0; border:1px dashed var(--c-warn); background:var(--c-warn-tint); color:var(--c-warn); border-radius:8px; padding:8px 11px; font-size:11px; }
+.mind-section { padding:12px 14px 4px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.mind-section.count { color:var(--c-ink-3); }
+.mind-empty { padding:0 14px 14px; font-size:11px; color:var(--c-ink-4); }
+.mind-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; margin:0 14px 8px; padding:9px 11px; }
+.mind-card.dim { opacity:.6; }
+.mind-card-top { display:flex; align-items:flex-start; gap:8px; }
+.mind-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+.mind-card-title { font-size:12px; font-weight:600; color:var(--c-ink); }
+.mind-card-meta { font-size:9.5px; color:var(--c-ink-4); margin-top:1px; }
+.mind-card-body { font-size:11px; color:var(--c-ink-2); margin-top:4px; line-height:1.45; }
+.mind-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
+.mind-actions button { padding:3px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; color:var(--c-ink-2); }
+.mind-actions button:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.mind-actions button.mind-accept { background:var(--c-brand); border-color:var(--c-brand); color:#fff; }
+.mind-actions button.mind-accept:hover { opacity:.9; color:#fff; }
+.mind-actions button.mind-ack { background:var(--c-ink-solid); border-color:var(--c-ink-solid); color:var(--c-on-solid); }
+.mind-actions button.mind-ack:hover { color:var(--c-on-solid); opacity:.9; }
+.mind-actions button.mind-danger { color:var(--c-danger); border-color:var(--c-danger); }
+.mind-reason { display:flex; gap:6px; margin-top:7px; }
+.mind-reason input { flex:1; border:1px solid var(--c-border-2); border-radius:6px; padding:4px 8px; font-size:10.5px; font-family:inherit; background:var(--c-surface); color:var(--c-ink); }
+.mind-reason button { padding:3px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface-2); font-size:10.5px; cursor:pointer; }
+.mind-status { font-size:10.5px; color:var(--c-ink-3); margin-top:6px; }
+.mind-status.err { color:var(--c-danger); }
+.mind-handoff { font-size:10.5px; color:var(--c-ink-3); margin-top:6px; }
+.mind-handoff a { color:var(--c-brand); }
+.mind-pri { font-size:9px; color:var(--c-ink-5); font-family:monospace; }
+.an-health { display:block; margin-top:4px; text-align:right; }
+.arch-node .an-health svg { display:inline-block; vertical-align:middle; }
 .ws-archdetail { display:none; width:330px; min-width:300px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; }
 .ws-archdetail.open { display:block; }
 .ws-archdetail h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
@@ -702,6 +750,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       <div class="arch-inner-tabs">
         <button class="active" data-arch-tab="graph">Graph</button>
         <button data-arch-tab="blocks">Building blocks</button>
+        <button data-arch-tab="mind">Mind</button>
       </div>
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
@@ -751,6 +800,24 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           </div>
         </div>
         <div class="tv-body" id="tvBodyBlocks"></div>
+      </div>
+      <div id="archMindPane" class="core-pane" data-src="CORE ARCHITECTURE → graph zone → Mind (the platform watching itself): health pulse + mechanical signals above, deliberative thoughts below | fmcns_navigator.html: initMind()/loadMind()/renderMind() | backend: routes/intel.js (services/architectureIntelligence.js)">
+        <div class="mind-toolbar">
+          <div class="mind-pulsewrap">
+            <span id="mindPulseRing"></span>
+            <span class="mind-pulsetext">
+              <b>Platform pulse</b>
+              <span id="mindPulseSub" class="mind-pulsesub">Health of the whole graph, today</span>
+            </span>
+            <svg id="mindHistory" class="mind-history" viewBox="0 0 140 34" preserveAspectRatio="none"></svg>
+          </div>
+          <span class="mind-meter" id="mindMeter"></span>
+          <span class="mind-toolbtns">
+            <button id="mindPulseBtn" title="One model pass over the whole graph — proposes up to 3 thoughts about what to do next">Think about the whole graph</button>
+            <button id="mindGrowthBtn" title="Growth radar: proposes next-logical-features from usage patterns">Growth radar</button>
+          </span>
+        </div>
+        <div class="tv-body" id="tvBodyMind"></div>
       </div>
     </div>
     <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done) + the New-prompt composer | fmcns_navigator.html: renderFlow(), qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js">
@@ -2604,14 +2671,17 @@ function renderWorkspace() {
   document.getElementById('qRight').classList.toggle('open', v === 'flow');
 }
 
-// Architecture view inner tabs: Graph (the canvas) or Building blocks
-// (Discover / Idea box). Building blocks lazy-init on first open.
+// Architecture view inner tabs: Graph (the canvas), Building blocks
+// (Discover / Idea box), or Mind (the intel feed). Building blocks and Mind
+// lazy-init on first open.
 let archTab = 'graph';
 function setArchTab(t) {
   archTab = t;
   document.getElementById('wsMap').classList.toggle('blocks-tab', t === 'blocks');
+  document.getElementById('wsMap').classList.toggle('mind-tab', t === 'mind');
   document.querySelectorAll('[data-arch-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-tab') === t));
   if (t === 'blocks') initBlocks();
+  if (t === 'mind') initMind();
 }
 
 function switchCoreView(v) {
@@ -4348,6 +4418,269 @@ function renderBkReportView(report) {
   });
 }
 
+// ---------- Mind pane — the platform watching itself ----------
+// (plan self-aware-platform.md Parts 3–6) Mechanical signals (free, cached ~20s on
+// the server) above, deliberative thoughts below. Accept → a paused task in the
+// Flow, linked back to the thought; Dismiss with an optional reason; Acknowledge
+// a signal once and it is gone forever; Deepen / Pulse / Growth are explicit
+// model clicks — this tab never spends on page load.
+let ARCH_INTEL = null;       // latest /api/architecture/intel/signals payload
+let MIND_THOUGHTS = [];      // latest /api/architecture/intel/thoughts payload
+const MIND_ACKED = new Set();// acked this session — the server keeps them gone, so hide forever
+let mindInited = false;
+let mindTimer = null;
+
+const SIGNAL_COLOR = (type) => (ARCH_INTEL?.meta && ARCH_INTEL.meta[type]) ? ARCH_INTEL.meta[type].color : '#8a8378';
+const SIGNAL_LABEL = (type) => (ARCH_INTEL?.meta && ARCH_INTEL.meta[type]) ? ARCH_INTEL.meta[type].label : String(type || '').replace(/_/g, ' ');
+const scoreColorOf = (s) => s >= 80 ? '#4f9d7a' : s >= 55 ? '#d99a3d' : '#d4573c';
+
+// A number-in-a-ring, used for the platform pulse and for per-node health.
+function scoreRingHtml(score, size) {
+  const S = size || 26, r = S / 2 - 2.5, c = 2 * Math.PI * r;
+  const s = Math.max(0, Math.min(100, Number(score) || 0));
+  const off = c * (1 - s / 100);
+  return `<svg class="mind-pulsering" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
+    <circle cx="${S/2}" cy="${S/2}" r="${r}" fill="none" stroke="var(--c-border-3)" stroke-width="3"/>
+    <circle cx="${S/2}" cy="${S/2}" r="${r}" fill="none" stroke="${scoreColorOf(s)}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${S/2} ${S/2})"/>
+    <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-size="${Math.round(S/2.6)}" font-weight="700" fill="var(--c-ink)">${Math.round(s)}</text>
+  </svg>`;
+}
+
+const mindSigKey = (s) => `${s.type}|${s.scope}|${s.target_id}`;
+
+async function initMind() {
+  if (mindInited && mindTimer) return;
+  if (!mindInited) {
+    mindInited = true;
+    const pulseBtn = document.getElementById('mindPulseBtn');
+    const growthBtn = document.getElementById('mindGrowthBtn');
+    const runPass = async (btn, focus, label) => {
+      btn.disabled = true;
+      const sub = document.getElementById('mindPulseSub');
+      const prev = sub.textContent;
+      sub.textContent = 'Thinking… (one model pass, up to a minute)';
+      try {
+        const out = await apiWrite('/api/architecture/intel/pulse', 'POST', { catalog: archCatalog(), focus });
+        await loadMind(true);
+        const n = (out.thoughts || []).length;
+        sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} — they are in the feed below.` : 'Nothing new came out of that pass — everything was already said.';
+      } catch (e) {
+        sub.textContent = (e && String(e.message).startsWith('HTTP')) ? 'Could not reach the server.'
+          : (e || {}).message || 'The model did not answer — retry.';
+      }
+      setTimeout(() => { sub.textContent = prev; }, 6000);
+      btn.disabled = false;
+    };
+    if (pulseBtn) pulseBtn.onclick = () => runPass(pulseBtn, 'pulse');
+    if (growthBtn) growthBtn.onclick = () => runPass(growthBtn, 'growth');
+  }
+  if (!mindTimer) {
+    mindTimer = setInterval(() => { if (coreView === 'arch' && archTab === 'mind') loadMind(true); }, 15000);
+  }
+  loadMind();
+}
+
+// The pulse + feed. Quiet reloads (polls) skip the re-render when nothing
+// changed — re-rendering destroys button handlers mid-typing and scrolls the
+// feed, so a 15s poll must not churn the DOM.
+let ARCH_INTEL_SIG = '';
+async function loadMind(quiet) {
+  const q = '?catalog=' + encodeURIComponent(JSON.stringify(archCatalog()));
+  try {
+    const [sigRes, thRes] = await Promise.all([
+      api('/api/architecture/intel/signals' + q),
+      api('/api/architecture/intel/thoughts'),
+    ]);
+    const sig = JSON.stringify([sigRes, thRes]);
+    if (quiet && sig === ARCH_INTEL_SIG) return;
+    ARCH_INTEL_SIG = sig;
+    ARCH_INTEL = sigRes;
+    MIND_THOUGHTS = thRes.thoughts || [];
+    renderMind();
+    syncArchHealthRings();
+    if (archSelected) renderArchDetail(archSelected);
+  } catch (e) {
+    if (!quiet) {
+      const host = document.getElementById('tvBodyMind');
+      if (host) host.innerHTML = '<div class="mind-empty">Could not reach the server.</div>';
+    }
+  }
+}
+
+function renderMind() {
+  const host = document.getElementById('tvBodyMind');
+  if (!host) return;
+  const h = ARCH_INTEL?.health || {};
+  const meter = ARCH_INTEL?.meter || {};
+  const sub = document.getElementById('mindPulseSub');
+  if (sub && !sub.dataset.busy) sub.textContent = h.scoredCount
+    ? `Health of the whole graph — scored across ${h.scoredCount} components`
+    : 'Health of the whole graph — no scorable components yet';
+  const ring = document.getElementById('mindPulseRing');
+  if (ring) ring.innerHTML = h.graph !== undefined ? scoreRingHtml(h.graph, 30) : '';
+
+  // History polyline (6.1): last daily snapshots, oldest → newest.
+  const histEl = document.getElementById('mindHistory');
+  if (histEl) {
+    const hist = (h.history || []).filter(p => typeof p.score === 'number');
+    if (hist.length >= 2) {
+      const W = 140, H = 34, pad = 3;
+      const min = Math.min(...hist.map(p => p.score)), max = Math.max(...hist.map(p => p.score));
+      const xOf = i => pad + i * (W - pad * 2) / (hist.length - 1);
+      const yOf = s => H - pad - (s - min) / Math.max(1, max - min) * (H - pad * 2);
+      const pts = hist.map((p, i) => `${xOf(i).toFixed(1)},${yOf(p.score).toFixed(1)}`);
+      const last = hist[hist.length - 1];
+      histEl.innerHTML = `<polyline fill="none" stroke="var(--c-border-3)" stroke-width="1" points="${pts.join(' ')}"/>
+        <polyline fill="none" stroke="${scoreColorOf(last.score)}" stroke-width="1.6" points="${pts.join(' ')}"/>
+        <circle cx="${xOf(hist.length - 1)}" cy="${yOf(last.score)}" r="2.2" fill="${scoreColorOf(last.score)}"/>`;
+    } else {
+      histEl.innerHTML = '';
+    }
+  }
+
+  const meterEl = document.getElementById('mindMeter');
+  if (meterEl) {
+    meterEl.innerHTML = meter.total ? `This week: <b>${meter.accepted}</b> accepted · <b>${meter.adopted}</b> adopted · ${meter.total} proposed`
+      : 'No thoughts proposed yet — the Mind feeds on your clicks.';
+  }
+
+  const sc = (ARCH_INTEL && ARCH_INTEL.selfCorrect && ARCH_INTEL.selfCorrect.exists) ? ARCH_INTEL.selfCorrect : null;
+  const scNote = sc ? `<div class="mind-selfnote"><b>${escS(sc.title)}.</b> ${escS(sc.body)}</div>` : '';
+  const hostOld = host.scrollTop || 0;
+
+  const visibleSigs = (ARCH_INTEL?.signals || []).filter(s => !MIND_ACKED.has(mindSigKey(s)));
+  const sigCards = visibleSigs.map(s => `
+    <div class="mind-card" data-sig="${escS(mindSigKey(s))}">
+      <div class="mind-card-top">
+        <span class="mind-dot" style="background:${SIGNAL_COLOR(s.type)}" title="${escS(SIGNAL_LABEL(s.type))}"></span>
+        <div style="flex:1;min-width:0;">
+          <div class="mind-card-title">${escS(s.title)}</div>
+          <div class="mind-card-meta">${escS(SIGNAL_LABEL(s.type))} · ${escS(s.scope)}${s.target_id ? ' · ' + escS(ARCH_BY_ID[s.target_id]?.name || s.target_id) : ''}</div>
+          <div class="mind-card-body">${escS(s.detail)}</div>
+        </div>
+      </div>
+      <div class="mind-actions">
+        <button class="mind-ack" data-ack="${escS(s.type)}|${escS(s.scope)}|${escS(s.target_id || '')}">✓ Acknowledge — intentional</button>
+        ${s.scope === 'node' && s.target_id ? `<button data-deepen="${escS(s.target_id)}">✦ Think deeper</button>` : ''}
+      </div>
+      <div class="mind-reason" style="display:none;"><input placeholder="Optional — why this is intentional" autocomplete="off"><button>Confirm</button><button>Cancel</button></div>
+    </div>`).join('');
+
+  const fmtD = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch { return ''; } };
+  const thoughtCards = MIND_THOUGHTS.map(t => {
+    const targetName = t.scope === 'node' && t.target_id ? (ARCH_BY_ID[t.target_id]?.name || t.target_id) : (t.scope === 'graph' ? 'whole graph' : t.scope);
+    const actions = t.status === 'new' ? `
+      <button class="mind-accept" data-accept="${t.id}">Accept → paused task</button>
+      <button data-dismiss="${t.id}">Dismiss</button>
+      ${t.scope === 'node' && t.target_id ? `<button data-deepen="${escS(t.target_id)}">✦ Think deeper</button>` : ''}` : '';
+    const acceptedNote = t.status === 'accepted' && t.work_prompt_id
+      ? `<div class="mind-handoff">Accepted — <a href="#" data-jump="${t.work_prompt_id}">view the task in the Flow</a></div>` : '';
+    const dismissedNote = t.status === 'dismissed'
+      ? `<div class="mind-card-body">${t.dismissed_reason ? 'Dismissed: ' + escS(t.dismissed_reason) : 'Dismissed.'}</div>` : '';
+    return `<div class="mind-card${t.status === 'dismissed' ? ' dim' : ''}" data-thought="${t.id}">
+      <div class="mind-card-top">
+        <span class="mind-dot" style="background:${t.status === 'accepted' ? '#4f9d7a' : t.status === 'dismissed' ? '#8a8378' : '#7a5ea8'}"></span>
+        <div style="flex:1;min-width:0;">
+          <div class="mind-card-title">${escS(t.title)}</div>
+          <div class="mind-card-meta">${escS(t.kind)} · ${escS(targetName)} · ${fmtD(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
+          <div class="mind-card-body">${escS(t.body)}</div>
+        </div>
+      </div>
+      ${actions ? `<div class="mind-actions">${actions}</div><div class="mind-reason" style="display:none;"><input placeholder="Optional — why you are dismissing this" autocomplete="off"><button>Confirm</button><button>Cancel</button></div>` : ''}
+      ${acceptedNote}
+      ${dismissedNote}
+    </div>`;
+  }).join('');
+
+  const newCount = MIND_THOUGHTS.filter(t => t.status === 'new').length;
+  host.innerHTML = scNote + `
+    <div class="mind-section">Health signals <span class="mind-section count">(${visibleSigs.length})</span></div>
+    ${visibleSigs.length ? sigCards : '<div class="mind-empty">No issues right now — the graph is quiet and healthy.</div>'}
+    <div class="mind-section">Thoughts <span class="mind-section count">(${newCount} waiting)</span></div>
+    ${MIND_THOUGHTS.length ? thoughtCards : '<div class="mind-empty">Nothing proposed yet. Use “Think about the whole graph” above, or click ✦ Think deeper on any component.</div>'}`;
+
+  host.scrollTop = hostOld;
+  host.querySelectorAll('[data-ack]').forEach(b => b.onclick = () => {
+      const [type, scope, target] = b.getAttribute('data-ack').split('|');
+      const card = b.closest('.mind-card');
+      const row = card.querySelector('.mind-reason');
+      row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+      if (row.style.display === 'none') return;
+      const input = row.querySelector('input');
+      row.querySelectorAll('button')[0].onclick = async () => {
+        try { await apiWrite('/api/architecture/intel/signals/ack', 'POST', { signal_type: type, scope, target_id: target, reason: input.value }); } catch {}
+        MIND_ACKED.add(`${type}|${scope}|${target}`);
+        renderMind(); syncArchHealthRings();
+        if (archSelected) renderArchDetail(archSelected);
+      };
+      row.querySelectorAll('button')[1].onclick = () => { row.style.display = 'none'; };
+    });
+    host.querySelectorAll('[data-accept]').forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const card = b.closest('.mind-card');
+      const st = document.createElement('div'); st.className = 'mind-status'; st.textContent = 'Creating the paused task…';
+      card.appendChild(st);
+      try {
+        const out = await apiWrite(`/api/architecture/intel/thoughts/${b.getAttribute('data-accept')}/accept`, 'POST', {});
+        await loadMind(true);
+        st.innerHTML = `Queued a paused task — <a href="#" class="core-handoff-link" data-jump="${out.prompt.id}">view it in the Flow</a>.`;
+        const a = st.querySelector('[data-jump]');
+        if (a) a.onclick = (e) => { e.preventDefault(); jumpToQueueItem(out.prompt.id); };
+      } catch (e) {
+        st.textContent = 'Could not create the task: ' + (e.message || e);
+        st.classList.add('err');
+        b.disabled = false;
+      }
+    });
+    host.querySelectorAll('[data-dismiss]').forEach(b => b.onclick = () => {
+      const card = b.closest('.mind-card');
+      const row = card.querySelector('.mind-reason');
+      row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+      if (row.style.display === 'none') return;
+      const input = row.querySelector('input');
+      row.querySelectorAll('button')[0].onclick = async () => {
+        try {
+          await apiWrite(`/api/architecture/intel/thoughts/${b.getAttribute('data-dismiss')}/dismiss`, 'POST', { reason: input.value });
+          await loadMind(true);
+        } catch {}
+      };
+      row.querySelectorAll('button')[1].onclick = () => { row.style.display = 'none'; };
+    });
+    host.querySelectorAll('[data-deepen]').forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const sub = document.getElementById('mindPulseSub');
+      const prev = sub.textContent;
+      sub.textContent = 'Thinking about ' + (ARCH_BY_ID[b.getAttribute('data-deepen')]?.name || b.getAttribute('data-deepen')) + '…';
+      try {
+        const out = await apiWrite('/api/architecture/intel/deepen', 'POST', { catalog: archCatalog(), targetId: b.getAttribute('data-deepen') });
+        await loadMind(true);
+        const n = (out.thoughts || []).length;
+        sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} about that component.` : 'Nothing new — that state was already thought about.';
+      } catch (e) {
+        sub.textContent = (e || {}).message || 'The model did not answer — retry.';
+      }
+      setTimeout(() => { sub.textContent = prev; }, 6000);
+      b.disabled = false;
+    });
+    host.querySelectorAll('[data-jump]').forEach(a => a.onclick = (e) => { e.preventDefault(); jumpToQueueItem(a.getAttribute('data-jump')); });
+}
+
+// Health ring on every graph card (6.1): filled in place from the last pulse, so
+// re-rendering the stage never needs a fresh fetch.
+function syncArchHealthRings() {
+  document.querySelectorAll('.an-health').forEach(el => {
+    const id = el.getAttribute('data-health-for');
+    const s = ARCH_INTEL?.health?.nodes ? ARCH_INTEL.health.nodes[id] : undefined;
+    if (s === undefined || s === null) { el.innerHTML = ''; return; }
+    const S = 16, r = S / 2 - 2, c = 2 * Math.PI * r;
+    const off = c * (1 - Math.max(0, Math.min(100, s)) / 100);
+    el.innerHTML = `<svg width="${S + 14}" height="${S}" viewBox="0 0 ${S + 14} ${S}">
+      <circle cx="${S / 2}" cy="${S / 2}" r="${r}" fill="none" stroke="var(--c-border-3)" stroke-width="2.5"/>
+      <circle cx="${S / 2}" cy="${S / 2}" r="${r}" fill="none" stroke="${scoreColorOf(s)}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${S / 2} ${S / 2})"/>
+      <text x="${S + 1}" y="${S / 2 + 2.5}" font-size="7" font-weight="700" fill="var(--c-ink)">${Math.round(s)}</text></svg>`;
+  });
+}
+
 // ---------- Architecture Navigator ----------
 // Status written by hand from a real review of BUILD_STATUS.md and the actual repo/DB state
 // (per explicit instruction: accurate now, not guessed, not live-introspected).
@@ -4730,6 +5063,7 @@ function buildMapHtml() {
       html += `<div class="arch-node${spec?' tt-spec':''}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
         <div class="an-name">${spec?'✦ ':''}${c.name}</div>
         <span class="an-badge" style="background:${b.color}">${b.text}</span>
+        <span class="an-health" data-health-for="${c.id}"></span>
       </div>`;
     });
     html += '</div>';
@@ -4754,6 +5088,7 @@ function buildTreeHtml() {
       html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
         <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
         <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
+        <span class="an-health" data-health-for="${c.id}"></span>
       </div>`;
     });
     html += '</div></div>';
@@ -4853,6 +5188,7 @@ function renderArchStage() {
   // run in the gaps between cards instead of across their faces.
   stage.innerHTML = `<div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>`;
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
+  syncArchHealthRings();
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { drawArchDeps(); fitArchCanvas(); });
   else { drawArchDeps(); fitArchCanvas(); }
 }
@@ -5031,6 +5367,31 @@ function renderArchDetail(id) {
     html += `</div>`;
   }
 
+  // Mind block (6.1/6.2): this component's health score + the signals firing on
+  // it, each with an Acknowledge button. Driven by the last pulse payload.
+  const nodeSigs = (ARCH_INTEL?.signals || []).filter(s => s.scope === 'node' && s.target_id === id && !MIND_ACKED.has(mindSigKey(s)));
+  const nodeScore = ARCH_INTEL?.health?.nodes ? ARCH_INTEL.health.nodes[id] : undefined;
+  if (nodeSigs.length || nodeScore !== undefined) {
+    html += `<div class="arch-field"><div class="arch-field-label">Mind — health & signals</div>
+      ${nodeScore !== undefined ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">${scoreRingHtml(nodeScore, 30)}<span style="font-size:11px;color:${scoreColorOf(nodeScore)}"><b>${Math.round(nodeScore)}</b>/100</span></div>` : ''}`;
+    nodeSigs.forEach(s => {
+      html += `<div class="mind-card" style="margin:6px 0;">
+        <div class="mind-card-top">
+          <span class="mind-dot" style="background:${SIGNAL_COLOR(s.type)}"></span>
+          <div style="flex:1;min-width:0;">
+            <div class="mind-card-title">${escS(s.title)}</div>
+            <div class="mind-card-body">${escS(s.detail)}</div>
+          </div>
+        </div>
+        <div class="mind-actions">
+          <button class="mind-ack" data-dack="${escS(s.type)}|${escS(s.scope)}|${escS(s.target_id || '')}">✓ Acknowledge — intentional</button>
+        </div>
+        <div class="mind-reason" style="display:none;"><input placeholder="Optional — why this is intentional" autocomplete="off"><button>Confirm</button><button>Cancel</button></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
   html += `<div class="arch-field"><div class="arch-field-label">Suggested next steps</div><div id="archSuggestHost"></div></div>`;
 
   html += `<div class="arch-field"><div class="arch-field-label">Build history</div><div id="archHistoryHost"><div class="empty">Loading…</div></div></div>`;
@@ -5058,6 +5419,22 @@ function renderArchDetail(id) {
     </div>
     <div id="archQueueHost"></div>`;
   host.innerHTML = html;
+
+  host.querySelectorAll('[data-dack]').forEach(b => b.onclick = () => {
+    const [type, scope, target] = b.getAttribute('data-dack').split('|');
+    const card = b.closest('.mind-card');
+    const row = card.querySelector('.mind-reason');
+    row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+    if (row.style.display === 'none') return;
+    const input = row.querySelector('input');
+    row.querySelectorAll('button')[0].onclick = async () => {
+      try { await apiWrite('/api/architecture/intel/signals/ack', 'POST', { signal_type: type, scope, target_id: target, reason: input.value }); } catch {}
+      MIND_ACKED.add(`${type}|${scope}|${target}`);
+      renderMind();
+      renderArchDetail(id);
+    };
+    row.querySelectorAll('button')[1].onclick = () => { row.style.display = 'none'; };
+  });
 
   const flowBtn = document.getElementById('archFlowBtn');
   if (flowBtn) flowBtn.onclick = () => {
