@@ -338,6 +338,9 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .ai-feature-name { font-weight:600; }
 .ai-feature-note { font-size:10px; color:var(--c-ink-4); }
 .ai-savebtn { margin-top:16px; padding:8px 16px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12px; font-weight:600; cursor:pointer; }
+.ai-adv { margin-top:14px; font-size:11.5px; color:var(--c-ink-2); }
+.ai-adv summary { cursor:pointer; color:var(--c-ink-2); }
+.ai-adv textarea { margin-top:6px; font-family:ui-monospace, Menlo, monospace; font-size:11px; min-height:90px; }
 .ai-savebtn:hover { background:var(--c-ink-solid-2); }
 .ai-savebtn:disabled { background:var(--c-border-3); cursor:default; }
 .ai-savemsg { font-size:11px; color:var(--c-brand); margin-left:10px; }
@@ -2876,7 +2879,7 @@ function renderAiSettings() {
 
   const rows = AI_FEATURES.map(f => {
     const cur = (aiSettings.defaults && aiSettings.defaults[f.key]) || {};
-    const provider = cur.provider || 'claude-code';
+    const provider = cur.provider || 'opencode';
     return `
       <tr data-feature="${f.key}">
         <td><div class="ai-feature-name">${f.label}</div><div class="ai-feature-note">${f.note}</div></td>
@@ -2889,6 +2892,8 @@ function renderAiSettings() {
         <td><select class="ai-model-sel">${aiModelOptions(provider, cur.model)}</select></td>
       </tr>`;
   }).join('');
+  const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
+    .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
   host.innerHTML = `
     <div class="ai-health">
@@ -2906,6 +2911,10 @@ function renderAiSettings() {
       <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    <details class="ai-adv">
+      <summary>Advanced — queue budget &amp; intel (JSON)</summary>
+      <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
+    </details>
     <button class="ai-savebtn" id="aiSaveBtn">Save</button>
     <span class="ai-savemsg" id="aiSaveMsg"></span>
     ${renderFreeProvidersSection()}
@@ -2930,9 +2939,22 @@ function renderAiSettings() {
       };
     });
     const policy = document.getElementById('aiPolicySel').value;
+    let queue = null, intel = null;
+    const advEl = document.getElementById('aiAdvJson');
+    if (advEl) {
+      try {
+        const adv = JSON.parse(advEl.value);
+        queue = adv.queue || {};
+        intel = adv.intel || {};
+      } catch (e) {
+        msg.textContent = 'Advanced JSON is not valid — fix it or leave it unchanged.';
+        msg.style.color = '#b23a2f';
+        return;
+      }
+    }
     btn.disabled = true; msg.textContent = '';
     try {
-      aiSettings = await apiWrite('/api/travaux/ai-settings', 'PUT', { defaults, policy });
+      aiSettings = await apiWrite('/api/travaux/ai-settings', 'PUT', { defaults, policy, queue, intel });
       msg.textContent = 'Saved.';
       setTimeout(() => { if (msg.textContent === 'Saved.') msg.textContent = ''; }, 3000);
     } catch (e) {

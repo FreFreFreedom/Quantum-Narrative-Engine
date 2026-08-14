@@ -26,7 +26,7 @@ import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
-import { bindAiTextDb } from './services/ai/text.js';
+import { bindAiTextDb, migrateFreeFirstDefaults } from './services/ai/text.js';
 import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
@@ -58,6 +58,13 @@ bindAiTextDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
+
+// Free-first platform policy (plan self-aware-platform.md Part 1): one-time
+// migration of per-feature defaults away from the Claude subscription. Idempotent.
+try {
+  const migrated = migrateFreeFirstDefaults();
+  if (migrated.changed) console.log(`Free-first policy: flipped ${migrated.changed} feature default(s) off Claude.`);
+} catch (e) { console.error('Free-first defaults migration failed:', e.message); }
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.

@@ -142,6 +142,31 @@ const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
 const MAX_PARALLEL_QUESTIONS = 2;
 const SUMMARY_TIMEOUT_MS = 3 * 60_000;
 
+// Self-aware platform (plan self-aware-platform.md Part 2): when a quota reset
+// window cannot be resolved, tasks defer with this default probe window instead
+// of pausing for a manual "change the model and resume" — the queue re-walks the
+// whole model chain on each wake until something answers.
+const DEFAULT_PROBE_MS = 15 * 60_000;
+
+// Daily spend guard for the paid OpenCode Go lane. Reads the budget straight from
+// ai_settings (no circular import into ai/text.js), sums real cost_usd captured
+// from the runs' own usage lines for today. Over budget → the chain skips the Go
+// pool and runs the free floor for the rest of the day's cycle; resets naturally
+// at the UTC day boundary. Budget 0 = guard disabled.
+function goLaneAllowed() {
+  try {
+    if (!db) return true;
+    const row = db.prepare(`SELECT queue_go_budget_usd FROM ai_settings WHERE id='global'`).get();
+    const budget = (row && typeof row.queue_go_budget_usd === 'number') ? row.queue_go_budget_usd : 0.33;
+    if (!(budget > 0)) return true;
+    const dayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
+    const spent = db.prepare(
+      `SELECT COALESCE(SUM(cost_usd), 0) AS total FROM work_prompts WHERE provider='opencode' AND cost_usd > 0 AND started_at >= ?`
+    ).get(dayStart);
+    return (spent?.total || 0) < budget;
+  } catch { return true; }
+}
+
 // Global cap on concurrent WRITER (implement) tasks (plan 2b). Env-configurable;
 // defaults to 2 — the Mac can't sustain five concurrent CLIs, and the roster can
 // hold more agents than run at once. Also exported for promptQueue.js, which
@@ -246,7 +271,7 @@ function importLegacyTasksFile() {
       t.status || 'approved',
       t.status === 'in_progress' ? 'working' : (t.run_state || 'idle'),
       t.model || null, t.effort || null, t.priority || 0,
-      t.provider || 'claude-code', t.provider_model || null, t.run_model || null,
+      t.provider || 'opencode', t.provider_model || null, t.run_model || null,
       Array.isArray(t.tried_models) ? JSON.stringify(t.tried_models) : (t.tried_models || null),
       t.agent_result || null, t.user_summary || null,
       (t.pending_question && typeof t.pending_question === 'object') ? JSON.stringify(t.pending_question) : (t.pending_question || null),
@@ -334,7 +359,9 @@ const taskProviderCache = new Map();
 function providerForTask(taskId) {
   if (taskProviderCache.has(taskId)) return taskProviderCache.get(taskId);
   const task = readTasks().find((t) => t.id === taskId);
-  return (task && task.provider) || 'claude-code';
+  // Free-first platform policy (plan self-aware-platform.md): the implicit lane
+  // is OpenCode, never the Claude subscription (opt-in per task only).
+  return (task && task.provider) || 'opencode';
 }
 
 function appendStreamChunk(taskId, chunk) {
@@ -475,7 +502,7 @@ function kick() {
 
   for (const q of tasks.filter((t) => t.status === 'approved' && t.mode === 'question').sort(byPriority)) {
     if (_questionRuns.size >= MAX_PARALLEL_QUESTIONS) break;
-    if ((q.provider || 'claude-code') === 'claude-code' && providerInCooldown('claude-code')) continue;
+    if ((q.provider || 'opencode') === 'claude-code' && providerInCooldown('claude-code')) continue;
     executeTask(q, { lane: 'question' });
   }
 
@@ -485,11 +512,12 @@ function kick() {
   // agents stay 'approved' — a later kick picks them up. A claude-code task is also
   // skipped (not started) while that provider is in quota cooldown — it stays
   // 'approved' and a later kick (post-cooldown, or once ai/text.js clears it) picks
-  // it up; opencode tasks are never gated here since they're the free-fallback tier.
+  // it up; opencode tasks (the default lane — Go subscription first, free floor
+  // beneath) are never gated here, they self-switch models on quota hits.
   const writers = tasks.filter((t) => t.status === 'approved' && t.mode !== 'question').sort(byPriority);
   for (const next of writers) {
     if (totalWriterRuns() >= MAX_CONCURRENT_WRITERS) break;
-    if ((next.provider || 'claude-code') === 'claude-code' && providerInCooldown('claude-code')) continue;
+    if ((next.provider || 'opencode') === 'claude-code' && providerInCooldown('claude-code')) continue;
     const agentKey = next.agent_key || 'dev1';
     const agent = agentRow(agentKey);
     if (agent && (!agent.enabled || agent.paused)) continue;
@@ -613,9 +641,12 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       const currentEntry = currentProviderId === 'opencode' ? `opencode:${currentModel}` : currentModel;
       const triedList = Array.from(new Set([...(t.tried_models || [t.model]), currentEntry]));
 
-      // Skip Claude tier fallback (all share same quota bank) — go straight to OpenCode free models.
-      // Record this exhaustion in the ledger, resolve OpenCode's live model list,
-      // and either continue the SAME task on the next free model or defer back to the queue.
+      // Skip Claude tier fallback (all share same quota bank) — go straight to the
+      // OpenCode model chain. Record this exhaustion in the ledger, resolve
+      // OpenCode's live model list, and continue the SAME task on the next model:
+      // Go (paid subscription) pool first — gated by the daily spend guard — then
+      // the free floor, or defer back to the queue with an auto-wake window so
+      // nothing ever needs a manual "change the model and resume".
       setImmediate(async () => {
         let evt = null;
         try {
@@ -631,45 +662,51 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
         let nextModel = null;
         try {
           const { models } = await listOpenCodeModels();
-          nextModel = (models || []).find((m) => m.free
+          const polished = (models || []).filter((m) => m.id
             && !triedList.includes(`opencode:${m.id}`)
-            && !isExhausted('opencode', m.id));
+            && !isExhausted('opencode', m.id)
+            && !isExhausted('opencode', ''));
+          const goPool = polished.filter((m) => !m.free).sort((a, b) =>
+            (Number(a.cost?.input) || 0) - (Number(b.cost?.input) || 0) || String(a.id).localeCompare(String(b.id)));
+          const freePool = polished.filter((m) => m.free);
+          const goAllowed = goLaneAllowed();
+          if (goAllowed) nextModel = goPool[0];
+          if (!nextModel) nextModel = freePool[0];
         } catch (e) { console.error('[taskRunner] OpenCode model discovery failed —', e.message); }
 
         if (nextModel) {
-          // OpenCode cannot resume a Claude session, and a model that just hit its own
-          // quota shouldn't have its (now-stale) session reused either — start fresh.
+          // Session continuity: staying within OpenCode, so resume the run's own
+          // session on the new model — the retry continues where it left off
+          // instead of restarting from the prompt. Fresh session only when the
+          // exhausted run never produced one.
           const finalTriedList = Array.from(new Set([...triedList, `opencode:${nextModel.id}`]));
           const retried = updateTask(taskId, {
             provider: 'opencode', model: nextModel.id, provider_model: nextModel.id, run_model: nextModel.id,
             tried_models: finalTriedList, status: 'in_progress', started_at: new Date().toISOString(),
           });
           if (retried) broadcastTask(retried);
-          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${currentModel || currentProviderId} — switching to OpenCode (${nextModel.id}).` });
+          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${currentModel || currentProviderId} — switching to OpenCode (${nextModel.id}${goLaneAllowed() ? '' : ', free-floor mode'}).` });
           let prevPrompt = '';
           try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
           runDetachedExecution(taskId, prevPrompt, {
             model: nextModel.id, providerModel: nextModel.id,
             tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
-            resumeSessionId: null, lane, provider: 'opencode', question: t.mode === 'question',
+            resumeSessionId: sessionId, lane, provider: 'opencode', question: t.mode === 'question',
           });
           return;
         }
 
-        // Every free OpenCode model hit quota — defer with
-        // whatever reset window we can resolve. Global pause is now the fallback for
-        // only the case where that window is unknown — a known reset lets the queue
-        // keep running and simply wake this prompt on its own once quotaScheduler
-        // sees it pass.
+        // Every OpenCode model is unavailable — defer with a reset window. Known
+        // windows wake the task automatically; an unknown window gets a
+        // conservative default probe window and the queue re-walks the whole
+        // chain on each wake, so no manual resume is ever required.
         import('./promptQueue.js')
-          .then((m) => m.onAgentTaskDeferred(t, { label: limit.label, resumeAfter: evt?.known ? evt.resetsAt : null }))
+          .then((m) => m.onAgentTaskDeferred(t, {
+            label: limit.label,
+            resumeAfter: evt?.known ? evt.resetsAt : new Date(Date.now() + DEFAULT_PROBE_MS).toISOString(),
+          }))
           .catch((e) => console.error('queue: deferral failed —', e.message));
-        if (!evt?.known) {
-          setQueuePaused(true, {
-            reason: `Claude quota exhausted and every free OpenCode model hit its usage limit while running "${t.title}" — paused, resume manually once quota resets.`,
-          });
-        }
-        appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on every available model — deferred. ${limit.label}.` });
+        appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on every available model — auto-resuming in ${evt?.known ? 'the reset window' : '~15 min'}. ${limit.label}.` });
         cleanup();
       });
       return;
@@ -872,7 +909,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   if (lane === 'question') _questionRuns.add(next.id);
   else addWriterRun(next.agent_key || 'dev1', next.id);
 
-  const provider = next.provider || 'claude-code';
+  const provider = next.provider || 'opencode';
   let model = next.model || 'sonnet';
   let effort = next.effort;
   if (provider === 'opencode') {

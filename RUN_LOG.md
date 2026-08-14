@@ -808,3 +808,17 @@ Antoine reported: clicking a movie shows nothing; characters work. Reproduced in
 - Verified: harness now renders the full movie panel (header card + chips, synopsis, director, keywords, cast section — 3019 chars, no error) and the character panel unchanged; live API returns parsed arrays (f_a_separation: genres [Drama], countries [Iran, France], 12 cast). All 5 blocks node --check clean, CSS balanced, master ↔ served copy ↔ served response checksums identical.
 - Lesson recorded: frontend changes get verified with the headless click harness (no stubbed app functions), not just syntax checks.
 - NOT YET SHIPPED — Antoine to hard-refresh and click movies again.
+
+---
+
+# RUN_LOG — free-first policy, 2026-08-14
+
+Overnight run on `overnight/2026-08-10`, plan `plans/self-aware-platform.md` Part 1 (also covers Parts 2–4 groundwork already in the tree: intel_thoughts schema, orchestrator/strategies WIP — full self-aware Platform NOT in this commit).
+
+- New rule implemented everywhere + verified live: **unspecified = free**. When no backend/model is chosen, tasks, AI-settings features, and the queue default to the free OpenCode lane — the paid Claude subscription is only ever reached by an explicit per-task or per-feature choice.
+- Backend (`services/ai/text.js`): the AI-settings store now holds `defaults` (per-work-type), `queue` (`goBudgetUsd`) and `intel` (thoughts config) separately in the DB (`queue_go_budget_usd`, `intel_json` columns), with `getAiSettings()/updateAiSettings()` exposing all of them (GET/PUT `/api/travaux/ai-settings`). Per-feature save merges; an unspecified default becomes opencode.
+- `migrateFreeFirstDefaults()` runs at boot (idempotent): any feature default still pointed at Claude is flipped to the free lane once.
+- `taskRunner.js` + `promptQueue.js`: provider falls back to `opencode` instead of `claude-code` everywhere (spawn, relaunch-with-thread, finish-prompt, queue chain comparisons). Claude runs only when picked explicitly.
+- Frontend AI Settings sheet (master `fmcns_navigator.html` + synced `queue-server/public/index.html`): cleared feature defaults now show OpenCode (free) as the selected backend, and a new "Advanced — queue budget & intel (JSON)" fold prefills the current stored JSON; Save validates and writes it back.
+- LIVE-VERIFIED (temp DB, no spend): fresh GET shows `queue: {goBudgetUsd: 0.33}`, PUT round-trip persists `defaults` + `queue` + `intel` exactly, migration flips a claude-code default to opencode on the next boot; providers endpoint still lists the full free/paid model catalogue; all edited JS files `node --check` clean; master ↔ served copy checksums identical after the frontend sync.
+- Not included in this commit (WIP from earlier in the run, untouched): `services/orchestrator.js`, `routes/strategies.js`, the `intel_thoughts` table and the unified-flow work. Never pushed/merged — Antoine reviews and decides.

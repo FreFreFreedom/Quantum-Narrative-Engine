@@ -110,14 +110,17 @@ function candidateParents({ agentKey, provider }) {
 export async function createPrompt({
   title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
-  component_id = null, provider = 'claude-code', provider_model = null, agent_key = null,
+  component_id = null, provider = 'opencode', provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
   const useMode = mode === 'question' ? 'question' : 'implement';
-  const useProvider = ['opencode', 'ai-router'].includes(provider) ? provider : 'claude-code';
+  // Free-first platform policy (plan self-aware-platform.md): an unspecified or
+  // unknown provider resolves to the OpenCode lane, never to the Claude
+  // subscription — Claude tasks only exist when explicitly chosen.
+  const useProvider = ['opencode', 'ai-router'].includes(provider) ? provider : 'opencode';
   const id = randomUUID();
   const given = String(title || '').trim();
   const label = given || heuristicTitle(text);
@@ -451,7 +454,7 @@ function sessionOfParent(row) {
   if (String(parent.agent_key || 'dev1') !== String(row.agent_key || 'dev1')) {
     return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it belongs to another agent. Starting a fresh session.` };
   }
-  if ((parent.provider || 'claude-code') !== (row.provider || 'claude-code')) {
+  if ((parent.provider || 'opencode') !== (row.provider || 'opencode')) {
     return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it ran on another provider. Starting a fresh session.` };
   }
   const sessionId = (row.provider === 'opencode' ? parent.opencode_session_id : parent.session_id) || null;
@@ -480,7 +483,7 @@ function startPrompt(row, { forceFresh = false } = {}) {
   const task = enqueueAgentTask({
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue', work_prompt_id: row.id, resume_session_id: resume,
-    provider: row.provider || 'claude-code', provider_model: usesModelPicker(row.provider) ? model : null,
+    provider: row.provider || 'opencode', provider_model: usesModelPicker(row.provider) ? model : null,
     agent_key: row.agent_key || 'dev1',
     worktree_path: worktreePath, branch,
   });
@@ -495,7 +498,7 @@ function startPrompt(row, { forceFresh = false } = {}) {
 function finishPrompt(id, task) {
   const status = task.status === 'done' ? 'done' : 'blocked';
   const q = task.pending_question && task.pending_question.question ? JSON.stringify(task.pending_question) : null;
-  const isOpen = (task.provider || 'claude-code') === 'opencode';
+  const isOpen = (task.provider || 'opencode') === 'opencode';
   const sessionCol = isOpen ? 'opencode_session_id' : 'session_id';
   db.prepare(`
     UPDATE work_prompts SET status=?, ${sessionCol}=COALESCE(?, ${sessionCol}), pending_question=?,
@@ -604,7 +607,7 @@ function relaunchWithThread(row) {
   const task = enqueueAgentTask({
     title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : activeSession,
-    provider: row.provider || 'claude-code', provider_model: usesModelPicker(row.provider) ? model : null,
+    provider: row.provider || 'opencode', provider_model: usesModelPicker(row.provider) ? model : null,
     agent_key: row.agent_key || 'dev1',
   });
   const nextTurns = fresh ? 0 : (row.context_turns || 0) + 1;
@@ -738,7 +741,7 @@ export function onAgentTaskDeferred(task, { label = '', resumeAfter = null } = {
     UPDATE work_prompts SET status='queued', started_at=NULL, agent_task_id=NULL, completed_at=NULL,
       resume_after=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(resumeAfter, row.id);
-  if (usesModelPicker(task.provider || 'claude-code')) {
+  if (usesModelPicker(task.provider || 'opencode')) {
     // OpenCode / AI Router have no subscription quota to "wait out" — the fix is
     // picking another model, so the thread note says exactly that instead of a
     // vague usage hint.

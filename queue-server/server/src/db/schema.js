@@ -359,6 +359,12 @@ function initSchema(db) {
   `);
   // Backfill: ensure the single row exists (idempotent, harmless on existing DBs).
   try { db.prepare(`INSERT OR IGNORE INTO ai_settings (id, defaults_json, health_json, quota_policy, cooldown_json) VALUES ('global', '{}', '{}', 'auto_free', '{}')`).run(); } catch {}
+  // Self-aware platform (plan self-aware-platform.md):
+  // - queue_go_budget_usd: daily cap on the paid OpenCode Go lane for the task
+  //   queue. 0 = no guard. Default ≈ 1/30th of the ~10 USD/month plan.
+  // - intel_json: intelligence engine budget (e.g. { thoughts_per_hour: 2 }).
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_go_budget_usd REAL NOT NULL DEFAULT 0.33`); } catch {}
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN intel_json TEXT NOT NULL DEFAULT '{}'`); } catch {}
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
   // provider_quota_ledger: append-only history of every exhaustion event, so the
@@ -395,6 +401,35 @@ function initSchema(db) {
       PRIMARY KEY (provider_id, model)
     )
   `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_quota_state_enabled ON provider_quota_state(exhausted, resets_at)`); } catch {}
+
+  // ─── Intelligence thoughts (plan self-aware-platform.md, Part 4) ─────────────
+  // Durable thought files: what the platform noticed about its own architecture
+  // (mechanical signals are computed live and not stored; deliberative thoughts
+  // are model-generated and persisted here with a state_hash so the same state
+  // is never re-thought). status: new -> accepted (linked to a paused Flow task
+  // via work_prompt_id) | dismissed (kept for the record, not re-proposed).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS intel_thoughts (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL DEFAULT 'mechanical' CHECK(kind IN ('mechanical','deliberative')),
+      scope TEXT NOT NULL DEFAULT 'node' CHECK(scope IN ('node','graph','content')),
+      target_id TEXT NOT NULL DEFAULT '',
+      title TEXT NOT NULL,
+      body TEXT NOT NULL DEFAULT '',
+      prompt_draft TEXT,
+      state_hash TEXT,
+      priority INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','accepted','dismissed','adopted')),
+      work_prompt_id TEXT,
+      dismissed_reason TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_thoughts_dedup ON intel_thoughts(scope, target_id, kind, state_hash) WHERE deleted_at IS NULL AND state_hash IS NOT NULL`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_intel_thoughts_feed ON intel_thoughts(status, created_at)`); } catch {}
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──

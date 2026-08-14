@@ -11,16 +11,22 @@ let db = null;
 export function bindAiTextDb(database) { db = database; }
 
 const SETTINGS_CACHE_TTL = 30_000;
-let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {} };
+let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33 }, intel: {} };
 
 function loadAiSettings() {
-  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {} };
+  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33 }, intel: {} };
   const now = Date.now();
   if (settingsCache.at && now - settingsCache.at < SETTINGS_CACHE_TTL) {
     return settingsCache;
   }
   const row = db.prepare(`SELECT * FROM ai_settings WHERE id='global'`).get();
   if (!row) return settingsCache;
+  let queue = { goBudgetUsd: 0.33 };
+  if (typeof row.queue_go_budget_usd === 'number' && Number.isFinite(row.queue_go_budget_usd)) {
+    queue.goBudgetUsd = row.queue_go_budget_usd;
+  }
+  let intel = {};
+  try { intel = JSON.parse(row.intel_json || '{}'); } catch {}
   try {
     settingsCache = {
       at: now,
@@ -28,9 +34,11 @@ function loadAiSettings() {
       policy: row.quota_policy || 'auto_free',
       health: JSON.parse(row.health_json || '{}'),
       cooldown: JSON.parse(row.cooldown_json || '{}'),
+      queue,
+      intel,
     };
   } catch {
-    settingsCache = { at: now, defaults: {}, policy: 'auto_free', health: {}, cooldown: {} };
+    settingsCache = { at: now, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue, intel: {} };
   }
   return settingsCache;
 }
@@ -43,7 +51,7 @@ const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft'];
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
 // shouldn't have to re-derive that from a raw ISO timestamp).
 export function getAiSettings() {
-  const { defaults, policy, cooldown } = refreshAiSettings();
+  const { defaults, policy, cooldown, queue, intel } = refreshAiSettings();
   const now = Date.now();
   const cooldownOut = {};
   for (const [providerId, until] of Object.entries(cooldown || {})) {
@@ -52,26 +60,64 @@ export function getAiSettings() {
   }
   const defaultsOut = {};
   for (const f of FEATURES) defaultsOut[f] = defaults[f] || {};
-  return { defaults: defaultsOut, policy, cooldown: cooldownOut, features: FEATURES };
+  return { defaults: defaultsOut, policy, cooldown: cooldownOut, features: FEATURES, queue, intel };
 }
 
 // Update per-feature defaults and/or the quota policy. Partial: only the keys
 // present in `patch.defaults` are merged in, so the panel can save one feature's
 // row without clobbering the others.
-export function updateAiSettings({ defaults: defaultsPatch, policy } = {}) {
+export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel } = {}) {
   if (!db) return { error: 'no_db' };
   const current = loadAiSettings();
   const nextDefaults = { ...current.defaults };
   if (defaultsPatch) {
     for (const [feature, val] of Object.entries(defaultsPatch)) {
       if (!FEATURES.includes(feature)) continue;
-      nextDefaults[feature] = { provider: val?.provider || 'claude-code', model: val?.model || null };
+      // Free-first platform policy (plan self-aware-platform.md Part 1): an
+      // unspecified default is the opencode free lane, never Claude. Claude is
+      // only ever reached by an explicit per-feature or per-task choice.
+      nextDefaults[feature] = { provider: val?.provider || 'opencode', model: val?.model || null };
     }
   }
   const nextPolicy = policy === 'manual_only' ? 'manual_only' : (policy === 'auto_free' ? 'auto_free' : current.policy);
-  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-    .run(JSON.stringify(nextDefaults), nextPolicy);
+  let nextQueue = { ...current.queue };
+  if (queue) {
+    if (typeof queue.goBudgetUsd === 'number' && Number.isFinite(queue.goBudgetUsd)) {
+      nextQueue.goBudgetUsd = Math.max(0, queue.goBudgetUsd);
+    }
+  }
+  let nextIntel = { ...(current.intel || {}) };
+  if (intel) nextIntel = { ...nextIntel, ...intel };
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, JSON.stringify(nextIntel));
   return getAiSettings();
+}
+
+// One-time policy migration (plan self-aware-platform.md Part 1): flip any
+// per-feature default still pointed at the Claude subscription to the free-first
+// opencode lane. Natural idempotence: after the first run no entry says
+// 'claude-code' anymore, so re-runs are no-ops. Doesn't touch per-task picks —
+// those are stored on the task itself.
+export function migrateFreeFirstDefaults() {
+  if (!db) return { changed: 0 };
+  const row = db.prepare(`SELECT defaults_json FROM ai_settings WHERE id='global'`).get();
+  if (!row) return { changed: 0 };
+  let defaults = {};
+  try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: 0 }; }
+  let changed = 0;
+  for (const f of FEATURES) {
+    const d = defaults[f];
+    if (d && d.provider === 'claude-code') {
+      defaults[f] = { provider: 'opencode', model: null };
+      changed++;
+    }
+  }
+  if (changed) {
+    db.prepare(`UPDATE ai_settings SET defaults_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+      .run(JSON.stringify(defaults));
+  }
+  refreshAiSettings();
+  return { changed };
 }
 
 // Detect quota/limit from provider-specific error text
@@ -144,7 +190,9 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
 export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text' }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
-  const providerId = featureDefaults.provider || 'claude-code';
+  // Free-first platform policy: an unconfigured feature runs on the opencode
+  // free lane (never the Claude subscription, which is opt-in per feature/task).
+  const providerId = featureDefaults.provider || 'opencode';
   const model = featureDefaults.model || null;
 
   // Primary: the configured provider + its own tier chain (e.g. claude-code's
