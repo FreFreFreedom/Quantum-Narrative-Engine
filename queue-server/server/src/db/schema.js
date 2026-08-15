@@ -919,6 +919,11 @@ export function initDiscoverySchema(db) {
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN project_name TEXT`); } catch {}
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN project_territory TEXT`); } catch {}
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN parts_json TEXT`); } catch {}
+  // Quick check verdict (see codeDiscovery.reviewInspiration): removed picks with
+  // reasons, alternative groups with a best-per-group. Stored on the REPORT so it
+  // follows the report wherever it is shown or reused (task panel, sections,
+  // promote/accept handoff). JSON: { removed:[], groups:[], recommended:[] }.
+  try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN review_json TEXT`); } catch {}
 
   // Written when a discovery pick (proven kind only) is planted into the tech tree —
   // links the new architecture_node back to the repo evidence that justified it.

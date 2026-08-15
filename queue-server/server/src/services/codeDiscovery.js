@@ -591,6 +591,8 @@ export function getReport(db, id) {
   const parts = row.parts_json
     ? JSON.parse(row.parts_json)
     : [{ name: 'Idea', description: row.idea_text, queries: JSON.parse(row.queries_json || '[]'), picks: JSON.parse(row.picks_json || '[]'), recommended_index: 0 }];
+  let review = null;
+  try { review = row.review_json ? JSON.parse(row.review_json) : null; } catch {}
   return {
     id: row.id,
     idea_text: row.idea_text,
@@ -599,9 +601,24 @@ export function getReport(db, id) {
     project_name: row.project_name || row.idea_text.slice(0, 60),
     project_territory: row.project_territory || null,
     parts,
+    review,
     created_at: row.created_at,
     rerun_count: row.rerun_count,
   };
+}
+
+// Persist the quick check's structural verdict on the report row — the report is
+// the canonical home: every surface that shows the report (task panel, sections,
+// promote/accept reuse) reads the same review. Transient bits (owner_note) stay
+// on the task row; this stores only removed/groups/recommended.
+export function storeReportReview(db, reportId, review) {
+  if (!db || !reportId || !review) return;
+  const structural = {
+    removed: review.removed || [],
+    groups: review.groups || [],
+    recommended: review.recommended || [],
+  };
+  db.prepare(`UPDATE discovery_reports SET review_json=? WHERE id=?`).run(JSON.stringify(structural), reportId);
 }
 
 // Latest world-look report attached to any item (suggestion, seed, component —
@@ -626,7 +643,16 @@ export async function runWorldLookGuarded(db, { idea_text, source, source_id, fo
   if (_worldLookRunning.has(key)) return { running: true };
   _worldLookRunning.add(key);
   try {
-    return await runInspiration(db, { idea_text, source, source_id, forceRefresh });
+    const report = await runInspiration(db, { idea_text, source, source_id, forceRefresh });
+    if (report?.error) return report;
+    // The quick check runs on every look — sections never ask the owner (no
+    // question card exists there): it decides alone and the verdict is stored
+    // on the report so every surface shows the filtered ideas.
+    let review = null;
+    try { review = await reviewInspiration({ report, prompt: idea_text, allowQuestion: false }); }
+    catch (e) { console.error('quick check after world-look failed —', e.message); }
+    if (review) storeReportReview(db, report.id, review);
+    return { ...report, review };
   } finally {
     _worldLookRunning.delete(key);
   }
@@ -648,6 +674,46 @@ export async function autoWorldLookSuggestions(db) {
       source_id: s.id,
     });
     if (out?.error) console.error(`Auto world-look failed for suggestion ${s.id}: ${out.message || out.error}`);
+    else ran++;
+  }
+  return { ran, skipped };
+}
+
+// Same sweep for the Not built list: every unbuilt tech-tree component gets its
+// look + quick check in the background (boot + every 6h), so opening the list —
+// or any component in it — shows the shelves instantly, like the queue does.
+// Built = the same statuses the Not built list treats as done.
+const BUILT_NODE_STATUSES = `('Working','Validated','Advanced')`;
+
+export async function autoWorldLookComponents(db) {
+  const rows = db.prepare(`SELECT id, name, what, next FROM architecture_nodes WHERE deleted_at IS NULL AND status NOT IN ${BUILT_NODE_STATUSES}`).all();
+  let ran = 0, skipped = 0;
+  for (const c of rows) {
+    if (findReportBySource(db, 'component', c.id) || isWorldLookRunning('component', c.id)) { skipped++; continue; }
+    const out = await runWorldLookGuarded(db, {
+      idea_text: [c.name, c.what, c.next].filter(Boolean).join('\n'),
+      source: 'component',
+      source_id: c.id,
+    });
+    if (out?.error) console.error(`Auto world-look failed for component ${c.id}: ${out.message || out.error}`);
+    else ran++;
+  }
+  return { ran, skipped };
+}
+
+// And the same for Seeds — every idea in the notebook gets its look + check
+// without any click, so the panel is already ready when the seed is opened.
+export async function autoWorldLookIdeas(db) {
+  const rows = db.prepare(`SELECT id, title, notes FROM work_ideas WHERE deleted_at IS NULL`).all();
+  let ran = 0, skipped = 0;
+  for (const i of rows) {
+    if (findReportBySource(db, 'idea', i.id) || isWorldLookRunning('idea', i.id)) { skipped++; continue; }
+    const out = await runWorldLookGuarded(db, {
+      idea_text: [i.title, i.notes].filter(Boolean).join('\n'),
+      source: 'idea',
+      source_id: i.id,
+    });
+    if (out?.error) console.error(`Auto world-look failed for seed ${i.id}: ${out.message || out.error}`);
     else ran++;
   }
   return { ran, skipped };

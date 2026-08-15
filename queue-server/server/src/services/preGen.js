@@ -17,7 +17,8 @@
 import { runSuggestionEngines } from './workSuggestions.js';
 import { generateSuggestions as generateArchSuggestions } from './architecture.js';
 import { syncFromGit } from './treeSync.js';
-import { autoWorldLookSuggestions } from './codeDiscovery.js';
+import { autoWorldLookSuggestions, autoWorldLookComponents, autoWorldLookIdeas } from './codeDiscovery.js';
+import { backfillInspirationReviews } from './promptQueue.js';
 
 const SUGGESTIONS_TTL_MS = 12 * 3600_000;
 const ARCH_TTL_MS = 24 * 3600_000;
@@ -113,12 +114,26 @@ async function pregenTreeSync(db) {
   else console.log(`Pre-gen: tree sync ${out.baseline ? 'baseline recorded (' + out.baseline.slice(0, 8) + ')' : 'created ' + (out.created ?? 0) + ' proposal(s)'}.`);
 }
 
-// Catch-up sweep: any suggestion that still has no world-look (e.g. one created
-// while the server was down, or an engine run that ended before its sweep could
-// finish) gets it here. Idempotent — existing reports are skipped.
+// Catch-up sweeps (all idempotent — existing reports are skipped):
+//   1. Quick-check backfill: reports that predate the check get their verdict,
+//      and waiting queue tasks get their plan re-drafted from filtered ideas.
+//   2. World-look sweeps: any suggestion / not-built component / seed that still
+//      has no world-look gets one (the quick check runs inside the same pass).
 async function pregenWorldLooks(db) {
-  const out = await autoWorldLookSuggestions(db);
-  if (out.ran || out.skipped) console.log(`Pre-gen: world-look sweep — ran ${out.ran}, skipped ${out.skipped}.`);
+  const bf = await backfillInspirationReviews().catch((e) => {
+    console.error('Pre-gen: review backfill failed —', e.message);
+    return null;
+  });
+  if (bf && (bf.reviewed || bf.redrafted)) {
+    console.log(`Pre-gen: review backfill — ${bf.reviewed} reviewed, ${bf.redrafted} plans re-drafted, ${bf.skipped} skipped, ${bf.failed} failed.`);
+  }
+  const s = await autoWorldLookSuggestions(db);
+  const c = await autoWorldLookComponents(db);
+  const i = await autoWorldLookIdeas(db);
+  const done = [s, c, i].filter(Boolean);
+  if (done.some(o => o.ran || o.skipped)) {
+    console.log(`Pre-gen: world-look sweeps — suggestions ran ${s?.ran ?? '?'} / skipped ${s?.skipped ?? '?'}; components ran ${c?.ran ?? '?'} / skipped ${c?.skipped ?? '?'}; seeds ran ${i?.ran ?? '?'} / skipped ${i?.skipped ?? '?'}.`);
+  }
 }
 
 let running = false;

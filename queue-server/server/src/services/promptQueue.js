@@ -35,7 +35,7 @@ import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
-import { runInspiration, getReport, inspirationDigestFor, reviewInspiration } from './codeDiscovery.js';
+import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
 import { syncFromTask } from './treeSync.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
@@ -187,7 +187,7 @@ export async function createPrompt({
         if (!pick) continue;
         applied.push({ part_index: pi, pick_index: ii, kind: pick.kind, name: pick.repo || pick.name || pick.kind });
       }
-      preInsp = { report: rep, applied, digest: inspirationDigestFor(rep, applied) };
+      preInsp = { report: rep, applied, digest: inspirationDigestFor(rep, applied, rep.review) };
     }
   }
   const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (willInspire ? 'pending' : 'off');
@@ -360,6 +360,7 @@ function startInspiration(id, { title, prompt }, { force = false } = {}) {
       } catch (e) {
         console.error('🤖 File de travaux: quick check —', e.message);
       }
+      if (review) storeReportReview(db, report.id, review); // canonical home on the report
       if (review?.question) {
         // The quick check needs the owner: the question shows on the card (same
         // mechanism as agent questions) and the draft waits for the answer.
@@ -444,10 +445,12 @@ export async function waitForInspiration(id, timeoutMs = INSPIRE_WAIT_MS) {
     }
     if (!row.inspire_report_id) return null;
     const report = getReport(db, row.inspire_report_id);
-    const review = parseInspireReview(row);
+    // Task-level review wins (it may carry the owner's answer), else the
+    // report's own quick-check verdict — section looks store it there.
+    const review = parseInspireReview(row) || report?.review || null;
     return {
       digest: inspirationDigestFor(report, parseInspirePicks(row), review),
-      note: review?.owner_note || null,
+      note: parseInspireReview(row)?.owner_note || null,
     };
   }
 }
@@ -507,7 +510,7 @@ export async function applyInspiration(id, { picks = [] } = {}) {
 
   // The quick check still shapes the draft around the owner's picks: their
   // choices always win, everything else keeps the filtered form.
-  const digest = inspirationDigestFor(report, applied, parseInspireReview(row));
+  const digest = inspirationDigestFor(report, applied, parseInspireReview(row) || report.review);
   const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt || row.prompt, mode: row.mode, inspiration: digest });
   if (draft) {
     db.prepare(`
@@ -553,19 +556,66 @@ export async function condenseExistingInspiration() {
   return { condensed, skipped, failed };
 }
 
+// One-time (idempotent) retroactive pass: every world-look report that predates
+// the quick check gets its verdict — stored on the report itself — and any
+// WAITING queue task whose plan was drafted from unfiltered ideas gets the plan
+// re-drafted from the filtered digest (using its original request). Guards:
+// only tasks still queued/set aside, never started, auto-drafted, with no open
+// question and no owner reply in the thread. Runs at boot (preGen) and can be
+// re-triggered — reports with a review are skipped, so it costs nothing twice.
+export async function backfillInspirationReviews() {
+  const reportIds = db.prepare(`SELECT id FROM discovery_reports WHERE review_json IS NULL`).all();
+  let reviewed = 0, redrafted = 0, skipped = 0, failed = 0;
+  for (const { id } of reportIds) {
+    const report = getReport(db, id);
+    if (!report || !(report.parts || []).some(p => (p.picks || []).length)) { skipped++; continue; }
+    const review = await reviewInspiration({ report, prompt: report.idea_text || '', allowQuestion: false })
+      .catch(() => null);
+    if (!review) { failed++; continue; }
+    storeReportReview(db, id, review);
+    reviewed++;
+
+    if (report.source !== 'prompt' || !report.source_id) continue;
+    const row = db.prepare(`SELECT * FROM work_prompts WHERE id=? AND deleted_at IS NULL`).get(report.source_id);
+    if (!row) continue;
+    // The task panel reads its own review first — fill it so markers show
+    // immediately; an existing review (fresh tasks) is never overwritten.
+    if (!row.inspire_review_json) {
+      db.prepare(`UPDATE work_prompts SET inspire_review_json=? WHERE id=?`).run(JSON.stringify(review), row.id);
+    }
+    const safe = ['queued', 'paused'].includes(row.status)
+      && !row.started_at && !!row.raw_prompt && !row.plan_pending
+      && !row.pending_question && row.plan_source === 'auto';
+    if (!safe) continue;
+    const replied = db.prepare(`SELECT 1 AS x FROM work_prompt_messages WHERE prompt_id=? AND role='user' LIMIT 1`).get(row.id);
+    if (replied) continue;
+    const digest = inspirationDigestFor(report, parseInspirePicks(row), review);
+    const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt, mode: row.mode, inspiration: digest });
+    if (draft) {
+      db.prepare(`
+        UPDATE work_prompts SET title=?, prompt=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+      `).run(draft.title, draft.brief, row.id);
+      redrafted++;
+    }
+  }
+  if (reviewed || redrafted) broadcast();
+  return { reviewed, redrafted, skipped, failed };
+}
+
 // Everything the task detail's "Inspired by" panel needs in one call: the state,
 // the last error (for the retry note), the applied picks, the quick-check review
 // (removed picks with reasons, alternative groups, best-per-group) and the full
-// report.
+// report. A task promoted from a section carries its report's review.
 export function inspirationPayload(id) {
   const row = getPrompt(id);
   if (!row) return null;
+  const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
   return {
     state: row.inspire_state,
     error: row.inspire_error || null,
     picks: parseInspirePicks(row),
-    review: parseInspireReview(row),
-    report: row.inspire_report_id ? getReport(db, row.inspire_report_id) : null,
+    review: parseInspireReview(row) || report?.review || null,
+    report,
   };
 }
 
@@ -1090,7 +1140,7 @@ async function answerInspireQuestion(row, text, userId) {
   const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
   addMessage(row.id, { role: 'user', text, author: userId });
 
-  const prev = parseInspireReview(row);
+  const prev = parseInspireReview(row) || report?.review || null;
   const reviewed = report
     ? await reviewInspiration({ report, prompt: row.raw_prompt || row.prompt, answer: text, allowQuestion: false })
     : null;
@@ -1100,6 +1150,7 @@ async function answerInspireQuestion(row, text, userId) {
     UPDATE work_prompts SET pending_question=NULL, inspire_review_json=?,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(JSON.stringify(review), row.id);
+  if (report && reviewed) storeReportReview(db, report.id, reviewed); // canonical home on the report
   settleInspireWaiter(row.id);
   broadcast();
 

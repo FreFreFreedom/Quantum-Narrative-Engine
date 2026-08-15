@@ -4663,10 +4663,16 @@ function flowWorldPanelHtml(source, id) {
   }
   if (e.state === 'ready' && e.report) {
     const sel = new Set(e.sel.map(x => x.part_index + ':' + x.pick_index));
+    const facts = qInspireReviewFacts(e.report.review);
+    const legend = (e.report.review?.groups?.length || 0) > 0
+      ? `<div class="q-inspire-legend">🔄 Some ideas are alternatives of each other — you only need one of each group. ⭐ marks our pick; a greyed-out idea was left out by the quick check (pick it if you disagree — your picks travel with the item).</div>`
+      : ((e.report.review?.removed?.length || 0) > 0
+        ? `<div class="q-inspire-legend">Greyed-out ideas were left out by the quick check — pick any you disagree with; your picks travel with the item.</div>`
+        : '');
     return `<div class="q-inspire-toolbar">
       <button class="ctrlbtn" data-action="flowworld-rerun" title="Fresh search — the bold ideas are brand new every time.">↻ New ideas</button>
       ${sel.size ? `<span class="q-inspire-note">${sel.size} picked — they travel with this item when it goes to the queue.</span>` : `<span class="q-inspire-note">Pick ideas here — they travel with this item when it goes to the queue.</span>`}
-    </div>${worldPartsHtml(e.report, { sel, pickAction: 'flowworld-pick' })}`;
+    </div>${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick' })}`;
   }
   return `<div class="tv-empty">
     <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
