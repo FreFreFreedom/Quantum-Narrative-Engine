@@ -1,9 +1,9 @@
 // Routes for the work queue — subset of §9's HTTP contract, backed by promptQueue.js.
 import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
-import { listOpenCodeModels, listAiRouterModels } from '../services/providers/index.js';
+import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
-import { findAgentTask } from '../services/taskRunner.js';
+import { findAgentTask, execOutputBytes, getExecTimeoutMinutes } from '../services/taskRunner.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 
 export function queueRoutes() {
@@ -14,6 +14,10 @@ export function queueRoutes() {
     // list (free first — sorted by the discovery code) plus a cheap liveness
     // signal for each provider so the UI can show what's actually runnable.
     const discovery = await listOpenCodeModels({ force: req.query.force === '1' }).catch((e) => ({ models: [], error: e.message }));
+    // Curated default for NEW tasks (plan B): step 1 of the Go chain when the
+    // live list has it, else the free floor. The New-prompt form preselects it.
+    let defaultModel = null;
+    try { defaultModel = await defaultOpenCodeModel(); } catch {}
     let aiRouterModels = [];
     let aiRouterError = null;
     try { aiRouterModels = listAiRouterModels(); } catch (e) { aiRouterError = e.message; }
@@ -25,6 +29,7 @@ export function queueRoutes() {
       opencode: {
         available: discovery.models.length > 0 || !discovery.error,
         models: discovery.models,
+        defaultModel,
         error: discovery.error || null,
       },
       aiRouter: {
@@ -43,8 +48,8 @@ export function queueRoutes() {
   });
 
   router.put('/ai-settings', (req, res) => {
-    const { defaults, policy } = req.body || {};
-    res.json(updateAiSettings({ defaults, policy }));
+    const { defaults, policy, queue, intel } = req.body || {};
+    res.json(updateAiSettings({ defaults, policy, queue, intel }));
   });
 
   router.get('/prompts', (req, res) => {
@@ -54,12 +59,17 @@ export function queueRoutes() {
       // can tell a wedged agent from a busy one — plan Part 3. Null for prompts
       // with no live agent task.
       const task = p.agent_task_id ? findAgentTask(p.agent_task_id) : null;
+      const running = p.status === 'running';
       return {
         ...p,
         pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
         messages: queue.listMessages(p.id),
         run_state: task?.run_state ?? null,
         heartbeat_at: task?.heartbeat_at ?? null,
+        // Work-meter data for the UI's progress bar: real output volume so far,
+        // plus the run's time budget (both only meaningful while running).
+        output_bytes: running ? execOutputBytes(p.agent_task_id) : null,
+        timeout_minutes: running ? getExecTimeoutMinutes() : null,
       };
     });
     res.json({
@@ -106,6 +116,27 @@ export function queueRoutes() {
     res.json({ prompts: queue.reorderPrompts(ids) });
   });
 
+  router.post('/prompts/:id/seen', (req, res) => {
+    const row = queue.markSeen(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json({ ok: true });
+  });
+
+  // Purpose summary for a task's detail view: 3-5 plain-language bullets on what
+  // the task is FOR. Normally pre-generated in the background (createPrompt /
+  // finishPrompt eager hooks) so it's already cached when the task is opened —
+  // this lazy path only serves the rare first-open race or a failed eager pass.
+  // Cached on the row; in-flight dedup shared with the eager hooks.
+  router.post('/prompts/:id/summarize', async (req, res) => {
+    try {
+      const out = await queue.summarizePrompt(req.params.id);
+      if (!out) return res.status(404).json({ error: 'not_found' });
+      res.json(out);
+    } catch (e) {
+      res.status(502).json({ error: 'summary_failed', message: e.message });
+    }
+  });
+
   router.post('/prompts/:id/first', (req, res) => {
     const row = queue.moveToFront(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });
@@ -129,8 +160,46 @@ export function queueRoutes() {
     res.json(row);
   });
 
-  router.post('/prompts/:id/reply', (req, res) => {
-    const out = queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
+  // Inspiration step: the automatic world-look pass (open / hidden / bold shelves)
+  // that runs for every implement-mode task before its plan is written. This view
+  // serves the task detail's "Inspired by" panel; refresh re-runs the pass (also
+  // the entry point for tasks created before the feature); apply stores the
+  // human's picks and re-drafts the plan with them emphasized.
+  router.get('/prompts/:id/inspiration', (req, res) => {
+    const out = queue.inspirationPayload(req.params.id);
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    res.json(out);
+  });
+
+  router.post('/prompts/:id/inspiration/refresh', async (req, res) => {
+    const row = await queue.refreshInspiration(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
+  router.post('/prompts/:id/inspiration/skip', async (req, res) => {
+    const row = await queue.skipInspiration(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
+  router.post('/prompts/:id/inspiration/apply', async (req, res) => {
+    const row = await queue.applyInspiration(req.params.id, req.body || {});
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    if (row.error) return res.status(400).json({ error: row.error });
+    res.json(row);
+  });
+
+  // One-off migration: shorten the descriptions of world-look reports created
+  // before the "one short sentence" rule. Idempotent — cheap model calls only
+  // for reports that still have long descriptions.
+  router.post('/inspiration/condense-existing', async (req, res) => {
+    const out = await queue.condenseExistingInspiration();
+    res.json(out);
+  });
+
+  router.post('/prompts/:id/reply', async (req, res) => {
+    const out = await queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });
     if (out.error === 'running') return res.status(409).json({ error: 'running' });
     if (out.error) return res.status(400).json({ error: out.error });

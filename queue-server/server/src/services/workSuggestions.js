@@ -14,6 +14,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE_FR } from './ai/style.js';
+import { autoWorldLookSuggestions } from './codeDiscovery.js';
 import * as queue from './promptQueue.js';
 
 let db = null;
@@ -65,7 +66,7 @@ export function addSuggestion({ title, rationale = '', prompt, area = null, kind
   return row(db.prepare(`SELECT * FROM work_suggestions WHERE id = ?`).get(id));
 }
 
-export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = null } = {}) {
+export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = null, inspiration = null } = {}) {
   const s = db.prepare(`SELECT * FROM work_suggestions WHERE id = ? AND deleted_at IS NULL`).get(id);
   if (!s) return null;
   if (s.work_prompt_id) {
@@ -80,6 +81,7 @@ export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = 
     status: 'paused', // sits aside — nothing runs automatically from a suggestion
     suggestion_id: s.id,
     created_by: 'antoine',
+    inspiration: inspiration || null, // world-look already ran in the section — no re-search
   });
   db.prepare(`
     UPDATE work_suggestions SET status='accepted', work_prompt_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
@@ -121,7 +123,7 @@ function parseSuggestionsJson(text) {
 }
 
 // ─── Chantier engine: "what should I work on next" ──────────────────────────────
-function buildContextDigest() {
+export function buildContextDigest() {
   const lines = [];
   try {
     const total = db.prepare(`SELECT COUNT(*) n FROM entities`).get().n;
@@ -151,12 +153,12 @@ const SUGGESTION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS (Fra
 
 ${digest}
 
-Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers ») qui feraient avancer l'app — features, corrections, nettoyage de données, etc. Chaque piste doit être un vrai prompt actionnable, pas juste une idée vague.
+Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers ») qui feraient avancer l'app — features, corrections, nettoyage de données, etc. Chaque piste doit être un vrai prompt actionnable, pas juste une idée vague. Le titre et la rationale sont lus par le propriétaire de l'app, qui n'est pas programmeur : jamais d'identifiants internes, de noms de composants techniques ni de jargon anglais — dis ce que ça change pour lui, avec des mots simples.
 
 ${USER_FACING_STYLE_FR}
 
 Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
-[{"title": "titre court (< 80 caractères)", "rationale": "1 phrase : pourquoi c'est utile maintenant", "prompt": "le prompt complet à donner à l'agent pour l'implémenter", "area": "zone concernée (ex: exploration, graph, queue, data)"}]`;
+[{"title": "titre court (< 80 caractères)", "rationale": "une phrase courte (max 15 mots) : pourquoi c'est utile maintenant", "prompt": "le prompt complet à donner à l'agent pour l'implémenter", "area": "zone concernée (ex: exploration, graph, queue, data)"}]`;
 
 export async function generateSuggestions() {
   const digest = buildContextDigest();
@@ -199,12 +201,12 @@ const INTEGRATION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS, un
 
 ${digest}
 
-Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrètes qui enrichiraient la recherche (nouvelles sources de données, APIs, outils) — pas des tâches internes.
+Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrètes qui enrichiraient la recherche (nouvelles sources de données, APIs, outils) — pas des tâches internes. Le titre et la rationale sont lus par le propriétaire, qui n'est pas programmeur : jamais de jargon technique ni de termes internes — dis ce que ça lui apporte, avec des mots simples.
 
 ${USER_FACING_STYLE_FR}
 
 Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
-[{"title": "titre court", "rationale": "1 phrase : pourquoi", "prompt": "prompt complet pour l'implémenter", "area": "integration"}]`;
+[{"title": "titre court", "rationale": "une phrase courte (max 15 mots) : pourquoi", "prompt": "prompt complet pour l'implémenter", "area": "integration"}]`;
 
 export async function generateIntegrationSuggestions() {
   const digest = buildIntegrationDigest();
@@ -223,5 +225,11 @@ export async function runSuggestionEngines({ kind = null } = {}) {
   const results = {};
   if (!kind || kind === 'chantier') results.chantier = await generateSuggestions();
   if (!kind || kind === 'integration') results.integration = await generateIntegrationSuggestions();
+  // New suggestions get their world-look right away (background, one at a time)
+  // so the three shelves are already ready when Antoine opens them. Reports
+  // persist; anything already looked is skipped — idempotent across runs.
+  autoWorldLookSuggestions(db)
+    .then(({ ran }) => { if (ran) console.log(`[travaux] auto world-look ran for ${ran} suggestion(s).`); })
+    .catch((e) => console.error('[travaux] auto world-look sweep failed:', e.message));
   return results;
 }

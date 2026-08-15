@@ -201,3 +201,258 @@ export async function speculate(db, parentId, ctx) {
   if (!created.length) return { error: 'all_duplicates', message: 'Those branches were already proposed for this node.' };
   return { nodes: created };
 }
+
+// ─── Auto-placement ("Add an idea") ───────────────────────────────────────────
+// One free-text idea in, one structurally-placed speculative node out. The model
+// decides the territory and the existing components it depends on; proposed ids
+// are validated against the live catalog the frontend sent (the trunk lives in
+// the HTML file, not in the database) and anything unknown is dropped — all
+// unknown means root, so a hallucinated id can never dangle.
+function catalogLines(catalog) {
+  return catalog.map(c =>
+    `- ${c.id} — ${c.name} (${c.territory}, ${c.status})${Array.isArray(c.depends) && c.depends.length ? `, depends on: ${c.depends.join(', ')}` : ''}: ${String(c.what || '').slice(0, 140)}`
+  ).join('\n') || '- (no components yet)';
+}
+
+function buildAutoPrompt(concept, catalog) {
+  return `You are extending the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
+
+The tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch). A new node belongs to exactly one of those territory ids.
+
+Existing components in the graph (id — name (territory, status), depends on: ids: description):
+${catalogLines(catalog)}
+
+The owner proposes this idea:
+"${concept}"
+
+Decide where it fits. Give it a short name (as written in the idea, trimmed), place it in one territory, and pick which existing components it depends on — only ids from the list above, the most natural prerequisites, 0 to 3 of them (none if it is a root idea). "what" is one sentence on what it is, "why" one sentence on why it matters, "next" one concrete first step to build it.
+
+${USER_FACING_STYLE}
+
+Respond with ONLY JSON, no prose, no markdown fence:
+{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}`;
+}
+
+function parseAuto(text) {
+  if (!text) return null;
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    const o = JSON.parse(m[0]);
+    return o && o.name ? o : null;
+  } catch { return null; }
+}
+
+// Explicit user click only — never on load (cost control, CLAUDE.md).
+export async function autoPlaceNode(db, conceptInput, ctx = {}) {
+  const concept = String(conceptInput || '').trim();
+  if (!concept) return { error: 'concept_required', message: 'An idea is required.' };
+  const catalog = Array.isArray(ctx.catalog) ? ctx.catalog.filter(c => c && c.id) : [];
+  const out = await generateText({
+    prompt: buildAutoPrompt(concept, catalog),
+    feature: 'quick',
+    maxTokens: 900,
+    label: 'arch-node-auto',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const p = parseAuto(out.text);
+  if (!p) return { error: 'unparseable', message: 'Claude did not return a usable placement.' };
+  const known = new Set(catalog.map(c => c.id));
+  const depends = Array.isArray(p.depends) ? p.depends.filter(id => known.has(id)) : [];
+  const r = createNode(db, {
+    name: p.name, territory: p.territory, what: p.what, why: p.why, next: p.next,
+    depends, status: 'Concept', provenance: 'speculative',
+  });
+  if (r.error) return { error: r.error, message: r.error === 'duplicate' ? 'This idea is already in the tree.' : 'Could not add the node.' };
+  return { node: r.node };
+}
+
+// ─── Graph intelligence ("Ask about this architecture") ───────────────────────
+// A question about the owner's own architecture. The model reasons over the
+// catalog (components, statuses, dependency edges) and answers; the set of ids
+// it names defines the trail the frontend lights up on the canvas.
+function buildAskPrompt(question, catalog) {
+  return `You are looking at the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System) — the owner's own research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
+
+The tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch). Statuses: Concept, Designed, Prototype, Working, Validated, Advanced. A node depends on the components listed after "depends on:".
+
+Existing components (id — name (territory, status): description):
+${catalogLines(catalog)}
+
+Answer the owner's question about THIS architecture — be concrete, reference the components by id, and go beyond the single node when relevant (what it touches, what depends on it, what is missing for it to work, how it fits the territories). Answer in the owner's language. Keep it under ~120 words.
+
+Respond with ONLY JSON, no prose, no markdown fence:
+{"answer":"your answer","ids":["ids of the components your answer mentions or is about — up to 6, only ids from the list above"]}`;
+}
+
+function parseAsk(text) {
+  if (!text) return null;
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    const o = JSON.parse(m[0]);
+    return o && o.answer ? o : null;
+  } catch { return null; }
+}
+
+export async function askGraph(questionInput, ctx = {}) {
+  const question = String(questionInput || '').trim();
+  if (!question) return { error: 'question_required', message: 'A question is required.' };
+  const catalog = Array.isArray(ctx.catalog) ? ctx.catalog.filter(c => c && c.id) : [];
+  const out = await generateText({
+    prompt: buildAskPrompt(question, catalog),
+    feature: 'quick',
+    maxTokens: 1000,
+    label: 'arch-graph-ask',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const p = parseAsk(out.text);
+  if (!p) return { error: 'unparseable', message: 'Claude did not return a usable answer.' };
+  const known = new Set(catalog.map(c => c.id));
+  const ids = Array.isArray(p.ids) ? p.ids.filter(id => known.has(id)) : [];
+  return { answer: p.answer, ids };
+}
+
+// ─── One idea door ("New idea") ───────────────────────────────────────────────
+// Every entry point (header button, architecture toolbar, Flow top) funnels into
+// this single router: one AI call decides whether the idea is about building
+// FMCNS itself — placed in the tree as a speculative node — or any other idea —
+// saved as a Seed. Two kinds of surfaces, one brain, one placement engine.
+import { createIdea } from './workIdeas.js';
+
+function buildRoutePrompt(concept, catalog) {
+  return `You are the idea router of FMCNS (Fractal Mythic Consciousness Navigation System) — the owner's research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
+
+The architecture tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch).
+
+Two kinds of ideas exist:
+- ARCHITECTURE ideas: about extending or improving FMCNS itself — a new capability, a change to how a part works, a fix, a new component. These become speculative nodes in the architecture tree.
+- SEEDS: any other idea — a research direction, an exploration, a question, something to think about later. These become a simple titled note.
+
+Existing components in the tree (id — name (territory, status), depends on: ids: description):
+${catalogLines(catalog)}
+
+The owner proposes:
+"${concept}"
+
+Decide the kind. If it is an architecture idea, return isArchitecture true with a short name, the ONE territory it belongs to, one-sentence what/why, one concrete next step, and 0 to 3 existing ids it depends on (none if it is a root idea). If it is a seed, return isArchitecture false with a short title and a one-line note.
+
+${USER_FACING_STYLE}
+
+Respond with ONLY JSON, no prose, no markdown fence.
+Architecture idea: {"isArchitecture":true,"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}
+Seed: {"isArchitecture":false,"title":"Short title","notes":"one line"}`;
+}
+
+function parseRoute(text) {
+  if (!text) return null;
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { return null; }
+}
+
+// One model call per explicit click only (cost control, CLAUDE.md).
+export async function routeIdea(db, conceptInput, ctx = {}) {
+  const concept = String(conceptInput || '').trim();
+  if (!concept) return { error: 'concept_required', message: 'An idea is required.' };
+  const catalog = Array.isArray(ctx.catalog) ? ctx.catalog.filter(c => c && c.id) : [];
+  const out = await generateText({
+    prompt: buildRoutePrompt(concept, catalog),
+    feature: 'quick',
+    maxTokens: 1100,
+    label: 'arch-idea-route',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const p = parseRoute(out.text);
+  if (!p || (p.isArchitecture === undefined && p.isArchitecture !== false)) {
+    return { error: 'unparseable', message: 'Claude did not return a usable routing.' };
+  }
+  if (p.isArchitecture) {
+    if (!p.name) return { error: 'unparseable', message: 'Claude did not return a usable placement.' };
+    const known = new Set(catalog.map(c => c.id));
+    const depends = Array.isArray(p.depends) ? p.depends.filter(id => known.has(id)) : [];
+    const r = createNode(db, {
+      name: p.name, territory: p.territory, what: p.what, why: p.why, next: p.next,
+      depends, status: 'Concept', provenance: 'speculative',
+    });
+    if (r.error) return r.error === 'duplicate'
+      ? { error: 'duplicate', message: 'This idea is already in the tree.' }
+      : { error: r.error, message: 'Could not add the node.' };
+    return { kind: 'node', node: r.node };
+  }
+  const title = String(p.title || '').trim();
+  if (!title) return { error: 'unparseable', message: 'Claude did not return a usable seed.' };
+  const idea = createIdea({ title: title.slice(0, 200), notes: p.notes || concept, created_by: 'antoine' });
+  return { kind: 'seed', idea };
+}
+
+// ─── "Not built" list — AI-recommended order ───────────────────────────────────
+// The list itself renders client-side (the trunk lives in the HTML file); this
+// only ranks. The frontend sends its items in, we return their ids in the order
+// the model recommends. Explicit click only — one model call per use.
+export async function rankUnbuilt(itemsInput = []) {
+  const items = Array.isArray(itemsInput) ? itemsInput.filter(it => it && it.id) : [];
+  if (!items.length) return { error: 'empty', message: 'Nothing to rank.' };
+  const catalog = items.map(it =>
+    `${it.id} — ${it.name} (${it.territory || '?'}, ${it.status || '?'})${it.buildable ? ', READY TO BUILD' : ', waiting on prerequisites'}: ${String(it.what || '').slice(0, 160)} ${it.next ? 'Next: ' + String(it.next).slice(0, 120) : ''}`).join('\n');
+  const out = await generateText({
+    prompt: `You are the tech-tree advisor of FMCNS — the owner's personal research system (characters, films, countries as one ontology, navigated fractally).
+
+These components of the architecture are NOT built yet. The owner wants to know the best order to build them in — the smartest next moves for the project, balancing impact on the research system, readiness (READY TO BUILD beats waiting on prerequisites), and how much each one unlocks.
+
+${catalog}
+
+Return ONLY JSON, no prose: {"order": ["id1", "id2", ...]} — every id exactly once, best first. Prefer buildable items early unless a locked one unlocks much more.`,
+    feature: 'studio',
+    maxTokens: 400,
+    label: 'arch-rank-unbuilt',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const m = out.text?.match(/\{[\s\S]*\}/);
+  let parsed = null;
+  if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+  const ordered = parsed?.order && Array.isArray(parsed.order) ? parsed.order : [];
+  const known = new Set(items.map(it => it.id));
+  const ids = ordered.filter(id => known.has(id));
+  // Model misses -> keep the input order for the rest (the client re-ranks anyway).
+  const seen = new Set(ids);
+  items.forEach(it => { if (!seen.has(it.id)) { ids.push(it.id); seen.add(it.id); } });
+  return { order: ids };
+}
+
+// "Show my next 3" — one call that picks a 3-item shortlist with a one-line
+// plain-English reason each, instead of reordering the whole list. Explicit
+// click only, same cost discipline as rankUnbuilt.
+export async function shortlistUnbuilt(itemsInput = []) {
+  const items = Array.isArray(itemsInput) ? itemsInput.filter(it => it && it.id) : [];
+  if (!items.length) return { error: 'empty', message: 'Nothing to pick from.' };
+  const catalog = items.map(it =>
+    `${it.id} — ${it.name} (${it.territory || '?'}, ${it.status || '?'})${it.buildable ? ', READY TO BUILD' : ', waiting on prerequisites'}: ${String(it.what || '').slice(0, 160)}`).join('\n');
+  const out = await generateText({
+    prompt: `You are the tech-tree advisor of FMCNS — the owner's personal research system (characters, films, countries as one ontology, navigated fractally).
+
+These components are NOT built yet. Pick the THREE best next moves for the project — balancing impact, readiness (READY TO BUILD beats waiting on prerequisites), and how much each one unlocks. The owner is not a programmer: every reason must be plain everyday language, no jargon, no internal ids.
+
+${catalog}
+
+Return ONLY JSON, no prose: {"picks":[{"id":"...","reason":"one short plain-English sentence — why build this one now"}]} — exactly 3 picks, best first.`,
+    feature: 'studio',
+    maxTokens: 400,
+    label: 'arch-notbuilt-shortlist',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const m = out.text?.match(/\{[\s\S]*\}/);
+  let parsed = null;
+  if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+  const picks = Array.isArray(parsed?.picks) ? parsed.picks.filter(p => p && p.id) : [];
+  const known = new Set(items.map(it => it.id));
+  const valid = picks.filter(p => known.has(p.id)).slice(0, 3)
+    .map(p => ({ id: p.id, reason: String(p.reason || '').slice(0, 240) }));
+  // Model came back short -> backfill from the input order so the panel is never empty.
+  const seen = new Set(valid.map(p => p.id));
+  for (const it of items) {
+    if (valid.length >= 3) break;
+    if (!seen.has(it.id)) { valid.push({ id: it.id, reason: '' }); seen.add(it.id); }
+  }
+  return { picks: valid };
+}

@@ -27,6 +27,7 @@ export function travauxRoutes() {
     const out = await suggestions.acceptSuggestion(req.params.id, {
       editedPrompt: req.body?.prompt || null,
       editedTitle: req.body?.title || null,
+      inspiration: req.body?.inspiration || null,
     });
     if (!out) return res.status(404).json({ error: 'not_found' });
     res.json(out);
@@ -75,7 +76,11 @@ export function travauxRoutes() {
   });
 
   router.post('/ideas/:id/promote', async (req, res) => {
-    const out = await ideas.promoteIdea(req.params.id, { userId: req.user?.sub || 'antoine', prompt: req.body?.prompt || null });
+    const out = await ideas.promoteIdea(req.params.id, {
+      userId: req.user?.sub || 'antoine',
+      prompt: req.body?.prompt || null,
+      inspiration: req.body?.inspiration || null,
+    });
     if (!out) return res.status(404).json({ error: 'not_found' });
     res.json(out);
   });

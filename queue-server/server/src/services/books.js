@@ -58,7 +58,7 @@ export function makeBooksHandler(db) {
   return async function getBookSuggestions(entity, { force = false, feature = 'quick' } = {}) {
     if (!force) {
       const cached = db.prepare(`SELECT suggestions FROM entity_book_suggestions WHERE entity_id=?`).get(entity.id);
-      if (cached) { try { return { books: JSON.parse(cached.suggestions), cached: true }; } catch {} }
+      if (cached) { try { const books = JSON.parse(cached.suggestions); if (Array.isArray(books) && books.every((b) => b && typeof b.title === 'string')) return { books, cached: true }; } catch {} }
     }
     const out = await generateText({
       prompt: buildPrompt(entity), feature, maxTokens: 1500, label: 'books',
@@ -66,9 +66,22 @@ export function makeBooksHandler(db) {
     if (out.error) return out;
     const text = out.text;
 
+    // Local-dev mock paths / stream envelopes must never reach the cache (they
+    // previously filled entity_book_suggestions with "Mock run." junk). Bail out
+    // with a clear error instead of caching garbage.
+    const t0 = String(text || '').trim();
+    if (!t0 || t0.startsWith('{') || t0.includes('=== USER SUMMARY ===') || t0.includes('=== USER QUESTION ===') || /^mock\b|mock run/i.test(t0)) {
+      return { error: 'generation_unavailable' };
+    }
+
     const match = text.match(/\[[\s\S]*\]/);
     let books;
     try { books = JSON.parse(match ? match[0] : text); } catch { return { error: 'parse_error', raw: text.slice(0, 500) }; }
+    if (!Array.isArray(books)) return { error: 'parse_error', raw: text.slice(0, 500) };
+    // Drop anything that isn't a real book entry (envelope content blocks, stubs) —
+    // a corrupt tail should never poison the whole list.
+    books = books.filter((b) => b && typeof b.title === 'string' && b.title.trim());
+    if (!books.length) return { error: 'generation_unavailable' };
 
     // Enrich each pick with real metadata in parallel — a failed/missing lookup for
     // one book just means that book renders without a cover, not an error for the list.

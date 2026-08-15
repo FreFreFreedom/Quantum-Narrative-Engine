@@ -21,6 +21,12 @@ The brief must:
 - State a clear, checkable definition of done.
 - Note anything the request implies is explicitly out of scope.
 
+If an INSPIRATION FROM THE WORLD section is present:
+- Open-source projects there are real references to study for patterns and ideas — not dependencies to install.
+- Closed products there are things to match or beat.
+- Bold ideas there are DESIGN TARGETS: make the plan reach for them instead of watering them down, while staying honest about what can fit in one task.
+- Never invent packages, projects or products beyond what is given there or already known to exist.
+
 Write for the coding agent, not for a human reader. If the raw request is already clear and complete, keep the brief short rather than padding it. Do not ask questions — if something is genuinely unresolvable, say so as a note inside the brief rather than leaving it out.`;
 
 function parseDraft(text) {
@@ -34,13 +40,18 @@ function parseDraft(text) {
 }
 
 // → { title, brief } | null. Never throws — a failure here must fall back to the
-// raw prompt, never stall or crash task creation.
-export async function draftPlan({ title = '', prompt, mode = 'implement' }) {
+// raw prompt, never stall or crash task creation. `inspiration` is an optional
+// plain-text digest of the world-look pass (see codeDiscovery.inspirationDigestFor):
+// passed through verbatim as context the drafting model can see. `ownerNote` is the
+// owner's answer to a rare quick-check question about the world-look ideas.
+export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null }) {
   const text = String(prompt || '').trim();
   if (!text) return null;
   const input = [
     title ? `SUBMITTED TITLE: ${title}` : null,
     `MODE: ${mode}`,
+    inspiration ? `INSPIRATION FROM THE WORLD:\n${inspiration}` : null,
+    ownerNote ? `OWNER'S NOTE ON THE IDEAS (their answer to a question about the world-look — follow it):\n${String(ownerNote).trim()}` : null,
     `RAW REQUEST:\n${text}`,
   ].filter(Boolean).join('\n\n');
 

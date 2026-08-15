@@ -15,8 +15,10 @@ import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
 import { initTaskRunner, bindTaskDb, DATA_DIR } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
+import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
+import { startPreGen } from './services/preGen.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
@@ -26,13 +28,30 @@ import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
-import { bindAiTextDb } from './services/ai/text.js';
+import { bindAiTextDb, migrateFreeFirstDefaults } from './services/ai/text.js';
 import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
+import { conversationsRoutes } from './routes/conversations.js';
+import { bindConversationsDb } from './services/conversations.js';
+import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
+
+// Graceful shutdown: kill this server's own in-flight toolless text children
+// (their 4-min timers die with the process — without this they'd orphan and run
+// on, exactly the 38h zombie class this fix targets). Exec tasks are detached by
+// design and are NOT killed here: they survive restarts and their monitors
+// re-attach at boot.
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.on(sig, () => {
+    const n = activeTextCallCount();
+    if (n) console.log(`[shutdown] killing ${n} in-flight text call(s)…`);
+    killTextCalls();
+    process.exit(0);
+  });
+}
 
 const PORT = process.env.PORT || 8080;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -55,6 +74,14 @@ bindBriefingDb(db);
 bindAiTextDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
+bindConversationsDb(db);
+
+// Free-first platform policy (plan self-aware-platform.md Part 1): one-time
+// migration of per-feature defaults away from the Claude subscription. Idempotent.
+try {
+  const migrated = migrateFreeFirstDefaults();
+  if (migrated.changed) console.log(`Free-first policy: flipped ${migrated.changed} feature default(s) off Claude.`);
+} catch (e) { console.error('Free-first defaults migration failed:', e.message); }
 
 // Repopulate ontology + knowledge data on every boot — Railway's free tier resets
 // the DB on each deploy, so this has to be automatic, not a one-off manual step.
@@ -79,6 +106,10 @@ try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate fai
 if (process.env.WARMUP_DISABLED !== '1') {
   warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
     .catch((e) => console.error('Cache warm-up failed:', e.message));
+  // Background pre-generation (suggestions + architecture "what's next") so those
+  // tabs open instantly from the DB instead of waiting on a live generation.
+  // Same WARMUP_DISABLED gate: the review runner's ephemeral boot must not spend.
+  startPreGen(db);
 }
 
 const app = express();
@@ -113,7 +144,9 @@ app.use('/api/travaux', requireAuth, providersRoutes());
 app.use('/api/ontology', requireAuth, ontologyRoutes(db));
 app.use('/api/chat', requireAuth, chatRoutes(db));
 app.use('/api/architecture', requireAuth, architectureRoutes(db));
+app.use('/api/architecture/intel', requireAuth, intelRoutes(db));
 app.use('/api/discovery', requireAuth, discoveryRoutes(db));
+app.use('/api/convos', requireAuth, conversationsRoutes());
 
 // Serve the single-file frontend app (fmcns_navigator.html, copied to
 // public/index.html) at the root address, so the whole app lives at one URL.

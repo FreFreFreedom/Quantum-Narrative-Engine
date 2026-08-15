@@ -53,6 +53,35 @@ function git(args, { cwd, quiet = false } = {}) {
   }
 }
 
+// Transient-lock retry: the queue's git calls run against the SAME repo the user
+// works in (a worktree add / fetch while the user is mid-commit can hit
+// .git/index.lock or a ref-in-use). Those are momentary — retry briefly instead
+// of falling straight back to the main-checkout fallback (which is the one
+// collision with the user's interactive work; see plan concurrency section).
+const LOCK_ERROR_RE = /index\.lock|another git process|Unable to create|is in use|refusing to use|Operation not permitted/i;
+function gitWithRetry(args, { cwd, quiet = false, attempts = 3, delayMs = 1200 } = {}) {
+  let lastError = null;
+  for (let i = 0; i < attempts; i++) {
+    let out = null;
+    let errText = '';
+    try {
+      out = execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+      return out;
+    } catch (e) {
+      errText = e.stderr ? e.stderr.toString().trim() : e.message;
+      lastError = errText;
+      if (!LOCK_ERROR_RE.test(errText)) break; // not a lock race — retrying won't help
+    }
+    if (i < attempts - 1) {
+      if (!quiet) console.warn(`[gitOps] git ${args.join(' ')} hit a transient lock (${errText.split('\n')[0]}) — retry ${i + 1}/${attempts}`);
+      const until = Date.now() + delayMs;
+      while (Date.now() < until) { /* busy-wait */ }
+    }
+  }
+  if (!quiet) console.warn(`[gitOps] git ${args.join(' ')} failed after ${attempts} attempt(s): ${(lastError || '').split('\n')[0]}`);
+  return null;
+}
+
 function slugify(title) {
   const slug = String(title || '')
     .toLowerCase()
@@ -61,6 +90,41 @@ function slugify(title) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 24);
   return slug || 'task';
+}
+
+// ─── Read-only history helpers for the self-updating tech tree ───────────────
+// (treeSync.js). Quiet and null-safe: on any failure the sync simply skips this
+// round — the tree must never be able to break the queue or the server.
+export function gitLogSummaries(cwd, { since = null, until = 'main', max = 20 } = {}) {
+  const range = since ? `${since}..${until}` : until;
+  const out = git(['-C', cwd, 'log', '--format=%h|%s', '-n', String(max), range], { quiet: true });
+  if (out === null) return [];
+  return out.split('\n').filter(Boolean).map((l) => {
+    const i = l.indexOf('|');
+    return { sha: l.slice(0, i), subject: l.slice(i + 1) };
+  });
+}
+
+export function gitDiffStat(cwd, from, to = 'HEAD') {
+  return git(['-C', cwd, 'diff', '--stat', `${from}..${to}`], { quiet: true }) || '';
+}
+
+export function gitChangedFiles(cwd, from, to = 'HEAD') {
+  const out = git(['-C', cwd, 'diff', '--name-status', `${from}..${to}`], { quiet: true });
+  if (out === null) return [];
+  return out.split('\n').filter(Boolean);
+}
+
+export function gitHeadSha(cwd, ref = 'main') {
+  return git(['-C', cwd, 'rev-parse', '--verify', '--quiet', ref], { quiet: true }) || null;
+}
+
+// Best-effort, read-only remote refresh for the tree watcher: local `main` can
+// lag behind pushed work (e.g. a deploy push from another machine), and the
+// watcher should see it. Quiet and never fatal — with no network or no remote
+// the watcher simply falls back to local main.
+export function gitFetchOriginMain(cwd) {
+  return gitWithRetry(['-C', cwd, 'fetch', 'origin', 'main', '--quiet'], { quiet: true });
 }
 
 // Create one worktree + branch for a task. Returns
@@ -84,8 +148,8 @@ export function createWorktree({ taskId, title, agentKey }) {
     mkdirSync(root, { recursive: true });
 
     // Best-effort remote refresh (read-only). Quiet: a machine with no network or
-    // no remote must still be able to dispatch.
-    git(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { quiet: true });
+    // no remote must still be able to dispatch. Retried on lock races.
+    gitWithRetry(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { quiet: true });
 
     // Plan rule: branch from origin/main. If origin/main is not present locally
     // (never fetched, no network), fall back to local main — documented deviation.
@@ -94,7 +158,11 @@ export function createWorktree({ taskId, title, agentKey }) {
       : (git(['-C', main, 'rev-parse', '--verify', '--quiet', 'main'], { quiet: true }) ? 'main' : null);
     if (!base) throw new Error('no origin/main or main ref to branch from');
 
-    const out = git(['-C', main, 'worktree', 'add', '-b', branch, wtPath, base]);
+    // Retried on lock races: the user may be mid-commit in the main checkout at
+    // this exact moment — a momentary index.lock must not push the task into the
+    // main-checkout fallback (the one place a queue task could collide with the
+    // user's own interactive work).
+    const out = gitWithRetry(['-C', main, 'worktree', 'add', '-b', branch, wtPath, base], { quiet: true });
     if (out === null) throw new Error(`worktree add failed for ${taskId}`);
     const baseSha = git(['-C', main, 'rev-parse', base], { quiet: true }) || null;
 

@@ -7,7 +7,8 @@ anything about communicating with Antoine, this file wins.
 ## Working with Antoine
 
 Antoine is not a programmer. He operates this project as a user and works with
-agents. This section is a hard rule for ALL communication intended for Antoine:
+agents. This section is a hard rule for ALL communication intended for Antoine,
+in EVERY conversation, whatever the model, whatever the session — always:
 
 - Write in plain English, short and direct.
 - No jargon, no file names, no internal terms — unless you explain them in the
@@ -17,6 +18,40 @@ agents. This section is a hard rule for ALL communication intended for Antoine:
   exposing implementation details.
 - Full technical detail is fine and encouraged between agents, in code, and in
   internal notes. The restriction applies only to words aimed at Antoine.
+- Applies in French too when he writes in French: français simple, pas de
+  jargon, expliquer tout terme technique dans la même phrase.
+
+### App-generated text for Antoine
+
+The same rule applies to EVERYTHING the app itself writes for Antoine:
+suggestions, task titles and recaps, summaries, answers to his questions,
+explanations, ideas — all of it. Any prompt that produces text Antoine will
+read MUST carry the shared plain-English style instruction (see the app's
+shared style module). New features must attach it from day one; before
+shipping a feature, check its text is style-tagged. This is a hard rule, not a
+preference.
+
+### Ship directly — no local test phase (hard)
+
+Antoine reviews quality by using the app. When he asks for a change and says
+go (or gives any equivalent green light), build it and ship it immediately —
+never spend time on local verification:
+
+1. Run only the zero-cost checks: `node --check` on every changed server file,
+   and a syntax check of the inline scripts in `fmcns_navigator.html` (extract
+   the `<script>` blocks, `node --check` each). These catch syntax breakage
+   before a deploy and cost nothing.
+2. Apply the frontend sync rule (copy master →
+   `queue-server/public/index.html`, checksums match).
+3. Commit and push to `main` right away — pushing is the deploy. No local
+   boot, no `curl` checks, no localhost testing.
+4. One quick check that production serves the new version (frontend checksum
+   or the changed route answering) is deploy confirmation, not a test phase.
+5. If something is broken after shipping, Antoine says so and it gets fixed in
+   the next round. Just fix it — never waste his time on apologies.
+
+This rule applies to live sessions with Antoine. Unattended overnight runs
+still never push (below).
 
 ## Autonomous overnight runs
 
@@ -24,7 +59,8 @@ When implementation happens in an unattended run (see the `fmcns-overnight`
 agent and the `/overnight` command):
 
 - Never push, merge to main, or deploy anything. Publishing is Antoine's call,
-  always.
+  always. (The ship-directly rule above applies to live sessions only — it does
+  not relax this.)
 - Never do anything destructive or irreversible merely to avoid asking a
   question.
 - Commit locally, step by step, on a dedicated branch (`overnight/<date>`), so
@@ -67,6 +103,13 @@ questions come first.
   its checks actually ran.
 - Keep `RUN_LOG.md` current as you go — Antoine reads it in the morning, not
   your memory.
+- **Frontend sync rule (hard)**: Antoine tests the app at `localhost:3000`,
+  which is served from a copy at `queue-server/public/index.html` — NOT the
+  master `fmcns_navigator.html` at the repo root. After **every** round of
+  frontend changes, copy the master over the copy
+  (`cp fmcns_navigator.html queue-server/public/index.html`) and verify the
+  checksums match. Never leave a session with the two diverged. Tell Antoine
+  to hard-refresh (Shift+Cmd+R) when testing the server copy.
 
 ## Repository essentials
 
@@ -81,7 +124,8 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
   (Node/Express, `node:sqlite`, ESM) deployed on Railway.
 - **Boot**: `cd queue-server && JWT_SECRET=dev ADMIN_PASSWORD=dev npm start`
   (minimum env). There is no test suite and no linter — `node --check <file>` is
-  the sanity check, and local boot + `curl` + the browser are the verification.
+  the sanity check. Skip local boot/`curl`/browser verification: changes ship
+  directly (see the ship-directly rule under "Working with Antoine").
 - **Git rules (hard)**: never push, never merge, never checkout/reset away work
   on `main`. Agent work lives on `agent/*` branches in worktrees; merging and
   publishing are the human's call via the review screen.

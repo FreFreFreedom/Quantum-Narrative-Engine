@@ -4,6 +4,7 @@ import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
 import { makeBookDetailHandler } from '../services/bookDetail.js';
+import { enrichFilm, enrichAllFilms, listEnrichments, batchStatus } from '../services/filmEnrichment.js';
 
 export function ontologyRoutes(db) {
   const router = Router();
@@ -11,6 +12,25 @@ export function ontologyRoutes(db) {
   const getTagLens = makeTagLensHandler(db);
   const getTagPattern = makeTagPatternHandler(db);
   const getBookDetail = makeBookDetailHandler(db);
+
+  router.get('/enrichments', (req, res) => res.json({ enrichments: listEnrichments(db) }));
+
+  router.post('/entities/:id/enrich-film', async (req, res) => {
+    const entity = q.getEntity(db, req.params.id);
+    if (!entity) return res.status(404).json({ error: 'not_found' });
+    if (entity.type !== 'film') return res.status(400).json({ error: 'not_a_film' });
+    const out = await enrichFilm(db, entity, { force: !!req.body?.force });
+    if (out.error) return res.status(out.status || 500).json(out);
+    res.json(out);
+  });
+
+  router.post('/enrich-films/all', async (req, res) => {
+    const out = await enrichAllFilms(db);
+    if (out.error) return res.status(out.status || 500).json(out);
+    res.json(out);
+  });
+
+  router.get('/enrich-films/status', (req, res) => res.json(batchStatus()));
 
   router.get('/entities', (req, res) => {
     const { type, cluster, tag, name, grounded, source } = req.query;

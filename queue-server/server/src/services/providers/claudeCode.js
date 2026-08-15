@@ -11,6 +11,7 @@
 // unlocked by CLAUDE_CODE_OAUTH_TOKEN / a prior `claude /login`.
 
 import { spawn } from 'node:child_process';
+import { registerTextCall, unregisterTextCall } from '../textCallRegistry.js';
 
 export const id = 'claude-code';
 export const label = 'Claude Code';
@@ -111,14 +112,19 @@ export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, mo
 export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env }) {
   return new Promise((resolveP) => {
     const proc = spawn(bin, ['-p', '--model', model, '--tools', ''], {
-      cwd, env, stdio: 'pipe',
+      cwd, env, stdio: 'pipe', detached: true,
     });
+    const callId = registerTextCall(proc.pid, { label: 'claude-code' });
     proc.stdin.write(prompt);
     proc.stdin.end();
     let output = '';
     let settled = false;
-    const settle = (v) => { if (!settled) { settled = true; clearTimeout(timer); resolveP(v); } };
-    const timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, timeoutMs);
+    const settle = (v) => { if (!settled) { settled = true; clearTimeout(timer); unregisterTextCall(callId); resolveP(v); } };
+    const timer = setTimeout(() => {
+      try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
+      try { proc.kill('SIGKILL'); } catch {}
+      settle({ code: -1, text: '' });
+    }, timeoutMs);
     proc.stdout.on('data', (c) => { output += c.toString(); });
     proc.stderr.on('data', () => {});
     proc.on('error', () => settle({ code: -1, text: '' }));

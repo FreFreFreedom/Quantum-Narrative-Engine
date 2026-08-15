@@ -179,9 +179,10 @@ edit in place, open in a browser to test.
 
 ## Deploying
 
-Railway auto-deploys from `main`. Full workflow and verification discipline live
-in the `deploy` skill (`.claude/skills/deploy/SKILL.md`) — invoke it before
-pushing any backend change.
+Railway auto-deploys from `main`. Shipping discipline is Antoine's rule, set in
+`AGENTS.md`: ship directly, no local test phase — syntax checks only, then
+commit and push. The `deploy` skill (`.claude/skills/deploy/SKILL.md`) has the
+step-by-step.
 
 ## Credit/cost efficiency
 

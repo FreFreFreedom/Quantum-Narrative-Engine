@@ -34,6 +34,8 @@ export function openDb() {
   initTagPatternSchema(db);
   initBookDetailSchema(db);
   initDiscoverySchema(db);
+  initConversationsSchema(db);
+  initFilmEnrichmentSchema(db);
   return db;
 }
 
@@ -127,6 +129,33 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN raw_prompt TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN plan_source TEXT DEFAULT 'auto'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN plan_pending INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Link a Dispatch Queue task back to the conversation that produced it (Idea Studio
+  // handoff — see plans/universal-conversations-core-architecture.md §7).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN convo_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN seen_at TEXT`); } catch {}
+  // Purpose summary for the task detail: 3-5 plain-language bullets on what the
+  // task is FOR. Generated lazily on first open (one free-model call), then
+  // cached here so revisits cost nothing (see routes/queue.js summarize).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN summary TEXT`); } catch {}
+  // Inspiration step: every implement-mode task gets a background pass that looks
+  // at the world before its plan is written (open projects, closed products, bold
+  // ideas — see codeDiscovery.js runInspiration). State machine: 'off' (question
+  // mode / legacy rows) -> 'pending' (search running) -> 'ready' (report done,
+  // nothing applied yet) | 'failed' (search failed, retry offered) | 'applied'
+  // (picks applied and the plan re-drafted). The report itself lives in
+  // discovery_reports (source='prompt', source_id=<prompt id>); these columns
+  // only hold the pointer, the applied picks and the error text.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_state TEXT NOT NULL DEFAULT 'off'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_report_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_picks_json TEXT NOT NULL DEFAULT '[]'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_error TEXT`); } catch {}
+  // Quick check between world-look and plan draft: one cheap pass that filters
+  // the report's picks (removed + one-line reasons), clusters substitutes into
+  // groups with an automatic best-per-group recommendation, and — rarely —
+  // asks the owner one question when the answer changes what gets built. JSON:
+  // { removed:[], groups:[], recommended:[], question:{question,options}|null }.
+  // NULL = no review (legacy reports, or the check failed — full report used).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_review_json TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -252,21 +281,31 @@ function initSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
   `);
-  // Seed the two developer agents (step 3 scope — the full roster arrives in a
+  // Seed the three developer agents (step 3 scope — the full roster arrives in a
   // later step). Seeded HERE rather than in bootstrapData.js because agent_tasks
   // rows (legacy import + live queue) carry a REFERENCES agents(key) FK — the rows
   // must exist before the first task is ever inserted, and openDb() runs before
   // the bootstrap pass. INSERT OR IGNORE: a UI edit to an agent is never clobbered.
+  // dev3 (plan C4): a third parallel writer on the OpenCode lane — every writer
+  // task runs in its own git worktree/branch, so parallel implementers never
+  // collide on files.
   db.exec(`
     INSERT OR IGNORE INTO agents (key, label, emoji, role, persona, brief_file, provider, provider_model, preset, tools, path_allow, path_deny, max_parallel, enabled, paused, sort_order)
     VALUES
-      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', '.agents/roles/dev.md', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
-      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
+      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
+      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2),
+      ('dev3', 'Developer 3', '🧑‍💻', 'dev', 'Third implementer — another parallel writer on the OpenCode lane, own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 3)
   `);
   // Backfill brief_file on rows seeded before step 6 (INSERT OR IGNORE never
-  // clobbers a UI edit — this only fills NULLs for the two default devs).
+  // clobbers a UI edit — this only fills NULLs for the three default devs).
   try {
-    db.prepare(`UPDATE agents SET brief_file='.agents/roles/dev.md' WHERE key IN ('dev1','dev2') AND brief_file IS NULL`).run();
+    db.prepare(`UPDATE agents SET brief_file='.agents/roles/dev.md' WHERE key IN ('dev1','dev2','dev3') AND brief_file IS NULL`).run();
+  } catch {}
+  // Auto-assign devs (plan "auto devs"): the three writers are all on the
+  // OpenCode lane now. dev1 was seeded as claude-code in earlier steps, so
+  // existing databases get backfilled to opencode on boot.
+  try {
+    db.prepare(`UPDATE agents SET provider='opencode' WHERE key IN ('dev1','dev2','dev3') AND provider='claude-code'`).run();
   } catch {}
 
   // ─── Reviews — the merge gate (plan Part 4, step 5) ───────────────────────────
@@ -353,6 +392,13 @@ function initSchema(db) {
   `);
   // Backfill: ensure the single row exists (idempotent, harmless on existing DBs).
   try { db.prepare(`INSERT OR IGNORE INTO ai_settings (id, defaults_json, health_json, quota_policy, cooldown_json) VALUES ('global', '{}', '{}', 'auto_free', '{}')`).run(); } catch {}
+  // Self-aware platform (plan self-aware-platform.md):
+  // - queue_go_budget_usd: daily cap on the paid OpenCode Go lane for the task
+  //   queue. 0 = no guard (the default since plan C3 — the Go plan's own caps
+  //   protect the account). Set > 0 to re-enable.
+  // - intel_json: intelligence engine budget (e.g. { thoughts_per_hour: 2 }).
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_go_budget_usd REAL NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN intel_json TEXT NOT NULL DEFAULT '{}'`); } catch {}
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
   // provider_quota_ledger: append-only history of every exhaustion event, so the
@@ -389,6 +435,87 @@ function initSchema(db) {
       PRIMARY KEY (provider_id, model)
     )
   `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_quota_state_enabled ON provider_quota_state(exhausted, resets_at)`); } catch {}
+
+  // ─── Intelligence thoughts (plan self-aware-platform.md, Part 4) ─────────────
+  // Durable thought files: what the platform noticed about its own architecture
+  // (mechanical signals are computed live and not stored; deliberative thoughts
+  // are model-generated and persisted here with a state_hash so the same state
+  // is never re-thought). status: new -> accepted (linked to a paused Flow task
+  // via work_prompt_id) | dismissed (kept for the record, not re-proposed).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS intel_thoughts (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL DEFAULT 'mechanical' CHECK(kind IN ('mechanical','deliberative')),
+      scope TEXT NOT NULL DEFAULT 'node' CHECK(scope IN ('node','graph','content')),
+      target_id TEXT NOT NULL DEFAULT '',
+      title TEXT NOT NULL,
+      body TEXT NOT NULL DEFAULT '',
+      prompt_draft TEXT,
+      state_hash TEXT,
+      priority INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','accepted','dismissed','adopted')),
+      work_prompt_id TEXT,
+      dismissed_reason TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_thoughts_dedup ON intel_thoughts(scope, target_id, kind, state_hash) WHERE deleted_at IS NULL AND state_hash IS NOT NULL`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_intel_thoughts_feed ON intel_thoughts(status, created_at)`); } catch {}
+
+  // ─── Intelligence round 2 (plan self-aware-platform.md, Parts 3 & 6) ─────────
+  // intel_signal_acknowledgements: one-click "intentional, not a problem" — once a
+  // signal type is acknowledged for a target it is filtered out forever (6.2).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS intel_signal_acknowledgements (
+      id TEXT PRIMARY KEY,
+      signal_type TEXT NOT NULL,
+      scope TEXT NOT NULL DEFAULT 'node',
+      target_id TEXT NOT NULL DEFAULT '',
+      reason TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_acks ON intel_signal_acknowledgements(signal_type, scope, target_id)`); } catch {}
+
+  // intel_health_snapshots: one deterministic daily snapshot per target (node or
+  // graph) so the platform's health has a history and a trend, not just a number
+  // (6.1). day = YYYY-MM-DD UTC; upsert per (scope, target, day).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS intel_health_snapshots (
+      id TEXT PRIMARY KEY,
+      scope TEXT NOT NULL DEFAULT 'node',
+      target_id TEXT NOT NULL DEFAULT '',
+      score INTEGER NOT NULL,
+      signals_json TEXT NOT NULL DEFAULT '[]',
+      day TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_snapshots ON intel_health_snapshots(scope, target_id, day)`); } catch {}
+
+  // intel_task_lessons: post-mortem notes from finished queue tasks (6.3).
+  // Separate table on purpose — retrospectives are not "thoughts" the user
+  // accepts or dismisses; they are durable learned context, deduped by a
+  // fingerprint of the lesson so the same lesson is never re-learned.
+
+  // Delay the ALTER until the table exists.
+  try { db.exec(`CREATE TABLE IF NOT EXISTS intel_task_lessons (
+      id TEXT PRIMARY KEY,
+      work_prompt_id TEXT,
+      title TEXT NOT NULL,
+      lesson TEXT NOT NULL DEFAULT '',
+      outcome TEXT NOT NULL DEFAULT '',
+      fingerprint TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )`); } catch {}
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_intel_lessons_fp ON intel_task_lessons(fingerprint) WHERE fingerprint IS NOT NULL`); } catch {}
+
+  // Link from a queue task back to the Mind thought that produced it (Accept →
+  // paused Flow task, Part 4), mirroring suggestion_id.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN thought_id TEXT`); } catch {}
 }
 
 // ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──
@@ -471,6 +598,11 @@ export function initOntologySchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag)`); } catch {}
+
+  // Salient facts: which verified TMDb facts a tag/cluster lens foregrounds. The
+  // lens call returns prose + a short JSON list of salient facts; stored here so
+  // the client can highlight/dim the entity's fact sheet through the active lens.
+  try { db.exec(`ALTER TABLE entity_tag_lenses ADD COLUMN salient_json TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS continuum_axes (
@@ -602,10 +734,15 @@ export function initTagLensSchema(db) {
       entity_id TEXT NOT NULL REFERENCES entities(id),
       tag TEXT NOT NULL,
       lens_text TEXT NOT NULL,
+      salient_json TEXT,
       created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       PRIMARY KEY (entity_id, tag)
     )
   `);
+  // Existing DBs created before salient_json shipped: patch the table in place.
+  // (The parallel ALTER in initSchema can't cover fresh DBs — the table didn't
+  // exist yet when it ran.)
+  try { db.exec(`ALTER TABLE entity_tag_lenses ADD COLUMN salient_json TEXT`); } catch {}
 }
 
 // ─── Tag PATTERN explanations: what a tag means as a general pattern, not tied to
@@ -698,6 +835,25 @@ export function initArchitectureSchema(db) {
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_nodes_parent ON architecture_nodes(parent_node_id)`); } catch {}
   try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_arch_nodes_fp ON architecture_nodes(parent_node_id, fingerprint)`); } catch {}
 
+  // Self-updating tree (plan self-updating-tree): proposals created from finished
+  // queue tasks (sync_source='queue') or from git history outside the app
+  // (sync_source='git'). proposed=1 marks a node as pending human approval — the
+  // tree already draws speculative nodes dashed, and accepting flips the
+  // provenance to 'canon' in place. tree_sync_state remembers the last commit
+  // the git watcher processed, so a rescan is incremental and free.
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_source TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_prompt_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_sha TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN proposed INTEGER NOT NULL DEFAULT 0`); } catch {}
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tree_sync_state (
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      last_sha TEXT,
+      last_run_at TEXT,
+      last_error TEXT
+    )
+  `);
+
   // Phase 4: a Seed can be planted directly into the tree, making Idées the list
   // rendering of the same objects the tree renders spatially. Additive ALTER in a
   // try/catch per this file's convention — it throws harmlessly once applied.
@@ -763,6 +919,11 @@ export function initDiscoverySchema(db) {
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN project_name TEXT`); } catch {}
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN project_territory TEXT`); } catch {}
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN parts_json TEXT`); } catch {}
+  // Quick check verdict (see codeDiscovery.reviewInspiration): removed picks with
+  // reasons, alternative groups with a best-per-group. Stored on the REPORT so it
+  // follows the report wherever it is shown or reused (task panel, sections,
+  // promote/accept handoff). JSON: { removed:[], groups:[], recommended:[] }.
+  try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN review_json TEXT`); } catch {}
 
   // Written when a discovery pick (proven kind only) is planted into the tech tree —
   // links the new architecture_node back to the repo evidence that justified it.
@@ -779,4 +940,92 @@ export function initDiscoverySchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_node_evidence_node ON architecture_node_evidence(node_id)`); } catch {}
+}
+
+// ─── Idea Studio conversations (plan "universal-conversations-core-architecture") ──
+// One conversation per subject (architecture component / tech-tree node / seed /
+// suggestion). Messages accumulate as turns; the model is called per-turn (not per
+// message), and the conversation history is windowed + recap'd for cost control.
+export function initConversationsSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convos (
+      id TEXT PRIMARY KEY,
+      subject_type TEXT NOT NULL,
+      subject_id   TEXT NOT NULL,
+      title TEXT,
+      subject_hint TEXT,
+      recap TEXT,
+      turns INTEGER NOT NULL DEFAULT 0,
+      work_prompt_id TEXT,
+      handed_off_at TEXT,
+      created_by TEXT REFERENCES users(id),
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_convos_subject ON convos(subject_type, subject_id) WHERE deleted_at IS NULL`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convo_messages (
+      id TEXT PRIMARY KEY,
+      convo_id TEXT NOT NULL REFERENCES convos(id),
+      role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+      kind TEXT NOT NULL DEFAULT 'chat' CHECK(kind IN ('chat','plan')),
+      text TEXT NOT NULL DEFAULT '',
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
+}
+
+// ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────
+// Two tables, both keyed off TMDb, following the generate-once-and-cache pattern
+// (see books.js / codeDiscovery.js's github_discovery_cache):
+// - tmdb_enrichments: the RESULT, one row per film entity. Deliberately keyed by
+//   entity_id and NOT written into entities.meta, because migrateOntology()
+//   re-seeds/overwrites every entity's meta on every boot (ON CONFLICT DO UPDATE)
+//   — data written into meta would be erased at the next deploy. This table
+//   survives reseeds and is merged client-side at boot.
+// - tmdb_cache: raw API responses keyed by request hash (search/detail), so a
+//   batch re-run reuses earlier answers. 30-day TTL enforced in the service
+//   (filmEnrichment.js). Negative results ("movie not found") are cached too —
+//   otherwise every boot would re-query the same missing titles.
+export function initFilmEnrichmentSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tmdb_enrichments (
+      entity_id TEXT PRIMARY KEY REFERENCES entities(id),
+      -- matched | not_found | ambiguous | error — see filmEnrichment.js for the
+      -- matching rules (year-scoped search + director validation vs. meta.auteurs).
+      status TEXT NOT NULL DEFAULT 'error',
+      tmdb_id INTEGER,
+      match_confidence INTEGER NOT NULL DEFAULT 0,
+      title TEXT,
+      title_en TEXT,
+      original_language TEXT,
+      year INTEGER,
+      release_date TEXT,
+      -- Overview pulled with language=en-US (the corpus is partly non-English
+      -- films; the enrichment block always shows the English synopsis plus the
+      -- original-language title).
+      synopsis_en TEXT DEFAULT '',
+      genres_json TEXT NOT NULL DEFAULT '[]',
+      keywords_json TEXT NOT NULL DEFAULT '[]',
+      countries_json TEXT NOT NULL DEFAULT '[]',
+      cast_json TEXT NOT NULL DEFAULT '[]',
+      director TEXT,
+      poster_path TEXT,
+      fetched_at TEXT,
+      attempted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_tmdb_enrich_status ON tmdb_enrichments(status)`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tmdb_cache (
+      request_key TEXT PRIMARY KEY,
+      payload TEXT NOT NULL,
+      fetched_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
 }

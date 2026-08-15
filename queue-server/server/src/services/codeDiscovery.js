@@ -17,7 +17,9 @@
 // subscription path is down.
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './claudeText.js';
+import { generateText as generateTextByFeature } from './ai/text.js';
 import { createNode } from './architectureNodes.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -49,26 +51,36 @@ async function searchGithub(query) {
   const headers = { 'User-Agent': 'fmcns-discovery', Accept: 'application/vnd.github+json' };
   if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
   const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=5`;
-  let resp;
-  try {
-    resp = await fetch(url, { headers });
-  } catch (e) {
-    return { error: 'network_error', message: e.message };
+  const attempt = async () => {
+    let resp;
+    try {
+      resp = await fetch(url, { headers });
+    } catch (e) {
+      return { error: 'network_error', message: e.message };
+    }
+    if (!resp.ok) {
+      let detail = '';
+      try { detail = (await resp.text()).slice(0, 300); } catch {}
+      return { error: 'github_error', message: `HTTP ${resp.status}: ${detail}` };
+    }
+    const data = await resp.json();
+    const items = (data.items || []).map(r => ({
+      repo_full_name: r.full_name,
+      stars: r.stargazers_count || 0,
+      description: r.description || '',
+      html_url: r.html_url,
+      topics: r.topics || [],
+    }));
+    return { items };
+  };
+  let out = await attempt();
+  // Rate limits and server hiccups are transient — one cheap second try before
+  // the caller falls back to the cache or reports the shelf empty.
+  if (out.error === 'github_error' && /HTTP (403|429|5\d\d)/.test(out.message || '')) {
+    await new Promise(r => setTimeout(r, 2500));
+    out = await attempt();
   }
-  if (!resp.ok) {
-    let detail = '';
-    try { detail = (await resp.text()).slice(0, 300); } catch {}
-    return { error: 'github_error', message: `HTTP ${resp.status}: ${detail}` };
-  }
-  const data = await resp.json();
-  const items = (data.items || []).map(r => ({
-    repo_full_name: r.full_name,
-    stars: r.stargazers_count || 0,
-    description: r.description || '',
-    html_url: r.html_url,
-    topics: r.topics || [],
-  }));
-  return { items };
+  return out;
 }
 
 function cacheRow(r) {
@@ -154,7 +166,7 @@ Decide whether this idea is a single atomic building block, or whether it names 
 - If it combines distinct capabilities: return 2-4 parts, one per distinct capability, each independently searchable on GitHub.
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"project_name":"short name for the overall idea (only meaningful if more than one part)","project_territory":"one of perception|knowledge|reasoning|experience|interface","parts":[{"name":"short label","description":"one paragraph: what this part must do, specific enough to search GitHub for"}]}`;
+{"project_name":"short name for the overall idea (only meaningful if more than one part)","project_territory":"one of perception|knowledge|reasoning|experience|interface","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do, specific enough to search GitHub for"}]}`;
 }
 
 function buildQueryPrompt(partDescription) {
@@ -193,7 +205,7 @@ Respond with ONLY a JSON object, no prose, no markdown fence:
 
 // Tolerant JSON extraction — strips a ```json fence if present (models occasionally
 // add one to these newer prompts), else falls back to the first {...} block.
-function parseJsonObject(text) {
+export function parseJsonObject(text) {
   if (!text) return null;
   let s = String(text).trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -264,12 +276,323 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
   return getReport(db, id);
 }
 
+// ─── Inspiration pass: three shelves for every queue task ─────────────────────
+//
+// Distinct from the idea box on purpose: where the idea box is an explicit,
+// GitHub-first exploration, this pass runs automatically for every implement-mode
+// task BEFORE its plan is drafted (plan "inspiration-before-planning"). It asks
+// the model for three shelves per part:
+//
+//   open   — real open-source projects (backed by live GitHub results)
+//   hidden — products/features that exist in the world but whose code is not
+//            public (the model's general knowledge — labeled as unverifiable)
+//   bold   — ideas that may not exist anywhere yet. THE HEART of the pass: the
+//            model is pushed to understand the deep nature of the technologies
+//            and envision the boldest plausible version, not to play it safe.
+//
+// One decompose(+queries) call plus one picks call per part — cheaper than the
+// idea box's three passes, and it must be, because it runs unattended.
+// The stored report is indistinguishable from an idea-box report (same table,
+// same parts/picks JSON shape, source='prompt', source_id=<prompt id>), so the
+// tech tree, evidence and report views all work on it without new schema.
+
+const INSPIRE_MAX_PARTS = 3;
+
+function buildInspireDecomposePrompt(ideaText) {
+  return `You are helping plan an idea for ${FMCNS_BLURB}.
+
+The idea: "${String(ideaText).trim()}"
+
+Two jobs in one pass:
+1. Split the idea into 1-3 independently searchable parts IF it combines distinct capabilities (an atomic idea stays exactly ONE part).
+2. For each part, propose 1-2 GitHub repo-search query strings (the kind you would type into GitHub's search box) that would surface real, already-built open-source work relevant to that part. Be realistic about what a query would return.
+
+The description is read by the app's owner, who is not a programmer — plain everyday words, no jargon, no internal component ids.
+
+${USER_FACING_STYLE}
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+{"project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
+}
+
+function buildInspirePicksPrompt(partDescription, resultsByQuery) {
+  const hasLive = resultsByQuery.length > 0;
+  const resultsBlock = resultsByQuery.map(({ q, why, results }) => {
+    const lines = results.slice(0, 5).map(r => `  - ${r.repo_full_name} (${r.stars}★): ${r.description || '(no description)'}`).join('\n') || '  - (no results)';
+    return `Query "${q.q}" (${q.why}):\n${lines}`;
+  }).join('\n\n');
+  return `You are the inspiration engine for ${FMCNS_BLURB}. A task is about to be planned into a real feature, and the plan will be written from your answer. Look at the world and produce inspiration on three shelves — with the BOLD shelf as the HEART of your answer.
+
+The part of the idea you are inspiring for: "${String(partDescription).trim()}"
+
+${hasLive ? `What a live GitHub search just returned for this part:\n\n${resultsBlock}\n\n` : 'No live GitHub results were available for this part — still produce shelves 2 and 3 at full strength.\n\n'}
+
+SHELF 1 — "open": real open-source projects worth taking ideas from, chosen from the live results above. If the live results contain relevant repos, you MUST include an open pick for each relevant one (up to 3) — never return zero open picks when relevant repos exist.${hasLive ? '' : ' (no live results available, so produce zero open picks)'}. Fields: repo, stars, why_fits, use.
+SHELF 2 — "hidden": things that exist in the world but whose code is not public — products or features inside companies, from your general knowledge. You cannot link them; give the name, what it does, what we can learn from it, and what FMCNS could do even better. Fields: name, what, lesson, use.
+SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (1-2 punchy short sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how FMCNS could be the first to build it).
+
+Produce 2-3 open picks, 1-2 hidden picks, and 2-3 bold picks. Set recommended_index to the single pick that gives the best mix of boldness and feasibility — prefer a bold pick when it is strong.
+
+Every text field must be ONE short sentence, maximum 20 words. Never write paragraphs.
+
+${USER_FACING_STYLE}
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+{"picks":[{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how FMCNS would use it"},{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what FMCNS could do even better, one short sentence"},{"kind":"bold","name":"short idea name","vision":"1-2 punchy short sentences","why_possible":"one short sentence","how_fmcns":"one short sentence"}],"recommended_index":0}`;
+}
+
+// The automatic inspiration pass. Never throws — a failure returns {error} and
+// the caller marks the task inspire_state='failed' so the human gets a retry
+// button, and the plan is drafted without inspiration (the queue never blocks).
+export async function runInspiration(db, { idea_text, source = 'prompt', source_id = null, forceRefresh = false } = {}) {
+  const ideaText = String(idea_text || '').trim();
+  if (!ideaText) return { error: 'idea_text_required' };
+
+  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(ideaText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose' });
+  if (pass0.error) return { error: pass0.error, message: pass0.message };
+  const parsed0 = parseJsonObject(pass0.text);
+  const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, INSPIRE_MAX_PARTS);
+  const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: ideaText, queries: [] }];
+  const projectName = parsed0?.project_name || ideaText.slice(0, 60);
+
+  const builtParts = [];
+  for (const part of parts) {
+    const partDescription = String(part.description || ideaText).trim();
+    const queries = (part.queries || []).filter(q => q && q.q).slice(0, 2);
+    const resultsByQuery = [];
+    for (const q of queries) {
+      const qId = queryHash(q.q);
+      const out = await getResults(db, qId, q.q, { forceRefresh });
+      if (!out.error) resultsByQuery.push({ q, why: q.why, results: out.results || [] });
+    }
+    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks' });
+    const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
+    const picks = (parsed2?.picks || []).filter(p => p && ['open', 'hidden', 'bold'].includes(p.kind));
+    const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;
+    builtParts.push({
+      name: part.name || partDescription.slice(0, 40),
+      description: partDescription,
+      queries,
+      picks,
+      recommended_index: picks.length ? recommendedIndex : 0,
+    });
+  }
+
+  if (!builtParts.some(p => p.picks.length)) {
+    return { error: 'unparseable', message: 'The model did not return usable inspiration for any part.' };
+  }
+
+  const id = randomUUID();
+  db.prepare(`
+    INSERT INTO discovery_reports (id, idea_text, source, source_id, queries_json, picks_json, project_name, project_territory, parts_json)
+    VALUES (?,?,?,?,?,?,?,?,?)
+  `).run(id, ideaText, source, source_id, JSON.stringify(builtParts[0].queries || []), JSON.stringify(builtParts[0].picks || []), projectName, null, JSON.stringify(builtParts));
+
+  return getReport(db, id);
+}
+
+// Compact digest of a report for the plan-drafting pass: what the world has, what
+// it hides, and the bold ideas — bold first (it is the heart). When the human
+// applied specific picks, those are emphasized as the chosen direction while a
+// couple of others stay as context. When a review (see reviewInspiration) exists,
+// removed picks drop out entirely and each group of alternatives contributes only
+// its recommended pick — the owner's applied picks always override the review.
+// Capped so the drafting call stays cheap.
+export function inspirationDigestFor(report, appliedPicks = [], review = null) {
+  if (!report) return null;
+  const chosen = new Set((appliedPicks || []).map(p => `${p.part_index}:${p.pick_index}`));
+  const removed = new Set((review?.removed || []).map(r => `${r.part_index}:${r.pick_index}`));
+  const groupMembers = new Set();
+  const groupBest = new Set();
+  for (const g of (review?.groups || [])) {
+    const rec = (review.recommended || []).find(r => r.group_id === g.id);
+    const best = rec && (g.picks || []).some(p => p.part_index === rec.part_index && p.pick_index === rec.pick_index)
+      ? rec : (g.picks || [])[0] || null;
+    (g.picks || []).forEach(p => groupMembers.add(`${p.part_index}:${p.pick_index}`));
+    if (best) groupBest.add(`${best.part_index}:${best.pick_index}`);
+  }
+  const parts = (report.parts || []).slice(0, 3);
+  const byShelf = { open: [], hidden: [], bold: [] };
+  parts.forEach((part, pi) => {
+    (part.picks || []).forEach((pick, i) => {
+      if (!byShelf[pick.kind]) return;
+      const key = `${pi}:${i}`;
+      // Survives when: the owner applied it, or the review did not remove it and
+      // (it is not part of an alternative group, or it is the group's best).
+      const kept = chosen.has(key) || (!removed.has(key) && (!groupMembers.has(key) || groupBest.has(key)));
+      if (!kept) return;
+      byShelf[pick.kind].push({ ...pick, mark: chosen.has(key) });
+    });
+  });
+  const fmt = {
+    open: p => `- ${p.repo || '?'} (${p.stars || 0}★): ${p.why_fits || ''} Use: ${p.use || ''}`,
+    hidden: p => `- ${p.name || '?'}: ${p.what || ''} Lesson: ${p.lesson || ''} For FMCNS: ${p.use || ''}`,
+    bold: p => `- ${p.name || '?'}: ${p.vision || ''} Possible because: ${p.why_possible || ''} For FMCNS: ${p.how_fmcns || ''}`,
+  };
+  const caps = { open: 2, hidden: 2, bold: 3 };
+  const mark = p => (p.mark ? ' (CHOSEN)' : '');
+  const lines = [];
+  for (const shelf of ['bold', 'open', 'hidden']) {
+    const items = byShelf[shelf];
+    if (!items.length) continue;
+    const chosenFirst = [...items.filter(p => p.mark), ...items.filter(p => !p.mark)].slice(0, caps[shelf]);
+    const label = shelf === 'bold'
+      ? 'SHELF 3 — BOLD IDEAS (may not exist anywhere yet — design targets, not dependencies)'
+      : shelf === 'open'
+        ? 'SHELF 1 — OPEN SOURCE (real, verifiable projects)'
+        : 'SHELF 2 — CLOSED PRODUCTS (exist in the world, code not public — match or beat them)';
+    lines.push(label + ':');
+    lines.push(...chosenFirst.map(p => fmt[shelf](p) + mark(p)));
+  }
+  const out = lines.join('\n');
+  return out.length > 2600 ? out.slice(0, 2600) : out;
+}
+
+// ─── Quick check: between world-look and plan draft ───────────────────────────
+//
+// One cheap pass over a finished inspiration report, before the plan is drafted.
+// It keeps the report lean: removes picks that do not earn their place, clusters
+// substitutes into groups (the owner only needs one of each), and names the best
+// pick per group. It decides alone on anything it can; it asks the owner at most
+// ONE question, only when the answer genuinely changes what gets built (a real
+// fork, or a bold idea that would grow the task far beyond its original scope).
+// Never throws — a failure returns null and the caller uses the full report.
+
+function compactReportForReview(report) {
+  return (report.parts || []).slice(0, 3).map((part, pi) => ({
+    name: part.name,
+    description: part.description,
+    picks: (part.picks || []).map((pick, i) => {
+      const key = { part_index: pi, pick_index: i };
+      if (pick.kind === 'open') return { ...key, kind: 'open', repo: pick.repo, why_fits: pick.why_fits, use: pick.use };
+      if (pick.kind === 'hidden') return { ...key, kind: 'hidden', name: pick.name, what: pick.what, use: pick.use };
+      return { ...key, kind: 'bold', name: pick.name, vision: pick.vision, how_fmcns: pick.how_fmcns };
+    }),
+  }));
+}
+
+function buildReviewPrompt(ideaText, reportJson, answer, allowQuestion) {
+  const answerBlock = answer
+    ? `THE OWNER ALREADY ANSWERED A QUESTION ABOUT THESE IDEAS: "${String(answer).trim()}". Take it as their decision — incorporate it into your removals/recommendations, and do NOT ask any new question.`
+    : '';
+  const questionRule = allowQuestion
+    ? `4. QUESTION: only if there is a real fork the owner must choose — two genuinely different directions for the task, or a bold idea that would make the task much bigger than asked. Then write ONE question with 2-3 short options. Otherwise "question": null. When in doubt, decide alone.`
+    : `4. QUESTION: do NOT ask any question this time — decide alone. "question": null always.`;
+  return `You are the quick-check editor for ${FMCNS_BLURB}. A world-look just returned inspiration ideas for one task, and the task's plan will be written from what survives your check. Keep the report lean and honest: remove what does not earn its place, flag alternatives, and pick the best of each family.
+
+The task: "${String(ideaText).trim()}"
+
+The world-look report (parts with picks; every pick carries its part_index and pick_index):
+${reportJson}
+
+${answerBlock}
+
+Do:
+1. REMOVE picks that do not serve THIS task: off-topic, duplicates of another pick, or ideas that would blow the task up beyond one job. One short reason each (max 20 words), plain everyday words.
+2. GROUP picks that are alternatives of each other — they would build the same thing, the owner only needs one. Give each group a short id ("A", "B"...) and a one-sentence note on why they are the same thing in different wrapping. A group of one is not a group.
+3. RECOMMEND, for each group, the single best pick, with one short sentence why.
+${questionRule}
+
+${USER_FACING_STYLE}
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+{"removed":[{"part_index":0,"pick_index":1,"reason":"short plain reason"}],"groups":[{"id":"A","picks":[[0,2],[1,0]],"note":"why they are alternatives"}],"recommended":[{"group_id":"A","part_index":0,"pick_index":2,"why":"one short sentence"}],"question":null}`;
+}
+
+// Validate the model's review against the real report shape: indices must exist,
+// groups need at least two surviving members, the question needs options. Returns
+// a clean review object, or null when nothing usable came back.
+function sanitizeReview(parsed, report) {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const parts = report.parts || [];
+  const counts = parts.map(p => (p.picks || []).length);
+  const validKey = k => Number.isInteger(k?.part_index) && Number.isInteger(k?.pick_index)
+    && k.part_index >= 0 && k.part_index < parts.length
+    && k.pick_index >= 0 && k.pick_index < counts[k.part_index];
+
+  const removed = (Array.isArray(parsed.removed) ? parsed.removed : [])
+    .filter(k => validKey(k) && String(k.reason || '').trim())
+    .map(k => ({ part_index: k.part_index, pick_index: k.pick_index, reason: String(k.reason).trim().slice(0, 180) }));
+  const removedKeys = new Set(removed.map(r => `${r.part_index}:${r.pick_index}`));
+
+  const groups = [];
+  const usedIds = new Set();
+  for (const g of (Array.isArray(parsed.groups) ? parsed.groups : [])) {
+    const keys = (Array.isArray(g?.picks) ? g.picks : [])
+      .filter(p => Array.isArray(p) && validKey({ part_index: p[0], pick_index: p[1] }))
+      .map(p => ({ part_index: p[0], pick_index: p[1] }))
+      .filter(k => !removedKeys.has(`${k.part_index}:${k.pick_index}`));
+    if (keys.length < 2) continue; // a group of one is not a group
+    let id = String(g.id || '').trim().slice(0, 2).toUpperCase();
+    if (!id || usedIds.has(id)) id = String.fromCharCode(65 + groups.length);
+    usedIds.add(id);
+    groups.push({ id, picks: keys, note: String(g.note || '').trim().slice(0, 180) });
+  }
+
+  const recommended = [];
+  for (const g of groups) {
+    const rec = (Array.isArray(parsed.recommended) ? parsed.recommended : [])
+      .find(r => String(r?.group_id || '').toUpperCase() === g.id
+        && validKey({ part_index: r.part_index, pick_index: r.pick_index })
+        && g.picks.some(p => p.part_index === r.part_index && p.pick_index === r.pick_index));
+    const key = rec || g.picks[0];
+    recommended.push({
+      group_id: g.id,
+      part_index: key.part_index,
+      pick_index: key.pick_index,
+      why: rec ? String(rec.why || '').trim().slice(0, 180) : '',
+    });
+  }
+
+  let question = null;
+  if (allowQuestion && parsed.question && typeof parsed.question === 'object' && String(parsed.question.question || '').trim()) {
+    const options = (Array.isArray(parsed.question.options) ? parsed.question.options : [])
+      .map(o => String(o || '').trim()).filter(Boolean).slice(0, 3);
+    if (options.length >= 2) {
+      question = { question: String(parsed.question.question).trim().slice(0, 300), options };
+    }
+  }
+
+  if (!removed.length && !groups.length && !question) return null;
+  return { removed, groups, recommended, question };
+}
+
+/**
+ * Quick check over a world-look report, before the plan is drafted.
+ * @returns {Promise<{removed, groups, recommended, question}|null>} — null on any
+ *   failure or when the model returns nothing usable (full report is then used).
+ */
+export async function reviewInspiration({ report, prompt, answer = null, allowQuestion = true } = {}) {
+  if (!report || !(report.parts || []).length) return null;
+  const compact = compactReportForReview(report);
+  if (!compact.some(p => (p.picks || []).length)) return null;
+  const ideaText = String(prompt || report.idea_text || '').trim() || 'the task';
+  try {
+    const out = await generateTextByFeature({
+      prompt: buildReviewPrompt(ideaText, JSON.stringify(compact), answer, allowQuestion),
+      feature: 'inspire',
+      maxTokens: 800,
+      label: 'inspire-review',
+    });
+    if (out.error) {
+      console.error('inspireReview failed —', out.message);
+      return null;
+    }
+    return sanitizeReview(parseJsonObject(out.text), report);
+  } catch (e) {
+    console.error('inspireReview threw —', e.message);
+    return null;
+  }
+}
+
 export function getReport(db, id) {
   const row = db.prepare(`SELECT * FROM discovery_reports WHERE id=?`).get(id);
   if (!row) return null;
   const parts = row.parts_json
     ? JSON.parse(row.parts_json)
     : [{ name: 'Idea', description: row.idea_text, queries: JSON.parse(row.queries_json || '[]'), picks: JSON.parse(row.picks_json || '[]'), recommended_index: 0 }];
+  let review = null;
+  try { review = row.review_json ? JSON.parse(row.review_json) : null; } catch {}
   return {
     id: row.id,
     idea_text: row.idea_text,
@@ -278,13 +601,129 @@ export function getReport(db, id) {
     project_name: row.project_name || row.idea_text.slice(0, 60),
     project_territory: row.project_territory || null,
     parts,
+    review,
     created_at: row.created_at,
     rerun_count: row.rerun_count,
   };
 }
 
+// Persist the quick check's structural verdict on the report row — the report is
+// the canonical home: every surface that shows the report (task panel, sections,
+// promote/accept reuse) reads the same review. Transient bits (owner_note) stay
+// on the task row; this stores only removed/groups/recommended.
+export function storeReportReview(db, reportId, review) {
+  if (!db || !reportId || !review) return;
+  const structural = {
+    removed: review.removed || [],
+    groups: review.groups || [],
+    recommended: review.recommended || [],
+  };
+  db.prepare(`UPDATE discovery_reports SET review_json=? WHERE id=?`).run(JSON.stringify(structural), reportId);
+}
+
+// Latest world-look report attached to any item (suggestion, seed, component —
+// anything that stores its look under a source + item id pair).
+export function findReportBySource(db, source, source_id) {
+  if (!source || !source_id) return null;
+  const row = db.prepare(`SELECT id FROM discovery_reports WHERE source=? AND source_id=? ORDER BY created_at DESC LIMIT 1`).get(source, source_id);
+  return row ? getReport(db, row.id) : null;
+}
+
+// ─── Shared in-flight guard + background sweeper ─────────────────────────────
+// One look per item at a time, anywhere it is triggered from (the section
+// panels' routes OR the background sweep) — the GET endpoint reports it, and
+// nothing ever double-runs.
+const _worldLookRunning = new Set();
+export function isWorldLookRunning(source, id) {
+  return _worldLookRunning.has(`${source}:${id}`);
+}
+
+export async function runWorldLookGuarded(db, { idea_text, source, source_id, forceRefresh = false } = {}) {
+  const key = `${source}:${source_id}`;
+  if (_worldLookRunning.has(key)) return { running: true };
+  _worldLookRunning.add(key);
+  try {
+    const report = await runInspiration(db, { idea_text, source, source_id, forceRefresh });
+    if (report?.error) return report;
+    // The quick check runs on every look — sections never ask the owner (no
+    // question card exists there): it decides alone and the verdict is stored
+    // on the report so every surface shows the filtered ideas.
+    let review = null;
+    try { review = await reviewInspiration({ report, prompt: idea_text, allowQuestion: false }); }
+    catch (e) { console.error('quick check after world-look failed —', e.message); }
+    if (review) storeReportReview(db, report.id, review);
+    return { ...report, review };
+  } finally {
+    _worldLookRunning.delete(key);
+  }
+}
+
+// Background sweep: every suggestion that has no world-look yet gets one,
+// sequentially (one at a time keeps GitHub and model traffic gentle). Reports
+// persist forever, so each suggestion costs this once and the sweep is
+// idempotent across restarts. Never throws. Runs through the same free-model-
+// first seam the queue's inspiration pass uses.
+export async function autoWorldLookSuggestions(db) {
+  const rows = db.prepare(`SELECT id, title, prompt FROM work_suggestions WHERE deleted_at IS NULL AND status='new'`).all();
+  let ran = 0, skipped = 0;
+  for (const s of rows) {
+    if (findReportBySource(db, 'suggestion', s.id) || isWorldLookRunning('suggestion', s.id)) { skipped++; continue; }
+    const out = await runWorldLookGuarded(db, {
+      idea_text: [s.title, s.prompt].filter(Boolean).join('\n'),
+      source: 'suggestion',
+      source_id: s.id,
+    });
+    if (out?.error) console.error(`Auto world-look failed for suggestion ${s.id}: ${out.message || out.error}`);
+    else ran++;
+  }
+  return { ran, skipped };
+}
+
+// Same sweep for the Not built list: every unbuilt tech-tree component gets its
+// look + quick check in the background (boot + every 6h), so opening the list —
+// or any component in it — shows the shelves instantly, like the queue does.
+// Built = the same statuses the Not built list treats as done.
+const BUILT_NODE_STATUSES = `('Working','Validated','Advanced')`;
+
+export async function autoWorldLookComponents(db) {
+  const rows = db.prepare(`SELECT id, name, what, next FROM architecture_nodes WHERE deleted_at IS NULL AND status NOT IN ${BUILT_NODE_STATUSES}`).all();
+  let ran = 0, skipped = 0;
+  for (const c of rows) {
+    if (findReportBySource(db, 'component', c.id) || isWorldLookRunning('component', c.id)) { skipped++; continue; }
+    const out = await runWorldLookGuarded(db, {
+      idea_text: [c.name, c.what, c.next].filter(Boolean).join('\n'),
+      source: 'component',
+      source_id: c.id,
+    });
+    if (out?.error) console.error(`Auto world-look failed for component ${c.id}: ${out.message || out.error}`);
+    else ran++;
+  }
+  return { ran, skipped };
+}
+
+// And the same for Seeds — every idea in the notebook gets its look + check
+// without any click, so the panel is already ready when the seed is opened.
+export async function autoWorldLookIdeas(db) {
+  const rows = db.prepare(`SELECT id, title, notes FROM work_ideas WHERE deleted_at IS NULL`).all();
+  let ran = 0, skipped = 0;
+  for (const i of rows) {
+    if (findReportBySource(db, 'idea', i.id) || isWorldLookRunning('idea', i.id)) { skipped++; continue; }
+    const out = await runWorldLookGuarded(db, {
+      idea_text: [i.title, i.notes].filter(Boolean).join('\n'),
+      source: 'idea',
+      source_id: i.id,
+    });
+    if (out?.error) console.error(`Auto world-look failed for seed ${i.id}: ${out.message || out.error}`);
+    else ran++;
+  }
+  return { ran, skipped };
+}
+
 export function listReports(db) {
-  return db.prepare(`SELECT id, idea_text, source, picks_json, parts_json, created_at FROM discovery_reports ORDER BY created_at DESC`)
+  // The blocks-tab "Past reports" library shows idea-box runs only — automatic
+  // per-task inspiration reports (source='prompt') belong to the task detail
+  // view, where they are served through the task's inspiration endpoint.
+  return db.prepare(`SELECT id, idea_text, source, picks_json, parts_json, created_at FROM discovery_reports WHERE COALESCE(source,'idea_box')='idea_box' ORDER BY created_at DESC`)
     .all()
     .map(r => {
       const parts = r.parts_json ? JSON.parse(r.parts_json) : [{ picks: JSON.parse(r.picks_json || '[]') }];

@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-11T21:10:40.583Z
+Generated: 2026-08-15T04:07:57.166Z
 
 ## Components
 
@@ -23,20 +23,29 @@ Generated: 2026-08-11T21:10:40.583Z
 
 ## Agent roster
 
-- dev1 · Developer 1 · dev · claude-code · enabled
+- dev1 · Developer 1 · dev · opencode · enabled
 - dev2 · Developer 2 · dev · opencode · enabled
+- dev3 · Developer 3 · dev · opencode · enabled
 
 ## Open agent branches
 
 - agent/dev1/3fe1f0a7-overnight-test-step3-dev
 - agent/dev1/b53ff577-overnight-test-step4-dev
 - agent/dev2/a2f9e798-overnight-test-step3-dev
+- agent/dev2/cd272ef5-test-opencode-free-model
 - agent/dev2/cebe2006-overnight-test-step4-dev
 - agent/dev2/eb356287-overnight-test-step4-dev
 - agent/github-code-discovery
 - agent/idea-box-decomposition
+- agent/idea-studio
 
 ## Plan backlog
 
 - multi-agent-development-team — PLANNED
 - universal-conversations-core-architecture — PLANNED
+- always-on-models — DONE
+- dispatch-queue-free-model-fallback — DONE
+- github-code-discovery — DONE (MVP)
+- plan-first-queue-and-idea-composition — Part A DONE, Part B SUPERSEDED
+- core-workspace-unified-flow — IN PROGRESS
+- self-aware-platform — Parts 1–2 DONE (2026-08-14) · Parts 3–6 PLANNED
