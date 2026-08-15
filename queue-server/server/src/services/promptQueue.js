@@ -377,6 +377,40 @@ export async function applyInspiration(id, { picks = [] } = {}) {
   return getPrompt(id);
 }
 
+// One-time condensation pass for world-look reports written before the
+// "one short sentence" description rule existed (new reports are born with it).
+// Rewrites each part's description in place — picks untouched. One cheap model
+// call per report with long descriptions; idempotent.
+export async function condenseExistingInspiration() {
+  const rows = db.prepare(`SELECT DISTINCT inspire_report_id AS rid FROM work_prompts WHERE inspire_report_id IS NOT NULL AND deleted_at IS NULL`).all();
+  let condensed = 0, skipped = 0, failed = 0;
+  for (const { rid } of rows) {
+    const row = db.prepare(`SELECT * FROM discovery_reports WHERE id=?`).get(rid);
+    if (!row) { skipped++; continue; }
+    let parts;
+    try { parts = JSON.parse(row.parts_json || '[]'); } catch { parts = []; }
+    const idxs = [];
+    parts.forEach((p, i) => { if (String(p.description || '').trim().length > 60) idxs.push(i); });
+    if (!idxs.length) { skipped++; continue; }
+    const descs = idxs.map(i => parts[i].description);
+    const out = await generateText({
+      prompt: `Shorten each description below to ONE short sentence (max 20 words), keeping its meaning and search-worthy specificity. Return ONLY a JSON array of strings, same order, nothing else.\n${JSON.stringify(descs)}`,
+      feature: 'studio',
+      maxTokens: 300,
+      label: 'inspire-condense-existing',
+    });
+    if (out.error) { failed++; continue; }
+    let short = null;
+    const m = (out.text || '').match(/\[[\s\S]*\]/);
+    if (m) { try { short = JSON.parse(m[0]); } catch {} }
+    if (!Array.isArray(short) || short.length !== idxs.length) { failed++; continue; }
+    idxs.forEach((pi, i) => { const s = String(short[i] || '').trim(); if (s) parts[pi].description = s; });
+    db.prepare(`UPDATE discovery_reports SET parts_json=? WHERE id=?`).run(JSON.stringify(parts), rid);
+    condensed++;
+  }
+  return { condensed, skipped, failed };
+}
+
 // Everything the task detail's "Inspired by" panel needs in one call: the state,
 // the last error (for the retry note), the applied picks and the full report.
 export function inspirationPayload(id) {

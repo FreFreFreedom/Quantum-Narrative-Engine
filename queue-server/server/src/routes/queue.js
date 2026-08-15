@@ -190,6 +190,14 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  // One-off migration: shorten the descriptions of world-look reports created
+  // before the "one short sentence" rule. Idempotent — cheap model calls only
+  // for reports that still have long descriptions.
+  router.post('/inspiration/condense-existing', async (req, res) => {
+    const out = await queue.condenseExistingInspiration();
+    res.json(out);
+  });
+
   router.post('/prompts/:id/reply', (req, res) => {
     const out = queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });
