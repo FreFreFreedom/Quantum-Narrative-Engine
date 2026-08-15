@@ -262,21 +262,31 @@ function initSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
   `);
-  // Seed the two developer agents (step 3 scope — the full roster arrives in a
+  // Seed the three developer agents (step 3 scope — the full roster arrives in a
   // later step). Seeded HERE rather than in bootstrapData.js because agent_tasks
   // rows (legacy import + live queue) carry a REFERENCES agents(key) FK — the rows
   // must exist before the first task is ever inserted, and openDb() runs before
   // the bootstrap pass. INSERT OR IGNORE: a UI edit to an agent is never clobbered.
+  // dev3 (plan C4): a third parallel writer on the OpenCode lane — every writer
+  // task runs in its own git worktree/branch, so parallel implementers never
+  // collide on files.
   db.exec(`
     INSERT OR IGNORE INTO agents (key, label, emoji, role, persona, brief_file, provider, provider_model, preset, tools, path_allow, path_deny, max_parallel, enabled, paused, sort_order)
     VALUES
-      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', '.agents/roles/dev.md', 'claude-code', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
-      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2)
+      ('dev1', 'Developer 1', '👨‍💻', 'dev', 'Generalist implementer — the default agent for new tasks.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 1),
+      ('dev2', 'Developer 2', '👩‍💻', 'dev', 'Second implementer — runs in parallel with Developer 1 on its own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 2),
+      ('dev3', 'Developer 3', '🧑‍💻', 'dev', 'Third implementer — another parallel writer on the OpenCode lane, own worktree.', '.agents/roles/dev.md', 'opencode', NULL, 'standard', 'Bash,Read,Write,Edit,Glob,Grep', '["**"]', '[]', 1, 1, 0, 3)
   `);
   // Backfill brief_file on rows seeded before step 6 (INSERT OR IGNORE never
-  // clobbers a UI edit — this only fills NULLs for the two default devs).
+  // clobbers a UI edit — this only fills NULLs for the three default devs).
   try {
-    db.prepare(`UPDATE agents SET brief_file='.agents/roles/dev.md' WHERE key IN ('dev1','dev2') AND brief_file IS NULL`).run();
+    db.prepare(`UPDATE agents SET brief_file='.agents/roles/dev.md' WHERE key IN ('dev1','dev2','dev3') AND brief_file IS NULL`).run();
+  } catch {}
+  // Auto-assign devs (plan "auto devs"): the three writers are all on the
+  // OpenCode lane now. dev1 was seeded as claude-code in earlier steps, so
+  // existing databases get backfilled to opencode on boot.
+  try {
+    db.prepare(`UPDATE agents SET provider='opencode' WHERE key IN ('dev1','dev2','dev3') AND provider='claude-code'`).run();
   } catch {}
 
   // ─── Reviews — the merge gate (plan Part 4, step 5) ───────────────────────────
@@ -365,9 +375,10 @@ function initSchema(db) {
   try { db.prepare(`INSERT OR IGNORE INTO ai_settings (id, defaults_json, health_json, quota_policy, cooldown_json) VALUES ('global', '{}', '{}', 'auto_free', '{}')`).run(); } catch {}
   // Self-aware platform (plan self-aware-platform.md):
   // - queue_go_budget_usd: daily cap on the paid OpenCode Go lane for the task
-  //   queue. 0 = no guard. Default ≈ 1/30th of the ~10 USD/month plan.
+  //   queue. 0 = no guard (the default since plan C3 — the Go plan's own caps
+  //   protect the account). Set > 0 to re-enable.
   // - intel_json: intelligence engine budget (e.g. { thoughts_per_hour: 2 }).
-  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_go_budget_usd REAL NOT NULL DEFAULT 0.33`); } catch {}
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_go_budget_usd REAL NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN intel_json TEXT NOT NULL DEFAULT '{}'`); } catch {}
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────

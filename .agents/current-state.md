@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-14T22:29:20.444Z
+Generated: 2026-08-15T04:07:57.166Z
 
 ## Components
 
@@ -23,8 +23,9 @@ Generated: 2026-08-14T22:29:20.444Z
 
 ## Agent roster
 
-- dev1 · Developer 1 · dev · claude-code · enabled
+- dev1 · Developer 1 · dev · opencode · enabled
 - dev2 · Developer 2 · dev · opencode · enabled
+- dev3 · Developer 3 · dev · opencode · enabled
 
 ## Open agent branches
 

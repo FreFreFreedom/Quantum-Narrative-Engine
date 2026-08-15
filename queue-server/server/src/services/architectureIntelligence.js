@@ -17,6 +17,7 @@
 
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 import * as queue from './promptQueue.js';
 
 const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface'];
@@ -54,6 +55,8 @@ export const SIGNAL_META = {
   cluster_ungrounded:{ label: 'Cluster ungrounded', color: '#c98a2e', severity: 10, help: 'A thematic cluster has no archive-grounded material behind its tags.' },
   untagged_entities: { label: 'Untagged entities', color: '#8a8378', severity: 5,  help: 'Entities that carry no archetypal tags at all — invisible to the pattern engine.' },
   thin_entities:     { label: 'Thin entities',     color: '#8a8378', severity: 5,  help: 'Entities with no books and no tag lens written about them.' },
+  continuum_band_gap:{ label: 'Continuum band gap', color: '#7a5ea8', severity: 10, help: 'An axis band with almost no scores — comparisons across that region are ungrounded.' },
+  no_scale_echo:     { label: 'No scale echo',     color: '#3f6b85', severity: 5,  help: 'Scored entities with no cross-type partner within echo range — Scale Echo can never bridge them.' },
 };
 
 const DEFAULT_WEIGHTS = (() => {
@@ -254,6 +257,59 @@ function computeContentSignals(db, push) {
     `).get()?.n || 0;
     if (bare >= 5) {
       push({ type: 'thin_entities', scope: 'content', target_id: 'corpus', title: `${bare} entities have no books and no lens`, detail: 'Nothing has ever been written about them — they stay one-dimensional.' });
+    }
+  } catch {}
+  // Continuum band gaps (Part 5): an axis whose middle/edge bands are empty while
+  // another band is well-populated is lopsided — scores in the gap band can't be
+  // meaningfully compared.
+  try {
+    const bands = db.prepare(`
+      SELECT a.key, a.name, ec.band, COUNT(*) n FROM continuum_axes a
+      LEFT JOIN (
+        SELECT ec2.axis_key, ec2.entity_id,
+               CASE WHEN ec2.value < 0.34 THEN 'low' WHEN ec2.value < 0.67 THEN 'mid' ELSE 'high' END AS band
+        FROM entity_continuum ec2
+      ) ec ON ec.axis_key = a.key
+      GROUP BY a.key, a.name, ec.band
+    `).all();
+    const byAxis = {};
+    for (const b of bands) (byAxis[b.key] = byAxis[b.key] || []).push(b);
+    for (const [key, list] of Object.entries(byAxis)) {
+      const counts = { low: 0, mid: 0, high: 0 };
+      for (const b of list) counts[b.band || 'mid'] = b.n || 0;
+      const populated = Object.values(counts).filter((n) => n >= 5);
+      for (const [band, n] of Object.entries(counts)) {
+        if (n <= 1 && populated.length) {
+          const name = (list[0] || {}).name || key;
+          push({ type: 'continuum_band_gap', scope: 'content', target_id: key, title: `The ${band} band of ${name} is empty`, detail: `${n} of ${Object.values(counts).reduce((a, b) => a + b, 0)} scores fall in it — comparisons across that region are ungrounded.` });
+          break; // one signal per axis
+        }
+      }
+    }
+  } catch {}
+  // No-scale-echo potential (Part 5): entities scored on an axis but with no
+  // cross-type partner within the echo threshold — the Scale Echo bridge v0 can
+  // never fire for them, so they are dead ends across scales.
+  try {
+    const rows = db.prepare(`
+      SELECT e.id, e.type, e.name, ec.axis_key, ec.value
+      FROM entity_continuum ec JOIN entities e ON e.id = ec.entity_id
+      ORDER BY ec.axis_key, ec.value
+    `).all();
+    const perAxis = {};
+    for (const r of rows) (perAxis[r.axis_key] = perAxis[r.axis_key] || []).push(r);
+    const echoes = new Set();
+    for (const list of Object.values(perAxis)) {
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length && list[j].value - list[i].value <= 0.07; j++) {
+          if (list[i].type !== list[j].type) { echoes.add(list[i].id); echoes.add(list[j].id); }
+        }
+      }
+    }
+    const scoredIds = new Set(rows.map((r) => r.id));
+    const deadEnds = [...scoredIds].filter((id) => !echoes.has(id));
+    if (deadEnds.length >= 3) {
+      push({ type: 'no_scale_echo', scope: 'content', target_id: 'corpus', title: `${deadEnds.length} scored entities have no echo partner`, detail: 'No cross-type pair sits within echo range on any axis — Scale Echo cannot bridge them to another scale.' });
     }
   } catch {}
 }
@@ -506,6 +562,8 @@ ${mine || '- none'}
 
 Produce up to 3 THOUGHTS about this component, not child nodes. Each thought is one of: a blind spot risk, how to make this component meaningfully better, an integration opportunity with the rest of the platform, or a next feature that makes logical sense. Each must be specific to FMCNS's real subject matter — not generic advice ("add tests", "improve caching").
 
+${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
+
 Respond with ONLY a JSON array, no prose, no markdown fence:
 [{"title":"short title under 8 words","body":"2-3 sentences: the thought itself and why it matters now","prompt_draft":"a ready-to-queue task prompt implementing the thought","priority":0}]`;
   const out = await generateText({ prompt, feature: 'quick', maxTokens: 1300, label: 'intel-deepen' });
@@ -564,6 +622,8 @@ ${growthFocus
   ? 'Focus: GROWTH. Examine usage patterns and quiet zones (never-worked components, isolated territories, accepted speculations that produced value). Propose up to 3 next-logical-features: new capabilities that tie the platform together or fill obvious blind spots. Each must be specific to FMCNS, not generic.'
   : 'Focus: the platform\'s own development health. Propose up to 3 thoughts about what to do next — blind spots, integration opportunities between components, features that make logical sense. Each must be specific to FMCNS, not generic.'}
 
+${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
+
 Respond with ONLY a JSON array, no prose, no markdown fence:
 [{"title":"short title under 8 words","body":"2-3 sentences: the thought and why it matters now","prompt_draft":"a ready-to-queue task prompt implementing it","priority":0,"target_id":"optional existing component id from the list above"}]`;
 
@@ -574,7 +634,9 @@ Respond with ONLY a JSON array, no prose, no markdown fence:
   const created = [];
   for (const it of items) {
     const target = byId.has(it.target_id) ? it.target_id : '';
-    const hash = target ? stateHashOf(byId.get(target)) : createHash('sha1').update(dayStr() + '::graph').digest('hex');
+    const hash = target
+      ? stateHashOf(byId.get(target))
+      : createHash('sha1').update(dayStr() + '::graph::' + norm(it.title)).digest('hex');
     const r = createThought(db, {
       kind: 'deliberative', scope: target ? 'node' : 'graph', target_id: target,
       title: it.title, body: it.body || '', prompt_draft: it.prompt_draft || null,
@@ -585,7 +647,73 @@ Respond with ONLY a JSON array, no prose, no markdown fence:
   return { thoughts: created, skipped: items.length - created.length };
 }
 
-// ─── Retrospectives + failure memory (6.3) ────────────────────────────────────
+// Content-corpus deliberation (Part 5) — the "Think" buttons in the Content
+// graph's Intelligence panel. Same caps and dedup rules as pulseGraph, but it
+// thinks about the ontology itself, not the platform's code.
+export async function contentPulse(db, { focus = 'themes', force = false } = {}) {
+  const cfg = loadIntelConfig(db);
+  if (!force) {
+    const cap = intelCap(db, cfg);
+    if (!cap.allowed) return { error: 'cap', message: `Automatic thinking is limited to ${cfg.thoughts_per_hour} thoughts/hour — an explicit click is always allowed.` };
+  }
+  const contentDigest = (() => {
+    try {
+      const lines = [];
+      const clusters = db.prepare(`SELECT code, name, grounding_status FROM clusters ORDER BY code`).all();
+      for (const c of clusters) {
+        const n = db.prepare(`SELECT COUNT(*) n FROM entities WHERE clusters LIKE ?`).get(`%${c.code}%`)?.n || 0;
+        lines.push(`- Cluster ${c.code} ${c.name} (${c.grounding_status || 'unknown status'}, ${n} entities)`);
+      }
+      const axes = db.prepare(`
+        SELECT a.key, a.name, COUNT(ec.entity_id) scored, ROUND(MIN(ec.value), 2) min_v, ROUND(MAX(ec.value), 2) max_v
+        FROM continuum_axes a LEFT JOIN entity_continuum ec ON ec.axis_key = a.key
+        GROUP BY a.key, a.name
+      `).all();
+      for (const a of axes) lines.push(`- Axis ${a.name} (${a.scored} scores, range ${a.min_v}–${a.max_v})`);
+      const tags = db.prepare(`SELECT tag, COUNT(*) n FROM entity_tags GROUP BY tag ORDER BY n DESC LIMIT 12`).all();
+      lines.push(`- Top tags: ${tags.map((t) => `${t.tag} (${t.n})`).join(', ') || 'none yet'}`);
+      const counts = db.prepare(`SELECT type, COUNT(*) n FROM entities GROUP BY type`).all();
+      lines.push(`- Corpus: ${counts.map((t) => `${t.type}×${t.n}`).join(', ')}`);
+      return lines.join('\n');
+    } catch { return '(corpus data unavailable)'; }
+  })();
+  const focusLine = focus === 'bridges'
+    ? 'Focus: BRIDGE PITCHES. Look at the axes and their scored entities. Propose up to 3 specific cross-scale bridges: name the concrete pair of entities (or two entity archetypes) across different scales — e.g. a character and a country, a film and a country — that share a telling archetypal position and are worth an explicit scale-echo link. Point to the axis and approximate scores.'
+    : 'Focus: UNDER-EXPLORED THEMES. Look at the corpus: cluster grounding, axis coverage and band gaps, sparse or missing tags, thin entities (no books, no lens). Propose up to 3 thoughts about what the corpus is missing or what theme deserves exploration next. Each must be specific to this corpus, not generic advice.';
+
+  const prompt = `You are the mind of FMCNS (Fractal Mythic Consciousness Navigation System) — a personal research tool mapping characters, films and countries as one ontology of "characters" (universal ontological units), navigated fractally. You are thinking about the CONTENT itself — the material corpus — not the software.
+
+Here is the corpus right now:
+${contentDigest}
+
+${focusLine}
+
+${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
+
+Respond with ONLY a JSON array, no prose, no markdown fence:
+[{"title":"short title under 8 words","body":"2-3 sentences: the insight and why it matters now","prompt_draft":"a ready-to-queue task prompt that would act on this","priority":0,"target_id":"optional cluster code or axis key from the list above"}]`;
+
+  const out = await generateText({ prompt, feature: 'quick', maxTokens: 1700, label: 'intel-content' });
+  if (out.error) return { error: out.error, message: out.message };
+  const items = parseThoughtsArray(out.text);
+  if (!items.length) return { error: 'unparseable', message: 'The model did not return usable thoughts.' };
+  const validTargets = new Set([
+    ...db.prepare(`SELECT code FROM clusters`).all().map((c) => c.code),
+    ...db.prepare(`SELECT key FROM continuum_axes`).all().map((a) => a.key),
+  ]);
+  const created = [];
+  for (const it of items) {
+    const target = validTargets.has(it.target_id) ? it.target_id : '';
+    const hash = createHash('sha1').update(dayStr() + '::content::' + focus + '::' + norm(it.title)).digest('hex');
+    const r = createThought(db, {
+      kind: 'deliberative', scope: 'content', target_id: target,
+      title: it.title, body: it.body || '', prompt_draft: it.prompt_draft || null,
+      priority: Number(it.priority) || 0, state_hash: hash,
+    });
+    if (r.thought) created.push(r.thought);
+  }
+  return { thoughts: created, skipped: items.length - created.length };
+}
 function lessonFingerprint(lesson) {
   return createHash('sha1').update(norm(lesson)).digest('hex');
 }
@@ -617,6 +745,8 @@ export async function runRetrospectives(db, { force = false, max = 1 } = {}) {
     const prompt = `You are the memory of FMCNS, a self-aware platform. A development task just finished. Review it and extract ONE durable lesson worth remembering — what worked, what failed, what to do differently next time. Be concrete. If the outcome was success, still find one transferable lesson.
 
 ${digest}
+
+${USER_FACING_STYLE} (applies to the "title" and "lesson" the owner reads)
 
 Respond with ONLY JSON, no prose, no markdown fence:
 {"title":"short title under 8 words","lesson":"2-3 sentences: the reusable lesson","outcome":"done|blocked"}`;
@@ -698,5 +828,5 @@ export function scheduleBackgroundIntel(db) {
 export const intelApi = {
   signalsFor, computeSignals, acknowledgeSignal, healthFor, recordSnapshots, healthHistory,
   adoptionMeter, listThoughts, createThought, getThought, acceptThought, dismissThought,
-  deepenNode, pulseGraph, runRetrospectives, listLessons, drainList, scheduleBackgroundIntel,
+  deepenNode, pulseGraph, contentPulse, runRetrospectives, listLessons, drainList, scheduleBackgroundIntel,
 };

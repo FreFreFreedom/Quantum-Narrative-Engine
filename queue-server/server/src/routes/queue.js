@@ -1,7 +1,7 @@
 // Routes for the work queue — subset of §9's HTTP contract, backed by promptQueue.js.
 import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
-import { listOpenCodeModels, listAiRouterModels } from '../services/providers/index.js';
+import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
 import { findAgentTask, execOutputBytes, getExecTimeoutMinutes } from '../services/taskRunner.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
@@ -14,6 +14,10 @@ export function queueRoutes() {
     // list (free first — sorted by the discovery code) plus a cheap liveness
     // signal for each provider so the UI can show what's actually runnable.
     const discovery = await listOpenCodeModels({ force: req.query.force === '1' }).catch((e) => ({ models: [], error: e.message }));
+    // Curated default for NEW tasks (plan B): step 1 of the Go chain when the
+    // live list has it, else the free floor. The New-prompt form preselects it.
+    let defaultModel = null;
+    try { defaultModel = await defaultOpenCodeModel(); } catch {}
     let aiRouterModels = [];
     let aiRouterError = null;
     try { aiRouterModels = listAiRouterModels(); } catch (e) { aiRouterError = e.message; }
@@ -25,6 +29,7 @@ export function queueRoutes() {
       opencode: {
         available: discovery.models.length > 0 || !discovery.error,
         models: discovery.models,
+        defaultModel,
         error: discovery.error || null,
       },
       aiRouter: {

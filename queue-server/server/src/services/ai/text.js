@@ -4,7 +4,7 @@
 // paid without explicit click).
 
 import { generateText as legacyGenerateText } from '../claudeText.js';
-import { getProviderCapability, getProviderModule, getDefaultModel, isKnownProvider } from './providers.js';
+import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, isKnownProvider } from './providers.js';
 import * as router from './router.js';
 
 let db = null;
@@ -148,11 +148,15 @@ async function getFallbackChain(feature, providerId, model) {
     }
   }
 
-  // If quota policy allows auto-free, add free opencode model
+  // If quota policy allows auto-free, add the opencode lane as backup: the
+  // default model (paid curated flagship) FIRST, then the free model — so a
+  // paid failure degrades to free opencode, never straight to the catalogue.
   const { policy } = loadAiSettings();
   if (policy === 'auto_free') {
-    const freeId = await getDefaultModel('opencode', feature);
-    if (freeId) chain.push({ provider: 'opencode', model: freeId });
+    const defId = await getDefaultModel('opencode', feature);
+    if (defId) chain.push({ provider: 'opencode', model: defId });
+    const freeId = await getFreeOpenCodeModel();
+    if (freeId && freeId !== defId) chain.push({ provider: 'opencode', model: freeId });
   }
 
   return chain;

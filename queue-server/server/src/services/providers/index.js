@@ -34,12 +34,58 @@ export async function listOpenCodeModels({ force = false } = {}) {
   return out;
 }
 
+// Curated paid-model chain for the OpenCode Go subscription lane (plan
+// "Continuous smooth queue on OpenCode Go — final"): walked in order on a quota
+// hit — cheapest-strong first, escalate only on stall/failure. Step 1 is also
+// the default model for NEW queue tasks. Only Go-subscription models
+// (opencode-go/*) are auto-tried in this order, then remaining opencode-go/*
+// flagships and opencode/* hosted models — third-party direct-billed models
+// (alibaba/*, google/*, …) never auto-run. A curated entry missing from the
+// live list is skipped. Reorder here any time.
+export const CURATED_GO_CHAIN = [
+  'opencode-go/deepseek-v4-pro',
+  'opencode-go/mimo-v2.5-pro',
+  'opencode-go/hy3',
+  'opencode-go/deepseek-v4-flash',
+  'opencode-go/kimi-k2.7-code',
+  'opencode-go/minimax-m3',
+  'opencode-go/qwen3.7-plus',
+  'opencode-go/glm-5.2',
+  'opencode-go/kimi-k2.6',
+  'opencode-go/qwen3.6-plus',
+];
+
+// A curated entry written with a prefix matches only that exact id; a bare name
+// matches under either the opencode-go/ or opencode/ provider prefix (so the
+// chain survives a provider renames).
+export function curatedMatch(entry, id) {
+  if (id === entry) return true;
+  if (!entry.includes('/')) return id === `opencode-go/${entry}` || id === `opencode/${entry}`;
+  return false;
+}
+
 export async function defaultOpenCodeModel() {
   const { models, error } = await listOpenCodeModels();
-  const free = models.find((m) => m.free);
+  const live = models || [];
+  for (const entry of CURATED_GO_CHAIN) {
+    const hit = live.find((m) => curatedMatch(entry, m.id));
+    if (hit) return hit.id;
+  }
+  const free = live.find((m) => m.free);
   if (free) return free.id;
-  if (models.length) return models[0].id;
+  if (live.length) return live[0].id;
   throw new Error(error || 'no OpenCode models available');
+}
+
+// Context window for a model id, from the discovery cache. Unknown models get
+// the conservative fleet default (200k — the Go chain flagship's window). The
+// context-budget rule (plan "context budget") uses this to reset long sessions
+// at 75% of the window before input costs balloon.
+const DEFAULT_CONTEXT_WINDOW = 200_000;
+export function modelContextWindow(modelId) {
+  const models = discoveryCache.out?.models || [];
+  const hit = models.find((m) => m.id === modelId);
+  return (hit && hit.contextWindow) || DEFAULT_CONTEXT_WINDOW;
 }
 
 // AI Router free models (from catalogue, filtered by available API keys)

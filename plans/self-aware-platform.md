@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Parts 1–2 DONE (shipped 2026-08-14, commits `448c27e` + `f627ee7` on main) · Parts 3–6 IMPLEMENTED on `overnight/2026-08-10` (`5aa29c1` + `356956f`, not yet merged — Antoine's call). Remaining: Part 5 content-graph UI + content deliberative pass, overnight-agent drain workflow, and the plan's 6.1–6.6 verification pass in the live app. |
+| **Status** | Parts 1–2 DONE (shipped 2026-08-14, commits `448c27e` + `f627ee7` on main) · Parts 3–6 IMPLEMENTED on `overnight/2026-08-10` (`5aa29c1` + `356956f`, not yet merged — Antoine's call). Part 5 (content-graph Intelligence) implemented, pending Antoine's test and commit word. Remaining: overnight-agent drain workflow (6.6 runner), and the plan's 6.1–6.6 verification pass in the live app. |
 | **Created** | 2026-08-13 |
 | **Updated** | 2026-08-14 — status corrected to reality; Part 6 added (inspiration round, Antoine approved all six) |
 | **Project** | FMCNS — `quantum-narrative-engine` (frontend `fmcns_navigator.html`, backend `queue-server/`) |
@@ -96,8 +96,14 @@ is already in the tree and what is still to build.
   - Frontend: Mind tab (pulse ring + history sparkline + meter + Pulse/Growth buttons, signal
     feed with Acknowledge/Think-deeper, thought feed with Accept/Dismiss), per-node health
     rings on graph cards, signals + score in the component detail panel.
-  - Remaining: Part 5 content-graph UI (Intelligence toggle + feed panel + canvas highlighting)
-    and content-scope deliberative pass; overnight-agent drain workflow (6.6 runner); the
+  - **Part 5 — IMPLEMENTED (uncommitted, pending Antoine's test).** Content graph wakes up:
+    🧠 Intelligence toggle + panel in the Content graph (content signals with Acknowledge,
+    content thoughts with Accept/Dismiss, Think — themes / bridges buttons, 15 s refresh);
+    flagged zones highlighted on the canvas (⚠ + dashed ring). Backend: `continuum_band_gap`
+    and `no_scale_echo` signals added to `computeContentSignals`; `contentPulse` deliberative
+    pass (`focus: themes|bridges`, explicit-click only). Per-thought `state_hash` fixes a
+    dedup bug that discarded 2 of every 3 suggestions (also fixed for `pulseGraph` graph-scope).
+  - Remaining: overnight-agent drain workflow (6.6 runner); the
     plan's 6.1–6.6 verification pass in the live app.
 - Unrelated WIP lying in the working tree (untracked, from the multi-agent team plan, NOT this
   plan): `queue-server/server/src/routes/strategies.js`,

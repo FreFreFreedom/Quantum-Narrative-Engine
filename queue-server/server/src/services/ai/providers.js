@@ -4,6 +4,7 @@
 import * as claudeCode from '../providers/claudeCode.js';
 import * as opencode from '../providers/opencode.js';
 import * as openaiCompat from '../providers/openaiCompat.js';
+import { CURATED_GO_CHAIN, curatedMatch } from '../providers/index.js';
 import { listProviders as listCatalogProviders } from './catalog.js';
 
 export const PROVIDER_CAPABILITIES = {
@@ -126,8 +127,20 @@ export async function getFreeOpenCodeModel() {
 // Get the default model for a provider for a given work type
 export async function getDefaultModel(providerId, workType) {
   if (providerId === 'opencode') {
-    const freeId = await getFreeOpenCodeModel();
-    return freeId || 'opencode-default';
+    // Small features run on the Go subscription's curated flagship first (paid —
+    // reliable, complete answers; the free reasoning models truncate). Missing
+    // from the live list (or balance empty — the chain then fails over) → the
+    // free model keeps the feature alive, per the free-first fallback policy.
+    const { models } = await listOpenCodeModels();
+    const live = models || [];
+    for (const entry of CURATED_GO_CHAIN) {
+      const hit = live.find((m) => curatedMatch(entry, m.id));
+      if (hit) return hit.id;
+    }
+    const free = live.find(m => m.free);
+    if (free) return free.id;
+    if (live.length) return live[0].id;
+    return 'opencode-default';
   }
   // claude-code defaults by work type
   if (workType === 'quick') return 'haiku';

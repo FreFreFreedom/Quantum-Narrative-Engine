@@ -7,7 +7,8 @@ anything about communicating with Antoine, this file wins.
 ## Working with Antoine
 
 Antoine is not a programmer. He operates this project as a user and works with
-agents. This section is a hard rule for ALL communication intended for Antoine:
+agents. This section is a hard rule for ALL communication intended for Antoine,
+in EVERY conversation, whatever the model, whatever the session — always:
 
 - Write in plain English, short and direct.
 - No jargon, no file names, no internal terms — unless you explain them in the
@@ -17,6 +18,18 @@ agents. This section is a hard rule for ALL communication intended for Antoine:
   exposing implementation details.
 - Full technical detail is fine and encouraged between agents, in code, and in
   internal notes. The restriction applies only to words aimed at Antoine.
+- Applies in French too when he writes in French: français simple, pas de
+  jargon, expliquer tout terme technique dans la même phrase.
+
+### App-generated text for Antoine
+
+The same rule applies to EVERYTHING the app itself writes for Antoine:
+suggestions, task titles and recaps, summaries, answers to his questions,
+explanations, ideas — all of it. Any prompt that produces text Antoine will
+read MUST carry the shared plain-English style instruction (see the app's
+shared style module). New features must attach it from day one; before
+shipping a feature, check its text is style-tagged. This is a hard rule, not a
+preference.
 
 ## Autonomous overnight runs
 

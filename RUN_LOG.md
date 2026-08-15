@@ -1035,3 +1035,255 @@ Interactive session with Antoine. Branch `overnight/2026-08-10` (work uncommitte
 - Verified: backend `node --check`; frontend blocks `node --check`; `qPurposePreview` harness test (trim, ellipsis, escaping, fallback); scratch-DB end-to-end — task created → summary READY within ~14 s without opening (4 bullets), cached re-call instant; live :3000 route smoke test (first call 7.4 s, cached after). Master → public copy checksum identical (`7d104a72…`).
 - Left untouched in the worktree: another agent's in-progress Part 5 changes (intel.js, architectureIntelligence.js, untracked strategies.js/orchestrator.js) — not part of this ship.
 - SHIPPED per Antoine: commit → main fast-forward → pushed.
+
+---
+
+# RUN_LOG — Continuous smooth queue on OpenCode Go (final plan), 2026-08-15
+
+Interactive session with Antoine. No branch — this session ships the queue-smoothness plan
+(the two switch bugs found during its deep verification + the curated Go model chain).
+
+## Status
+
+- [x] A1 — switch keeps the task's worktree (was: retry landed in the main checkout, losing
+  the task's files). Fixed: `cwd: t.worktree_path` in the switch retry.
+- [x] A2 — claude→opencode switch no longer hands opencode a Claude session id. Fixed:
+  `resumeSessionId: currentProviderId === 'opencode' ? sessionId : null` (opencode→opencode
+  still resumes the same session, verified live).
+- [x] B — curated Go chain (`CURATED_GO_CHAIN` in `providers/index.js`): deepseek-v4-pro →
+  mimo-v2.5-pro → hy3 → deepseek-v4-flash → kimi-k2.7-code → minimax-m3 → qwen3.7-plus →
+  glm-5.2 → kimi-k2.6 → qwen3.6-plus, then remaining opencode-go/* and opencode/* by cost.
+  Third-party direct-billed models (alibaba/*, google/*…) never auto-run. New tasks default
+  to step 1 (server `defaultOpenCodeModel()` + `/providers` `defaultModel` + form preselect).
+- [x] C2 — coding-capable filter in `opencode.js listModels` (capabilities: text input +
+  tool calling) + name-based media catch (omni/*-image). 173 → 145 models, zero leaks.
+- [x] C3 — daily spend guard disabled: `queue_go_budget_usd` = 0 everywhere (live DB row,
+  schema default, code fallback). The Go plan's own caps protect the account.
+- [x] C4 — `MAX_CONCURRENT_WRITERS` 2 → 3; dev3 agent seeded (opencode lane, own worktree).
+- [x] C6 — launchd agent `~/Library/LaunchAgents/com.fmcns.queue-server.plist`
+  (RunAtLoad + KeepAlive, PORT=3000, logs in ~/Library/Logs/fmcns/). Loaded; old manual
+  `npm start` replaced.
+- [x] A4 — live verification, zero spend (mock CLIs, scratch server/worktrees/DB):
+  switch walks the curated order (deepseek-v4-pro → mimo-v2.5-pro), same task id + worktree,
+  session resumed opencode→opencode and dropped claude→opencode, full-chain walk to the free
+  floor, then defer with auto-wake (prompt `queued` + `resume_after`, task row parked
+  `deferred` — new: the defer path used to leave the task row `in_progress`, which the boot
+  re-attach would resurrect as a ghost holding a writer slot).
+- [x] D — real end-to-end task on the live queue: created without a model → defaulted to
+  opencode-go/deepseek-v4-pro → done, model self-reported "deepseek-v4-pro". Frontend
+  master/public checksums identical (`bec39544…`).
+
+## Pending decisions
+
+None.
+
+## Decisions taken (routine technical)
+
+1. **C1 kill** — the 38h lyria zombie was already gone (verified with `ps`; the boot
+   orphan sweep from the earlier round covers this class going forward).
+2. **Deferred task rows** — the all-models-exhausted defer now sets the agent task to
+   `deferred` (agent_tasks has no CHECK constraint; the boot re-attach only looks at
+   `in_progress`, so parked rows are inert). The PROMPT row keeps `queued` + `resume_after`
+   and owns the auto-wake.
+3. **Mock verification instead of deliberate outage** — the plan's A4 wanted a real
+   switch test; a real quota hit can't be fabricated on demand, so the switch path was
+   driven with mock opencode/claude CLIs (`OPENCODE_BIN`/`CLAUDE_BIN` env) against a scratch
+   server. Zero spend, all branches exercised (limit → switch → resume/fresh → defer).
+4. **Curated chain IDs** — stored as full `opencode-go/*` ids (verified against the live
+   list); `curatedMatch` also accepts bare names under either opencode prefix, so the chain
+   survives a provider rename.
+
+## Shipped
+
+Working tree only (uncommitted, alongside the earlier uncommitted rounds). Backend:
+`taskRunner.js`, `providers/index.js`, `providers/opencode.js`, `routes/queue.js`,
+`db/schema.js`. Frontend: `fmcns_navigator.html` + synced `queue-server/public/index.html`.
+Live DB: `ai_settings.queue_go_budget_usd = 0`. launchd agent loaded (server on :3000).
+
+---
+
+# RUN_LOG — All devs on OpenCode + automatic dev selection, 2026-08-15
+
+Interactive session with Antoine. Per his request: all three devs run on OpenCode (with the
+curated Go model chain as default), and tasks pick their dev automatically — he no longer
+manages agent assignment.
+
+## Status
+
+- [x] All devs on OpenCode — dev1 was the last Claude Code agent; its seed row is now
+  `opencode` (schema.js), and existing databases are backfilled on boot
+  (`provider='claude-code'` → `'opencode'` for dev1/dev2/dev3). Live DB confirmed: all three
+  devs are opencode. The curated chain (opencode-go/deepseek-v4-pro default) already applied
+  per-task, so all dev work now runs on it.
+- [x] Automatic dev selection — new `pickAgentFor(row, runningByAgent)` in `agents.js`:
+  least-loaded enabled dev wins (fewest running tasks, ties by `sort_order`); chained tasks
+  (parent_prompt_id) prefer their parent's dev so plan-2d session resumption keeps working;
+  returns null when every dev is at capacity (prompt stays queued, next dispatch retries).
+- [x] Resolve once at dispatch — `advanceQueue` (writer lane + question lane) resolves the
+  key and passes it to `startPrompt(row, { agentKey })`, which stores it on the agent task AND
+  persists it back onto the work_prompts row (COALESCE — never clobbers an explicit pick).
+  Follow-ups (`relaunchWithThread`) read the persisted key and stay on the same dev.
+- [x] Frontend — the agent dropdown defaults to "🤖 Auto (least busy)" (sends no agent_key);
+  task cards show "Auto" until the server assigns one, then the real dev.
+- [x] Verified, zero spend (scratch server + mock opencode CLI on :4123):
+  - 3 tasks without an agent dispatched in one pass → dev1/dev2/dev3 concurrently, all done.
+  - Chained tasks: child of a dev3 task → dev3 (parent's dev); two more children whose
+    parents were busy fell to least-loaded (dev1, dev2) in the same pass.
+  - `node --check` clean; master synced to `queue-server/public/index.html` (md5 identical).
+  - Live server restarted on :3000 (launchd), backfill applied.
+
+## Pending decisions
+
+None.
+
+## Decisions taken (routine technical)
+
+1. Chained/follow-up tasks prefer the parent's dev over strict load-balancing — keeps the
+   same-context session resumable. (Confirmed with Antoine before implementing.)
+2. dev1's provider backfill runs on every boot (`WHERE provider='claude-code'`) — it only
+   corrects the old default; a deliberate UI edit back to Claude Code is never clobbered
+   once the row is opencode.
+3. Auto-assign applies to question tasks too (same helper), so chained questions keep
+   resuming their parent's session.
+
+---
+
+# RUN_LOG — Context budget: memory-aware session resets, 2026-08-15
+
+Interactive session with Antoine. He asked whether the devs' memory is managed intelligently —
+enough context to stay productive, without burning credit on runaway sessions. He picked:
+**reset line at 75% of the model's memory window**, **smart digest on fresh start**.
+
+## Status
+
+- [x] Context window kept — `listModels` now retains each model's `limit.context`
+  (`contextWindow` on the cached entry); `modelContextWindow(id)` in `providers/index.js`
+  with a 200k fallback for unknown models.
+- [x] Session size measured — `sessionSizeTokens(row)`: the last run's input tokens
+  (`tokens_in`, CLI-reported — it INCLUDES the accumulated history on every resume, so it
+  IS the live session size); falls back to a thread-length estimate when missing.
+- [x] Budget rule — `relaunchWithThread` starts FRESH when the session reaches 75% of the
+  model's window (`overContextBudget`), in addition to the existing turn-count rule
+  (4–8 replies) and the manual clear button. Below the line, sessions keep resuming.
+- [x] Smart digest — `buildFollowUpPrompt` fresh branch no longer re-dumps the raw thread
+  (the old behavior re-paid the whole history in one turn). It now sends: task title,
+  original request (`raw_prompt` — the human's actual words; `prompt` holds the plan
+  draft), the cached purpose summary, the last milestone before the tail, and the latest
+  exchange — capped per block (~1k tokens total).
+- [x] UI badge — prompt rows carry `context_pct` (server-computed from `tokens_in` vs
+  window); task cards show "🧠 3%" (amber at 50%+, orange at 75%+) with an explanatory
+  tooltip. No per-row joins needed (tokens_in is written back on every finish).
+- [x] Verified, zero spend (scratch server + mock opencode CLI that emits controllable
+  `tokens.input`): first run 2k tokens → badge 1%; follow-up at 160k → badge 80%; next
+  follow-up went FRESH (turns reset to 0, session link dropped) with the digest prompt
+  (ORIGINAL REQUEST from raw_prompt, PURPOSE, LAST MILESTONE, LATEST EXCHANGE — no
+  full-thread dump); a small-session follow-up stayed resumed (turns 1, resume-branch
+  prompt). All 5 frontend script blocks + backend files pass `node --check`.
+- [x] Live server restarted on :3000 (launchd); real queue rows already show badges
+  (3–5%). Master synced to `queue-server/public/index.html` (md5 identical).
+
+## Pending decisions
+
+None.
+
+## Decisions taken (routine technical)
+
+1. Reset-line fraction is a single constant (`CONTEXT_BUDGET_FRACTION = 0.75`) — Antoine's
+   choice; trivial to retune.
+2. The turn-count rule stays as the upper bound (models with missing token reporting), the
+   budget rule is the primary trigger in practice.
+3. Badge hidden when there is no measured session yet (first run in flight) — no invented
+   numbers.
+
+---
+
+# RUN_LOG — Small features on the Go flagship + Auto model for new tasks, 2026-08-15
+
+Interactive session with Antoine. Two asks: (1) the old "route small features through the
+Go subscription" plan — assessed and shipped in adapted form; (2) new tasks must auto-select
+their model per the curated system, and the queue's model display should match the system.
+
+## Status
+
+- [x] Small features (tag lenses, summaries, plan drafts, warmup, suggestions) now default
+  to the curated flagship `opencode-go/deepseek-v4-pro` — `getDefaultModel('opencode')` in
+  `ai/providers.js` walks CURATED_GO_CHAIN first (paid), then free. The fallback chain in
+  `ai/text.js` is [paid, free] before the catalogue, so a paid failure degrades to free
+  opencode, never straight to Google. Per-feature AI Settings overrides still win.
+- [x] Verified, zero spend (mock CLI): unconfigured feature → flagship called first and
+  succeeds; flagship forced to fail → "recovered via opencode" on the free model; E2E
+  tag-lens on a scratch server → HTTP 200, model call = flagship.
+- [x] New tasks no longer require a model choice: the queue form's model dropdown defaults
+  to "🤖 Auto (system default)" (empty value → server resolves the curated default; a picked
+  model still sticks). Task edit form got the same Auto option.
+- [x] Model display fixed: task cards now show what ACTUALLY ran (`run_model`) when present,
+  else the requested model, else "🤖 Auto". Old finished tasks keep their historical models
+  (that is what they ran on); everything created now lands on the system model — verified:
+  a model-less task created on the scratch server stored `opencode-go/deepseek-v4-pro`.
+- [x] Live server restarted on :3000 (launchd); `/providers` defaultModel =
+  `opencode-go/deepseek-v4-pro`. Master synced to `queue-server/public/index.html` (md5
+  identical). All 5 frontend blocks + backend files pass `node --check`.
+
+## Pending decisions
+
+None.
+
+## Decisions taken (routine technical)
+
+1. Plan adaptation (was: benchmark gpt-5.4-mini / haiku-4-5 / gemini-3.7-flash, queue stays
+   free): the curated chain already names the flagship and the queue already runs paid, so
+   the benchmark was dropped — small features reuse step 1 of the curated chain. The stale
+   "auto-push to main" shipping step was dropped per AGENTS.md (publishing is Antoine's
+   call; this round ships locally, uncommitted, alongside the session's other work).
+2. `getFallbackChain` auto_free now pushes BOTH the default (paid) and the free opencode
+   model, deduped — preserves the free floor when the Go balance is empty.
+3. Old tasks with stale free-model ids are left untouched (honest history); the card label
+   prefers `run_model` so the display matches what really ran.
+
+# RUN_LOG — Plain-English rule everywhere + ship to Railway + queue task model re-point, 2026-08-15
+
+Interactive session with Antoine. Three asks: (1) make the no-jargon rule permanent — for
+every conversation with him AND for everything the app itself writes; (2) ship the session's
+work to the internet (his call — "ship the changes"); (3) the deployed app's unfinished tasks
+(1 ready, 7 set aside, 3 blocked) are pinned to wrong models — re-point them to the system
+model, after checking none were already done elsewhere.
+
+## Status
+
+- [x] AGENTS.md hardened: the plain-English rule now applies "in EVERY conversation, whatever
+  the model" and a new section makes it a hard rule for all app-generated text (suggestions,
+  titles, summaries, answers, thoughts). French clause added.
+- [x] Style wiring: the shared USER_FACING_STYLE instruction is now attached to the prompts
+  that produce owner-visible text and didn't have it yet — Purpose summaries
+  (promptQueue.js), component suggestions (architecture.js), Mind thoughts (deepen / pulse /
+  growth / content-pulse) and task retrospectives (architectureIntelligence.js). The chat
+  assistant and agent role briefs already carried the rule; tag lenses, tag patterns, book
+  picks, book details and work suggestions already had the style tag.
+- [x] Shipped: full session work committed to main and pushed to origin — Railway redeploys
+  from main (Antoine confirmed that is the deploy path).
+- [x] Deployed app verified healthy after deploy; flagship `opencode-go/deepseek-v4-pro`
+  now appears in the deployed model list — proof that `OPENCODE_AUTH_CONTENT` on Railway
+  carries the Go subscription key (as Antoine said).
+- [x] Clean-up check of the 11 unfinished deployed tasks (codebase searched for each):
+  TV Tropes, IMSDb, Reddit/PRAW, Genius, timeline, entity neighborhood graph, voice input,
+  mouse-position zoom, relation-type taxonomy — none exist; Google Books — the book-search
+  feature exists (books.js + Google Books lookup), the task's enrichment pipeline does not
+  (entity_book_details is empty), task kept with a "what's already done" note; "Context"
+  (blocked) is a pending-question task, left as-is.
+- [x] Deployed tasks re-pointed: provider_model cleared on all 11 (queued/paused/blocked)
+  so each resolves the curated default at run time; the 3 still on claude-code switched to
+  opencode; bogus run_model leftovers cleared. Statuses untouched — nothing auto-started.
+- [x] Local app's 3 blocked tasks re-pointed the same way (consistency between both copies).
+
+## Pending decisions
+
+None.
+
+## Decisions taken (routine technical)
+
+1. Untracked strategies.js / orchestrator.js are not imported anywhere (dead code from an
+   earlier session) — deliberately left out of the ship commit; .claude/, .DS_Store,
+   fix_escape.py and the ERP plan markdown excluded as personal/throwaway files.
+2. Google Books task: kept (the enrichment pipeline is genuinely missing), with the
+   task text amended to say the book-search part already exists so the agent focuses on
+   what remains. Antoine's "already done" check found nothing else to clean.

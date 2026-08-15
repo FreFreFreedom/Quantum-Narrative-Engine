@@ -26,14 +26,14 @@
 // and are resolved through the provider seam below — everything scheduler/monitor/file
 // related is provider-agnostic.
 
-import { spawn } from 'node:child_process';
-import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync, mkdirSync, statSync } from 'node:fs';
+import { spawn, execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, unlinkSync, mkdirSync, statSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { getProvider } from './providers/index.js';
 import * as claudeCode from './providers/claudeCode.js';
-import { defaultOpenCodeModel, listOpenCodeModels, getDefaultAiRouterModel } from './providers/index.js';
+import { defaultOpenCodeModel, listOpenCodeModels, getDefaultAiRouterModel, CURATED_GO_CHAIN, curatedMatch } from './providers/index.js';
 import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { roleBriefFor } from './briefing.js';
@@ -131,12 +131,25 @@ const TASKS_JSON = resolve(DATA_DIR, 'agent-tasks.json');
 // parallel writers one global file would be overwritten by the second writer.
 const PID_FILE = (id) => resolve(DATA_DIR, `.agent-pid-${id}`);
 
+// Toolless text calls (ai/text.js seam) get their own pid files via the shared
+// registry so a boot-time sweep can kill children orphaned by a dead server —
+// the 38h zombie `opencode run ... --agent fmcns-text` (reparented to init, its
+// 4-min timer killed with the parent) is exactly that class of leak.
+import { bindTextCallDir, registerTextCall, unregisterTextCall, TEXT_PID_PREFIX, activeTextCallCount } from './textCallRegistry.js';
+try { bindTextCallDir(DATA_DIR); } catch {}
+
 const EXEC_LOG = (id) => resolve(DATA_DIR, `.agent-exec-${id}.log`);
 const EXEC_CODE = (id) => resolve(DATA_DIR, `.agent-exec-${id}.code`);
 const EXEC_PROMPT = (id) => resolve(DATA_DIR, `.agent-exec-${id}.prompt`);
 const EXEC_INBOX = (id) => resolve(DATA_DIR, `.agent-exec-${id}.inbox`);
 
-const EXEC_TIMEOUT_MS = 30 * 60_000;
+const EXEC_TIMEOUT_MS = 35 * 60_000;
+// Heartbeat stall (plan: 35-min cap with heartbeat): a process that is alive but
+// produces no transcript output for this long is wedged (e.g. a CLI stuck on a
+// dead provider connection) — kill it instead of waiting out the absolute cap.
+// The heartbeat is updated on every drained log byte, so this measures output
+// silence, not wall-clock age.
+const EXEC_STALL_MS = 20 * 60_000;
 const READONLY_TOOLS = 'Read,Glob,Grep';
 const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
 const MAX_PARALLEL_QUESTIONS = 2;
@@ -152,12 +165,13 @@ const DEFAULT_PROBE_MS = 15 * 60_000;
 // ai_settings (no circular import into ai/text.js), sums real cost_usd captured
 // from the runs' own usage lines for today. Over budget → the chain skips the Go
 // pool and runs the free floor for the rest of the day's cycle; resets naturally
-// at the UTC day boundary. Budget 0 = guard disabled.
+// at the UTC day boundary. Budget 0 = guard disabled (the default: the Go plan's
+// own caps protect the account — plan C3).
 function goLaneAllowed() {
   try {
     if (!db) return true;
     const row = db.prepare(`SELECT queue_go_budget_usd FROM ai_settings WHERE id='global'`).get();
-    const budget = (row && typeof row.queue_go_budget_usd === 'number') ? row.queue_go_budget_usd : 0.33;
+    const budget = (row && typeof row.queue_go_budget_usd === 'number') ? row.queue_go_budget_usd : 0;
     if (!(budget > 0)) return true;
     const dayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
     const spent = db.prepare(
@@ -168,10 +182,10 @@ function goLaneAllowed() {
 }
 
 // Global cap on concurrent WRITER (implement) tasks (plan 2b). Env-configurable;
-// defaults to 2 — the Mac can't sustain five concurrent CLIs, and the roster can
-// hold more agents than run at once. Also exported for promptQueue.js, which
-// mirrors this gate at the prompt level.
-export const MAX_CONCURRENT_WRITERS = Math.max(1, parseInt(process.env.MAX_CONCURRENT_WRITERS || '2', 10));
+// defaults to 3 — every task runs in its own git worktree/branch, so parallel
+// writers can never collide on files (plan C4). Also exported for
+// promptQueue.js, which mirrors this gate at the prompt level.
+export const MAX_CONCURRENT_WRITERS = Math.max(1, parseInt(process.env.MAX_CONCURRENT_WRITERS || '3', 10));
 
 // `setsid` exists on Linux (util-linux) but not on macOS. Memoised at load time —
 // the platform does not change while the server runs. When absent, execution falls
@@ -531,6 +545,20 @@ function isProcessAlive(pid) {
   try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
+// Liveness of the whole detached process group (plan: re-attach via process-group
+// check). The pid file records the bash WRAPPER's pid. If the wrapper dies but its
+// CLI child keeps running (reparented to init), kill(pid, 0) says dead while the
+// group — and the agent — are very much alive. Checking the group closes the
+// waitForExit hole where a dead wrapper would finalize a task as blocked while the
+// agent keeps working (and its exit code would never be captured). Works on both
+// platforms: the wrapper is the group leader (setsid on Linux, Node's detached on
+// macOS), so the group id equals the wrapper pid.
+function isProcessGroupAlive(pid) {
+  if (!pid) return false;
+  if (isProcessAlive(pid)) return true;
+  try { process.kill(-pid, 0); return true; } catch { return false; }
+}
+
 // Pausing the queue previously only stopped NEW tasks from starting (the kick()
 // filter above) — a task already in flight kept running until it finished or hit its
 // 30-min timeout, which made "Pause queue" look broken. This actually kills the
@@ -546,7 +574,7 @@ export function stopTask(taskId) {
   try { pid = parseInt(readFileSync(pidFile, 'utf8').trim().split('\n')[0], 10); } catch {}
   const updated = updateTask(taskId, { stop_requested: true, run_state: 'stopped' });
   if (updated) broadcastTask(updated);
-  if (pid) { try { process.kill(-pid, 'SIGKILL'); } catch {} }
+  if (pid) killGroup(pid);
   return true;
 }
 
@@ -597,7 +625,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     }
   }
 
-  function finalize({ killedTimeout = false } = {}) {
+  function finalize({ killedTimeout = false, stallReason = false } = {}) {
     if (finished) return;
     finished = true;
     clearInterval(poll);
@@ -614,10 +642,12 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     const usage = parsed.usage;
 
     let status, agent_result;
-    console.log(`[taskRunner] task ${taskId} process finished — code=${code} killedTimeout=${killedTimeout}`);
+    console.log(`[taskRunner] task ${taskId} process finished — code=${code} killedTimeout=${killedTimeout} stall=${stallReason}`);
     if (killedTimeout) {
       status = 'blocked';
-      agent_result = `(timed out after ${Math.round(EXEC_TIMEOUT_MS / 60000)} min)\n\n${text}`;
+      agent_result = stallReason
+        ? `(stalled — no output for ${Math.round(EXEC_STALL_MS / 60000)} min)\n\n${text}`
+        : `(timed out after ${Math.round(EXEC_TIMEOUT_MS / 60000)} min)\n\n${text}`;
     } else if (code === 0) {
       status = 'done';
       agent_result = text || '(finished without a report)';
@@ -666,8 +696,17 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
             && !triedList.includes(`opencode:${m.id}`)
             && !isExhausted('opencode', m.id)
             && !isExhausted('opencode', ''));
-          const goPool = polished.filter((m) => !m.free).sort((a, b) =>
-            (Number(a.cost?.input) || 0) - (Number(b.cost?.input) || 0) || String(a.id).localeCompare(String(b.id)));
+          // Paid pool = the Go subscription lane only: the curated order first
+          // (cheapest-strong first, escalate on stall), then remaining
+          // opencode-go/* flagships and opencode/* hosted models by cost.
+          // Third-party direct-billed models (alibaba/*, google/*, …) never
+          // auto-run. The daily spend guard still gates the whole paid lane.
+          const isOpenCodeHosted = (m) => m.id.startsWith('opencode-go/') || m.id.startsWith('opencode/');
+          const byCost = (a, b) => (Number(a.cost?.input) || 0) - (Number(b.cost?.input) || 0) || String(a.id).localeCompare(String(b.id));
+          const chainIndex = (m) => CURATED_GO_CHAIN.findIndex((e) => curatedMatch(e, m.id));
+          const goPool = polished
+            .filter((m) => !m.free && isOpenCodeHosted(m))
+            .sort((a, b) => (chainIndex(a) === -1 ? 999 : chainIndex(a)) - (chainIndex(b) === -1 ? 999 : chainIndex(b)) || byCost(a, b));
           const freePool = polished.filter((m) => m.free);
           const goAllowed = goLaneAllowed();
           if (goAllowed) nextModel = goPool[0];
@@ -675,10 +714,11 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
         } catch (e) { console.error('[taskRunner] OpenCode model discovery failed —', e.message); }
 
         if (nextModel) {
-          // Session continuity: staying within OpenCode, so resume the run's own
-          // session on the new model — the retry continues where it left off
-          // instead of restarting from the prompt. Fresh session only when the
-          // exhausted run never produced one.
+          // Session continuity: only an OpenCode→OpenCode switch can resume —
+          // the run's own session carries the prior turns. A Claude→OpenCode
+          // switch starts a fresh OpenCode session (cross-provider transcripts
+          // can't transfer), but the SAME task, worktree and prompt file carry
+          // the code state over.
           const finalTriedList = Array.from(new Set([...triedList, `opencode:${nextModel.id}`]));
           const retried = updateTask(taskId, {
             provider: 'opencode', model: nextModel.id, provider_model: nextModel.id, run_model: nextModel.id,
@@ -691,7 +731,12 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
           runDetachedExecution(taskId, prevPrompt, {
             model: nextModel.id, providerModel: nextModel.id,
             tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
-            resumeSessionId: sessionId, lane, provider: 'opencode', question: t.mode === 'question',
+            // Stay in the task's own worktree — its earlier work lives there
+            // (A1 fix: the retry used to land in the main checkout).
+            cwd: t.worktree_path || undefined,
+            // OpenCode→OpenCode only: resume that same session (A2 fix).
+            resumeSessionId: currentProviderId === 'opencode' ? sessionId : null,
+            lane, provider: 'opencode', question: t.mode === 'question',
           });
           return;
         }
@@ -700,6 +745,12 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
         // windows wake the task automatically; an unknown window gets a
         // conservative default probe window and the queue re-walks the whole
         // chain on each wake, so no manual resume is ever required.
+        // Park the task row too: leaving it 'in_progress' would make the boot
+        // re-attach resurrect a ghost after a restart (holding a writer slot
+        // until its monitor times out). The PROMPT row owns the auto-wake
+        // (status='queued' + resume_after, set by onAgentTaskDeferred).
+        const parked = updateTask(taskId, { status: 'deferred', completed_at: new Date().toISOString() });
+        if (parked) broadcastTask(parked);
         import('./promptQueue.js')
           .then((m) => m.onAgentTaskDeferred(t, {
             label: limit.label,
@@ -791,12 +842,26 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     if (existsSync(CODE)) { finalize(); return; }
     if (Date.now() - startedAt > EXEC_TIMEOUT_MS) {
       const pid = currentPid();
-      if (pid) { try { process.kill(-pid, 'SIGKILL'); } catch {} }
+      if (pid) killGroup(pid);
       finalize({ killedTimeout: true });
       return;
     }
     const pid = currentPid();
-    if (pid && !isProcessAlive(pid) && Date.now() - startedAt > 6000) { drainLog(); finalize(); }
+    // Group-liveness, not single-pid: a dead bash wrapper with a live CLI child
+    // (reparented after the wrapper died) must NOT finalize the task early.
+    if (pid && !isProcessGroupAlive(pid) && Date.now() - startedAt > 6000) { drainLog(); finalize(); }
+    // Heartbeat stall: alive but silent too long → wedged, kill it. Tracked by
+    // the DB heartbeat (updated on every new log byte) so a freshly re-attached
+    // monitor inherits the process's real last-activity time.
+    if (pid && isProcessGroupAlive(pid) && Date.now() - startedAt > 15_000) {
+      const t = readTasks().find((x) => x.id === taskId);
+      const beat = t?.heartbeat_at ? new Date(t.heartbeat_at).getTime() : startedAt;
+      if (Date.now() - beat > EXEC_STALL_MS) {
+        killGroup(pid);
+        finalize({ killedTimeout: true, stallReason: true });
+        return;
+      }
+    }
   }, 2000);
 
   drainLog();
@@ -1077,6 +1142,17 @@ export function cancelPendingAgentTask(id) {
 
 export function initTaskRunner() {
   const timer = setTimeout(() => {
+    // Boot-time orphan sweep (fixes the 38h zombie): kill any queue-spawned
+    // CLI process whose server is gone, and clean stale pid files. Runs BEFORE
+    // re-attach so a task that looks 'in_progress' in the DB but whose process
+    // was orphaned by a crash gets a clean finalize instead of a live ghost.
+    try {
+      const swept = sweepOrphans();
+      if (swept.killedPids || swept.killedGroups || swept.removedPidFiles) {
+        console.log(`[taskRunner] orphan sweep: killed ${swept.killedPids} process(es), killed ${swept.killedGroups} group(s), removed ${swept.removedPidFiles} stale pid file(s)`);
+      }
+    } catch (e) { console.error('[taskRunner] orphan sweep failed:', e.message); }
+
     // Boot-time worktree GC (plan 2a): prune stale metadata, remove worktrees
     // whose task row is gone or which are older than 7 days — EXCEPT any worktree
     // still referenced by a task row's worktree_path (continuations share their
@@ -1101,6 +1177,83 @@ export function initTaskRunner() {
     setImmediate(kick);
   }, 1000);
   timer.unref?.();
+}
+
+// Kill a process group, falling back to a direct kill when the pid is not a
+// group leader (e.g. a toolless child spawned before detached:true was added).
+function killGroup(pid) {
+  if (!pid) return;
+  try { process.kill(-pid, 'SIGKILL'); } catch { try { process.kill(pid, 'SIGKILL'); } catch {} }
+}
+
+// Boot-time orphan sweep. Kills ONLY processes this queue spawns:
+//   • `opencode run --format json ... --agent fmcns-text` (toolless text calls),
+//   • `opencode run --format json ... --title "fmcns-<taskId>"` (exec/question runs)
+// whose parent is not the current server (i.e. the spawning server is dead and
+// the child was reparented to init). A bare `opencode` TUI — the user's own
+// interactive sessions — never matches (no `run --format json`, no fmcns marker),
+// so a queue restart can never kill the terminal sessions running beside it.
+// Stale pid files (task no longer in_progress, or process gone) are removed so
+// the next re-attach doesn't chase ghosts. Live in_progress tasks are skipped:
+// their processes are detached by design and the re-attach loop takes them over.
+export function sweepOrphans() {
+  const results = { killedPids: 0, killedGroups: 0, removedPidFiles: 0 };
+  const me = process.pid;
+  const tasks = readTasks();
+  const inProgress = new Set(tasks.filter((t) => t.status === 'in_progress').map((t) => t.id));
+
+  let psOut = '';
+  try { psOut = execFileSync('ps', ['-axo', 'pid=,ppid=,command='], { encoding: 'utf8' }); } catch {}
+
+  // 1) ps scan: queue-spawned CLIs whose parent is not this server = orphans.
+  for (const line of psOut.split('\n')) {
+    const m = line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/);
+    if (!m) continue;
+    const pid = parseInt(m[1], 10);
+    const ppid = parseInt(m[2], 10);
+    const cmd = m[3];
+    if (ppid === me) continue; // our own child — never touch
+    const titleMatch = cmd.match(/--title "fmcns-([0-9a-f-]{36})"/);
+    const isText = cmd.includes('--agent fmcns-text');
+    if (!titleMatch && !isText) continue; // not one of ours (bare TUI etc.)
+    if (titleMatch && inProgress.has(titleMatch[1])) continue; // live task — re-attach takes it over
+    killGroup(pid);
+    results.killedPids++;
+    console.warn(`[taskRunner] orphan sweep killed pid ${pid}: ${cmd.slice(0, 140)}`);
+  }
+
+  // 2) Pid files: remove stale ones; group-kill a still-alive process only when
+  //    its task is NOT in_progress (orphan of a task that was already finalized).
+  for (const f of readdirSync(DATA_DIR)) {
+    if (f.startsWith('.agent-text-')) {
+      let pid = null;
+      try { pid = parseInt(readFileSync(resolve(DATA_DIR, f), 'utf8').trim().split('\n')[0], 10); } catch {}
+      if (pid && isProcessAlive(pid)) {
+        const ppid = ppidOf(pid);
+        if (ppid === me) continue; // this boot's own live call — registry owns it
+        killGroup(pid);
+        results.killedPids++;
+      }
+      try { unlinkSync(resolve(DATA_DIR, f)); results.removedPidFiles++; } catch {}
+      continue;
+    }
+    if (!f.startsWith('.agent-pid-')) continue;
+    const taskId = f.slice('.agent-pid-'.length);
+    let pid = null;
+    try { pid = parseInt(readFileSync(resolve(DATA_DIR, f), 'utf8').trim().split('\n')[0], 10); } catch {}
+    if (inProgress.has(taskId)) continue; // re-attach owns it
+    if (pid && isProcessAlive(pid)) { killGroup(pid); results.killedGroups++; }
+    try { unlinkSync(resolve(DATA_DIR, f)); results.removedPidFiles++; } catch {}
+  }
+  return results;
+}
+
+function ppidOf(pid) {
+  try {
+    const out = execFileSync('ps', ['-o', 'ppid=', '-p', String(pid)], { encoding: 'utf8' }).trim();
+    const n = parseInt(out, 10);
+    return Number.isFinite(n) ? n : null;
+  } catch { return null; }
 }
 
 // ─── Transcript helpers shared by the prompt-queue hand-off ──────────────────

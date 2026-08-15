@@ -12,6 +12,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 // ─── Static content: what doesn't change with live data ────────────────────────
 // WHAT/WHY/INPUT-OUTPUT/depends live in the frontend (fmcns_navigator.html) since
@@ -320,6 +321,7 @@ export async function generateSuggestions(db, id) {
     `Produce exactly 2 or 3 concrete, actionable suggestions for this specific component. `,
     `Each suggestion must already be phrased as a ready-to-execute task-queue prompt — an instruction an autonomous coding agent could act on directly, `,
     `not a vague description. Be specific: name the file/mechanism where you can infer it.\n\n`,
+    `${USER_FACING_STYLE} (applies to the title the owner reads; the "prompt" field may stay technical for the coding agent)\n\n`,
     `Respond with ONLY a JSON array, no prose, no markdown fences, in this exact shape:\n`,
     `[{"title": "short label, under 8 words", "prompt": "the full ready-to-queue instruction"}]`,
   ].join('');

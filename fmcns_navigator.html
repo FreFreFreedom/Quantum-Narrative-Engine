@@ -2799,10 +2799,11 @@ async function loadAgents() {
   const sel = document.getElementById('qAgent');
   if (!sel) return;
   const prev = sel.value;
-  sel.innerHTML = qAgents.map(a =>
+  // "Auto" is the default: the server picks the least-busy dev at start.
+  sel.innerHTML = `<option value="">🤖 Auto (least busy)</option>` + qAgents.map(a =>
     `<option value="${a.key}">${a.emoji ? a.emoji + ' ' : ''}${a.label}${a.paused ? ' (paused)' : ''}</option>`).join('');
   if (prev && qAgents.some(a => a.key === prev)) sel.value = prev;
-  else sel.value = qAgents.length ? qAgents[0].key : '';
+  else sel.value = '';
 }
 
 async function loadProviders() {
@@ -2838,13 +2839,14 @@ function qProviderUi() {
       const models = qModelsForProvider(val);
       const prev = modelSel.value;
       const err = val === 'opencode' ? qProviders.opencode?.error : qProviders.aiRouter?.error;
+      // Auto is the default: the server picks the system model (step 1 of the
+      // curated chain) — the user never has to choose. A picked model sticks.
+      const autoOpt = '<option value="">🤖 Auto (system default)</option>';
       modelSel.innerHTML = models.length
-        ? models.map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('')
-        : `<option value="">${err ? 'unavailable — ' + err : '(no models)'}</option>`;
-      // Keep a user-chosen model across refreshes; only fall back to the first
-      // (free / highest-ranked) one when the old choice is gone.
+        ? autoOpt + models.map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('')
+        : autoOpt + `<option value="">${err ? 'unavailable — ' + err : '(no models)'}</option>`;
       if (prev && [...modelSel.options].some(o => o.value === prev)) modelSel.value = prev;
-      else if (models.length) modelSel.value = models[0].id;
+      else modelSel.value = '';
     }
   }
   if (modeSel) {
@@ -3215,19 +3217,33 @@ function qCostLine(p) {
 // label>' for claude-code rows (the preset, or the auto-resolved tier).
 function qProviderLabel(p) {
   if ((p.provider || 'claude-code') === 'opencode') {
-    return `OpenCode${p.provider_model ? ' · ' + p.provider_model : ''}`;
+    // What actually ran (run_model) beats what was requested; Auto when neither.
+    const model = p.run_model || p.provider_model || null;
+    return `OpenCode${model ? ' · ' + model : ' · 🤖 Auto'}`;
   }
   if ((p.provider || 'claude-code') === 'ai-router') {
-    return `AI Router${p.provider_model ? ' · ' + p.provider_model : ''}`;
+    return `AI Router${p.provider_model ? ' · ' + p.provider_model : ' · 🤖 Auto'}`;
   }
   const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
   return `Claude Code · ${presetLabel}`;
 }
 
-// Which agent a task is assigned to (roster label; dev1 when unknown).
+// Which agent a task is assigned to ("Auto" until the server picks one).
 function qAgentLabel(p) {
-  const a = qAgents.find(x => x.key === (p.agent_key || 'dev1'));
-  return a ? `${a.emoji ? a.emoji + ' ' : ''}${a.label}` : (p.agent_key || 'dev1');
+  const key = p.agent_key || null;
+  if (!key) return '🤖 Auto';
+  const a = qAgents.find(x => x.key === key);
+  return a ? `${a.emoji ? a.emoji + ' ' : ''}${a.label}` : key;
+}
+
+// Memory badge: how much of the dev's context window the task's session fills
+// (server-computed). Only shown when there is a measured session to report.
+function qMemoryBadge(p) {
+  const pct = p.context_pct;
+  if (!Number.isFinite(pct) || pct <= 0) return '';
+  const hot = pct >= 75;
+  const color = hot ? '#c46a3a' : (pct >= 50 ? '#b8934a' : '#7d8677');
+  return ` · <span title="Session memory used vs. the model's window — at 75% the next reply starts a fresh session with a compact recap" style="color:${color};">🧠 ${pct}%</span>`;
 }
 
 const REVIEW_ORDER = { pending: 0, approved: 1, changes_requested: 2, merged: 3, rejected: 4, reverted: 5 };
@@ -3491,7 +3507,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
     </div>
     <div class="q-item-meta">
-      <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}</span>
+      <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
@@ -3899,8 +3915,8 @@ async function qAddPrompt(asPaused) {
       status: asPaused ? 'paused' : undefined, // "Set aside" — waits in Parked until started
       space: 'fmcns',
       provider,
-      provider_model: usesModelPicker ? modelSel.value : null,
-      agent_key: document.getElementById('qAgent').value || 'dev1',
+      provider_model: usesModelPicker ? (modelSel.value || null) : null, // '' = Auto → server system default
+      agent_key: document.getElementById('qAgent').value || null, // '' = Auto
       strategy: document.getElementById('qStrategy').value,
     });
     document.getElementById('qPromptText').value = '';
@@ -4042,14 +4058,13 @@ function qRenderDetail(p) {
       }
       modelSel.disabled = !newUsesModelPicker;
       if (newUsesModelPicker) {
-        modelSel.innerHTML = '<option value="">— pick one —</option>' +
+        modelSel.innerHTML = '<option value="">🤖 Auto (system default)</option>' +
           qModelsForProvider(newVal).map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('');
-        const models = qModelsForProvider(newVal);
-        if (models.length) modelSel.value = models[0].id;
+        modelSel.value = '';
       }
-      await commitPatch({ provider: newVal, provider_model: newUsesModelPicker ? modelSel.value : null });
+      await commitPatch({ provider: newVal, provider_model: newUsesModelPicker ? (modelSel.value || null) : null });
     };
-    modelSel.onchange = async () => { if (modelSel.value) await commitPatch({ provider_model: modelSel.value }); };
+    modelSel.onchange = async () => { await commitPatch({ provider_model: modelSel.value || null }); };
   }
 
 

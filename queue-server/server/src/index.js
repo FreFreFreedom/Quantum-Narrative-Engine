@@ -34,9 +34,24 @@ import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaSched
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
+import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
+
+// Graceful shutdown: kill this server's own in-flight toolless text children
+// (their 4-min timers die with the process — without this they'd orphan and run
+// on, exactly the 38h zombie class this fix targets). Exec tasks are detached by
+// design and are NOT killed here: they survive restarts and their monitors
+// re-attach at boot.
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.on(sig, () => {
+    const n = activeTextCallCount();
+    if (n) console.log(`[shutdown] killing ${n} in-flight text call(s)…`);
+    killTextCalls();
+    process.exit(0);
+  });
+}
 
 const PORT = process.env.PORT || 8080;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

@@ -95,6 +95,18 @@ export function intelRoutes(db) {
     res.status(201).json(out);
   });
 
+  // Part 5: the Content graph wakes up — the same Mind, turned on the corpus
+  // itself (focus 'themes' | 'bridges'). Explicit clicks, never capped.
+  router.post('/content-pulse', async (req, res) => {
+    const out = await intelApi.contentPulse(db, {
+      focus: req.body?.focus || 'themes',
+      force: true,
+    });
+    if (out.error === 'cap') return res.status(429).json(out);
+    if (out.error) return res.status(502).json(out);
+    res.status(201).json(out);
+  });
+
   // The loop watching itself (6.5).
   router.get('/meter', (req, res) => {
     res.json(intelApi.adoptionMeter(db));

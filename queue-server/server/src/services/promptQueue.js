@@ -30,10 +30,11 @@ import {
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
-import { defaultOpenCodeModel, getDefaultAiRouterModel } from './providers/index.js';
-import { listAgents } from './agents.js';
+import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow } from './providers/index.js';
+import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
 import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -49,14 +50,16 @@ function SELECT() { return 'SELECT * FROM work_prompts WHERE deleted_at IS NULL'
 
 export function listPrompts({ space = null } = {}) {
   const where = space ? ' AND space=?' : '';
-  return db.prepare(`${SELECT()}${where} ORDER BY
+  const rows = db.prepare(`${SELECT()}${where} ORDER BY
     CASE WHEN pending_question IS NOT NULL AND status NOT IN ('running','cancelled') THEN 0
          ELSE CASE status WHEN 'running' THEN 1 WHEN 'queued' THEN 2 WHEN 'paused' THEN 3 ELSE 4 END END,
     position, created_at`).all(...(space ? [space] : []));
+  return rows.map((r) => ({ ...r, context_pct: contextPct(r) }));
 }
 
 export function getPrompt(id) {
-  return db.prepare(`${SELECT()} AND id=?`).get(id) || null;
+  const row = db.prepare(`${SELECT()} AND id=?`).get(id) || null;
+  return row ? { ...row, context_pct: contextPct(row) } : null;
 }
 
 // Mark a prompt as read by the human (the unread dot on finished items).
@@ -310,6 +313,7 @@ export async function summarizePrompt(id) {
         'Summarize the PURPOSE of this task for its owner: what it is for, what it produces, what it touches — NOT the mechanics.',
         'Answer as 3-5 short bullet points, one line each, plain language, no preamble, no markdown headers.',
         'If the task is a question, say what the owner wanted to know.',
+        USER_FACING_STYLE,
         '\nTask:\n' + text.slice(-16000),
       ].join('\n'),
       feature: 'summary',
@@ -456,17 +460,6 @@ export function advanceQueue() {
   const runningQuestions = runningRows.filter((r) => r.mode === 'question').length;
   const started = [];
 
-  const slots = getMaxParallelQuestions() - runningQuestions;
-  if (slots > 0) {
-    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
-    for (const q of questions) started.push(startPrompt(q));
-  }
-
-  // Writer lane, per agent (plan 2b): instead of the old single-implement gate,
-  // start every queued implement prompt whose agent has a free slot and whose
-  // start keeps the global MAX_CONCURRENT_WRITERS cap intact. This is the prompt
-  // level of the same guard taskRunner's kick() applies at the task level — two
-  // agents can genuinely run in parallel; a paused/disabled agent's prompts wait.
   const agents = new Map(listAgents().map((a) => [a.key, a]));
   const runningImpl = runningRows.filter((r) => r.mode !== 'question');
   const runningByAgent = new Map();
@@ -474,15 +467,38 @@ export function advanceQueue() {
     const k = r.agent_key || 'dev1';
     runningByAgent.set(k, (runningByAgent.get(k) || 0) + 1);
   }
+
+  const slots = getMaxParallelQuestions() - runningQuestions;
+  if (slots > 0) {
+    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
+    for (const q of questions) {
+      const agentKey = q.agent_key || pickAgentFor(q, runningByAgent) || 'dev1';
+      started.push(startPrompt(q, { agentKey }));
+    }
+  }
+
+  // Writer lane, per agent (plan 2b): instead of the old single-implement gate,
+  // start every queued implement prompt whose agent has a free slot and whose
+  // start keeps the global MAX_CONCURRENT_WRITERS cap intact. This is the prompt
+  // level of the same guard taskRunner's kick() applies at the task level — two
+  // agents can genuinely run in parallel; a paused/disabled agent's prompts wait.
   const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
-    const agentKey = next.agent_key || 'dev1';
+    // Auto-assign (plan "auto devs"): no agent picked → least-loaded enabled
+    // dev; chained tasks prefer their parent's dev so session resumption
+    // keeps working. All devs busy → the prompt stays queued and the next
+    // dispatch retries.
+    let agentKey = next.agent_key;
+    if (!agentKey) {
+      agentKey = pickAgentFor(next, runningByAgent);
+      if (!agentKey) continue;
+    }
     const agent = agents.get(agentKey);
     if (agent && (!agent.enabled || agent.paused)) continue;
     const agentCap = agent ? Math.max(1, Math.min(4, agent.max_parallel || 1)) : 1;
     if ((runningByAgent.get(agentKey) || 0) >= agentCap) continue;
-    started.push(startPrompt(next));
+    started.push(startPrompt(next, { agentKey }));
     runningImpl.push(next);
     runningByAgent.set(agentKey, (runningByAgent.get(agentKey) || 0) + 1);
   }
@@ -523,8 +539,9 @@ function sessionOfParent(row) {
   };
 }
 
-function startPrompt(row, { forceFresh = false } = {}) {
+function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
   const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const useAgentKey = agentKey || row.agent_key || 'dev1';
   let resume = null;
   let worktreePath = null;
   let branch = null;
@@ -541,13 +558,14 @@ function startPrompt(row, { forceFresh = false } = {}) {
     title: row.title, description: row.prompt, kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue', work_prompt_id: row.id, resume_session_id: resume,
     provider: row.provider || 'opencode', provider_model: usesModelPicker(row.provider) ? model : null,
-    agent_key: row.agent_key || 'dev1',
+    agent_key: useAgentKey,
     worktree_path: worktreePath, branch,
   });
   db.prepare(`
-    UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+    UPDATE work_prompts SET status='running', agent_task_id=?, agent_key=COALESCE(agent_key, ?),
+      started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(task.id, row.id);
+  `).run(task.id, useAgentKey, row.id);
   broadcast();
   return { prompt: getPrompt(row.id), task };
 }
@@ -608,6 +626,47 @@ export function contextResetThresholdFor(row) {
   return CONTEXT_RESET_BY_TIER[effectivePreset(row)] ?? CONTEXT_RESET_THRESHOLD;
 }
 
+// ─── Context budget (plan "context budget") ───────────────────────────────────
+// Memory-aware credit control on top of the turn-count reset: the last run's
+// input tokens INCLUDE the accumulated session history (the CLI resends the
+// growing transcript on every --resume), so tokens_in IS the live session size.
+// Past BUDGET_FRACTION of the model's context window, the next follow-up starts
+// fresh instead of resuming — before per-turn input costs balloon near the
+// window edge. The turn-count rule stays as an upper bound for models whose
+// token reporting is missing.
+const CONTEXT_BUDGET_FRACTION = 0.75;
+
+function modelWindowFor(row) {
+  return modelContextWindow(row.run_model || row.provider_model || '');
+}
+
+// Real session size: last run's input tokens (CLI-reported) when present, else
+// a text-length estimate of the stored thread, else 0.
+export function sessionSizeTokens(row) {
+  const last = row.agent_task_id ? findAgentTask(row.agent_task_id) : null;
+  const n = last?.tokens_in ?? row.tokens_in ?? null;
+  if (Number.isFinite(n) && n > 0) return n;
+  const text = listMessages(row.id).map((m) => m.text || '').join(' ');
+  return Math.round(text.length / 4);
+}
+
+export function overContextBudget(row) {
+  return sessionSizeTokens(row) >= CONTEXT_BUDGET_FRACTION * modelWindowFor(row);
+}
+
+// Cheap variant for list views (no per-row task/message queries): tokens_in is
+// written back to the prompt row on every finish, so it needs no joins.
+export function contextPct(row) {
+  const n = Number(row.tokens_in) || 0;
+  if (n <= 0) return null;
+  return Math.min(999, Math.round((n / modelWindowFor(row)) * 100));
+}
+
+function clip(text, max) {
+  const t = String(text || '').trim();
+  return t.length > max ? t.slice(0, max - 1).trimEnd() + '…' : t;
+}
+
 export function buildFollowUpPrompt(row, messages, { fresh = false } = {}) {
   if (!fresh) {
     // Resuming — the CLI already has everything before this tail.
@@ -621,13 +680,20 @@ export function buildFollowUpPrompt(row, messages, { fresh = false } = {}) {
       'If you still need information, say precisely what — do not guess.',
     ].join('');
   }
-  // Fresh session — no CLI memory at all, so a short recap has to substitute for it.
-  const thread = messages.map((m) => `${m.role === 'user' ? 'Human' : 'You'}: ${m.text}`).join('\n\n');
+  // Fresh session — no CLI memory at all. Instead of re-dumping the raw thread
+  // (the old behavior: the "cheap" reset immediately re-paid the whole history),
+  // hand over a compact digest: original request + purpose + last milestone +
+  // the latest exchange. Cheaper first turn, dev still lands with footing.
+  const tail = messages.slice(-FOLLOWUP_TAIL);
+  const prior = messages.slice(0, -FOLLOWUP_TAIL);
+  const lastAgent = [...prior].reverse().find((m) => m.role === 'agent');
   return [
-    'Continuing a work-queue task in a NEW session (the previous one was long enough that ',
-    'starting fresh saves cost — you do not have this history already).\n\n',
-    `=== ORIGINAL REQUEST ===\n${row.prompt}\n\n`,
-    `=== THREAD SO FAR ===\n${thread}\n\n`,
+    'Continuing a work-queue task in a NEW session (memory budget reached — the previous session is gone; this digest is all you get).\n\n',
+    `=== TASK ===\n${clip(row.title, 120)}\n\n`,
+    `=== ORIGINAL REQUEST ===\n${clip(row.raw_prompt || row.prompt, 800)}\n\n`,
+    row.summary ? `=== PURPOSE ===\n${clip(row.summary, 600)}\n\n` : '',
+    lastAgent ? `=== LAST MILESTONE ===\n${clip(lastAgent.text, 900)}\n\n` : '',
+    `=== LATEST EXCHANGE ===\n${tail.map((m) => `${m.role === 'user' ? 'Human' : 'You'}: ${clip(m.text, 600)}`).join('\n\n')}\n\n`,
     '=== DO NOW ===\n',
     'Respond to the LAST human message and continue the task accordingly. ',
     'If you still need information, say precisely what — do not guess.',
@@ -660,22 +726,32 @@ function relaunchWithThread(row) {
   const isOpen = row.provider === 'opencode';
   const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   const overThreshold = (row.context_turns || 0) >= contextResetThresholdFor(row);
+  const overBudget = overContextBudget(row);
   const activeSession = isOpen ? row.opencode_session_id : row.session_id;
-  const fresh = !activeSession || overThreshold;
+  const fresh = !activeSession || overThreshold || overBudget;
+  // Follow-ups stay on the dev that ran the original (persisted at dispatch);
+  // legacy rows without one get the least-loaded dev.
+  const runningByAgent = new Map();
+  for (const r of db.prepare(`SELECT agent_key FROM work_prompts WHERE deleted_at IS NULL AND status='running'`).all()) {
+    const k = r.agent_key || 'dev1';
+    runningByAgent.set(k, (runningByAgent.get(k) || 0) + 1);
+  }
+  const useAgentKey = row.agent_key || pickAgentFor(row, runningByAgent) || 'dev1';
   const task = enqueueAgentTask({
     title: row.title, description: buildFollowUpPrompt(row, messages, { fresh }), kind: 'queue', mode: row.mode, model, effort,
     author: 'work queue (follow-up)', work_prompt_id: row.id, resume_session_id: fresh ? null : activeSession,
     provider: row.provider || 'opencode', provider_model: usesModelPicker(row.provider) ? model : null,
-    agent_key: row.agent_key || 'dev1',
+    agent_key: useAgentKey,
   });
   const nextTurns = fresh ? 0 : (row.context_turns || 0) + 1;
   db.prepare(`
-    UPDATE work_prompts SET status='running', agent_task_id=?, started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+    UPDATE work_prompts SET status='running', agent_task_id=?, agent_key=COALESCE(agent_key, ?),
+      started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
       completed_at=NULL, pending_question=NULL, context_turns=?,
       session_id=CASE WHEN ? THEN NULL ELSE session_id END,
       opencode_session_id=CASE WHEN ? THEN NULL ELSE opencode_session_id END,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(task.id, nextTurns, fresh ? 1 : 0, fresh ? 1 : 0, row.id);
+  `).run(task.id, useAgentKey, nextTurns, fresh ? 1 : 0, fresh ? 1 : 0, row.id);
   broadcast();
   return { prompt: getPrompt(row.id), task };
 }

@@ -23,6 +23,7 @@ import { spawn } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { registerTextCall, unregisterTextCall } from '../textCallRegistry.js';
 
 export const id = 'opencode';
 export const label = 'OpenCode';
@@ -174,16 +175,23 @@ export function runToolless({ prompt, model, timeoutMs = 4 * 60_000, cwd, bin = 
     if (!guard.ok) return resolveP({ code: -1, text: guard.error });
     let proc;
     try {
+      // detached: true so the child is its own process-group leader — the
+      // registry can group-kill it, and it survives a parent crash (the pid
+      // file then lets a boot-time sweep find and kill it; see textCallRegistry).
       proc = spawn(bin, ['run', '--format', 'json', '--model', model, '--agent', 'fmcns-text', '--auto'], {
-        cwd, env, stdio: 'pipe',
+        cwd, env, stdio: 'pipe', detached: true,
       });
     } catch (e) {
       return resolveP({ code: -1, text: e.message });
     }
+    const callId = registerTextCall(proc.pid, { label: 'opencode' });
     let out = '';
     let settled = false;
-    const settle = (v) => { if (!settled) { settled = true; clearTimeout(timer); resolveP(v); } };
+    const settle = (v) => { if (!settled) { settled = true; clearTimeout(timer); unregisterTextCall(callId); resolveP(v); } };
     const timer = setTimeout(() => {
+      // Group-kill: the detached child leads its own group, so -pid takes the
+      // CLI and any grandchildren (opencode may spawn a server sidecar).
+      try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
       try { proc.kill('SIGKILL'); } catch {}
       settle({ code: -1, text: `no response after ${timeoutMs / 1000}s` });
     }, timeoutMs);
@@ -229,11 +237,28 @@ export function listModels({ bin, cwd }) {
           if (!j || typeof j !== 'object' || !j.id) return;
           const cost = j.cost || {};
           const free = (cost.input || 0) === 0 && (cost.output || 0) === 0;
+          // Coding-capable filter (plan C2): keep only models with text input AND
+          // tool calling. Speech/image/TTS/embedding/ASR models (lyria, veo,
+          // qwen3-asr, gemini-*-image/tts, embeddings, …) must never reach the
+          // model picker or the fallback chain. Every model in the live list
+          // carries a capabilities block, so a missing block is treated as
+          // unknown — kept, rather than an empty chain.
+          const cap = j.capabilities || {};
+          if (typeof cap.toolcall === 'boolean' || cap.input) {
+            if (cap.toolcall !== true || cap.input?.text !== true) return;
+          }
+          // Name-based media catch: omni/multimodal and *-image models that
+          // still claim text+toolcall slip past the capability check (e.g.
+          // qwen-omni-*, gemini-3.1-flash-lite-image). Never false-positives on
+          // a text-only coding model (verified against the live list).
+          const id = pendingId || (j.providerID ? `${j.providerID}/${j.id}` : j.id);
+          if (/(^|\/)qwen[\w.-]*omni|omni[\w.-]*|[\w.-]*-image(-preview)?$/i.test(id)) return;
           models.push({
-            id: pendingId || (j.providerID ? `${j.providerID}/${j.id}` : j.id),
+            id,
             name: j.name || j.id,
             cost,
             free,
+            contextWindow: (j.limit && Number.isFinite(j.limit.context) && j.limit.context > 0) ? j.limit.context : null,
           });
         } catch { /* skip malformed blocks */ }
         pendingId = null;

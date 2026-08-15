@@ -81,3 +81,33 @@ export function deleteAgent(key) {
   const del = db.prepare(`DELETE FROM agents WHERE key=?`).run(key);
   return del.changes > 0;
 }
+
+// Auto-assignment (plan "auto devs"): pick the dev that should run a task with
+// no explicit agent. Least-loaded enabled dev wins (fewest running tasks),
+// ties broken by sort_order. A chained task (parent_prompt_id) prefers its
+// parent's dev — plan-2d session resumption matches on agent — as long as that
+// dev has a free slot. Returns null when no dev can take the task right now.
+export function pickAgentFor(row, runningByAgent) {
+  if (!db) return null;
+  const devs = listAgents().filter((a) => a.role === 'dev' && a.enabled && !a.paused);
+  if (!devs.length) return null;
+  const load = (key) => runningByAgent?.get(key) || 0;
+  const capOf = (a) => Math.max(1, Math.min(4, a.max_parallel || 1));
+  const free = (a) => load(a.key) < capOf(a);
+  let preferred = null;
+  if (row?.parent_prompt_id) {
+    const parent = db.prepare(`SELECT agent_key FROM work_prompts WHERE id=?`).get(row.parent_prompt_id);
+    preferred = parent?.agent_key || null;
+  }
+  if (preferred) {
+    const pa = devs.find((a) => a.key === preferred);
+    if (pa && free(pa)) return pa.key;
+  }
+  const available = devs.filter(free);
+  if (!available.length) return null;
+  available.sort((a, b) =>
+    (load(a.key) - load(b.key)) ||
+    ((a.sort_order ?? 0) - (b.sort_order ?? 0)) ||
+    a.key.localeCompare(b.key));
+  return available[0].key;
+}
