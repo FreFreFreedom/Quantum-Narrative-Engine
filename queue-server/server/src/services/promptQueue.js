@@ -35,7 +35,7 @@ import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
-import { runInspiration, getReport, inspirationDigestFor } from './codeDiscovery.js';
+import { runInspiration, getReport, inspirationDigestFor, reviewInspiration } from './codeDiscovery.js';
 import { syncFromTask } from './treeSync.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
@@ -217,12 +217,16 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   // Inspiration step: the draft waits (bounded) for the automatic world-look
   // pass so the plan is written with real-world context — this is the "wait for
   // inspiration before starting" behavior for tasks added straight to the
-  // queue. On timeout or failure the draft proceeds without it; the report may
-  // still land later and the human can re-draft by applying picks.
+  // queue. The quick check (review) runs inside that pass; if it asks the owner
+  // a question, the wait extends (unbounded) until the answer, the skip, or the
+  // task's deletion. On timeout or failure the draft proceeds without it; the
+  // report may still land later and the human can re-draft by applying picks.
   const inspiration = await waitForInspiration(id, INSPIRE_WAIT_MS);
+  const inspDigest = inspiration ? (typeof inspiration === 'string' ? inspiration : inspiration.digest) : null;
+  const inspNote = inspiration && typeof inspiration === 'object' ? inspiration.note : null;
 
   const [draft, presetOut, parentOut] = await Promise.all([
-    draftPlan({ title, prompt, mode, inspiration }),
+    draftPlan({ title, prompt, mode, inspiration: inspDigest, ownerNote: inspNote }),
     needPreset ? resolvePreset({ mode, prompt }).catch(() => 'standard') : Promise.resolve(null),
     needParent
       ? (async () => {
@@ -239,12 +243,16 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   const parentId = parentOut ? parentOut.id : null;
   const contextNote = parentOut ? `Auto-continuing the session of "${parentOut.title}".` : null;
 
+  // The task may have been deleted while the draft (or the question wait) ran.
+  if (!getPrompt(id)) return;
+
   db.prepare(`
     UPDATE work_prompts SET title=?, prompt=?, resolved_preset=COALESCE(?, resolved_preset),
       ${parentId ? 'parent_prompt_id=?, same_context=1,' : ''}
       plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(finalTitle, finalPrompt, resolved, ...(parentId ? [parentId] : []), id);
   if (contextNote) addMessage(id, { role: 'agent', text: contextNote });
+  _inspireWaiters.delete(id);
   broadcast();
   if (targetStatus === 'queued') advanceQueue();
 }
@@ -262,6 +270,47 @@ function parseInspirePicks(row) {
   try { return JSON.parse(row?.inspire_picks_json || '[]'); } catch { return []; }
 }
 
+// The quick check's verdict on the report (see codeDiscovery.reviewInspiration):
+// removed picks with reasons, alternative groups with a best-per-group, an
+// optional owner question, and — after the owner answered — their note.
+function parseInspireReview(row) {
+  try { return row?.inspire_review_json ? JSON.parse(row.inspire_review_json) : null; } catch { return null; }
+}
+
+// True when the pending question was asked by the quick check (kind:'review'),
+// not by an executing agent — the two have different answer paths.
+function isReviewQuestion(row) {
+  try {
+    const q = row?.pending_question ? JSON.parse(row.pending_question) : null;
+    return !!(q && q.question && q.kind === 'review');
+  } catch { return false; }
+}
+
+// ─── Draft-stage waiters ──────────────────────────────────────────────────────
+// When the quick check asks the owner a question, runPlanDraft parks on a promise
+// resolved by the answer path (answerInspireQuestion), the skip, the deletion, or
+// a refresh (which voids the old question; the loop re-waits if the new pass asks
+// a new one). A parked draft holds its promise reference, so removing the entry
+// on settle is safe. Cleaned up at the end of runPlanDraft.
+const _inspireWaiters = new Map(); // id -> { promise, resolve }
+
+function inspireWaiter(id) {
+  let entry = _inspireWaiters.get(id);
+  if (!entry) {
+    let resolve;
+    const promise = new Promise((r) => { resolve = r; });
+    entry = { promise, resolve };
+    _inspireWaiters.set(id, entry);
+  }
+  return entry;
+}
+
+function settleInspireWaiter(id) {
+  const entry = _inspireWaiters.get(id);
+  if (entry) entry.resolve();
+  _inspireWaiters.delete(id);
+}
+
 function startInspiration(id, { title, prompt }, { force = false } = {}) {
   const run = (async () => {
     try {
@@ -272,10 +321,33 @@ function startInspiration(id, { title, prompt }, { force = false } = {}) {
         forceRefresh: force,
       });
       if (report?.error) throw new Error(report.message || report.error);
+      // The quick check runs before the report is marked ready: one cheap pass
+      // that filters what does not earn its place. Its own failure is NOT a
+      // world-look failure — the full report is used, exactly as before.
       db.prepare(`
-        UPDATE work_prompts SET inspire_state='ready', inspire_report_id=?, inspire_error=NULL,
+        UPDATE work_prompts SET inspire_state='reviewing', inspire_report_id=?, inspire_error=NULL,
           updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
       `).run(report.id, id);
+      broadcast();
+      let review = null;
+      try {
+        review = await reviewInspiration({ report, prompt: [title, prompt].filter(Boolean).join('\n') });
+      } catch (e) {
+        console.error('🤖 File de travaux: quick check —', e.message);
+      }
+      if (review?.question) {
+        // The quick check needs the owner: the question shows on the card (same
+        // mechanism as agent questions) and the draft waits for the answer.
+        db.prepare(`
+          UPDATE work_prompts SET inspire_state='ready', inspire_review_json=?, pending_question=?,
+            updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+        `).run(JSON.stringify(review), JSON.stringify({ ...review.question, kind: 'review' }), id);
+      } else {
+        db.prepare(`
+          UPDATE work_prompts SET inspire_state='ready', inspire_review_json=?,
+            updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+        `).run(review ? JSON.stringify(review) : null, id);
+      }
     } catch (e) {
       db.prepare(`
         UPDATE work_prompts SET inspire_state='failed', inspire_error=?,
@@ -302,28 +374,57 @@ export async function skipInspiration(id) {
   if (!row) return null;
   if (row.mode !== 'implement') return row;
   db.prepare(`
-    UPDATE work_prompts SET inspire_state='skipped', inspire_error=NULL,
+    UPDATE work_prompts SET inspire_state='skipped', inspire_error=NULL, pending_question=NULL,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(id);
+  settleInspireWaiter(id);
   broadcast();
   if (row.status === 'queued') advanceQueue();
   return getPrompt(id);
 }
 
-// Wait for the task's inspiration pass, bounded. Resolves to the plan-ready
-// digest (already emphasizing any applied picks), or null when there is no pass
-// to wait for, it failed, or the timeout elapsed first.
+// Wait for the task's inspiration pass, bounded. Resolves to { digest, note }
+// (the digest already filtered by the quick check and emphasizing any applied
+// picks; the note carries the owner's answer when a quick-check question was
+// answered), or null when there is no pass to wait for, it failed, or the
+// timeout elapsed first. When the quick check asked the owner a question, the
+// wait extends without timeout until the answer, the skip, or deletion — the
+// question card is visible and the plan should be written with their answer.
+// A refresh (new pass) while waiting is given one more bounded chance, then
+// the settled row is used as-is.
 export async function waitForInspiration(id, timeoutMs = INSPIRE_WAIT_MS) {
-  const run = _inspiring.get(id);
-  if (!run) return null;
-  await Promise.race([
+  const racePass = (run) => Promise.race([
     run.catch(() => {}),
     new Promise((res) => setTimeout(res, timeoutMs)),
   ]);
-  const row = getPrompt(id);
-  if (!row?.inspire_report_id) return null;
-  const report = getReport(db, row.inspire_report_id);
-  return inspirationDigestFor(report, parseInspirePicks(row));
+  let run = _inspiring.get(id);
+  if (run) await racePass(run);
+
+  let extraWaits = 0;
+  for (;;) {
+    const row = getPrompt(id);
+    if (!row) return null;
+    if (isReviewQuestion(row)) {
+      // Attach the waiter BEFORE re-checking: an answer that lands between the
+      // two reads either resolves this entry or shows up in the re-check.
+      const entry = inspireWaiter(id);
+      if (isReviewQuestion(getPrompt(id))) await entry.promise;
+      continue;
+    }
+    run = _inspiring.get(id);
+    if (run && extraWaits < 1) {
+      extraWaits++;
+      await racePass(run);
+      continue;
+    }
+    if (!row.inspire_report_id) return null;
+    const report = getReport(db, row.inspire_report_id);
+    const review = parseInspireReview(row);
+    return {
+      digest: inspirationDigestFor(report, parseInspirePicks(row), review),
+      note: review?.owner_note || null,
+    };
+  }
 }
 
 // Manual re-run from the task detail (also the entry point for tasks created
@@ -333,6 +434,16 @@ export async function refreshInspiration(id) {
   if (!row) return null;
   if (row.mode !== 'implement') return row;
   if (_inspiring.has(id)) return row; // one pass at a time
+  // A new world-look voids the previous quick-check verdict (the review keys
+  // belong to the old report) and any question it asked. Settling the waiter
+  // wakes a parked plan draft, which loops and re-waits if the new pass asks.
+  if (isReviewQuestion(row) || parseInspireReview(row)) {
+    db.prepare(`
+      UPDATE work_prompts SET pending_question=NULL, inspire_review_json=NULL
+        WHERE id=?
+    `).run(id);
+  }
+  settleInspireWaiter(id);
   db.prepare(`
     UPDATE work_prompts SET inspire_state='pending', inspire_error=NULL,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
@@ -369,7 +480,9 @@ export async function applyInspiration(id, { picks = [] } = {}) {
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(JSON.stringify(applied), id);
 
-  const digest = inspirationDigestFor(report, applied);
+  // The quick check still shapes the draft around the owner's picks: their
+  // choices always win, everything else keeps the filtered form.
+  const digest = inspirationDigestFor(report, applied, parseInspireReview(row));
   const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt || row.prompt, mode: row.mode, inspiration: digest });
   if (draft) {
     db.prepare(`
@@ -416,7 +529,9 @@ export async function condenseExistingInspiration() {
 }
 
 // Everything the task detail's "Inspired by" panel needs in one call: the state,
-// the last error (for the retry note), the applied picks and the full report.
+// the last error (for the retry note), the applied picks, the quick-check review
+// (removed picks with reasons, alternative groups, best-per-group) and the full
+// report.
 export function inspirationPayload(id) {
   const row = getPrompt(id);
   if (!row) return null;
@@ -424,6 +539,7 @@ export function inspirationPayload(id) {
     state: row.inspire_state,
     error: row.inspire_error || null,
     picks: parseInspirePicks(row),
+    review: parseInspireReview(row),
     report: row.inspire_report_id ? getReport(db, row.inspire_report_id) : null,
   };
 }
@@ -585,6 +701,7 @@ export function deletePrompt(id) {
   const wasPending = isPending(row);
   if (wasPending) reclaimPending(row);
   db.prepare(`UPDATE work_prompts SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+  settleInspireWaiter(id); // a parked plan draft must wake and see the row gone
   broadcast();
   if (wasPending) advanceQueue();
   return true;
@@ -688,8 +805,10 @@ export function advanceQueue() {
   // 'applied' (picks baked in) or 'skipped' (Antoine explicitly chose a plain
   // plan). 'off' (pre-feature rows), 'pending' and 'failed' all hold it — the
   // pass completes and this function is re-kicked from startInspiration. Question
-  // rows are exempt (the pass never runs for them).
-  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND (mode='question' OR COALESCE(inspire_state,'off') NOT IN ('off','pending','failed')) AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
+  // rows are exempt (the pass never runs for them). A task with an unanswered
+  // question (a quick-check question, or any question that outlived a state
+  // change) is held too — it waits for the owner, never starts on its own.
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND pending_question IS NULL AND (mode='question' OR COALESCE(inspire_state,'off') NOT IN ('off','pending','failed')) AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
     // Auto-assign (plan "auto devs"): no agent picked → least-loaded enabled
@@ -770,7 +889,7 @@ function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
   });
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, agent_key=COALESCE(agent_key, ?),
-      started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+      started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), pending_question=NULL,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(task.id, useAgentKey, row.id);
   broadcast();
@@ -916,14 +1035,71 @@ export function buildFollowUpPrompt(row, messages, { fresh = false } = {}) {
   ].join('');
 }
 
-export function replyToPrompt(id, { text, userId = null }) {
+export async function replyToPrompt(id, { text, userId = null }) {
   const row = getPrompt(id);
   if (!row) return null;
   if (row.status === 'running') return { error: 'running' };
   const clean = String(text || '').trim();
   if (!clean) return { error: 'empty' };
+  // A quick-check question on a task that has not started is answered before
+  // anything runs: the answer shapes the world-look, then the plan is drafted
+  // (or re-drafted) — no agent launch. Agent questions (kind absent) keep the
+  // classic relaunch path.
+  if (row.pending_question && isReviewQuestion(row) && !row.started_at && ['queued', 'paused'].includes(row.status)) {
+    return answerInspireQuestion(row, clean, userId);
+  }
   addMessage(id, { role: 'user', text: clean, author: userId });
   return relaunchWithThread(row);
+}
+
+/**
+ * The owner answered a quick-check question about the world-look. Their answer
+ * goes to the thread, the question is cleared, and the review is re-run once
+ * with the answer as the decision (never asking again). Two exits:
+ *   • plan still drafting → the parked runPlanDraft wakes and drafts with the
+ *     answer as its note (single drafting owner);
+ *   • plan already drafted (the world-look landed after the draft timeout) →
+ *     re-draft here, exactly like applyInspiration, with the answer as the note.
+ */
+async function answerInspireQuestion(row, text, userId) {
+  const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
+  addMessage(row.id, { role: 'user', text, author: userId });
+
+  const prev = parseInspireReview(row);
+  const reviewed = report
+    ? await reviewInspiration({ report, prompt: row.raw_prompt || row.prompt, answer: text, allowQuestion: false })
+    : null;
+  const review = { ...(reviewed || prev || {}), owner_note: text };
+
+  db.prepare(`
+    UPDATE work_prompts SET pending_question=NULL, inspire_review_json=?,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(JSON.stringify(review), row.id);
+  settleInspireWaiter(row.id);
+  broadcast();
+
+  const fresh = getPrompt(row.id);
+  if (!fresh) return null;
+  if (fresh.plan_pending) return { prompt: fresh, task: null }; // runPlanDraft drafts
+
+  // The caller's own plan stays untouched (plan_source:'skip' — e.g. a
+  // conversation handoff): the answer only settles the world-look, and the
+  // queue gate releases the task as it now has no open question.
+  if (fresh.plan_source === 'skip') {
+    advanceQueue();
+    return { prompt: getPrompt(row.id), task: null };
+  }
+
+  const digest = inspirationDigestFor(report, parseInspirePicks(fresh), review);
+  const draft = await draftPlan({ title: fresh.title, prompt: fresh.raw_prompt || fresh.prompt, mode: fresh.mode, inspiration: digest, ownerNote: text });
+  if (draft) {
+    db.prepare(`
+      UPDATE work_prompts SET title=?, prompt=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(draft.title, draft.brief, row.id);
+  }
+  broadcast();
+  if (fresh.status === 'queued') advanceQueue();
+  return { prompt: getPrompt(row.id), task: null };
 }
 
 // Deliberate, user-triggered version of the same reset the threshold does

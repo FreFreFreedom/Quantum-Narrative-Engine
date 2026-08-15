@@ -42,14 +42,16 @@ function parseDraft(text) {
 // → { title, brief } | null. Never throws — a failure here must fall back to the
 // raw prompt, never stall or crash task creation. `inspiration` is an optional
 // plain-text digest of the world-look pass (see codeDiscovery.inspirationDigestFor):
-// passed through verbatim as context the drafting model can see.
-export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null }) {
+// passed through verbatim as context the drafting model can see. `ownerNote` is the
+// owner's answer to a rare quick-check question about the world-look ideas.
+export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null }) {
   const text = String(prompt || '').trim();
   if (!text) return null;
   const input = [
     title ? `SUBMITTED TITLE: ${title}` : null,
     `MODE: ${mode}`,
     inspiration ? `INSPIRATION FROM THE WORLD:\n${inspiration}` : null,
+    ownerNote ? `OWNER'S NOTE ON THE IDEAS (their answer to a question about the world-look — follow it):\n${String(ownerNote).trim()}` : null,
     `RAW REQUEST:\n${text}`,
   ].filter(Boolean).join('\n\n');
 

@@ -382,15 +382,34 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
 // Compact digest of a report for the plan-drafting pass: what the world has, what
 // it hides, and the bold ideas — bold first (it is the heart). When the human
 // applied specific picks, those are emphasized as the chosen direction while a
-// couple of others stay as context. Capped so the drafting call stays cheap.
-export function inspirationDigestFor(report, appliedPicks = []) {
+// couple of others stay as context. When a review (see reviewInspiration) exists,
+// removed picks drop out entirely and each group of alternatives contributes only
+// its recommended pick — the owner's applied picks always override the review.
+// Capped so the drafting call stays cheap.
+export function inspirationDigestFor(report, appliedPicks = [], review = null) {
   if (!report) return null;
   const chosen = new Set((appliedPicks || []).map(p => `${p.part_index}:${p.pick_index}`));
+  const removed = new Set((review?.removed || []).map(r => `${r.part_index}:${r.pick_index}`));
+  const groupMembers = new Set();
+  const groupBest = new Set();
+  for (const g of (review?.groups || [])) {
+    const rec = (review.recommended || []).find(r => r.group_id === g.id);
+    const best = rec && (g.picks || []).some(p => p.part_index === rec.part_index && p.pick_index === rec.pick_index)
+      ? rec : (g.picks || [])[0] || null;
+    (g.picks || []).forEach(p => groupMembers.add(`${p.part_index}:${p.pick_index}`));
+    if (best) groupBest.add(`${best.part_index}:${best.pick_index}`);
+  }
   const parts = (report.parts || []).slice(0, 3);
   const byShelf = { open: [], hidden: [], bold: [] };
   parts.forEach((part, pi) => {
     (part.picks || []).forEach((pick, i) => {
-      if (byShelf[pick.kind]) byShelf[pick.kind].push({ ...pick, mark: chosen.has(`${pi}:${i}`) });
+      if (!byShelf[pick.kind]) return;
+      const key = `${pi}:${i}`;
+      // Survives when: the owner applied it, or the review did not remove it and
+      // (it is not part of an alternative group, or it is the group's best).
+      const kept = chosen.has(key) || (!removed.has(key) && (!groupMembers.has(key) || groupBest.has(key)));
+      if (!kept) return;
+      byShelf[pick.kind].push({ ...pick, mark: chosen.has(key) });
     });
   });
   const fmt = {
@@ -415,6 +434,143 @@ export function inspirationDigestFor(report, appliedPicks = []) {
   }
   const out = lines.join('\n');
   return out.length > 2600 ? out.slice(0, 2600) : out;
+}
+
+// ─── Quick check: between world-look and plan draft ───────────────────────────
+//
+// One cheap pass over a finished inspiration report, before the plan is drafted.
+// It keeps the report lean: removes picks that do not earn their place, clusters
+// substitutes into groups (the owner only needs one of each), and names the best
+// pick per group. It decides alone on anything it can; it asks the owner at most
+// ONE question, only when the answer genuinely changes what gets built (a real
+// fork, or a bold idea that would grow the task far beyond its original scope).
+// Never throws — a failure returns null and the caller uses the full report.
+
+function compactReportForReview(report) {
+  return (report.parts || []).slice(0, 3).map((part, pi) => ({
+    name: part.name,
+    description: part.description,
+    picks: (part.picks || []).map((pick, i) => {
+      const key = { part_index: pi, pick_index: i };
+      if (pick.kind === 'open') return { ...key, kind: 'open', repo: pick.repo, why_fits: pick.why_fits, use: pick.use };
+      if (pick.kind === 'hidden') return { ...key, kind: 'hidden', name: pick.name, what: pick.what, use: pick.use };
+      return { ...key, kind: 'bold', name: pick.name, vision: pick.vision, how_fmcns: pick.how_fmcns };
+    }),
+  }));
+}
+
+function buildReviewPrompt(ideaText, reportJson, answer, allowQuestion) {
+  const answerBlock = answer
+    ? `THE OWNER ALREADY ANSWERED A QUESTION ABOUT THESE IDEAS: "${String(answer).trim()}". Take it as their decision — incorporate it into your removals/recommendations, and do NOT ask any new question.`
+    : '';
+  const questionRule = allowQuestion
+    ? `4. QUESTION: only if there is a real fork the owner must choose — two genuinely different directions for the task, or a bold idea that would make the task much bigger than asked. Then write ONE question with 2-3 short options. Otherwise "question": null. When in doubt, decide alone.`
+    : `4. QUESTION: do NOT ask any question this time — decide alone. "question": null always.`;
+  return `You are the quick-check editor for ${FMCNS_BLURB}. A world-look just returned inspiration ideas for one task, and the task's plan will be written from what survives your check. Keep the report lean and honest: remove what does not earn its place, flag alternatives, and pick the best of each family.
+
+The task: "${String(ideaText).trim()}"
+
+The world-look report (parts with picks; every pick carries its part_index and pick_index):
+${reportJson}
+
+${answerBlock}
+
+Do:
+1. REMOVE picks that do not serve THIS task: off-topic, duplicates of another pick, or ideas that would blow the task up beyond one job. One short reason each (max 20 words), plain everyday words.
+2. GROUP picks that are alternatives of each other — they would build the same thing, the owner only needs one. Give each group a short id ("A", "B"...) and a one-sentence note on why they are the same thing in different wrapping. A group of one is not a group.
+3. RECOMMEND, for each group, the single best pick, with one short sentence why.
+${questionRule}
+
+${USER_FACING_STYLE}
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+{"removed":[{"part_index":0,"pick_index":1,"reason":"short plain reason"}],"groups":[{"id":"A","picks":[[0,2],[1,0]],"note":"why they are alternatives"}],"recommended":[{"group_id":"A","part_index":0,"pick_index":2,"why":"one short sentence"}],"question":null}`;
+}
+
+// Validate the model's review against the real report shape: indices must exist,
+// groups need at least two surviving members, the question needs options. Returns
+// a clean review object, or null when nothing usable came back.
+function sanitizeReview(parsed, report) {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const parts = report.parts || [];
+  const counts = parts.map(p => (p.picks || []).length);
+  const validKey = k => Number.isInteger(k?.part_index) && Number.isInteger(k?.pick_index)
+    && k.part_index >= 0 && k.part_index < parts.length
+    && k.pick_index >= 0 && k.pick_index < counts[k.part_index];
+
+  const removed = (Array.isArray(parsed.removed) ? parsed.removed : [])
+    .filter(k => validKey(k) && String(k.reason || '').trim())
+    .map(k => ({ part_index: k.part_index, pick_index: k.pick_index, reason: String(k.reason).trim().slice(0, 180) }));
+  const removedKeys = new Set(removed.map(r => `${r.part_index}:${r.pick_index}`));
+
+  const groups = [];
+  const usedIds = new Set();
+  for (const g of (Array.isArray(parsed.groups) ? parsed.groups : [])) {
+    const keys = (Array.isArray(g?.picks) ? g.picks : [])
+      .filter(p => Array.isArray(p) && validKey({ part_index: p[0], pick_index: p[1] }))
+      .map(p => ({ part_index: p[0], pick_index: p[1] }))
+      .filter(k => !removedKeys.has(`${k.part_index}:${k.pick_index}`));
+    if (keys.length < 2) continue; // a group of one is not a group
+    let id = String(g.id || '').trim().slice(0, 2).toUpperCase();
+    if (!id || usedIds.has(id)) id = String.fromCharCode(65 + groups.length);
+    usedIds.add(id);
+    groups.push({ id, picks: keys, note: String(g.note || '').trim().slice(0, 180) });
+  }
+
+  const recommended = [];
+  for (const g of groups) {
+    const rec = (Array.isArray(parsed.recommended) ? parsed.recommended : [])
+      .find(r => String(r?.group_id || '').toUpperCase() === g.id
+        && validKey({ part_index: r.part_index, pick_index: r.pick_index })
+        && g.picks.some(p => p.part_index === r.part_index && p.pick_index === r.pick_index));
+    const key = rec || g.picks[0];
+    recommended.push({
+      group_id: g.id,
+      part_index: key.part_index,
+      pick_index: key.pick_index,
+      why: rec ? String(rec.why || '').trim().slice(0, 180) : '',
+    });
+  }
+
+  let question = null;
+  if (allowQuestion && parsed.question && typeof parsed.question === 'object' && String(parsed.question.question || '').trim()) {
+    const options = (Array.isArray(parsed.question.options) ? parsed.question.options : [])
+      .map(o => String(o || '').trim()).filter(Boolean).slice(0, 3);
+    if (options.length >= 2) {
+      question = { question: String(parsed.question.question).trim().slice(0, 300), options };
+    }
+  }
+
+  if (!removed.length && !groups.length && !question) return null;
+  return { removed, groups, recommended, question };
+}
+
+/**
+ * Quick check over a world-look report, before the plan is drafted.
+ * @returns {Promise<{removed, groups, recommended, question}|null>} — null on any
+ *   failure or when the model returns nothing usable (full report is then used).
+ */
+export async function reviewInspiration({ report, prompt, answer = null, allowQuestion = true } = {}) {
+  if (!report || !(report.parts || []).length) return null;
+  const compact = compactReportForReview(report);
+  if (!compact.some(p => (p.picks || []).length)) return null;
+  const ideaText = String(prompt || report.idea_text || '').trim() || 'the task';
+  try {
+    const out = await generateTextByFeature({
+      prompt: buildReviewPrompt(ideaText, JSON.stringify(compact), answer, allowQuestion),
+      feature: 'inspire',
+      maxTokens: 800,
+      label: 'inspire-review',
+    });
+    if (out.error) {
+      console.error('inspireReview failed —', out.message);
+      return null;
+    }
+    return sanitizeReview(parseJsonObject(out.text), report);
+  } catch (e) {
+    console.error('inspireReview threw —', e.message);
+    return null;
+  }
 }
 
 export function getReport(db, id) {

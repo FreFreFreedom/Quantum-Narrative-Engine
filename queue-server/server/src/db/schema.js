@@ -149,6 +149,13 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_report_id TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_picks_json TEXT NOT NULL DEFAULT '[]'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_error TEXT`); } catch {}
+  // Quick check between world-look and plan draft: one cheap pass that filters
+  // the report's picks (removed + one-line reasons), clusters substitutes into
+  // groups with an automatic best-per-group recommendation, and — rarely —
+  // asks the owner one question when the answer changes what gets built. JSON:
+  // { removed:[], groups:[], recommended:[], question:{question,options}|null }.
+  // NULL = no review (legacy reports, or the check failed — full report used).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_review_json TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
