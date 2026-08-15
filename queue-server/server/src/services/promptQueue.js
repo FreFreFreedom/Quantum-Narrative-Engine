@@ -253,7 +253,9 @@ export async function backfillPlan(id) {
   return getPrompt(id);
 }
 
-const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy', 'summary'];
+// run_model is editable ONLY so unfinished tasks can shed a stale "ran with"
+// label from an earlier attempt — the queue overwrites it at the next dispatch.
+const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'run_model', 'agent_key', 'parent_prompt_id', 'strategy', 'summary'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
