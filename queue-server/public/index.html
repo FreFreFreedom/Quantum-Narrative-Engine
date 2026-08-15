@@ -2796,6 +2796,12 @@ const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
 const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
 const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
 let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
+// Change fingerprints: the 4s poll must not rebuild the Flow (list, open card,
+// merge cards) when nothing actually changed — that rebuild was the visible
+// "reset" every few seconds. A running task still re-renders every tick so its
+// progress bar stays live.
+let qLastSig = null;
+let qReviewsLastSig = null;
 let qConnFails = 0;
 // Execution-provider picker data (GET /api/travaux/providers): opencode model list
 // (free first) + provider liveness. Fetched once at init and again whenever the
@@ -3116,7 +3122,12 @@ async function qLoad() {
   }
   const connEl = document.getElementById('qConnLost');
   if (connEl) connEl.style.display = 'none';
-  qPrompts = data.prompts || [];
+  const nextPrompts = data.prompts || [];
+  const anyRunning = nextPrompts.some(p => p.status === 'running');
+  const sig = JSON.stringify({ paused: data.queue_paused, prompts: nextPrompts });
+  const changed = sig !== qLastSig || anyRunning;
+  qLastSig = sig;
+  qPrompts = nextPrompts;
   qPaused = !!data.queue_paused;
   const badge = document.getElementById('queuePauseBadge');
   badge.style.display = qPaused ? '' : 'none';
@@ -3138,14 +3149,15 @@ async function qLoad() {
     modeBadgeEl.classList.toggle('on', askingCount > 0);
   }
   if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
-  if (coreView === 'flow') renderFlow();
+  if (coreView === 'flow' && changed) renderFlow();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
-    // Poll re-render: stand down while the human is typing in the expanded card.
+    // Poll re-render: stand down while the human is typing in the expanded card,
+    // and skip entirely when the data hasn't changed (no pointless card reset).
     if (fresh) {
       qSelected = fresh;
-      if (!qTypingGuard()) qRenderDetail(fresh);
+      if (changed && !qTypingGuard()) qRenderDetail(fresh);
     }
   }
 }
@@ -3379,12 +3391,15 @@ function qCompetitionCard(p) {
 
 async function qRenderReviews() {
   const host = document.getElementById('flowReviews');
-  if (!host) return;
+  if (!host || coreView !== 'flow') return;
   try {
     const [reviewsData, strategiesData] = await Promise.all([
       api('/api/travaux/reviews'),
       api('/api/travaux/prompts?space=fmcns'),
     ]);
+    const sig = JSON.stringify([reviewsData, strategiesData]);
+    if (sig === qReviewsLastSig) return;
+    qReviewsLastSig = sig;
     qReviews = reviewsData.reviews || [];
     const strategyPrompts = (strategiesData.prompts || []).filter(p => p.strategy === 'competition' && p.strategy_state === 'awaiting_choice');
     
@@ -3584,30 +3599,36 @@ function renderFlow() {
   const showQueue = flowType === 'all' || flowType === 'queue';
   const showSg = flowType === 'all' || flowType === 'suggestions';
   const showSeeds = flowType === 'all' || flowType === 'seeds';
-  const showDone = flowType === 'all' || flowType === 'done';
+  // Done renders in the queue block below AND on its own "✓ Done" tab — it used
+  // to live inside the showQueue gate only, so the Done tab always came up empty.
+  const showDone = flowType === 'all' || flowType === 'queue' || flowType === 'done';
   let html = '';
 
+  const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
+  const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
+
   if (showQueue) {
-    const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
     const questions = qPrompts.filter(p => rel(p) && p.pending_question && flowMatches([p.title, p.prompt]));
     const running = qPrompts.filter(p => rel(p) && p.status === 'running' && flowMatches([p.title, p.prompt]));
     const ready = qPrompts.filter(p => rel(p) && p.status === 'queued' && flowMatches([p.title, p.prompt]));
     const parked = qPrompts.filter(p => rel(p) && p.status === 'paused' && flowMatches([p.title, p.prompt]));
-    const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
     const busy = running.length > 0;
     if (questions.length) html += flowSection('❓', 'Questions to answer', questions.length, questions.map(p => flowQueueRow(p, false)).join(''));
     if (running.length) html += flowSection('▶', 'Running now', running.length, running.map(p => flowQueueRow(p, false)).join(''));
     if (ready.length) html += flowSection('⏳', 'Ready to start', ready.length, ready.map((p, i) => flowQueueRow(p, true, busy, i)).join(''));
     if (parked.length) html += flowSection('⏸', 'Parked', parked.length, parked.map(p => flowQueueRow(p, true)).join(''));
+    if (flowType === 'queue' && !questions.length && !running.length && !ready.length && !parked.length && !done.length) {
+      html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
+    }
+  }
+
+  if (showDone) {
     if (done.length) {
       const showDoneList = flowType === 'done' || flowDoneOpen || flowSearch !== '';
       const doneRows = flowType === 'done'
         ? done.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
         : done;
       html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
-    }
-    if (flowType === 'queue' && !questions.length && !running.length && !ready.length && !parked.length && !done.length) {
-      html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
     }
     if (flowType === 'done' && !done.length) {
       html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
