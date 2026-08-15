@@ -419,3 +419,40 @@ Return ONLY JSON, no prose: {"order": ["id1", "id2", ...]} — every id exactly 
   items.forEach(it => { if (!seen.has(it.id)) { ids.push(it.id); seen.add(it.id); } });
   return { order: ids };
 }
+
+// "Show my next 3" — one call that picks a 3-item shortlist with a one-line
+// plain-English reason each, instead of reordering the whole list. Explicit
+// click only, same cost discipline as rankUnbuilt.
+export async function shortlistUnbuilt(itemsInput = []) {
+  const items = Array.isArray(itemsInput) ? itemsInput.filter(it => it && it.id) : [];
+  if (!items.length) return { error: 'empty', message: 'Nothing to pick from.' };
+  const catalog = items.map(it =>
+    `${it.id} — ${it.name} (${it.territory || '?'}, ${it.status || '?'})${it.buildable ? ', READY TO BUILD' : ', waiting on prerequisites'}: ${String(it.what || '').slice(0, 160)}`).join('\n');
+  const out = await generateText({
+    prompt: `You are the tech-tree advisor of FMCNS — the owner's personal research system (characters, films, countries as one ontology, navigated fractally).
+
+These components are NOT built yet. Pick the THREE best next moves for the project — balancing impact, readiness (READY TO BUILD beats waiting on prerequisites), and how much each one unlocks. The owner is not a programmer: every reason must be plain everyday language, no jargon, no internal ids.
+
+${catalog}
+
+Return ONLY JSON, no prose: {"picks":[{"id":"...","reason":"one short plain-English sentence — why build this one now"}]} — exactly 3 picks, best first.`,
+    feature: 'studio',
+    maxTokens: 400,
+    label: 'arch-notbuilt-shortlist',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const m = out.text?.match(/\{[\s\S]*\}/);
+  let parsed = null;
+  if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+  const picks = Array.isArray(parsed?.picks) ? parsed.picks.filter(p => p && p.id) : [];
+  const known = new Set(items.map(it => it.id));
+  const valid = picks.filter(p => known.has(p.id)).slice(0, 3)
+    .map(p => ({ id: p.id, reason: String(p.reason || '').slice(0, 240) }));
+  // Model came back short -> backfill from the input order so the panel is never empty.
+  const seen = new Set(valid.map(p => p.id));
+  for (const it of items) {
+    if (valid.length >= 3) break;
+    if (!seen.has(it.id)) { valid.push({ id: it.id, reason: '' }); seen.add(it.id); }
+  }
+  return { picks: valid };
+}

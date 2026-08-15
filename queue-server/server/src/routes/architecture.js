@@ -1,7 +1,7 @@
 // Routes for the Architecture Navigator's live backend surface.
 import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
-import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt } from '../services/architectureNodes.js';
+import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt, shortlistUnbuilt } from '../services/architectureNodes.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
 
 export function architectureRoutes(db) {
@@ -89,6 +89,14 @@ export function architectureRoutes(db) {
   // the model returns their ids best-first. Explicit click only.
   router.post('/rank-unbuilt', async (req, res) => {
     const out = await rankUnbuilt(req.body?.items);
+    if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
+    res.json(out);
+  });
+
+  // "Show my next 3" in the Not built list — a 3-pick shortlist with a one-line
+  // plain-English reason each. Explicit click only.
+  router.post('/notbuilt-shortlist', async (req, res) => {
+    const out = await shortlistUnbuilt(req.body?.items);
     if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
     res.json(out);
   });

@@ -290,6 +290,14 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .nb-markers { display:inline-flex; gap:5px; margin-left:auto; font-size:10.5px; }
 .nb-empty { font-size:12px; color:var(--c-ink-4); padding:12px 2px; }
 .nb-status-line { font-size:11px; color:var(--c-ink-3); margin-top:4px; }
+.nb-chips { display:flex; gap:4px; flex-wrap:wrap; }
+.nb-chip { font-size:11px; padding:3px 9px; border-radius:12px; }
+.nb-chip.on { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
+.nb-shortlist { border:1px solid #c08a3e; background:var(--c-warm-tint); border-radius:10px; padding:8px 12px; margin-bottom:10px; }
+.nb-shortlist-head { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; margin-bottom:4px; }
+.nb-short-row { display:flex; gap:10px; align-items:center; padding:6px 0; border-top:1px solid var(--c-border); }
+.nb-short-row:first-of-type { border-top:none; }
+.nb-short-num { font-weight:800; color:#8a5a1e; font-size:14px; min-width:16px; }
 
 /* ---------- Mind pane (architecture intel feed) ---------- */
 #archMindPane { flex:1; min-height:0; display:none; flex-direction:column; }
@@ -5277,6 +5285,7 @@ function archDepth(c, visited) {
 // call (explicit click only). Rows queue a build in one click, can trigger the
 // world-look early, or open a discussion — all without leaving the list.
 let nbInited = false, nbSearch = '', nbOrder = null, nbConvos = {};
+let nbFilterTerr = '', nbFilterReady = '', nbShortlist = null, nbShortlistBusy = false;
 
 function nbUnbuiltItems() {
   const items = [];
@@ -5317,18 +5326,32 @@ function nbQueuePromptOf(c) {
 function renderNotbuiltFlow() {
   const host = document.getElementById('tvBodyFlow');
   if (!host) return;
+  const terrChips = ['', ...TERRITORIES.map(t => t.id)].map(tid =>
+    `<button class="ctrlbtn nb-chip${nbFilterTerr === tid ? ' on' : ''}" data-nbterr="${tid}">${tid === '' ? 'All' : (TERRITORIES.find(t => t.id === tid) || {}).label}</button>`).join('');
+  const readyChips = ['', 'buildable', 'locked'].map(rv =>
+    `<button class="ctrlbtn nb-chip${nbFilterReady === rv ? ' on' : ''}" data-nbready="${rv}">${rv === '' ? 'Any readiness' : rv === 'buildable' ? 'Ready to build' : 'Waiting on others'}</button>`).join('');
   host.innerHTML = `
     <div class="nb-toolbar" style="border-bottom:none;padding:4px 2px 10px;">
       <span class="arch-title">Not built</span>
       <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEsc(nbSearch)}">
+      <button class="ctrlbtn" id="nbShortlistBtn" title="One AI call — picks the 3 best next moves with a one-line reason each">✨ Show my next 3</button>
       <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project">✨ AI recommends order</button>
-      <span class="nb-hint">Ready-to-build first · one click queues a build · world-look runs before it starts</span>
+      <div class="nb-chips">${terrChips}</div>
+      <div class="nb-chips">${readyChips}</div>
     </div>
     <div class="nb-body" id="tvBodyNotbuilt" style="padding:0 2px;"></div>`;
   const search = document.getElementById('nbSearch');
   if (search) search.oninput = () => { nbSearch = search.value; renderNotbuilt(); };
   const aiBtn = document.getElementById('nbAiOrderBtn');
   if (aiBtn) aiBtn.onclick = nbAiOrder;
+  const shortBtn = document.getElementById('nbShortlistBtn');
+  if (shortBtn) shortBtn.onclick = nbShowShortlist;
+  host.querySelectorAll('[data-nbterr]').forEach(b => {
+    b.onclick = () => { nbFilterTerr = b.getAttribute('data-nbterr'); renderNotbuiltFlow(); };
+  });
+  host.querySelectorAll('[data-nbready]').forEach(b => {
+    b.onclick = () => { nbFilterReady = b.getAttribute('data-nbready'); renderNotbuiltFlow(); };
+  });
   if (!nbInited) {
     nbInited = true;
     // Stored/speculative nodes merge in asynchronously — re-render once they land.
@@ -5344,6 +5367,9 @@ function renderNotbuilt() {
   let items = nbUnbuiltItems();
   const q = nbSearch.trim().toLowerCase();
   if (q) items = items.filter(it => [it.c.name, it.c.what, it.c.why, it.c.territory].join(' ').toLowerCase().includes(q));
+  if (nbFilterTerr) items = items.filter(it => it.c.territory === nbFilterTerr);
+  if (nbFilterReady === 'buildable') items = items.filter(it => it.state === 'buildable');
+  if (nbFilterReady === 'locked') items = items.filter(it => it.state === 'locked');
   if (nbOrder) {
     const pos = {};
     nbOrder.forEach((id, i) => { pos[id] = i; });
@@ -5356,6 +5382,25 @@ function renderNotbuilt() {
     return;
   }
   let html = '';
+  // The "next 3" shortlist panel — pinned above the list until cleared.
+  if (nbShortlist && nbShortlist.length) {
+    html += `<div class="nb-shortlist">
+      <div class="nb-shortlist-head"><span>✨ Your next 3 — best moves right now</span><button class="ctrlbtn" data-nbshort-clear style="font-size:10.5px;">✕ Clear</button></div>
+      ${nbShortlist.map((p, i) => {
+        const c = ARCH_BY_ID[p.id];
+        if (!c) return '';
+        const terr = TERRITORIES.find(t => t.id === c.territory);
+        return `<div class="nb-short-row">
+          <span class="nb-short-num">${i + 1}</span>
+          <div style="flex:1;min-width:0;">
+            <div class="nb-name">${qEsc(c.name)} <span class="nb-terr">${terr ? terr.label : c.territory}</span></div>
+            ${p.reason ? `<div class="nb-what" style="margin:2px 0;">${qEsc(p.reason)}</div>` : ''}
+          </div>
+          <button class="nb-build" data-nbbuild="${p.id}">⚡ Build</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
   items.forEach(({ c, state, unmet }) => {
     const terr = TERRITORIES.find(t => t.id === c.territory);
     const linked = (qPrompts || []).filter(p => p.component_id === c.id);
@@ -5437,6 +5482,25 @@ function renderNotbuilt() {
   host.querySelectorAll('[data-jump]').forEach(a => {
     a.onclick = (e) => { e.preventDefault(); jumpToQueueItem(a.getAttribute('data-jump')); };
   });
+  host.querySelectorAll('[data-nbshort-clear]').forEach(b => {
+    b.onclick = () => { nbShortlist = null; renderNotbuilt(); };
+  });
+}
+
+async function nbShowShortlist() {
+  if (nbShortlistBusy) return;
+  nbShortlistBusy = true;
+  const btn = document.getElementById('nbShortlistBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Thinking…'; }
+  try {
+    const items = nbUnbuiltItems().map(({ c, state }) => ({
+      id: c.id, name: c.name, territory: c.territory, status: c.status, what: c.what, next: c.next, buildable: state === 'buildable',
+    }));
+    const out = await apiWrite('/api/architecture/notbuilt-shortlist', 'POST', { items });
+    nbShortlist = out.picks || null;
+  } catch (e) { alert('Could not get a shortlist: ' + e.message); }
+  nbShortlistBusy = false;
+  renderNotbuiltFlow();
 }
 
 async function nbAiOrder() {
