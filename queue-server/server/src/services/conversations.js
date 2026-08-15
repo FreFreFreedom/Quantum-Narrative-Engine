@@ -183,6 +183,7 @@ Commands the user may type:
   /grill-me — switch to interrogation mode: ask the sharpest clarifying questions, one at a time, no answering yet.
   /plan     — produce the final plan for the coding agent (done by the system; you do not do this yourself).
   /handoff  — queue the plan as a task (done by the system).
+  /compare  — compare the enrichment ideas attached to this subject (done by the system; you do not do this yourself).
   /help     — list these commands.
 
 The subject being discussed is described in SUBJECT CONTEXT below. It is the whole reason this conversation exists — keep every answer anchored to it.
@@ -225,7 +226,7 @@ function buildMessages(convo, msgs, windowSize) {
 async function runChatTurn(convoId, userId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
   if (ctx.error) return { error: ctx.error };
 
   const msgs = listMessages(convo.id);
@@ -256,7 +257,7 @@ async function runChatTurn(convoId, userId) {
 async function runPlanTurn(convoId, userId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
   if (ctx.error) return { error: ctx.error };
 
   const msgs = listMessages(convoId);
@@ -286,6 +287,39 @@ async function runPlanTurn(convoId, userId) {
   return { title, brief, planId: mid, text: result.text, via: result.via };
 }
 
+// /compare — one condensed verdict over the enrichment ideas attached to the
+// subject (world-look picks, generated next steps, or sibling suggestions).
+// Nothing attached -> a free text answer, no model call at all.
+async function runCompareTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+  const collected = ctx.compare ? await ctx.compare() : { items: [], note: 'No enrichment ideas attached to this subject.' };
+  const items = (collected.items || []).slice(0, 8);
+  if (!items.length) {
+    return { text: collected.note || 'Nothing attached to compare here yet.' };
+  }
+  const listing = items.map((it, i) => `${i + 1}. ${it.label}: ${it.text}`).join('\n');
+  const prompt = `The owner asked to compare the ideas attached to the subject below.
+
+=== SUBJECT ===
+${ctx.contextText}
+
+=== IDEAS ===
+${listing}
+
+Give a short comparison verdict: for each idea, one line on what it offers; then say which ONE you would pick and why (1-2 sentences). Plain English, no jargon, be concise.`;
+  const result = await generateText({ prompt, feature: 'studio', label: 'conversations:compare', model: CONVO_CHAT_MODEL, maxTokens: 900 });
+  if (result.error) return result;
+  const mid = randomUUID();
+  db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
+    .run(mid, convoId, 'assistant', 'chat', result.text || '');
+  db.prepare(`UPDATE convos SET turns=turns+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convoId);
+  broadcastAll('convos:updated', { convoId });
+  return { text: result.text, via: result.via };
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function sendMessage(convoId, { text, userId = 'antoine' } = {}) {
@@ -303,12 +337,13 @@ export async function sendMessage(convoId, { text, userId = 'antoine' } = {}) {
     if (slash === 'handoff') return handoffToQueue(convoId);
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data.',
+        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject (world-look picks, generated next steps, or sibling suggestions).\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data.',
       };
     }
+    if (slash === 'compare') return runCompareTurn(convoId);
     if (slash === 'grill-me') {
       // interrogation mode: a single turn where the model asks questions only
-      const ctx = buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+      const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
       if (ctx.error) return { error: ctx.error };
       const msgs = listMessages(convo.id);
       const system = `${subjectSystemPrompt(ctx.contextText)}\n\nYou are now in GRILL MODE. Ask the user the sharpest clarifying questions you can, ONE at a time, in order of importance. Do not propose solutions yet. End with a question mark. Keep the first question short.`;

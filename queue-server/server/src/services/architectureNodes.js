@@ -385,3 +385,37 @@ export async function routeIdea(db, conceptInput, ctx = {}) {
   const idea = createIdea({ title: title.slice(0, 200), notes: p.notes || concept, created_by: 'antoine' });
   return { kind: 'seed', idea };
 }
+
+// ─── "Not built" list — AI-recommended order ───────────────────────────────────
+// The list itself renders client-side (the trunk lives in the HTML file); this
+// only ranks. The frontend sends its items in, we return their ids in the order
+// the model recommends. Explicit click only — one model call per use.
+export async function rankUnbuilt(itemsInput = []) {
+  const items = Array.isArray(itemsInput) ? itemsInput.filter(it => it && it.id) : [];
+  if (!items.length) return { error: 'empty', message: 'Nothing to rank.' };
+  const catalog = items.map(it =>
+    `${it.id} — ${it.name} (${it.territory || '?'}, ${it.status || '?'})${it.buildable ? ', READY TO BUILD' : ', waiting on prerequisites'}: ${String(it.what || '').slice(0, 160)} ${it.next ? 'Next: ' + String(it.next).slice(0, 120) : ''}`).join('\n');
+  const out = await generateText({
+    prompt: `You are the tech-tree advisor of FMCNS — the owner's personal research system (characters, films, countries as one ontology, navigated fractally).
+
+These components of the architecture are NOT built yet. The owner wants to know the best order to build them in — the smartest next moves for the project, balancing impact on the research system, readiness (READY TO BUILD beats waiting on prerequisites), and how much each one unlocks.
+
+${catalog}
+
+Return ONLY JSON, no prose: {"order": ["id1", "id2", ...]} — every id exactly once, best first. Prefer buildable items early unless a locked one unlocks much more.`,
+    feature: 'studio',
+    maxTokens: 400,
+    label: 'arch-rank-unbuilt',
+  });
+  if (out.error) return { error: out.error, message: out.message };
+  const m = out.text?.match(/\{[\s\S]*\}/);
+  let parsed = null;
+  if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+  const ordered = parsed?.order && Array.isArray(parsed.order) ? parsed.order : [];
+  const known = new Set(items.map(it => it.id));
+  const ids = ordered.filter(id => known.has(id));
+  // Model misses -> keep the input order for the rest (the client re-ranks anyway).
+  const seen = new Set(ids);
+  items.forEach(it => { if (!seen.has(it.id)) { ids.push(it.id); seen.add(it.id); } });
+  return { order: ids };
+}

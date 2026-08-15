@@ -1,7 +1,7 @@
 // Routes for the Architecture Navigator's live backend surface.
 import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
-import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea } from '../services/architectureNodes.js';
+import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt } from '../services/architectureNodes.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
 
 export function architectureRoutes(db) {
@@ -82,6 +82,14 @@ export function architectureRoutes(db) {
       if (out.error === 'question_required') return res.status(400).json(out);
       return res.status(502).json(out);
     }
+    res.json(out);
+  });
+
+  // "AI recommends order" in the Not built list — the client sends its items,
+  // the model returns their ids best-first. Explicit click only.
+  router.post('/rank-unbuilt', async (req, res) => {
+    const out = await rankUnbuilt(req.body?.items);
+    if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
     res.json(out);
   });
 

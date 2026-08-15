@@ -156,7 +156,7 @@ Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers �
 ${USER_FACING_STYLE_FR}
 
 Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
-[{"title": "titre court (< 80 caractères)", "rationale": "1 phrase : pourquoi c'est utile maintenant", "prompt": "le prompt complet à donner à l'agent pour l'implémenter", "area": "zone concernée (ex: exploration, graph, queue, data)"}]`;
+[{"title": "titre court (< 80 caractères)", "rationale": "une phrase courte (max 15 mots) : pourquoi c'est utile maintenant", "prompt": "le prompt complet à donner à l'agent pour l'implémenter", "area": "zone concernée (ex: exploration, graph, queue, data)"}]`;
 
 export async function generateSuggestions() {
   const digest = buildContextDigest();
@@ -204,7 +204,7 @@ Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrèt
 ${USER_FACING_STYLE_FR}
 
 Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
-[{"title": "titre court", "rationale": "1 phrase : pourquoi", "prompt": "prompt complet pour l'implémenter", "area": "integration"}]`;
+[{"title": "titre court", "rationale": "une phrase courte (max 15 mots) : pourquoi", "prompt": "prompt complet pour l'implémenter", "area": "integration"}]`;
 
 export async function generateIntegrationSuggestions() {
   const digest = buildIntegrationDigest();

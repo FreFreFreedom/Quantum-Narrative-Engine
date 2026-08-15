@@ -15,6 +15,33 @@ import * as suggestions from './workSuggestions.js';
 import { getComponents, getComponentHistory } from './architecture.js';
 import * as archNodes from './architectureNodes.js';
 
+// Lazy import: promptQueue pulls in the whole queue machinery; loading it at
+// module init would make conversations import-heavy. Only needed for tasks.
+let promptQueue = null;
+function pq() {
+  if (!promptQueue) promptQueue = import('./promptQueue.js');
+  return promptQueue;
+}
+
+// Condensed world-look digest for conversations: one description line + the
+// three shelves trimmed to their essentials, chosen picks marked. Short enough
+// to live inside the system prompt without eating the turn budget.
+function condensedInspiration(report, picks) {
+  if (!report) return null;
+  const chosen = new Set((picks || []).map(p => `${p.part_index}:${p.pick_index}`));
+  const lines = [];
+  (report.parts || []).slice(0, 3).forEach((part, pi) => {
+    if (part.description) lines.push(`Idea: ${String(part.description).slice(0, 240)}`);
+    (part.picks || []).forEach((pick, i) => {
+      const mark = chosen.has(`${pi}:${i}`) ? ' [CHOSEN]' : '';
+      if (pick.kind === 'open') lines.push(`- open project ${pick.repo || '?'}${mark}: ${String(pick.why_fits || '').slice(0, 140)}`);
+      else if (pick.kind === 'hidden') lines.push(`- hidden product ${pick.name || '?'}${mark}: ${String(pick.lesson || pick.what || '').slice(0, 140)}`);
+      else if (pick.kind === 'bold') lines.push(`- bold idea ${pick.name || '?'}${mark}: ${String(pick.vision || '').slice(0, 220)}`);
+    });
+  });
+  return lines.join('\n');
+}
+
 const registry = new Map();
 
 export function registerSubject(type, spec) {
@@ -27,8 +54,9 @@ export function subjectSpec(type) {
 
 // Build the full context block that gets prepended to the system prompt for a
 // conversation about `type`/`subjectId`. Returns { title, contextText, tools,
-// handoff } | { error }.
-export function buildSubjectContext(db, type, subjectId, hint) {
+// handoff, compare } | { error }. `compare` (optional) collects the enrichment
+// ideas attached to the subject for the /compare command.
+export async function buildSubjectContext(db, type, subjectId, hint) {
   const spec = registry.get(type);
   if (!spec) return { error: 'unknown_subject_type' };
   const subject = spec.load(db, subjectId, hint);
@@ -38,7 +66,7 @@ export function buildSubjectContext(db, type, subjectId, hint) {
     ? spec.title(db, subjectId, hint)
     : (subject.title || subject.name || subjectId);
 
-  const contextText = spec.describe(subject, hint);
+  const contextText = await spec.describe(subject, hint);
 
   return {
     title,
@@ -46,6 +74,12 @@ export function buildSubjectContext(db, type, subjectId, hint) {
     tools: spec.tools || [],
     handoff: spec.handoff || null,
     dispatch: spec.dispatch || null,
+    compare: spec.compareItems
+      ? async () => {
+          const out = await spec.compareItems(db, subjectId, subject, hint);
+          return out || { items: [], note: 'No enrichment ideas attached yet.' };
+        }
+      : null,
   };
 }
 
@@ -89,15 +123,34 @@ registerSubject('suggestion', {
     const row = db?.prepare(`SELECT title FROM work_suggestions WHERE id=?`).get(id);
     return row?.title || id;
   },
-  describe: (subject) => {
-    return `This is a Suggestion — Claude proposed it as work to do. `
+  describe: async (subject) => {
+    let s = `This is a Suggestion — Claude proposed it as work to do. `
       + `Title: "${subject.title}". `
       + `Area: ${subject.area || 'general'}. Kind: ${subject.kind || 'chantier'}. `
       + `Rationale: ${subject.rationale || 'none given'}. `
       + `It has not been accepted yet.`;
+    if (subject.work_prompt_id) {
+      s += ` It is already queued as a task.`;
+      try {
+        const queue = await pq();
+        const insp = queue.inspirationPayload(subject.work_prompt_id);
+        if (insp?.report) {
+          const digest = condensedInspiration(insp.report, insp.picks);
+          if (digest) s += `\nIts queued task's world-look ideas (real projects / hidden products / bold ideas):\n${digest}`;
+        }
+      } catch { /* queue unavailable — context stays basic */ }
+    }
+    return s;
   },
   handoff: (db, convoId, subjectId, promptId) => {
     db.prepare(`UPDATE work_suggestions SET work_prompt_id=?, status='accepted', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND work_prompt_id IS NULL`).run(promptId, subjectId);
+  },
+  compareItems: (db, id) => {
+    const others = db.prepare(`SELECT title, rationale FROM work_suggestions WHERE deleted_at IS NULL AND status='new' AND id != ? ORDER BY created_at DESC LIMIT 6`).all(id);
+    return {
+      note: others.length ? 'Other open suggestions waiting in the list:' : 'No other open suggestions to compare with.',
+      items: others.map((r) => ({ label: r.title, text: r.rationale || '' })),
+    };
   },
 });
 
@@ -127,7 +180,21 @@ registerSubject('arch_component', {
     if (subject.now_text) s += `Current state: ${subject.now_text}. `;
     if (h.next) s += `Next step: ${h.next}. `;
     if (subject.provenance === 'speculative') s += `This is a speculative branch — not yet built. `;
+    if (Array.isArray(subject.suggestions) && subject.suggestions.length) {
+      s += `\nIts already-generated next steps:\n` + subject.suggestions
+        .map((sg) => `- ${sg.title}: ${String(sg.prompt || '').slice(0, 180)}`)
+        .join('\n');
+    }
     return s;
+  },
+  compareItems: (db, id, subject) => {
+    const items = (Array.isArray(subject?.suggestions) && subject.suggestions)
+      ? subject.suggestions.map((sg) => ({ label: sg.title, text: String(sg.prompt || '').slice(0, 260) }))
+      : [];
+    return {
+      note: items.length ? 'The next-step suggestions already generated for this component:' : 'This component has no generated next steps yet (use "Generate suggestions" on its detail first).',
+      items,
+    };
   },
   handoff: (db, convoId, subjectId, promptId) => {
     // Components don't have a work_prompt_id column; the handoff link lives only
@@ -159,8 +226,78 @@ registerSubject('arch_node', {
     if (subject.provenance === 'speculative') s += `This is a speculative proposal — not yet built. `;
     return s;
   },
+  compareItems: (db, id, subject) => {
+    return {
+      note: 'This tech-tree node has no enrichment ideas attached yet — queue it (the world-look will run before it starts) or generate next-step suggestions first.',
+      items: [],
+    };
+  },
   handoff: (db, convoId, subjectId, promptId) => {
     // Nodes don't carry a work_prompt_id; the link lives on the conversation row.
+    return;
+  },
+});
+
+// A queued Task as a conversation subject — lets Antoine discuss any task in the
+// Flow (including while it runs) with full awareness of its world-look ideas.
+registerSubject('task', {
+  label: 'Task',
+  load: (db, id) => {
+    return db?.prepare(`SELECT * FROM work_prompts WHERE id=? AND deleted_at IS NULL`).get(id);
+  },
+  title: (db, id) => {
+    const row = db?.prepare(`SELECT title FROM work_prompts WHERE id=?`).get(id);
+    return row?.title || id;
+  },
+  describe: async (subject) => {
+    let s = `This is a Task in the Dispatch Queue. `
+      + `Title: "${subject.title}". `
+      + `Mode: ${subject.mode || 'implement'}. Status: ${subject.status || 'unknown'}. `;
+    const purpose = subject.summary || subject.prompt || '';
+    if (purpose) s += `Purpose: ${String(purpose).slice(0, 300)}. `;
+    if (subject.pending_question) s += `It is waiting for the owner's answer to: "${subject.pending_question.question}". `;
+    if (subject.inspire_state && subject.inspire_state !== 'off') s += `Its world-look is '${subject.inspire_state}'. `;
+    try {
+      const queue = await pq();
+      const insp = queue.inspirationPayload(subject.id);
+      if (insp?.report) {
+        const digest = condensedInspiration(insp.report, insp.picks);
+        if (digest) s += `\nIts world-look ideas (real projects / hidden products / bold ideas; [CHOSEN] marks what the owner picked):\n${digest}`;
+      }
+    } catch { /* queue unavailable — context stays basic */ }
+    return s;
+  },
+  compareItems: async (db, id) => {
+    try {
+      const queue = await pq();
+      const insp = queue.inspirationPayload(id);
+      if (insp?.report) {
+        const items = [];
+        (insp.report.parts || []).slice(0, 3).forEach((part, pi) => {
+          (part.picks || []).forEach((pick, i) => {
+            const chosen = (insp.picks || []).some(p => p.part_index === pi && p.pick_index === i);
+            const label = (chosen ? '✓ ' : '') + (pick.repo || pick.name || pick.kind || 'idea');
+            const text = pick.kind === 'open'
+              ? `${pick.why_fits || ''} Use: ${pick.use || ''}`
+              : pick.kind === 'hidden'
+                ? `${pick.lesson || ''} For FMCNS: ${pick.use || ''}`
+                : `${pick.vision || ''} For FMCNS: ${pick.how_fmcns || ''}`;
+            items.push({ label, text: String(text).slice(0, 400) });
+          });
+        });
+        return {
+          note: items.length ? 'The world-look ideas attached to this task (✓ = already picked):' : 'This task has a world-look but no ideas in it yet.',
+          items,
+        };
+      }
+    } catch { /* fall through */ }
+    return {
+      note: 'No world-look ideas attached to this task yet — they appear once the task gets its look at the world (real projects, hidden products, bold ideas).',
+      items: [],
+    };
+  },
+  handoff: (db, convoId, subjectId, promptId) => {
+    // A task is already a task — no handoff back-reference needed.
     return;
   },
 });

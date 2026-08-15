@@ -156,7 +156,7 @@ Decide whether this idea is a single atomic building block, or whether it names 
 - If it combines distinct capabilities: return 2-4 parts, one per distinct capability, each independently searchable on GitHub.
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"project_name":"short name for the overall idea (only meaningful if more than one part)","project_territory":"one of perception|knowledge|reasoning|experience|interface","parts":[{"name":"short label","description":"one paragraph: what this part must do, specific enough to search GitHub for"}]}`;
+{"project_name":"short name for the overall idea (only meaningful if more than one part)","project_territory":"one of perception|knowledge|reasoning|experience|interface","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do, specific enough to search GitHub for"}]}`;
 }
 
 function buildQueryPrompt(partDescription) {
@@ -298,7 +298,7 @@ Two jobs in one pass:
 2. For each part, propose 1-2 GitHub repo-search query strings (the kind you would type into GitHub's search box) that would surface real, already-built open-source work relevant to that part. Be realistic about what a query would return.
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one paragraph: what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
+{"project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
 }
 
 function buildInspirePicksPrompt(partDescription, resultsByQuery) {

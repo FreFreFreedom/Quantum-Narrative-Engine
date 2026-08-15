@@ -31,6 +31,16 @@ export function conversationsRoutes() {
     res.json({ convo: out.convo, messages: convos.listMessages(out.convo.id), created: out.created });
   });
 
+  // GET /api/convos/for?type=arch_component&ids=a,b,c — which of these subjects
+  // already have a conversation (for the ✨/💬 markers in the "Not built" list).
+  // Declared before /:id so "for" is not captured as an id.
+  router.get('/for', (req, res) => {
+    const type = String(req.query.type || '');
+    const ids = String(req.query.ids || '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 100);
+    if (!type || !ids.length) return res.json({ convos: {} });
+    res.json({ convos: convos.listConvosForSubjects(type, ids) });
+  });
+
   // GET /api/convos/:id — fetch a specific conversation + its messages.
   router.get('/:id', (req, res) => {
     const convo = convos.getConvo(req.params.id);
