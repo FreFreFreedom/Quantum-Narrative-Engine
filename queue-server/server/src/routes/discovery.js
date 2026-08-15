@@ -2,12 +2,12 @@
 // pattern as routes/architecture.js.
 import { Router } from 'express';
 import {
-  listQueries, getResults, recordFeedback, runIdeaSearch, runInspiration, listReports, getReport, findReportBySource, plant, plantProject, CURATED_QUERIES,
+  listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
+  isWorldLookRunning, runWorldLookGuarded, plant, plantProject, CURATED_QUERIES,
 } from '../services/codeDiscovery.js';
 
 export function discoveryRoutes(db) {
   const router = Router();
-  const worldLookRunning = new Set();
 
   router.get('/queries', (req, res) => {
     res.json({ queries: listQueries() });
@@ -61,28 +61,32 @@ export function discoveryRoutes(db) {
   // The same three-shelf inspiration pass the queue runs on every implement
   // task, but attached to the item itself (source + item id) instead of a queue
   // prompt — so ideas appear right in their own section without queueing first.
-  // Start returns immediately (the pass takes a while); the caller polls GET.
+  // Start returns immediately (the pass takes a while); the caller polls GET,
+  // which also reports whether a look is still running (started here or by the
+  // background sweep in codeDiscovery.autoWorldLookSuggestions).
   router.post('/world-look', (req, res) => {
     const { source, source_id, idea_text } = req.body || {};
-    const key = `${source}:${source_id}`;
     if (!source || !source_id || !String(idea_text || '').trim()) {
       return res.status(400).json({ error: 'source, source_id and idea_text are required' });
     }
-    if (worldLookRunning.has(key)) return res.status(202).json({ started: false, running: true });
-    worldLookRunning.add(key);
-    res.status(202).json({ started: true });
-    runInspiration(db, {
+    if (isWorldLookRunning(source, source_id)) return res.status(202).json({ started: false, running: true });
+    const run = runWorldLookGuarded(db, {
       idea_text: String(idea_text),
       source: String(source),
       source_id: String(source_id),
-    }).catch((e) => console.error('[discovery] world-look failed:', e.message))
-      .finally(() => worldLookRunning.delete(key));
+    });
+    res.status(202).json({ started: true });
+    run.catch((e) => console.error('[discovery] world-look failed:', e.message));
   });
 
   router.get('/world-look', (req, res) => {
     const { source, source_id } = req.query;
     if (!source || !source_id) return res.status(400).json({ error: 'source and source_id are required' });
-    res.json({ report: findReportBySource(db, String(source), String(source_id)) });
+    const key = { source: String(source), source_id: String(source_id) };
+    res.json({
+      report: findReportBySource(db, key.source, key.source_id),
+      running: isWorldLookRunning(key.source, key.source_id),
+    });
   });
 
   return router;

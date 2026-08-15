@@ -14,6 +14,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE_FR } from './ai/style.js';
+import { autoWorldLookSuggestions } from './codeDiscovery.js';
 import * as queue from './promptQueue.js';
 
 let db = null;
@@ -224,5 +225,11 @@ export async function runSuggestionEngines({ kind = null } = {}) {
   const results = {};
   if (!kind || kind === 'chantier') results.chantier = await generateSuggestions();
   if (!kind || kind === 'integration') results.integration = await generateIntegrationSuggestions();
+  // New suggestions get their world-look right away (background, one at a time)
+  // so the three shelves are already ready when Antoine opens them. Reports
+  // persist; anything already looked is skipped — idempotent across runs.
+  autoWorldLookSuggestions(db)
+    .then(({ ran }) => { if (ran) console.log(`[travaux] auto world-look ran for ${ran} suggestion(s).`); })
+    .catch((e) => console.error('[travaux] auto world-look sweep failed:', e.message));
   return results;
 }

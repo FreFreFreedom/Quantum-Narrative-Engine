@@ -612,6 +612,47 @@ export function findReportBySource(db, source, source_id) {
   return row ? getReport(db, row.id) : null;
 }
 
+// ─── Shared in-flight guard + background sweeper ─────────────────────────────
+// One look per item at a time, anywhere it is triggered from (the section
+// panels' routes OR the background sweep) — the GET endpoint reports it, and
+// nothing ever double-runs.
+const _worldLookRunning = new Set();
+export function isWorldLookRunning(source, id) {
+  return _worldLookRunning.has(`${source}:${id}`);
+}
+
+export async function runWorldLookGuarded(db, { idea_text, source, source_id, forceRefresh = false } = {}) {
+  const key = `${source}:${source_id}`;
+  if (_worldLookRunning.has(key)) return { running: true };
+  _worldLookRunning.add(key);
+  try {
+    return await runInspiration(db, { idea_text, source, source_id, forceRefresh });
+  } finally {
+    _worldLookRunning.delete(key);
+  }
+}
+
+// Background sweep: every suggestion that has no world-look yet gets one,
+// sequentially (one at a time keeps GitHub and model traffic gentle). Reports
+// persist forever, so each suggestion costs this once and the sweep is
+// idempotent across restarts. Never throws. Runs through the same free-model-
+// first seam the queue's inspiration pass uses.
+export async function autoWorldLookSuggestions(db) {
+  const rows = db.prepare(`SELECT id, title, prompt FROM work_suggestions WHERE deleted_at IS NULL AND status='new'`).all();
+  let ran = 0, skipped = 0;
+  for (const s of rows) {
+    if (findReportBySource(db, 'suggestion', s.id) || isWorldLookRunning('suggestion', s.id)) { skipped++; continue; }
+    const out = await runWorldLookGuarded(db, {
+      idea_text: [s.title, s.prompt].filter(Boolean).join('\n'),
+      source: 'suggestion',
+      source_id: s.id,
+    });
+    if (out?.error) console.error(`Auto world-look failed for suggestion ${s.id}: ${out.message || out.error}`);
+    else ran++;
+  }
+  return { ran, skipped };
+}
+
 export function listReports(db) {
   // The blocks-tab "Past reports" library shows idea-box runs only — automatic
   // per-task inspiration reports (source='prompt') belong to the task detail

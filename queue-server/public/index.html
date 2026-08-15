@@ -3647,6 +3647,12 @@ function renderFlow() {
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
   const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
 
+  // In-flight world-looks (server-side auto-looks included) tick forward here,
+  // so ✨ markers appear on rows the moment a look lands — no need to open the
+  // item first. Poll is a no-op unless the item is pending.
+  if (showSg) tvSuggestions.forEach(s => flowWorldPoll('suggestion', s.id));
+  if (showSeeds) tvIdeas.forEach(i => flowWorldPoll('idea', i.id));
+
   if (showQueue) {
     const questions = qPrompts.filter(p => rel(p) && p.pending_question && flowMatches([p.title, p.prompt]));
     const running = qPrompts.filter(p => rel(p) && p.status === 'running' && flowMatches([p.title, p.prompt]));
@@ -4591,11 +4597,12 @@ let flowWorld = {};
 function flowWorldEntry(source, id) {
   const key = source + ':' + id;
   let e = flowWorld[key];
-  if (!e) { e = { state: 'idle', synced: false, startedAt: 0, report: null, error: '', sel: [] }; flowWorld[key] = e; }
+  if (!e) { e = { state: 'idle', synced: false, startedAt: 0, report: null, error: '', sel: [], autoAttempted: false }; flowWorld[key] = e; }
   return e;
 }
 // One silent lookup per item per session: after a reload, the panel and the
-// row markers come back without re-searching.
+// row markers come back without re-searching. If the server is already running
+// a look for this item (background sweep), join it instead of offering start.
 async function flowWorldSync(source, id) {
   const e = flowWorldEntry(source, id);
   if (e.synced || e.state !== 'idle') return;
@@ -4603,10 +4610,13 @@ async function flowWorldSync(source, id) {
   try {
     const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
     if (data.report) { e.report = data.report; e.state = 'ready'; renderFlow(); }
+    else if (data.running) { e.state = 'pending'; e.startedAt = Date.now(); renderFlow(); }
   } catch (err) { /* stays idle — the start button still works */ }
 }
 // Polled from the render loop while a look is running; flips to ready the
-// moment the report lands. Gives up after four minutes with a retry path.
+// moment the report lands. Gives up after four minutes with a retry path, and
+// a look that settled without a report (server-side failure) falls back to the
+// start button.
 async function flowWorldPoll(source, id) {
   const e = flowWorldEntry(source, id);
   if (e.state !== 'pending') return;
@@ -4614,6 +4624,7 @@ async function flowWorldPoll(source, id) {
   try {
     const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
     if (data.report) { e.report = data.report; e.state = 'ready'; renderFlow(); }
+    else if (!data.running) { e.state = 'idle'; e.startedAt = 0; renderFlow(); }
   } catch (err) { /* the next poll tick retries */ }
 }
 async function flowWorldStart(source, id, ideaText) {
@@ -4625,6 +4636,22 @@ async function flowWorldStart(source, id, ideaText) {
   } catch (err) {
     e.state = 'failed'; e.error = err.message;
   }
+}
+const wSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Used by the Not built background sweep: block until this item's look settles
+// (ready, or settled without a report) — so looks run one at a time.
+async function flowWorldWait(source, id) {
+  const e = flowWorldEntry(source, id);
+  const deadline = Date.now() + 240000;
+  while (Date.now() < deadline) {
+    await wSleep(5000);
+    try {
+      const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
+      if (data.report) { e.report = data.report; e.state = 'ready'; return; }
+      if (!data.running && e.state === 'pending') { e.state = 'idle'; e.startedAt = 0; return; }
+    } catch (err) { /* keep waiting */ }
+  }
+  if (e.state === 'pending') { e.state = 'failed'; e.error = 'The look took too long — try again.'; }
 }
 function flowWorldPanelHtml(source, id) {
   const e = flowWorldEntry(source, id);
@@ -4727,6 +4754,10 @@ async function loadSuggestions() {
     const data = await api('/api/travaux/suggestions' + (q.length ? '?' + q.join('&') : ''));
     tvSuggestions = data.suggestions || [];
   } catch (e) { tvSuggestions = []; }
+  // Their world-looks are prepared in the background on the server — sync each
+  // suggestion's state once per session so ready ones show their ✨ marker (and
+  // in-flight ones join the poll) without opening them first.
+  tvSuggestions.forEach(s => { flowWorldSync('suggestion', s.id); flowWorldPoll('suggestion', s.id); });
   // Re-open the suggestion detail after a refresh (accept/dismiss/regenerate) if
   // it is still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'suggestion') {
@@ -5482,6 +5513,46 @@ function nbQueuePromptOf(c) {
   };
 }
 
+// Background auto-look for the Not built list: one pass per session that works
+// through every unbuilt component, one at a time — learns which already have a
+// report (one cheap lookup each), starts a look for the rest, and waits for each
+// to settle before the next. Opening a component later shows its shelves
+// instantly, no waiting. Each look costs the same few free-model-first calls the
+// queue already spends per task, and reports are permanent, so this only ever
+// runs once per new component.
+let nbAutoRunning = false;
+async function nbAutoLook() {
+  if (nbAutoRunning) return;
+  nbAutoRunning = true;
+  try {
+    for (;;) {
+      const comps = nbUnbuiltItems().map(x => x.c);
+      let pendingAny = false;
+      for (const c of comps) {
+        const e = flowWorldEntry('component', c.id);
+        if (e.synced) { if (e.state === 'pending') pendingAny = true; continue; }
+        await flowWorldSync('component', c.id);
+        if (flowWorldEntry('component', c.id).state === 'pending') pendingAny = true;
+      }
+      const target = comps.find(c => {
+        const e = flowWorldEntry('component', c.id);
+        return e.state === 'idle' && !e.autoAttempted;
+      });
+      if (!target) {
+        if (!pendingAny) break; // every component has its look (or a manual retry button)
+        await wSleep(10000);     // some looks are in flight — check again shortly
+        continue;
+      }
+      const e = flowWorldEntry('component', target.id);
+      e.autoAttempted = true;    // one automatic attempt per item per session
+      const { title, prompt } = nbQueuePromptOf(target);
+      await flowWorldStart('component', target.id, [title, prompt].join('\n'));
+      await flowWorldWait('component', target.id);
+    }
+  } catch (e) { console.error('nb auto-look stopped:', e); }
+  finally { nbAutoRunning = false; }
+}
+
 // The "Not built" Flow view: toolbar + list, rendered into the Flow body when
 // its type chip is active. renderNotbuilt() fills the list body only, so the
 // search box keeps focus while typing.
@@ -5516,8 +5587,10 @@ function renderNotbuiltFlow() {
   });
   if (!nbInited) {
     nbInited = true;
-    // Stored/speculative nodes merge in asynchronously — re-render once they land.
-    loadArchNodes().then(() => renderNotbuilt()).catch(() => {});
+    // Stored/speculative nodes merge in asynchronously — re-render once they land,
+    // then start the background auto-look so every row's shelves are ready in
+    // advance (one at a time, no waiting when you click).
+    loadArchNodes().then(() => { renderNotbuilt(); nbAutoLook(); }).catch(() => {});
     loadNbConvos();
   }
   renderNotbuilt();
@@ -5546,6 +5619,9 @@ function renderNotbuilt() {
     host.innerHTML = '<div class="nb-empty">Nothing here — everything matching is either built or filtered out.</div>';
     return;
   }
+  // In-flight looks (the background sweep included) tick forward on each
+  // render, so markers and row labels update the moment one lands.
+  items.forEach(it => flowWorldPoll('component', it.c.id));
   let html = '';
   // The "next 3" shortlist panel — pinned above the list until cleared.
   if (nbShortlist && nbShortlist.length) {

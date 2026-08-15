@@ -17,6 +17,7 @@
 import { runSuggestionEngines } from './workSuggestions.js';
 import { generateSuggestions as generateArchSuggestions } from './architecture.js';
 import { syncFromGit } from './treeSync.js';
+import { autoWorldLookSuggestions } from './codeDiscovery.js';
 
 const SUGGESTIONS_TTL_MS = 12 * 3600_000;
 const ARCH_TTL_MS = 24 * 3600_000;
@@ -112,6 +113,14 @@ async function pregenTreeSync(db) {
   else console.log(`Pre-gen: tree sync ${out.baseline ? 'baseline recorded (' + out.baseline.slice(0, 8) + ')' : 'created ' + (out.created ?? 0) + ' proposal(s)'}.`);
 }
 
+// Catch-up sweep: any suggestion that still has no world-look (e.g. one created
+// while the server was down, or an engine run that ended before its sweep could
+// finish) gets it here. Idempotent — existing reports are skipped.
+async function pregenWorldLooks(db) {
+  const out = await autoWorldLookSuggestions(db);
+  if (out.ran || out.skipped) console.log(`Pre-gen: world-look sweep — ran ${out.ran}, skipped ${out.skipped}.`);
+}
+
 let running = false;
 let started = false;
 
@@ -121,6 +130,7 @@ async function runOnce(db) {
   try {
     await pregenSuggestions(db);
     await pregenArchitecture(db);
+    await pregenWorldLooks(db);
   } catch (e) {
     console.error('Pre-gen: run failed —', e.message);
   } finally {
