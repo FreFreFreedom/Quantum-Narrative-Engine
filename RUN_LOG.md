@@ -1287,3 +1287,16 @@ None.
 2. Google Books task: kept (the enrichment pipeline is genuinely missing), with the
    task text amended to say the book-search part already exists so the agent focuses on
    what remains. Antoine's "already done" check found nothing else to clean.
+
+## Follow-up (same session)
+
+- The flagship verification initially failed: the deployed model list had zero opencode-go
+  models even after the new code deployed. Cause: the OPENCODE_AUTH_CONTENT value on Railway
+  was missing the Go subscription entry. Antoine updated the variable from the prepared
+  auth-file copy (providers: opencode, google, alibaba, opencode-go). After the redeploy the
+  deployed app lists 18 opencode-go models, with `opencode-go/deepseek-v4-pro` (chain step 1)
+  present — the 11 re-pointed tasks will now resolve to it at run time.
+- Deployed queue stays paused (as Antoine left it) — nothing auto-starts; tasks resume on the
+  flagship whenever he resumes the queue.
+- Deployed tasks re-verified: all 11 unfinished rows have provider=opencode, provider_model
+  and run_model cleared. Local rows fixed the same way earlier in this session.
