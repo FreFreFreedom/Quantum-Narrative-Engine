@@ -266,16 +266,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .ws-map.mind-tab #archMindPane { display:flex; }
 .ws-map.mind-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
 
-/* ---------- Not built pane (siftable list of unbuilt tree components) ---------- */
-#archNotbuiltPane { flex:1; min-height:0; display:none; flex-direction:column; }
-.ws-map.notbuilt-tab .arch-toolbar, .ws-map.notbuilt-tab .ws-map-body { display:none; }
-.ws-map.notbuilt-tab #archNotbuiltPane { display:flex; }
-.ws-map.notbuilt-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
-.nb-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding:10px 14px; border-bottom:1px solid var(--c-border); flex-shrink:0; }
+/* ---------- Not built list (Flow chip — siftable unbuilt tree components) ---------- */
+.nb-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding:10px 2px; flex-shrink:0; }
 .nb-toolbar .arch-title { font-size:13px; font-weight:700; }
 .nb-search { flex:1; min-width:160px; max-width:340px; border:1px solid var(--c-border-2); border-radius:8px; padding:6px 10px; font-size:12px; font-family:inherit; }
 .nb-hint { font-size:10.5px; color:var(--c-ink-4); }
-.nb-body { flex:1; overflow-y:auto; padding:10px 14px 18px; }
+.nb-body { flex:1; overflow-y:auto; }
 .nb-row { border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); padding:9px 12px; margin-bottom:8px; }
 .nb-row.nb-buildable { border-color:#c08a3e; background:var(--c-warm-tint); }
 .nb-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -883,7 +879,6 @@ button:active { transform: translateY(1px) scale(.99); }
     <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage(), initBlocks() into #tvBodyBlocks | backend: services/architecture.js, routes/architecture.js, routes/discovery.js">
       <div class="arch-inner-tabs">
         <button class="active" data-arch-tab="graph">Graph</button>
-        <button data-arch-tab="notbuilt">Not built</button>
         <button data-arch-tab="blocks">Building blocks</button>
         <button data-arch-tab="mind">Mind</button>
       </div>
@@ -961,15 +956,6 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="tv-body" id="tvBodyMind"></div>
       </div>
-      <div id="archNotbuiltPane" class="core-pane" data-src="CORE ARCHITECTURE → graph zone → Not built (siftable list of unbuilt tree components, one-click build) | fmcns_navigator.html: initNotbuilt()/renderNotbuilt() | backend: routes/architecture.js rank-unbuilt, routes/travaux.js">
-        <div class="nb-toolbar">
-          <span class="arch-title">Not built</span>
-          <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off">
-          <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project">✨ AI recommends order</button>
-          <span class="nb-hint">Ready-to-build first · one click queues a build · world-look runs before it starts</span>
-        </div>
-        <div class="nb-body" id="tvBodyNotbuilt"><div class="empty">Loading…</div></div>
-      </div>
     </div>
     <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done) + the New-prompt composer | fmcns_navigator.html: renderFlow(), qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js">
       <div id="corePaneFlow" class="core-pane" data-src="CORE ARCHITECTURE → Flow | fmcns_navigator.html: renderFlow() into #tvBodyFlow, item detail into the right zone | backend: services/promptQueue.js, services/suggestions.js, services/workIdeas.js">
@@ -981,6 +967,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <span class="flow-typecips" id="flowTypeBtns">
               <button class="active" data-ftype="all">All</button>
               <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
+              <button data-ftype="notbuilt">Not built</button>
               <button data-ftype="suggestions">Suggestions</button>
               <button data-ftype="seeds">Seeds</button>
               <button data-ftype="done">✓ Done</button>
@@ -2770,11 +2757,9 @@ function setArchTab(t) {
   archTab = t;
   document.getElementById('wsMap').classList.toggle('blocks-tab', t === 'blocks');
   document.getElementById('wsMap').classList.toggle('mind-tab', t === 'mind');
-  document.getElementById('wsMap').classList.toggle('notbuilt-tab', t === 'notbuilt');
   document.querySelectorAll('[data-arch-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-tab') === t));
   if (t === 'blocks') initBlocks();
   if (t === 'mind') initMind();
-  if (t === 'notbuilt') initNotbuilt();
 }
 
 function switchCoreView(v) {
@@ -3195,7 +3180,6 @@ async function qLoad() {
   }
   if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
   if (coreView === 'flow' && changed) renderFlow();
-  if (coreView === 'arch' && archTab === 'notbuilt' && changed) renderNotbuilt();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
@@ -3552,12 +3536,13 @@ function flowMatches(parts) {
   return parts.join(' ').toLowerCase().includes(flowSearch.toLowerCase());
 }
 
-// True while the human is typing inside the Flow (inline titles, or any field of
-// the expanded task/seed/suggestion card). Poll-driven re-renders must stand
-// down then — the data stays current and renders again on the next tick.
+// True while the human is typing inside the Flow (inline titles, any field of
+// the expanded task/seed/suggestion card, or the Not built search box).
+// Poll-driven re-renders must stand down then — the data stays current and
+// renders again on the next tick.
 function qTypingGuard() {
   const ae = document.activeElement;
-  return !!(ae && ae.closest && ae.closest('#flowExpanded, .q-title-inline'));
+  return !!(ae && ae.closest && ae.closest('#flowExpanded, .q-title-inline, #nbSearch'));
 }
 
 // Save/restore field values across an expanded-card re-render, so a poll that
@@ -3641,6 +3626,10 @@ function renderFlow() {
   // stays current (polls update it) and renders again right after.
   if (qTypingGuard() || qDragQId) return;
   document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
+
+  // "Not built" lives in the Flow now — the siftable list of unbuilt tree
+  // components, its own toolbar included.
+  if (flowType === 'notbuilt') { renderNotbuiltFlow(); return; }
 
   const showQueue = flowType === 'all' || flowType === 'queue';
   const showSg = flowType === 'all' || flowType === 'suggestions';
@@ -5419,16 +5408,30 @@ function nbQueuePromptOf(c) {
   };
 }
 
-function initNotbuilt() {
-  if (nbInited) { renderNotbuilt(); return; }
-  nbInited = true;
+// The "Not built" Flow view: toolbar + list, rendered into the Flow body when
+// its type chip is active. renderNotbuilt() fills the list body only, so the
+// search box keeps focus while typing.
+function renderNotbuiltFlow() {
+  const host = document.getElementById('tvBodyFlow');
+  if (!host) return;
+  host.innerHTML = `
+    <div class="nb-toolbar" style="border-bottom:none;padding:4px 2px 10px;">
+      <span class="arch-title">Not built</span>
+      <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEsc(nbSearch)}">
+      <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project">✨ AI recommends order</button>
+      <span class="nb-hint">Ready-to-build first · one click queues a build · world-look runs before it starts</span>
+    </div>
+    <div class="nb-body" id="tvBodyNotbuilt" style="padding:0 2px;"></div>`;
   const search = document.getElementById('nbSearch');
   if (search) search.oninput = () => { nbSearch = search.value; renderNotbuilt(); };
   const aiBtn = document.getElementById('nbAiOrderBtn');
   if (aiBtn) aiBtn.onclick = nbAiOrder;
-  // Stored/speculative nodes merge in asynchronously — re-render once they land.
-  loadArchNodes().then(() => renderNotbuilt()).catch(() => {});
-  loadNbConvos();
+  if (!nbInited) {
+    nbInited = true;
+    // Stored/speculative nodes merge in asynchronously — re-render once they land.
+    loadArchNodes().then(() => renderNotbuilt()).catch(() => {});
+    loadNbConvos();
+  }
   renderNotbuilt();
 }
 

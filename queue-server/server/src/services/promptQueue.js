@@ -350,6 +350,9 @@ export async function applyInspiration(id, { picks = [] } = {}) {
   const row = getPrompt(id);
   if (!row) return null;
   if (row.status === 'running') return { ...row, error: 'running' };
+  // A finished task's plan is the historical record of what ran — picks on a
+  // done/cancelled task are read-only (its world-look stays visible to read).
+  if (['done', 'cancelled'].includes(row.status)) return { ...row, error: 'finished' };
   const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
   if (!report) return { ...row, error: 'no_report' };
   const applied = [];
@@ -377,10 +380,11 @@ export async function applyInspiration(id, { picks = [] } = {}) {
   return getPrompt(id);
 }
 
-// One-time condensation pass for world-look reports written before the
-// "one short sentence" description rule existed (new reports are born with it).
-// Rewrites each part's description in place — picks untouched. One cheap model
-// call per report with long descriptions; idempotent.
+// One-time plain-language pass for world-look report descriptions — both the
+// old "one paragraph" style and the technical one-sentence style are rewritten
+// for a non-programmer: one short sentence (max 20 words), everyday words, no
+// jargon, no internal names. Picks untouched. One cheap model call per report;
+// idempotent (already-plain short descriptions come back unchanged).
 export async function condenseExistingInspiration() {
   const rows = db.prepare(`SELECT DISTINCT inspire_report_id AS rid FROM work_prompts WHERE inspire_report_id IS NOT NULL AND deleted_at IS NULL`).all();
   let condensed = 0, skipped = 0, failed = 0;
@@ -394,7 +398,7 @@ export async function condenseExistingInspiration() {
     if (!idxs.length) { skipped++; continue; }
     const descs = idxs.map(i => parts[i].description);
     const out = await generateText({
-      prompt: `Shorten each description below to ONE short sentence (max 20 words), keeping its meaning and search-worthy specificity. Return ONLY a JSON array of strings, same order, nothing else.\n${JSON.stringify(descs)}`,
+      prompt: `Rewrite each description below for a NON-programmer, in plain everyday language: ONE short sentence (max 20 words). No jargon, no technical terms, no internal component or system names (like "SQLite" or "API") — say what it does for the person using the app, in everyday words. Keep the meaning. Return ONLY a JSON array of strings, same order, nothing else.\n${JSON.stringify(descs)}`,
       feature: 'studio',
       maxTokens: 300,
       label: 'inspire-condense-existing',
