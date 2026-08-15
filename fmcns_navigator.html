@@ -4219,14 +4219,17 @@ async function qSummarize(p) {
 // any shelf and the plan re-drafts with the picks as its compass.
 
 function qInspireHtml(p) {
-  if (!p.inspire_state || p.inspire_state === 'off') {
-    return `<div class="tv-empty">This task never looked at what the world already does.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">✨ Look at what exists before you start</button></div>`;
+  if (!p.inspire_state || p.inspire_state === 'off' || p.inspire_state === 'skipped') {
+    const note = p.inspire_state === 'skipped'
+      ? 'This task runs on a plain plan — the world-look was skipped. The task will start when you start it.'
+      : 'This task has not looked at the world yet, so it will not start until it does (or you skip the search).';
+    return `<div class="tv-empty">${note}<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">✨ Look at what exists before you start</button>${p.inspire_state !== 'skipped' ? '<button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button>' : ''}</div>`;
   }
   if (p.inspire_state === 'pending') {
-    return `<div class="tv-empty">🔭 Looking for inspiration… real projects, hidden products, bold ideas. About a minute.</div>`;
+    return `<div class="tv-empty">🔭 Looking for inspiration… real projects, hidden products, bold ideas. This task will not start before these ideas are ready.</div>`;
   }
   if (p.inspire_state === 'failed') {
-    return `<div class="tv-empty">The world-look did not finish${p.inspire_error ? ': ' + qEsc(p.inspire_error) : ''}.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">Try again</button></div>`;
+    return `<div class="tv-empty">The world-look did not finish${p.inspire_error ? ': ' + qEsc(p.inspire_error) : ''}. This task waits until the search succeeds — or you let it run on a plain plan.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">Try again</button><button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button></div>`;
   }
   const cached = qInspireCache[p.id];
   if (cached && cached.state === p.inspire_state && cached.report_id === p.inspire_report_id) {
@@ -4378,7 +4381,7 @@ function qWireInspire(p) {
   const host = document.getElementById('qInspireHost');
   if (!host) return;
   const st = p.inspire_state || 'off';
-  if (st === 'off' || st === 'failed' || st === 'pending') {
+  if (st === 'off' || st === 'failed' || st === 'skipped' || st === 'pending') {
     if (st !== 'pending') {
       host.querySelectorAll('[data-action="inspire-start"]').forEach(b => {
         b.onclick = async () => {
@@ -4388,6 +4391,16 @@ function qWireInspire(p) {
             qInspireCache[p.id] = null;
             await qLoad();
           } catch (e) { b.disabled = false; b.textContent = '✨ Look at what exists before you start'; alert('Error: ' + e.message); }
+        };
+      });
+      host.querySelectorAll('[data-action="inspire-skip"]').forEach(b => {
+        b.onclick = async () => {
+          b.disabled = true; b.textContent = 'Skipping…';
+          try {
+            await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/skip`, 'POST', {});
+            qInspireCache[p.id] = null;
+            await qLoad();
+          } catch (e) { b.disabled = false; b.textContent = 'Start without inspiration'; alert('Error: ' + e.message); }
         };
       });
     }

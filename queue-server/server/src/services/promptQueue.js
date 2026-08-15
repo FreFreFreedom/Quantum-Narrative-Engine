@@ -284,10 +284,30 @@ function startInspiration(id, { title, prompt }, { force = false } = {}) {
     } finally {
       _inspiring.delete(id);
       broadcast();
+      // The inspiration gate: a queued task held at 'off'/'pending'/'failed' is
+      // released the moment the pass settles (ready → runs, failed → stays held
+      // for the retry/skip buttons). advanceQueue is a no-op for rows that are
+      // still held or still drafting — safe to call on every completion.
+      advanceQueue();
     }
   })();
   _inspiring.set(id, run);
   return run;
+}
+
+// Antoine chose to let this task run on a plain plan without the world-look
+// ("Start without inspiration"). The gate then treats it like a ready task.
+export async function skipInspiration(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  if (row.mode !== 'implement') return row;
+  db.prepare(`
+    UPDATE work_prompts SET inspire_state='skipped', inspire_error=NULL,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(id);
+  broadcast();
+  if (row.status === 'queued') advanceQueue();
+  return getPrompt(id);
 }
 
 // Wait for the task's inspiration pass, bounded. Resolves to the plan-ready
@@ -624,7 +644,14 @@ export function advanceQueue() {
   // start keeps the global MAX_CONCURRENT_WRITERS cap intact. This is the prompt
   // level of the same guard taskRunner's kick() applies at the task level — two
   // agents can genuinely run in parallel; a paused/disabled agent's prompts wait.
-  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
+  //
+  // Inspiration gate (plan inspiration-before-planning): an implement task only
+  // starts once its world-look pass finished — 'ready' (ideas waiting for picks),
+  // 'applied' (picks baked in) or 'skipped' (Antoine explicitly chose a plain
+  // plan). 'off' (pre-feature rows), 'pending' and 'failed' all hold it — the
+  // pass completes and this function is re-kicked from startInspiration. Question
+  // rows are exempt (the pass never runs for them).
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND (mode='question' OR COALESCE(inspire_state,'off') NOT IN ('off','pending','failed')) AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
     // Auto-assign (plan "auto devs"): no agent picked → least-loaded enabled

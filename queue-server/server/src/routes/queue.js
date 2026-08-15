@@ -177,6 +177,12 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  router.post('/prompts/:id/inspiration/skip', async (req, res) => {
+    const row = await queue.skipInspiration(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
   router.post('/prompts/:id/inspiration/apply', async (req, res) => {
     const row = await queue.applyInspiration(req.params.id, req.body || {});
     if (!row) return res.status(404).json({ error: 'not_found' });
