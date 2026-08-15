@@ -1369,3 +1369,29 @@ None.
 5. Unverified by live run: the queue-origin path (needs a real finished task — the queue is
    paused by Antoine). It is defensive (every failure path is a silent skip) and will fire
    on the next finished task.
+
+## Follow-up (same session) — mandatory inspiration + bulk search
+
+- Antoine clarified the rule: EVERY task must pass the inspiration phase BEFORE it can
+  enter the queue and start — no exceptions. Implemented as a hard gate: queued implement
+  tasks are held while inspire_state is 'off'/'pending'/'failed'; only 'ready'/'applied'
+  release them, plus an explicit "Start without inspiration" escape hatch (state 'skipped')
+  for the rare case the search keeps failing. Pass completion re-kicks the queue so held
+  tasks release on their own. Question tasks exempt. Verified locally: a queued task held
+  through pending → released at ready → plan drafted with the world-look in it.
+- Bulk search: Antoine asked for the automatic world-look on ALL waiting tasks. All 11
+  deployed tasks (1 ready, 7 parked, 3 blocked) triggered via the refresh endpoint — now
+  all 'ready' with their three shelves. Local app: the 1 implement task triggered (the 2
+  question-mode tasks are exempt by design). The 2 finished tasks left alone (nothing to
+  plan for them — noted to Antoine).
+- Root cause found and fixed while doing this: Railway only deploys queue-server/, so the
+  repo-root .opencode/agent definitions (fmcns-text etc.) never reached the container —
+  the toolless text lane failed its read-only guard there and every plan draft/summary/
+  inspiration silently ran on free catalogue fallbacks, and question tasks would have
+  fallen back to opencode's write-capable default agent. The three agent files now ship
+  inside queue-server/.opencode/agent/ (plain copies; Railway has no build step), so the
+  flagship runs on the deployed app. First batch of 6 searches failed on catalogue models;
+  after the fix, all 6 retries succeeded on the flagship.
+- Routine decisions: the two file copies must stay in sync by hand (noted here); the
+  remaining 'off' state now means "never searched" and the gate holds it until searched
+  or skipped.
