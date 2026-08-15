@@ -602,6 +602,43 @@ export async function backfillInspirationReviews() {
   return { reviewed, redrafted, skipped, failed };
 }
 
+// ─── Background sweep for legacy tasks ───────────────────────────────────────
+// Tasks queued before the world-look feature shipped sit at inspire_state='off'
+// (the column default) with no report — opening one shows a "✨ Look" button
+// instead of the ideas. This pre-runs their world-look at boot and every 6h, the
+// same way the suggestion/seed/not-built sweeps do theirs, so every task the user
+// can click on already has its shelves ready (grey-outs, alternatives, our pick
+// included) instead of making them wait. Idempotent: tasks with a report or an
+// in-flight pass are skipped; refreshInspiration() dedups an already-running pass
+// via `_inspiring`. Reuses the free-model-first seam; never throws.
+export async function autoWorldLookTasks({ limit = 16 } = {}) {
+  const rows = db.prepare(`
+    SELECT id, title, raw_prompt, prompt
+    FROM work_prompts
+    WHERE mode='implement' AND deleted_at IS NULL
+      AND (inspire_state IS NULL OR inspire_state IN ('off','failed'))
+      AND inspire_report_id IS NULL
+    ORDER BY created_at ASC
+    LIMIT ?
+  `).all(limit);
+  let ran = 0, skipped = 0, failed = 0;
+  for (const r of rows) {
+    if (_inspiring.has(r.id)) { skipped++; continue; }          // already running
+    const row = await refreshInspiration(r.id);                 // -> 'pending' + starts runInspiration
+    if (!row) { skipped++; continue; }
+    const run = _inspiring.get(r.id);                           // grab the in-flight promise
+    if (run) {
+      await run;                                                // settle (look + quick check)
+      const st = getPrompt(r.id)?.inspire_state;
+      if (st === 'ready' || st === 'applied') ran++;
+      else failed++;                                            // review settled as failed/held
+    } else {
+      skipped++;                                                // started elsewhere between the check and the call
+    }
+  }
+  return { ran, skipped, failed };
+}
+
 // Everything the task detail's "Inspired by" panel needs in one call: the state,
 // the last error (for the retry note), the applied picks, the quick-check review
 // (removed picks with reasons, alternative groups, best-per-group) and the full

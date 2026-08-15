@@ -18,7 +18,7 @@ import { runSuggestionEngines } from './workSuggestions.js';
 import { generateSuggestions as generateArchSuggestions } from './architecture.js';
 import { syncFromGit } from './treeSync.js';
 import { autoWorldLookSuggestions, autoWorldLookComponents, autoWorldLookIdeas } from './codeDiscovery.js';
-import { backfillInspirationReviews } from './promptQueue.js';
+import { backfillInspirationReviews, autoWorldLookTasks } from './promptQueue.js';
 
 const SUGGESTIONS_TTL_MS = 12 * 3600_000;
 const ARCH_TTL_MS = 24 * 3600_000;
@@ -119,6 +119,9 @@ async function pregenTreeSync(db) {
 //      and waiting queue tasks get their plan re-drafted from filtered ideas.
 //   2. World-look sweeps: any suggestion / not-built component / seed that still
 //      has no world-look gets one (the quick check runs inside the same pass).
+//   3. Legacy tasks: tasks that predate the feature (inspire_state='off' /
+//      failed, no report) get a look too — so the task list has shelves ready
+//      before you open any of them, like the rest.
 async function pregenWorldLooks(db) {
   const bf = await backfillInspirationReviews().catch((e) => {
     console.error('Pre-gen: review backfill failed —', e.message);
@@ -130,9 +133,10 @@ async function pregenWorldLooks(db) {
   const s = await autoWorldLookSuggestions(db);
   const c = await autoWorldLookComponents(db);
   const i = await autoWorldLookIdeas(db);
-  const done = [s, c, i].filter(Boolean);
-  if (done.some(o => o.ran || o.skipped)) {
-    console.log(`Pre-gen: world-look sweeps — suggestions ran ${s?.ran ?? '?'} / skipped ${s?.skipped ?? '?'}; components ran ${c?.ran ?? '?'} / skipped ${c?.skipped ?? '?'}; seeds ran ${i?.ran ?? '?'} / skipped ${i?.skipped ?? '?'}.`);
+  const t = await autoWorldLookTasks();
+  const done = [s, c, i, t].filter(Boolean);
+  if (done.some(o => o.ran || o.skipped || o.reviewed)) {
+    console.log(`Pre-gen: world-look sweeps — suggestions ran ${s?.ran ?? '?'} / skipped ${s?.skipped ?? '?'}; components ran ${c?.ran ?? '?'} / skipped ${c?.skipped ?? '?'}; seeds ran ${i?.ran ?? '?'} / skipped ${i?.skipped ?? '?'}; tasks ran ${t?.ran ?? '?'} / skipped ${t?.skipped ?? '?'} / failed ${t?.failed ?? '?'}).`);
   }
 }
 
