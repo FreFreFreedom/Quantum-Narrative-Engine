@@ -33,6 +33,7 @@ import { resolveParent } from './contextPolicy.js';
 import { defaultOpenCodeModel, getDefaultAiRouterModel } from './providers/index.js';
 import { listAgents } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
+import { generateText } from './ai/text.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -176,6 +177,7 @@ export async function createPrompt({
       agentKey: useAgentKey, contextMode: context_mode, explicitParent: !!useParent,
     });
   }
+  eagerSummarize(id); // free-lane purpose bullets ready before the owner opens it
   return getPrompt(id);
 }
 
@@ -248,7 +250,7 @@ export async function backfillPlan(id) {
   return getPrompt(id);
 }
 
-const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy'];
+const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'agent_key', 'parent_prompt_id', 'strategy', 'summary'];
 
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
@@ -288,6 +290,48 @@ function syncPendingTask(row) {
   if (!isPending(row)) return;
   const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
   updatePendingAgentTask(row.agent_task_id, { title: row.title, description: row.prompt, mode: row.mode, model, effort });
+}
+
+// ─── AI purpose summary ────────────────────────────────────────────────────────
+// One cheap free-lane call, cached on the row so revisits and list polls never pay
+// again. In-flight dedup: concurrent callers (route + eager hooks + rapid re-opens)
+// share a single generation instead of fanning out. Failures are silent — the
+// frontend keeps its instant prompt preview and the next open retries.
+const _summarizing = new Map();
+
+export async function summarizePrompt(id) {
+  const row = getPrompt(id);
+  if (!row || row.summary) return row ? { summary: row.summary } : null;
+  if (_summarizing.has(row.id)) return { summary: await _summarizing.get(row.id) };
+  const attempt = (async () => {
+    const text = [row.title, row.raw_prompt || '', row.prompt].filter(Boolean).join('\n\n');
+    const out = await generateText({
+      prompt: [
+        'Summarize the PURPOSE of this task for its owner: what it is for, what it produces, what it touches — NOT the mechanics.',
+        'Answer as 3-5 short bullet points, one line each, plain language, no preamble, no markdown headers.',
+        'If the task is a question, say what the owner wanted to know.',
+        '\nTask:\n' + text.slice(-16000),
+      ].join('\n'),
+      feature: 'summary',
+      maxTokens: 300,
+      label: 'prompt:summarize',
+    });
+    const summary = (out.text || '').trim();
+    if (!summary) throw new Error('empty summary');
+    updatePrompt(row.id, { summary });
+    return summary;
+  })();
+  _summarizing.set(row.id, attempt);
+  try { return { summary: await attempt }; }
+  finally { _summarizing.delete(row.id); }
+}
+
+// Eager, fire-and-forget: pre-generate the summary at creation and again when a
+// task finishes, so the owner usually finds it already there on first open. The
+// dedup map plus the cached row keep this to at most one call per task, and any
+// failure just leaves the lazy path for later.
+function eagerSummarize(id) {
+  setImmediate(() => { summarizePrompt(id).catch(() => {}); });
 }
 
 export function updatePrompt(id, patch) {
@@ -521,6 +565,7 @@ function finishPrompt(id, task) {
     WHERE id=?
   `).run(status, task.session_id || null, q, task.cost_usd ?? null, task.tokens_in ?? null, task.tokens_out ?? null, task.run_model || null, id);
   broadcast();
+  eagerSummarize(id); // purpose bullets ready by the time the finished task is opened
   return getPrompt(id);
 }
 

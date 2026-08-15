@@ -943,6 +943,19 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`. Documents only 
 - **Frontend sync rule**: master copied to `queue-server/public/index.html`, SHA-256 identical.
 - **Not committed** — pending Antoine's word after he tests.
 
+## 2026-08-14 — Content Intelligence moved into the Mind tab + architecture Map/Tree redesigned (focus + collapse)
+
+- **Content Navigator cleanup** (per Antoine): the 🧠 Intelligence toggle, its floating panel and the zone ⚠ flags are gone from the Content graph — the map is clean again. Nothing was lost: the Mind tab already lists every content signal and thought.
+- **Mind tab now hosts content thinking**: two new toolbar buttons — "Think — corpus themes" and "Think — corpus bridges" (same `POST /content-pulse` endpoint, results land in the feed with Accept → paused task / Dismiss). Content thoughts in the feed now name their target (cluster zone or axis) instead of the bare word "content".
+- **Architecture graph redesign — "Focus + collapse"** (per Antoine's choice of Option 1, GitHub/ArchiLens-style drill-down):
+  - **Collapsible territories** (Map): fold button per column; collapsed = slim summary bar (name, component count, built/need-work/speculative stats); "⊟ Collapse all / ⊞ Expand all" in the focus bar. Choice persists in localStorage.
+  - **Focus mode** (Map + Tree): focus one territory via its ⛶ button or the new toolbar select — it fills the canvas and its external connections appear as clickable chips ("Prerequisites" / "Depended on by"). "← All territories" to return. Tree shows only that territory's tiers + chips.
+  - **Status filter chips** in the toolbar (All / Needs work / Speculative / Built) — non-matching components dim to ghosts. Filter persists in localStorage.
+  - **Minimap** (top-right): territory blocks + viewport rectangle, click-to-jump; updates live on pan/zoom.
+- **Fixed a latent bug found along the way**: `renderArchStage()` wiped the Ask bar and zoom buttons from the stage on every render (they existed in the static HTML, so wiring happened once at init and was then destroyed — Ask would have been dead after the first re-render). Controls are now re-created and re-wired on every render (`wireArchStageControls()`).
+- **Verified**: all 5 script blocks pass `node --check`; layout logic harness-tested in Node against the real data (full map 5 cols/16 nodes; all-collapsed → 5 summary bars/0 nodes; focus reasoning → 1 col + 5 correct chips; built filter dims 12/16; tree focus → correct tiers+chips). Master synced to `queue-server/public/index.html`, SHA-256 identical, served page contains the new UI and none of the removed code. No backend change, no server restart needed.
+- **Not committed** — pending Antoine's word after he tests.
+
 ---
 
 # RUN_LOG — Queue pill + Target button removal, 2026-08-14
@@ -955,3 +968,70 @@ Interactive session with Antoine. Branch `overnight/2026-08-10`.
 - Mode bar is now: segmented control (Content / Map / Core) · right cluster `[ ◧ Queue ] [ 🌙 ]`.
 - Verified: `node --check` on extracted inline JS, master ↔ served copy checksums identical, local :3000 serving the new pill (no inspect refs), live Railway serving it (health 200).
 - SHIPPED per Antoine: commit f150cfb (only the two frontend files) → main fast-forward → pushed. Note: origin/main had advanced (overnight agent's work 733304d) — fast-forwarded on top, no conflict. Merge-check worktree main ref updated. Antoine hard-refreshes :3000.
+
+---
+
+# RUN_LOG — Map layout removed + whole-app polish/declutter, 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10` (work uncommitted, pending his test). Decisions: remove the architecture **Map layout** (Tree is now the only graph layout), refresh the **whole app** visually, cut superfluous text, keep it minimalist, add subtle motion.
+
+## Map layout removed (Core architecture graph)
+
+- The Map/Tree toggle is gone; the dependency **Tree** is the one layout. Removed: `buildMapHtml`, the territory columns + fold/collapse controls, "⊟ Collapse all / ⊞ Expand all", the per-column focus buttons, the `archLayout`/`archCollapsed` state and its localStorage persistence, and all `.arch-col*` CSS.
+- Kept: focus select + focus bar, status filter chips, color-by segment, minimap, zoom, Ask bar, context chips, detail panel. The minimap now draws one block per **tier** (instead of per territory column).
+- Dependency edges always use the tree-style curved lines; locked-component dimming always applies.
+
+## Whole-app polish + declutter
+
+- **Design tokens refined** in both themes (warmer paper light palette, softer dark blue-grey palette): new `--c-accent` (was referenced but **never defined** — the active Graph/Building-blocks/Mind tab had no visible active state; fixed), plus focus-ring, shadow, radius, and motion tokens (`--c-ring`, `--sh-xs/sm/md`, `--r-sm/md`, `--t-fast/med`, `--ease`).
+- **Typography**: base 13px, slightly larger buttons/titles/cards throughout; anti-aliasing on.
+- **Consistent components**: one radius/motion language for buttons, tabs, inputs; cards get soft shadows + a subtle hover lift; custom thin scrollbars in both themes; visible keyboard focus rings; smooth 300ms colour cross-fade when toggling light/dark; `prefers-reduced-motion` respected.
+- **Motion**: cards fade-rise on render (240ms), detail panels slide in, mode switches fade, buttons press on click.
+- **Text cuts (per Antoine)**: Content navigator header paragraph removed (legend already lives on the graph); sidebar "Integration continuum" → "Axis"; "Selected entity" panel heading removed; the three descriptive toolbar sub-lines (Architecture / Building blocks / Flow) removed; queue banner shortened ("Queue wired · N runs done"); Mind buttons shortened (Think / Growth radar / Themes / Bridges — tooltips explain); "Health of the whole graph, today" subtitle removed (its JS updates are now null-guarded).
+- Backend, the world Map tab, and all functionality untouched.
+
+## Verified
+
+- All 5 script blocks pass `node --check`; CSS brace balance OK; zero references to removed ids/text anywhere.
+- Node harness test against the real 16-component data (fresh extraction from the live file): full tree = 6 tiers/16 nodes with correct Roots…Tier 5 labels; focus reasoning = 4 nodes + 3 prereq/2 dependent chips; built filter dims 12 of 16; issue filter shows all 16; speculative dims all 16; depths and node states correct.
+- Master synced to `queue-server/public/index.html` — SHA-256 identical (`1b6b0ec6…`), live server (restarted, PID 43934) serves the new frontend at :3000 (hash matches).
+- **Not committed** — pending Antoine's word after he tests (hard-refresh Shift+Cmd+R).
+
+---
+
+# RUN_LOG — Minimap removed + Map layout restored + Flow "task box expands" (Done chip, Purpose summary, no right pane), 2026-08-14
+
+Interactive session with Antoine. Branch `overnight/2026-08-10` (work uncommitted, pending his test).
+
+## Correction — minimap removed, Map layout restored
+
+- Antoine asked to remove the minimap; the previous session had (mis)understood this as removing the whole Map layout. With his confirmation, the **Map layout is fully restored** (Map/Tree toggle, territory columns, per-column fold + ⛶ focus buttons, "Collapse all / Expand all" in the focus bar, `archLayout`/`archCollapsed` state + persistence, `.arch-col*` CSS, horizontal edge routing in `drawArchDeps`, `jumpToArchNode` forces Tree). All its approved features (focus, collapse, status filters) are back.
+- The **minimap itself is gone everywhere**: element, `drawArchMinimap`, its pointer handler, its call sites, and its CSS.
+
+## Flow — "task box expands", right pane eliminated
+
+- The right-hand detail bar is **removed**; the Flow list gets the full width. Clicking a task, seed, or suggestion **expands the row downwards** into an inset card with the full detail (meta, purpose, thread, reply/steer box, provider/model switches, Run again / Remove, seed and suggestion actions). Clicking the selected row again collapses it. A just-queued handoff still opens immediately (card pinned at top until the poll slots it into its row).
+- **Poll safety**: while typing anywhere inside the expanded card (or an inline title), automatic refresh stands down; a snapshot/restore preserves field values across re-renders (a poll never wipes text you typed and then clicked away from — the old right pane wiped the reply box on every poll, focus or not).
+- New **"✓ Done" chip** in the Flow filter row: shows only finished tasks, most recent first. The folded Done section in "All" stays.
+
+## Task detail — Purpose summary replaces the prompt
+
+- Backend: additive `summary` column on `work_prompts`; new `POST /api/travaux/prompts/:id/summarize` — lazy, cached on the row, in-flight dedup (rapid re-opens share one generation), **free model** via the `summary` feature lane (no paid quota). `summary` added to the editable set for persistence; `SELECT *` already carries it into the list.
+- Frontend: the task card shows a **Purpose** block (3–5 plain-language bullets on what the task is FOR), auto-generated on first open ("Summarizing…" while it runs). On failure it falls back to a short note; the raw prompt stays reachable behind a small **"Show full prompt"** link (per Antoine's choice to keep it).
+
+## Verified
+
+- All 5 script blocks pass `node --check`; `qPurposeHtml` harness-tested in Node (bullet stripping + HTML escaping).
+- Backend syntax checks pass; endpoint tested end-to-end against a **scratch DB** on :3999: first call generates a 5-bullet summary (~9 s, free model), second call returns the cached value instantly, unknown id → 404, summary present in the prompts list.
+- Live server restarted on :3000 with the new backend (in-flight agent tasks re-attach on boot — still running); live endpoints checked (health, prompts list, summarize 404 path).
+- Master synced to `queue-server/public/index.html` — SHA-256 identical (`4c85c867…`).
+- **Not committed** — pending Antoine's test (hard-refresh Shift+Cmd+R).
+
+## Follow-up — Purpose is instant, then shipped (per Antoine: "You can ship")
+
+- **No visible loading ever**: the card now opens with an instant preview — the opening lines of the prompt itself, trimmed — instead of "Summarizing…". The AI bullets are generated in the background and silently replace the preview when ready; on failure the preview simply stays (full prompt always one click below).
+- **Eager pre-generation**: summaries are now generated in the background at task creation and again when a task finishes (fire-and-forget, free lane, deduped + cached — at most one call per task). Most tasks are already summarized before they are opened; the lazy endpoint only covers a first-open race.
+- Refactor: `summarizePrompt()` moved into `promptQueue.js` (shared dedup map with the eager hooks); the route now delegates to it.
+- Verified: backend `node --check`; frontend blocks `node --check`; `qPurposePreview` harness test (trim, ellipsis, escaping, fallback); scratch-DB end-to-end — task created → summary READY within ~14 s without opening (4 bullets), cached re-call instant; live :3000 route smoke test (first call 7.4 s, cached after). Master → public copy checksum identical (`7d104a72…`).
+- Left untouched in the worktree: another agent's in-progress Part 5 changes (intel.js, architectureIntelligence.js, untracked strategies.js/orchestrator.js) — not part of this ship.
+- SHIPPED per Antoine: commit → main fast-forward → pushed.

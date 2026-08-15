@@ -117,6 +117,21 @@ export function queueRoutes() {
     res.json({ ok: true });
   });
 
+  // Purpose summary for a task's detail view: 3-5 plain-language bullets on what
+  // the task is FOR. Normally pre-generated in the background (createPrompt /
+  // finishPrompt eager hooks) so it's already cached when the task is opened —
+  // this lazy path only serves the rare first-open race or a failed eager pass.
+  // Cached on the row; in-flight dedup shared with the eager hooks.
+  router.post('/prompts/:id/summarize', async (req, res) => {
+    try {
+      const out = await queue.summarizePrompt(req.params.id);
+      if (!out) return res.status(404).json({ error: 'not_found' });
+      res.json(out);
+    } catch (e) {
+      res.status(502).json({ error: 'summary_failed', message: e.message });
+    }
+  });
+
   router.post('/prompts/:id/first', (req, res) => {
     const row = queue.moveToFront(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });

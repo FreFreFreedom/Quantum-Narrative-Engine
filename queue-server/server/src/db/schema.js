@@ -133,6 +133,10 @@ function initSchema(db) {
   // handoff — see plans/universal-conversations-core-architecture.md §7).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN convo_id TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN seen_at TEXT`); } catch {}
+  // Purpose summary for the task detail: 3-5 plain-language bullets on what the
+  // task is FOR. Generated lazily on first open (one free-model call), then
+  // cached here so revisits cost nothing (see routes/queue.js summarize).
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN summary TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

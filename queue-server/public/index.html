@@ -13,14 +13,19 @@
 <style>
 :root {
   color-scheme: light;
-  --c-bg: #fbfaf8; --c-bg-2: #f7f5f2; --c-stage: #f0ede6; --c-mapstage: #eef2f4;
-  --c-surface: #fff; --c-surface-2: #f2efe9; --c-surface-3: #eee9df;
+  --c-bg: #faf9f6; --c-bg-2: #f4f2ee; --c-stage: #f0ede6; --c-mapstage: #eef1f3;
+  --c-surface: #fff; --c-surface-2: #f3f0ea; --c-surface-3: #ece7dc;
   --c-surface-rgb: 255 255 255;
-  --c-border: #e4dfd8; --c-border-2: #d9d3c9; --c-border-3: #c9c1b3;
-  --c-ink: #2a2621; --c-ink-2: #3a352e; --c-ink-3: #6b645b;
-  --c-ink-4: #8a8378; --c-ink-5: #a19a8e;
-  --c-ink-solid: #2a2621; --c-ink-solid-2: #3a352e; --c-on-solid: #fbfaf8;
-  --c-halo: #f7f5f2;
+  --c-border: #e7e1d8; --c-border-2: #dcd5c9; --c-border-3: #c8bfae;
+  --c-ink: #26221b; --c-ink-2: #38332b; --c-ink-3: #615a4e;
+  --c-ink-4: #89806f; --c-ink-5: #a49b8c;
+  --c-ink-solid: #26221b; --c-ink-solid-2: #38332b; --c-on-solid: #fbfaf8;
+  --c-halo: #f4f2ee;
+  --c-accent: #2f7d63;
+  --c-ring: rgba(47,125,99,.5);
+  --sh-xs: 0 1px 2px rgba(38,34,27,.05); --sh-sm: 0 2px 10px rgba(38,34,27,.07); --sh-md: 0 10px 26px rgba(38,34,27,.12);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+  --t-fast: 140ms; --t-med: 220ms; --ease: cubic-bezier(.2,.7,.3,1);
   --c-warn: #8a5a1e; --c-warn-tint: #f6e7cf;
   --c-info: #3f6b85; --c-info-tint: #e8eef0;
   --c-success-tint: #e4f0ea;
@@ -34,14 +39,17 @@
 }
 .dark {
   color-scheme: dark;
-  --c-bg: #0d1117; --c-bg-2: #14181c; --c-stage: #10151b; --c-mapstage: #0d1117;
-  --c-surface: #111623; --c-surface-2: #161c2c; --c-surface-3: #1b2233;
-  --c-surface-rgb: 17 22 35;
-  --c-border: #252d3b; --c-border-2: #303a4a; --c-border-3: #3d4859;
-  --c-ink: #e6e1d8; --c-ink-2: #cfc9bf; --c-ink-3: #9aa0ab;
-  --c-ink-4: #79808c; --c-ink-5: #5d6269;
-  --c-ink-solid: #e6e1d8; --c-ink-solid-2: #cfc9bf; --c-on-solid: #17120c;
-  --c-halo: #0d1117;
+  --c-bg: #0c1017; --c-bg-2: #12161d; --c-stage: #0f141b; --c-mapstage: #0c1017;
+  --c-surface: #131927; --c-surface-2: #1a2131; --c-surface-3: #212a3c;
+  --c-surface-rgb: 19 25 39;
+  --c-border: #26303f; --c-border-2: #333e50; --c-border-3: #42506a;
+  --c-ink: #ece8df; --c-ink-2: #d5d0c5; --c-ink-3: #9aa2ad;
+  --c-ink-4: #79818e; --c-ink-5: #5c636e;
+  --c-ink-solid: #ece8df; --c-ink-solid-2: #d5d0c5; --c-on-solid: #14100a;
+  --c-halo: #0c1017;
+  --c-accent: #5db48c;
+  --c-ring: rgba(93,180,140,.55);
+  --sh-xs: 0 1px 2px rgba(0,0,0,.3); --sh-sm: 0 2px 10px rgba(0,0,0,.38); --sh-md: 0 10px 26px rgba(0,0,0,.5);
   --c-warn: #e3a64f; --c-warn-tint: #3a2c14;
   --c-info: #6ea8dc; --c-info-tint: #16283e;
   --c-success-tint: #123027;
@@ -54,7 +62,15 @@
   --c-plot-7: #7e8fb0; --c-plot-8: #c08a3e;
 }
 * { box-sizing: border-box; }
-body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; font-size:13px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+* { scrollbar-width:thin; scrollbar-color:var(--c-border-3) transparent; }
+::-webkit-scrollbar { width:10px; height:10px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--c-border-3); border-radius:8px; border:3px solid transparent; background-clip:content-box; }
+::-webkit-scrollbar-thumb:hover { background:var(--c-ink-4); border:3px solid transparent; background-clip:content-box; }
+:focus-visible { outline:2px solid var(--c-ring); outline-offset:2px; }
+body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-toolbar, .tv-toolbar, .mind-toolbar, .flow-composer, .q-right, .q-left, .ws-slot, .ws-archdetail { transition:background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 .wrap { display:flex; height:100vh; min-height:640px; }
 .left { width:230px; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; flex-shrink:0; padding:14px; }
 .left h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:14px 0 8px; }
@@ -93,27 +109,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .legend .swatch.e { border-top:2.5px dashed #8b6fb0; }
 .legend .swatch.b { border-top:2px dotted #4f9d7a; }
 .legend .dotswatch { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-.intel-panel { position:absolute; top:12px; right:12px; width:320px; max-height:calc(100% - 24px); overflow-y:auto; background:rgba(var(--c-surface-rgb),.96); border:1px solid var(--c-border); border-radius:10px; padding:10px 12px; font-size:10.5px; z-index:6; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 18px rgba(0,0,0,.18); }
-.intel-panel h3 { margin:0; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); }
-.intel-panel .intel-actions { display:flex; gap:6px; flex-wrap:wrap; }
-.intel-panel .intel-actions button { font-size:10px; padding:3px 8px; border-radius:6px; border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-ink); cursor:pointer; }
-.intel-panel .intel-actions button:active { transform:translateY(1px); }
-.intel-panel .intel-tools { display:flex; align-items:center; gap:6px; margin-top:2px; }
-.intel-note { color:var(--c-ink-4); font-style:italic; }
-.intel-signal { border-left:3px solid #8a8378; padding:6px 8px; background:rgba(var(--c-surface-rgb),.6); border-radius:0 6px 6px 0; }
-.intel-signal .is-title { font-weight:600; color:var(--c-ink); }
-.intel-signal .is-detail { color:var(--c-ink-3); margin-top:2px; }
-.intel-signal .is-actions { margin-top:4px; }
-.intel-signal .is-actions button { font-size:9.5px; padding:2px 7px; border-radius:5px; border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; }
-.intel-thought { border:1px solid var(--c-border); border-left:3px solid var(--c-accent,#6b8fd0); padding:6px 8px; border-radius:0 6px 6px 0; background:rgba(var(--c-surface-rgb),.6); }
-.intel-thought .it-title { font-weight:600; color:var(--c-ink); }
-.intel-thought .it-body { color:var(--c-ink-3); margin-top:2px; }
-.intel-thought .it-actions { margin-top:4px; display:flex; gap:6px; }
-.intel-thought .it-actions button { font-size:9.5px; padding:2px 7px; border-radius:5px; border:1px solid var(--c-border); background:var(--c-surface); cursor:pointer; }
-.intel-thought .it-actions .ia-accept { border-color:#4f9d7a; color:#4f9d7a; }
-.intel-thought .it-actions .ia-dismiss { border-color:#c98a8a; color:#c98a8a; }
-.intel-thought.dimmed { opacity:.55; }
-#toggleIntel.active { background:var(--c-accent,#6b8fd0); color:#fff; }
 .right { width:360px; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; flex-shrink:0; }
 .right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .card { border-radius:10px; padding:12px; color:var(--c-on-solid); margin-bottom:10px; }
@@ -320,11 +315,22 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .ws-archdetail h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .ws-flow { flex:1; min-width:0; min-height:0; display:none; flex-direction:column; }
 .ws-flow.open { display:flex; }
-.ws-detail { width:330px; min-width:280px; flex-shrink:0; display:none; flex-direction:column; min-height:0; border-left:1px solid var(--c-border); background:var(--c-bg); }
-.ws-detail.open { display:flex; }
-.ws-slot { display:none; flex:1; min-height:0; overflow-y:auto; padding:14px; }
-.ws-slot.open { display:block; }
-.ws-slot h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
+/* Inline task/seed/suggestion detail — the row expands downwards into this card. */
+.flow-expanded { border:1px solid var(--c-border-2); background:var(--c-surface-2); border-radius:10px; padding:14px; margin:2px 0 10px; animation:fmcnsRise .22s var(--ease); }
+.flow-expanded h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 10px; }
+.flow-expanded .arch-field { margin-bottom:10px; }
+.flow-expanded .q-thread-msg { border-bottom:1px solid var(--c-border); padding:8px 0; font-size:12.5px; line-height:1.55; }
+.flow-expanded .q-thread-msg:last-child { border-bottom:none; }
+.flow-expanded .q-replybox { display:flex; gap:8px; margin-top:10px; }
+.flow-expanded .q-replybox textarea { flex:1; resize:vertical; min-height:52px; }
+.flow-expanded .q-detail-row { display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--c-ink-3); margin-bottom:10px; }
+.q-purpose { margin:0; padding-left:18px; line-height:1.6; font-size:12.5px; }
+.q-purpose li { margin-bottom:4px; }
+.q-purpose-preview { font-size:12.5px; color:var(--c-ink-3); line-height:1.6; }
+.q-fullprompt { font-size:12px; margin-top:2px; }
+.q-fullprompt summary { cursor:pointer; color:var(--c-ink-4); font-size:11px; text-transform:uppercase; letter-spacing:.05em; user-select:none; }
+.q-fullprompt summary:hover { color:var(--c-ink); }
+.q-fullprompt .arch-field-body { margin-top:8px; font-size:11.5px; max-height:220px; overflow-y:auto; white-space:pre-wrap; }
 
 .core-pane { flex:1; display:none; flex-direction:column; min-height:0; min-width:0; }
 .core-pane.open { display:flex; }
@@ -432,7 +438,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .tv-toolbar, .arch-toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:8px 14px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
 .tv-toolbar-top { display:flex; align-items:center; gap:14px; }
 .tv-toolbar .arch-title, .arch-toolbar .arch-title { font-size:13px; font-weight:600; }
-.tv-toolbar .arch-sub, .arch-toolbar .arch-sub { font-size:11px; color:var(--c-ink-3); }
 .tv-body { flex:1; overflow-y:auto; padding:16px; }
 .flow-controls { display:flex; align-items:center; gap:10px; }
 .flow-typecips { display:flex; gap:2px; }
@@ -541,10 +546,25 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-viewbtns button { padding:5px 11px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .arch-viewbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .arch-layoutseg, .arch-layersel { display:flex; gap:6px; }
+.arch-layoutseg { margin-left:2px; }
+.arch-layoutseg button { opacity:.85; }
 .arch-layersel { margin-left:2px; }
 .arch-layersel button { opacity:.85; }
+.arch-statusseg { display:flex; gap:6px; margin-left:2px; }
+.arch-statusseg button { opacity:.85; }
+.arch-focussel { margin-left:2px; padding:5px 8px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; color:var(--c-ink); cursor:pointer; font-family:inherit; }
 .arch-stage { flex:1; overflow:hidden; position:relative; }
 .arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
+.arch-focusbar { position:absolute; top:12px; left:12px; z-index:6; display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:9px; background:rgba(var(--c-surface-rgb),.95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:11px; max-width:calc(100% - 200px); }
+.arch-focusbar .arch-focusname { font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.arch-focusbar .arch-focusmeta { color:var(--c-ink-4); }
+.arch-focusbar button { padding:4px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; color:var(--c-ink); }
+.arch-context { margin-top:18px; padding:12px 14px; border:1px dashed var(--c-border-2); border-radius:10px; background:var(--c-surface-2); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.arch-context-label { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); }
+.arch-ctxchip { border:1px solid; background:var(--c-surface); border-radius:20px; padding:3px 11px; font-size:10.5px; cursor:pointer; color:var(--c-ink); }
+.arch-ctxchip:hover { border-color:var(--c-ink); }
+.arch-node.st-off { opacity:.16; pointer-events:none; }
+.arch-node.tt-spec.st-off { opacity:.12; }
 .arch-zoombtns { position:absolute; right:14px; bottom:14px; display:flex; gap:6px; z-index:6; }
 .arch-ask { position:absolute; left:14px; bottom:14px; z-index:6; width:min(440px, calc(100% - 160px)); }
 .arch-ask-inputrow { display:flex; gap:6px; }
@@ -564,17 +584,23 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-zoombtns button.off { opacity:.45; }
 .arch-node { transition:opacity .15s ease; }
 .arch-node.arch-dim { opacity:.4; }
-.arch-cols { display:flex; gap:18px; min-width:0; position:relative; }
-.arch-col { flex:1; min-width:170px; }
-.arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin-bottom:4px; font-weight:600; }
+/* Tech Tree view — same .arch-node markup, laid out by prereq depth instead of territory. */
+.arch-cols { display:flex; gap:18px; min-width:1180px; position:relative; }
+.arch-col { flex:1; min-width:0; }
+.arch-col-headrow { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+.arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+.arch-col-count { font-size:10px; color:var(--c-ink-4); margin-left:auto; white-space:nowrap; }
+.arch-col-fold, .arch-col-focusbtn { padding:2px 7px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; line-height:1.3; cursor:pointer; color:var(--c-ink); opacity:.7; }
+.arch-col-fold:hover, .arch-col-focusbtn:hover { opacity:1; background:var(--c-surface-2); }
 .arch-col-sub { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; line-height:1.4; }
+.arch-col.collapsed .arch-col-sub { margin-bottom:0; }
+.arch-col-stats { font-size:10.5px; color:var(--c-ink-4); line-height:1.5; border:1px dashed var(--c-border-2); border-radius:9px; background:var(--c-surface-2); padding:9px 11px; }
 .arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:8px 10px; margin-bottom:9px; cursor:pointer; position:relative; }
 .arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .arch-node:hover { border-color:var(--c-border-3); }
 .arch-node.selected { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
 .arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:var(--c-on-solid); }
 .arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
-/* Tech Tree view — same .arch-node markup, laid out by prereq depth instead of territory. */
 .arch-tiers { display:flex; flex-direction:column; gap:30px; min-width:1180px; position:relative; }
 .arch-tier { display:flex; gap:18px; align-items:flex-start; }
 .arch-tier-label { width:74px; flex-shrink:0; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); font-weight:600; padding-top:10px; }
@@ -598,7 +624,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .arch-specbtn { width:100%; padding:8px 12px; border-radius:7px; border:1px dashed #7a5ea8; background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; cursor:pointer; margin-top:10px; }
 .arch-specbtn:hover { background:#f2ecfa; }
 .arch-specbtn:disabled { opacity:.55; cursor:default; }
-.ws-slot h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .arch-detail-name { font-size:16px; font-weight:700; margin-bottom:2px; }
 .arch-detail-territory { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; }
 .arch-field { margin-bottom:11px; }
@@ -655,6 +680,42 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 .map-entitylist li:hover { background:var(--c-surface-2); }
 .map-entitylist li.selected { background:var(--c-surface-3); font-weight:600; }
 .map-entitylist .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* ---------- Modern UI pass: one motion language, soft shadows, calmer type ---------- */
+button { -webkit-tap-highlight-color: transparent; }
+button, .mode-pill, .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .arch-inner-tabs button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button, .arch-ctxchip, .mind-actions button {
+  transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+}
+button:active { transform: translateY(1px) scale(.99); }
+.ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .arch-inner-tabs button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button { border-radius: var(--r-md); }
+.mode-tabs { box-shadow: var(--sh-xs); }
+.mode-tabs button { font-size:12px; padding:6px 16px; }
+.core-tabs button { border-radius: var(--r-md); font-size:11px; }
+.arch-node, .mind-card, .sg-card, .id-card, .lcard, .book, .q-item, .flow-row {
+  box-shadow: var(--sh-xs);
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), opacity var(--t-med) var(--ease);
+}
+.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.legend { box-shadow: var(--sh-sm); }
+@keyframes fmcnsRise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+@keyframes fmcnsSlideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+@keyframes fmcnsFade { from { opacity:0; } to { opacity:1; } }
+.arch-node, .mind-card, .lcard, .book, .q-item, .flow-row, .sg-card, .id-card { animation: fmcnsRise .24s var(--ease) backwards; }
+.ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
+#mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
+.header h1 { font-size:16px; }
+.ctrlbtn { font-size:11.5px; padding:5px 11px; }
+.arch-viewbtns button { font-size:11.5px; padding:6px 12px; }
+.flow-typecips button { font-size:11px; padding:5px 11px; }
+.mind-toolbtns button { font-size:11.5px; padding:6px 12px; }
+.arch-node .an-name { font-size:13px; }
+.arch-tier-nodes .arch-node { width:212px; }
+.mind-pulsetext b { font-size:13px; }
+.lcard-name, .sg-card-title { font-size:13px; }
+.q-item-title, .flow-sgrow .q-item-title, .flow-idrow .q-item-title { font-size:12.5px; }
+.arch-ask-inputrow input { font-size:12.5px; padding:8px 11px; }
+.arch-ask-inputrow button { font-size:12.5px; padding:8px 13px; }
+.searchbox, .axisselect, .flow-search { font-size:12px; }
 </style>
 </head>
 <body>
@@ -690,7 +751,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     </div>
     <h2>Search</h2>
     <input class="searchbox" id="search" placeholder="Search entities...">
-    <h2>Integration continuum</h2>
+    <h2>Axis</h2>
     <select class="axisselect" id="axisSelect"><option value="">No axis filter</option></select>
     <div id="axisControls" style="display:none;">
       <div class="axis-poles"><span id="axisLow">low</span><span id="axisHigh">high</span></div>
@@ -715,7 +776,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
   <div class="mid">
     <div class="header">
       <h1>FMCNS — Fractal Navigator</h1>
-      <p>One live graph across characters, films, and countries, grouped into cluster regions. Gold = shared director/writer (always visible). Violet = shared tags. Green dotted = continuum-proximity bridge across scale (Scale Echo). Hover or click a node to reveal its connections — everything else fades.</p>
     </div>
     <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near renderZoneLabels()">
       <span class="ctrl-label">View</span>
@@ -730,7 +790,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       <button class="ctrlbtn" id="toggleBridges">Bridges: on</button>
       <button class="ctrlbtn" id="toggleShowAll">Show all connections</button>
       <button class="ctrlbtn" id="resetBtn">Reset view</button>
-      <button class="ctrlbtn" id="toggleIntel" title="Intelligence: the Mind watching the content corpus — signals + thoughts about the material itself">🧠 Intelligence</button>
       <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)">🎬 Enrich all films</button>
       <span id="enrichStatus" style="font-size:10.5px;color:var(--c-ink-4);"></span>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
@@ -740,10 +799,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
         <g id="viewport"><g id="zoneLayer"></g><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
       </svg>
       <div class="legend" id="legend"></div>
-      <div class="intel-panel" id="contentIntel" style="display:none;" data-src="Content navigator → Intelligence panel (Part 5): content signals + thoughts, ack/accept/dismiss, Think buttons | fmcns_navigator.html: initContentIntel()/loadContentIntel()/renderContentIntel() | backend: GET /api/architecture/intel/signals, /thoughts, POST /content-pulse">
-        <h3>Content intelligence</h3>
-        <div id="contentIntelBody" class="intel-note">Opening…</div>
-      </div>
     </div>
     <div class="list-stage" id="listStage" data-src="Content navigator → list view of entities | fmcns_navigator.html: renderList() (~line 937)">
       <div class="list-summary" id="listSummary"></div>
@@ -751,7 +806,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
     </div>
   </div>
   <div class="right">
-    <h2>Selected entity</h2>
     <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
   </div>
 </div>
@@ -782,12 +836,18 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
       </div>
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
-        <span class="arch-sub">How FMCNS itself is built — click a component, drag to pan, scroll to zoom.</span>
         <div class="arch-viewbtns">
           <span class="arch-layoutseg">
             <button class="active" data-arch-layout="map" title="Territories side by side">Map</button>
             <button data-arch-layout="tree" title="Dependency tiers — each row depends on the row above">Tree</button>
           </span>
+          <span class="arch-statusseg">
+            <button class="active" data-arch-status="all" title="Show everything">All</button>
+            <button data-arch-status="issue" title="Only components whose prerequisites are missing">Needs work</button>
+            <button data-arch-status="speculative" title="Only Claude-proposed components">Speculative</button>
+            <button data-arch-status="built" title="Only built components">Built</button>
+          </span>
+          <select class="arch-focussel" id="archFocusSel" title="Zoom into one territory — its dependencies stay visible as chips"><option value="">Focus: all territories</option></select>
           <span class="arch-layersel">
             <button class="active" data-arch-layer="territory" title="Color by territory">Territory</button>
             <button data-arch-layer="status" title="Color by build status">Status</button>
@@ -820,7 +880,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
         <div class="tv-toolbar">
           <div class="tv-toolbar-top">
             <span class="arch-title">Building blocks</span>
-            <span class="arch-sub">Real GitHub repos and imagined proposals, evidence for what FMCNS could grow next.</span>
           </div>
           <div class="arch-viewbtns" id="bkViewBtns">
             <button class="active" data-bk-view="discover">Discover</button>
@@ -835,14 +894,15 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
             <span id="mindPulseRing"></span>
             <span class="mind-pulsetext">
               <b>Platform pulse</b>
-              <span id="mindPulseSub" class="mind-pulsesub">Health of the whole graph, today</span>
             </span>
             <svg id="mindHistory" class="mind-history" viewBox="0 0 140 34" preserveAspectRatio="none"></svg>
           </div>
           <span class="mind-meter" id="mindMeter"></span>
           <span class="mind-toolbtns">
-            <button id="mindPulseBtn" title="One model pass over the whole graph — proposes up to 3 thoughts about what to do next">Think about the whole graph</button>
+            <button id="mindPulseBtn" title="One model pass over the whole graph — proposes up to 3 thoughts about what to do next">Think</button>
             <button id="mindGrowthBtn" title="Growth radar: proposes next-logical-features from usage patterns">Growth radar</button>
+            <button id="mindContentThemesBtn" title="One model pass over the content corpus — proposes up to 3 under-explored themes in your material">Themes</button>
+            <button id="mindContentBridgesBtn" title="One model pass over the content corpus — proposes up to 3 cross-scale bridge pairs">Bridges</button>
           </span>
         </div>
         <div class="tv-body" id="tvBodyMind"></div>
@@ -853,7 +913,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
         <div class="tv-toolbar">
           <div class="tv-toolbar-top">
             <span class="arch-title">Flow</span>
-            <span class="arch-sub">Everything in flight — questions, running work, what's queued, Claude's suggestions, your seeds.</span>
           </div>
           <span class="flow-controls">
             <span class="flow-typecips" id="flowTypeBtns">
@@ -861,6 +920,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
               <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
               <button data-ftype="suggestions">Suggestions</button>
               <button data-ftype="seeds">Seeds</button>
+              <button data-ftype="done">✓ Done</button>
             </span>
             <input id="flowSearch" class="flow-search" placeholder="Search the flow…" autocomplete="off">
           </span>
@@ -936,12 +996,6 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
           </div>
         </div>
         <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
-      </div>
-    </div>
-    <div class="ws-detail" id="wsDetail" data-src="CORE ARCHITECTURE → workspace right zone: the shared detail pane (task thread / seed / suggestion — Flow view)">
-      <div class="ws-slot" id="qRight" data-src="CORE ARCHITECTURE → right zone → selected Flow item (task thread, seed, suggestion) | fmcns_navigator.html: qRenderDetail()/renderSeedDetail()/renderSuggestionDetail() | backend: services/promptQueue.js reply/steer/pause endpoints, routes/travaux.js">
-        <h2>Detail</h2>
-        <div class="empty">Select an item in the Flow to see it here.</div>
       </div>
     </div>
   </div>
@@ -1149,7 +1203,7 @@ function setContentView(v) {
   document.querySelector('.graph-stage').style.display = v === 'graph' ? '' : 'none';
   document.getElementById('listStage').style.display = v === 'list' ? 'flex' : 'none';
   // Colour-mode and bridge buttons only mean something on the canvas.
-  document.querySelectorAll('[data-color], #toggleBridges, #toggleShowAll, #resetBtn, #toggleIntel')
+  document.querySelectorAll('[data-color], #toggleBridges, #toggleShowAll, #resetBtn')
     .forEach(b => { b.style.display = v === 'graph' ? '' : 'none'; });
   document.querySelectorAll('.ctrl-label').forEach(l => {
     if (l.textContent === 'Color by') l.style.display = v === 'graph' ? '' : 'none';
@@ -1158,127 +1212,6 @@ function setContentView(v) {
 }
 document.getElementById('viewGraphBtn').onclick = () => setContentView('graph');
 document.getElementById('viewListBtn').onclick = () => setContentView('list');
-
-// ---------- Content Intelligence (Part 5) ----------
-// The same Mind that watches the architecture, turned on the material corpus:
-// content-scope signals and thoughts, ack/accept/dismiss, and two "Think"
-// buttons (themes / bridges). Zones flagged by signals are highlighted on the
-// canvas by renderZoneLabels().
-const CONTENT_INTEL = { signals: [], thoughts: [], meta: {} };
-let contentIntelOn = false;
-let contentIntelTimer = null;
-
-function initContentIntel() {
-  const toggle = document.getElementById('toggleIntel');
-  toggle.addEventListener('click', () => {
-    contentIntelOn = !contentIntelOn;
-    toggle.classList.toggle('active', contentIntelOn);
-    document.getElementById('contentIntel').style.display = contentIntelOn ? '' : 'none';
-    if (contentIntelOn) {
-      loadContentIntel();
-      contentIntelTimer = setInterval(loadContentIntel, 15000);
-    } else {
-      clearInterval(contentIntelTimer);
-      contentIntelTimer = null;
-      renderZoneLabels();
-    }
-  });
-}
-
-async function loadContentIntel() {
-  if (!contentIntelOn) return;
-  const body = document.getElementById('contentIntelBody');
-  try {
-    const sig = await api('/api/architecture/intel/signals');
-    const th = await api('/api/architecture/intel/thoughts?scope=content');
-    CONTENT_INTEL.signals = (sig.signals || []).filter(s => s.scope === 'content');
-    CONTENT_INTEL.meta = sig.meta || {};
-    CONTENT_INTEL.thoughts = (th.thoughts || []).filter(t => t.scope === 'content');
-    renderContentIntel();
-    renderZoneLabels();
-  } catch (e) {
-    body.innerHTML = '<div class="intel-note">Could not reach the server. Check that it is running.</div>';
-  }
-}
-
-function renderContentIntel() {
-  const body = document.getElementById('contentIntelBody');
-  const sigs = CONTENT_INTEL.signals.filter(s => !MIND_ACKED.has(`${s.type}|${s.scope}|${s.target_id || ''}`));
-  const thoughts = CONTENT_INTEL.thoughts;
-  if (!sigs.length && !thoughts.length) {
-    body.innerHTML = '<div class="intel-note">The corpus looks healthy — no signals, no thoughts yet. Try "Think".</div>';
-    return;
-  }
-  const signalHtml = sigs.map(s => `
-    <div class="intel-signal" style="border-left-color:${(CONTENT_INTEL.meta[s.type] || {}).color || '#8a8378'}">
-      <div class="is-title">${escapeHtml(s.title)}${s.target_id && CLUSTER_COLORS[s.target_id] ? ` <span style="color:${CLUSTER_COLORS[s.target_id]};font-size:9px">zone ${s.target_id}</span>` : ''}</div>
-      <div class="is-detail">${escapeHtml(s.detail)}</div>
-      <div class="is-actions"><button data-sig-ack="${escapeHtml(s.type)}|${escapeHtml(s.scope)}|${escapeHtml(s.target_id || '')}">Acknowledge</button></div>
-    </div>`).join('');
-  const thoughtHtml = thoughts.map(t => `
-    <div class="intel-thought ${t.status === 'accepted' || t.status === 'dismissed' ? 'dimmed' : ''}">
-      <div class="it-title">${escapeHtml(t.title)}${t.target_id && CLUSTER_COLORS[t.target_id] ? ` <span style="color:${CLUSTER_COLORS[t.target_id]};font-size:9px">zone ${t.target_id}</span>` : ''}</div>
-      <div class="it-body">${escapeHtml(t.body)}</div>
-      <div class="it-actions">
-        ${t.status === 'new' ? `<button class="ia-accept" data-intel-accept="${t.id}">Accept</button><button class="ia-dismiss" data-intel-dismiss="${t.id}">Dismiss</button>` : `<span class="intel-note">${t.status}</span>`}
-      </div>
-    </div>`).join('');
-  body.innerHTML = `
-    <div class="intel-tools">
-      <button id="intelThinkThemes" title="The Mind proposes up to 3 under-explored themes in the corpus">💭 Think — themes</button>
-      <button id="intelThinkBridges" title="The Mind proposes up to 3 cross-scale bridge pairs">🌉 Think — bridges</button>
-      <span style="margin-left:auto" class="intel-note" id="intelBusy"></span>
-    </div>
-    ${sigs.length ? `<h3>Signals (${sigs.length})</h3>${signalHtml}` : ''}
-    ${thoughts.length ? `<h3>Thoughts</h3>${thoughtHtml}` : ''}`;
-  body.querySelectorAll('[data-sig-ack]').forEach(b => b.addEventListener('click', async () => {
-    const [type, scope, target] = b.dataset.sigAck.split('|');
-    try {
-      await apiWrite('/api/architecture/intel/signals/ack', 'POST', { type, scope, target_id: target });
-      MIND_ACKED.add(`${type}|${scope}|${target}`);
-      loadContentIntel();
-    } catch (e) { /* leave as-is */ }
-  }));
-  body.querySelectorAll('[data-intel-accept]').forEach(b => b.addEventListener('click', async () => {
-    const btn = b;
-    btn.textContent = 'Working…';
-    try {
-      const r = await apiWrite(`/api/architecture/intel/thoughts/${b.dataset.intelAccept}/accept`, 'POST', {});
-      if (r.thought) loadContentIntel();
-    } catch (e) { btn.textContent = 'Accept'; }
-  }));
-  body.querySelectorAll('[data-intel-dismiss]').forEach(b => b.addEventListener('click', async () => {
-    const btn = b;
-    btn.textContent = 'Working…';
-    try {
-      await apiWrite(`/api/architecture/intel/thoughts/${b.dataset.intelDismiss}/dismiss`, 'POST', { reason: 'dismissed in content graph' });
-      loadContentIntel();
-    } catch (e) { btn.textContent = 'Dismiss'; }
-  }));
-  const busy = document.getElementById('intelBusy');
-  document.getElementById('intelThinkThemes').addEventListener('click', () => thinkContent('themes', busy));
-  document.getElementById('intelThinkBridges').addEventListener('click', () => thinkContent('bridges', busy));
-}
-
-async function thinkContent(focus, busyEl) {
-  busyEl.textContent = 'Thinking…';
-  try {
-    await apiWrite('/api/architecture/intel/content-pulse', 'POST', { focus });
-    await loadContentIntel();
-  } catch (e) {
-    busyEl.textContent = e.message === 'cap' ? 'That budget is spent for this hour — try later.' : 'Failed. Try again.';
-  }
-}
-
-function flaggedContentZones() {
-  const zones = new Set();
-  for (const s of CONTENT_INTEL.signals) {
-    if (s.scope === 'content' && s.target_id && CLUSTER_COLORS[s.target_id] && !MIND_ACKED.has(`${s.type}|${s.scope}|${s.target_id}`)) zones.add(s.target_id);
-  }
-  return zones;
-}
-
-document.addEventListener('DOMContentLoaded', initContentIntel);
 
 document.getElementById('axisSelect').addEventListener('change', (e) => {
   axisFilter.key = e.target.value;
@@ -1384,17 +1317,12 @@ function renderZoneLabels() {
   layer.innerHTML = '';
   layer.setAttribute('style', 'pointer-events:none;');
   const zoneR = activeClusterCodes.length <= 1 ? 260 : 150;
-  const flagged = flaggedContentZones();
   activeClusterCodes.forEach(code => {
     if (code === 'other') return;
     const c = CLUSTER_CENTROIDS[code];
     const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
-    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR,fill:CLUSTER_COLORS[code]||'var(--c-border-3)',opacity:flagged.has(code)?0.16:0.05}));
-    if (flagged.has(code)) {
-      layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR+6,fill:'none',stroke:CLUSTER_COLORS[code]||'#8a8378','stroke-width':2.5,'stroke-dasharray':'10 7',opacity:0.85}));
-      layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-22,'text-anchor':'middle',style:'font-size:12px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:0.95;letter-spacing:.03em;'})).textContent = '⚠ flagged';
-    }
-    layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-8,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:'+(flagged.has(code)?1:0.5)+';letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
+    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR,fill:CLUSTER_COLORS[code]||'var(--c-border-3)',opacity:0.05}));
+    layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-8,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:0.5;letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
   });
 }
 
@@ -2765,8 +2693,6 @@ function renderWorkspace() {
   document.getElementById('wsMap').classList.toggle('open', v === 'arch');
   document.getElementById('wsFlow').classList.toggle('open', v !== 'arch');
   Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
-  document.getElementById('wsDetail').classList.toggle('open', v === 'flow');
-  document.getElementById('qRight').classList.toggle('open', v === 'flow');
 }
 
 // Architecture view inner tabs: Graph (the canvas), Building blocks
@@ -2798,9 +2724,21 @@ function jumpToQueueItem(id) {
   const item = qPrompts.find(p => p.id === id);
   if (item) {
     if (!item.seen_at) { item.seen_at = '1'; apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {}); }
-    qSelected = item; qRenderDetail(item);
+    qSelected = item;
   }
   renderFlow();
+  // The prompt may not be in the list yet (a just-queued handoff); open the card
+  // at the top anyway — the next poll slots it into its row.
+  if (qSelected && !document.getElementById('flowExpanded')) {
+    const host = document.getElementById('tvBodyFlow');
+    if (host) {
+      const card = document.createElement('div');
+      card.className = 'flow-expanded';
+      card.id = 'flowExpanded';
+      host.insertBefore(card, host.firstChild);
+      qRenderDetail(qSelected);
+    }
+  }
 }
 
 // Mirror of jumpToQueueItem for the tech tree: switch to Architecture, force the
@@ -3178,7 +3116,11 @@ async function qLoad() {
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
-    if (fresh) { qSelected = fresh; qRenderDetail(fresh); }
+    // Poll re-render: stand down while the human is typing in the expanded card.
+    if (fresh) {
+      qSelected = fresh;
+      if (!qTypingGuard()) qRenderDetail(fresh);
+    }
   }
 }
 
@@ -3509,6 +3451,31 @@ function flowMatches(parts) {
   return parts.join(' ').toLowerCase().includes(flowSearch.toLowerCase());
 }
 
+// True while the human is typing inside the Flow (inline titles, or any field of
+// the expanded task/seed/suggestion card). Poll-driven re-renders must stand
+// down then — the data stays current and renders again on the next tick.
+function qTypingGuard() {
+  const ae = document.activeElement;
+  return !!(ae && ae.closest && ae.closest('#flowExpanded, .q-title-inline'));
+}
+
+// Save/restore field values across an expanded-card re-render, so a poll that
+// rebuilds the card never wipes text the human typed but then clicked away from.
+function qSnapInputs(host) {
+  const snap = {};
+  host.querySelectorAll('input, textarea, select').forEach(el => {
+    const k = el.id || el.getAttribute('data-role');
+    if (k) snap[k] = el.value;
+  });
+  return snap;
+}
+function qRestoreInputs(host, snap) {
+  Object.entries(snap).forEach(([k, v]) => {
+    const el = host.querySelector('#' + k + ', [data-role="' + k + '"]');
+    if (el && el.value !== v) el.value = v;
+  });
+}
+
 function flowQueueRow(p, reorderable, busy, ahead) {
   const sel = qSelected && qSelected.id === p.id;
   const finished = !Q_ACTIVE_STATUSES.includes(p.status);
@@ -3535,7 +3502,8 @@ function flowQueueRow(p, reorderable, busy, ahead) {
         <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
         <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>
       </div>` : ''}
-  </div>`;
+  </div>
+  ${qSelected && qSelected.id === p.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
 }
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
@@ -3556,15 +3524,16 @@ function qDragMove(id, overId) {
 function renderFlow() {
   const host = document.getElementById('tvBodyFlow');
   if (!host) return;
-  // Never rebuild the list while the human is typing a title or mid-drag — the
-  // data below stays current (polls update it) and renders again right after.
-  const ae = document.activeElement;
-  if (ae && ae.classList && (ae.classList.contains('q-title-inline') || qDragQId)) return;
+  // Never rebuild the list while the human is typing (inline title or inside the
+  // expanded task card — reply box, seed fields) or mid-drag — the data below
+  // stays current (polls update it) and renders again right after.
+  if (qTypingGuard() || qDragQId) return;
   document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
 
   const showQueue = flowType === 'all' || flowType === 'queue';
   const showSg = flowType === 'all' || flowType === 'suggestions';
   const showSeeds = flowType === 'all' || flowType === 'seeds';
+  const showDone = flowType === 'all' || flowType === 'done';
   let html = '';
 
   if (showQueue) {
@@ -3575,16 +3544,22 @@ function renderFlow() {
     const parked = qPrompts.filter(p => rel(p) && p.status === 'paused' && flowMatches([p.title, p.prompt]));
     const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
     const busy = running.length > 0;
-    const showDone = flowDoneOpen || flowSearch !== '';
     if (questions.length) html += flowSection('❓', 'Questions to answer', questions.length, questions.map(p => flowQueueRow(p, false)).join(''));
     if (running.length) html += flowSection('▶', 'Running now', running.length, running.map(p => flowQueueRow(p, false)).join(''));
     if (ready.length) html += flowSection('⏳', 'Ready to start', ready.length, ready.map((p, i) => flowQueueRow(p, true, busy, i)).join(''));
     if (parked.length) html += flowSection('⏸', 'Parked', parked.length, parked.map(p => flowQueueRow(p, true)).join(''));
     if (done.length) {
-      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span><span class="flow-done-chev">${showDone ? '▾' : '▸'}</span></div>${showDone ? done.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+      const showDoneList = flowType === 'done' || flowDoneOpen || flowSearch !== '';
+      const doneRows = flowType === 'done'
+        ? done.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
+        : done;
+      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
     if (flowType === 'queue' && !questions.length && !running.length && !ready.length && !parked.length && !done.length) {
       html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
+    }
+    if (flowType === 'done' && !done.length) {
+      html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
     }
   }
 
@@ -3656,13 +3631,13 @@ function renderFlow() {
     el.onclick = (e) => {
       if (e.target.closest('.q-arrow')) return;
       if (e.target.closest('.q-title-inline')) return;
+      if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; renderFlow(); return; }
       flowSideSel = null;
       qSelected = qPrompts.find(p => p.id === id);
       if (qSelected && !qSelected.seen_at) {
         qSelected.seen_at = '1';
         apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
       }
-      qRenderDetail(qSelected);
       renderFlow();
     };
   });
@@ -3712,9 +3687,9 @@ function renderFlow() {
       const id = el.getAttribute('data-sid');
       const s = tvSuggestions.find(x => x.id === id);
       if (!s) return;
+      if (flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === id) { flowSideSel = null; qSelected = null; renderFlow(); return; }
       flowSideSel = { kind: 'suggestion', id };
       qSelected = null;
-      renderSuggestionDetail(s);
       renderFlow();
     };
   });
@@ -3723,9 +3698,9 @@ function renderFlow() {
       const id = el.getAttribute('data-iid');
       const idea = tvIdeas.find(x => x.id === id);
       if (!idea) return;
+      if (flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === id) { flowSideSel = null; qSelected = null; renderFlow(); return; }
       flowSideSel = { kind: 'seed', id };
       qSelected = null;
-      renderSeedDetail(idea);
       renderFlow();
     };
   });
@@ -3745,6 +3720,19 @@ function renderFlow() {
   if (addBtn) {
     addBtn.onclick = addIdea;
     document.getElementById('idTitleInput').onkeydown = (e) => { if (e.key === 'Enter') addIdea(); };
+  }
+  // Inline expanded detail: the selected row carries the empty card in its slot,
+  // filled here after the list renders (each renderer re-wires its own actions).
+  const expanded = document.getElementById('flowExpanded');
+  if (expanded) {
+    if (qSelected) qRenderDetail(qSelected);
+    else if (flowSideSel && flowSideSel.kind === 'suggestion') {
+      const fresh = tvSuggestions.find(x => x.id === flowSideSel.id);
+      if (fresh) renderSuggestionDetail(fresh); else flowSideSel = null;
+    } else if (flowSideSel && flowSideSel.kind === 'seed') {
+      const fresh = tvIdeas.find(x => x.id === flowSideSel.id);
+      if (fresh) renderSeedDetail(fresh); else flowSideSel = null;
+    }
   }
 }
 
@@ -3767,12 +3755,13 @@ async function flowGenerateNow() {
   }
 }
 
-// Shared detail pane, right zone. The task detail (qRenderDetail) already lives
-// there; seeds and suggestions get their own light renderers with the same actions
-// the old list cards had — moved, not changed.
+// Shared inline detail for Flow items: seeds and suggestions get their own light
+// renderers with the same actions the old list cards had — moved, not changed.
+// Each writes into the expanded card that sits under the selected row.
 function renderSeedDetail(idea) {
-  const host = document.getElementById('qRight');
+  const host = document.getElementById('flowExpanded');
   if (!host) return;
+  const snap = qSnapInputs(host);
   const title = (idea.title || '').replace(/"/g, '&quot;');
   const notes = (idea.notes || '');
   const tag = (idea.tag || '').replace(/"/g, '&quot;');
@@ -3822,18 +3811,19 @@ function renderSeedDetail(idea) {
     tvIdeas = tvIdeas.filter(x => x.id !== idea.id);
     flowSideSel = null;
     renderFlow();
-    host.innerHTML = '<h2>Detail</h2><div class="empty">Select an item in the Flow to see it here.</div>';
     try { await apiWrite(`/api/travaux/ideas/${idea.id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
   };
   const jump = host.querySelector('[data-jump]');
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
   const plantJump = host.querySelector('[data-plantjump]');
   if (plantJump) plantJump.onclick = (e) => { e.preventDefault(); jumpToArchNode(plantJump.getAttribute('data-plantjump')); };
+  qRestoreInputs(host, snap);
 }
 
 function renderSuggestionDetail(s) {
-  const host = document.getElementById('qRight');
+  const host = document.getElementById('flowExpanded');
   if (!host) return;
+  const snap = qSnapInputs(host);
   host.innerHTML = `
     <h2>Suggestion</h2>
     <div class="arch-detail-name">${s.title}</div>
@@ -3875,6 +3865,7 @@ function renderSuggestionDetail(s) {
   };
   const jump = host.querySelector('[data-jump]');
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
+  qRestoreInputs(host, snap);
 }
 
 async function qAddPrompt(asPaused) {
@@ -3932,7 +3923,9 @@ async function qTogglePause() {
 }
 
 function qRenderDetail(p) {
-  const host = document.getElementById('qRight');
+  const host = document.getElementById('flowExpanded');
+  if (!host) return;
+  const snap = qSnapInputs(host);
   const messages = (p.messages || []);
   const provVal = p.provider || 'claude-code';
   const isOpen = provVal === 'opencode';
@@ -3981,7 +3974,8 @@ function qRenderDetail(p) {
         </span>
         <span style="font-size:11px;color:var(--c-ink-4);">Switching provider drops the old session link and starts fresh.</span>
       </div>` : ''}
-    <div class="arch-field"><div class="arch-field-label">Original prompt</div><div class="arch-field-body">${p.prompt}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : qPurposePreview(p)}</div></div>
+    <details class="q-fullprompt"><summary>Show full prompt</summary><div class="arch-field-body">${p.prompt}</div></details>
     ${p.raw_prompt && p.raw_prompt !== p.prompt ? `
     <div class="arch-field">
       <div class="arch-field-label"><a href="#" id="qRawToggle" style="text-decoration:underline;">Originally submitted ▾</a></div>
@@ -4099,7 +4093,6 @@ function qRenderDetail(p) {
   if (delBtn) delBtn.onclick = async () => {
     await apiWrite(`/api/travaux/prompts/${p.id}`, 'DELETE');
     qSelected = null;
-    document.getElementById('qRight').innerHTML = '<h2>Detail</h2><div class="empty">Select an item in the Flow to see it here.</div>';
     await qLoad();
   };
   const rerunBtn = document.getElementById('qRerunBtn');
@@ -4121,6 +4114,45 @@ function qRenderDetail(p) {
       await qLoad();
     } catch (e) { rerunFreshBtn.disabled = false; rerunFreshBtn.textContent = 'Run again fresh'; alert('Error: ' + e.message); }
   };
+  qRestoreInputs(host, snap);
+  if (!p.summary) qSummarize(p);
+}
+
+// Bullet rendering for a stored task summary (one free model call, cached on the
+// row — see POST /prompts/:id/summarize). Robust to stray bullet markers and
+// blank lines the model may leave in.
+function qPurposeHtml(summary) {
+  const lines = String(summary || '').split('\n')
+    .map(l => l.replace(/^[-•*]\s*/, '').trim())
+    .filter(Boolean);
+  return '<ul class="q-purpose">' + lines.map(l => `<li>${qEsc(l)}</li>`).join('') + '</ul>';
+}
+
+// Instant placeholder while the AI bullets are on their way: the opening of the
+// prompt itself, trimmed — the card never shows a spinner, and the raw prompt is
+// always one click away below.
+function qPurposePreview(p) {
+  const text = String(p.raw_prompt || p.prompt || '').replace(/\s+/g, ' ').trim();
+  const cut = text.length > 240 ? text.slice(0, 240).replace(/\s\S*$/, '') + '…' : text;
+  return '<div class="q-purpose-preview">' + qEsc(cut || 'No prompt text.') + '</div>';
+}
+
+// Lazy per-task summary: fired in the background on first open, then cached on
+// the object and the row. In-flight re-renders (polls) hit the busy flag instead
+// of re-calling. Always silent — on failure the preview simply stays.
+async function qSummarize(p) {
+  if (p.summary) return;
+  const body = document.getElementById('qPurposeBody');
+  if (!body || body.dataset.busy === '1') return;
+  body.dataset.busy = '1';
+  try {
+    const r = await apiWrite(`/api/travaux/prompts/${p.id}/summarize`, 'POST', {});
+    if (r.summary) {
+      p.summary = r.summary;
+      const live = document.getElementById('qPurposeBody');
+      if (live) live.innerHTML = qPurposeHtml(r.summary);
+    }
+  } catch (e) { /* keep the instant preview — the full prompt is below */ }
 }
 
 async function qReply(id, text) {
@@ -4180,11 +4212,11 @@ async function loadSuggestions() {
     const data = await api('/api/travaux/suggestions' + (q.length ? '?' + q.join('&') : ''));
     tvSuggestions = data.suggestions || [];
   } catch (e) { tvSuggestions = []; }
-  // Re-open the suggestion detail after a refresh (accept/dismiss/regenerate) if it
-  // is still in the list — the detail pane survives the Flow re-render.
+  // Re-open the suggestion detail after a refresh (accept/dismiss/regenerate) if
+  // it is still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'suggestion') {
     const fresh = tvSuggestions.find(x => x.id === flowSideSel.id);
-    if (fresh) renderSuggestionDetail(fresh); else flowSideSel = null;
+    if (fresh) { if (!qTypingGuard()) renderSuggestionDetail(fresh); } else flowSideSel = null;
   }
   if (coreView === 'flow') renderFlow();
 }
@@ -4193,10 +4225,10 @@ async function loadSuggestions() {
 async function loadIdeas() {
   try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
   // Re-open the seed detail after a refresh (promote/plant/delete/add) if it is
-  // still in the list — the detail pane survives the Flow re-render.
+  // still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'seed') {
     const fresh = tvIdeas.find(x => x.id === flowSideSel.id);
-    if (fresh) renderSeedDetail(fresh); else flowSideSel = null;
+    if (fresh) { if (!qTypingGuard()) renderSeedDetail(fresh); } else flowSideSel = null;
   }
   if (coreView === 'flow') renderFlow();
 }
@@ -4557,22 +4589,43 @@ async function initMind() {
     const runPass = async (btn, focus, label) => {
       btn.disabled = true;
       const sub = document.getElementById('mindPulseSub');
-      const prev = sub.textContent;
-      sub.textContent = 'Thinking… (one model pass, up to a minute)';
+      const prev = sub ? sub.textContent : '';
+      if (sub) sub.textContent = 'Thinking… (one model pass, up to a minute)';
       try {
         const out = await apiWrite('/api/architecture/intel/pulse', 'POST', { catalog: archCatalog(), focus });
         await loadMind(true);
         const n = (out.thoughts || []).length;
-        sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} — they are in the feed below.` : 'Nothing new came out of that pass — everything was already said.';
+        if (sub) sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} — they are in the feed below.` : 'Nothing new came out of that pass — everything was already said.';
       } catch (e) {
-        sub.textContent = (e && String(e.message).startsWith('HTTP')) ? 'Could not reach the server.'
+        if (sub) sub.textContent = (e && String(e.message).startsWith('HTTP')) ? 'Could not reach the server.'
           : (e || {}).message || 'The model did not answer — retry.';
       }
-      setTimeout(() => { sub.textContent = prev; }, 6000);
+      setTimeout(() => { if (sub) sub.textContent = prev; }, 6000);
       btn.disabled = false;
     };
     if (pulseBtn) pulseBtn.onclick = () => runPass(pulseBtn, 'pulse');
     if (growthBtn) growthBtn.onclick = () => runPass(growthBtn, 'growth');
+    const themesBtn = document.getElementById('mindContentThemesBtn');
+    const bridgesBtn = document.getElementById('mindContentBridgesBtn');
+    const runContentPass = async (btn, focus) => {
+      btn.disabled = true;
+      const sub = document.getElementById('mindPulseSub');
+      const prev = sub ? sub.textContent : '';
+      if (sub) sub.textContent = 'Thinking about the corpus… (one model pass, up to a minute)';
+      try {
+        const out = await apiWrite('/api/architecture/intel/content-pulse', 'POST', { focus });
+        await loadMind(true);
+        const n = (out.thoughts || []).length;
+        if (sub) sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} about the corpus — they are in the feed below.` : 'Nothing new came out of that pass — everything was already said.';
+      } catch (e) {
+        if (sub) sub.textContent = (e && String(e.message).startsWith('HTTP')) ? 'Could not reach the server.'
+          : (e || {}).message || 'The model did not answer — retry.';
+      }
+      setTimeout(() => { if (sub) sub.textContent = prev; }, 6000);
+      btn.disabled = false;
+    };
+    if (themesBtn) themesBtn.onclick = () => runContentPass(themesBtn, 'themes');
+    if (bridgesBtn) bridgesBtn.onclick = () => runContentPass(bridgesBtn, 'bridges');
   }
   if (!mindTimer) {
     mindTimer = setInterval(() => { if (coreView === 'arch' && archTab === 'mind') loadMind(true); }, 15000);
@@ -4667,8 +4720,19 @@ function renderMind() {
     </div>`).join('');
 
   const fmtD = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch { return ''; } };
+  // What a thought's target_id points at, in human terms — a component (node),
+  // the whole platform graph, or part of the content corpus (cluster zone or axis).
+  const contentTargetName = (tid) => {
+    if (!tid) return 'the content corpus';
+    if (CLUSTERS && CLUSTERS[tid]) return 'cluster ' + tid + ' — ' + CLUSTERS[tid].name.split(',')[0];
+    const ax = (FACETS && FACETS.axes || []).find(a => a.key === tid);
+    if (ax) return 'axis: ' + ax.name;
+    return tid;
+  };
+  const targetName = (t) => t.scope === 'node' && t.target_id ? (ARCH_BY_ID[t.target_id]?.name || t.target_id)
+    : (t.scope === 'graph' ? 'whole graph' : t.scope === 'content' ? contentTargetName(t.target_id) : t.scope);
   const thoughtCards = MIND_THOUGHTS.map(t => {
-    const targetName = t.scope === 'node' && t.target_id ? (ARCH_BY_ID[t.target_id]?.name || t.target_id) : (t.scope === 'graph' ? 'whole graph' : t.scope);
+    const targetNameStr = targetName(t);
     const actions = t.status === 'new' ? `
       <button class="mind-accept" data-accept="${t.id}">Accept → paused task</button>
       <button data-dismiss="${t.id}">Dismiss</button>
@@ -4682,7 +4746,7 @@ function renderMind() {
         <span class="mind-dot" style="background:${t.status === 'accepted' ? '#4f9d7a' : t.status === 'dismissed' ? '#8a8378' : '#7a5ea8'}"></span>
         <div style="flex:1;min-width:0;">
           <div class="mind-card-title">${escS(t.title)}</div>
-          <div class="mind-card-meta">${escS(t.kind)} · ${escS(targetName)} · ${fmtD(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
+          <div class="mind-card-meta">${escS(t.kind)} · ${escS(targetNameStr)} · ${fmtD(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
           <div class="mind-card-body">${escS(t.body)}</div>
         </div>
       </div>
@@ -4749,17 +4813,17 @@ function renderMind() {
     host.querySelectorAll('[data-deepen]').forEach(b => b.onclick = async () => {
       b.disabled = true;
       const sub = document.getElementById('mindPulseSub');
-      const prev = sub.textContent;
-      sub.textContent = 'Thinking about ' + (ARCH_BY_ID[b.getAttribute('data-deepen')]?.name || b.getAttribute('data-deepen')) + '…';
+      const prev = sub ? sub.textContent : '';
+      if (sub) sub.textContent = 'Thinking about ' + (ARCH_BY_ID[b.getAttribute('data-deepen')]?.name || b.getAttribute('data-deepen')) + '…';
       try {
         const out = await apiWrite('/api/architecture/intel/deepen', 'POST', { catalog: archCatalog(), targetId: b.getAttribute('data-deepen') });
         await loadMind(true);
         const n = (out.thoughts || []).length;
-        sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} about that component.` : 'Nothing new — that state was already thought about.';
+        if (sub) sub.textContent = n ? `Proposed ${n} thought${n === 1 ? '' : 's'} about that component.` : 'Nothing new — that state was already thought about.';
       } catch (e) {
-        sub.textContent = (e || {}).message || 'The model did not answer — retry.';
+        if (sub) sub.textContent = (e || {}).message || 'The model did not answer — retry.';
       }
-      setTimeout(() => { sub.textContent = prev; }, 6000);
+      setTimeout(() => { if (sub) sub.textContent = prev; }, 6000);
       b.disabled = false;
     });
     host.querySelectorAll('[data-jump]').forEach(a => a.onclick = (e) => { e.preventDefault(); jumpToQueueItem(a.getAttribute('data-jump')); });
@@ -5025,7 +5089,7 @@ function renderArchQueueBanner() {
   if (!el) return;
   if (!archQueueStatus) { el.textContent = ''; return; }
   const dot = archQueueStatus.executionConfigured ? '●' : '○';
-  el.innerHTML = `<span style="color:${archQueueStatus.executionConfigured?'#4f9d7a':'var(--c-ink-4)'}">${dot}</span> Task queue execution: ${archQueueStatus.executionConfigured?'wired in':'not configured'} · ${archQueueStatus.completedCount} completed run${archQueueStatus.completedCount===1?'':'s'}`;
+  el.innerHTML = `<span style="color:${archQueueStatus.executionConfigured?'#4f9d7a':'var(--c-ink-4)'}">${dot}</span> Queue ${archQueueStatus.executionConfigured?'wired':'not configured'} · ${archQueueStatus.completedCount} run${archQueueStatus.completedCount===1?'':'s'} done`;
 }
 
 async function initArchNav() {
@@ -5040,25 +5104,27 @@ async function initArchNav() {
   document.querySelectorAll('[data-arch-layer]').forEach(b => {
     b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); syncArchControls(); renderArchStage(); };
   });
-  const askInput = document.getElementById('archAskInput');
-  const askGo = document.getElementById('archAskGo');
-  if (askInput && askGo) {
-    askGo.onclick = askArchGraph;
-    askInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') askArchGraph(); });
-  }
-  document.querySelectorAll('[data-arch-zoom]').forEach(b => {
+  document.querySelectorAll('[data-arch-status]').forEach(b => {
     b.onclick = () => {
-      if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
-      else zoomArchCanvas(b.getAttribute('data-arch-zoom') === 'in' ? 1.3 : 1 / 1.3, null);
+      archStatusFilter = b.getAttribute('data-arch-status');
+      saveArchView();
+      syncArchControls();
+      renderArchStage();
     };
   });
-  const edgesBtn = document.getElementById('archEdgesBtn');
-  if (edgesBtn) edgesBtn.onclick = () => {
-    archEdgesOn = !archEdgesOn;
-    edgesBtn.classList.toggle('off', !archEdgesOn);
-    edgesBtn.title = archEdgesOn ? 'Dependency lines: on' : 'Dependency lines: off';
-    drawArchDeps();
-  };
+  const focusSel = document.getElementById('archFocusSel');
+  if (focusSel) {
+    TERRITORIES.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.id;
+      o.textContent = t.label;
+      focusSel.appendChild(o);
+    });
+    focusSel.addEventListener('change', () => {
+      archFocus = focusSel.value || null;
+      renderArchStage();
+    });
+  }
   const stage = document.getElementById('archStage');
   stage.addEventListener('mousemove', (e) => {
     const node = e.target.closest('.arch-node');
@@ -5068,7 +5134,7 @@ async function initArchNav() {
   let drag = null;
   stage.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
-    if (e.target.closest('button, select, input, textarea, .arch-node')) return;
+    if (e.target.closest('button, select, input, textarea, .arch-node, .arch-focusbar')) return;
     drag = { sx: e.clientX, sy: e.clientY, ox: archViewport.x, oy: archViewport.y, moved: false };
     try { stage.setPointerCapture(e.pointerId); } catch (err) {}
   });
@@ -5102,10 +5168,9 @@ async function initArchNav() {
 function syncArchControls() {
   document.querySelectorAll('[data-arch-layout]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-layout') === archLayout));
   document.querySelectorAll('[data-arch-layer]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-layer') === archLayer));
-  const sub = document.querySelector('#wsMap .arch-sub');
-  if (sub) sub.textContent = archLayer === 'evolution'
-    ? 'How FMCNS itself is built — the badge shows the latest version. Click a component, drag to pan, scroll to zoom.'
-    : 'How FMCNS itself is built — click a component, drag to pan, scroll to zoom.';
+  document.querySelectorAll('[data-arch-status]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-status') === archStatusFilter));
+  const focusSel = document.getElementById('archFocusSel');
+  if (focusSel && focusSel.value !== (archFocus || '')) focusSel.value = archFocus || '';
 }
 
 // Zoom around a point in the stage's coordinate space (null = stage center), clamped.
@@ -5151,41 +5216,72 @@ function archNodeBadge(c) {
   return { text: (TERRITORIES.find(t => t.id === c.territory) || {}).label || c.territory, color: TERRITORY_COLORS[c.territory] };
 }
 
-// Map layout — the five territories side by side. Same node ids as ever, so the
-// dependency edges draw across the whole canvas.
+// Map layout — the territories side by side (or one focused territory alone).
+// Same node ids as ever, so the dependency edges draw across the whole canvas.
+// Collapsed territories render as slim summary bars; the status filter dims
+// non-matching components.
+// Tree layout — the one layout. Components are laid out by prereq depth, so the
+// dependency edges read top-to-bottom as an actual tech tree. Focus mode
+// restricts the tree to one territory (external dependencies become chips); the
+// status filter dims the rest.
+// Map layout — the territories side by side (or one focused territory alone).
+// Same node ids as ever, so the dependency edges draw across the whole canvas.
+// Collapsed territories render as slim summary bars; the status filter dims
+// non-matching components.
 function buildMapHtml() {
+  const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
   let html = '<div class="arch-cols" id="archCols">';
-  TERRITORIES.forEach(t => {
-    html += `<div class="arch-col"><div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div><div class="arch-col-sub">${t.sub}</div>`;
-    ARCH_DATA.filter(c => c.territory === t.id).forEach(c => {
-      const b = archNodeBadge(c);
-      const spec = c.provenance === 'speculative';
-      html += `<div class="arch-node${spec?' tt-spec':''}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
-        <div class="an-name">${spec?'✦ ':''}${c.name}</div>
-        <span class="an-badge" style="background:${b.color}">${b.text}</span>
-        <span class="an-health" data-health-for="${c.id}"></span>
+  territories.forEach(t => {
+    const nodes = ARCH_DATA.filter(c => c.territory === t.id);
+    const collapsed = !archFocus && archCollapsed.has(t.id);
+    const stats = archTerritoryStats(t.id);
+    html += `<div class="arch-col${collapsed ? ' collapsed' : ''}" data-terr="${t.id}">`;
+    html += `<div class="arch-col-headrow">
+        <button class="arch-col-fold" data-fold="${t.id}" title="${collapsed ? 'Expand' : 'Collapse'} this territory">${collapsed ? '▸' : '▾'}</button>
+        <div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div>
+        <span class="arch-col-count">${nodes.length} ${nodes.length === 1 ? 'component' : 'components'}</span>
+        <button class="arch-col-focusbtn" data-focus="${t.id}" title="Focus this territory — its connections stay visible as chips">⛶</button>
       </div>`;
-    });
+    if (collapsed) {
+      html += `<div class="arch-col-sub">${t.sub}</div>`;
+      html += `<div class="arch-col-stats">${stats.built} built · ${stats.locked} need work${stats.spec ? ' · ' + stats.spec + ' speculative' : ''}</div>`;
+    } else {
+      html += `<div class="arch-col-sub">${t.sub}</div>`;
+      nodes.forEach(c => {
+        const b = archNodeBadge(c);
+        const spec = c.provenance === 'speculative';
+        const off = archFilteredOff(c) ? ' st-off' : '';
+        html += `<div class="arch-node${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+          <div class="an-name">${spec?'✦ ':''}${c.name}</div>
+          <span class="an-badge" style="background:${b.color}">${b.text}</span>
+          <span class="an-health" data-health-for="${c.id}"></span>
+        </div>`;
+      });
+    }
     html += '</div>';
   });
+  html += '</div>';
+  if (archFocus) {
+    const ctx = archContextList(archFocus);
+    html += archContextHtml(ctx.pre, ctx.post);
+  }
   return html;
 }
 
-// Tree layout — same components, same node markup, same #archnode-<id> ids, laid
-// out by prereq depth instead of territory, so the dependency edges read
-// top-to-bottom as an actual tech tree.
 function buildTreeHtml() {
+  const pool = archFocus ? ARCH_DATA.filter(c => c.territory === archFocus) : ARCH_DATA;
   const tiers = {};
-  ARCH_DATA.forEach(c => { const d = archDepth(c); (tiers[d] = tiers[d] || []).push(c); });
+  pool.forEach(c => { const d = archDepth(c); (tiers[d] = tiers[d] || []).push(c); });
   const order = {}; TERRITORIES.forEach((t, i) => order[t.id] = i);
-  let html = '<div class="arch-tiers" id="archCols">';
+  let html = '<div class="arch-tiers" id="archTree">';
   Object.keys(tiers).map(Number).sort((a,b) => a - b).forEach(d => {
     const nodes = tiers[d].slice().sort((a,b) => (order[a.territory]-order[b.territory]) || a.name.localeCompare(b.name));
     html += `<div class="arch-tier"><div class="arch-tier-label">${d === 0 ? 'Roots' : 'Tier ' + d}</div><div class="arch-tier-nodes">`;
     nodes.forEach(c => {
       const st = archNodeState(c);
       const spec = c.provenance === 'speculative';
-      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+      const off = archFilteredOff(c) ? ' st-off' : '';
+      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
         <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
         <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
         <span class="an-health" data-health-for="${c.id}"></span>
@@ -5193,6 +5289,11 @@ function buildTreeHtml() {
     });
     html += '</div></div>';
   });
+  html += '</div>';
+  if (archFocus) {
+    const ctx = archContextList(archFocus);
+    html += archContextHtml(ctx.pre, ctx.post);
+  }
   return html;
 }
 
@@ -5281,16 +5382,153 @@ async function askArchGraph() {
   }
 }
 
+// Which territory (if any) is focused, which are collapsed (Map layout), and the
+// status filter. Collapsed set + filter persist between visits; focus never does.
+let archFocus = null;
+let archCollapsed = new Set();
+let archStatusFilter = 'all';
+try {
+  const v = JSON.parse(localStorage.getItem('fmcns.archView') || '{}');
+  if (Array.isArray(v.collapsed)) archCollapsed = new Set(v.collapsed);
+  if (v.status) archStatusFilter = v.status;
+} catch (e) {}
+function saveArchView() {
+  try { localStorage.setItem('fmcns.archView', JSON.stringify({ collapsed: [...archCollapsed], status: archStatusFilter })); } catch (e) {}
+}
+
+// Status chips: does this component fall outside the current filter?
+function archFilteredOff(c) {
+  if (archStatusFilter === 'issue') return archNodeState(c) !== 'locked';
+  if (archStatusFilter === 'speculative') return c.provenance !== 'speculative';
+  if (archStatusFilter === 'built') return archNodeState(c) !== 'built';
+  return false;
+}
+
+function archTerritoryStats(id) {
+  const nodes = ARCH_DATA.filter(c => c.territory === id);
+  const st = { built: 0, locked: 0, spec: 0 };
+  nodes.forEach(c => {
+    if (c.provenance === 'speculative') st.spec++;
+    else if (archNodeState(c) === 'built') st.built++;
+    else if (archNodeState(c) === 'locked') st.locked++;
+  });
+  return { total: nodes.length, ...st };
+}
+
+// Components OUTSIDE a focused territory that touch it (its prerequisites, and
+// the things that depend on it) — rendered as chips so the focus keeps context.
+function archContextList(focusId) {
+  const inTerr = new Set(ARCH_DATA.filter(c => c.territory === focusId).map(c => c.id));
+  const pre = new Set(), post = new Set();
+  ARCH_DATA.forEach(c => {
+    (c.depends || []).forEach(d => {
+      if (inTerr.has(c.id) && !inTerr.has(d)) pre.add(d);
+      if (!inTerr.has(c.id) && inTerr.has(d)) post.add(c.id);
+    });
+  });
+  return { pre: [...pre], post: [...post] };
+}
+
+function archContextHtml(pre, post) {
+  if (!pre.length && !post.length) return '';
+  const chip = (id, kind) => {
+    const c = ARCH_BY_ID[id];
+    if (!c) return '';
+    return `<button class="arch-ctxchip" data-ctx="${id}" title="${kind === 'pre' ? 'Prerequisite of the focused territory — click to inspect' : 'Depends on the focused territory — click to inspect'}" style="border-color:${TERRITORY_COLORS[c.territory]}">${kind === 'pre' ? '← ' : '→ '}${c.name}</button>`;
+  };
+  return `<div class="arch-context">
+    ${pre.length ? '<span class="arch-context-label">Prerequisites</span>' + pre.map(x => chip(x, 'pre')).join('') : ''}
+    ${post.length ? '<span class="arch-context-label">Depended on by</span>' + post.map(x => chip(x, 'post')).join('') : ''}
+  </div>`;
+}
+
+function archFocusName(id) {
+  const t = TERRITORIES.find(x => x.id === id);
+  return t ? t.label : id;
+}
+
 function renderArchStage() {
   const stage = document.getElementById('archStage');
   if (!stage) return;
   // The overlay svg comes first in the DOM so it paints BELOW the cards: lines
-  // run in the gaps between cards instead of across their faces.
-  stage.innerHTML = `<div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>`;
+  // run in the gaps between cards instead of across their faces. The Ask bar,
+  // zoom buttons and focus bar are re-created here so they never get orphaned
+  // by re-renders.
+  stage.innerHTML = `
+    <div class="arch-focusbar" id="archFocusBar" style="display:${archFocus ? 'flex' : 'none'}">
+      <button id="archFocusBack">← All territories</button>
+      <span class="arch-focusname" style="color:${archFocus ? (TERRITORY_COLORS[archFocus] || 'var(--c-ink)') : 'var(--c-ink)'}">${archFocus ? escS(archFocusName(archFocus)) : ''}</span>
+      ${archFocus ? `<span class="arch-focusmeta">${escS((() => { const s = archTerritoryStats(archFocus); return `${s.total} components · ${s.built} built · ${s.locked} need work${s.spec ? ' · ' + s.spec + ' speculative' : ''}`; })())}</span>` : ''}
+      ${!archFocus && archLayout === 'map' ? `<button id="archCollapseAll">${archCollapsed.size ? 'Expand all' : 'Collapse all'}</button>` : ''}
+    </div>
+    <div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>
+    <div class="arch-ask" id="archAsk">
+      <div class="arch-ask-inputrow">
+        <input id="archAskInput" placeholder="Ask about this architecture…" autocomplete="off">
+        <button id="archAskGo">Ask</button>
+      </div>
+      <div class="arch-ask-answer" id="archAskAnswer" hidden></div>
+    </div>
+    <div class="arch-zoombtns">
+      <button data-arch-zoom="out" title="Zoom out">−</button>
+      <button data-arch-zoom="in" title="Zoom in">+</button>
+      <button data-arch-zoom="fit" title="Fit the graph to the screen">⌂</button>
+      <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on">∿</button>
+    </div>`;
+  wireArchStageControls();
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
+  document.querySelectorAll('[data-ctx]').forEach(b => {
+    b.onclick = () => selectArchNode(b.getAttribute('data-ctx'));
+  });
+  const backBtn = document.getElementById('archFocusBack');
+  if (backBtn) backBtn.onclick = () => { archFocus = null; renderArchStage(); };
+  const collapseAllBtn = document.getElementById('archCollapseAll');
+  if (collapseAllBtn) collapseAllBtn.onclick = () => {
+    archCollapsed = archCollapsed.size ? new Set() : new Set(TERRITORIES.map(t => t.id));
+    saveArchView();
+    renderArchStage();
+  };
+  document.querySelectorAll('[data-fold]').forEach(b => {
+    b.onclick = () => {
+      const id = b.getAttribute('data-fold');
+      if (archCollapsed.has(id)) archCollapsed.delete(id); else archCollapsed.add(id);
+      saveArchView();
+      renderArchStage();
+    };
+  });
+  document.querySelectorAll('[data-focus]').forEach(b => {
+    b.onclick = () => {
+      archFocus = b.getAttribute('data-focus');
+      renderArchStage();
+    };
+  });
   syncArchHealthRings();
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { drawArchDeps(); fitArchCanvas(); });
   else { drawArchDeps(); fitArchCanvas(); }
+}
+
+// Ask / zoom / edges controls live inside the re-rendered stage, so their
+// handlers are (re)attached here on every render, not just at init.
+function wireArchStageControls() {
+  const askInput = document.getElementById('archAskInput');
+  const askGo = document.getElementById('archAskGo');
+  if (askInput && askGo) {
+    askGo.onclick = askArchGraph;
+    askInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') askArchGraph(); });
+  }
+  document.querySelectorAll('[data-arch-zoom]').forEach(b => {
+    b.onclick = () => {
+      if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
+      else zoomArchCanvas(b.getAttribute('data-arch-zoom') === 'in' ? 1.3 : 1 / 1.3, null);
+    };
+  });
+  const edgesBtn = document.getElementById('archEdgesBtn');
+  if (edgesBtn) edgesBtn.onclick = () => {
+    archEdgesOn = !archEdgesOn;
+    edgesBtn.classList.toggle('off', !archEdgesOn);
+    edgesBtn.title = archEdgesOn ? 'Dependency lines: on' : 'Dependency lines: off';
+    drawArchDeps();
+  };
 }
 
 // Direct neighbours in the dependency graph (prereqs + dependents), used for the
