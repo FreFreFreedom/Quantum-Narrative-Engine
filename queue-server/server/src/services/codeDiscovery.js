@@ -297,6 +297,10 @@ Two jobs in one pass:
 1. Split the idea into 1-3 independently searchable parts IF it combines distinct capabilities (an atomic idea stays exactly ONE part).
 2. For each part, propose 1-2 GitHub repo-search query strings (the kind you would type into GitHub's search box) that would surface real, already-built open-source work relevant to that part. Be realistic about what a query would return.
 
+The description is read by the app's owner, who is not a programmer — plain everyday words, no jargon, no internal component ids.
+
+${USER_FACING_STYLE}
+
 Respond with ONLY a JSON object, no prose, no markdown fence:
 {"project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
 }

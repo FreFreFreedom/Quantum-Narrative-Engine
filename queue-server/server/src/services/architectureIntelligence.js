@@ -539,6 +539,58 @@ function parseThoughtsArray(text) {
   return [];
 }
 
+// One-time vulgarization pass: rewrites already-stored user-facing texts (mind
+// thought titles/bodies, work suggestion titles/rationales) into plain everyday
+// language — the same rule new generations are born with. Idempotent. One model
+// call per table with rows to rewrite.
+export async function vulgarizeExistingTexts(db) {
+  const thoughts = db.prepare(`SELECT id, title, body FROM intel_thoughts WHERE deleted_at IS NULL`).all();
+  const suggestions = db.prepare(`SELECT id, title, rationale FROM work_suggestions WHERE deleted_at IS NULL`).all();
+  let thoughtCount = 0, suggestionCount = 0;
+
+  if (thoughts.length) {
+    const out = await generateText({
+      prompt: `Rewrite these titles and bodies so a non-programmer understands them instantly. Plain English, everyday words. Never use internal component ids or technical slugs (like "observation-layer") — say what the change would do for the person using the app. Keep each title under 8 words, each body 1-2 short sentences. Return ONLY a JSON array with every input id exactly once: [{"id":"...","title":"...","body":"..."}]\n${JSON.stringify(thoughts)}`,
+      feature: 'studio', maxTokens: 1200, label: 'vulgarize-thoughts',
+    });
+    if (!out.error) {
+      const m = (out.text || '').match(/\[[\s\S]*\]/);
+      let parsed = null;
+      if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+      if (Array.isArray(parsed)) {
+        for (const it of parsed) {
+          if (!it || !it.id || !it.title) continue;
+          db.prepare(`UPDATE intel_thoughts SET title=?, body=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+            .run(String(it.title).slice(0, 200), String(it.body || '').slice(0, 800), it.id);
+          thoughtCount++;
+        }
+      }
+    }
+  }
+
+  if (suggestions.length) {
+    const out = await generateText({
+      prompt: `Rewrite these suggestion titles and rationales so a non-programmer understands them instantly. Plain English, everyday words, no technical jargon, no internal names or ids — say what it would change for the person using the app. Keep each title short (under 8 words) and each rationale one short sentence. Return ONLY a JSON array with every input id exactly once: [{"id":"...","title":"...","rationale":"..."}]\n${JSON.stringify(suggestions)}`,
+      feature: 'studio', maxTokens: 1200, label: 'vulgarize-suggestions',
+    });
+    if (!out.error) {
+      const m = (out.text || '').match(/\[[\s\S]*\]/);
+      let parsed = null;
+      if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+      if (Array.isArray(parsed)) {
+        for (const it of parsed) {
+          if (!it || !it.id || !it.title) continue;
+          db.prepare(`UPDATE work_suggestions SET title=?, rationale=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND deleted_at IS NULL`)
+            .run(String(it.title).slice(0, 200), String(it.rationale || '').slice(0, 400), it.id);
+          suggestionCount++;
+        }
+      }
+    }
+  }
+
+  return { thoughts: thoughtCount, suggestions: suggestionCount };
+}
+
 // Explicit click only. Extends speculate(): instead of proposing child NODES, it
 // proposes THOUGHTS — blind spots, improvements, integrations, next features.
 export async function deepenNode(db, { catalog, targetId } = {}) {
@@ -563,6 +615,7 @@ ${mine || '- none'}
 Produce up to 3 THOUGHTS about this component, not child nodes. Each thought is one of: a blind spot risk, how to make this component meaningfully better, an integration opportunity with the rest of the platform, or a next feature that makes logical sense. Each must be specific to FMCNS's real subject matter — not generic advice ("add tests", "improve caching").
 
 ${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
+The title and body must NEVER mention internal component ids or slugs (like "observation-layer") — say what the change would do for the person using the app, in everyday words.
 
 Respond with ONLY a JSON array, no prose, no markdown fence:
 [{"title":"short title under 8 words","body":"2-3 sentences: the thought itself and why it matters now","prompt_draft":"a ready-to-queue task prompt implementing the thought","priority":0}]`;
@@ -623,6 +676,7 @@ ${growthFocus
   : 'Focus: the platform\'s own development health. Propose up to 3 thoughts about what to do next — blind spots, integration opportunities between components, features that make logical sense. Each must be specific to FMCNS, not generic.'}
 
 ${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
+The title and body must NEVER mention internal component ids or slugs (like "observation-layer") — say what the change would do for the person using the app, in everyday words.
 
 Respond with ONLY a JSON array, no prose, no markdown fence:
 [{"title":"short title under 8 words","body":"2-3 sentences: the thought and why it matters now","prompt_draft":"a ready-to-queue task prompt implementing it","priority":0,"target_id":"optional existing component id from the list above"}]`;
@@ -829,4 +883,5 @@ export const intelApi = {
   signalsFor, computeSignals, acknowledgeSignal, healthFor, recordSnapshots, healthHistory,
   adoptionMeter, listThoughts, createThought, getThought, acceptThought, dismissThought,
   deepenNode, pulseGraph, contentPulse, runRetrospectives, listLessons, drainList, scheduleBackgroundIntel,
+  vulgarizeExistingTexts,
 };

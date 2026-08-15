@@ -151,7 +151,7 @@ const SUGGESTION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS (Fra
 
 ${digest}
 
-Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers ») qui feraient avancer l'app — features, corrections, nettoyage de données, etc. Chaque piste doit être un vrai prompt actionnable, pas juste une idée vague.
+Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers ») qui feraient avancer l'app — features, corrections, nettoyage de données, etc. Chaque piste doit être un vrai prompt actionnable, pas juste une idée vague. Le titre et la rationale sont lus par le propriétaire de l'app, qui n'est pas programmeur : jamais d'identifiants internes, de noms de composants techniques ni de jargon anglais — dis ce que ça change pour lui, avec des mots simples.
 
 ${USER_FACING_STYLE_FR}
 
@@ -199,7 +199,7 @@ const INTEGRATION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS, un
 
 ${digest}
 
-Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrètes qui enrichiraient la recherche (nouvelles sources de données, APIs, outils) — pas des tâches internes.
+Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrètes qui enrichiraient la recherche (nouvelles sources de données, APIs, outils) — pas des tâches internes. Le titre et la rationale sont lus par le propriétaire, qui n'est pas programmeur : jamais de jargon technique ni de termes internes — dis ce que ça lui apporte, avec des mots simples.
 
 ${USER_FACING_STYLE_FR}
 

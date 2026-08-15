@@ -188,7 +188,7 @@ Commands the user may type:
 
 The subject being discussed is described in SUBJECT CONTEXT below. It is the whole reason this conversation exists — keep every answer anchored to it.
 
-Be direct, plain-English, no jargon. Keep answers short unless the user asks for detail.`;
+Be direct, plain-English, no jargon. Keep answers short unless the user asks for detail. Never mention internal component ids, codes or file names in your answers — say what the thing DOES for the user, in everyday words. The user is not a programmer.`;
 
 function subjectSystemPrompt(ctxText) {
   return `${BASE_SYSTEM}

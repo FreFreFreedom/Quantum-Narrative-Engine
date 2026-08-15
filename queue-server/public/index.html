@@ -4995,10 +4995,11 @@ async function initMind() {
 // feed, so a 15s poll must not churn the DOM.
 let ARCH_INTEL_SIG = '';
 async function loadMind(quiet) {
-  const q = '?catalog=' + encodeURIComponent(JSON.stringify(archCatalog()));
+  // The catalog travels in the request BODY, not the URL — the tree grew past
+  // the size a URL can carry (the server rejects giant URLs with 431).
   try {
     const [sigRes, thRes] = await Promise.all([
-      api('/api/architecture/intel/signals' + q),
+      apiWrite('/api/architecture/intel/signals', 'POST', { catalog: archCatalog() }),
       api('/api/architecture/intel/thoughts'),
     ]);
     const sig = JSON.stringify([sigRes, thRes]);

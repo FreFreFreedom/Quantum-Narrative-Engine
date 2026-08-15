@@ -11,7 +11,9 @@ export function intelRoutes(db) {
   // The pulse (Part 3 + 6.1/6.2/6.5): deterministic signals + health scores +
   // adoption meter, all cached ~20 s, zero model calls. Also fires the bounded
   // background pass (retrospectives → lessons) but never awaits it. The visible
-  // catalog (what the user sees on the graph) travels as JSON in ?catalog=.
+  // catalog (what the user sees on the graph) travels as JSON. POST with a body
+  // is the primary path — the tree grew too large for ?catalog= URLs (Node's
+  // header cap rejects them with 431). GET ?catalog= stays for small callers.
   router.get('/signals', (req, res) => {
     let catalog = [];
     const raw = req.query.catalog;
@@ -21,6 +23,21 @@ export function intelRoutes(db) {
     const out = intelApi.signalsFor(db, catalog);
     intelApi.scheduleBackgroundIntel(db);
     res.json({ ...out, meta: SIGNAL_META });
+  });
+
+  router.post('/signals', (req, res) => {
+    const catalog = Array.isArray(req.body?.catalog) ? req.body.catalog : [];
+    const out = intelApi.signalsFor(db, catalog);
+    intelApi.scheduleBackgroundIntel(db);
+    res.json({ ...out, meta: SIGNAL_META });
+  });
+
+  // One-off migration: rewrite stored user-facing texts (mind thought titles and
+  // bodies, suggestion titles and rationales) into plain everyday language —
+  // the same rule new generations are born with. Idempotent.
+  router.post('/vulgarize-existing', async (req, res) => {
+    const out = await intelApi.vulgarizeExistingTexts(db);
+    res.json(out);
   });
 
   // "Intentional, not a problem" (6.2): acknowledging a (type, scope, target)
