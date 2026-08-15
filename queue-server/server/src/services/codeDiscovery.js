@@ -17,7 +17,9 @@
 // subscription path is down.
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './claudeText.js';
+import { generateText as generateTextByFeature } from './ai/text.js';
 import { createNode } from './architectureNodes.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -193,7 +195,7 @@ Respond with ONLY a JSON object, no prose, no markdown fence:
 
 // Tolerant JSON extraction — strips a ```json fence if present (models occasionally
 // add one to these newer prompts), else falls back to the first {...} block.
-function parseJsonObject(text) {
+export function parseJsonObject(text) {
   if (!text) return null;
   let s = String(text).trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -264,6 +266,153 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
   return getReport(db, id);
 }
 
+// ─── Inspiration pass: three shelves for every queue task ─────────────────────
+//
+// Distinct from the idea box on purpose: where the idea box is an explicit,
+// GitHub-first exploration, this pass runs automatically for every implement-mode
+// task BEFORE its plan is drafted (plan "inspiration-before-planning"). It asks
+// the model for three shelves per part:
+//
+//   open   — real open-source projects (backed by live GitHub results)
+//   hidden — products/features that exist in the world but whose code is not
+//            public (the model's general knowledge — labeled as unverifiable)
+//   bold   — ideas that may not exist anywhere yet. THE HEART of the pass: the
+//            model is pushed to understand the deep nature of the technologies
+//            and envision the boldest plausible version, not to play it safe.
+//
+// One decompose(+queries) call plus one picks call per part — cheaper than the
+// idea box's three passes, and it must be, because it runs unattended.
+// The stored report is indistinguishable from an idea-box report (same table,
+// same parts/picks JSON shape, source='prompt', source_id=<prompt id>), so the
+// tech tree, evidence and report views all work on it without new schema.
+
+const INSPIRE_MAX_PARTS = 3;
+
+function buildInspireDecomposePrompt(ideaText) {
+  return `You are helping plan an idea for ${FMCNS_BLURB}.
+
+The idea: "${String(ideaText).trim()}"
+
+Two jobs in one pass:
+1. Split the idea into 1-3 independently searchable parts IF it combines distinct capabilities (an atomic idea stays exactly ONE part).
+2. For each part, propose 1-2 GitHub repo-search query strings (the kind you would type into GitHub's search box) that would surface real, already-built open-source work relevant to that part. Be realistic about what a query would return.
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+{"project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one paragraph: what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
+}
+
+function buildInspirePicksPrompt(partDescription, resultsByQuery) {
+  const hasLive = resultsByQuery.length > 0;
+  const resultsBlock = resultsByQuery.map(({ q, why, results }) => {
+    const lines = results.slice(0, 5).map(r => `  - ${r.repo_full_name} (${r.stars}★): ${r.description || '(no description)'}`).join('\n') || '  - (no results)';
+    return `Query "${q.q}" (${q.why}):\n${lines}`;
+  }).join('\n\n');
+  return `You are the inspiration engine for ${FMCNS_BLURB}. A task is about to be planned into a real feature, and the plan will be written from your answer. Look at the world and produce inspiration on three shelves — with the BOLD shelf as the HEART of your answer.
+
+The part of the idea you are inspiring for: "${String(partDescription).trim()}"
+
+${hasLive ? `What a live GitHub search just returned for this part:\n\n${resultsBlock}\n\n` : 'No live GitHub results were available for this part — still produce shelves 2 and 3 at full strength.\n\n'}
+
+SHELF 1 — "open": real open-source projects worth taking ideas from. Only repos that actually appeared in the live results above${hasLive ? '' : ' (none available, so produce zero open picks)'}. Fields: repo, stars, why_fits, use.
+SHELF 2 — "hidden": things that exist in the world but whose code is not public — products or features inside companies, from your general knowledge. You cannot link them; give the name, what it does, the lesson to take, and how FMCNS could match or beat it. Fields: name, what, lesson, use.
+SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (2-3 bold sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how FMCNS could be the first to build it).
+
+Produce 2-3 open picks (if live results justify them), 1-2 hidden picks, and 2-3 bold picks. Set recommended_index to the single pick that gives the best mix of boldness and feasibility — prefer a bold pick when it is strong.
+
+${USER_FACING_STYLE}
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+{"picks":[{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one sentence","use":"one sentence on how FMCNS would use it"},{"kind":"hidden","name":"product or company","what":"what it does","lesson":"what to take from it","use":"how FMCNS matches or beats it"},{"kind":"bold","name":"short idea name","vision":"2-3 bold sentences","why_possible":"why it is achievable","how_fmcns":"how FMCNS could be first"}],"recommended_index":0}`;
+}
+
+// The automatic inspiration pass. Never throws — a failure returns {error} and
+// the caller marks the task inspire_state='failed' so the human gets a retry
+// button, and the plan is drafted without inspiration (the queue never blocks).
+export async function runInspiration(db, { idea_text, source = 'prompt', source_id = null, forceRefresh = false } = {}) {
+  const ideaText = String(idea_text || '').trim();
+  if (!ideaText) return { error: 'idea_text_required' };
+
+  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(ideaText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose' });
+  if (pass0.error) return { error: pass0.error, message: pass0.message };
+  const parsed0 = parseJsonObject(pass0.text);
+  const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, INSPIRE_MAX_PARTS);
+  const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: ideaText, queries: [] }];
+  const projectName = parsed0?.project_name || ideaText.slice(0, 60);
+
+  const builtParts = [];
+  for (const part of parts) {
+    const partDescription = String(part.description || ideaText).trim();
+    const queries = (part.queries || []).filter(q => q && q.q).slice(0, 2);
+    const resultsByQuery = [];
+    for (const q of queries) {
+      const qId = queryHash(q.q);
+      const out = await getResults(db, qId, q.q, { forceRefresh });
+      if (!out.error) resultsByQuery.push({ q, why: q.why, results: out.results || [] });
+    }
+    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks' });
+    const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
+    const picks = (parsed2?.picks || []).filter(p => p && ['open', 'hidden', 'bold'].includes(p.kind));
+    const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;
+    builtParts.push({
+      name: part.name || partDescription.slice(0, 40),
+      description: partDescription,
+      queries,
+      picks,
+      recommended_index: picks.length ? recommendedIndex : 0,
+    });
+  }
+
+  if (!builtParts.some(p => p.picks.length)) {
+    return { error: 'unparseable', message: 'The model did not return usable inspiration for any part.' };
+  }
+
+  const id = randomUUID();
+  db.prepare(`
+    INSERT INTO discovery_reports (id, idea_text, source, source_id, queries_json, picks_json, project_name, project_territory, parts_json)
+    VALUES (?,?,?,?,?,?,?,?,?)
+  `).run(id, ideaText, source, source_id, JSON.stringify(builtParts[0].queries || []), JSON.stringify(builtParts[0].picks || []), projectName, null, JSON.stringify(builtParts));
+
+  return getReport(db, id);
+}
+
+// Compact digest of a report for the plan-drafting pass: what the world has, what
+// it hides, and the bold ideas — bold first (it is the heart). When the human
+// applied specific picks, those are emphasized as the chosen direction while a
+// couple of others stay as context. Capped so the drafting call stays cheap.
+export function inspirationDigestFor(report, appliedPicks = []) {
+  if (!report) return null;
+  const chosen = new Set((appliedPicks || []).map(p => `${p.part_index}:${p.pick_index}`));
+  const parts = (report.parts || []).slice(0, 3);
+  const byShelf = { open: [], hidden: [], bold: [] };
+  parts.forEach((part, pi) => {
+    (part.picks || []).forEach((pick, i) => {
+      if (byShelf[pick.kind]) byShelf[pick.kind].push({ ...pick, mark: chosen.has(`${pi}:${i}`) });
+    });
+  });
+  const fmt = {
+    open: p => `- ${p.repo || '?'} (${p.stars || 0}★): ${p.why_fits || ''} Use: ${p.use || ''}`,
+    hidden: p => `- ${p.name || '?'}: ${p.what || ''} Lesson: ${p.lesson || ''} For FMCNS: ${p.use || ''}`,
+    bold: p => `- ${p.name || '?'}: ${p.vision || ''} Possible because: ${p.why_possible || ''} For FMCNS: ${p.how_fmcns || ''}`,
+  };
+  const caps = { open: 2, hidden: 2, bold: 3 };
+  const mark = p => (p.mark ? ' (CHOSEN)' : '');
+  const lines = [];
+  for (const shelf of ['bold', 'open', 'hidden']) {
+    const items = byShelf[shelf];
+    if (!items.length) continue;
+    const chosenFirst = [...items.filter(p => p.mark), ...items.filter(p => !p.mark)].slice(0, caps[shelf]);
+    const label = shelf === 'bold'
+      ? 'SHELF 3 — BOLD IDEAS (may not exist anywhere yet — design targets, not dependencies)'
+      : shelf === 'open'
+        ? 'SHELF 1 — OPEN SOURCE (real, verifiable projects)'
+        : 'SHELF 2 — CLOSED PRODUCTS (exist in the world, code not public — match or beat them)';
+    lines.push(label + ':');
+    lines.push(...chosenFirst.map(p => fmt[shelf](p) + mark(p)));
+  }
+  const out = lines.join('\n');
+  return out.length > 2600 ? out.slice(0, 2600) : out;
+}
+
 export function getReport(db, id) {
   const row = db.prepare(`SELECT * FROM discovery_reports WHERE id=?`).get(id);
   if (!row) return null;
@@ -284,7 +433,10 @@ export function getReport(db, id) {
 }
 
 export function listReports(db) {
-  return db.prepare(`SELECT id, idea_text, source, picks_json, parts_json, created_at FROM discovery_reports ORDER BY created_at DESC`)
+  // The blocks-tab "Past reports" library shows idea-box runs only — automatic
+  // per-task inspiration reports (source='prompt') belong to the task detail
+  // view, where they are served through the task's inspiration endpoint.
+  return db.prepare(`SELECT id, idea_text, source, picks_json, parts_json, created_at FROM discovery_reports WHERE COALESCE(source,'idea_box')='idea_box' ORDER BY created_at DESC`)
     .all()
     .map(r => {
       const parts = r.parts_json ? JSON.parse(r.parts_json) : [{ picks: JSON.parse(r.picks_json || '[]') }];

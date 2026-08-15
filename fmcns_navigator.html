@@ -499,6 +499,25 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-actions button.primary { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .sg-actions button:hover { background:var(--c-surface-2); }
 .sg-actions button.primary:hover { background:var(--c-ink-solid-2); }
+/* Inspired-by panel (task detail): the three shelves */
+.q-inspire-toolbar { display:flex; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
+.q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
+.q-inspire-shelf.q-inspire-bold { color:#8a5a1e; }
+.q-inspire-note { font-size:10px; color:var(--c-ink-4); margin-bottom:6px; }
+.q-inspire-tag { font-size:9.5px; border:1px solid var(--c-border-2); border-radius:8px; padding:1px 7px; color:var(--c-ink-4); flex-shrink:0; }
+.q-inspire-part { font-size:11.5px; margin:8px 0 4px; }
+.q-inspire-part span { color:var(--c-ink-4); }
+.q-inspire-card.sel, .q-inspire-card.q-inspire-sel { border-color:var(--c-accent); background:color-mix(in srgb, var(--c-accent) 7%, var(--c-surface)); }
+.q-inspire-card.q-inspire-applied { border-color:#4f9d7a; }
+/* Self-updating tree: pending proposals bar (Architecture tab) */
+.arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; padding:8px 12px; margin-bottom:8px; }
+.arch-proposals-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11.5px; font-weight:600; margin-bottom:6px; }
+.arch-proposal-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--c-border); }
+.arch-proposal-row:first-of-type { border-top:none; }
+.arch-proposal-main { flex:1; min-width:0; }
+.arch-proposal-name { font-weight:600; font-size:11.5px; margin-right:6px; }
+.arch-proposal-what { font-size:10.5px; color:var(--c-ink-4); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.arch-proposal-actions { display:flex; gap:6px; flex-shrink:0; }
 .sg-genbtn { padding:6px 14px; border-radius:6px; border:1px dashed var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; color:var(--c-ink-3); }
 .sg-genbtn:hover { background:var(--c-surface-2); }
 .sg-genbtn:disabled { opacity:.6; cursor:default; }
@@ -855,6 +874,7 @@ button:active { transform: translateY(1px) scale(.99); }
           </span>
         </div>
       </div>
+      <div id="archProposals" class="arch-proposals" hidden></div>
       <div class="ws-map-body">
         <div class="arch-stage" id="archStage">
           <div class="arch-ask" id="archAsk">
@@ -2615,6 +2635,10 @@ const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
 let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
+// Inspiration panel state: rendered HTML per task (avoids refetching on every
+// 4s poll), the human's un-applied selections, and the in-flight guard.
+let qInspireCache = {}, qInspireSel = {};
+const qInspireBusy = new Set();
 let flowComponentFilter = null; // architecture node id → only its related prompts show
 let qDragQId = null;             // prompt id being drag-reordered
 
@@ -3508,6 +3532,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     </div>
     <div class="q-item-meta">
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
+      ${qInspireBadge(p)}
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
@@ -3523,6 +3548,16 @@ function flowQueueRow(p, reorderable, busy, ahead) {
 }
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+// Small state marker on flow rows so Antoine can see at a glance which tasks
+// have inspiration ready — the panel itself lives in the task detail.
+function qInspireBadge(p) {
+  if (p.mode !== 'implement' || !p.inspire_state || p.inspire_state === 'off') return '';
+  if (p.inspire_state === 'pending') return '<span class="q-badge" style="background:#6b7baa;" title="Looking at the world before the plan is written — real projects, hidden products, bold ideas.">🔭 Inspiring…</span>';
+  if (p.inspire_state === 'ready') return '<span class="q-badge" style="background:#8a5a1e;" title="Ideas from the world are ready — open the task to see them and pick.">✨ Ideas ready</span>';
+  if (p.inspire_state === 'applied') return '<span class="q-badge" style="background:#4f9d7a;" title="Picked ideas are baked into the plan.">✨ Inspired</span>';
+  return '';
+}
 
 function flowSection(icon, title, count, rowsHtml) {
   return `<div class="flow-section"><div class="flow-sec-head"><span class="flow-sec-title">${icon} ${title}</span><span class="flow-sec-count">${count}</span></div>${rowsHtml}</div>`;
@@ -3991,6 +4026,11 @@ function qRenderDetail(p) {
         <span style="font-size:11px;color:var(--c-ink-4);">Switching provider drops the old session link and starts fresh.</span>
       </div>` : ''}
     <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : qPurposePreview(p)}</div></div>
+    ${p.mode === 'implement' ? `
+    <div class="arch-field">
+      <div class="arch-field-label">Inspired by — the world's ideas</div>
+      <div id="qInspireHost">${qInspireHtml(p)}</div>
+    </div>` : ''}
     <details class="q-fullprompt"><summary>Show full prompt</summary><div class="arch-field-body">${p.prompt}</div></details>
     ${p.raw_prompt && p.raw_prompt !== p.prompt ? `
     <div class="arch-field">
@@ -4131,6 +4171,7 @@ function qRenderDetail(p) {
   };
   qRestoreInputs(host, snap);
   if (!p.summary) qSummarize(p);
+  qWireInspire(p);
 }
 
 // Bullet rendering for a stored task summary (one free model call, cached on the
@@ -4168,6 +4209,197 @@ async function qSummarize(p) {
       if (live) live.innerHTML = qPurposeHtml(r.summary);
     }
   } catch (e) { /* keep the instant preview — the full prompt is below */ }
+}
+
+// ── Inspired by — the world's ideas (per-task inspiration panel) ─────────────
+// Every implement-mode task gets an automatic pass that looks at the world
+// before its plan is written (see routes/queue.js inspiration endpoints):
+// three shelves — open projects (verifiable links), hidden products (general
+// knowledge, labeled as such), and bold ideas (the heart). Antoine picks from
+// any shelf and the plan re-drafts with the picks as its compass.
+
+function qInspireHtml(p) {
+  if (!p.inspire_state || p.inspire_state === 'off') {
+    return `<div class="tv-empty">This task never looked at what the world already does.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">✨ Look at what exists before you start</button></div>`;
+  }
+  if (p.inspire_state === 'pending') {
+    return `<div class="tv-empty">🔭 Looking for inspiration… real projects, hidden products, bold ideas. About a minute.</div>`;
+  }
+  if (p.inspire_state === 'failed') {
+    return `<div class="tv-empty">The world-look did not finish${p.inspire_error ? ': ' + qEsc(p.inspire_error) : ''}.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">Try again</button></div>`;
+  }
+  const cached = qInspireCache[p.id];
+  if (cached && cached.state === p.inspire_state && cached.report_id === p.inspire_report_id) {
+    return cached.html;
+  }
+  return `<div class="tv-empty">Loading shelves…</div>`;
+}
+
+function qInspireCard(pick, pi, i, applied, sel) {
+  const key = pi + ':' + i;
+  const isApplied = applied.has(key);
+  const isSel = sel.has(key);
+  let head = '', body = '';
+  if (pick.kind === 'open') {
+    head = `<span class="sg-card-title">${qEsc(pick.repo || 'Project')}</span>${pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}`;
+    body = (pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${qEsc(pick.why_fits)}</div>` : '') +
+      (pick.use ? `<div class="sg-rationale"><b>How we'd use it:</b> ${qEsc(pick.use)}</div>` : '') +
+      (pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${qEsc(pick.repo)}" target="_blank" rel="noopener">github.com/${qEsc(pick.repo)}</a></div>` : '');
+  } else if (pick.kind === 'hidden') {
+    head = `<span class="sg-card-title">${qEsc(pick.name || 'Product')}</span><span class="q-inspire-tag" title="The code is not public — this comes from general knowledge and may be out of date.">closed source</span>`;
+    body = (pick.what ? `<div class="sg-rationale"><b>What it is:</b> ${qEsc(pick.what)}</div>` : '') +
+      (pick.lesson ? `<div class="sg-rationale"><b>Lesson:</b> ${qEsc(pick.lesson)}</div>` : '') +
+      (pick.use ? `<div class="sg-rationale"><b>How we'd match or beat it:</b> ${qEsc(pick.use)}</div>` : '');
+  } else {
+    head = `<span class="sg-card-title">✨ ${qEsc(pick.name || 'Bold idea')}</span>`;
+    body = (pick.vision ? `<div class="sg-rationale"><b>The vision:</b> ${qEsc(pick.vision)}</div>` : '') +
+      (pick.why_possible ? `<div class="sg-rationale"><b>Why it's possible:</b> ${qEsc(pick.why_possible)}</div>` : '') +
+      (pick.how_fmcns ? `<div class="sg-rationale"><b>How we'd be first:</b> ${qEsc(pick.how_fmcns)}</div>` : '');
+  }
+  const btnLabel = isApplied ? '✓ In the plan' : isSel ? '✓ Selected' : 'Use in plan';
+  return `
+    <div class="sg-card q-inspire-card ${isApplied ? 'q-inspire-applied' : ''} ${isSel ? 'q-inspire-sel' : ''}" data-partidx="${pi}" data-pickidx="${i}">
+      <div class="sg-card-top">${head}</div>
+      ${body}
+      <div class="sg-actions">
+        <button data-action="inspire-pick" class="${isApplied || isSel ? 'primary' : ''}" ${isApplied ? 'disabled title="Already baked into the plan."' : ''}>${btnLabel}</button>
+      </div>
+    </div>`;
+}
+
+function qInspireFullHtml(p, data) {
+  const report = data.report;
+  if (!report || !report.parts || !report.parts.length) {
+    return `<div class="tv-empty">The search came back empty this time.</div>`;
+  }
+  const applied = new Set((data.picks || []).map(x => x.part_index + ':' + x.pick_index));
+  const sel = new Set((qInspireSel[p.id] || []).map(x => x.part_index + ':' + x.pick_index));
+  const shelves = [
+    { kind: 'open', title: 'Already built in the open', note: 'Real projects with links — you can check them yourself.', cls: '' },
+    { kind: 'hidden', title: 'Already built behind closed doors', note: 'Exists in the world, code not public — from general knowledge, may be out of date.', cls: '' },
+    { kind: 'bold', title: 'Bold new ideas — the future', note: 'May not exist anywhere yet. The heart of this panel.', cls: 'q-inspire-bold' },
+  ];
+  const partsHtml = report.parts.map((part, pi) => {
+    const header = report.parts.length > 1
+      ? `<div class="q-inspire-part"><b>${pi + 1}. ${qEsc(part.name || 'Part')}</b> <span>${qEsc(part.description || '')}</span></div>`
+      : '';
+    const shelfHtml = shelves.map(sh => {
+      const items = (part.picks || []).map((pick, i) => ({ pick, i })).filter(x => x.pick.kind === sh.kind);
+      if (!items.length) return '';
+      return `<h4 class="q-inspire-shelf ${sh.cls}">${sh.title}</h4>` +
+        (sh.note ? `<div class="q-inspire-note">${sh.note}</div>` : '') +
+        items.map(({ pick, i }) => qInspireCard(pick, pi, i, applied, sel)).join('');
+    }).join('');
+    return header + shelfHtml;
+  }).join('');
+  return `
+    <div class="q-inspire-toolbar">
+      <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="Rewrite this task's plan with the selected ideas as its compass.">✨ Apply to plan</button>
+      <button class="ctrlbtn" data-action="inspire-start" title="Fresh search — GitHub lookups are cached for a day, the bold ideas are brand new every time.">↻ New ideas</button>
+    </div>
+    ${partsHtml}`;
+}
+
+// Re-render the panel from the cached report after a selection toggle (cheap —
+// no network) and re-wire the buttons.
+function qInspireReRender(p) {
+  const host = document.getElementById('qInspireHost');
+  if (!host) return;
+  const cached = qInspireCache[p.id];
+  if (!cached) return;
+  const data = { state: cached.state, report: cached.report, picks: cached.picks };
+  host.innerHTML = qInspireFullHtml(p, data);
+  qWireInspireButtons(p);
+}
+
+function qWireInspireButtons(p) {
+  const host = document.getElementById('qInspireHost');
+  if (!host) return;
+  host.querySelectorAll('[data-action="inspire-start"]').forEach(b => {
+    b.onclick = async () => {
+      b.disabled = true; b.textContent = 'Looking…';
+      try {
+        await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/refresh`, 'POST', {});
+        qInspireCache[p.id] = null; qInspireSel[p.id] = [];
+        await qLoad();
+      } catch (e) { b.disabled = false; b.textContent = '↻ New ideas'; alert('Error: ' + e.message); }
+    };
+  });
+  host.querySelectorAll('[data-action="inspire-pick"]').forEach(b => {
+    b.onclick = () => {
+      const card = b.closest('.q-inspire-card');
+      const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
+      const list = qInspireSel[p.id] || (qInspireSel[p.id] = []);
+      const idx = list.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
+      if (idx >= 0) list.splice(idx, 1); else list.push(key);
+      qInspireReRender(p);
+    };
+  });
+  const applyBtn = host.querySelector('[data-action="inspire-apply"]');
+  if (applyBtn) {
+    applyBtn.onclick = async () => {
+      const sel = qInspireSel[p.id] || [];
+      if (!sel.length) return;
+      applyBtn.disabled = true; applyBtn.textContent = 'Applying…';
+      try {
+        await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/apply`, 'POST', { picks: sel });
+        qInspireCache[p.id] = null; qInspireSel[p.id] = [];
+        await qLoad();
+      } catch (e) { applyBtn.disabled = false; applyBtn.textContent = '✨ Apply to plan'; alert('Error: ' + e.message); }
+    };
+  }
+}
+
+async function qFetchInspire(p) {
+  if (qInspireBusy.has(p.id)) return;
+  qInspireBusy.add(p.id);
+  try {
+    const data = await api(`/api/travaux/prompts/${p.id}/inspiration`);
+    const html = qInspireFullHtml(p, data);
+    qInspireCache[p.id] = {
+      state: data.state,
+      report_id: data.report?.id || null,
+      report: data.report,
+      picks: data.picks || [],
+      html,
+    };
+    const live = document.getElementById('qInspireHost');
+    if (live) live.innerHTML = html;
+    qWireInspireButtons(p);
+  } catch (e) { /* the next poll retries — never loud in the panel */ }
+  finally { qInspireBusy.delete(p.id); }
+}
+
+// Called from qRenderDetail on every render (each 4s poll while open). Cheap
+// paths first: nothing to do, pending, or a cached render; the only network
+// call is the one fetch per (task, state) change.
+function qWireInspire(p) {
+  if (p.mode !== 'implement') return;
+  const host = document.getElementById('qInspireHost');
+  if (!host) return;
+  const st = p.inspire_state || 'off';
+  if (st === 'off' || st === 'failed' || st === 'pending') {
+    if (st !== 'pending') {
+      host.querySelectorAll('[data-action="inspire-start"]').forEach(b => {
+        b.onclick = async () => {
+          b.disabled = true; b.textContent = 'Looking…';
+          try {
+            await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/refresh`, 'POST', {});
+            qInspireCache[p.id] = null;
+            await qLoad();
+          } catch (e) { b.disabled = false; b.textContent = '✨ Look at what exists before you start'; alert('Error: ' + e.message); }
+        };
+      });
+    }
+    return;
+  }
+  const cached = qInspireCache[p.id];
+  if (cached && cached.state === st && cached.report_id === p.inspire_report_id) {
+    host.innerHTML = cached.html;
+    qWireInspireButtons(p);
+    return;
+  }
+  qFetchInspire(p);
 }
 
 async function qReply(id, text) {
@@ -5089,14 +5321,84 @@ async function loadArchNodes() {
       id:n.id, territory:n.territory, name:n.name,
       what:n.what || '', why:n.why || '',
       input:'—', output:'—',
-      now:n.provenance === 'speculative' ? 'Speculative — proposed by Claude, not yet accepted.' : 'Concept. Added by hand; not built yet.',
+      now:n.proposed
+        ? 'Proposed automatically from real work — pending your acceptance in the bar above.'
+        : (n.provenance === 'speculative' ? 'Speculative — proposed by Claude, not yet accepted.' : 'Concept. Added by hand; not built yet.'),
       next:n.next || '', status:n.status, depends:n.depends || [],
       provenance:n.provenance, parent_node_id:n.parent_node_id, _stored:true,
+      proposed:!!n.proposed, sync_source:n.sync_source,
     };
     ARCH_DATA.push(node); ARCH_BY_ID[n.id] = node;
   });
   // Depths are memoised, and the tree's shape just changed.
   for (const k in _archDepthCache) delete _archDepthCache[k];
+}
+
+// ── Self-updating tree: pending proposals ────────────────────────────────────
+// The tree watchers (finished tasks / git history) propose nodes; Antoine
+// accepts (becomes a real part of the tree) or rejects (gone) here. The
+// proposed nodes themselves already show dashed on the graph.
+let archProposals = [];
+
+async function loadArchProposals() {
+  try { archProposals = (await api('/api/architecture/proposals')).proposals || []; }
+  catch (e) { archProposals = []; }
+  renderArchProposals();
+}
+
+function archProposalSource(n) {
+  if (n.sync_source === 'queue') return 'From a finished task';
+  if (n.sync_source === 'git') return 'From changes outside the app';
+  return 'Auto-proposed';
+}
+
+function renderArchProposals() {
+  const host = document.getElementById('archProposals');
+  if (!host) return;
+  if (!archProposals.length) { host.hidden = true; host.innerHTML = ''; return; }
+  host.hidden = false;
+  host.innerHTML = `
+    <div class="arch-proposals-head">
+      <span>🌱 Pending proposals — the tree noticed real work</span>
+      <button class="ctrlbtn" id="archSyncNowBtn" title="Re-read the app's recent changes right now (usually runs automatically every hour).">Sync now</button>
+    </div>
+    ${archProposals.map(n => `
+      <div class="arch-proposal-row" data-pid="${n.id}">
+        <div class="arch-proposal-main">
+          <span class="arch-proposal-name">${qEsc(n.name)}</span>
+          <span class="q-badge" style="background:#7a5ea8;">${archProposalSource(n)}</span>
+          ${n.sync_sha ? `<span class="q-badge" style="background:var(--c-ink-4);" title="${qEsc(n.sync_sha)}">${qEsc(n.sync_sha.slice(0, 8))}</span>` : ''}
+          <div class="arch-proposal-what">${qEsc(n.what || '')}</div>
+        </div>
+        <div class="arch-proposal-actions">
+          <button class="ctrlbtn" data-act="accept">✓ Accept</button>
+          <button class="ctrlbtn" data-act="reject">✕ Reject</button>
+        </div>
+      </div>`).join('')}`;
+  host.querySelectorAll('.arch-proposal-row').forEach(row => {
+    const id = row.getAttribute('data-pid');
+    row.querySelector('[data-act="accept"]').onclick = async () => {
+      try {
+        await apiWrite(`/api/architecture/proposals/${id}/accept`, 'POST', {});
+        await loadArchProposals(); await loadArchNodes(); renderArchStage();
+      } catch (e) { alert('Error: ' + e.message); }
+    };
+    row.querySelector('[data-act="reject"]').onclick = async () => {
+      try {
+        await apiWrite(`/api/architecture/proposals/${id}/reject`, 'POST', {});
+        await loadArchProposals(); await loadArchNodes(); renderArchStage();
+      } catch (e) { alert('Error: ' + e.message); }
+    };
+  });
+  const syncBtn = document.getElementById('archSyncNowBtn');
+  if (syncBtn) syncBtn.onclick = async () => {
+    syncBtn.disabled = true; syncBtn.textContent = 'Reading…';
+    try {
+      const out = await apiWrite('/api/architecture/tree/sync', 'POST', {});
+      syncBtn.textContent = out.created ? `✓ ${out.created} new` : (out.skipped ? '✓ Nothing new' : '✓ Done');
+      await loadArchProposals(); await loadArchNodes(); renderArchStage();
+    } catch (e) { syncBtn.disabled = false; syncBtn.textContent = 'Sync now'; alert('Error: ' + e.message); }
+  };
 }
 
 function renderArchQueueBanner() {
@@ -5177,6 +5479,7 @@ async function initArchNav() {
   await loadArchLiveData();
   renderArchStage();
   renderArchQueueBanner();
+  await loadArchProposals();
   if (archSelected) renderArchDetail(archSelected); // refresh detail panel with live data if already open
 }
 

@@ -137,6 +137,18 @@ function initSchema(db) {
   // task is FOR. Generated lazily on first open (one free-model call), then
   // cached here so revisits cost nothing (see routes/queue.js summarize).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN summary TEXT`); } catch {}
+  // Inspiration step: every implement-mode task gets a background pass that looks
+  // at the world before its plan is written (open projects, closed products, bold
+  // ideas — see codeDiscovery.js runInspiration). State machine: 'off' (question
+  // mode / legacy rows) -> 'pending' (search running) -> 'ready' (report done,
+  // nothing applied yet) | 'failed' (search failed, retry offered) | 'applied'
+  // (picks applied and the plan re-drafted). The report itself lives in
+  // discovery_reports (source='prompt', source_id=<prompt id>); these columns
+  // only hold the pointer, the applied picks and the error text.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_state TEXT NOT NULL DEFAULT 'off'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_report_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_picks_json TEXT NOT NULL DEFAULT '[]'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_error TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -815,6 +827,25 @@ export function initArchitectureSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_nodes_parent ON architecture_nodes(parent_node_id)`); } catch {}
   try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_arch_nodes_fp ON architecture_nodes(parent_node_id, fingerprint)`); } catch {}
+
+  // Self-updating tree (plan self-updating-tree): proposals created from finished
+  // queue tasks (sync_source='queue') or from git history outside the app
+  // (sync_source='git'). proposed=1 marks a node as pending human approval — the
+  // tree already draws speculative nodes dashed, and accepting flips the
+  // provenance to 'canon' in place. tree_sync_state remembers the last commit
+  // the git watcher processed, so a rescan is incremental and free.
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_source TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_prompt_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_sha TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN proposed INTEGER NOT NULL DEFAULT 0`); } catch {}
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tree_sync_state (
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      last_sha TEXT,
+      last_run_at TEXT,
+      last_error TEXT
+    )
+  `);
 
   // Phase 4: a Seed can be planted directly into the tree, making Idées the list
   // rendering of the same objects the tree renders spatially. Additive ALTER in a

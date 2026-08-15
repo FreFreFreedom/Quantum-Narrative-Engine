@@ -35,6 +35,8 @@ import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan } from './taskPlanner.js';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { runInspiration, getReport, inspirationDigestFor } from './codeDiscovery.js';
+import { syncFromTask } from './treeSync.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -162,18 +164,28 @@ export async function createPrompt({
   // conversation handoff) skip this and behave exactly as before — resolvePreset
   // runs synchronously against the text as submitted.
   const willDraft = willDraftPreCheck;
+  // Inspiration step (plan inspiration-before-planning): EVERY implement-mode
+  // task — suggestion, hand-typed, seed, thought, handoff — gets a background
+  // pass that looks at the world (open / hidden / bold shelves) before its plan
+  // is written. Question-mode tasks skip it. The pass never blocks creation:
+  // the row lands with inspire_state='pending' and the draft simply waits up to
+  // its timeout for the report (below), then proceeds without it on failure.
+  const willInspire = useMode === 'implement';
   const resolved = (!willDraft && preset === 'auto' && useProvider === 'claude-code')
     ? await resolvePreset({ mode: useMode, prompt: text }).catch(() => 'standard') : null;
 
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
     useMode, preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id);
+    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, willInspire ? 'pending' : 'off');
 
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
+  if (willInspire) {
+    startInspiration(id, { title: label, prompt: text });
+  }
   if (willDraft) {
     runPlanDraft(id, {
       title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial,
@@ -202,8 +214,15 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   const needPreset = preset === 'auto' && provider === 'claude-code';
   const needParent = contextMode === 'auto' && !explicitParent;
 
+  // Inspiration step: the draft waits (bounded) for the automatic world-look
+  // pass so the plan is written with real-world context — this is the "wait for
+  // inspiration before starting" behavior for tasks added straight to the
+  // queue. On timeout or failure the draft proceeds without it; the report may
+  // still land later and the human can re-draft by applying picks.
+  const inspiration = await waitForInspiration(id, INSPIRE_WAIT_MS);
+
   const [draft, presetOut, parentOut] = await Promise.all([
-    draftPlan({ title, prompt, mode }),
+    draftPlan({ title, prompt, mode, inspiration }),
     needPreset ? resolvePreset({ mode, prompt }).catch(() => 'standard') : Promise.resolve(null),
     needParent
       ? (async () => {
@@ -228,6 +247,127 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   if (contextNote) addMessage(id, { role: 'agent', text: contextNote });
   broadcast();
   if (targetStatus === 'queued') advanceQueue();
+}
+
+// ─── Inspiration step ─────────────────────────────────────────────────────────
+// Every implement-mode task gets an automatic pass that looks at the world
+// (codeDiscovery.runInspiration: open / hidden / bold shelves) before its plan
+// is written. The pass never blocks creation and never blocks the queue — the
+// draft waits for it only up to INSPIRE_WAIT_MS, and a failure simply leaves
+// the task inspire_state='failed' with a retry button in the UI.
+const INSPIRE_WAIT_MS = 75_000;
+const _inspiring = new Map();
+
+function parseInspirePicks(row) {
+  try { return JSON.parse(row?.inspire_picks_json || '[]'); } catch { return []; }
+}
+
+function startInspiration(id, { title, prompt }, { force = false } = {}) {
+  const run = (async () => {
+    try {
+      const report = await runInspiration(db, {
+        idea_text: [title, prompt].filter(Boolean).join('\n'),
+        source: 'prompt',
+        source_id: id,
+        forceRefresh: force,
+      });
+      if (report?.error) throw new Error(report.message || report.error);
+      db.prepare(`
+        UPDATE work_prompts SET inspire_state='ready', inspire_report_id=?, inspire_error=NULL,
+          updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+      `).run(report.id, id);
+    } catch (e) {
+      db.prepare(`
+        UPDATE work_prompts SET inspire_state='failed', inspire_error=?,
+          updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+      `).run(String(e.message || 'unknown error').slice(0, 400), id);
+    } finally {
+      _inspiring.delete(id);
+      broadcast();
+    }
+  })();
+  _inspiring.set(id, run);
+  return run;
+}
+
+// Wait for the task's inspiration pass, bounded. Resolves to the plan-ready
+// digest (already emphasizing any applied picks), or null when there is no pass
+// to wait for, it failed, or the timeout elapsed first.
+export async function waitForInspiration(id, timeoutMs = INSPIRE_WAIT_MS) {
+  const run = _inspiring.get(id);
+  if (!run) return null;
+  await Promise.race([
+    run.catch(() => {}),
+    new Promise((res) => setTimeout(res, timeoutMs)),
+  ]);
+  const row = getPrompt(id);
+  if (!row?.inspire_report_id) return null;
+  const report = getReport(db, row.inspire_report_id);
+  return inspirationDigestFor(report, parseInspirePicks(row));
+}
+
+// Manual re-run from the task detail (also the entry point for tasks created
+// before this feature: their state is 'off' and this starts their first pass).
+export async function refreshInspiration(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  if (row.mode !== 'implement') return row;
+  if (_inspiring.has(id)) return row; // one pass at a time
+  db.prepare(`
+    UPDATE work_prompts SET inspire_state='pending', inspire_error=NULL,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(id);
+  broadcast();
+  startInspiration(id, { title: row.title, prompt: row.raw_prompt || row.prompt }, { force: true });
+  return getPrompt(id);
+}
+
+// The human picked shelves/blocks → store them and re-draft the plan once with
+// the chosen items emphasized ("you pick, plan re-drafts"). The raw submitted
+// text stays the drafting source so drafts never compound on themselves. Guarded
+// against running tasks — steering is the right tool once it is executing.
+export async function applyInspiration(id, { picks = [] } = {}) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  if (row.status === 'running') return { ...row, error: 'running' };
+  const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
+  if (!report) return { ...row, error: 'no_report' };
+  const applied = [];
+  for (const sel of picks || []) {
+    const pi = Number(sel.part_index) || 0;
+    const ii = Number(sel.pick_index) || 0;
+    const pick = report.parts?.[pi]?.picks?.[ii];
+    if (!pick) continue;
+    applied.push({ part_index: pi, pick_index: ii, kind: pick.kind, name: pick.repo || pick.name || pick.kind });
+  }
+  if (!applied.length) return { ...row, error: 'no_valid_picks' };
+  db.prepare(`
+    UPDATE work_prompts SET inspire_picks_json=?, inspire_state='applied',
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(JSON.stringify(applied), id);
+
+  const digest = inspirationDigestFor(report, applied);
+  const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt || row.prompt, mode: row.mode, inspiration: digest });
+  if (draft) {
+    db.prepare(`
+      UPDATE work_prompts SET title=?, prompt=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(draft.title, draft.brief, id);
+  }
+  broadcast();
+  return getPrompt(id);
+}
+
+// Everything the task detail's "Inspired by" panel needs in one call: the state,
+// the last error (for the retry note), the applied picks and the full report.
+export function inspirationPayload(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  return {
+    state: row.inspire_state,
+    error: row.inspire_error || null,
+    picks: parseInspirePicks(row),
+    report: row.inspire_report_id ? getReport(db, row.inspire_report_id) : null,
+  };
 }
 
 // Retroactive plan-first drafting for a task created before that feature existed
@@ -586,7 +726,16 @@ function finishPrompt(id, task) {
   `).run(status, task.session_id || null, q, task.cost_usd ?? null, task.tokens_in ?? null, task.tokens_out ?? null, task.run_model || null, id);
   broadcast();
   eagerSummarize(id); // purpose bullets ready by the time the finished task is opened
-  return getPrompt(id);
+  const done = getPrompt(id);
+  // Self-updating tree: a finished implement task may have built something
+  // significant — classify its worktree diff in the background (fire-and-forget,
+  // never throws, never blocks task completion or the queue). Worktree-less runs
+  // and tweaks are cheap no-ops inside syncFromTask; merged work is also caught
+  // later by the git-history watcher.
+  if (done.status === 'done' && done.mode === 'implement') {
+    syncFromTask(db, id).catch(() => {});
+  }
+  return done;
 }
 
 // ─── Conversation thread ───────────────────────────────────────────────────────

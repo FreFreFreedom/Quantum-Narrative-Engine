@@ -16,6 +16,7 @@
 
 import { runSuggestionEngines } from './workSuggestions.js';
 import { generateSuggestions as generateArchSuggestions } from './architecture.js';
+import { syncFromGit } from './treeSync.js';
 
 const SUGGESTIONS_TTL_MS = 12 * 3600_000;
 const ARCH_TTL_MS = 24 * 3600_000;
@@ -23,6 +24,11 @@ const INTERVAL_MS = 6 * 3600_000;
 const BOOT_DELAY_MS = 2 * 60_000;
 const CONCURRENCY = 2;
 const STAGGER_MS = 350;
+// The tree watcher runs its own, more frequent cadence (roughly hourly, per the
+// plan) — but each run only does a model call when main has NEW commits, so the
+// idle cost is one cheap git log per hour.
+const TREE_INTERVAL_MS = 60 * 60_000;
+const TREE_BOOT_DELAY_MS = 90_000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -96,6 +102,16 @@ async function pregenArchitecture(db) {
   });
 }
 
+// The self-updating tree watcher: reads main's git history since the last
+// processed commit and proposes nodes for significant changes (see treeSync.js).
+// First run just records the baseline — no proposals for pre-existing history.
+async function pregenTreeSync(db) {
+  const out = await syncFromGit(db);
+  if (out?.error) console.error(`Pre-gen: tree sync failed — ${out.error} ${out.message || ''}`);
+  else if (out?.skipped) console.log(`Pre-gen: tree sync skipped — ${out.skipped}.`);
+  else console.log(`Pre-gen: tree sync ${out.baseline ? 'baseline recorded (' + out.baseline.slice(0, 8) + ')' : 'created ' + (out.created ?? 0) + ' proposal(s)'}.`);
+}
+
 let running = false;
 let started = false;
 
@@ -120,5 +136,8 @@ export function startPreGen(db) {
   setTimeout(() => { runOnce(db).catch(() => {}); }, BOOT_DELAY_MS).unref?.();
   const timer = setInterval(() => { runOnce(db).catch(() => {}); }, INTERVAL_MS);
   timer.unref?.();
-  console.log('Pre-gen: scheduled (first run after boot warm-up, then every 6h).');
+  setTimeout(() => { pregenTreeSync(db).catch(() => {}); }, TREE_BOOT_DELAY_MS).unref?.();
+  const treeTimer = setInterval(() => { pregenTreeSync(db).catch(() => {}); }, TREE_INTERVAL_MS);
+  treeTimer.unref?.();
+  console.log('Pre-gen: scheduled (first run after boot warm-up, then every 6h; tree watcher hourly).');
 }

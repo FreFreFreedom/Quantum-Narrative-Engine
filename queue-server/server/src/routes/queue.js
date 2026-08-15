@@ -160,6 +160,30 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  // Inspiration step: the automatic world-look pass (open / hidden / bold shelves)
+  // that runs for every implement-mode task before its plan is written. This view
+  // serves the task detail's "Inspired by" panel; refresh re-runs the pass (also
+  // the entry point for tasks created before the feature); apply stores the
+  // human's picks and re-drafts the plan with them emphasized.
+  router.get('/prompts/:id/inspiration', (req, res) => {
+    const out = queue.inspirationPayload(req.params.id);
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    res.json(out);
+  });
+
+  router.post('/prompts/:id/inspiration/refresh', async (req, res) => {
+    const row = await queue.refreshInspiration(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
+  router.post('/prompts/:id/inspiration/apply', async (req, res) => {
+    const row = await queue.applyInspiration(req.params.id, req.body || {});
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    if (row.error) return res.status(400).json({ error: row.error });
+    res.json(row);
+  });
+
   router.post('/prompts/:id/reply', (req, res) => {
     const out = queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });

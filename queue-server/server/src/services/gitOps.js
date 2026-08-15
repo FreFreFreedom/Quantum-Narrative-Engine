@@ -92,6 +92,41 @@ function slugify(title) {
   return slug || 'task';
 }
 
+// ─── Read-only history helpers for the self-updating tech tree ───────────────
+// (treeSync.js). Quiet and null-safe: on any failure the sync simply skips this
+// round — the tree must never be able to break the queue or the server.
+export function gitLogSummaries(cwd, { since = null, until = 'main', max = 20 } = {}) {
+  const range = since ? `${since}..${until}` : until;
+  const out = git(['-C', cwd, 'log', '--format=%h|%s', '-n', String(max), range], { quiet: true });
+  if (out === null) return [];
+  return out.split('\n').filter(Boolean).map((l) => {
+    const i = l.indexOf('|');
+    return { sha: l.slice(0, i), subject: l.slice(i + 1) };
+  });
+}
+
+export function gitDiffStat(cwd, from, to = 'HEAD') {
+  return git(['-C', cwd, 'diff', '--stat', `${from}..${to}`], { quiet: true }) || '';
+}
+
+export function gitChangedFiles(cwd, from, to = 'HEAD') {
+  const out = git(['-C', cwd, 'diff', '--name-status', `${from}..${to}`], { quiet: true });
+  if (out === null) return [];
+  return out.split('\n').filter(Boolean);
+}
+
+export function gitHeadSha(cwd, ref = 'main') {
+  return git(['-C', cwd, 'rev-parse', '--verify', '--quiet', ref], { quiet: true }) || null;
+}
+
+// Best-effort, read-only remote refresh for the tree watcher: local `main` can
+// lag behind pushed work (e.g. a deploy push from another machine), and the
+// watcher should see it. Quiet and never fatal — with no network or no remote
+// the watcher simply falls back to local main.
+export function gitFetchOriginMain(cwd) {
+  return gitWithRetry(['-C', cwd, 'fetch', 'origin', 'main', '--quiet'], { quiet: true });
+}
+
 // Create one worktree + branch for a task. Returns
 //   { worktreePath, branch, baseSha }
 // or null when worktrees are disabled/unavailable (caller falls back to the main

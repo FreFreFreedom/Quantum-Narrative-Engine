@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
 import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea } from '../services/architectureNodes.js';
+import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
 
 export function architectureRoutes(db) {
   const router = Router();
@@ -27,6 +28,31 @@ export function architectureRoutes(db) {
   router.delete('/nodes/:id', (req, res) => {
     const out = deleteNode(db, req.params.id);
     if (out.error) return res.status(404).json(out);
+    res.json(out);
+  });
+
+  // Self-updating tree: proposals the tree watchers found in real work (finished
+  // queue tasks or git commits outside the app), waiting for Antoine's word.
+  router.get('/proposals', (req, res) => {
+    res.json({ proposals: listProposals(db) });
+  });
+
+  router.post('/proposals/:id/accept', (req, res) => {
+    const out = acceptProposal(db, req.params.id);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
+  router.post('/proposals/:id/reject', (req, res) => {
+    const out = rejectProposal(db, req.params.id);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
+  // Manual "Sync now" from the Architecture tab — runs the git-history watcher
+  // immediately (cheap: one model call only when main has new commits).
+  router.post('/tree/sync', async (req, res) => {
+    const out = await syncFromGit(db);
     res.json(out);
   });
 

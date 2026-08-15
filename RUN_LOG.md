@@ -1300,3 +1300,72 @@ None.
   flagship whenever he resumes the queue.
 - Deployed tasks re-verified: all 11 unfinished rows have provider=opencode, provider_model
   and run_model cleared. Local rows fixed the same way earlier in this session.
+
+## Session — Inspiration before planning + self-updating tree (approved plan, built live with Antoine)
+
+Two features approved by Antoine in conversation and built in this session (no plan file —
+the design was locked in chat; decisions below).
+
+### Feature 1 — "Inspired by" before every plan
+
+- EVERY implement-mode task (accepted suggestion, hand-typed, seed, thought, Idea Studio
+  handoff) now runs an automatic inspiration pass BEFORE its plan is drafted. The task
+  lands with inspire_state='pending' and the plan draft waits up to 75 s for the report,
+  then proceeds without it on failure — the queue can never block. Question-mode tasks skip.
+- The pass (codeDiscovery.runInspiration) produces THREE shelves per part:
+  1. "open" — real open-source projects from live GitHub results (verifiable links).
+  2. "hidden" — closed products from the model's general knowledge, labeled as such.
+  3. "bold" — the heart: visionary ideas that may not exist anywhere yet (nature of the
+     technologies → boldest plausible version). Style-tagged with the shared plain-English
+     instruction since Antoine reads these cards.
+- Task detail shows an "Inspired by" panel; Antoine picks from any shelf and "Apply to plan"
+  re-drafts the plan with the picks as design targets (CHOSEN-marked in the digest the
+  planner sees). "↻ New ideas" re-runs the pass (GitHub cached 24 h, AI passes fresh).
+  Flow rows carry a small state badge (Inspiring… / Ideas ready / Inspired).
+- New API: GET /api/travaux/prompts/:id/inspiration, POST .../inspiration/refresh,
+  POST .../inspiration/apply. Reports stored in discovery_reports (source='prompt',
+  source_id=task id — columns existed but were unused); the blocks-tab report library now
+  lists idea-box runs only, prompt reports live in the task detail.
+- Verified end-to-end locally: create → pending → ready (3 shelves incl. bold) → apply →
+  plan re-drafted with "The Reading Relationship" etc. as targets → test task deleted.
+
+### Feature 2 — The tree reads real work (self-updating tree)
+
+- New service treeSync.js with two capture paths, both proposing speculative nodes with
+  proposed=1 + sync_source ('queue' | 'git') + sync_sha; the tree already draws speculative
+  nodes dashed. Accept flips to canon in place; reject soft-deletes.
+  1. Queue-origin: on every finished 'done' implement task, the worktree diff
+     (base_sha..HEAD) is classified (fire-and-forget from finishPrompt; never throws).
+  2. Git-origin: an hourly watcher (preGen, +90 s first run) fetches origin/main (read-only,
+     quiet; falls back to local main), diffs since tree_sync_state.last_sha, and classifies.
+     First run only records a baseline. On Railway with no git repo it silently no-ops.
+- Review surface: Architecture tab gets a "Pending proposals" bar (source badge, commit sha,
+  Accept / Reject) + a "Sync now" button. API: GET /api/architecture/proposals,
+  POST /api/architecture/proposals/:id/accept|reject, POST /api/architecture/tree/sync.
+- Classification runs through the ai/text.js seam (new 'treesync' feature, free-first lane
+  like every other text feature).
+- Verified locally with real data: after baseline, the watcher classified the pushed commits
+  (fbcc34e..94b879b) and proposed 3 nodes; "Context Budget Memory" accepted (canon, leaves
+  pending list), the other two left pending for Antoine to review in the app.
+
+### Pending decisions
+
+None.
+
+### Decisions taken (routine technical)
+
+1. Inspiration AI calls use the modern feature seam (ai/text.js, feature 'inspire'), NOT the
+   legacy claudeText seam the idea box uses — the legacy path needs the Claude CLI/API key
+   and failed locally (cli_spawn_failed / no_api_key), while the feature seam works on the
+   free-first opencode lane everywhere the app runs. Idea box left untouched (proven on
+   Railway).
+2. Proposals reuse existing 'speculative' provenance + new columns (proposed, sync_source,
+   sync_prompt_id, sync_sha) instead of a new status value — STATUS_LEVELS and the graph
+   renderer stay untouched; the dashed-outline treatment comes for free.
+3. Queue-origin capture reads the agent_tasks worktree (base_sha..HEAD); worktree-less runs
+   and deleted worktrees skip quietly — the git watcher still catches the merged work.
+4. Git watcher prefers origin/main after a quiet read-only fetch (matches the createWorktree
+   branching rule), because local main can lag behind pushed work.
+5. Unverified by live run: the queue-origin path (needs a real finished task — the queue is
+   paused by Antoine). It is defensive (every failure path is a silent skip) and will fire
+   on the next finished task.
