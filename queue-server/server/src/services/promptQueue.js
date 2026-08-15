@@ -118,7 +118,7 @@ export async function createPrompt({
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null, provider = 'opencode', provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
-  convo_id = null, thought_id = null,
+  convo_id = null, thought_id = null, inspiration = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -171,25 +171,46 @@ export async function createPrompt({
   // the row lands with inspire_state='pending' and the draft simply waits up to
   // its timeout for the report (below), then proceeds without it on failure.
   const willInspire = useMode === 'implement';
+  // Precomputed world-look: the item's own section (suggestion / seed / not-built
+  // component) already ran the pass, so the task reuses it instead of searching
+  // again. Picks are validated against the report; state lands 'applied' when
+  // picks came along, else 'ready' (shelves shown, nothing chosen yet).
+  let preInsp = null;
+  if (willInspire && inspiration && inspiration.report_id) {
+    const rep = getReport(db, inspiration.report_id);
+    if (rep) {
+      const applied = [];
+      for (const sel of inspiration.picks || []) {
+        const pi = Number(sel.part_index) || 0;
+        const ii = Number(sel.pick_index) || 0;
+        const pick = rep.parts?.[pi]?.picks?.[ii];
+        if (!pick) continue;
+        applied.push({ part_index: pi, pick_index: ii, kind: pick.kind, name: pick.repo || pick.name || pick.kind });
+      }
+      preInsp = { report: rep, applied, digest: inspirationDigestFor(rep, applied) };
+    }
+  }
+  const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (willInspire ? 'pending' : 'off');
   const resolved = (!willDraft && preset === 'auto' && useProvider === 'claude-code')
     ? await resolvePreset({ mode: useMode, prompt: text }).catch(() => 'standard') : null;
 
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
     useMode, preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, willInspire ? 'pending' : 'off');
+    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]');
 
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
-  if (willInspire) {
+  if (willInspire && !preInsp) {
     startInspiration(id, { title: label, prompt: text });
   }
   if (willDraft) {
     runPlanDraft(id, {
       title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial,
       agentKey: useAgentKey, contextMode: context_mode, explicitParent: !!useParent,
+      inspirationOverride: preInsp ? preInsp.digest : null,
     });
   }
   eagerSummarize(id); // free-lane purpose bullets ready before the owner opens it
@@ -210,7 +231,7 @@ export async function createPrompt({
 // brief (a fine signal — the brief is mostly reformatting of the same content, and
 // the judge is explicitly instructed to err upward). Total warm-up drops to the
 // slowest single call.
-async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus, agentKey = null, contextMode = 'manual', explicitParent = false }) {
+async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus, agentKey = null, contextMode = 'manual', explicitParent = false, inspirationOverride = null }) {
   const needPreset = preset === 'auto' && provider === 'claude-code';
   const needParent = contextMode === 'auto' && !explicitParent;
 
@@ -221,7 +242,11 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   // a question, the wait extends (unbounded) until the answer, the skip, or the
   // task's deletion. On timeout or failure the draft proceeds without it; the
   // report may still land later and the human can re-draft by applying picks.
-  const inspiration = await waitForInspiration(id, INSPIRE_WAIT_MS);
+  // inspirationOverride: the world-look already ran in the item's own section
+  // (suggestion / seed / not-built) — use that digest directly, no wait.
+  const inspiration = inspirationOverride !== null
+    ? { digest: inspirationOverride }
+    : await waitForInspiration(id, INSPIRE_WAIT_MS);
   const inspDigest = inspiration ? (typeof inspiration === 'string' ? inspiration : inspiration.digest) : null;
   const inspNote = inspiration && typeof inspiration === 'object' ? inspiration.note : null;
 

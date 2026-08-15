@@ -533,6 +533,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
 .q-inspire-shelf.q-inspire-bold { color:#8a5a1e; }
 .q-inspire-note { font-size:10px; color:var(--c-ink-4); margin-bottom:6px; }
+.world-r { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.q-inspire-wrap { margin:4px 0 8px; }
+.nb-world { margin:2px 0 6px 14px; padding:8px 10px; border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); }
 .q-inspire-tag { font-size:9.5px; border:1px solid var(--c-border-2); border-radius:8px; padding:1px 7px; color:var(--c-ink-4); flex-shrink:0; }
 .q-inspire-part { font-size:11.5px; margin:8px 0 4px; }
 .q-inspire-part span { color:var(--c-ink-4); }
@@ -3684,6 +3687,7 @@ function renderFlow() {
         <div class="flow-row flow-sgrow${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? ' sel' : ''}" data-sid="${s.id}">
           <div class="q-item-top">
             <span class="q-item-title">${s.title}</span>
+            ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
             <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
             ${s.status === 'new' ? `<button class="ctrlbtn sg-dismiss-x" data-dismiss-sid="${s.id}" title="Dismiss — clear this suggestion">✕</button>` : ''}
@@ -3713,6 +3717,7 @@ function renderFlow() {
         <div class="flow-row flow-idrow${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? ' sel' : ''}" data-iid="${i.id}">
           <div class="q-item-top">
             <span class="q-item-title">${i.title || '(untitled)'}</span>
+            ${flowWorldEntry('idea', i.id).state === 'ready' ? '<span title="World-look ideas ready — open the seed">✨</span>' : ''}
             ${i.tag ? `<span class="id-tag-pill">${i.tag}</span>` : ''}
             ${i.work_prompt_id ? '<span class="q-badge" style="background:#4f9d7a;">Queued</span>' : ''}
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
@@ -3902,6 +3907,7 @@ function renderSeedDetail(idea) {
       ${idea.arch_node_id ? '' : '<button id="seedPlantBtn">🌱 Plant in tree</button>'}
       <button class="danger" id="seedDeleteBtn">Remove</button>
     </div>
+    <div class="q-inspire-wrap" id="seedWorldHost"></div>
     <div class="arch-qf-status" id="seedDetailStatus"></div>`;
   const save = () => apiWrite(`/api/travaux/ideas/${idea.id}`, 'PATCH', {
     title: host.querySelector('[data-role="title"]').value,
@@ -3921,7 +3927,9 @@ function renderSeedDetail(idea) {
   };
   document.getElementById('seedPromoteBtn').onclick = async (e) => {
     e.target.disabled = true; e.target.textContent = '…';
-    try { await apiWrite(`/api/travaux/ideas/${idea.id}/promote`, 'POST', {}); await loadIdeas(); await qLoad(); }
+    const we = flowWorldEntry('idea', idea.id);
+    const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
+    try { await apiWrite(`/api/travaux/ideas/${idea.id}/promote`, 'POST', { inspiration }); await loadIdeas(); await qLoad(); }
     catch (err) { e.target.disabled = false; e.target.textContent = '→ Queue'; alert('Error: ' + err.message); }
   };
   const plantBtn = document.getElementById('seedPlantBtn');
@@ -3940,6 +3948,11 @@ function renderSeedDetail(idea) {
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
   const plantJump = host.querySelector('[data-plantjump]');
   if (plantJump) plantJump.onclick = (e) => { e.preventDefault(); jumpToArchNode(plantJump.getAttribute('data-plantjump')); };
+  // The world-look, right on the seed: three shelves, picks carried to the
+  // queue on promote. Rendered after the card so it never fights snap/restore.
+  flowWorldRender('idea', idea.id, document.getElementById('seedWorldHost'), [idea.title, idea.notes].filter(Boolean).join('\n'));
+  flowWorldSync('idea', idea.id);
+  flowWorldPoll('idea', idea.id);
   qRestoreInputs(host, snap);
 }
 
@@ -3964,6 +3977,7 @@ function renderSuggestionDetail(s) {
         <button id="sgDiscussBtn">💬 Discuss first</button>
         <button id="sgDismissBtn">Dismiss</button>
       </div>` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Flow</a>` : 'Already in the queue.'}</div>` : ''}
+    <div class="q-inspire-wrap" id="sgWorldHost"></div>
     <div class="arch-qf-status" id="sgDetailStatus"></div>`;
   const promptToggle = document.getElementById('sgPromptToggle');
   if (promptToggle) {
@@ -3987,7 +4001,9 @@ function renderSuggestionDetail(s) {
   if (acceptBtn) acceptBtn.onclick = async () => {
     const promptText = host.querySelector('[data-role="prompt"]').value;
     acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
-    try { await apiWrite(`/api/travaux/suggestions/${s.id}/accept`, 'POST', { prompt: promptText }); await loadSuggestions(); await qLoad(); }
+    const we = flowWorldEntry('suggestion', s.id);
+    const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
+    try { await apiWrite(`/api/travaux/suggestions/${s.id}/accept`, 'POST', { prompt: promptText, inspiration }); await loadSuggestions(); await qLoad(); }
     catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accept → queue (set aside)'; alert('Error: ' + e.message); }
   };
   const dismissBtn = document.getElementById('sgDismissBtn');
@@ -3998,6 +4014,11 @@ function renderSuggestionDetail(s) {
   };
   const jump = host.querySelector('[data-jump]');
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
+  // The world-look, right on the suggestion: three shelves, picks carried to the
+  // queue on accept. Rendered after the card so it never fights the snap/restore.
+  flowWorldRender('suggestion', s.id, document.getElementById('sgWorldHost'), [s.title, s.prompt].filter(Boolean).join('\n'));
+  flowWorldSync('suggestion', s.id);
+  flowWorldPoll('suggestion', s.id);
   qRestoreInputs(host, snap);
 }
 
@@ -4351,29 +4372,30 @@ function qInspireReviewFacts(review) {
   return { removed, groupOf, bestOf };
 }
 
-function qInspireCard(pick, pi, i, applied, sel, facts) {
+function qInspireCard(pick, pi, i, applied, sel, facts = null, pickAction = 'inspire-pick') {
   const key = pi + ':' + i;
   const isApplied = applied.has(key);
   const isSel = sel.has(key);
-  const removed = facts.removed.get(key);
-  const group = facts.groupOf.get(key);
-  const bestWhy = facts.bestOf.get(key);
+  const removed = facts?.removed.get(key);
+  const group = facts?.groupOf.get(key);
+  const bestWhy = facts?.bestOf.get(key);
+  const r = (label, text) => `<div class="sg-rationale world-r" title="${qEsc(text)}"><b>${label}</b> ${qEsc(text)}</div>`;
   let head = '', body = '';
   if (pick.kind === 'open') {
     head = `<span class="sg-card-title">${qEsc(pick.repo || 'Project')}</span>${pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}`;
-    body = (pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${qEsc(pick.why_fits)}</div>` : '') +
-      (pick.use ? `<div class="sg-rationale"><b>How we'd use it:</b> ${qEsc(pick.use)}</div>` : '') +
+    body = (pick.why_fits ? r('Why it fits:', pick.why_fits) : '') +
+      (pick.use ? r("How we'd use it:", pick.use) : '') +
       (pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${qEsc(pick.repo)}" target="_blank" rel="noopener">github.com/${qEsc(pick.repo)}</a></div>` : '');
   } else if (pick.kind === 'hidden') {
-    head = `<span class="sg-card-title">${qEsc(pick.name || 'Product')}</span><span class="q-inspire-tag" title="The code is not public — this comes from general knowledge and may be out of date.">closed source</span>`;
-    body = (pick.what ? `<div class="sg-rationale"><b>What it is:</b> ${qEsc(pick.what)}</div>` : '') +
-      (pick.lesson ? `<div class="sg-rationale"><b>Lesson:</b> ${qEsc(pick.lesson)}</div>` : '') +
-      (pick.use ? `<div class="sg-rationale"><b>How we'd match or beat it:</b> ${qEsc(pick.use)}</div>` : '');
+    head = `<span class="sg-card-title">${qEsc(pick.name || 'Product')}</span><span class="q-inspire-tag" title="The code stays inside a company — this comes from general knowledge and may be out of date.">not public</span>`;
+    body = (pick.what ? r('What it is:', pick.what) : '') +
+      (pick.lesson ? r('What we can learn:', pick.lesson) : '') +
+      (pick.use ? r('What we could do even better:', pick.use) : '');
   } else {
     head = `<span class="sg-card-title">✨ ${qEsc(pick.name || 'Bold idea')}</span>`;
-    body = (pick.vision ? `<div class="sg-rationale"><b>The vision:</b> ${qEsc(pick.vision)}</div>` : '') +
-      (pick.why_possible ? `<div class="sg-rationale"><b>Why it's possible:</b> ${qEsc(pick.why_possible)}</div>` : '') +
-      (pick.how_fmcns ? `<div class="sg-rationale"><b>How we'd be first:</b> ${qEsc(pick.how_fmcns)}</div>` : '');
+    body = (pick.vision ? r('The big idea:', pick.vision) : '') +
+      (pick.why_possible ? r("Why it's doable:", pick.why_possible) : '') +
+      (pick.how_fmcns ? r("How we'd get there first:", pick.how_fmcns) : '');
   }
   const groupChip = group ? `<span class="q-inspire-alt-chip" title="${qEsc(group.note || 'These ideas are alternatives — you only need one.')}">🔄 Alternatives ${qEsc(group.id)}</span>` : '';
   const bestLine = bestWhy !== undefined ? `<div class="q-inspire-best">⭐ Our pick${bestWhy ? ' — ' + qEsc(bestWhy) : ''}</div>` : '';
@@ -4386,9 +4408,38 @@ function qInspireCard(pick, pi, i, applied, sel, facts) {
       ${bestLine}
       ${removedLine}
       <div class="sg-actions">
-        <button data-action="inspire-pick" class="${isApplied || isSel ? 'primary' : ''}" ${isApplied ? 'disabled title="Already baked into the plan."' : ''}>${btnLabel}</button>
+        <button data-action="${pickAction}" class="${isApplied || isSel ? 'primary' : ''}" ${isApplied ? 'disabled title="Already baked into the plan."' : ''}>${btnLabel}</button>
       </div>
     </div>`;
+}
+
+const WORLD_SHELF_META = [
+  { kind: 'open', title: 'Already built in the open', note: 'Real projects with links — you can check them yourself.', cls: '' },
+  { kind: 'hidden', title: 'Already built, but kept private', note: 'Real products, but the code stays inside companies. From general knowledge — may be out of date.', cls: '' },
+  { kind: 'bold', title: 'Bold new ideas — the future', note: 'May not exist anywhere yet. The heart of this panel.', cls: 'q-inspire-bold' },
+];
+
+// The three shelves themselves — shared by the task panel and the world-look
+// panels in Suggestion / Seeds / Not built. applied = picks already baked into a
+// plan; sel = picks currently ticked in this panel; facts = optional review map.
+function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = null, pickAction = 'inspire-pick' } = {}) {
+  return report.parts.map((part, pi) => {
+    const desc = String(part.description || '');
+    const descHtml = desc.length > 220
+      ? `<span class="q-inspire-desc clamped" data-inspire-desc>${qEsc(desc.slice(0, 220))} <span class="nb-more" data-action="inspire-desc-more">more ▾</span></span><span hidden data-inspire-desc-full>${qEsc(desc)}</span>`
+      : `<span class="q-inspire-desc">${qEsc(desc)}</span>`;
+    const header = report.parts.length > 1
+      ? `<div class="q-inspire-part"><b>${pi + 1}. ${qEsc(part.name || 'Part')}</b> ${descHtml}</div>`
+      : `<div class="q-inspire-part">${descHtml}</div>`;
+    const shelfHtml = WORLD_SHELF_META.map(sh => {
+      const items = (part.picks || []).map((pick, i) => ({ pick, i })).filter(x => x.pick.kind === sh.kind);
+      if (!items.length) return '';
+      return `<h4 class="q-inspire-shelf ${sh.cls}">${sh.title}</h4>` +
+        (sh.note ? `<div class="q-inspire-note">${sh.note}</div>` : '') +
+        items.map(({ pick, i }) => qInspireCard(pick, pi, i, applied, sel, facts, pickAction)).join('');
+    }).join('');
+    return header + shelfHtml;
+  }).join('');
 }
 
 function qInspireFullHtml(p, data) {
@@ -4399,28 +4450,6 @@ function qInspireFullHtml(p, data) {
   const applied = new Set((data.picks || []).map(x => x.part_index + ':' + x.pick_index));
   const sel = new Set((qInspireSel[p.id] || []).map(x => x.part_index + ':' + x.pick_index));
   const facts = qInspireReviewFacts(data.review);
-  const shelves = [
-    { kind: 'open', title: 'Already built in the open', note: 'Real projects with links — you can check them yourself.', cls: '' },
-    { kind: 'hidden', title: 'Already built behind closed doors', note: 'Exists in the world, code not public — from general knowledge, may be out of date.', cls: '' },
-    { kind: 'bold', title: 'Bold new ideas — the future', note: 'May not exist anywhere yet. The heart of this panel.', cls: 'q-inspire-bold' },
-  ];
-  const partsHtml = report.parts.map((part, pi) => {
-    const desc = String(part.description || '');
-    const descHtml = desc.length > 220
-      ? `<span class="q-inspire-desc clamped" data-inspire-desc>${qEsc(desc.slice(0, 220))} <span class="nb-more" data-action="inspire-desc-more">more ▾</span></span><span hidden data-inspire-desc-full>${qEsc(desc)}</span>`
-      : `<span class="q-inspire-desc">${qEsc(desc)}</span>`;
-    const header = report.parts.length > 1
-      ? `<div class="q-inspire-part"><b>${pi + 1}. ${qEsc(part.name || 'Part')}</b> ${descHtml}</div>`
-      : `<div class="q-inspire-part">${descHtml}</div>`;
-    const shelfHtml = shelves.map(sh => {
-      const items = (part.picks || []).map((pick, i) => ({ pick, i })).filter(x => x.pick.kind === sh.kind);
-      if (!items.length) return '';
-      return `<h4 class="q-inspire-shelf ${sh.cls}">${sh.title}</h4>` +
-        (sh.note ? `<div class="q-inspire-note">${sh.note}</div>` : '') +
-        items.map(({ pick, i }) => qInspireCard(pick, pi, i, applied, sel, facts)).join('');
-    }).join('');
-    return header + shelfHtml;
-  }).join('');
   const legend = (data.review?.groups?.length || 0) > 0
     ? `<div class="q-inspire-legend">🔄 Some ideas are alternatives of each other — you only need one of each group. ⭐ marks our pick; a greyed-out idea was left out of the plan (your choice always wins).</div>`
     : ((data.review?.removed?.length || 0) > 0
@@ -4432,7 +4461,7 @@ function qInspireFullHtml(p, data) {
       <button class="ctrlbtn" data-action="inspire-start" title="Fresh search — GitHub lookups are cached for a day, the bold ideas are brand new every time.">↻ New ideas</button>
     </div>
     ${legend}
-    ${partsHtml}`;
+    ${worldPartsHtml(report, { applied, sel, facts })}`;
 }
 
 // Re-render the panel from the cached report after a selection toggle (cheap —
@@ -4552,6 +4581,93 @@ function qWireInspire(p) {
     return;
   }
   qFetchInspire(p);
+}
+
+// ── World-look inside sections (Suggestion / Seeds / Not built) ─────────────
+// Same three shelves the queue runs per task, but attached to the item itself —
+// no queueing, no waiting for a task to exist. One entry per item, keyed by
+// source + id. Picks ticked here travel with the item when it is queued.
+let flowWorld = {};
+function flowWorldEntry(source, id) {
+  const key = source + ':' + id;
+  let e = flowWorld[key];
+  if (!e) { e = { state: 'idle', synced: false, startedAt: 0, report: null, error: '', sel: [] }; flowWorld[key] = e; }
+  return e;
+}
+// One silent lookup per item per session: after a reload, the panel and the
+// row markers come back without re-searching.
+async function flowWorldSync(source, id) {
+  const e = flowWorldEntry(source, id);
+  if (e.synced || e.state !== 'idle') return;
+  e.synced = true;
+  try {
+    const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
+    if (data.report) { e.report = data.report; e.state = 'ready'; renderFlow(); }
+  } catch (err) { /* stays idle — the start button still works */ }
+}
+// Polled from the render loop while a look is running; flips to ready the
+// moment the report lands. Gives up after four minutes with a retry path.
+async function flowWorldPoll(source, id) {
+  const e = flowWorldEntry(source, id);
+  if (e.state !== 'pending') return;
+  if (Date.now() - e.startedAt > 240000) { e.state = 'failed'; e.error = 'The look took too long — try again.'; renderFlow(); return; }
+  try {
+    const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
+    if (data.report) { e.report = data.report; e.state = 'ready'; renderFlow(); }
+  } catch (err) { /* the next poll tick retries */ }
+}
+async function flowWorldStart(source, id, ideaText) {
+  const e = flowWorldEntry(source, id);
+  if (e.state === 'pending') return;
+  e.state = 'pending'; e.startedAt = Date.now(); e.error = '';
+  try {
+    await apiWrite('/api/discovery/world-look', 'POST', { source, source_id: id, idea_text: ideaText });
+  } catch (err) {
+    e.state = 'failed'; e.error = err.message;
+  }
+}
+function flowWorldPanelHtml(source, id) {
+  const e = flowWorldEntry(source, id);
+  if (e.state === 'pending') {
+    return `<div class="tv-empty">🔭 Looking at the world — real projects, hidden products, bold ideas. This takes a minute or two.</div>`;
+  }
+  if (e.state === 'failed') {
+    return `<div class="tv-empty">The world-look did not finish${e.error ? ': ' + qEsc(e.error) : ''}.<br><button class="ctrlbtn" data-action="flowworld-start" style="margin-top:8px;">Try again</button></div>`;
+  }
+  if (e.state === 'ready' && e.report) {
+    const sel = new Set(e.sel.map(x => x.part_index + ':' + x.pick_index));
+    return `<div class="q-inspire-toolbar">
+      <button class="ctrlbtn" data-action="flowworld-rerun" title="Fresh search — the bold ideas are brand new every time.">↻ New ideas</button>
+      ${sel.size ? `<span class="q-inspire-note">${sel.size} picked — they travel with this item when it goes to the queue.</span>` : `<span class="q-inspire-note">Pick ideas here — they travel with this item when it goes to the queue.</span>`}
+    </div>${worldPartsHtml(e.report, { sel, pickAction: 'flowworld-pick' })}`;
+  }
+  return `<div class="tv-empty">
+    <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
+    <div class="q-inspire-note" style="margin-top:8px;">What already exists, and what could be bold — before anything is queued.</div>
+  </div>`;
+}
+// Panel for the expanded suggestion/seed card. Re-renders in place after picks
+// or a start, so focus and typed text elsewhere in the card are never touched.
+function flowWorldRender(source, id, host, ideaText) {
+  if (!host) return;
+  host.innerHTML = flowWorldPanelHtml(source, id);
+  const e = flowWorldEntry(source, id);
+  host.querySelectorAll('[data-action="flowworld-start"], [data-action="flowworld-rerun"]').forEach(b => {
+    b.onclick = async () => {
+      b.disabled = true;
+      await flowWorldStart(source, id, ideaText);
+      flowWorldRender(source, id, host, ideaText);
+    };
+  });
+  host.querySelectorAll('[data-action="flowworld-pick"]').forEach(b => {
+    b.onclick = () => {
+      const card = b.closest('.q-inspire-card');
+      const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
+      const idx = e.sel.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
+      if (idx >= 0) e.sel.splice(idx, 1); else e.sel.push(key);
+      flowWorldRender(source, id, host, ideaText);
+    };
+  });
 }
 
 async function qReply(id, text) {
@@ -5330,6 +5446,7 @@ function archDepth(c, visited) {
 // call (explicit click only). Rows queue a build in one click, can trigger the
 // world-look early, or open a discussion — all without leaving the list.
 let nbInited = false, nbSearch = '', nbOrder = null, nbConvos = {};
+let nbWorldOpen = null; // component id whose world-look panel is open under its row
 let nbFilterTerr = '', nbFilterReady = '', nbShortlist = null, nbShortlistBusy = false;
 
 function nbUnbuiltItems() {
@@ -5404,6 +5521,9 @@ function renderNotbuiltFlow() {
     loadNbConvos();
   }
   renderNotbuilt();
+  // The open world-look panel: one lookup after a reload, then poll while a
+  // look is running — the same cadence the task panel uses.
+  if (nbWorldOpen) { flowWorldSync('component', nbWorldOpen); flowWorldPoll('component', nbWorldOpen); }
 }
 
 function renderNotbuilt() {
@@ -5450,12 +5570,15 @@ function renderNotbuilt() {
     const terr = TERRITORIES.find(t => t.id === c.territory);
     const linked = (qPrompts || []).filter(p => p.component_id === c.id);
     const inspireReady = linked.some(p => ['ready', 'applied'].includes(p.inspire_state));
+    const we = flowWorldEntry('component', c.id);
     const markers = [];
     if (inspireReady) markers.push('<span title="World-look ideas are ready — open the task in the Flow">✨</span>');
+    if (we.state === 'ready') markers.push('<span title="World-look ideas are ready right here, in this section">✨</span>');
     if (nbConvos[c.id]) markers.push('<span title="A conversation is open about this">💬</span>');
     const spec = c.provenance === 'speculative' ? '✦ ' : '';
     const whatText = String(c.what || '');
     const trunc = whatText.length > 240;
+    const worldLabel = we.state === 'ready' ? '✨ World ideas ready' : we.state === 'pending' ? '🔭 Looking at the world…' : '✨ Look at the world';
     html += `<div class="nb-row${state === 'buildable' ? ' nb-buildable' : ''}" data-nbid="${c.id}">
       <div class="nb-top">
         <span class="nb-name">${qEsc(spec + c.name)}</span>
@@ -5470,10 +5593,11 @@ function renderNotbuilt() {
         ${state === 'buildable'
           ? `<button class="nb-build" data-nbbuild="${c.id}">⚡ Build — all prerequisites met</button>`
           : `<button data-nbbuild="${c.id}" title="Queues it anyway — it waits until its prerequisites are done">Queue anyway</button>`}
-        <button data-nbworld="${c.id}" title="Queues it set aside and starts the world-look now — real projects, hidden products, bold ideas">✨ Look at the world now</button>
+        <button data-nbworld="${c.id}" title="Real projects, hidden products, bold ideas — right here, without queueing">${worldLabel}</button>
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
       </div>
-    </div>`;
+    </div>
+    ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}</div>` : ''}`;
   });
   host.innerHTML = html;
   host.querySelectorAll('[data-nbbuild]').forEach(b => {
@@ -5482,31 +5606,45 @@ function renderNotbuilt() {
       if (!c) return;
       const { title, prompt } = nbQueuePromptOf(c);
       b.disabled = true; b.textContent = 'Queuing…';
-      queuePromptDirect(title, prompt, c.id, null).then(p => {
+      const we = flowWorldEntry('component', c.id);
+      const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
+      queuePromptDirect(title, prompt, c.id, null, inspiration).then(p => {
         if (p) { qLoad(); renderNotbuilt(); }
         else { b.disabled = false; b.textContent = '⚡ Build — all prerequisites met'; }
       });
     };
   });
   host.querySelectorAll('[data-nbworld]').forEach(b => {
-    b.onclick = async () => {
+    b.onclick = () => {
       const c = ARCH_BY_ID[b.getAttribute('data-nbworld')];
       if (!c) return;
-      b.disabled = true; b.textContent = 'Looking…';
-      try {
-        const { title, prompt } = nbQueuePromptOf(c);
-        const p = await apiWrite('/api/travaux/prompts', 'POST', {
-          title, prompt, component_id: c.id, mode: 'implement', preset: 'deep', space: 'fmcns', status: 'paused',
-        });
-        await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/refresh`, 'POST', {}).catch(() => {});
-        await qLoad();
-        b.textContent = '✨ Ideas will appear on the task';
-      } catch (e) {
-        b.disabled = false; b.textContent = '✨ Look at the world now';
-        alert('Error: ' + e.message);
-      }
+      nbWorldOpen = nbWorldOpen === c.id ? null : c.id;
       renderNotbuilt();
     };
+  });
+  host.querySelectorAll('[data-nbworldpanel]').forEach(panel => {
+    const cid = panel.getAttribute('data-nbworldpanel');
+    const c = ARCH_BY_ID[cid];
+    if (!c) return;
+    const { title, prompt } = nbQueuePromptOf(c);
+    const text = [title, prompt].join('\n');
+    const e = flowWorldEntry('component', cid);
+    panel.querySelectorAll('[data-action="flowworld-start"], [data-action="flowworld-rerun"]').forEach(b => {
+      b.onclick = async () => {
+        b.disabled = true;
+        await flowWorldStart('component', cid, text);
+        renderNotbuilt();
+      };
+    });
+    panel.querySelectorAll('[data-action="flowworld-pick"]').forEach(b => {
+      b.onclick = () => {
+        const card = b.closest('.q-inspire-card');
+        const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
+        const idx = e.sel.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
+        if (idx >= 0) e.sel.splice(idx, 1); else e.sel.push(key);
+        renderNotbuilt();
+      };
+    });
   });
   host.querySelectorAll('[data-nbdiscuss]').forEach(b => {
     b.onclick = () => {
@@ -6266,7 +6404,7 @@ function fmtVerified(iso) {
   } catch (e) { return iso; }
 }
 
-async function queuePromptDirect(title, promptText, componentId, statusHost) {
+async function queuePromptDirect(title, promptText, componentId, statusHost, inspiration = null) {
   if (statusHost) statusHost.textContent = 'Queuing...';
   try {
     // Explicitly pass space/mode/preset like qAddPrompt does (the Dispatch Queue list
@@ -6274,7 +6412,7 @@ async function queuePromptDirect(title, promptText, componentId, statusHost) {
     // space to 'fmcns' when omitted, so this didn't reproduce as a live bug, but sending
     // it explicitly matches qAddPrompt's payload and isn't dependent on that default.
     const prompt = await apiWrite('/api/travaux/prompts', 'POST', {
-      title, prompt: promptText, component_id: componentId, mode: 'implement', preset: 'deep', space: 'fmcns',
+      title, prompt: promptText, component_id: componentId, mode: 'implement', preset: 'deep', space: 'fmcns', inspiration,
     });
     await qLoad();
     if (statusHost) {

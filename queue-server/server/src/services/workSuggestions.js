@@ -65,7 +65,7 @@ export function addSuggestion({ title, rationale = '', prompt, area = null, kind
   return row(db.prepare(`SELECT * FROM work_suggestions WHERE id = ?`).get(id));
 }
 
-export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = null } = {}) {
+export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = null, inspiration = null } = {}) {
   const s = db.prepare(`SELECT * FROM work_suggestions WHERE id = ? AND deleted_at IS NULL`).get(id);
   if (!s) return null;
   if (s.work_prompt_id) {
@@ -80,6 +80,7 @@ export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = 
     status: 'paused', // sits aside — nothing runs automatically from a suggestion
     suggestion_id: s.id,
     created_by: 'antoine',
+    inspiration: inspiration || null, // world-look already ran in the section — no re-search
   });
   db.prepare(`
     UPDATE work_suggestions SET status='accepted', work_prompt_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')

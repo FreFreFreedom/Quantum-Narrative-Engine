@@ -82,7 +82,7 @@ export function plantIdea(id, { territory = 'reasoning', depends = [] } = {}) {
   return { idea: getIdea(id), node: out.node, already: false };
 }
 
-export async function promoteIdea(id, { userId = 'antoine', prompt = null } = {}) {
+export async function promoteIdea(id, { userId = 'antoine', prompt = null, inspiration = null } = {}) {
   const idea = getIdea(id);
   if (!idea) return null;
   if (idea.work_prompt_id) {
@@ -98,6 +98,7 @@ export async function promoteIdea(id, { userId = 'antoine', prompt = null } = {}
     preset: 'deep',
     status: 'paused', // set aside — nothing launches until the user starts it
     created_by: userId,
+    inspiration: inspiration || null, // world-look already ran on the seed — no re-search
   });
   db.prepare(`UPDATE work_ideas SET work_prompt_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(promptRow.id, id);
   return { idea: getIdea(id), prompt: promptRow, already: false };

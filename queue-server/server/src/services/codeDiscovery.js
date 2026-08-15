@@ -51,26 +51,36 @@ async function searchGithub(query) {
   const headers = { 'User-Agent': 'fmcns-discovery', Accept: 'application/vnd.github+json' };
   if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
   const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=5`;
-  let resp;
-  try {
-    resp = await fetch(url, { headers });
-  } catch (e) {
-    return { error: 'network_error', message: e.message };
+  const attempt = async () => {
+    let resp;
+    try {
+      resp = await fetch(url, { headers });
+    } catch (e) {
+      return { error: 'network_error', message: e.message };
+    }
+    if (!resp.ok) {
+      let detail = '';
+      try { detail = (await resp.text()).slice(0, 300); } catch {}
+      return { error: 'github_error', message: `HTTP ${resp.status}: ${detail}` };
+    }
+    const data = await resp.json();
+    const items = (data.items || []).map(r => ({
+      repo_full_name: r.full_name,
+      stars: r.stargazers_count || 0,
+      description: r.description || '',
+      html_url: r.html_url,
+      topics: r.topics || [],
+    }));
+    return { items };
+  };
+  let out = await attempt();
+  // Rate limits and server hiccups are transient — one cheap second try before
+  // the caller falls back to the cache or reports the shelf empty.
+  if (out.error === 'github_error' && /HTTP (403|429|5\d\d)/.test(out.message || '')) {
+    await new Promise(r => setTimeout(r, 2500));
+    out = await attempt();
   }
-  if (!resp.ok) {
-    let detail = '';
-    try { detail = (await resp.text()).slice(0, 300); } catch {}
-    return { error: 'github_error', message: `HTTP ${resp.status}: ${detail}` };
-  }
-  const data = await resp.json();
-  const items = (data.items || []).map(r => ({
-    repo_full_name: r.full_name,
-    stars: r.stargazers_count || 0,
-    description: r.description || '',
-    html_url: r.html_url,
-    topics: r.topics || [],
-  }));
-  return { items };
+  return out;
 }
 
 function cacheRow(r) {
@@ -317,16 +327,18 @@ The part of the idea you are inspiring for: "${String(partDescription).trim()}"
 
 ${hasLive ? `What a live GitHub search just returned for this part:\n\n${resultsBlock}\n\n` : 'No live GitHub results were available for this part — still produce shelves 2 and 3 at full strength.\n\n'}
 
-SHELF 1 — "open": real open-source projects worth taking ideas from. Only repos that actually appeared in the live results above${hasLive ? '' : ' (none available, so produce zero open picks)'}. Fields: repo, stars, why_fits, use.
-SHELF 2 — "hidden": things that exist in the world but whose code is not public — products or features inside companies, from your general knowledge. You cannot link them; give the name, what it does, the lesson to take, and how FMCNS could match or beat it. Fields: name, what, lesson, use.
-SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (2-3 bold sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how FMCNS could be the first to build it).
+SHELF 1 — "open": real open-source projects worth taking ideas from, chosen from the live results above. If the live results contain relevant repos, you MUST include an open pick for each relevant one (up to 3) — never return zero open picks when relevant repos exist.${hasLive ? '' : ' (no live results available, so produce zero open picks)'}. Fields: repo, stars, why_fits, use.
+SHELF 2 — "hidden": things that exist in the world but whose code is not public — products or features inside companies, from your general knowledge. You cannot link them; give the name, what it does, what we can learn from it, and what FMCNS could do even better. Fields: name, what, lesson, use.
+SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (1-2 punchy short sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how FMCNS could be the first to build it).
 
-Produce 2-3 open picks (if live results justify them), 1-2 hidden picks, and 2-3 bold picks. Set recommended_index to the single pick that gives the best mix of boldness and feasibility — prefer a bold pick when it is strong.
+Produce 2-3 open picks, 1-2 hidden picks, and 2-3 bold picks. Set recommended_index to the single pick that gives the best mix of boldness and feasibility — prefer a bold pick when it is strong.
+
+Every text field must be ONE short sentence, maximum 20 words. Never write paragraphs.
 
 ${USER_FACING_STYLE}
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"picks":[{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one sentence","use":"one sentence on how FMCNS would use it"},{"kind":"hidden","name":"product or company","what":"what it does","lesson":"what to take from it","use":"how FMCNS matches or beats it"},{"kind":"bold","name":"short idea name","vision":"2-3 bold sentences","why_possible":"why it is achievable","how_fmcns":"how FMCNS could be first"}],"recommended_index":0}`;
+{"picks":[{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how FMCNS would use it"},{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what FMCNS could do even better, one short sentence"},{"kind":"bold","name":"short idea name","vision":"1-2 punchy short sentences","why_possible":"one short sentence","how_fmcns":"one short sentence"}],"recommended_index":0}`;
 }
 
 // The automatic inspiration pass. Never throws — a failure returns {error} and
@@ -590,6 +602,14 @@ export function getReport(db, id) {
     created_at: row.created_at,
     rerun_count: row.rerun_count,
   };
+}
+
+// Latest world-look report attached to any item (suggestion, seed, component —
+// anything that stores its look under a source + item id pair).
+export function findReportBySource(db, source, source_id) {
+  if (!source || !source_id) return null;
+  const row = db.prepare(`SELECT id FROM discovery_reports WHERE source=? AND source_id=? ORDER BY created_at DESC LIMIT 1`).get(source, source_id);
+  return row ? getReport(db, row.id) : null;
 }
 
 export function listReports(db) {
