@@ -238,6 +238,39 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .app-shell { display:flex; flex-direction:column; height:100vh; min-height:640px; }
 .app-shell .wrap { flex:1; min-height:0; }
 
+/* ---------- Queue panel: right-anchored slide-over, reachable from any mode ---------- */
+.queue-panel-veil { position:fixed; inset:0; background:rgba(20,17,10,.14); z-index:9992; }
+.queue-panel { position:fixed; top:0; right:0; bottom:0; width:420px; max-width:100vw; background:var(--c-surface); border-left:1px solid var(--c-border); box-shadow:var(--sh-md); z-index:9993; display:flex; flex-direction:column; }
+.queue-panel[hidden], .queue-panel-veil[hidden] { display:none; }
+.queue-panel-head { display:flex; align-items:center; gap:8px; height:56px; padding:0 14px; border-bottom:1px solid var(--c-border); flex-shrink:0; }
+.queue-panel-icon { font-size:14px; color:var(--c-ink-3); }
+.queue-panel-title { font-size:13px; font-weight:700; color:var(--c-ink); }
+.queue-panel-openpage { margin-left:auto; font-size:11px; font-weight:600; color:var(--c-accent); text-decoration:none; white-space:nowrap; }
+.queue-panel-openpage:hover { text-decoration:underline; }
+.queue-panel-close { border:none; background:none; cursor:pointer; font-size:14px; color:var(--c-ink-4); padding:5px 8px; border-radius:8px; flex-shrink:0; }
+.queue-panel-close:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.queue-panel-body { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:16px; }
+.qp-sec-title { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); font-weight:600; margin-bottom:6px; }
+.qp-sec-title.asking { color:var(--c-violet); }
+.qp-empty { font-size:11px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:12px; text-align:center; }
+.qp-composer textarea { width:100%; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; font-size:12.5px; resize:vertical; min-height:64px; font-family:inherit; box-sizing:border-box; }
+.qp-composer-row { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.qp-mode-seg, .qp-place-seg { display:flex; gap:2px; }
+.qp-mode-seg button, .qp-place-seg button { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:var(--c-ink-3); }
+.qp-mode-seg button.active, .qp-place-seg button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink-solid); }
+.qp-pick-btn { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:var(--c-ink-2); }
+.qp-pick-btn.active { border-color:var(--c-danger); color:var(--c-danger); }
+.qp-pick-ctx { font-size:10.5px; color:var(--c-ink-4); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qp-submit { margin-left:auto; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); border-radius:8px; padding:7px 14px; font-size:12px; cursor:pointer; }
+.qp-submit:disabled { opacity:.5; cursor:default; }
+.qp-status { font-size:11px; color:var(--c-ink-4); }
+.qp-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:7px; }
+.qp-card .q-item-title { font-size:12px; font-weight:600; }
+.qp-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--c-border); border-radius:8px; margin-bottom:6px; font-size:11.5px; background:var(--c-surface); }
+.qp-row .qp-num { color:var(--c-ink-4); font-size:10px; width:16px; flex-shrink:0; text-align:right; }
+.qp-row .qp-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--c-ink-2); }
+@media (max-width: 520px) { .queue-panel { width:100%; } }
+
 /* ---------- CORE ARCHITECTURE shell (merged Architecture/Seeds/Suggestion Engine/Dispatch Queue) ---------- */
 #coreApp { flex:1; display:none; flex-direction:column; min-height:0; }
 #coreApp.open { display:flex; }
@@ -456,6 +489,16 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-replybox { display:flex; gap:6px; margin-top:10px; }
 .q-replybox textarea { flex:1; border:1px solid var(--c-border-2); border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; resize:vertical; min-height:44px; }
 .q-replybox button { padding:0 14px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:11.5px; cursor:pointer; }
+/* Card state vocabulary shared by the Flow tab and the Queue panel: a card "asking" for
+   an answer or actively "running" gets a colored border + soft ring, everything else stays
+   plain — the same border+ring-only rule wherever a queue row appears. */
+.q-item.state-asking, .flow-row.state-asking { border-color:var(--c-violet); box-shadow:0 0 0 1px var(--c-violet-tint); }
+.q-item.state-running, .flow-row.state-running { border-color:var(--c-accent); box-shadow:0 0 0 1px var(--c-accent); }
+.q-opts-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.q-opts-row .q-optbtn { display:inline-block; width:auto; margin-top:0; }
+.q-replybox2 { margin-top:10px; }
+.q-replybox2 textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; resize:vertical; min-height:44px; box-sizing:border-box; }
+.q-replybox2-row { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
 .q-detail-row { display:flex; gap:14px; font-size:10.5px; color:var(--c-ink-3); margin-bottom:12px; flex-wrap:wrap; }
 
 /* ---------- AI Settings sub-tab ---------- */
@@ -876,6 +919,16 @@ button:active { transform: translateY(1px) scale(.99); }
     <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
   </div>
 </div>
+<div id="queuePanelVeil" class="queue-panel-veil" hidden></div>
+<aside id="queuePanel" class="queue-panel" hidden aria-label="Dispatch Queue">
+  <div class="queue-panel-head">
+    <span class="queue-panel-icon">☰</span>
+    <span class="queue-panel-title">Dispatch Queue</span>
+    <a href="#" id="queuePanelOpenPage" class="queue-panel-openpage">Open full page →</a>
+    <button id="queuePanelClose" class="queue-panel-close" title="Close (Esc)" aria-label="Close">✕</button>
+  </div>
+  <div class="queue-panel-body" id="queuePanelBody"></div>
+</aside>
   <div class="wrap" id="app">
   <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls() | backend: GET /api/ontology/facets, /api/ontology/clusters">
     <h2>Entity types</h2>
@@ -2723,7 +2776,7 @@ let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
 document.getElementById('modeCoreBtn').onclick = () => setMode('core');
-document.getElementById('modeQueueBtn').onclick = () => { setMode('core'); switchCoreView('flow'); };
+document.getElementById('modeQueueBtn').onclick = () => openQueuePanel();
 function setMode(m) {
   document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
   document.getElementById('modeMapBtn').classList.toggle('active', m==='map');
@@ -3264,6 +3317,7 @@ async function qLoad() {
   }
   if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
   if (coreView === 'flow' && changed) renderFlow();
+  if (queuePanelOpen && changed) renderQueuePanel();
   qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
@@ -3661,12 +3715,13 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const pauseBtn = ['running', 'queued'].includes(p.status)
     ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
     : '';
+  const state = qCardState(p);
   return `
-  <div class="flow-row q-item${sel ? ' sel' : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
+  <div class="flow-row q-item${sel ? ' sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="q-item-top">
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder (or ▲▼ on hover)">⠿</span>' : ''}
       ${titleHtml}
-      <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
+      ${qPillHtml(p)}
       ${startBtn}
     </div>
     <div class="q-item-meta">
@@ -3690,6 +3745,66 @@ function flowQueueRow(p, reorderable, busy, ahead) {
 }
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+// ---------- Shared queue-row bricks — used by the Flow tab AND the Queue panel ----------
+// One place for the status pill, the question/options block and the reply box, so the two
+// surfaces stay visually and behaviorally identical instead of drifting apart.
+function qPillHtml(p) {
+  return `<span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>`;
+}
+// A card's state drives its border/ring treatment (see CSS): 'asking' (waiting on you,
+// violet) beats 'running' (accent) beats plain.
+function qCardState(p) {
+  if (qIsAsking(p)) return 'asking';
+  if (p.status === 'running') return 'running';
+  return '';
+}
+function qQuestionBlockHtml(p, { showQuestion = true } = {}) {
+  if (!p.pending_question) return '';
+  const opts = p.pending_question.options || [];
+  return `<div class="q-question-block" data-qid="${p.id}">
+    ${showQuestion ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
+    ${opts.length ? `<div class="q-opts-row">${opts.map(o => `<button class="q-optbtn" data-opt="${encodeURIComponent(o)}">${qEsc(o)}</button>`).join('')}</div>` : ''}
+  </div>`;
+}
+// Wires option buttons rendered by qQuestionBlockHtml — a click both answers AND relaunches
+// right away (placement 'front'), matching how picking an option always meant "go" here.
+function qWireQuestionBlock(host, onAnswer) {
+  host.querySelectorAll('.q-question-block [data-opt]').forEach(b => {
+    b.onclick = () => onAnswer(host.querySelector('.q-question-block').getAttribute('data-qid'), decodeURIComponent(b.getAttribute('data-opt')), 'front');
+  });
+}
+// Reply textarea + two buttons: relaunch now (front of its turn) or save the answer and
+// let the task resume on its normal turn in the queue (back). `idPrefix` keeps multiple
+// instances (Flow detail pane vs. Queue panel) from colliding on element ids.
+function qReplyBoxHtml(idPrefix, { placeholder = 'Reply — this relaunches the task with the full thread as context…' } = {}) {
+  return `<div class="q-replybox2" data-prefix="${idPrefix}">
+    <textarea id="${idPrefix}Text" placeholder="${qEsc(placeholder)}"></textarea>
+    <div class="q-replybox2-row">
+      <button class="ctrlbtn" id="${idPrefix}Front" title="Sends your reply and relaunches the task right away.">Reply now</button>
+      <button class="ctrlbtn" id="${idPrefix}Back" title="Saves your reply and returns the task to the queue — it resumes on its normal turn.">Save &amp; queue</button>
+    </div>
+    <div class="q-err" id="${idPrefix}Err"></div>
+  </div>`;
+}
+// Wires a qReplyBoxHtml instance. `onSend(text, placement)` should call qReply and clear
+// the textarea/error on success.
+function qWireReplyBox(host, idPrefix, onSend) {
+  const text = host.querySelector('#' + idPrefix + 'Text');
+  const errEl = host.querySelector('#' + idPrefix + 'Err');
+  const send = async (placement) => {
+    const v = (text.value || '').trim();
+    if (!v) return;
+    if (errEl) errEl.textContent = '';
+    try { await onSend(v, placement); text.value = ''; }
+    catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
+  };
+  const frontBtn = host.querySelector('#' + idPrefix + 'Front');
+  const backBtn = host.querySelector('#' + idPrefix + 'Back');
+  if (frontBtn) frontBtn.onclick = () => send('front');
+  if (backBtn) backBtn.onclick = () => send('back');
+  text.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send('front'); });
+}
 
 // Small state marker on flow rows so Antoine can see at a glance which tasks
 // have inspiration ready — the panel itself lives in the task detail.
@@ -4302,11 +4417,13 @@ function qRenderDetail(p) {
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
     <div id="qThread"></div>
     ${p.pending_question ? `<div id="qQuestionHost"></div>` : ''}
-    <div class="q-replybox">
-      <textarea id="qReplyText" placeholder="${p.status==='running' ? 'Send a message while it runs (steering)…' : 'Reply — this relaunches the task with the full thread as context…'}"></textarea>
-      <button id="qReplyBtn">${p.status==='running' ? 'Steer' : 'Reply'}</button>
-    </div>
-    <div id="qReplyErr" class="q-err"></div>
+    ${p.status === 'running'
+      ? `<div class="q-replybox">
+          <textarea id="qReplyText" placeholder="Send a message while it runs (steering)…"></textarea>
+          <button id="qReplyBtn">Steer</button>
+        </div>
+        <div id="qReplyErr" class="q-err"></div>`
+      : qReplyBoxHtml('qReply')}
     <div class="q-row" style="margin-top:10px;">
       ${['running','queued'].includes(p.status) ? `<button class="ctrlbtn" id="qPauseBtn" title="${p.status === 'running' ? 'Stop it now — it goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸ Pause</button>` : ''}
       ${['queued','running'].includes(p.status) ? `
@@ -4384,18 +4501,22 @@ function qRenderDetail(p) {
 
   if (p.pending_question) {
     const qh = document.getElementById('qQuestionHost');
-    qh.innerHTML = `<div class="q-item-q" style="margin-bottom:6px;">🙋 ${p.pending_question.question}</div>` +
-      (p.pending_question.options || []).map(o => `<button class="q-optbtn" data-opt="${encodeURIComponent(o)}">${o}</button>`).join('');
-    qh.querySelectorAll('[data-opt]').forEach(b => {
-      b.onclick = () => qReply(p.id, decodeURIComponent(b.getAttribute('data-opt')));
+    qh.innerHTML = qQuestionBlockHtml(p, { showQuestion: true });
+    qWireQuestionBlock(qh, async (id, text, placement) => {
+      try { await qReply(id, text, placement); }
+      catch (e) { alert('Could not send: ' + e.message); }
     });
   }
 
-  document.getElementById('qReplyBtn').onclick = () => {
-    const text = document.getElementById('qReplyText').value.trim();
-    if (!text) return;
-    if (p.status === 'running') qSteer(p.id, text); else qReply(p.id, text);
-  };
+  if (p.status === 'running') {
+    document.getElementById('qReplyBtn').onclick = () => {
+      const text = document.getElementById('qReplyText').value.trim();
+      if (!text) return;
+      qSteer(p.id, text);
+    };
+  } else {
+    qWireReplyBox(host, 'qReply', (text, placement) => qReply(p.id, text, placement));
+  }
   const startBtn = document.getElementById('qStartBtn');
   if (startBtn) startBtn.onclick = async () => {
     startBtn.disabled = true; startBtn.textContent = 'Starting…';
@@ -4907,14 +5028,9 @@ function flowWorldRender(source, id, host, ideaText, onChange) {
   });
 }
 
-async function qReply(id, text) {
-  const errEl = document.getElementById('qReplyErr');
-  if (errEl) errEl.textContent = '';
-  try {
-    await apiWrite(`/api/travaux/prompts/${id}/reply`, 'POST', { text });
-    document.getElementById('qReplyText').value = '';
-    await qLoad();
-  } catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
+async function qReply(id, text, placement = 'front') {
+  await apiWrite(`/api/travaux/prompts/${id}/reply`, 'POST', { text, placement });
+  await qLoad();
 }
 async function qSteer(id, text) {
   const errEl = document.getElementById('qReplyErr');
@@ -7084,6 +7200,212 @@ function openChatWithPrompt(text) {
     if (input) { input.value = text; input.focus(); }
   }, 50);
 }
+
+// ---------- Queue panel: quick access to the queue from anywhere (⌘/Ctrl+/) ----------
+// A right-anchored slide-over that bundles adding a task and seeing the queue in one
+// place, so there's one quick-access surface instead of several. State lives here, above
+// any mode switch, so opening it never depends on which mode (content/map/core) is active
+// — the same principle behind the modebar's Queue button and badge already staying live in
+// every mode (see qLoad, called from boot() regardless of mode).
+let queuePanelOpen = false;
+let qpMode = 'implement';
+let qpPicked = null;
+let qpPickActive = false;
+let qpPickBanner = null;
+
+function qpSectionHtml(cls, title, count, rowsHtml, emptyText) {
+  return `<div>
+    <div class="qp-sec-title ${cls}">${title}${count != null ? ' · ' + count : ''}</div>
+    ${rowsHtml || `<div class="qp-empty">${emptyText}</div>`}
+  </div>`;
+}
+
+function renderQueuePanel() {
+  const body = document.getElementById('queuePanelBody');
+  if (!body) return;
+  const asking = qPrompts.filter(qIsAsking);
+  const running = qPrompts.filter(p => p.status === 'running' && !qIsAsking(p));
+  const queued = qPrompts.filter(p => p.status === 'queued');
+
+  body.innerHTML = `
+    <div class="qp-composer">
+      <textarea id="qpText" placeholder="Describe the task…"></textarea>
+      <div class="qp-composer-row">
+        <div class="qp-mode-seg">
+          <button class="${qpMode === 'implement' ? 'active' : ''}" data-qpmode="implement">Implement</button>
+          <button class="${qpMode === 'question' ? 'active' : ''}" data-qpmode="question">Question</button>
+        </div>
+      </div>
+      <div class="qp-composer-row">
+        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn">${qpPickActive ? '✕ Cancel' : '✏️ Point at an element'}</button>
+        <span class="qp-pick-ctx" id="qpPickCtx">${qpPicked ? '🎯 ' + qEsc(qpPicked) : ''}</span>
+      </div>
+      <div class="qp-composer-row">
+        <div class="qp-place-seg" id="qpPlaceSeg">
+          <button class="active" data-pl="last">Last in line</button>
+          <button data-pl="first">First in line</button>
+        </div>
+        <span class="qp-status" id="qpStatus"></span>
+        <button class="qp-submit" id="qpSubmit">Add to queue</button>
+      </div>
+      ${qPaused ? '<div class="qp-status" style="margin-top:6px;">⏸ Queue paused — this will wait until resumed.</div>' : ''}
+    </div>
+    ${qpSectionHtml('asking', '🙋 Waiting for you', asking.length,
+      asking.map(p => `<div class="qp-card">
+        <div class="q-item-title">${qEsc(p.title || '(untitled)')}</div>
+        ${qQuestionBlockHtml(p, { showQuestion: true })}
+        ${qReplyBoxHtml('qp' + p.id)}
+      </div>`).join(''), 'Nothing waiting on you.')}
+    ${qpSectionHtml('', '▶ Running now', running.length,
+      running.map(p => `<div class="qp-row"><span class="qp-num">▶</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
+      'Nothing running.')}
+    ${qpSectionHtml('', 'In queue', queued.length,
+      queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
+      'Queue is empty — add a task above.')}
+  `;
+
+  // Cards are rendered in the same order as `asking`, so pair them up by index rather
+  // than matching data-qid strings against possibly-non-string ids.
+  [...body.querySelectorAll('.qp-card')].forEach((card, i) => {
+    const p = asking[i];
+    if (!p) return;
+    qWireQuestionBlock(card, async (id, text, placement) => {
+      try { await qReply(id, text, placement); }
+      catch (e) { alert('Could not send: ' + e.message); }
+    });
+    qWireReplyBox(card, 'qp' + p.id, (text, placement) => qReply(p.id, text, placement));
+  });
+
+  body.querySelectorAll('[data-qpmode]').forEach(b => {
+    b.onclick = () => { qpMode = b.getAttribute('data-qpmode'); renderQueuePanel(); };
+  });
+  body.querySelectorAll('#qpPlaceSeg button').forEach(b => {
+    b.onclick = () => body.querySelectorAll('#qpPlaceSeg button').forEach(x => x.classList.toggle('active', x === b));
+  });
+  document.getElementById('qpPickBtn').onclick = qpTogglePicking;
+  document.getElementById('qpSubmit').onclick = qpSubmitTask;
+  const textEl = document.getElementById('qpText');
+  if (textEl) textEl.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) qpSubmitTask(); });
+}
+
+async function qpSubmitTask() {
+  const textEl = document.getElementById('qpText');
+  const statusEl = document.getElementById('qpStatus');
+  const submitBtn = document.getElementById('qpSubmit');
+  const text = (textEl.value || '').trim();
+  if (!text) return;
+  const fullText = text + (qpPicked ? '\n\n(context: ' + qpPicked + ')' : '');
+  const first = (document.querySelector('#qpPlaceSeg .active') || {}).getAttribute?.('data-pl') === 'first';
+  submitBtn.disabled = true;
+  try {
+    await apiWrite('/api/travaux/prompts', 'POST', {
+      title: '', prompt: fullText, mode: qpMode, status: 'queued', priority: first, space: 'fmcns',
+    });
+    textEl.value = '';
+    qpPicked = null;
+    await qLoad();
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
+// Element picker for the composer — a stripped copy of what "Modifier le système" already
+// does (see the describe/hover/click trio below the widget's script), specific to this
+// panel's own DOM ids so it doesn't fight the other picker if both existed mid-migration.
+function qpDescribeEl(el) {
+  const parts = [];
+  ['id', 'data-src', 'data-testid', 'aria-label', 'placeholder', 'name', 'title'].forEach(k => {
+    const v = el.getAttribute(k);
+    if (v && !parts.length) parts.push((k === 'id' ? '#' : '[') + String(v).slice(0, 60) + (k === 'id' ? '' : ']'));
+  });
+  const cls = (typeof el.className === 'string' ? el.className : '').split(/\s+/).filter(Boolean).slice(0, 3).join('.');
+  if (cls && !parts.length) parts.push('.' + cls);
+  if (!parts.length) {
+    const txt = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50);
+    parts.push(txt ? '"' + txt + '"' : el.tagName.toLowerCase());
+  }
+  return parts.join(' · ');
+}
+function qpHover(e) {
+  const t = e.target;
+  if (!t || t.nodeType !== 1 || document.getElementById('queuePanel').contains(t) || (qpPickBanner && qpPickBanner.contains(t))) return;
+  document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
+  const r = t.getBoundingClientRect();
+  if (r.width <= 0 || r.height <= 0) return;
+  const hl = document.createElement('div');
+  hl.className = 'fw-hover-hl';
+  hl.style.left = r.left + 'px'; hl.style.top = r.top + 'px';
+  hl.style.width = r.width + 'px'; hl.style.height = r.height + 'px';
+  document.body.appendChild(hl);
+}
+function qpClick(e) {
+  const t = e.target;
+  if (document.getElementById('queuePanel').contains(t) || (qpPickBanner && qpPickBanner.contains(t))) return;
+  e.preventDefault();
+  e.stopPropagation();
+  document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
+  qpPicked = qpDescribeEl(t);
+  qpStopPicking();
+}
+function qpStopPicking() {
+  if (!qpPickActive) return;
+  qpPickActive = false;
+  document.removeEventListener('mouseover', qpHover, true);
+  document.removeEventListener('click', qpClick, true);
+  if (qpPickBanner) { qpPickBanner.remove(); qpPickBanner = null; }
+  document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
+  renderQueuePanel();
+}
+function qpTogglePicking() {
+  if (qpPickActive) { qpStopPicking(); return; }
+  qpPickActive = true;
+  qpPicked = null;
+  renderQueuePanel();
+  qpPickBanner = document.createElement('div');
+  qpPickBanner.className = 'fw-pick-banner';
+  qpPickBanner.innerHTML = '<span>🎯 Point at an element — click it to capture</span><button id="qpPickSkip">Skip</button>';
+  document.body.appendChild(qpPickBanner);
+  qpPickBanner.querySelector('#qpPickSkip').onclick = qpStopPicking;
+  document.addEventListener('mouseover', qpHover, true);
+  document.addEventListener('click', qpClick, true);
+}
+
+function openQueuePanel() {
+  queuePanelOpen = true;
+  document.getElementById('queuePanelVeil').hidden = false;
+  document.getElementById('queuePanel').hidden = false;
+  renderQueuePanel();
+  const t = document.getElementById('qpText');
+  if (t) t.focus();
+}
+function closeQueuePanel() {
+  if (qpPickActive) return; // let the picker's own Escape/Skip end it first
+  queuePanelOpen = false;
+  document.getElementById('queuePanelVeil').hidden = true;
+  document.getElementById('queuePanel').hidden = true;
+}
+
+document.getElementById('queuePanelVeil').onclick = closeQueuePanel;
+document.getElementById('queuePanelClose').onclick = closeQueuePanel;
+document.getElementById('queuePanelOpenPage').onclick = (e) => {
+  e.preventDefault();
+  closeQueuePanel();
+  setMode('core');
+  switchCoreView('flow');
+};
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+    const el = document.activeElement;
+    const typing = el && /^(INPUT|TEXTAREA)$/.test(el.tagName);
+    if (typing) return;
+    e.preventDefault();
+    queuePanelOpen ? closeQueuePanel() : openQueuePanel();
+  } else if (e.key === 'Escape' && queuePanelOpen) {
+    closeQueuePanel();
+  }
+});
 </script>
 <style>
 #fmcns-chat-btn { position: fixed; bottom: 18px; right: 18px; width: 40px; height: 40px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); border: none; font-size: 15px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
@@ -7203,13 +7525,11 @@ function openChatWithPrompt(text) {
 .studio-draft .primary { background:var(--c-ink-solid); color:var(--c-on-solid); border:none; }
 .studio-draft .ghost { background:var(--c-surface); border:1px solid var(--c-border-2); color:var(--c-ink); }
 </style>
-<button id="fmcns-chat-btn" title="FMCNS Assistant (⌘/Ctrl+`)">✦<span id="fw-badge"></span></button>
+<button id="fmcns-chat-btn" title="FMCNS Assistant (⌘/Ctrl+`)">✦</button>
 <div id="fmcns-chat-panel">
   <div id="fmcns-chat-header">
     <div class="fw-tabs">
       <button data-fw-tab="chat" class="active">Chat</button>
-      <button data-fw-tab="task">New task</button>
-      <button data-fw-tab="queue">Queue</button>
     </div>
     <button class="fw-close" id="fmcns-chat-close" title="Close">✕</button>
   </div>
@@ -7227,37 +7547,6 @@ function openChatWithPrompt(text) {
       <input type="file" id="fmcns-chat-file" accept="application/pdf" style="display:none;">
       <textarea id="fmcns-chat-input" rows="1" placeholder="Ask the assistant..."></textarea>
       <button id="fmcns-chat-send">Send</button>
-    </div>
-  </div>
-  <div class="fw-tab" id="fw-tab-task">
-    <div class="fw-task-form">
-      <div class="fw-task-row">
-        <div class="fw-mode-seg">
-          <button class="active" data-task-mode="implement">Implement</button>
-          <button data-task-mode="question">Question</button>
-        </div>
-      </div>
-      <textarea id="fw-task-input" rows="3" placeholder="Describe the task for the coding agent…"></textarea>
-      <div class="fw-task-row">
-        <button class="fw-pick-btn" id="fw-pick-btn">✏️ Point at an element</button>
-        <span class="fw-pick-ctx" id="fw-pick-ctx"></span>
-      </div>
-      <div class="fw-task-row">
-        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-ink-3);"><input type="checkbox" id="fw-task-first"> First in line</label>
-        <span class="fw-task-status" id="fw-task-status"></span>
-        <button class="fw-task-submit" id="fw-task-submit">Add to queue</button>
-      </div>
-    </div>
-  </div>
-  <div class="fw-tab" id="fw-tab-queue">
-    <div id="fw-queue-list"></div>
-    <div class="fw-task-form" style="border-top:1px solid var(--c-border);">
-      <textarea id="fw-queue-input" rows="2" placeholder="Drop a prompt…"></textarea>
-      <div class="fw-task-row">
-        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-ink-3);"><input type="checkbox" id="fw-queue-first"> First in line</label>
-        <span class="fw-task-status" id="fw-queue-status"></span>
-        <button class="fw-task-submit" id="fw-queue-add">Add</button>
-      </div>
     </div>
   </div>
   <div class="fw-resize" id="fw-resize" title="Drag to resize"></div>
@@ -7403,21 +7692,17 @@ function openChatWithPrompt(text) {
   btn.onclick = async function() {
     panel.classList.toggle('open');
     saveWindowState();
-    if (!panel.classList.contains('open')) { stopQueueTimer(); return; }
-    if (currentFwTab === 'chat' && !getToken()) { showLogin(); return; }
-    if (currentFwTab === 'chat') { showChat(); await ensureSession(); if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; } }
-    if (currentFwTab === 'queue') { pollQueueNow(); startQueueTimer(); }
+    if (!panel.classList.contains('open')) return;
+    if (!getToken()) { showLogin(); return; }
+    showChat(); await ensureSession(); if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; }
   };
-  closeBtn.onclick = function() { panel.classList.remove('open'); saveWindowState(); stopQueueTimer(); };
+  closeBtn.onclick = function() { panel.classList.remove('open'); saveWindowState(); };
 
-  // ── Floating window: tabs, resize, persistence, shortcut ──────────────────
+  // ── Floating window: tabs (Chat only — New task/Queue folded into the Queue panel,
+  // see openQueuePanel/renderQueuePanel above), resize, persistence, shortcut ─────────
   var fwTabs = Array.prototype.slice.call(document.querySelectorAll('[data-fw-tab]'));
-  var fwTabIds = { chat: 'fw-tab-chat', task: 'fw-tab-task', queue: 'fw-tab-queue' };
-  var badge = document.getElementById('fw-badge');
+  var fwTabIds = { chat: 'fw-tab-chat' };
   var resizeHandle = document.getElementById('fw-resize');
-  var fwQueueTimer = null;
-  var fwPrompts = [];
-  var fwTaskMode = 'implement';
   var currentFwTab = 'chat';
   var fwWindowState = (function() { try { return JSON.parse(localStorage.getItem('fmcns_window_state') || 'null') || {}; } catch (e) { return {}; } })();
 
@@ -7425,26 +7710,18 @@ function openChatWithPrompt(text) {
     try { localStorage.setItem('fmcns_window_state', JSON.stringify({ open: panel.classList.contains('open'), w: panel.offsetWidth, h: panel.offsetHeight, tab: currentFwTab })); } catch (e) {}
   }
 
-  function startQueueTimer() { if (!fwQueueTimer) fwQueueTimer = setInterval(pollQueueNow, 20000); }
-  function stopQueueTimer() { if (fwQueueTimer) { clearInterval(fwQueueTimer); fwQueueTimer = null; } }
-
   function showFwTab(t) {
+    // Only 'chat' is a real tab now — a stale 'task'/'queue' saved from before this
+    // migration falls back to it instead of leaving the panel with nothing active.
+    if (!fwTabIds[t]) t = 'chat';
     currentFwTab = t;
     fwTabs.forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-fw-tab') === t); });
     Object.keys(fwTabIds).forEach(function(k) { document.getElementById(fwTabIds[k]).classList.toggle('active-tab', k === t); });
-    if (t === 'queue') { pollQueueNow(); startQueueTimer(); }
-    else stopQueueTimer();
     saveWindowState();
   }
   window.fwShowTab = showFwTab;
 
   fwTabs.forEach(function(b) { b.onclick = function() { showFwTab(b.getAttribute('data-fw-tab')); }; });
-  document.querySelectorAll('[data-task-mode]').forEach(function(b) {
-    b.onclick = function() {
-      fwTaskMode = b.getAttribute('data-task-mode');
-      document.querySelectorAll('[data-task-mode]').forEach(function(x) { x.classList.toggle('active', x === b); });
-    };
-  });
 
   document.addEventListener('keydown', function(e) {
     if ((e.metaKey || e.ctrlKey) && e.key === '`') { e.preventDefault(); btn.click(); }
@@ -7464,221 +7741,13 @@ function openChatWithPrompt(text) {
     document.addEventListener('pointerup', up);
   });
 
-  // ── New task tab ──────────────────────────────────────────────────────────
-  function apiWrite(path, method, body) {
-    return api(path, { method: method, body: JSON.stringify(body || {}) });
-  }
-  function fwStatusDone(el, linkId) {
-    el.innerHTML = '✓ Added — <a href="#" id="' + linkId + '">View in Flow</a>';
-    var a = el.querySelector('#' + linkId);
-    if (a) a.onclick = function(e) { e.preventDefault(); if (window.setMode) window.setMode('core'); if (window.switchCoreView) window.switchCoreView('flow'); };
-  }
-  function submitFwTask() {
-    var inputEl = document.getElementById('fw-task-input');
-    var statusEl = document.getElementById('fw-task-status');
-    var firstEl = document.getElementById('fw-task-first');
-    var submitBtn = document.getElementById('fw-task-submit');
-    var text = inputEl.value.trim();
-    if (!text) return;
-    var fullText = text + (fwPicked ? '\n\n(context: ' + fwPicked + ')' : '');
-    submitBtn.disabled = true;
-    apiWrite('/api/travaux/prompts', 'POST', { title: '', prompt: fullText, mode: fwTaskMode, status: 'queued', priority: !!firstEl.checked, space: 'fmcns' })
-      .then(function(resp) { return resp.json(); })
-      .then(function() {
-        inputEl.value = '';
-        fwPicked = null;
-        document.getElementById('fw-pick-ctx').textContent = '';
-        fwStatusDone(statusEl, 'fwViewFlow1');
-      })
-      .catch(function(e) { statusEl.textContent = 'Error: ' + e.message; })
-      .finally(function() { submitBtn.disabled = false; });
-  }
-  document.getElementById('fw-task-submit').onclick = submitFwTask;
-  document.getElementById('fw-task-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitFwTask(); }
-  });
-
-  // ── Element picker (New task tab) ─────────────────────────────────────────
-  var fwPickActive = false;
-  var fwPicked = null;
-  var fwPickBanner = null;
-  var fwPickBtn = document.getElementById('fw-pick-btn');
-  function fwDescribe(el) {
-    var parts = [];
-    ['id', 'data-src', 'data-testid', 'aria-label', 'placeholder', 'name', 'title'].forEach(function(k) {
-      var v = el.getAttribute(k);
-      if (v && !parts.length) parts.push((k === 'id' ? '#' : '[') + String(v).slice(0, 60) + (k === 'id' ? '' : ']'));
-    });
-    var cls = (typeof el.className === 'string' ? el.className : '').split(/\s+/).filter(Boolean).slice(0, 3).join('.');
-    if (cls && !parts.length) parts.push('.' + cls);
-    if (!parts.length) {
-      var txt = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50);
-      parts.push(txt ? '"' + txt + '"' : el.tagName.toLowerCase());
-    }
-    var path = [];
-    var node = el;
-    while (node && node !== document.body && path.length < 4) {
-      if (node.id) { path.unshift('#' + node.id); break; }
-      var ds = node.getAttribute && node.getAttribute('data-src');
-      if (ds) { path.unshift('[' + ds.slice(0, 40) + ']'); break; }
-      if (node.nodeType === 1 && node.tagName) path.unshift(node.tagName.toLowerCase());
-      node = node.parentNode;
-    }
-    return parts.join(' · ') + ' — inside ' + (path.join(' > ') || 'page');
-  }
-  function fwStopPicking() {
-    if (!fwPickActive) return;
-    fwPickActive = false;
-    document.removeEventListener('mouseover', fwHover, true);
-    document.removeEventListener('click', fwClick, true);
-    if (fwPickBanner) { fwPickBanner.remove(); fwPickBanner = null; }
-    if (fwPickBtn) { fwPickBtn.textContent = '✏️ Point at an element'; fwPickBtn.classList.remove('active'); }
-    document.querySelectorAll('.fw-hover-hl').forEach(function(x) { x.remove(); });
-    var ctx = document.getElementById('fw-pick-ctx');
-    if (ctx) ctx.textContent = fwPicked ? '🎯 ' + fwPicked : '';
-  }
-  function fwHover(e) {
-    if (!fwPickActive) return;
-    var t = e.target;
-    if (!t || t.nodeType !== 1) return;
-    if (t === fwPickBanner || (fwPickBanner && t.closest('.fw-pick-banner'))) return;
-    if (t === panel || panel.contains(t)) return;
-    document.querySelectorAll('.fw-hover-hl').forEach(function(x) { x.remove(); });
-    var hl = document.createElement('div');
-    hl.className = 'fw-hover-hl';
-    var r = t.getBoundingClientRect();
-    if (r.width <= 0 || r.height <= 0) return;
-    hl.style.left = r.left + 'px'; hl.style.top = r.top + 'px';
-    hl.style.width = r.width + 'px'; hl.style.height = r.height + 'px';
-    document.body.appendChild(hl);
-  }
-  function fwClick(e) {
-    if (!fwPickActive) return;
-    var t = e.target;
-    if (t === fwPickBanner || (fwPickBanner && t.closest('.fw-pick-banner'))) return;
-    if (t === panel || panel.contains(t)) return;
-    if (t === fwPickBtn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    document.querySelectorAll('.fw-hover-hl').forEach(function(x) { x.remove(); });
-    fwPicked = fwDescribe(t);
-    fwStopPicking();
-  }
-  if (fwPickBtn) fwPickBtn.onclick = function() {
-    if (fwPickActive) { fwStopPicking(); return; }
-    fwPickActive = true;
-    fwPicked = null;
-    fwPickBtn.textContent = '✕ Cancel';
-    fwPickBtn.classList.add('active');
-    var ctx = document.getElementById('fw-pick-ctx');
-    if (ctx) ctx.textContent = 'Click the element to point at — Esc or this button cancels.';
-    fwPickBanner = document.createElement('div');
-    fwPickBanner.className = 'fw-pick-banner';
-    fwPickBanner.innerHTML = '<span>🎯 Point at an element — click it to capture</span><button id="fwPickSkip">Skip</button>';
-    document.body.appendChild(fwPickBanner);
-    fwPickBanner.querySelector('#fwPickSkip').onclick = fwStopPicking;
-    document.addEventListener('mouseover', fwHover, true);
-    document.addEventListener('click', fwClick, true);
-  };
-  document.addEventListener('keydown', function(e) { if (fwPickActive && e.key === 'Escape') fwStopPicking(); });
-
-  // Prefill the New task tab from anywhere (the "Turn it into a task" chip).
+  // Prefill the Queue panel's composer from anywhere (the "Turn it into a task" chip).
+  // The widget's own New-task tab was folded into that panel — see openQueuePanel above.
   window.fwPrefillTask = function(text) {
-    showFwTab('task');
-    if (!panel.classList.contains('open')) btn.click();
-    if (document.getElementById('fw-task-input')) {
-      document.getElementById('fw-task-input').value = text;
-      document.getElementById('fw-task-input').focus();
-    }
+    if (window.openQueuePanel) window.openQueuePanel();
+    var t = document.getElementById('qpText');
+    if (t) { t.value = text; t.focus(); }
   };
-
-  // ── Queue tab ─────────────────────────────────────────────────────────────
-  function fwElapsed(iso) {
-    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
-    var m = Math.floor(s / 60), r = s % 60;
-    return (m > 0 ? m + 'm ' : '') + r + 's';
-  }
-  async function pollQueueNow() {
-    try {
-      var resp = await api('/api/travaux/prompts?space=fmcns');
-      if (!resp.ok) return;
-      fwPrompts = (await resp.json()).prompts || [];
-      renderFwQueue();
-    } catch (e) {}
-  }
-  function renderFwQueue() {
-    var asking = fwPrompts.filter(function(p) { return p.pending_question; });
-    var running = fwPrompts.filter(function(p) { return p.status === 'running'; });
-    var queued = fwPrompts.filter(function(p) { return p.status === 'queued'; });
-    var paused = fwPrompts.filter(function(p) { return p.status === 'paused'; });
-    var blocked = fwPrompts.filter(function(p) { return p.status === 'blocked'; });
-    var done = fwPrompts.filter(function(p) { return p.status === 'done'; });
-    badge.style.display = asking.length ? '' : 'none';
-    var list = document.getElementById('fw-queue-list');
-    if (!list) return;
-    var html = '';
-    html += '<div class="fw-q-sec">❓ Questions (' + asking.length + ')</div>';
-    html += asking.map(function(p) {
-      var q = p.pending_question;
-      return '<div class="fw-q-card" data-qid="' + qEsc(p.id) + '">' +
-        '<div class="fw-q-title">' + qEsc(p.title) + '</div>' +
-        '<div class="fw-q-q">🙋 ' + qEsc(q.question) + '</div>' +
-        '<div class="fw-q-opts">' + (q.options || []).map(function(o) { return '<button data-opt="' + qEsc(o) + '">' + qEsc(o) + '</button>'; }).join('') + '</div>' +
-        '<div class="fw-q-reply"><input placeholder="Or type your own reply…"><button>Send</button></div>' +
-      '</div>';
-    }).join('') || '<div class="fw-q-sec" style="margin-top:0;">No questions waiting.</div>';
-    html += '<div class="fw-q-sec">▶ Running (' + running.length + ')</div>';
-    html += running.map(function(p) { return '<div class="fw-q-row"><span class="fw-q-num">▶</span><span class="fw-q-title">' + qEsc(p.title) + '</span><span class="fw-q-meta">' + (p.started_at ? fwElapsed(p.started_at) : '') + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing running.</div>';
-    html += '<div class="fw-q-sec">⏳ Queued (' + queued.length + ')</div>';
-    html += queued.map(function(p, i) { return '<div class="fw-q-row"><span class="fw-q-num">' + (i + 1) + '.</span><span class="fw-q-title">' + qEsc(p.title) + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Queue is empty.</div>';
-    html += '<div class="fw-q-sec">⚠ Blocked (' + blocked.length + ')</div>';
-    html += blocked.map(function(p) { return '<div class="fw-q-row" data-bid="' + qEsc(p.id) + '"><span class="fw-q-num">⚠</span><span class="fw-q-title">' + qEsc(p.title) + '</span><button data-action="rerun" title="Put it back in the queue">Run again</button></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing blocked.</div>';
-    if (paused.length) html += '<div class="fw-q-sec">⏸ Parked: ' + paused.length + '</div>';
-    if (done.length) html += '<div class="fw-q-sec">✓ Done: ' + done.length + '</div>';
-    list.innerHTML = html;
-    list.querySelectorAll('[data-action="rerun"]').forEach(function(b) {
-      b.onclick = async function() {
-        b.disabled = true; b.textContent = '…';
-        try {
-          var id = b.closest('.fw-q-row').getAttribute('data-bid');
-          await apiWrite('/api/travaux/prompts/' + id, 'PATCH', { status: 'queued' });
-          await apiWrite('/api/travaux/prompts/advance', 'POST');
-          await pollQueueNow();
-        } catch (e) { b.disabled = false; b.textContent = 'Run again'; alert('Error: ' + e.message); }
-      };
-    });
-    list.querySelectorAll('.fw-q-card').forEach(function(card) {
-      var qid = card.getAttribute('data-qid');
-      card.querySelectorAll('[data-opt]').forEach(function(b) {
-        b.onclick = function() { sendFwReply(qid, b.getAttribute('data-opt')); };
-      });
-      var inp = card.querySelector('.fw-q-reply input');
-      var send = card.querySelector('.fw-q-reply button');
-      send.onclick = function() { var v = inp.value.trim(); if (v) sendFwReply(qid, v); };
-      inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { var v = inp.value.trim(); if (v) sendFwReply(qid, v); } });
-    });
-  }
-  async function sendFwReply(id, text) {
-    try {
-      await apiWrite('/api/travaux/prompts/' + id + '/reply', 'POST', { text: text });
-      await pollQueueNow();
-    } catch (e) { alert('Could not send: ' + e.message); }
-  }
-  function addFwPrompt() {
-    var inputEl = document.getElementById('fw-queue-input');
-    var statusEl = document.getElementById('fw-queue-status');
-    var firstEl = document.getElementById('fw-queue-first');
-    var addBtn = document.getElementById('fw-queue-add');
-    var text = inputEl.value.trim();
-    if (!text) return;
-    addBtn.disabled = true;
-    apiWrite('/api/travaux/prompts', 'POST', { title: '', prompt: text, mode: 'implement', status: 'queued', priority: !!firstEl.checked, space: 'fmcns' })
-      .then(function(resp) { return resp.json(); })
-      .then(function() { inputEl.value = ''; fwStatusDone(statusEl, 'fwViewFlow2'); return pollQueueNow(); })
-      .catch(function(e) { statusEl.textContent = 'Error: ' + e.message; })
-      .finally(function() { addBtn.disabled = false; });
-  }
-  document.getElementById('fw-queue-add').onclick = addFwPrompt;
 
   // Restore the saved window size/tab/open state.
   if (fwWindowState.w) panel.style.width = fwWindowState.w + 'px';
@@ -7686,9 +7755,8 @@ function openChatWithPrompt(text) {
   showFwTab(fwWindowState.tab || 'chat');
   if (fwWindowState.open) {
     panel.classList.add('open');
-    if (currentFwTab === 'chat' && !getToken()) showLogin();
-    if (currentFwTab === 'chat' && getToken()) { showChat(); ensureSession(); if (!log.dataset.loaded) loadHistory(); }
-    if (currentFwTab === 'queue') { pollQueueNow(); startQueueTimer(); }
+    if (!getToken()) showLogin();
+    else { showChat(); ensureSession(); if (!log.dataset.loaded) loadHistory(); }
   }
 
   attachBtn.onclick = function() { fileInput.click(); };

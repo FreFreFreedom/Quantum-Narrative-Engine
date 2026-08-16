@@ -206,7 +206,9 @@ export function queueRoutes() {
   }));
 
   router.post('/prompts/:id/reply', asyncHandler(async (req, res) => {
-    const out = await queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
+    const out = await queue.replyToPrompt(req.params.id, {
+      text: req.body?.text, userId: req.user?.sub, placement: req.body?.placement === 'back' ? 'back' : 'front',
+    });
     if (!out) return res.status(404).json({ error: 'not_found' });
     if (out.error === 'running') return res.status(409).json({ error: 'running' });
     if (out.error) return res.status(400).json({ error: out.error });

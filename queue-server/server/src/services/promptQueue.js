@@ -1182,7 +1182,7 @@ export function buildFollowUpPrompt(row, messages, { fresh = false } = {}) {
   ].join('');
 }
 
-export async function replyToPrompt(id, { text, userId = null }) {
+export async function replyToPrompt(id, { text, userId = null, placement = 'front' }) {
   const row = getPrompt(id);
   if (!row) return null;
   if (row.status === 'running') return { error: 'running' };
@@ -1196,7 +1196,22 @@ export async function replyToPrompt(id, { text, userId = null }) {
     return answerInspireQuestion(row, clean, userId);
   }
   addMessage(id, { role: 'user', text: clean, author: userId });
+  if (placement === 'back') return requeueToBack(row);
   return relaunchWithThread(row);
+}
+
+// Save the answer without relaunching this instant — the task goes back to the
+// ordinary scheduler and resumes on its normal turn. Reuses the same
+// append-to-back semantics createPrompt already uses (nextPosition), not a new
+// ordering concept (this app has no wait_rank/lane column).
+function requeueToBack(row) {
+  db.prepare(`
+    UPDATE work_prompts SET status='queued', position=?, pending_question=NULL,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(nextPosition(row.space), row.id);
+  broadcast();
+  advanceQueue(); // starts right away if nothing else is ahead, otherwise waits its turn
+  return { prompt: getPrompt(row.id), task: null };
 }
 
 /**
