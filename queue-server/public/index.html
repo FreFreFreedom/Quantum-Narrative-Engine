@@ -362,6 +362,16 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-fullprompt summary:hover { color:var(--c-ink); }
 .q-fullprompt .arch-field-body { margin-top:8px; font-size:11.5px; max-height:220px; overflow-y:auto; white-space:pre-wrap; }
 
+/* Primary action — the one button that actually runs a paused task, pinned
+   right under the status line so it's never a scroll-and-hunt below Purpose,
+   the world-idea picker, and the thread. */
+.q-primary-action { margin:10px 0 12px; padding:10px 12px; border-radius:8px; background:color-mix(in srgb, var(--c-brand) 10%, var(--c-surface)); border:1px solid color-mix(in srgb, var(--c-brand) 30%, var(--c-border-2)); }
+.q-startbtn { padding:9px 18px; border-radius:var(--r-md); border:none; background:var(--c-brand); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+.q-startbtn:hover { opacity:.92; }
+.q-primary-hint { margin-top:8px; font-size:11px; color:var(--c-ink-3); line-height:1.5; }
+.q-primary-hint a { color:var(--c-brand); text-decoration:underline; cursor:pointer; }
+.q-primary-hint:empty { display:none; }
+
 /* Run details — the agent/provider/timing/cost chrome, tucked behind a toggle
    so the card leads with what a person needs (status, purpose, thread). */
 .flow-rundetails { margin:8px 0 12px; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; background:var(--c-surface-2); }
@@ -4186,6 +4196,23 @@ async function qTogglePause() {
   } catch (e) { console.error('pause toggle failed', e); }
 }
 
+// The note under the top Start button: nudges toward "Apply to plan" first when
+// picks are sitting unapplied, so starting and applying read as one connected
+// decision instead of two unrelated buttons on opposite ends of the card.
+function qPrimaryHintHtml(p) {
+  if (p.mode !== 'implement') return '';
+  const n = (qInspireSel[p.id] || []).length;
+  if (!n) return '';
+  return `${n} idea${n === 1 ? '' : 's'} picked below aren't in the plan yet — <a href="#" data-action="scroll-inspire">apply them to the plan</a> first if you want them included, or start now without them.`;
+}
+function qWirePrimaryHint(container) {
+  const link = container.querySelector('[data-action="scroll-inspire"]');
+  if (link) link.onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('qInspireHost')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+}
+
 function qRenderDetail(p) {
   const host = document.getElementById('flowExpanded');
   if (!host) return;
@@ -4219,6 +4246,11 @@ function qRenderDetail(p) {
       <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
       <span style="color:var(--c-ink-4);">${p.mode === 'question' ? 'Question' : 'Implement'}</span>
     </div>
+    ${p.status === 'paused' ? `
+    <div class="q-primary-action">
+      <button class="q-startbtn" id="qStartBtn" title="Queue it — it runs in its normal turn, not necessarily right away.">▶ Start this task</button>
+      <div class="q-primary-hint" id="qPrimaryHint">${qPrimaryHintHtml(p)}</div>
+    </div>` : ''}
     ${p.status === 'running' ? qProgressBar(p) : ''}
     <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
       <summary>Run details — agent, provider, timing, cost</summary>
@@ -4265,7 +4297,6 @@ function qRenderDetail(p) {
     </div>
     <div id="qReplyErr" class="q-err"></div>
     <div class="q-row" style="margin-top:10px;">
-      ${p.status === 'paused' ? `<button class="ctrlbtn" id="qStartBtn" title="Queue it — it runs in its normal turn, not necessarily right away.">▶ Start</button>` : ''}
       ${['running','queued'].includes(p.status) ? `<button class="ctrlbtn" id="qPauseBtn" title="${p.status === 'running' ? 'Stop it now — it goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸ Pause</button>` : ''}
       ${['queued','running'].includes(p.status) ? `
         <label class="ctrlbtn" style="cursor:pointer;" title="When this task finishes, stop the whole queue instead of moving on to the next one.">
@@ -4279,6 +4310,8 @@ function qRenderDetail(p) {
       <button class="ctrlbtn" id="qDeleteBtn">Remove</button>
     </div>
   `;
+
+  qWirePrimaryHint(host);
 
   const rawToggle = document.getElementById('qRawToggle');
   if (rawToggle) {
@@ -4654,6 +4687,8 @@ function qWireInspireButtons(p) {
       const facts = qInspireReviewFacts(qInspireCache[p.id]?.review);
       applyInspireToggle(list, key, facts);
       qInspireReRender(p);
+      const hint = document.getElementById('qPrimaryHint');
+      if (hint) { hint.innerHTML = qPrimaryHintHtml(p); qWirePrimaryHint(hint); }
     };
   });
   const applyBtn = host.querySelector('[data-action="inspire-apply"]');
