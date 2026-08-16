@@ -38,6 +38,7 @@ import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
 import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
+import { errorHandler } from './lib/asyncHandler.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -199,6 +200,11 @@ app.use('/api/convos', requireAuth, conversationsRoutes());
 // public/index.html) at the root address, so the whole app lives at one URL.
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
 app.use(express.static(PUBLIC_DIR));
+
+// Must be registered after every route: catches anything an asyncHandler-wrapped
+// handler (or a synchronous throw) passes to next(err), so a failure always gets a
+// response instead of hanging the request until the client times out.
+app.use(errorHandler);
 
 const server = http.createServer(app);
 attachRealtime(server);

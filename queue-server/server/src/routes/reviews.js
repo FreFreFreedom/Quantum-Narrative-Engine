@@ -3,6 +3,7 @@
 // happens on its own except the checks, which run when a review is created.
 import { Router } from 'express';
 import * as reviews from '../services/reviewRunner.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function reviewsRoutes() {
   const router = Router();
@@ -19,11 +20,11 @@ export function reviewsRoutes() {
   });
 
   // The human-pressed button: merge + deploy. Gated in the UI by typing FUSIONNER.
-  router.post('/reviews/:id/merge', async (req, res) => {
+  router.post('/reviews/:id/merge', asyncHandler(async (req, res) => {
     const out = await reviews.mergeReview(req.params.id);
     if (out.error) return res.status(out.error === 'not_found' ? 404 : 409).json(out);
     res.json({ ok: true, review: reviews.getReview(req.params.id), merge_commit: out.merge_commit });
-  });
+  }));
 
   // Undo button — available on merged reviews.
   router.post('/reviews/:id/revert', (req, res) => {

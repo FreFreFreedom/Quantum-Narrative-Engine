@@ -3,6 +3,7 @@
 // and the subject registry in services/subjectContext.js.
 import { Router } from 'express';
 import * as convos from '../services/conversations.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 function isConvoError(out) {
   return out && typeof out === 'object' && out.error && !out.ok;
@@ -49,25 +50,25 @@ export function conversationsRoutes() {
   });
 
   // POST /api/convos/:id/message — one user turn (or a command like /plan, /handoff).
-  router.post('/:id/message', async (req, res) => {
+  router.post('/:id/message', asyncHandler(async (req, res) => {
     const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id });
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
-  });
+  }));
 
   // POST /api/convos/:id/plan — generate the coder brief (TITLE + BRIEF).
-  router.post('/:id/plan', async (req, res) => {
+  router.post('/:id/plan', asyncHandler(async (req, res) => {
     const out = await convos.requestPlan(req.params.id);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
-  });
+  }));
 
   // POST /api/convos/:id/handoff — queue the plan as a paused task (idempotent).
-  router.post('/:id/handoff', async (req, res) => {
+  router.post('/:id/handoff', asyncHandler(async (req, res) => {
     const out = await convos.handoffToQueue(req.params.id, { title: req.body?.title || null, prompt: req.body?.prompt || null });
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
-  });
+  }));
 
   // POST /api/convos/:id/reset — fold conversation into a recap, clear messages.
   router.post('/:id/reset', (req, res) => {

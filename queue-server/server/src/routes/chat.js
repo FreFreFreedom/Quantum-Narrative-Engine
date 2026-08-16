@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as chat from '../services/chat.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function chatRoutes(db) {
   const router = Router();
@@ -18,13 +19,13 @@ export function chatRoutes(db) {
   });
 
   // { sessionId, text, attachments?: [{ filename, mimeType, dataBase64 }] }
-  router.post('/message', async (req, res) => {
+  router.post('/message', asyncHandler(async (req, res) => {
     const { sessionId, text, attachments } = req.body || {};
     if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text_required' });
     const out = await handleChat({ sessionId, text, attachments: Array.isArray(attachments) ? attachments : [] });
     if (out.error) return res.status(out.error === 'invalid_session' ? 404 : 500).json(out);
     res.json(out);
-  });
+  }));
 
   return router;
 }

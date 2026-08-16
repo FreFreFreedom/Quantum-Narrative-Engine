@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import * as suggestions from '../services/workSuggestions.js';
 import * as ideas from '../services/workIdeas.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function travauxRoutes() {
   const router = Router();
@@ -23,7 +24,7 @@ export function travauxRoutes() {
       .catch((e) => console.error('[travaux] suggestion engine run failed:', e.message));
   });
 
-  router.post('/suggestions/:id/accept', async (req, res) => {
+  router.post('/suggestions/:id/accept', asyncHandler(async (req, res) => {
     const out = await suggestions.acceptSuggestion(req.params.id, {
       editedPrompt: req.body?.prompt || null,
       editedTitle: req.body?.title || null,
@@ -31,7 +32,7 @@ export function travauxRoutes() {
     });
     if (!out) return res.status(404).json({ error: 'not_found' });
     res.json(out);
-  });
+  }));
 
   router.post('/suggestions/:id/dismiss', (req, res) => {
     const row = suggestions.dismissSuggestion(req.params.id, { reason: req.body?.reason || null });
@@ -75,7 +76,7 @@ export function travauxRoutes() {
     res.json({ ideas: ideas.reorderIdeas(ids) });
   });
 
-  router.post('/ideas/:id/promote', async (req, res) => {
+  router.post('/ideas/:id/promote', asyncHandler(async (req, res) => {
     const out = await ideas.promoteIdea(req.params.id, {
       userId: req.user?.sub || 'antoine',
       prompt: req.body?.prompt || null,
@@ -83,7 +84,7 @@ export function travauxRoutes() {
     });
     if (!out) return res.status(404).json({ error: 'not_found' });
     res.json(out);
-  });
+  }));
 
   router.post('/ideas/:id/plant', (req, res) => {
     const out = ideas.plantIdea(req.params.id, req.body || {});

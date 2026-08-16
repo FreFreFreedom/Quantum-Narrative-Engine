@@ -4,6 +4,7 @@
 // owns every rule: this file only maps HTTP to it.
 import { Router } from 'express';
 import { intelApi, SIGNAL_META } from '../services/architectureIntelligence.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function intelRoutes(db) {
   const router = Router();
@@ -35,10 +36,10 @@ export function intelRoutes(db) {
   // One-off migration: rewrite stored user-facing texts (mind thought titles and
   // bodies, suggestion titles and rationales) into plain everyday language —
   // the same rule new generations are born with. Idempotent.
-  router.post('/vulgarize-existing', async (req, res) => {
+  router.post('/vulgarize-existing', asyncHandler(async (req, res) => {
     const out = await intelApi.vulgarizeExistingTexts(db);
     res.json(out);
-  });
+  }));
 
   // "Intentional, not a problem" (6.2): acknowledging a (type, scope, target)
   // combination silences that signal forever.
@@ -72,7 +73,7 @@ export function intelRoutes(db) {
 
   // Accept → paused Flow task (the human gate). Edited title/prompt may be
   // passed for the rare case where the draft needs re-wording while accepting.
-  router.post('/thoughts/:id/accept', async (req, res) => {
+  router.post('/thoughts/:id/accept', asyncHandler(async (req, res) => {
     const out = await intelApi.acceptThought(db, req.params.id, {
       editedTitle: req.body?.editedTitle ?? null,
       editedPrompt: req.body?.editedPrompt ?? null,
@@ -80,7 +81,7 @@ export function intelRoutes(db) {
     if (out.error === 'not_found') return res.status(404).json(out);
     if (out.error === 'no_prompt') return res.status(400).json(out);
     res.json(out);
-  });
+  }));
 
   router.post('/thoughts/:id/dismiss', (req, res) => {
     const out = intelApi.dismissThought(db, req.params.id, { reason: req.body?.reason });
@@ -90,7 +91,7 @@ export function intelRoutes(db) {
 
   // Explicit clicks — never capped. Deepen: thoughts about one node; Pulse:
   // thoughts about the whole graph (focus 'growth' for 6.4 feature radar).
-  router.post('/deepen', async (req, res) => {
+  router.post('/deepen', asyncHandler(async (req, res) => {
     const out = await intelApi.deepenNode(db, {
       catalog: req.body?.catalog || [],
       targetId: req.body?.targetId || '',
@@ -99,9 +100,9 @@ export function intelRoutes(db) {
     if (out.error === 'all_duplicates') return res.status(409).json(out);
     if (out.error) return res.status(502).json(out);
     res.status(201).json(out);
-  });
+  }));
 
-  router.post('/pulse', async (req, res) => {
+  router.post('/pulse', asyncHandler(async (req, res) => {
     const out = await intelApi.pulseGraph(db, {
       catalog: req.body?.catalog || [],
       focus: req.body?.focus || 'pulse',
@@ -110,11 +111,11 @@ export function intelRoutes(db) {
     if (out.error === 'cap') return res.status(429).json(out);
     if (out.error) return res.status(502).json(out);
     res.status(201).json(out);
-  });
+  }));
 
   // Part 5: the Content graph wakes up — the same Mind, turned on the corpus
   // itself (focus 'themes' | 'bridges'). Explicit clicks, never capped.
-  router.post('/content-pulse', async (req, res) => {
+  router.post('/content-pulse', asyncHandler(async (req, res) => {
     const out = await intelApi.contentPulse(db, {
       focus: req.body?.focus || 'themes',
       force: true,
@@ -122,7 +123,7 @@ export function intelRoutes(db) {
     if (out.error === 'cap') return res.status(429).json(out);
     if (out.error) return res.status(502).json(out);
     res.status(201).json(out);
-  });
+  }));
 
   // The loop watching itself (6.5).
   router.get('/meter', (req, res) => {

@@ -5,6 +5,7 @@ import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '..
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
 import { findAgentTask, execOutputBytes, getExecTimeoutMinutes } from '../services/taskRunner.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function queueRoutes() {
   const router = Router();
@@ -154,11 +155,11 @@ export function queueRoutes() {
   });
 
   // Retroactive plan-first drafting for a task created before that feature existed.
-  router.post('/prompts/:id/backfill-plan', async (req, res) => {
+  router.post('/prompts/:id/backfill-plan', asyncHandler(async (req, res) => {
     const row = await queue.backfillPlan(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });
     res.json(row);
-  });
+  }));
 
   // Inspiration step: the automatic world-look pass (open / hidden / bold shelves)
   // that runs for every implement-mode task before its plan is written. This view
@@ -171,40 +172,40 @@ export function queueRoutes() {
     res.json(out);
   });
 
-  router.post('/prompts/:id/inspiration/refresh', async (req, res) => {
+  router.post('/prompts/:id/inspiration/refresh', asyncHandler(async (req, res) => {
     const row = await queue.refreshInspiration(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });
     res.json(row);
-  });
+  }));
 
-  router.post('/prompts/:id/inspiration/skip', async (req, res) => {
+  router.post('/prompts/:id/inspiration/skip', asyncHandler(async (req, res) => {
     const row = await queue.skipInspiration(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });
     res.json(row);
-  });
+  }));
 
-  router.post('/prompts/:id/inspiration/apply', async (req, res) => {
+  router.post('/prompts/:id/inspiration/apply', asyncHandler(async (req, res) => {
     const row = await queue.applyInspiration(req.params.id, req.body || {});
     if (!row) return res.status(404).json({ error: 'not_found' });
     if (row.error) return res.status(400).json({ error: row.error });
     res.json(row);
-  });
+  }));
 
   // One-off migration: shorten the descriptions of world-look reports created
   // before the "one short sentence" rule. Idempotent — cheap model calls only
   // for reports that still have long descriptions.
-  router.post('/inspiration/condense-existing', async (req, res) => {
+  router.post('/inspiration/condense-existing', asyncHandler(async (req, res) => {
     const out = await queue.condenseExistingInspiration();
     res.json(out);
-  });
+  }));
 
-  router.post('/prompts/:id/reply', async (req, res) => {
+  router.post('/prompts/:id/reply', asyncHandler(async (req, res) => {
     const out = await queue.replyToPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });
     if (out.error === 'running') return res.status(409).json({ error: 'running' });
     if (out.error) return res.status(400).json({ error: out.error });
     res.status(201).json(out.prompt);
-  });
+  }));
 
   router.post('/prompts/:id/message', (req, res) => {
     const out = queue.steerPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });

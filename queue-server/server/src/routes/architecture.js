@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
 import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt, shortlistUnbuilt } from '../services/architectureNodes.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function architectureRoutes(db) {
   const router = Router();
@@ -51,21 +52,21 @@ export function architectureRoutes(db) {
 
   // Manual "Sync now" from the Architecture tab — runs the git-history watcher
   // immediately (cheap: one model call only when main has new commits).
-  router.post('/tree/sync', async (req, res) => {
+  router.post('/tree/sync', asyncHandler(async (req, res) => {
     const out = await syncFromGit(db);
     res.json(out);
-  });
+  }));
 
   // Explicit user click only — never called on page load (cost control).
-  router.post('/nodes/:id/speculate', async (req, res) => {
+  router.post('/nodes/:id/speculate', asyncHandler(async (req, res) => {
     const out = await speculate(db, req.params.id, req.body || {});
     if (out.error) return res.status(out.error === 'all_duplicates' ? 409 : 502).json(out);
     res.json(out);
-  });
+  }));
 
   // "Add an idea": one free-text concept -> one speculative, structurally-placed node.
   // Frontend sends { concept, catalog } (the trunk lives in the HTML, not the DB).
-  router.post('/nodes/auto', async (req, res) => {
+  router.post('/nodes/auto', asyncHandler(async (req, res) => {
     const out = await autoPlaceNode(db, req.body?.concept || '', req.body || {});
     if (out.error) {
       if (out.error === 'concept_required') return res.status(400).json(out);
@@ -73,37 +74,37 @@ export function architectureRoutes(db) {
       return res.status(502).json(out);
     }
     res.json(out);
-  });
+  }));
 
   // "Ask about this architecture": a question in, an answer + highlighted ids out.
-  router.post('/graph/ask', async (req, res) => {
+  router.post('/graph/ask', asyncHandler(async (req, res) => {
     const out = await askGraph(req.body?.question || '', req.body || {});
     if (out.error) {
       if (out.error === 'question_required') return res.status(400).json(out);
       return res.status(502).json(out);
     }
     res.json(out);
-  });
+  }));
 
   // "AI recommends order" in the Not built list — the client sends its items,
   // the model returns their ids best-first. Explicit click only.
-  router.post('/rank-unbuilt', async (req, res) => {
+  router.post('/rank-unbuilt', asyncHandler(async (req, res) => {
     const out = await rankUnbuilt(req.body?.items);
     if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
     res.json(out);
-  });
+  }));
 
   // "Show my next 3" in the Not built list — a 3-pick shortlist with a one-line
   // plain-English reason each. Explicit click only.
-  router.post('/notbuilt-shortlist', async (req, res) => {
+  router.post('/notbuilt-shortlist', asyncHandler(async (req, res) => {
     const out = await shortlistUnbuilt(req.body?.items);
     if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
     res.json(out);
-  });
+  }));
 
   // The one idea door: any entry point can POST here with { concept, catalog }.
   // One AI call routes the idea — speculative tree node or Seed.
-  router.post('/ideas', async (req, res) => {
+  router.post('/ideas', asyncHandler(async (req, res) => {
     const out = await routeIdea(db, req.body?.concept || '', req.body || {});
     if (out.error) {
       if (out.error === 'concept_required') return res.status(400).json(out);
@@ -111,7 +112,7 @@ export function architectureRoutes(db) {
       return res.status(502).json(out);
     }
     res.json(out);
-  });
+  }));
 
   router.get('/components', (req, res) => {
     res.json({ components: getComponents(db) });
@@ -125,11 +126,11 @@ export function architectureRoutes(db) {
     res.json(getComponentHistory(db, req.params.id));
   });
 
-  router.post('/components/:id/suggestions/regenerate', async (req, res) => {
+  router.post('/components/:id/suggestions/regenerate', asyncHandler(async (req, res) => {
     const out = await generateSuggestions(db, req.params.id);
     if (out.error) return res.status(out.error === 'no_api_key' ? 500 : 502).json(out);
     res.json(out);
-  });
+  }));
 
   return router;
 }

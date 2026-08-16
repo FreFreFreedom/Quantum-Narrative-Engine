@@ -5,6 +5,7 @@ import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, CURATED_QUERIES,
 } from '../services/codeDiscovery.js';
+import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function discoveryRoutes(db) {
   const router = Router();
@@ -13,14 +14,14 @@ export function discoveryRoutes(db) {
     res.json({ queries: listQueries() });
   });
 
-  router.get('/results', async (req, res) => {
+  router.get('/results', asyncHandler(async (req, res) => {
     const queryId = req.query.query_id;
     const entry = CURATED_QUERIES.find(q => q.id === queryId);
     if (!entry) return res.status(404).json({ error: 'unknown_query_id' });
     const out = await getResults(db, entry.id, entry.query, { forceRefresh: req.query.refresh === '1' });
     if (out.error) return res.status(502).json(out);
     res.json(out);
-  });
+  }));
 
   router.post('/feedback', (req, res) => {
     const out = recordFeedback(db, req.body || {});
@@ -29,11 +30,11 @@ export function discoveryRoutes(db) {
   });
 
   // Explicit user click only — the 2-pass AI pipeline never runs on page load.
-  router.post('/ideas', async (req, res) => {
+  router.post('/ideas', asyncHandler(async (req, res) => {
     const out = await runIdeaSearch(db, req.body || {});
     if (out.error) return res.status(502).json(out);
     res.json(out);
-  });
+  }));
 
   router.get('/reports', (req, res) => {
     res.json({ reports: listReports(db) });
