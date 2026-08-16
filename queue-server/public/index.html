@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
 (function () {
   var t = null;
@@ -26,6 +27,10 @@
   --sh-xs: 0 1px 2px rgba(38,34,27,.05); --sh-sm: 0 2px 10px rgba(38,34,27,.07); --sh-md: 0 10px 26px rgba(38,34,27,.12);
   --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
   --t-fast: 140ms; --t-med: 220ms; --ease: cubic-bezier(.2,.7,.3,1);
+  /* Spacing scale: 4px base. Type scale: documents sizes already converged on. Same in light/dark. */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-base: 13px; --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
+  --fw-normal: 400; --fw-medium: 600;
   --c-warn: #8a5a1e; --c-warn-tint: #f6e7cf;
   --c-info: #3f6b85; --c-info-tint: #e8eef0;
   --c-success-tint: #e4f0ea;
@@ -91,7 +96,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .header p { font-size:11.5px; margin:0; color:var(--c-ink-3); }
 .graph-controls { padding:7px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .ctrl-label { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.04em; }
-.ctrlbtn { padding:4px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
+.ctrlbtn { padding:var(--sp-1) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .ctrlbtn.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .graph-stage { flex:1; position:relative; overflow:hidden; background:var(--c-stage); }
 #graphSvg { width:100%; height:100%; display:block; cursor:grab; }
@@ -246,7 +251,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .core-banner { font-size:10px; color:var(--c-ink-4); white-space:nowrap; }
 .core-serverpick { display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--c-ink-4); }
 .core-serverpick select { font-size:10.5px; padding:1px 4px; }
-.core-hbtn { padding:4px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:10.5px; cursor:pointer; }
+.core-hbtn { padding:var(--sp-1) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:10.5px; cursor:pointer; }
 .core-hbtn:hover { background:var(--c-surface-2); color:var(--c-ink); }
 
 /* ---------- Core workspace shell (three zones) ---------- */
@@ -369,8 +374,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-row { display:flex; gap:8px; margin-bottom:7px; }
 .q-row label { flex:1; font-size:10px; color:var(--c-ink-3); }
 .q-check { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--c-ink-2); flex:none !important; }
-.q-addbtn { width:100%; padding:8px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12px; font-weight:600; cursor:pointer; }
-.q-addbtn:hover { background:var(--c-ink-solid-2); }
+/* Shared "primary" button base — .q-addbtn and .id-addbtn are the same solid-fill
+   control at two sizes; kept as separate selectors (not renamed) so no JS/markup
+   hook breaks, but the shared look lives here once instead of twice. */
+.q-addbtn, .id-addbtn { border-radius:var(--r-sm); border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-weight:var(--fw-medium); cursor:pointer; }
+.q-addbtn:hover, .id-addbtn:hover { background:var(--c-ink-solid-2); }
+.q-addbtn { width:100%; padding:var(--sp-2); font-size:var(--fs-md); }
 .q-addbtn:disabled { background:var(--c-border-3); cursor:default; }
 .q-err { font-size:10.5px; color:var(--c-danger); margin-top:5px; }
 .q-item { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:7px; cursor:pointer; }
@@ -555,7 +564,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-radio-btn { border-radius:999px !important; }
 .q-inspire-card.q-inspire-sel.q-inspire-in-group { border-left-color:var(--c-accent); }
 /* Self-updating tree: pending proposals bar (Architecture tab) */
-.arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; padding:8px 12px; margin-bottom:8px; }
+.arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; padding:8px 12px; margin-bottom:8px; max-height:38vh; overflow-y:auto; }
 .arch-proposals-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11.5px; font-weight:600; margin-bottom:6px; }
 .arch-proposal-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--c-border); }
 .arch-proposal-row:first-of-type { border-top:none; }
@@ -572,7 +581,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .id-form textarea { resize:vertical; min-height:46px; }
 .id-form-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .id-form-hint { font-size:10.5px; color:var(--c-ink-4); }
-.id-addbtn { padding:7px 14px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:11.5px; cursor:pointer; flex-shrink:0; }
+.id-addbtn { padding:var(--sp-2) var(--sp-4); font-size:var(--fs-sm); flex-shrink:0; }
 .id-addbtn:disabled { background:var(--c-border-3); cursor:default; }
 .id-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:10px 12px; margin-bottom:8px; display:flex; gap:10px; align-items:flex-start; }
 .id-card-main { flex:1; min-width:0; }
@@ -675,7 +684,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-node.tt-locked:hover { opacity:.78; }
 .arch-lockedreqs { font-size:11px; color:var(--c-ink-3); line-height:1.5; }
 .arch-lockedreqs a { color:var(--c-warn); cursor:pointer; text-decoration:underline; }
-.arch-buildbtn { width:100%; padding:9px 12px; border-radius:7px; border:none; background:#c08a3e; color:#fff; font-size:12px; font-weight:600; cursor:pointer; margin-bottom:10px; }
+.arch-buildbtn { width:100%; padding:9px 12px; border-radius:7px; border:none; background:var(--c-amber); color:#fff; font-size:12px; font-weight:600; cursor:pointer; margin-bottom:10px; }
 .arch-buildbtn:hover { background:#a9762f; }
 /* Speculative nodes read as provisional — dashed and violet, distinct from the
    grey dashed "locked" look so proposal and unreachability aren't confusable. */
@@ -683,10 +692,10 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .tt-addbtn { margin-left:12px; padding:4px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .tt-addbtn:hover { background:var(--c-surface-2); }
 .tt-addlabel { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.05em; }
-.tt-specnote { border-left:3px solid #7a5ea8; padding-left:10px; font-size:11.5px; color:var(--c-ink-3); line-height:1.6; }
+.tt-specnote { border-left:3px solid var(--c-violet); padding-left:10px; font-size:11.5px; color:var(--c-ink-3); line-height:1.6; }
 .tt-specnote a { color:var(--c-violet); cursor:pointer; text-decoration:underline; }
-.arch-specbtn { width:100%; padding:8px 12px; border-radius:7px; border:1px dashed #7a5ea8; background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; cursor:pointer; margin-top:10px; }
-.arch-specbtn:hover { background:#f2ecfa; }
+.arch-specbtn { width:100%; padding:8px 12px; border-radius:7px; border:1px dashed var(--c-violet); background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; cursor:pointer; margin-top:10px; }
+.arch-specbtn:hover { background:var(--c-violet-tint); }
 .arch-specbtn:disabled { opacity:.55; cursor:default; }
 .arch-detail-name { font-size:16px; font-weight:700; margin-bottom:2px; }
 .arch-detail-territory { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; }
@@ -779,6 +788,22 @@ button:active { transform: translateY(1px) scale(.99); }
 .arch-ask-inputrow input { font-size:12.5px; padding:8px 11px; }
 .arch-ask-inputrow button { font-size:12.5px; padding:8px 13px; }
 .searchbox, .axisselect, .flow-search { font-size:12px; }
+
+/* ---------- Responsive pass (Phase 3): Breakpoints: tablet <=900px, mobile <=600px.
+   Narrows the fixed-width side rails first; does not restructure any view's
+   layout (canvas/SVG panels keep their flex sizing) to avoid regressing the
+   graph pan/zoom math, which assumes a stable container. ---------- */
+@media (max-width: 900px) {
+  .left { width:190px; }
+  .right { width:300px; }
+  .map-sidepanel { width:260px; }
+}
+@media (max-width: 600px) {
+  .left { width:150px; padding:10px; }
+  .right { width:240px; padding:10px; }
+  .map-sidepanel { width:210px; padding:10px; }
+  .ctrlbtn, .core-hbtn { padding:var(--sp-1) var(--sp-2); }
+}
 </style>
 </head>
 <body>
@@ -801,7 +826,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
       <span>Queue</span><span id="modeQueueBadge" class="mode-pill-count"></span>
     </button>
-    <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme">🌙</button>
+    <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
   </div>
 </div>
   <div class="wrap" id="app">
@@ -929,10 +954,10 @@ button:active { transform: translateY(1px) scale(.99); }
             <div class="arch-ask-answer" id="archAskAnswer" hidden></div>
           </div>
           <div class="arch-zoombtns">
-            <button data-arch-zoom="out" title="Zoom out">−</button>
-            <button data-arch-zoom="in" title="Zoom in">+</button>
-            <button data-arch-zoom="fit" title="Fit the graph to the screen">⌂</button>
-            <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on">∿</button>
+            <button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
+            <button data-arch-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
+            <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>
+            <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
           </div>
         </div>
         <div class="ws-archdetail" id="archRight" data-src="CORE ARCHITECTURE → graph zone → selected component detail (docked, auto-hides) | fmcns_navigator.html: selectArchNode()/renderArchDetail() | backend: services/architecture.js">
@@ -2480,7 +2505,7 @@ async function loadBooksFor(entityId) {
       currentBooks = data.books;
       host.innerHTML = data.books.map((b, i) => {
         const titleHtml = b.link ? `<a href="${b.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${qEsc(b.title)}</a>` : qEsc(b.title);
-        const cover = b.cover ? `<img class="bcover" src="${b.cover}" alt="" loading="lazy">` : `<div class="bcover-ph">📖</div>`;
+        const cover = b.cover ? `<img class="bcover" src="${b.cover}" alt="Cover: ${qEsc(b.title).replace(/"/g, '&quot;')}" loading="lazy">` : `<div class="bcover-ph">📖</div>`;
         return `<div class="book" data-book-idx="${i}"><div class="bwrap">${cover}<div><span class="btitle">${titleHtml}</span><span class="bkind">${qEsc(b.kind)}</span><div class="bauthor">${qEsc(b.author)}${b.year ? ` <span class="byear">(${b.year})</span>` : ''}</div><div class="bwhy">${qEsc(b.why)}</div></div></div><div class="bdetail" id="bdetail-${i}"></div></div>`;
       }).join('');
       host.querySelectorAll('.book').forEach(el => {
@@ -6420,10 +6445,10 @@ function renderArchStage() {
       <div class="arch-ask-answer" id="archAskAnswer" hidden></div>
     </div>
     <div class="arch-zoombtns">
-      <button data-arch-zoom="out" title="Zoom out">−</button>
-      <button data-arch-zoom="in" title="Zoom in">+</button>
-      <button data-arch-zoom="fit" title="Fit the graph to the screen">⌂</button>
-      <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on">∿</button>
+      <button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
+      <button data-arch-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
+      <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>
+      <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
     </div>`;
   wireArchStageControls();
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
