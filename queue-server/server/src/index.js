@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import http from 'node:http';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { openDb, DB_PATH } from './db/schema.js';
 import { requireAuth, issueToken } from './auth.js';
@@ -113,19 +116,63 @@ if (process.env.WARMUP_DISABLED !== '1') {
 }
 
 const app = express();
-app.use(cors());
+// Antoine opens fmcns_navigator.html either from the deployed frontend (same
+// origin as this API — no CORS involved) or directly as a local file (Origin:
+// null) — see CLAUDE.md. Allow just those, not any website that happens to
+// hold a stolen token.
+const ALLOWED_ORIGINS = [
+  'https://quantum-narrative-engine-production.up.railway.app',
+  /^https?:\/\/localhost(:\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+];
+app.use(cors({
+  origin(origin, callback) {
+    // No Origin header (server-to-server, curl) or the file:// "null" origin —
+    // allow both; a same-origin browser request also sends no Origin at all.
+    if (!origin || origin === 'null') return callback(null, true);
+    if (ALLOWED_ORIGINS.some((o) => (o instanceof RegExp ? o.test(origin) : o === origin))) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+}));
+// CSP off: the frontend is a single file with inline <script>/<style> tags, which a
+// default CSP would block outright. Every other helmet header (X-Content-Type-Options,
+// X-Frame-Options, HSTS, X-Powered-By removal, etc.) still applies.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '25mb' })); // PDFs come through as base64 in the chat payload
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'fmcns-queue-server', time: new Date().toISOString() });
 });
 
-app.post('/api/auth/login', (req, res) => {
+// Unlimited login attempts previously meant the shared password could be brute-forced
+// with no throttling at the app layer at all.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'too_many_attempts', detail: 'Too many login attempts — try again in 15 minutes.' },
+});
+
+app.post('/api/auth/login', loginLimiter, (req, res) => {
   if (!ADMIN_PASSWORD) return res.status(500).json({ error: 'server_not_configured', detail: 'ADMIN_PASSWORD is not set' });
   const { password } = req.body || {};
-  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'invalid_password' });
+  if (!timingSafeEqualStrings(String(password || ''), ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: 'invalid_password' });
+  }
   res.json({ token: issueToken() });
 });
+
+// crypto.timingSafeEqual throws on unequal-length buffers, so compare a fixed-size
+// hash of each string instead of the raw (variable-length) values — that keeps the
+// comparison itself constant-time regardless of how the two strings' lengths differ.
+function timingSafeEqualStrings(a, b) {
+  const ah = crypto.createHash('sha256').update(a).digest();
+  const bh = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(ah, bh);
+}
 
 app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
