@@ -17,6 +17,14 @@
 // Deliberately no tools and no filesystem access on the CLI path (--allowedTools "")
 // — these are pure text generations, and the CLI is otherwise capable of editing the
 // repo, which is not something a book-recommendation call should ever be able to do.
+//
+// This is the always-Claude, no-fallback-provider primitive — ai/text.js wraps this
+// module as its 'claude-code' provider option (imported there as legacyGenerateText)
+// and is the entry point new code should call: it adds free-first multi-provider
+// fallback and per-feature model config on top of this. Call this file directly only
+// when a caller deliberately wants guaranteed-Claude behavior regardless of the
+// free-first policy (e.g. codeDiscovery.js's Idea box decompose/queries/picks flow) —
+// not as a shortcut around ai/text.js.
 
 import { spawn } from 'node:child_process';
 

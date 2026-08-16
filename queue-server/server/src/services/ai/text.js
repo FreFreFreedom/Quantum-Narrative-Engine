@@ -1,7 +1,10 @@
-// AI text generation seam (plan Part 7R) — single entry point for all short-text
-// features. Resolves the feature's configured model + fallback order from ai_settings;
-// on detected quota limit follows the policy (auto-switch to free backup, never
-// paid without explicit click).
+// AI text generation seam (plan Part 7R) — the entry point new code should call for
+// short-text generation. Resolves the feature's configured model + fallback order
+// from ai_settings; on detected quota limit follows the policy (auto-switch to free
+// backup, never paid without explicit click). Wraps ../claudeText.js as the
+// 'claude-code' provider option (see runAttempt below) rather than duplicating it —
+// call claudeText.js directly only when a caller deliberately wants its always-Claude,
+// no-fallback-provider behavior instead of this module's free-first policy.
 
 import { generateText as legacyGenerateText } from '../claudeText.js';
 import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, isKnownProvider } from './providers.js';
