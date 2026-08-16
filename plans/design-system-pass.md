@@ -33,7 +33,13 @@ First pass landed across all 5 phases, scoped to the lowest-risk slice of each
   device/browser testing to do safely, which wasn't available this session
   (the local file can't be opened by the browser automation tool — no
   `file://` access). Treat this as the safety-net layer only; the deeper
-  per-view redesign is still open work.
+  per-view redesign is still open work. **Update (2026-08-16)**: with
+  `queue-server` running locally the browser tool *can* reach
+  `localhost:3000`, which unblocked one piece of this — the Architecture
+  detail pane (`.ws-archdetail`, fixed 330px) now becomes an overlay below
+  900px instead of permanently squeezing the graph, verified live via
+  `getBoundingClientRect`. Content/Map's own side panels and an Architecture
+  tab switcher for the 3-zone workspace are still not done.
 - **Phase 4 (dark mode)** — done for the confirmed hits: `.arch-buildbtn`
   background, `.arch-specbtn` border/hover, and `.tt-specnote` border-left all
   swapped from hardcoded hex to `var(--c-amber)`/`var(--c-violet)`/
@@ -47,10 +53,13 @@ First pass landed across all 5 phases, scoped to the lowest-risk slice of each
   paths), and real `alt="Cover: {title}"` text on book covers (properly
   quote-escaped — the existing `qEsc()` helper doesn't escape `"`, so a raw
   swap would have opened a small attribute-injection hole; used
-  `.replace(/"/g, '&quot;')` on top of it). **Not done**: keyboard nav
-  (`tabindex`/Enter/Space) on the Content/Map/Architecture graph nodes — the
-  highest-effort item, deferred per this plan's own time-boxing guidance;
-  needs its own follow-up pass.
+  `.replace(/"/g, '&quot;')` on top of it). **Update (2026-08-16)**: keyboard
+  nav (`tabindex="0" role="button"`, Enter/Space, arrow-key stepping through
+  DOM order) is now done for the **Architecture** graph nodes specifically —
+  shipped as part of a follow-up Core Architecture navigation/polish pass
+  (see `plans/core-workspace-unified-flow.md`'s 2026-08-16 note and this
+  session's work). **Still not done**: the same treatment on the Content and
+  Map graph nodes — those remain pointer-only.
 - Verification done: all 5 inline `<script>` blocks pass `node --check`;
   `queue-server/public/index.html` re-synced to match. Visual/browser
   verification was **not** performed — the browser automation tool available

@@ -258,17 +258,17 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .ws-shell { flex:1; min-height:0; display:flex; }
 .ws-map { flex:1; min-width:0; display:none; flex-direction:column; min-height:0; }
 .ws-map.open { display:flex; }
-.ws-map-body { flex:1; min-height:0; display:flex; }
+.ws-map-body { flex:1; min-height:0; display:flex; animation:fmcnsFade .22s var(--ease); }
 .ws-map.blocks-tab .arch-toolbar, .ws-map.blocks-tab .ws-map-body { display:none; }
 .ws-map.blocks-tab #archBlocksPane { display:flex; }
 .arch-inner-tabs { display:flex; align-items:center; gap:8px; padding:8px 14px 0; flex-shrink:0; }
 .ws-map.blocks-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
 .arch-inner-tabs button { font-size:12px; padding:4px 10px; border-radius:10px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); cursor:pointer; }
 .arch-inner-tabs button:hover { background:var(--c-surface-2); }
-.arch-inner-tabs button.active { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
-#archBlocksPane { flex:1; min-height:0; display:none; flex-direction:column; }
+.arch-inner-tabs button.active { background:var(--c-ink-solid); border-color:var(--c-ink); color:var(--c-on-solid); }
+#archBlocksPane { flex:1; min-height:0; display:none; flex-direction:column; animation:fmcnsFade .22s var(--ease); }
 .ws-map.mind-tab .arch-toolbar, .ws-map.mind-tab .ws-map-body { display:none; }
-.ws-map.mind-tab #archMindPane { display:flex; }
+.ws-map.mind-tab #archMindPane { display:flex; animation:fmcnsFade .22s var(--ease); }
 .ws-map.mind-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
 
 /* ---------- Not built list (Flow chip — siftable unbuilt tree components) ---------- */
@@ -619,6 +619,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-viewbtns button { padding:5px 11px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .arch-viewbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .arch-layoutseg, .arch-layersel { display:flex; gap:6px; }
+.arch-segdivider { padding-left:9px; border-left:1px solid var(--c-border-2); }
 .arch-layoutseg { margin-left:2px; }
 .arch-layoutseg button { opacity:.85; }
 .arch-layersel { margin-left:2px; }
@@ -626,8 +627,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-statusseg { display:flex; gap:6px; margin-left:2px; }
 .arch-statusseg button { opacity:.85; }
 .arch-focussel { margin-left:2px; padding:5px 8px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; color:var(--c-ink); cursor:pointer; font-family:inherit; }
-.arch-stage { flex:1; overflow:hidden; position:relative; }
+.arch-stage { flex:1; overflow:hidden; position:relative; box-shadow:inset 0 0 0 0 transparent; transition:box-shadow var(--t-med) var(--ease); }
 .arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
+.arch-canvas.arch-zoom-anim { transition:transform var(--t-fast) var(--ease); }
 .arch-focusbar { position:absolute; top:12px; left:12px; z-index:6; display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:9px; background:rgba(var(--c-surface-rgb),.95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:11px; max-width:calc(100% - 200px); }
 .arch-focusbar .arch-focusname { font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
 .arch-focusbar .arch-focusmeta { color:var(--c-ink-4); }
@@ -797,6 +799,13 @@ button:active { transform: translateY(1px) scale(.99); }
   .left { width:190px; }
   .right { width:300px; }
   .map-sidepanel { width:260px; }
+  /* Core Architecture (Phase B1): the detail pane permanently ate 330px of
+     graph width on every screen size. Below tablet width it becomes an
+     overlay instead, so the graph keeps full width and the pane slides in
+     over it — reuses the same .open class and fmcnsSlideIn animation used
+     at desktop width, only the positioning changes. */
+  .ws-map-body { position:relative; }
+  .ws-archdetail { position:absolute; top:0; right:0; bottom:0; z-index:8; box-shadow:var(--sh-md); }
 }
 @media (max-width: 600px) {
   .left { width:150px; padding:10px; }
@@ -925,18 +934,18 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
         <div class="arch-viewbtns">
-          <span class="arch-layoutseg">
+          <span class="arch-layoutseg" role="group" aria-label="Layout">
             <button class="active" data-arch-layout="map" title="Territories side by side">Map</button>
             <button data-arch-layout="tree" title="Dependency tiers — each row depends on the row above">Tree</button>
           </span>
-          <span class="arch-statusseg">
+          <span class="arch-statusseg arch-segdivider" role="group" aria-label="Status filter">
             <button class="active" data-arch-status="all" title="Show everything">All</button>
             <button data-arch-status="issue" title="Only components whose prerequisites are missing">Needs work</button>
             <button data-arch-status="speculative" title="Only Claude-proposed components">Speculative</button>
             <button data-arch-status="built" title="Only built components">Built</button>
           </span>
-          <select class="arch-focussel" id="archFocusSel" title="Zoom into one territory — its dependencies stay visible as chips"><option value="">Focus: all territories</option></select>
-          <span class="arch-layersel">
+          <select class="arch-focussel" id="archFocusSel" title="Zoom into one territory — its dependencies stay visible as chips" aria-label="Focus territory"><option value="">Focus: all territories</option></select>
+          <span class="arch-layersel arch-segdivider" role="group" aria-label="Color by">
             <button class="active" data-arch-layer="territory" title="Color by territory">Territory</button>
             <button data-arch-layer="status" title="Color by build status">Status</button>
             <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
@@ -6230,7 +6239,7 @@ function buildMapHtml() {
         const b = archNodeBadge(c);
         const spec = c.provenance === 'speculative';
         const off = archFilteredOff(c) ? ' st-off' : '';
-        html += `<div class="arch-node${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+        html += `<div class="arch-node${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
           <div class="an-name">${spec?'✦ ':''}${c.name}</div>
           <span class="an-badge" style="background:${b.color}">${b.text}</span>
         </div>`;
@@ -6259,7 +6268,7 @@ function buildTreeHtml() {
       const st = archNodeState(c);
       const spec = c.provenance === 'speculative';
       const off = archFilteredOff(c) ? ' st-off' : '';
-      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}">
+      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
         <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
         <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
       </div>`;
@@ -6425,6 +6434,9 @@ function archFocusName(id) {
 function renderArchStage() {
   const stage = document.getElementById('archStage');
   if (!stage) return;
+  // A subtle stage-level accent so a territory focus stays visible even once
+  // the focus bar (which sits at a fixed corner) scrolls out of view.
+  stage.style.boxShadow = archFocus ? `inset 0 0 0 2px ${TERRITORY_COLORS[archFocus] || 'var(--c-ring)'}` : '';
   // The overlay svg comes first in the DOM so it paints BELOW the cards: lines
   // run in the gaps between cards instead of across their faces. The Ask bar,
   // zoom buttons and focus bar are re-created here so they never get orphaned
@@ -6452,6 +6464,22 @@ function renderArchStage() {
     </div>`;
   wireArchStageControls();
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
+  // Keyboard nav on graph nodes (B4): Enter/Space activates like a click; arrow
+  // keys step through nodes in DOM order, which already matches reading order
+  // (territory columns left-to-right in Map, tiers top-to-bottom in Tree).
+  document.querySelectorAll('.arch-node[data-arch-id]').forEach(n => {
+    n.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectArchNode(n.getAttribute('data-arch-id')); return; }
+      const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+      const backward = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+      if (!forward && !backward) return;
+      e.preventDefault();
+      const nodes = Array.from(document.querySelectorAll('.arch-node[data-arch-id]'));
+      const i = nodes.indexOf(n);
+      const next = nodes[i + (forward ? 1 : -1)];
+      if (next) next.focus();
+    };
+  });
   document.querySelectorAll('[data-ctx]').forEach(b => {
     b.onclick = () => selectArchNode(b.getAttribute('data-ctx'));
   });
@@ -6492,8 +6520,13 @@ function wireArchStageControls() {
   }
   document.querySelectorAll('[data-arch-zoom]').forEach(b => {
     b.onclick = () => {
+      // Transition only the button-triggered jump, not live drag-panning (which
+      // calls applyArchTransform() continuously and would feel laggy if animated).
+      const canvas = document.getElementById('archCanvas');
+      if (canvas) canvas.classList.add('arch-zoom-anim');
       if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
       else zoomArchCanvas(b.getAttribute('data-arch-zoom') === 'in' ? 1.3 : 1 / 1.3, null);
+      if (canvas) setTimeout(() => canvas.classList.remove('arch-zoom-anim'), 160);
     };
   });
   const edgesBtn = document.getElementById('archEdgesBtn');
