@@ -362,6 +362,15 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-fullprompt summary:hover { color:var(--c-ink); }
 .q-fullprompt .arch-field-body { margin-top:8px; font-size:11.5px; max-height:220px; overflow-y:auto; white-space:pre-wrap; }
 
+/* Run details — the agent/provider/timing/cost chrome, tucked behind a toggle
+   so the card leads with what a person needs (status, purpose, thread). */
+.flow-rundetails { margin:8px 0 12px; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; background:var(--c-surface-2); }
+.flow-rundetails summary { cursor:pointer; color:var(--c-ink-3); font-size:11px; text-transform:uppercase; letter-spacing:.05em; user-select:none; }
+.flow-rundetails summary:hover { color:var(--c-ink); }
+.flow-rundetails[open] summary { margin-bottom:8px; }
+.flow-rundetails .q-detail-row { margin-bottom:6px; }
+.flow-rundetails .q-detail-row:last-child { margin-bottom:0; }
+
 .core-pane { flex:1; display:none; flex-direction:column; min-height:0; min-width:0; }
 .core-pane.open { display:flex; }
 
@@ -542,6 +551,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
 .q-inspire-shelf.q-inspire-bold { color:#8a5a1e; }
 .q-inspire-note { font-size:10px; color:var(--c-ink-4); margin-bottom:6px; }
+.q-inspire-note-active { color:var(--c-brand); font-weight:600; }
 .world-r { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .q-inspire-wrap { margin:4px 0 8px; }
 .nb-world { margin:2px 0 6px 14px; padding:8px 10px; border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); }
@@ -675,11 +685,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-col-sub { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; line-height:1.4; }
 .arch-col.collapsed .arch-col-sub { margin-bottom:0; }
 .arch-col-stats { font-size:10.5px; color:var(--c-ink-4); line-height:1.5; border:1px dashed var(--c-border-2); border-radius:9px; background:var(--c-surface-2); padding:9px 11px; }
-.arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:8px 10px; margin-bottom:9px; cursor:pointer; position:relative; }
-.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:10px; padding:10px 12px; margin-bottom:10px; cursor:pointer; position:relative; }
+.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .arch-node:hover { border-color:var(--c-border-3); }
 .arch-node.selected { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
 .arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:var(--c-on-solid); }
+.arch-node .an-what { margin-top:6px; font-size:11px; line-height:1.45; color:var(--c-ink-3); }
 .arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
 .arch-tiers { display:flex; flex-direction:column; gap:30px; min-width:1180px; position:relative; }
 .arch-tier { display:flex; gap:18px; align-items:flex-start; }
@@ -727,7 +738,14 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-queueform textarea { resize:vertical; min-height:60px; }
 .arch-queueform button { padding:6px 12px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:11.5px; cursor:pointer; }
 .arch-qf-status { font-size:10.5px; margin-top:5px; color:var(--c-ink-3); }
-.arch-verified { font-size:10px; color:var(--c-ink-4); margin:-6px 0 10px; }
+.arch-verified { font-size:10px; color:var(--c-ink-4); margin:0 0 10px; }
+/* Advanced — data-freshness note + the raw territory/dependency editor,
+   collapsed by default so a quick glance isn't buried under bookkeeping. */
+.arch-advanced { margin:12px 0 0; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; background:var(--c-surface-2); }
+.arch-advanced summary { cursor:pointer; color:var(--c-ink-3); font-size:11px; text-transform:uppercase; letter-spacing:.05em; user-select:none; }
+.arch-advanced summary:hover { color:var(--c-ink); }
+.arch-advanced[open] summary { margin-bottom:8px; }
+.arch-advanced .arch-field:last-child { margin-bottom:0; }
 .arch-suggestion { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:8px 10px; margin-bottom:7px; cursor:pointer; }
 .arch-suggestion:hover { background:var(--c-surface-2); }
 .arch-suggestion .as-title { font-size:11.5px; font-weight:600; margin-bottom:2px; }
@@ -3618,6 +3636,11 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const titleHtml = reorderable
     ? `<input class="q-title-inline" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
     : `<span class="q-item-title${unread ? ' unread' : ''}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
+  const actionBtn = p.status === 'paused'
+    ? `<button class="ctrlbtn q-arrow" data-qplay="${p.id}" title="Resume — runs in its normal turn, not necessarily right away.">▶</button>`
+    : ['running', 'queued'].includes(p.status)
+      ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
+      : '';
   return `
   <div class="flow-row q-item${sel ? ' sel' : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="q-item-top">
@@ -3634,10 +3657,12 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
     ${finished ? qCostLine(p) : ''}
     ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
-    ${reorderable ? `
+    ${reorderable || actionBtn ? `
       <div class="q-item-arrows">
+        ${actionBtn}
+        ${reorderable ? `
         <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
-        <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>
+        <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>` : ''}
       </div>` : ''}
   </div>
   ${qSelected && qSelected.id === p.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
@@ -3858,6 +3883,25 @@ function renderFlow() {
   });
   host.querySelectorAll('[data-qup]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qup'), -1); }; });
   host.querySelectorAll('[data-qdown]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qdown'), 1); }; });
+  host.querySelectorAll('[data-qpause]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      b.disabled = true;
+      try { await apiWrite(`/api/travaux/prompts/${b.getAttribute('data-qpause')}/pause`, 'POST'); await qLoad(); }
+      catch (err) { b.disabled = false; alert('Error: ' + err.message); }
+    };
+  });
+  host.querySelectorAll('[data-qplay]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      b.disabled = true;
+      try {
+        await apiWrite(`/api/travaux/prompts/${b.getAttribute('data-qplay')}`, 'PATCH', { status: 'queued' });
+        await apiWrite('/api/travaux/prompts/advance', 'POST');
+        await qLoad();
+      } catch (err) { b.disabled = false; alert('Error: ' + err.message); }
+    };
+  });
   host.querySelectorAll('.flow-sgrow').forEach(el => {
     el.onclick = () => {
       const id = el.getAttribute('data-sid');
@@ -3962,7 +4006,7 @@ function renderSeedDetail(idea) {
     ${idea.arch_node_id ? `<div class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></div>` : ''}
     <div class="arch-actionrow">
       <button id="seedDiscussBtn">💬 Discuss</button>
-      <button id="seedPromoteBtn">→ Queue</button>
+      <button id="seedPromoteBtn">→ Queue${flowWorldPickSuffix('idea', idea.id)}</button>
       ${idea.arch_node_id ? '' : '<button id="seedPlantBtn">🌱 Plant in tree</button>'}
       <button class="danger" id="seedDeleteBtn">Remove</button>
     </div>
@@ -3984,12 +4028,14 @@ function renderSeedDetail(idea) {
       onDone: () => { loadIdeas(); qLoad(); },
     });
   };
-  document.getElementById('seedPromoteBtn').onclick = async (e) => {
+  const promoteBtn = document.getElementById('seedPromoteBtn');
+  const promoteLabel = () => '→ Queue' + flowWorldPickSuffix('idea', idea.id);
+  promoteBtn.onclick = async (e) => {
     e.target.disabled = true; e.target.textContent = '…';
     const we = flowWorldEntry('idea', idea.id);
     const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
     try { await apiWrite(`/api/travaux/ideas/${idea.id}/promote`, 'POST', { inspiration }); await loadIdeas(); await qLoad(); }
-    catch (err) { e.target.disabled = false; e.target.textContent = '→ Queue'; alert('Error: ' + err.message); }
+    catch (err) { e.target.disabled = false; e.target.textContent = promoteLabel(); alert('Error: ' + err.message); }
   };
   const plantBtn = document.getElementById('seedPlantBtn');
   if (plantBtn) plantBtn.onclick = async (e) => {
@@ -4009,7 +4055,8 @@ function renderSeedDetail(idea) {
   if (plantJump) plantJump.onclick = (e) => { e.preventDefault(); jumpToArchNode(plantJump.getAttribute('data-plantjump')); };
   // The world-look, right on the seed: three shelves, picks carried to the
   // queue on promote. Rendered after the card so it never fights snap/restore.
-  flowWorldRender('idea', idea.id, document.getElementById('seedWorldHost'), [idea.title, idea.notes].filter(Boolean).join('\n'));
+  flowWorldRender('idea', idea.id, document.getElementById('seedWorldHost'), [idea.title, idea.notes].filter(Boolean).join('\n'),
+    () => { if (promoteBtn && !promoteBtn.disabled) promoteBtn.textContent = promoteLabel(); });
   flowWorldSync('idea', idea.id);
   flowWorldPoll('idea', idea.id);
   qRestoreInputs(host, snap);
@@ -4032,7 +4079,7 @@ function renderSuggestionDetail(s) {
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
       <textarea class="q-input" data-role="prompt" rows="6" style="display:none;">${qEsc(s.prompt)}</textarea></div>
       <div class="arch-actionrow">
-        <button class="primary" id="sgAcceptBtn">Accept → queue (set aside)</button>
+        <button class="primary" id="sgAcceptBtn">Accept → queue (set aside)${flowWorldPickSuffix('suggestion', s.id)}</button>
         <button id="sgDiscussBtn">💬 Discuss first</button>
         <button id="sgDismissBtn">Dismiss</button>
       </div>` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Flow</a>` : 'Already in the queue.'}</div>` : ''}
@@ -4057,13 +4104,14 @@ function renderSuggestionDetail(s) {
     });
   };
   const acceptBtn = document.getElementById('sgAcceptBtn');
+  const acceptLabel = () => 'Accept → queue (set aside)' + flowWorldPickSuffix('suggestion', s.id);
   if (acceptBtn) acceptBtn.onclick = async () => {
     const promptText = host.querySelector('[data-role="prompt"]').value;
     acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
     const we = flowWorldEntry('suggestion', s.id);
     const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
     try { await apiWrite(`/api/travaux/suggestions/${s.id}/accept`, 'POST', { prompt: promptText, inspiration }); await loadSuggestions(); await qLoad(); }
-    catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = 'Accept → queue (set aside)'; alert('Error: ' + e.message); }
+    catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = acceptLabel(); alert('Error: ' + e.message); }
   };
   const dismissBtn = document.getElementById('sgDismissBtn');
   if (dismissBtn) dismissBtn.onclick = async () => {
@@ -4075,7 +4123,10 @@ function renderSuggestionDetail(s) {
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
   // The world-look, right on the suggestion: three shelves, picks carried to the
   // queue on accept. Rendered after the card so it never fights the snap/restore.
-  flowWorldRender('suggestion', s.id, document.getElementById('sgWorldHost'), [s.title, s.prompt].filter(Boolean).join('\n'));
+  // onChange keeps the Accept button's own label in sync with the pick count,
+  // since picking only re-renders the world panel, not this whole card.
+  flowWorldRender('suggestion', s.id, document.getElementById('sgWorldHost'), [s.title, s.prompt].filter(Boolean).join('\n'),
+    () => { if (acceptBtn && !acceptBtn.disabled) acceptBtn.textContent = acceptLabel(); });
   flowWorldSync('suggestion', s.id);
   flowWorldPoll('suggestion', s.id);
   qRestoreInputs(host, snap);
@@ -4160,33 +4211,39 @@ function qRenderDetail(p) {
   if (p.run_model) costParts.push(p.run_model);
   if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
   if (p.cost_usd != null) costParts.push('~$' + p.cost_usd.toFixed(3));
+  const rdOpen = host.querySelector('.flow-rundetails')?.open || false;
   host.innerHTML = `
     <h2>Task</h2>
     <div class="arch-detail-name">${qEsc(p.title || '(untitled)')}</div>
     <div class="q-detail-row">
-      <span><b>Status:</b> ${qIsAsking(p) ? `<span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>` : qStatusLabel(p)}</span>
-      <span><b>Mode:</b> ${p.mode}</span>
-      <span><b>Agent:</b> ${qAgentLabel(p)}</span>
-      <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
-      ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
-      ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
-      ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
-      ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${qEsc(autoParent.title)}" (auto)</span>` : ''}
+      <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
+      <span style="color:var(--c-ink-4);">${p.mode === 'question' ? 'Question' : 'Implement'}</span>
     </div>
     ${p.status === 'running' ? qProgressBar(p) : ''}
-    ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
-    ${switchable ? `
-      <div class="q-detail-row" style="gap:8px;align-items:center;">
-        <span><b>Provider:</b>
-          <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
-        </span>
-        <span><b>Model:</b>
-          <select id="qDetailModel" class="q-input" style="width:auto;" ${usesModelPicker ? '' : 'disabled'}>
-            <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
-          </select>
-        </span>
-        <span style="font-size:11px;color:var(--c-ink-4);">Switching provider drops the old session link and starts fresh.</span>
-      </div>` : ''}
+    <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
+      <summary>Run details — agent, provider, timing, cost</summary>
+      <div class="q-detail-row">
+        <span><b>Agent:</b> ${qAgentLabel(p)}</span>
+        <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
+        ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
+        ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
+        ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
+        ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${qEsc(autoParent.title)}" (auto)</span>` : ''}
+      </div>
+      ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
+      ${switchable ? `
+        <div class="q-detail-row" style="gap:8px;align-items:center;">
+          <span><b>Provider:</b>
+            <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
+          </span>
+          <span><b>Model:</b>
+            <select id="qDetailModel" class="q-input" style="width:auto;" ${usesModelPicker ? '' : 'disabled'}>
+              <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
+            </select>
+          </span>
+          <span style="font-size:11px;color:var(--c-ink-4);">Switching provider drops the old session link and starts fresh.</span>
+        </div>` : ''}
+    </details>
     <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : qPurposePreview(p)}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
@@ -4759,7 +4816,7 @@ function flowWorldPanelHtml(source, id) {
         : '');
     return `<div class="q-inspire-toolbar">
       <button class="ctrlbtn" data-action="flowworld-rerun" title="Fresh search — the bold ideas are brand new every time.">↻ New ideas</button>
-      ${sel.size ? `<span class="q-inspire-note">${sel.size} picked — they travel with this item when it goes to the queue.</span>` : `<span class="q-inspire-note">Pick ideas here — they travel with this item when it goes to the queue.</span>`}
+      ${sel.size ? `<span class="q-inspire-note q-inspire-note-active">✓ ${sel.size} picked — included automatically when you press the button below to queue or build this.</span>` : `<span class="q-inspire-note">Pick ideas here — they'll be included automatically when you press the button below to queue or build this.</span>`}
     </div>${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick' })}`;
   }
   return `<div class="tv-empty">
@@ -4769,7 +4826,18 @@ function flowWorldPanelHtml(source, id) {
 }
 // Panel for the expanded suggestion/seed card. Re-renders in place after picks
 // or a start, so focus and typed text elsewhere in the card are never touched.
-function flowWorldRender(source, id, host, ideaText) {
+// How many ideas are picked but not yet folded into a plan, for the source/id
+// pair — used to put the count on the button that actually does the folding,
+// right where a person is about to press it.
+function flowWorldPickCount(source, id) {
+  return flowWorldEntry(source, id).sel.length;
+}
+function flowWorldPickSuffix(source, id) {
+  const n = flowWorldPickCount(source, id);
+  return n ? ` — with ${n} idea${n === 1 ? '' : 's'}` : '';
+}
+
+function flowWorldRender(source, id, host, ideaText, onChange) {
   if (!host) return;
   host.innerHTML = flowWorldPanelHtml(source, id);
   const e = flowWorldEntry(source, id);
@@ -4777,7 +4845,8 @@ function flowWorldRender(source, id, host, ideaText) {
     b.onclick = async () => {
       b.disabled = true;
       await flowWorldStart(source, id, ideaText);
-      flowWorldRender(source, id, host, ideaText);
+      flowWorldRender(source, id, host, ideaText, onChange);
+      if (onChange) onChange();
     };
   });
   host.querySelectorAll('[data-action="flowworld-pick"]').forEach(b => {
@@ -4786,7 +4855,8 @@ function flowWorldRender(source, id, host, ideaText) {
       const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
       const facts = qInspireReviewFacts(e.report?.review);
       applyInspireToggle(e.sel, key, facts);
-      flowWorldRender(source, id, host, ideaText);
+      flowWorldRender(source, id, host, ideaText, onChange);
+      if (onChange) onChange();
     };
   });
 }
@@ -5802,7 +5872,7 @@ function renderNotbuilt() {
             <div class="nb-name">${qEsc(c.name)} <span class="nb-terr">${terr ? terr.label : c.territory}</span></div>
             ${p.reason ? `<div class="nb-what" style="margin:2px 0;">${qEsc(p.reason)}</div>` : ''}
           </div>
-          <button class="nb-build" data-nbbuild="${p.id}">⚡ Build</button>
+          <button class="nb-build" data-nbbuild="${p.id}">⚡ Build${flowWorldPickSuffix('component', p.id)}</button>
         </div>`;
       }).join('')}
     </div>`;
@@ -5832,8 +5902,8 @@ function renderNotbuilt() {
       ${linked.length ? `<div class="nb-status-line">${linked.map(p => `<a href="#" class="core-handoff-link" data-jump="${p.id}">${p.status === 'running' ? 'Running now' : p.status === 'queued' ? 'Queued' : p.status === 'paused' ? 'Set aside' : p.status === 'done' ? 'Done' : p.status}</a>`).join(' · ')} — open in the Flow</div>` : ''}
       <div class="nb-actions">
         ${state === 'buildable'
-          ? `<button class="nb-build" data-nbbuild="${c.id}">⚡ Build — all prerequisites met</button>`
-          : `<button data-nbbuild="${c.id}" title="Queues it anyway — it waits until its prerequisites are done">Queue anyway</button>`}
+          ? `<button class="nb-build" data-nbbuild="${c.id}">⚡ Build — all prerequisites met${flowWorldPickSuffix('component', c.id)}</button>`
+          : `<button data-nbbuild="${c.id}" title="Queues it anyway — it waits until its prerequisites are done">Queue anyway${flowWorldPickSuffix('component', c.id)}</button>`}
         <button data-nbworld="${c.id}" title="Real projects, hidden products, bold ideas — right here, without queueing">${worldLabel}</button>
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
       </div>
@@ -5853,7 +5923,10 @@ function renderNotbuilt() {
       const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
       queuePromptDirect(title, prompt, c.id, null, inspiration).then(p => {
         if (p) { qLoad(); renderNotbuilt(); }
-        else { b.disabled = false; b.textContent = '⚡ Build — all prerequisites met'; }
+        else {
+          b.disabled = false;
+          b.textContent = (archNodeState(c) === 'buildable' ? '⚡ Build — all prerequisites met' : 'Queue anyway') + flowWorldPickSuffix('component', c.id);
+        }
       });
     };
   });
@@ -5975,7 +6048,7 @@ const TERRITORIES = [
   { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
   { id:'interface', label:'Interface', sub:'Layout & spacing, Typography & color, Interaction patterns, Per-view polish.' },
 ];
-let archLayout = 'map', archLayer = 'territory', archSelected = null;
+let archLayout = 'map', archLayer = 'status', archSelected = null;
 const archViewport = { x: 0, y: 0, k: 1 };
 let archEdgesOn = true, archHover = null;
 let archTrail = null; // ids highlighted by the last "ask about this architecture" answer
@@ -6288,6 +6361,7 @@ function buildMapHtml() {
         html += `<div class="arch-node${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
           <div class="an-name">${spec?'✦ ':''}${c.name}</div>
           <span class="an-badge" style="background:${b.color}">${b.text}</span>
+          ${c.what ? `<div class="an-what">${qEsc(c.what)}</div>` : ''}
         </div>`;
       });
     }
@@ -6713,7 +6787,6 @@ function renderArchDetail(id) {
   let html = `<h2>Component</h2>
     <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
     <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>`;
-  html += verified ? `<div class="arch-verified">Last verified ${verified} (live)</div>` : `<div class="arch-verified">Not yet live-verified — static description</div>`;
   html += `<div class="arch-field"><div class="arch-field-label">What</div><div class="arch-field-body">${c.what}</div></div>
     <div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${c.why}</div></div>
     <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
@@ -6728,24 +6801,6 @@ function renderArchDetail(id) {
     html += `<div class="arch-field"><div class="arch-field-label">Evolution path</div><div class="arch-versionladder">`;
     c.versions.forEach(([tag,desc]) => { html += `<div class="arch-vstep"><span class="vtag">${tag}</span>${desc}</div>`; });
     html += `</div></div>`;
-  }
-
-  // Stored nodes can be re-placed in the tree (territory + what they depend on).
-  // Trunk nodes are hardcoded in the app file, so they stay as authored.
-  if (c._stored) {
-    const deps = archPrereqs(c).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    const cands = ARCH_DATA.filter(x => x.id !== c.id).slice().sort((a,b)=>a.name.localeCompare(b.name))
-      .map(x => `<option value="${x.id}" ${(c.depends||[]).includes(x.id)?'selected':''}>${x.name}</option>`).join('');
-    html += `<div class="arch-field"><div class="arch-field-label">Placement</div>
-      <div class="arch-place-static" id="archPlaceStatic">${terr ? terr.label : c.territory} · ${deps ? 'depends: ' + archPrereqs(c).map(p=>p.name).join(', ') : 'root'}</div>
-      <button class="arch-linkbtn" id="archPlaceToggle">✎ Edit placement</button>
-      <div id="archPlaceEdit" style="display:none;">
-        <select id="archPlaceTerr">${TERRITORIES.map(t => `<option value="${t.id}" ${t.id===c.territory?'selected':''}>${t.label}</option>`).join('')}</select>
-        <div class="arch-placehint">Depends on (ctrl/cmd-click for several — empty keeps it a root)</div>
-        <select id="archPlaceDeps" multiple size="5">${cands}</select>
-        <div class="arch-actionrow"><button id="archPlaceSave">Accept</button><button id="archPlaceCancel">Cancel</button></div>
-        <div class="arch-qf-status" id="archPlaceStatus"></div>
-      </div></div>`;
   }
 
   // Suggested next steps — Claude-generated, ready-to-queue prompts. Regeneration is
@@ -6764,6 +6819,27 @@ function renderArchDetail(id) {
   html += `<div class="arch-field"><div class="arch-field-label">Suggested next steps</div><div id="archSuggestHost"></div></div>`;
 
   html += `<div class="arch-field"><div class="arch-field-label">Build history</div><div id="archHistoryHost"><div class="empty">Loading…</div></div></div>`;
+
+  // Advanced — bookkeeping fields (data freshness, and for backend-stored
+  // nodes only, the raw territory/dependency editor) that a quick "what is
+  // this" glance doesn't need. Collapsed by default.
+  let advancedHtml = verified ? `<div class="arch-verified">Last verified ${verified} (live)</div>` : `<div class="arch-verified">Not yet live-verified — static description</div>`;
+  if (c._stored) {
+    const deps = archPrereqs(c).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const cands = ARCH_DATA.filter(x => x.id !== c.id).slice().sort((a,b)=>a.name.localeCompare(b.name))
+      .map(x => `<option value="${x.id}" ${(c.depends||[]).includes(x.id)?'selected':''}>${x.name}</option>`).join('');
+    advancedHtml += `<div class="arch-field"><div class="arch-field-label">Placement</div>
+      <div class="arch-place-static" id="archPlaceStatic">${terr ? terr.label : c.territory} · ${deps ? 'depends: ' + archPrereqs(c).map(p=>p.name).join(', ') : 'root'}</div>
+      <button class="arch-linkbtn" id="archPlaceToggle">✎ Edit placement</button>
+      <div id="archPlaceEdit" style="display:none;">
+        <select id="archPlaceTerr">${TERRITORIES.map(t => `<option value="${t.id}" ${t.id===c.territory?'selected':''}>${t.label}</option>`).join('')}</select>
+        <div class="arch-placehint">Depends on (ctrl/cmd-click for several — empty keeps it a root)</div>
+        <select id="archPlaceDeps" multiple size="5">${cands}</select>
+        <div class="arch-actionrow"><button id="archPlaceSave">Accept</button><button id="archPlaceCancel">Cancel</button></div>
+        <div class="arch-qf-status" id="archPlaceStatus"></div>
+      </div></div>`;
+  }
+  html += `<details class="arch-advanced"><summary>Advanced</summary>${advancedHtml}</details>`;
 
   // Tech-tree affordances: one-click dispatch when the prereqs are met, and an
   // explanation of *why* not when they aren't.
