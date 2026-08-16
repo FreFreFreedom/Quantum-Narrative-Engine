@@ -1395,3 +1395,90 @@ None.
 - Routine decisions: the two file copies must stay in sync by hand (noted here); the
   remaining 'off' state now means "never searched" and the gate holds it until searched
   or skipped.
+
+---
+
+## Data persistence after deploy (Antoine request: "data keeps disappearing")
+
+**Problem:** Every time the app is deployed to Railway, the saved database file
+(`./data/queue.db`, which lives on the server's temporary hard drive) is deleted
+and recreated empty. So everything stored in the app — prompts, world-look
+reports, suggestions, seeds — vanishes after each deploy.
+
+**Why:** This project on Railway has no permanent/attached storage (there is no
+"Volumes" / "Storage" section in Settings), and the app currently saves only to
+that one file on the server's own disk.
+
+**Note on the earlier volume mention:** previous sessions recorded the data living
+"on the persistent Railway volume" — but that volume is no longer present/exposed
+in this project's Settings, so the file now falls back to the temporary disk and
+gets wiped on each deploy.
+
+**Options (this is a design choice, so I'm pausing for Antoine to pick — I won't
+change the code until then):**
+
+1. **Add permanent storage on Railway (cheapest if available).** If a volume can
+   be attached to this project (a paid add-on, or a free tier that still includes
+   one), set `DB_PATH=<volume path>/queue.db` or `RAILWAY_VOLUME_MOUNT_PATH=<mount>`
+   and nothing in the app needs to change — the existing code already follows those
+   settings and would log `dbOnVolume: true` in the start-up logs.
+   Important: I cannot attach the volume from here; that is a click inside your
+   Railway dashboard. I can only confirm it's working afterward (check the log line).
+2. **Switch the app to a free external database (stays free, but is a code rewrite).**
+   The app currently only speaks SQLite. Pointing it at a free hosted Postgres
+   (e.g. Neon free tier, or Supabase free Postgres, or Railway's own Postgres plugin
+   free tier) would make the data survive every deploy with no project storage
+   needed. Trade-off: real rewrite of the storage layer (all queries + connection
+   handling), so it takes longer and needs the chosen provider's connection string.
+
+**Recommended (Antoine's call):** If you can attach a volume to this project, do
+option 1 — less work, less risk. If the free plan can't give you one, do option 2
+(external Postgres) so saved work never has to be redone after a deploy, and it
+stays free.
+
+**Status:** was `PENDING` (Antoine's choice between option 1 and option 2).
+
+## Resolution (verified 2026-08-15 by a browser check of Antoine's Railway project)
+
+**The persistence problem is already fixed on the live site — no action was needed.**
+
+Claude Code opened your Railway dashboard and confirmed, for the service
+"Quantum Narrative Engine" (root dir `/queue-server`):
+
+- A persistent volume **is already attached**, mounted at `/data`.
+- Railway already auto-set `RAILWAY_VOLUME_ID`, `RAILWAY_VOLUME_NAME`, and
+  `RAILWAY_VOLUME_MOUNT_PATH=/data`.
+- The latest successful deploy (2026-08-15) startup logs show:
+  `Storage paths: {"DB_PATH":"/data/queue.db","DATA_DIR":"/data","RAILWAY_VOLUME_MOUNT_PATH":"/data","dbOnVolume":true,"dataDirOnVolume":true}`
+
+So the file is `DB_PATH=/data/queue.db` on durable storage, and `dbOnVolume:true`
+confirms the app is using it. Deploys after this point should NOT wipe saved data
+(prompts, suggestions, seeds, reports, chat).
+
+**Correction to the "Why" above:** the earlier note assumed the volume was no
+longer present because it wasn't visible in the Settings tabs Antoine listed
+(Source / Networking / … / Danger). The volume lives under a different menu
+("Settings → Storage / Volumes" was not enumerated there) and is in fact
+attached — my "no volume" assumption was wrong; Claude Code's check corrects it.
+
+**Net decision: DECIDED — no code change and no config change required for
+persistence.** The external-database rewrite (option 2) is now unnecessary.
+
+**What it blocks:** nothing. The data-loss-on-deploy symptom is resolved by the
+existing volume.
+
+**Caveat left for Antoine:** because the volume was already working, data created
+*before* it was attached cannot be recovered (it sat on the temporary disk). Only
+data created after the volume is active persists. If Antoine is STILL seeing data
+vanish after the 2026-08-15 deploy, the cause is something other than disk wiping
+(e.g. a code path that deletes rows) and needs separate investigation
+(`bootstrapData.js` / seedKnowledge wipe check) — not a persistence/storage fix.
+
+---
+
+## Pending decisions (this session)
+
+1. **Data persistence approach — see section above.** DECIDED: no action needed
+   (volume already attached, `dbOnVolume:true` on the live 2026-08-15 deploy).
+   If Antoine is still seeing post-deploy data loss, open a separate item to
+   audit row-deleting code paths. Status: `DECIDED`. Blocks: nothing.
