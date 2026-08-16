@@ -1119,15 +1119,25 @@ async function apiWrite(path, method, body) {
   return data;
 }
 
+// Shared by the main login form and the chat widget's own login box — both POST
+// the same password to the same endpoint; only what happens after a successful
+// login differs (boot() the whole app here, vs opening the chat panel there).
+// Reachable from the auxiliary IIFEs the same way qEsc/API_BASE are.
+async function fmcnsLogin(password) {
+  const resp = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password}) });
+  if (!resp.ok) return { ok: false };
+  const data = await resp.json();
+  return { ok: true, token: data.token };
+}
+
 document.getElementById('loginBtn').onclick = async function() {
   const pw = document.getElementById('loginPw').value;
   const err = document.getElementById('loginErr');
   err.textContent = '';
   try {
-    const resp = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: pw}) });
-    if (!resp.ok) { err.textContent = 'Wrong password.'; return; }
-    const data = await resp.json();
-    TOKEN = data.token;
+    const result = await fmcnsLogin(pw);
+    if (!result.ok) { err.textContent = 'Wrong password.'; return; }
+    TOKEN = result.token;
     localStorage.setItem('fmcns_chat_token', TOKEN);
     await boot();
   } catch (e) { err.textContent = 'Could not reach the server.'; }
@@ -6940,11 +6950,10 @@ function openChatWithPrompt(text) {
 <script>
 (function() {
   // Same shared server choice as the main app: the chat panel must follow the
-  // "Server: local / production" toggle (stored in the same localStorage key).
-  var FMCNS_CHAT_SERVER = localStorage.getItem('fmcns_api_base')
-    || ((location.hostname === 'localhost' || location.protocol === 'file:')
-        ? 'http://localhost:3000'
-        : 'https://quantum-narrative-engine-production.up.railway.app');
+  // "Server: local / production" toggle. Reuses the main script's own API_BASE
+  // (a top-level const declared earlier in the file, reachable here the same
+  // way qEsc is) instead of recomputing the same expression a second time.
+  var FMCNS_CHAT_SERVER = API_BASE;
   var btn = document.getElementById('fmcns-chat-btn');
   var panel = document.getElementById('fmcns-chat-panel');
   var closeBtn = document.getElementById('fmcns-chat-close');
@@ -7067,13 +7076,9 @@ function openChatWithPrompt(text) {
   pwSubmit.onclick = async function() {
     pwError.textContent = '';
     try {
-      var resp = await fetch(FMCNS_CHAT_SERVER + '/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pwInput.value }),
-      });
-      if (!resp.ok) { pwError.textContent = 'Wrong password.'; return; }
-      var data = await resp.json();
-      setToken(data.token);
+      var result = await fmcnsLogin(pwInput.value);
+      if (!result.ok) { pwError.textContent = 'Wrong password.'; return; }
+      setToken(result.token);
       showChat();
       await ensureSession();
       await loadHistory();
