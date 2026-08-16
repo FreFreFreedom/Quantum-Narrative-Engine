@@ -1635,7 +1635,7 @@ function echoListHtml(echoes) {
   if (!echoes.length) return '<div class="empty">No echoes found anywhere in the corpus.</div>';
   return echoes.map(r => `<div class="echo-line" data-goto="${r.o.id}">
       <span class="echo-kind ${r.kind}">${r.kind==='diag'?'author':r.kind==='ent'?'pattern':'scale echo'}</span>
-      <span><b>${r.o.name}</b> <span style="opacity:.55;">(${r.o.type})</span><br><span class="echo-why">${r.why}</span></span>
+      <span><b>${qEsc(r.o.name)}</b> <span style="opacity:.55;">(${r.o.type})</span><br><span class="echo-why">${qEsc(r.why)}</span></span>
     </div>`).join('');
 }
 
@@ -2029,7 +2029,7 @@ function filmHeaderHtml(e) {
     (enr.genres || []).slice(0, 4).forEach(g => chips.push(`<span class="tmdb-chip ${filtered ? (sm.genres.has(normPerson(g)) ? 'tmdb-hit' : 'tmdb-dim') : ''}">${g}</span>`));
   }
   const origTitle = matched && enr.title && enr.title.toLowerCase() !== e.name.toLowerCase()
-    ? `<div class="tmdb-origtitle">${enr.title}${enr.title_en ? ` <span class="tmdb-alt">(${enr.title_en})</span>` : ''}</div>` : '';
+    ? `<div class="tmdb-origtitle">${qEsc(enr.title)}${enr.title_en ? ` <span class="tmdb-alt">(${qEsc(enr.title_en)})</span>` : ''}</div>` : '';
   return `<div class="card film-card" style="background:linear-gradient(160deg, ${color}, var(--c-ink));">
       <span class="type-badge">${e.type}</span>
       ${poster ? `<img class="fposter" src="${poster}" alt="" loading="lazy">` : ''}
@@ -2475,9 +2475,9 @@ async function loadBooksFor(entityId) {
       // the click handler below can look a book back up by index without re-fetching.
       currentBooks = data.books;
       host.innerHTML = data.books.map((b, i) => {
-        const titleHtml = b.link ? `<a href="${b.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${b.title}</a>` : b.title;
+        const titleHtml = b.link ? `<a href="${b.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${qEsc(b.title)}</a>` : qEsc(b.title);
         const cover = b.cover ? `<img class="bcover" src="${b.cover}" alt="" loading="lazy">` : `<div class="bcover-ph">📖</div>`;
-        return `<div class="book" data-book-idx="${i}"><div class="bwrap">${cover}<div><span class="btitle">${titleHtml}</span><span class="bkind">${b.kind}</span><div class="bauthor">${b.author}${b.year ? ` <span class="byear">(${b.year})</span>` : ''}</div><div class="bwhy">${b.why}</div></div></div><div class="bdetail" id="bdetail-${i}"></div></div>`;
+        return `<div class="book" data-book-idx="${i}"><div class="bwrap">${cover}<div><span class="btitle">${titleHtml}</span><span class="bkind">${qEsc(b.kind)}</span><div class="bauthor">${qEsc(b.author)}${b.year ? ` <span class="byear">(${b.year})</span>` : ''}</div><div class="bwhy">${qEsc(b.why)}</div></div></div><div class="bdetail" id="bdetail-${i}"></div></div>`;
       }).join('');
       host.querySelectorAll('.book').forEach(el => {
         el.onclick = () => toggleBookDetail(entityId, parseInt(el.getAttribute('data-book-idx'), 10));
@@ -4222,7 +4222,7 @@ function qRenderDetail(p) {
 
   const threadHost = document.getElementById('qThread');
   threadHost.innerHTML = messages.length
-    ? messages.map(m => `<div class="q-thread-msg ${m.role}"><div class="q-thread-role">${m.role}</div>${m.text}</div>`).join('')
+    ? messages.map(m => `<div class="q-thread-msg ${m.role}"><div class="q-thread-role">${m.role}</div>${qEsc(m.text)}</div>`).join('')
     : '<div class="empty">No exchanges yet.</div>';
 
   if (p.pending_question) {
@@ -4905,9 +4905,9 @@ function renderDiscoverResults(queryId) {
   if (!results.length) { host.innerHTML = '<div class="tv-empty">No results.</div>'; return; }
   host.innerHTML = results.map(r => `
     <div class="bk-result-row" data-repo="${r.repo_full_name}">
-      <a href="${r.html_url}" target="_blank" rel="noopener">${r.repo_full_name}</a>
+      <a href="${r.html_url}" target="_blank" rel="noopener">${qEsc(r.repo_full_name)}</a>
       <span class="bk-stars">★ ${r.stars}</span>
-      <span class="bk-desc">${r.description || ''}</span>
+      <span class="bk-desc">${qEsc(r.description || '')}</span>
       <button data-fb="useful">Useful</button>
       <button data-fb="not_useful">Not useful</button>
     </div>
@@ -5020,12 +5020,12 @@ function bkPickCard(pick, partIdx, pickIdx, recommended) {
   return `
     <div class="sg-card" data-partidx="${partIdx}" data-pickidx="${pickIdx}">
       <div class="sg-card-top">
-        <span class="sg-card-title">${pick.kind === 'proven' ? (pick.repo || 'Repo') : (pick.tree_target?.name || 'Proposal')}</span>
+        <span class="sg-card-title">${qEsc(pick.kind === 'proven' ? (pick.repo || 'Repo') : (pick.tree_target?.name || 'Proposal'))}</span>
         ${recommended ? `<span class="bk-stars" title="AI-recommended pick for this part">★ AI pick</span>` : ''}
         ${pick.kind === 'proven' && pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
       </div>
-      ${pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${pick.why_fits}</div>` : ''}
-      ${pick.use ? `<div class="sg-rationale"><b>How FMCNS would use it:</b> ${pick.use}</div>` : ''}
+      ${pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${qEsc(pick.why_fits)}</div>` : ''}
+      ${pick.use ? `<div class="sg-rationale"><b>How FMCNS would use it:</b> ${qEsc(pick.use)}</div>` : ''}
       ${pick.kind === 'proven' && pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${pick.repo}" target="_blank" rel="noopener">github.com/${pick.repo}</a></div>` : ''}
       <div class="sg-actions">
         <button data-action="plant">🌱 Plant in tree</button>
@@ -5039,8 +5039,8 @@ function bkPartSection(part, partIdx, report) {
   const proven = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'proven');
   const imagined = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'imagined');
   const header = report.parts.length > 1
-    ? `<div class="tv-toolbar-top" style="margin-top:16px;"><span class="arch-title" style="font-size:13px;">${partIdx + 1}. ${part.name}</span></div>
-       <div class="id-form-hint" style="margin-bottom:6px;">${part.description}</div>`
+    ? `<div class="tv-toolbar-top" style="margin-top:16px;"><span class="arch-title" style="font-size:13px;">${partIdx + 1}. ${qEsc(part.name)}</span></div>
+       <div class="id-form-hint" style="margin-bottom:6px;">${qEsc(part.description)}</div>`
     : '';
   return `
     ${header}
