@@ -7354,15 +7354,26 @@ function qpStopPicking() {
   qpPickActive = false;
   document.removeEventListener('mouseover', qpHover, true);
   document.removeEventListener('click', qpClick, true);
+  document.removeEventListener('keydown', qpEscListener, true);
   if (qpPickBanner) { qpPickBanner.remove(); qpPickBanner = null; }
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
+  // The panel and its veil were hidden for the duration of the pick (see qpTogglePicking)
+  // so the whole page underneath was actually clickable — bring them back now.
+  if (queuePanelOpen) {
+    document.getElementById('queuePanelVeil').hidden = false;
+    document.getElementById('queuePanel').hidden = false;
+  }
   renderQueuePanel();
 }
 function qpTogglePicking() {
   if (qpPickActive) { qpStopPicking(); return; }
   qpPickActive = true;
   qpPicked = null;
-  renderQueuePanel();
+  // Hide the panel AND its full-viewport veil while picking — otherwise the veil (it sits
+  // on top of the whole page, not just the panel's own width) swallows every hover/click
+  // before it reaches the real element underneath, which is why pointing used to fail.
+  document.getElementById('queuePanelVeil').hidden = true;
+  document.getElementById('queuePanel').hidden = true;
   qpPickBanner = document.createElement('div');
   qpPickBanner.className = 'fw-pick-banner';
   qpPickBanner.innerHTML = '<span>🎯 Point at an element — click it to capture</span><button id="qpPickSkip">Skip</button>';
@@ -7370,7 +7381,9 @@ function qpTogglePicking() {
   qpPickBanner.querySelector('#qpPickSkip').onclick = qpStopPicking;
   document.addEventListener('mouseover', qpHover, true);
   document.addEventListener('click', qpClick, true);
+  document.addEventListener('keydown', qpEscListener, true);
 }
+function qpEscListener(e) { if (qpPickActive && e.key === 'Escape') { e.stopPropagation(); qpStopPicking(); } }
 
 function openQueuePanel() {
   queuePanelOpen = true;
