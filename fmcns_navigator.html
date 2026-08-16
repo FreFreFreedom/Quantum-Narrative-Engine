@@ -2258,7 +2258,7 @@ async function selectEntity(id){
     } else if (e.type === 'film' && e.clusters && e.clusters.length) {
       // Films carry no archetype tags — their thematic clusters are the lenses
       // (cluster codes work as lens keys; the backend phrases the read accordingly).
-      html += `<div class="tagrow"><span class="tagrow-label">Themes</span>${e.clusters.map(c => `<span class="tag cluster-lens" data-cluster="${c}" title="${escapeHtml(CLUSTERS[c] ? CLUSTERS[c].name : c)}">${escapeHtml(clusterLensLabel(c))}</span>`).join('')}</div>`;
+      html += `<div class="tagrow"><span class="tagrow-label">Themes</span>${e.clusters.map(c => `<span class="tag cluster-lens" data-cluster="${c}" title="${qEsc(CLUSTERS[c] ? CLUSTERS[c].name : c)}">${qEsc(clusterLensLabel(c))}</span>`).join('')}</div>`;
       html += `<div id="lensHost"></div>`;
     }
     if (e.type === 'film') {
@@ -2384,11 +2384,6 @@ async function selectEdgeConnection(e) {
 // through that tag, rather than showing the same general description every time.
 // Films carry no tags — their thematic cluster chips (data-cluster) are the lenses;
 // `label` is the human-friendly name shown in the lens header.
-// NOTE: escapeHtml lives in the Idea Studio closure at the bottom of this file and is
-// NOT visible here — this top-level copy is what the navigator's own templates use.
-function escapeHtml(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
 function clusterLensLabel(code) {
   return CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
 }
@@ -7278,7 +7273,6 @@ function openChatWithPrompt(text) {
   };
 
   // ── Queue tab ─────────────────────────────────────────────────────────────
-  function escFw(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
   function fwElapsed(iso) {
     var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
     var m = Math.floor(s / 60), r = s % 60;
@@ -7306,19 +7300,19 @@ function openChatWithPrompt(text) {
     html += '<div class="fw-q-sec">❓ Questions (' + asking.length + ')</div>';
     html += asking.map(function(p) {
       var q = p.pending_question;
-      return '<div class="fw-q-card" data-qid="' + escFw(p.id) + '">' +
-        '<div class="fw-q-title">' + escFw(p.title) + '</div>' +
-        '<div class="fw-q-q">🙋 ' + escFw(q.question) + '</div>' +
-        '<div class="fw-q-opts">' + (q.options || []).map(function(o) { return '<button data-opt="' + escFw(o) + '">' + escFw(o) + '</button>'; }).join('') + '</div>' +
+      return '<div class="fw-q-card" data-qid="' + qEsc(p.id) + '">' +
+        '<div class="fw-q-title">' + qEsc(p.title) + '</div>' +
+        '<div class="fw-q-q">🙋 ' + qEsc(q.question) + '</div>' +
+        '<div class="fw-q-opts">' + (q.options || []).map(function(o) { return '<button data-opt="' + qEsc(o) + '">' + qEsc(o) + '</button>'; }).join('') + '</div>' +
         '<div class="fw-q-reply"><input placeholder="Or type your own reply…"><button>Send</button></div>' +
       '</div>';
     }).join('') || '<div class="fw-q-sec" style="margin-top:0;">No questions waiting.</div>';
     html += '<div class="fw-q-sec">▶ Running (' + running.length + ')</div>';
-    html += running.map(function(p) { return '<div class="fw-q-row"><span class="fw-q-num">▶</span><span class="fw-q-title">' + escFw(p.title) + '</span><span class="fw-q-meta">' + (p.started_at ? fwElapsed(p.started_at) : '') + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing running.</div>';
+    html += running.map(function(p) { return '<div class="fw-q-row"><span class="fw-q-num">▶</span><span class="fw-q-title">' + qEsc(p.title) + '</span><span class="fw-q-meta">' + (p.started_at ? fwElapsed(p.started_at) : '') + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing running.</div>';
     html += '<div class="fw-q-sec">⏳ Queued (' + queued.length + ')</div>';
-    html += queued.map(function(p, i) { return '<div class="fw-q-row"><span class="fw-q-num">' + (i + 1) + '.</span><span class="fw-q-title">' + escFw(p.title) + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Queue is empty.</div>';
+    html += queued.map(function(p, i) { return '<div class="fw-q-row"><span class="fw-q-num">' + (i + 1) + '.</span><span class="fw-q-title">' + qEsc(p.title) + '</span></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Queue is empty.</div>';
     html += '<div class="fw-q-sec">⚠ Blocked (' + blocked.length + ')</div>';
-    html += blocked.map(function(p) { return '<div class="fw-q-row" data-bid="' + escFw(p.id) + '"><span class="fw-q-num">⚠</span><span class="fw-q-title">' + escFw(p.title) + '</span><button data-action="rerun" title="Put it back in the queue">Run again</button></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing blocked.</div>';
+    html += blocked.map(function(p) { return '<div class="fw-q-row" data-bid="' + qEsc(p.id) + '"><span class="fw-q-num">⚠</span><span class="fw-q-title">' + qEsc(p.title) + '</span><button data-action="rerun" title="Put it back in the queue">Run again</button></div>'; }).join('') || '<div class="fw-q-sec" style="margin-top:0;">Nothing blocked.</div>';
     if (paused.length) html += '<div class="fw-q-sec">⏸ Parked: ' + paused.length + '</div>';
     if (done.length) html += '<div class="fw-q-sec">✓ Done: ' + done.length + '</div>';
     list.innerHTML = html;
@@ -7465,15 +7459,8 @@ function openChatWithPrompt(text) {
   // model cost. Everything here is global-window glue over /api/convos.
   var S = { convoId:null, type:null, subjectId:null, title:'Idea studio', msgs:[], busy:false, promptId:null, onDone:null };
 
-  function escapeHtml(s){
-    return String(s==null?'':s).replace(/[&<>"']/g, function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-  }
-  window.escapeHtmlSt = escapeHtml; // harmless alias for other scripts
-
   function fmtBody(text){
-    var t = escapeHtml(text);
+    var t = qEsc(text);
     t = t.replace(/`([^`\n]*)`/g, '<code style="font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--c-border);padding:0 3px;border-radius:3px;">$1</code>');
     t = t.replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noreferrer" style="color:var(--c-brand);">$2</a>');
     return t;
@@ -7586,21 +7573,21 @@ function openChatWithPrompt(text) {
         studioEl('studioTitle').textContent = S.title;
         renderLog();
       })
-      .catch(function(e){ log.innerHTML = '<div class="studio-status err">Could not open this conversation: ' + escapeHtml(e.message||e) + '</div>'; });
+      .catch(function(e){ log.innerHTML = '<div class="studio-status err">Could not open this conversation: ' + qEsc(e.message||e) + '</div>'; });
   }
 
   function renderLog(){
     var log = studioEl('studioLog');
     var html = '';
     if(S.promptId){
-      html += '<div class="studio-msg pin"><div class="studio-bubble"><b>✓ Handed off to the Dispatch Queue</b> (set aside) — <a href="#" class="core-handoff-link" data-studio-jump="' + escapeHtml(S.promptId) + '" style="color:var(--c-brand);">view task</a></div></div>';
+      html += '<div class="studio-msg pin"><div class="studio-bubble"><b>✓ Handed off to the Dispatch Queue</b> (set aside) — <a href="#" class="core-handoff-link" data-studio-jump="' + qEsc(S.promptId) + '" style="color:var(--c-brand);">view task</a></div></div>';
     }
     S.msgs.forEach(function(m){
       var kind = m.kind === 'plan' ? 'plan' : 'agent';
       html += '<div class="studio-msg ' + (m.role==='user'?'user':'agent') + (kind==='plan'?' plan':'') + '">'
            + '<div class="studio-meta">' + (m.role==='user'?'You':(kind==='plan'?'Plan':'Assistant')) + '</div>'
            + (kind==='plan'
-              ? '<div class="studio-bubble"><pre class="studio-plan-pre">' + escapeHtml(m.text) + '</pre></div>'
+              ? '<div class="studio-bubble"><pre class="studio-plan-pre">' + qEsc(m.text) + '</pre></div>'
               : '<div class="studio-bubble">' + fmtBody(m.text) + '</div>')
            + '</div>';
     });
@@ -7671,7 +7658,7 @@ function openChatWithPrompt(text) {
         renderLog();
       })
       .catch(function(e){
-        S.msgs.push({ role:'assistant', kind:'chat', text:'Could not reach the server: ' + escapeHtml(e.message||e) });
+        S.msgs.push({ role:'assistant', kind:'chat', text:'Could not reach the server: ' + qEsc(e.message||e) });
         renderLog();
       })
       .then(function(){ S.busy = false; sendBtn.disabled = false; sendBtn.textContent = 'Send'; renderStudioActions(); });
