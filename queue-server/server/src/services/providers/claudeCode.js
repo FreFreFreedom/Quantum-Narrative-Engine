@@ -12,6 +12,7 @@
 
 import { spawn } from 'node:child_process';
 import { registerTextCall, unregisterTextCall } from '../textCallRegistry.js';
+import { shq } from '../shellQuote.js';
 
 export const id = 'claude-code';
 export const label = 'Claude Code';
@@ -102,10 +103,10 @@ export function nextFallbackModel(task) {
 // Returns the `bash -c` body AFTER the pid-file write; taskRunner.js prepends the
 // shared `printf … > pidFile; ` prefix and wraps everything in setsid --fork.
 export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, model, effort = null, tools, resumeSessionId = null }) {
-  const modelFlags = (model ? ` --model "${model}"` : '') + (effort ? ` --effort "${effort}"` : '');
-  const resumeFlag = resumeSessionId ? ` --resume "${resumeSessionId}"` : '';
-  return `"${bin}" -p --output-format stream-json --verbose${modelFlags}${resumeFlag} ` +
-    `--allowedTools "${tools}" < "${promptPath}" > "${logPath}" 2>&1; echo $? > "${codePath}"`;
+  const modelFlags = (model ? ` --model ${shq(model)}` : '') + (effort ? ` --effort ${shq(effort)}` : '');
+  const resumeFlag = resumeSessionId ? ` --resume ${shq(resumeSessionId)}` : '';
+  return `${shq(bin)} -p --output-format stream-json --verbose${modelFlags}${resumeFlag} ` +
+    `--allowedTools ${shq(tools)} < ${shq(promptPath)} > ${shq(logPath)} 2>&1; echo $? > ${shq(codePath)}`;
 }
 
 // ─── Toolless call (model-policy judge, user-summary generation) ─────────────

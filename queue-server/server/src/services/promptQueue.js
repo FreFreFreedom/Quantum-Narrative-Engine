@@ -122,6 +122,7 @@ export async function createPrompt({
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
+  if (!isValidModelId(provider_model)) throw new Error('invalid provider_model');
   const useMode = mode === 'question' ? 'question' : 'implement';
   // Free-first platform policy (plan self-aware-platform.md): an unspecified or
   // unknown provider resolves to the OpenCode lane, never to the Claude
@@ -683,6 +684,17 @@ export async function backfillPlan(id) {
 // label from an earlier attempt — the queue overwrites it at the next dispatch.
 const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'run_model', 'agent_key', 'parent_prompt_id', 'strategy', 'summary'];
 
+// provider_model/run_model reach a shell command string (taskRunner.js's spawned
+// CLI invocation) — buildRunCommand shell-quotes every value it interpolates, so
+// this isn't the only thing standing between a bad value and command injection,
+// but rejecting anything outside a plain model-id shape here means a malformed
+// value never gets past the API in the first place. Real model ids look like
+// "sonnet", "opencode/deepseek-v4-flash-free", "google-ai-studio/gemini-2.0-flash".
+const MODEL_ID_RE = /^[a-zA-Z0-9_.\/:-]{1,200}$/;
+function isValidModelId(v) {
+  return v == null || v === '' || MODEL_ID_RE.test(String(v));
+}
+
 function isPending(row) {
   if (!row || row.status !== 'running' || !row.agent_task_id) return false;
   const task = findAgentTask(row.agent_task_id);
@@ -777,6 +789,7 @@ export function updatePrompt(id, patch) {
     if (k === 'status' && !['queued', 'paused', 'cancelled'].includes(v)) continue;
     if (k === 'status' && row.status === 'running') continue;
     if (k === 'provider' && !['claude-code', 'opencode', 'ai-router'].includes(v)) continue;
+    if ((k === 'provider_model' || k === 'run_model') && !isValidModelId(v)) continue;
     if (k === 'title') {
       const given = String(v ?? '').trim();
       sets.push('title=?', 'title_auto=?');

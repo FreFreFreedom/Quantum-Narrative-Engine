@@ -41,6 +41,7 @@ import { generateText as generateAiText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { recordExhaustion, isExhausted } from './ai/router.js';
 import { getClaudeUsage } from './claudeUsage.js';
+import { shq } from './shellQuote.js';
 
 // Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
 // before process.cwd(), so agent-tasks.json etc. land on durable storage even if DATA_DIR
@@ -119,8 +120,6 @@ const DEFAULT_QUESTION_PROMPT = [
 function renderTemplate(tpl, vars) {
   return String(tpl).replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vars ? String(vars[k] ?? '') : m));
 }
-
-const AGENT_INTERNAL_SECRET = process.env.AGENT_INTERNAL_SECRET || '';
 
 const SETTINGS_FILE = resolve(DATA_DIR, 'agent-settings.json');
 // Legacy task file — imported into SQLite once on first boot after the migration,
@@ -915,7 +914,7 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
   // itself on POSIX, and the spawned bash *is* the process-group leader, so the
   // existing `process.kill(-pid, 'SIGKILL')` group-kill in stopTask and the timeout
   // path behaves identically on both platforms.
-  const cmd = `printf '%s\\n%s\\n' "$$" "${taskId}" > "${pidFile}"; ` + body;
+  const cmd = `printf '%s\\n%s\\n' "$$" ${shq(taskId)} > ${shq(pidFile)}; ` + body;
 
   const base = {
     cwd: execCwd,
@@ -1064,7 +1063,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   const roleBrief = roleBriefFor(agent);
   const tpl = getSettings()[isQuestion ? 'questionPrompt' : 'executionPrompt'];
   let prompt = renderTemplate(tpl, {
-    general: getSettings().generalPrompt, brief, roleBrief, internalSecret: AGENT_INTERNAL_SECRET,
+    general: getSettings().generalPrompt, brief, roleBrief,
   });
   // Hot-overridable templates (agent-settings.json) may predate {{roleBrief}} —
   // append it rather than silently dropping the role brief for custom templates.

@@ -24,6 +24,7 @@ import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { registerTextCall, unregisterTextCall } from '../textCallRegistry.js';
+import { shq } from '../shellQuote.js';
 
 export const id = 'opencode';
 export const label = 'OpenCode';
@@ -132,13 +133,13 @@ export function ensureQuestionAgent({ cwd }) {
 // run` consumes stdin when no message arg is given), so the same prompt-file
 // plumbing as the Claude provider applies, with no argv length limits.
 export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, model, sessionId = null, question = false }) {
-  const sessionFlag = sessionId ? ` --session "${sessionId}"` : '';
+  const sessionFlag = sessionId ? ` --session ${shq(sessionId)}` : '';
   const agentFlag = question ? ' --agent fmcns-question' : '';
   // --auto: approve permissions that are not explicitly denied. For implement
   // tasks that is the point; for question tasks the fmcns-question agent denies
   // everything beyond read/glob/grep, so --auto only releases those.
-  return `"${bin}" run --format json --model "${model}" --title "fmcns-${taskId}"${sessionFlag}${agentFlag} --auto` +
-    ` < "${promptPath}" > "${logPath}" 2>&1; echo $? > "${codePath}"`;
+  return `${shq(bin)} run --format json --model ${shq(model)} --title ${shq(`fmcns-${taskId}`)}${sessionFlag}${agentFlag} --auto` +
+    ` < ${shq(promptPath)} > ${shq(logPath)} 2>&1; echo $? > ${shq(codePath)}`;
 }
 
 // ─── Toolless call (ai/text.js free-fallback path) ────────────────────────────
