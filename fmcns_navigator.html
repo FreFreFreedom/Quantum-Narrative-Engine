@@ -2364,7 +2364,7 @@ async function selectEdgeConnection(e) {
 
   const explainHost = document.getElementById('edgeExplainHost');
   if (e.type === 'diag') {
-    explainHost.innerHTML = `Every entity here shares the same director/writer (<b>${e.auteur || 'unknown'}</b>) — an authorial fingerprint running across otherwise unrelated stories.`;
+    explainHost.innerHTML = `Every entity here shares the same director/writer (<b>${qEsc(e.auteur || 'unknown')}</b>) — an authorial fingerprint running across otherwise unrelated stories.`;
     return;
   }
   if (e.type === 'bridge') {
@@ -2383,7 +2383,7 @@ async function selectEdgeConnection(e) {
     });
     const data = await resp.json();
     if (focusedEdge !== e) return; // user moved on before this resolved
-    explainHost.innerHTML = data.error ? `Could not generate an explanation: ${data.error}` : data.explanation;
+    explainHost.innerHTML = data.error ? `Could not generate an explanation: ${qEsc(data.error)}` : qEsc(data.explanation);
   } catch (err) {
     if (focusedEdge !== e) return;
     explainHost.innerHTML = 'Could not reach the server.';
@@ -2420,7 +2420,7 @@ async function toggleTagLens(entity, tag, tagEl, label) {
   activeLensFailed = false;
   allTagEls.forEach(t => t.classList.toggle('active', (t.getAttribute('data-tag') || t.getAttribute('data-cluster')) === tag));
   refreshTmdbBlock(); // fact sheet stays fully visible until the lens's salient facts arrive
-  lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div><div class="empty" style="margin:0;">Loading…</div></div>`;
+  lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div><div class="empty" style="margin:0;">Loading…</div></div>`;
   // The model call can be slow or hang entirely (CLI backends have no timeout of
   // their own). Cap the wait so the panel never sits on "Loading…" forever.
   const ctrl = new AbortController();
@@ -2435,12 +2435,12 @@ async function toggleTagLens(entity, tag, tagEl, label) {
     if (activeLensTag !== tag) return; // user switched tags before this resolved
     if (data.error) {
       activeLensFailed = true;
-      lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div><div class="empty" style="margin:0;">Could not generate: ${data.error}</div></div>`;
+      lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div><div class="empty" style="margin:0;">Could not generate: ${qEsc(data.error)}</div></div>`;
       refreshTmdbBlock();
       return;
     }
     activeLensSalient = data.salient || null;
-    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div>${data.lens}</div>`;
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div>${qEsc(data.lens)}</div>`;
     refreshTmdbBlock(); // now that the lens's salient facts are known, filter the fact sheet
   } catch (err) {
     clearTimeout(timer);
@@ -2449,7 +2449,7 @@ async function toggleTagLens(entity, tag, tagEl, label) {
     const msg = (err && err.name === 'AbortError')
       ? 'The read is taking too long — the model may be busy. The verified facts stay visible above; try the lens again in a moment.'
       : 'Could not reach the server.';
-    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${display}"</div><div class="empty" style="margin:0;">${msg}</div></div>`;
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div><div class="empty" style="margin:0;">${msg}</div></div>`;
     refreshTmdbBlock();
   }
 }
@@ -2606,7 +2606,7 @@ function renderMapCard(name) {
   if (e) { selectEntity(e.id); return; } // full live card: tags, continuum, connections, books
   const entry = mapPaths[name];
   const p = entry.feature.properties;
-  document.getElementById('mapCardHost').innerHTML = `<div class="card" style="background:var(--c-info);"><div class="name">${p.name}</div><div class="sub">Not yet in the live ontology — showing prototype data.</div></div><div class="note">${p.note||''}</div>`;
+  document.getElementById('mapCardHost').innerHTML = `<div class="card" style="background:var(--c-info);"><div class="name">${qEsc(p.name)}</div><div class="sub">Not yet in the live ontology — showing prototype data.</div></div><div class="note">${qEsc(p.note||'')}</div>`;
 }
 
 function mapSelectByName(name) {
@@ -3694,13 +3694,13 @@ function renderFlow() {
         </div>` + sg.map(s => `
         <div class="flow-row flow-sgrow${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? ' sel' : ''}" data-sid="${s.id}">
           <div class="q-item-top">
-            <span class="q-item-title">${s.title}</span>
+            <span class="q-item-title">${qEsc(s.title)}</span>
             ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
             <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
             ${s.status === 'new' ? `<button class="ctrlbtn sg-dismiss-x" data-dismiss-sid="${s.id}" title="Dismiss — clear this suggestion">✕</button>` : ''}
           </div>
-          ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${s.rationale}</div>` : ''}
+          ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
         </div>
         ${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`).join(''));
     }
@@ -3724,13 +3724,13 @@ function renderFlow() {
         </div>` + (ideas.length ? ideas.map(i => `
         <div class="flow-row flow-idrow${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? ' sel' : ''}" data-iid="${i.id}">
           <div class="q-item-top">
-            <span class="q-item-title">${i.title || '(untitled)'}</span>
+            <span class="q-item-title">${qEsc(i.title || '(untitled)')}</span>
             ${flowWorldEntry('idea', i.id).state === 'ready' ? '<span title="World-look ideas ready — open the seed">✨</span>' : ''}
-            ${i.tag ? `<span class="id-tag-pill">${i.tag}</span>` : ''}
+            ${i.tag ? `<span class="id-tag-pill">${qEsc(i.tag)}</span>` : ''}
             ${i.work_prompt_id ? '<span class="q-badge" style="background:#4f9d7a;">Queued</span>' : ''}
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
           </div>
-          ${i.notes ? `<div class="sg-rationale">${i.notes}</div>` : ''}
+          ${i.notes ? `<div class="sg-rationale">${qEsc(i.notes)}</div>` : ''}
         </div>
         ${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
   }
@@ -3970,16 +3970,16 @@ function renderSuggestionDetail(s) {
   const snap = qSnapInputs(host);
   host.innerHTML = `
     <h2>Suggestion</h2>
-    <div class="arch-detail-name">${s.title}</div>
+    <div class="arch-detail-name">${qEsc(s.title)}</div>
     <div class="q-item-meta" style="margin:6px 0 10px;">
       <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
       <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
     </div>
-    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${s.rationale}</div></div>` : ''}
+    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${qEsc(s.rationale)}</div></div>` : ''}
     ${s.status === 'new' ? `
       <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
-      <textarea class="q-input" data-role="prompt" rows="6" style="display:none;">${s.prompt}</textarea></div>
+      <textarea class="q-input" data-role="prompt" rows="6" style="display:none;">${qEsc(s.prompt)}</textarea></div>
       <div class="arch-actionrow">
         <button class="primary" id="sgAcceptBtn">Accept → queue (set aside)</button>
         <button id="sgDiscussBtn">💬 Discuss first</button>
@@ -4111,7 +4111,7 @@ function qRenderDetail(p) {
   if (p.cost_usd != null) costParts.push('~$' + p.cost_usd.toFixed(3));
   host.innerHTML = `
     <h2>Task</h2>
-    <div class="arch-detail-name">${p.title || '(untitled)'}</div>
+    <div class="arch-detail-name">${qEsc(p.title || '(untitled)')}</div>
     <div class="q-detail-row">
       <span><b>Status:</b> ${qIsAsking(p) ? `<span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>` : qStatusLabel(p)}</span>
       <span><b>Mode:</b> ${p.mode}</span>
@@ -4120,7 +4120,7 @@ function qRenderDetail(p) {
       ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
       ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
       ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
-      ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${autoParent.title}" (auto)</span>` : ''}
+      ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${qEsc(autoParent.title)}" (auto)</span>` : ''}
     </div>
     ${p.status === 'running' ? qProgressBar(p) : ''}
     ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
@@ -4142,11 +4142,11 @@ function qRenderDetail(p) {
       <div class="arch-field-label">Inspired by — the world's ideas</div>
       <div id="qInspireHost">${qInspireHtml(p)}</div>
     </div>` : ''}
-    <details class="q-fullprompt"><summary>Show full prompt</summary><div class="arch-field-body">${p.prompt}</div></details>
+    <details class="q-fullprompt"><summary>Show full prompt</summary><div class="arch-field-body">${qEsc(p.prompt)}</div></details>
     ${p.raw_prompt && p.raw_prompt !== p.prompt ? `
     <div class="arch-field">
       <div class="arch-field-label"><a href="#" id="qRawToggle" style="text-decoration:underline;">Originally submitted ▾</a></div>
-      <div class="arch-field-body" id="qRawBody" style="display:none;">${p.raw_prompt}</div>
+      <div class="arch-field-body" id="qRawBody" style="display:none;">${qEsc(p.raw_prompt)}</div>
     </div>` : ''}
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
     <div id="qThread"></div>
@@ -6699,7 +6699,7 @@ function renderArchSuggestions(c) {
   let html = '';
   if (c.suggestions && c.suggestions.length) {
     c.suggestions.forEach(s => {
-      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${s.title}</div><div class="as-prompt">${s.prompt}</div></div>`;
+      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(s.prompt)}</div></div>`;
     });
     const genAt = fmtVerified(c.suggestions_generated_at);
     if (genAt) html += `<div class="arch-verified" style="margin-top:2px;">Generated ${genAt}</div>`;
@@ -6745,7 +6745,7 @@ async function loadArchHistory(id) {
       html += `<div class="arch-history-item">📦 ${c.message}<div class="ah-meta"><span class="arch-history-sha">${c.sha.slice(0,7)}</span> · ${fmtVerified(c.committed_at)||c.committed_at}</div></div>`;
     });
     (data.prompts || []).forEach(p => {
-      html += `<div class="arch-history-item">📋 ${p.title} <span style="color:${p.status==='done'?'#4f9d7a':'var(--c-ink-4)'}">(${p.status})</span><div class="ah-meta">${fmtVerified(p.created_at)||p.created_at}</div></div>`;
+      html += `<div class="arch-history-item">📋 ${qEsc(p.title)} <span style="color:${p.status==='done'?'#4f9d7a':'var(--c-ink-4)'}">(${p.status})</span><div class="ah-meta">${fmtVerified(p.created_at)||p.created_at}</div></div>`;
     });
     if (!html) html = '<div class="empty">No tracked history yet — commits and queued prompts touching this component going forward will appear here.</div>';
     el.innerHTML = html;
