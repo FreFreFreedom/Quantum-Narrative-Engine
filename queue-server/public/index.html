@@ -441,6 +441,11 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
 .q-item-arrows { display:flex; gap:5px; margin-top:6px; }
 .q-item-arrows .q-arrow { padding:1px 7px; font-size:9px; }
+/* The row-level Start button for a parked task — deliberately louder than the
+   small ▲▼ reorder arrows so it reads as "press this to run it", not just
+   another control, and never requires opening the task to find. */
+.q-rowstart { flex-shrink:0; padding:4px 11px; font-size:11px; font-weight:700; border:none; background:var(--c-brand); color:#fff; border-radius:var(--r-md); }
+.q-rowstart:hover { opacity:.9; }
 .q-right { flex:1; overflow-y:auto; padding:16px; background:var(--c-bg); }
 .q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
 .q-thread-msg.user { background:var(--c-info-tint); margin-left:auto; }
@@ -3646,17 +3651,23 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const titleHtml = reorderable
     ? `<input class="q-title-inline" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
     : `<span class="q-item-title${unread ? ' unread' : ''}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
-  const actionBtn = p.status === 'paused'
-    ? `<button class="ctrlbtn q-arrow" data-qplay="${p.id}" title="Resume — runs in its normal turn, not necessarily right away.">▶</button>`
-    : ['running', 'queued'].includes(p.status)
-      ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
-      : '';
+  // Paused ("Parked") tasks need a press to actually enter the run queue — that
+  // button used to be a bare, tiny "▶" glyph tucked among the drag-reorder
+  // arrows, easy to miss entirely. It's now a labeled, brand-colored button up
+  // in the row's own title line, so starting a task never requires opening it.
+  const startBtn = p.status === 'paused'
+    ? `<button class="ctrlbtn q-arrow q-rowstart" data-qplay="${p.id}" title="Start now — runs in its normal turn, not necessarily right away.">▶ Start</button>`
+    : '';
+  const pauseBtn = ['running', 'queued'].includes(p.status)
+    ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
+    : '';
   return `
   <div class="flow-row q-item${sel ? ' sel' : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="q-item-top">
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder (or ▲▼ on hover)">⠿</span>' : ''}
       ${titleHtml}
       <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
+      ${startBtn}
     </div>
     <div class="q-item-meta">
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
@@ -3667,9 +3678,9 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
     ${finished ? qCostLine(p) : ''}
     ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
-    ${reorderable || actionBtn ? `
+    ${reorderable || pauseBtn ? `
       <div class="q-item-arrows">
-        ${actionBtn}
+        ${pauseBtn}
         ${reorderable ? `
         <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
         <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>` : ''}
