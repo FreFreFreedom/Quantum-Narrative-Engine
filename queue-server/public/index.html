@@ -7394,7 +7394,7 @@ function openQueuePanel() {
   if (t) t.focus();
 }
 function closeQueuePanel() {
-  if (qpPickActive) return; // let the picker's own Escape/Skip end it first
+  if (qpPickActive) qpStopPicking(); // never let a stuck/abandoned pick block closing
   queuePanelOpen = false;
   document.getElementById('queuePanelVeil').hidden = true;
   document.getElementById('queuePanel').hidden = true;
