@@ -2997,7 +2997,6 @@ function aiModelOptions(provider, selected) {
 // in codingRank order (the fallback order the router actually uses).
 function renderFreeProvidersSection() {
   if (!aiFreeProviders) return '';
-  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const stateByKey = {};
   for (const s of aiFreeProviders.state || []) stateByKey[`${s.provider_id}::${s.model}`] = s;
   const fmtCountdown = (iso) => {
@@ -3010,7 +3009,7 @@ function renderFreeProvidersSection() {
   const rows = (aiFreeProviders.providers || []).flatMap((p) => {
     const providerState = stateByKey[`${p.id}::`]; // whole-provider exhaustion, if any
     if (!p.models.length) {
-      return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${esc(p.label)}</td><td colspan="3">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
+      return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${qEsc(p.label)}</td><td colspan="3">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
     }
     return p.models.map((m, i) => {
       const st = stateByKey[`${p.id}::${m.id}`] || providerState;
@@ -3022,8 +3021,8 @@ function renderFreeProvidersSection() {
           : `<span class="ai-fp-live">live</span>`);
       return `
         <tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}">
-          <td>${i === 0 ? esc(p.label) : ''}</td>
-          <td>${esc(m.id)}</td>
+          <td>${i === 0 ? qEsc(p.label) : ''}</td>
+          <td>${qEsc(m.id)}</td>
           <td class="ai-fp-rank">${m.codingRank}</td>
           <td>${statusHtml}</td>
         </tr>`;
@@ -3327,7 +3326,6 @@ const REVIEW_STATUS_COLORS = { pending: '#a19a8e', approved: '#2f7d63', changes_
 let qReviews = [];
 
 function qReviewCard(r) {
-  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c]));
   const checks = r.checks || {};
   const rows = [
     ['syntax', 'Changed files parse'],
@@ -3341,9 +3339,9 @@ function qReviewCard(r) {
     return `<div class="q-review-check"><span class="${c.ok ? 'q-check-ok' : 'q-check-bad'}">${c.ok ? '✓' : '✗'}</span><span>${label}</span></div>`;
   }).join('');
   const conflict = (r.conflicts_with && r.conflicts_with.length)
-    ? `<div class="q-review-conflict">⚠ Conflicts with : ${esc(r.conflicts_with.join(', '))}</div>` : '';
+    ? `<div class="q-review-conflict">⚠ Conflicts with : ${qEsc(r.conflicts_with.join(', '))}</div>` : '';
   const concerns = (r.concerns && r.concerns.length)
-    ? `<div class="q-review-concerns">${r.concerns.map(c => esc(c)).join('<br>')}</div>` : '';
+    ? `<div class="q-review-concerns">${r.concerns.map(c => qEsc(c)).join('<br>')}</div>` : '';
   const stats = (r.files_changed && r.files_changed.length)
     ? `<div class="q-review-meta">${r.files_changed.length} file(s) · +${r.insertions || 0} / −${r.deletions || 0}</div>` : '';
   const canMerge = r.status === 'approved';
@@ -3352,10 +3350,10 @@ function qReviewCard(r) {
   return `
   <div class="q-review" data-review-id="${r.id}">
     <div class="q-item-top">
-      <span class="q-item-title">${esc(r.prompt_title || r.branch || 'Work')}</span>
+      <span class="q-item-title">${qEsc(r.prompt_title || r.branch || 'Work')}</span>
       <span class="q-badge" style="background:${REVIEW_STATUS_COLORS[r.status]||'var(--c-ink-4)'};">${REVIEW_STATUS_LABELS[r.status]||r.status}</span>
     </div>
-    <div class="q-review-plain">${esc(r.plain_summary || '')}</div>
+    <div class="q-review-plain">${qEsc(r.plain_summary || '')}</div>
     <div class="q-review-checks">${rows}</div>
     ${conflict}
     ${concerns}
@@ -3370,7 +3368,6 @@ function qReviewCard(r) {
 
 // Competition comparison card — shows both variants side by side
 function qCompetitionCard(p) {
-  const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c]));
   const stages = p.stages || [];
   const buildStages = stages.filter(s => s.stage === 'build');
   const judgeStage = stages.find(s => s.stage === 'judge');
@@ -3393,10 +3390,10 @@ function qCompetitionCard(p) {
   return `
   <div class="q-review" data-review-id="competition-${p.id}" style="border-left-color:var(--c-warn);">
     <div class="q-item-top">
-      <span class="q-item-title">⚔️ Compétition — ${esc(p.title)}</span>
+      <span class="q-item-title">⚔️ Compétition — ${qEsc(p.title)}</span>
       <span class="q-badge" style="background:#8a5a1e;">Judge recommends ${winner === 'A' ? 'Version A' : winner === 'B' ? 'Version B' : 'neither'}</span>
     </div>
-    <div class="q-review-plain">${esc(why)}</div>
+    <div class="q-review-plain">${qEsc(why)}</div>
     <div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
         <thead>
@@ -3407,11 +3404,11 @@ function qCompetitionCard(p) {
           </tr>
         </thead>
         <tbody>
-          <tr><td style="padding:6px 8px;font-weight:600;">Files / changes</td><td style="padding:6px 8px;">${esc(aStats)}</td><td style="padding:6px 8px;">${esc(bStats)}</td></tr>
-          <tr style="background:var(--c-bg);"><td style="padding:6px 8px;font-weight:600;">Checks passed</td><td style="padding:6px 8px;">${esc(aChecks)}</td><td style="padding:6px 8px;">${esc(bChecks)}</td></tr>
-          <tr><td style="padding:6px 8px;font-weight:600;">Judge verdict</td><td style="padding:6px 8px;color:${verdictA==='safe'?'#2f7d63':verdictA==='risky'?'#b8860b':'#b23a2f'}">${esc(verdictA)}</td><td style="padding:6px 8px;color:${verdictB==='safe'?'#2f7d63':verdictB==='risky'?'#b8860b':'#b23a2f'}">${esc(verdictB)}</td></tr>
-          <tr style="background:var(--c-bg);"><td style="padding:6px 8px;font-weight:600;">Cost</td><td style="padding:6px 8px;">${esc(aCost)}</td><td style="padding:6px 8px;">${esc(bCost)}</td></tr>
-          <tr><td style="padding:6px 8px;font-weight:600;vertical-align:top;">Trade-offs</td><td style="padding:6px 8px;">${(tradeoffs.A || []).map(t => '• ' + esc(t)).join('<br>')}</td><td style="padding:6px 8px;">${(tradeoffs.B || []).map(t => '• ' + esc(t)).join('<br>')}</td></tr>
+          <tr><td style="padding:6px 8px;font-weight:600;">Files / changes</td><td style="padding:6px 8px;">${qEsc(aStats)}</td><td style="padding:6px 8px;">${qEsc(bStats)}</td></tr>
+          <tr style="background:var(--c-bg);"><td style="padding:6px 8px;font-weight:600;">Checks passed</td><td style="padding:6px 8px;">${qEsc(aChecks)}</td><td style="padding:6px 8px;">${qEsc(bChecks)}</td></tr>
+          <tr><td style="padding:6px 8px;font-weight:600;">Judge verdict</td><td style="padding:6px 8px;color:${verdictA==='safe'?'#2f7d63':verdictA==='risky'?'#b8860b':'#b23a2f'}">${qEsc(verdictA)}</td><td style="padding:6px 8px;color:${verdictB==='safe'?'#2f7d63':verdictB==='risky'?'#b8860b':'#b23a2f'}">${qEsc(verdictB)}</td></tr>
+          <tr style="background:var(--c-bg);"><td style="padding:6px 8px;font-weight:600;">Cost</td><td style="padding:6px 8px;">${qEsc(aCost)}</td><td style="padding:6px 8px;">${qEsc(bCost)}</td></tr>
+          <tr><td style="padding:6px 8px;font-weight:600;vertical-align:top;">Trade-offs</td><td style="padding:6px 8px;">${(tradeoffs.A || []).map(t => '• ' + qEsc(t)).join('<br>')}</td><td style="padding:6px 8px;">${(tradeoffs.B || []).map(t => '• ' + qEsc(t)).join('<br>')}</td></tr>
         </tbody>
       </table>
     </div>
@@ -5210,7 +5207,7 @@ function renderMind() {
   }
 
   const sc = (ARCH_INTEL && ARCH_INTEL.selfCorrect && ARCH_INTEL.selfCorrect.exists) ? ARCH_INTEL.selfCorrect : null;
-  const scNote = sc ? `<div class="mind-selfnote"><b>${escS(sc.title)}.</b> ${escS(sc.body)}</div>` : '';
+  const scNote = sc ? `<div class="mind-selfnote"><b>${qEsc(sc.title)}.</b> ${qEsc(sc.body)}</div>` : '';
   const hostOld = host.scrollTop || 0;
 
   const fmtD = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch { return ''; } };
@@ -5230,18 +5227,18 @@ function renderMind() {
     const actions = t.status === 'new' ? `
       <button class="mind-accept" data-accept="${t.id}">Accept → paused task</button>
       <button data-dismiss="${t.id}">Dismiss</button>
-      ${t.scope === 'node' && t.target_id ? `<button data-deepen="${escS(t.target_id)}">✦ Think deeper</button>` : ''}` : '';
+      ${t.scope === 'node' && t.target_id ? `<button data-deepen="${qEsc(t.target_id)}">✦ Think deeper</button>` : ''}` : '';
     const acceptedNote = t.status === 'accepted' && t.work_prompt_id
       ? `<div class="mind-handoff">Accepted — <a href="#" data-jump="${t.work_prompt_id}">view the task in the Flow</a></div>` : '';
     const dismissedNote = t.status === 'dismissed'
-      ? `<div class="mind-card-body">${t.dismissed_reason ? 'Dismissed: ' + escS(t.dismissed_reason) : 'Dismissed.'}</div>` : '';
+      ? `<div class="mind-card-body">${t.dismissed_reason ? 'Dismissed: ' + qEsc(t.dismissed_reason) : 'Dismissed.'}</div>` : '';
     return `<div class="mind-card${t.status === 'dismissed' ? ' dim' : ''}" data-thought="${t.id}">
       <div class="mind-card-top">
         <span class="mind-dot" style="background:${t.status === 'accepted' ? '#4f9d7a' : t.status === 'dismissed' ? '#8a8378' : '#7a5ea8'}"></span>
         <div style="flex:1;min-width:0;">
-          <div class="mind-card-title">${escS(t.title)}</div>
-          <div class="mind-card-meta">${escS(t.kind)} · ${escS(targetNameStr)} · ${fmtD(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
-          <div class="mind-card-body">${escS(t.body)}</div>
+          <div class="mind-card-title">${qEsc(t.title)}</div>
+          <div class="mind-card-meta">${qEsc(t.kind)} · ${qEsc(targetNameStr)} · ${fmtD(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
+          <div class="mind-card-body">${qEsc(t.body)}</div>
         </div>
       </div>
       ${actions ? `<div class="mind-actions">${actions}</div><div class="mind-reason" style="display:none;"><input placeholder="Optional — why you are dismissing this" autocomplete="off"><button>Confirm</button><button>Cancel</button></div>` : ''}
@@ -6167,8 +6164,6 @@ function archCatalog() {
   }));
 }
 
-const escS = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-
 // The one idea door: every entry point funnels here. One AI call routes the idea
 // — a new speculative component in the tree, or a Seed. Never on page load.
 async function submitIdea(concept, statusEl) {
@@ -6318,8 +6313,8 @@ function renderArchStage() {
   stage.innerHTML = `
     <div class="arch-focusbar" id="archFocusBar" style="display:${archFocus ? 'flex' : 'none'}">
       <button id="archFocusBack">← All territories</button>
-      <span class="arch-focusname" style="color:${archFocus ? (TERRITORY_COLORS[archFocus] || 'var(--c-ink)') : 'var(--c-ink)'}">${archFocus ? escS(archFocusName(archFocus)) : ''}</span>
-      ${archFocus ? `<span class="arch-focusmeta">${escS((() => { const s = archTerritoryStats(archFocus); return `${s.total} components · ${s.built} built · ${s.locked} need work${s.spec ? ' · ' + s.spec + ' speculative' : ''}`; })())}</span>` : ''}
+      <span class="arch-focusname" style="color:${archFocus ? (TERRITORY_COLORS[archFocus] || 'var(--c-ink)') : 'var(--c-ink)'}">${archFocus ? qEsc(archFocusName(archFocus)) : ''}</span>
+      ${archFocus ? `<span class="arch-focusmeta">${qEsc((() => { const s = archTerritoryStats(archFocus); return `${s.total} components · ${s.built} built · ${s.locked} need work${s.spec ? ' · ' + s.spec + ' speculative' : ''}`; })())}</span>` : ''}
       ${!archFocus && archLayout === 'map' ? `<button id="archCollapseAll">${archCollapsed.size ? 'Expand all' : 'Collapse all'}</button>` : ''}
     </div>
     <div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>
