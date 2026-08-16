@@ -259,7 +259,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .ws-map { flex:1; min-width:0; display:none; flex-direction:column; min-height:0; }
 .ws-map.open { display:flex; }
 .ws-map-body { flex:1; min-height:0; display:flex; animation:fmcnsFade .22s var(--ease); }
-.ws-map.blocks-tab .arch-toolbar, .ws-map.blocks-tab .ws-map-body { display:none; }
+.ws-map.blocks-tab .arch-toolbar, .ws-map.blocks-tab .ws-map-body, .ws-map.blocks-tab #archProposals { display:none; }
 .ws-map.blocks-tab #archBlocksPane { display:flex; }
 .arch-inner-tabs { display:flex; align-items:center; gap:8px; padding:8px 14px 0; flex-shrink:0; }
 .ws-map.blocks-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
@@ -267,7 +267,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-inner-tabs button:hover { background:var(--c-surface-2); }
 .arch-inner-tabs button.active { background:var(--c-ink-solid); border-color:var(--c-ink); color:var(--c-on-solid); }
 #archBlocksPane { flex:1; min-height:0; display:none; flex-direction:column; animation:fmcnsFade .22s var(--ease); }
-.ws-map.mind-tab .arch-toolbar, .ws-map.mind-tab .ws-map-body { display:none; }
+.ws-map.mind-tab .arch-toolbar, .ws-map.mind-tab .ws-map-body, .ws-map.mind-tab #archProposals { display:none; }
 .ws-map.mind-tab #archMindPane { display:flex; animation:fmcnsFade .22s var(--ease); }
 .ws-map.mind-tab .arch-inner-tabs { padding-bottom:8px; border-bottom:1px solid var(--c-border); }
 
@@ -564,13 +564,18 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-radio-btn { border-radius:999px !important; }
 .q-inspire-card.q-inspire-sel.q-inspire-in-group { border-left-color:var(--c-accent); }
 /* Self-updating tree: pending proposals bar (Architecture tab) */
-.arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; padding:8px 12px; margin-bottom:8px; max-height:38vh; overflow-y:auto; }
+.arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; margin:0 14px 10px; flex-shrink:0; }
+.arch-proposals:not(.open) { padding:0; }
+.arch-proposals.open { padding:8px 12px; max-height:34vh; overflow-y:auto; }
+.arch-proposals-strip { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:8px 12px; border:none; background:transparent; color:var(--c-ink-2); font-size:11.5px; font-family:inherit; cursor:pointer; border-radius:9px; }
+.arch-proposals-strip:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.arch-proposals-strip-cta { font-weight:600; color:var(--c-brand); flex-shrink:0; }
 .arch-proposals-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11.5px; font-weight:600; margin-bottom:6px; }
-.arch-proposal-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--c-border); }
+.arch-proposal-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--c-border); flex-wrap:wrap; }
 .arch-proposal-row:first-of-type { border-top:none; }
 .arch-proposal-main { flex:1; min-width:0; }
 .arch-proposal-name { font-weight:600; font-size:11.5px; margin-right:6px; }
-.arch-proposal-what { font-size:10.5px; color:var(--c-ink-4); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.arch-proposal-what { font-size:10.5px; color:var(--c-ink-4); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
 .arch-proposal-actions { display:flex; gap:6px; flex-shrink:0; }
 .sg-genbtn { padding:6px 14px; border-radius:6px; border:1px dashed var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; color:var(--c-ink-3); }
 .sg-genbtn:hover { background:var(--c-surface-2); }
@@ -6035,6 +6040,7 @@ async function loadArchNodes() {
 // accepts (becomes a real part of the tree) or rejects (gone) here. The
 // proposed nodes themselves already show dashed on the graph.
 let archProposals = [];
+let archProposalsOpen = false;
 
 async function loadArchProposals() {
   try { archProposals = (await api('/api/architecture/proposals')).proposals || []; }
@@ -6051,12 +6057,25 @@ function archProposalSource(n) {
 function renderArchProposals() {
   const host = document.getElementById('archProposals');
   if (!host) return;
-  if (!archProposals.length) { host.hidden = true; host.innerHTML = ''; return; }
+  if (!archProposals.length) { host.hidden = true; host.innerHTML = ''; archProposalsOpen = false; return; }
   host.hidden = false;
+  host.classList.toggle('open', archProposalsOpen);
+
+  if (!archProposalsOpen) {
+    host.innerHTML = `
+      <button class="arch-proposals-strip" id="archProposalsToggle">
+        <span>🌱 ${archProposals.length} change${archProposals.length === 1 ? '' : 's'} noticed since you last looked</span>
+        <span class="arch-proposals-strip-cta">Review ▾</span>
+      </button>`;
+    document.getElementById('archProposalsToggle').onclick = () => { archProposalsOpen = true; renderArchProposals(); };
+    return;
+  }
+
   host.innerHTML = `
     <div class="arch-proposals-head">
       <span>🌱 Pending proposals — the tree noticed real work</span>
       <button class="ctrlbtn" id="archSyncNowBtn" title="Re-read the app's recent changes right now (usually runs automatically every hour).">Sync now</button>
+      <button class="ctrlbtn" id="archProposalsCollapseBtn" title="Collapse this list">Hide ▴</button>
     </div>
     ${archProposals.map(n => `
       <div class="arch-proposal-row" data-pid="${n.id}">
@@ -6071,6 +6090,7 @@ function renderArchProposals() {
           <button class="ctrlbtn" data-act="reject">✕ Reject</button>
         </div>
       </div>`).join('')}`;
+  document.getElementById('archProposalsCollapseBtn').onclick = () => { archProposalsOpen = false; renderArchProposals(); };
   host.querySelectorAll('.arch-proposal-row').forEach(row => {
     const id = row.getAttribute('data-pid');
     row.querySelector('[data-act="accept"]').onclick = async () => {
