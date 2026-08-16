@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | IN PROGRESS |
+| **Status** | DONE (2026-08-16) — see reconciliation note below; 2 minor items formally closed as won't-do |
 | **Created** | 2026-08-13 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html` + synced `queue-server/public/index.html`) |
 | **Scope** | Frontend: `fmcns_navigator.html` — merge the 5 CORE ARCHITECTURE sub-tabs into one three-zone workspace (Architecture graph · unified Flow · Detail pane), night mode for the whole app, a merged floating window (Chat · New task · New idea · Queue panel), restore the Building blocks (Idea box + Library) from `agent/github-code-discovery` (additive backend), auto-placed "Add an idea" node creation. |
@@ -348,3 +348,48 @@ Queue tabs reuse backend createPrompt/reply/advance directly — no new backend
 code. Deferred from the Phase-5 sketch: the element picker (port of
 lib/pageContext.jsx), the "Turn this into a task" smart chip (idea chip owns
 smart detection per C3), and a New idea tab (absent by design — one idea door).
+
+## Implementation note — reconciliation pass (2026-08-16)
+
+Re-verified every open item from Phases 4/5/7 against the live app (code +
+browser at `localhost:3000`), since the notes above hadn't been updated since
+2026-08-13 and had drifted from what actually shipped. Everything below is
+confirmed live, not just planned:
+
+- **Phase 4 — Flow**: component filter is built (`flowComponentFilter`,
+  applied in `rel()`; set via the "🔎 Show related in Flow" button in the
+  detail pane, which calls `switchCoreView('flow')`). Drag-to-reorder is
+  built (`draggable="true"` rows with a `.q-drag-handle`, `dragstart`/
+  `dragover` handlers; the ▲▼ arrows stayed as a fallback). Paused prompts
+  have their own "⏸ Parked" Flow section.
+- **Phase 5 — Floating window / C6**: the element picker (`#fw-pick-btn`) is
+  **not** still deferred — it's fully working (`fwHover`/`fwClick`/
+  `fwDescribe`/`fwStopPicking`: capture-phase highlight, click-to-describe,
+  description appended into the task text on submit). The C6 note above is
+  now out of date on this one point.
+- **Phase 7 — Micro-features**: all built. Unread dot (`seen_at` column,
+  `.q-unread-dot` CSS, set via a `/seen` route), inline title autosave
+  (debounced PATCH), "Set aside" button (`#qSetAsideBtn`), First/Last
+  placement toggle (`#qPlaceSeg`), "Not started — N task(s) ahead, still
+  editable" waiting line (`.q-ahead`), and guiding empty states for every
+  Flow section (queue/done/suggestions/seeds) are all present in
+  `flowQueueRow()` and its surrounding render functions.
+
+**Formally closed, not silently dropped**:
+- A dedicated **"Library" chip in the Flow** (from the original Phase-4
+  sketch) — **won't-do, superseded**. Per the C4/C5 notes above, reports
+  already live in Architecture → Building blocks → Idea box; adding a second
+  Library entry point in Flow would duplicate that and blur the
+  "Architecture = idea place, Flow = execution place" split this plan
+  deliberately made.
+- A separate **"parked ideas" section** distinct from paused prompts —
+  **won't-do, low value**. Seeds already carry status pills, and paused
+  prompts already have their own Flow section; a third parking concept isn't
+  worth the added surface area.
+
+No further implementation work identified for Phases 0–7 of this plan.
+Any further "seamless navigation" work for Core Architecture (responsive
+behavior, motion/transitions, wayfinding clarity, keyboard navigation on the
+graph) continues in `plans/design-system-pass.md`'s follow-up scope rather
+than here, since it's visual/interaction polish rather than missing
+functionality.
