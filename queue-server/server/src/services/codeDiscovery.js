@@ -273,6 +273,14 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
     VALUES (?,?,?,?,?,?,?,?,?)
   `).run(id, ideaText, source, source_id, JSON.stringify(builtParts[0].queries), JSON.stringify(builtParts[0].picks), projectName, projectTerritory, JSON.stringify(builtParts));
 
+  // Same quick check the queue/section world-looks get, so alternative picks are
+  // grouped and marked here too — the idea box gets the same substitute-vs-
+  // complementary clarity as every other world-look surface.
+  try {
+    const review = await reviewInspiration({ report: getReport(db, id), prompt: ideaText, allowQuestion: false });
+    if (review) storeReportReview(db, id, review);
+  } catch (e) { console.error('quick check after idea-box search failed —', e.message); }
+
   return getReport(db, id);
 }
 
@@ -464,7 +472,11 @@ function compactReportForReview(report) {
     description: part.description,
     picks: (part.picks || []).map((pick, i) => {
       const key = { part_index: pi, pick_index: i };
-      if (pick.kind === 'open') return { ...key, kind: 'open', repo: pick.repo, why_fits: pick.why_fits, use: pick.use };
+      // Idea-box reports use kind 'proven'/'imagined' (same repo/why_fits/use shape
+      // as the inspiration pass's 'open' shelf) instead of open/hidden/bold.
+      if (pick.kind === 'open' || pick.kind === 'proven' || pick.kind === 'imagined') {
+        return { ...key, kind: pick.kind, repo: pick.repo, why_fits: pick.why_fits, use: pick.use };
+      }
       if (pick.kind === 'hidden') return { ...key, kind: 'hidden', name: pick.name, what: pick.what, use: pick.use };
       return { ...key, kind: 'bold', name: pick.name, vision: pick.vision, how_fmcns: pick.how_fmcns };
     }),
@@ -489,7 +501,7 @@ ${answerBlock}
 
 Do:
 1. REMOVE picks that do not serve THIS task: off-topic, duplicates of another pick, or ideas that would blow the task up beyond one job. One short reason each (max 20 words), plain everyday words.
-2. GROUP picks that are alternatives of each other — they would build the same thing, the owner only needs one. Give each group a short id ("A", "B"...) and a one-sentence note on why they are the same thing in different wrapping. A group of one is not a group.
+2. GROUP picks that are alternatives of each other — they would build the same thing, the owner only needs one. Do NOT group picks just because they are related or would work well together: if two picks could both be built and used at the same time without conflict, they are complementary, not alternatives — leave them ungrouped. Only group when picking one makes the other redundant. Give each group a short id ("A", "B"...) and a one-sentence note on why they are the same thing in different wrapping. A group of one is not a group.
 3. RECOMMEND, for each group, the single best pick, with one short sentence why.
 ${questionRule}
 
@@ -517,12 +529,15 @@ function sanitizeReview(parsed, report) {
 
   const groups = [];
   const usedIds = new Set();
+  const usedKeys = new Set(); // a pick can only be a substitute in one group at a time
   for (const g of (Array.isArray(parsed.groups) ? parsed.groups : [])) {
     const keys = (Array.isArray(g?.picks) ? g.picks : [])
       .filter(p => Array.isArray(p) && validKey({ part_index: p[0], pick_index: p[1] }))
       .map(p => ({ part_index: p[0], pick_index: p[1] }))
-      .filter(k => !removedKeys.has(`${k.part_index}:${k.pick_index}`));
+      .filter(k => !removedKeys.has(`${k.part_index}:${k.pick_index}`))
+      .filter(k => !usedKeys.has(`${k.part_index}:${k.pick_index}`));
     if (keys.length < 2) continue; // a group of one is not a group
+    keys.forEach(k => usedKeys.add(`${k.part_index}:${k.pick_index}`));
     let id = String(g.id || '').trim().slice(0, 2).toUpperCase();
     if (!id || usedIds.has(id)) id = String.fromCharCode(65 + groups.length);
     usedIds.add(id);
@@ -734,6 +749,49 @@ export function listReports(db) {
     });
 }
 
+// Every bold/imagined idea that came out of ANY world-look (queue task, suggestion,
+// seed, component, idea box) but was never planted into the tech tree — these are
+// the "speculations not yet in the tree" the On the Horizon section surfaces
+// alongside real unbuilt architecture_nodes. Excludes picks the quick check
+// removed, since those never earned a place in the first place.
+export function listUnplantedBoldPicks(db) {
+  const planted = new Set(
+    db.prepare(`SELECT report_id, part_index, pick_index FROM discovery_pick_plants`).all()
+      .map(r => `${r.report_id}:${r.part_index}:${r.pick_index}`)
+  );
+  const rows = db.prepare(`
+    SELECT id, idea_text, source, source_id, project_name, parts_json, review_json
+    FROM discovery_reports WHERE parts_json IS NOT NULL ORDER BY created_at DESC
+  `).all();
+  const out = [];
+  for (const row of rows) {
+    let parts;
+    try { parts = JSON.parse(row.parts_json || '[]'); } catch { continue; }
+    let review = null;
+    try { review = row.review_json ? JSON.parse(row.review_json) : null; } catch {}
+    const removed = new Set((review?.removed || []).map(r => `${r.part_index}:${r.pick_index}`));
+    parts.forEach((part, pi) => {
+      (part.picks || []).forEach((pick, i) => {
+        if (pick.kind !== 'bold' && pick.kind !== 'imagined') return;
+        if (planted.has(`${row.id}:${pi}:${i}`)) return;
+        if (removed.has(`${pi}:${i}`)) return;
+        out.push({
+          report_id: row.id,
+          part_index: pi,
+          pick_index: i,
+          source: row.source,
+          source_id: row.source_id,
+          idea_text: row.project_name || row.idea_text,
+          part_name: parts.length > 1 ? (part.name || null) : null,
+          name: pick.name || pick.tree_target?.name || 'Bold idea',
+          summary: pick.vision || pick.use || pick.why_fits || '',
+        });
+      });
+    });
+  }
+  return out;
+}
+
 // Plant a single discovery pick into the tech tree. Provenance is 'speculative'
 // (the same value the existing Claude speculation feature uses) rather than a new
 // discovery-specific value — architectureNodes.createNode only ever preserves the
@@ -746,17 +804,17 @@ export function plant(db, { report_id, part_index = 0, pick_index, target_node_i
   const pick = part?.picks?.[pick_index];
   if (!pick) return { error: 'pick_not_found' };
 
-  const out = plantPick(db, pick, { target_node_id, report_id });
+  const out = plantPick(db, pick, { target_node_id, report_id, part_index, pick_index });
   return out.error ? out : { node: out.node };
 }
 
-function plantPick(db, pick, { target_node_id = null, report_id = null } = {}) {
+function plantPick(db, pick, { target_node_id = null, report_id = null, part_index = null, pick_index = null } = {}) {
   const target = pick.tree_target || {};
   const out = createNode(db, {
-    name: target.name || pick.repo || 'Discovery pick',
+    name: target.name || pick.repo || pick.name || 'Discovery pick',
     territory: target.territory,
-    what: pick.use || '',
-    why: pick.why_fits || '',
+    what: pick.use || pick.vision || '',
+    why: pick.why_fits || pick.how_fmcns || '',
     depends: target_node_id ? [target_node_id] : [],
     status: 'Concept',
     provenance: 'speculative',
@@ -769,6 +827,14 @@ function plantPick(db, pick, { target_node_id = null, report_id = null } = {}) {
       INSERT INTO architecture_node_evidence (id, node_id, repo_full_name, stars, why, report_id)
       VALUES (?,?,?,?,?,?)
     `).run(randomUUID(), out.node.id, pick.repo, pick.stars || 0, pick.why_fits || '', report_id);
+  }
+  if (report_id && Number.isInteger(part_index) && Number.isInteger(pick_index)) {
+    try {
+      db.prepare(`
+        INSERT OR REPLACE INTO discovery_pick_plants (report_id, part_index, pick_index, node_id)
+        VALUES (?,?,?,?)
+      `).run(report_id, part_index, pick_index, out.node.id);
+    } catch (e) { console.error('discovery_pick_plants insert failed —', e.message); }
   }
   return { node: out.node };
 }
@@ -795,12 +861,13 @@ export function plantProject(db, { report_id } = {}) {
   const projectNode = parentOut.node;
 
   const childNodes = [];
-  for (const part of report.parts) {
-    const pick = part.picks?.[part.recommended_index] || part.picks?.[0];
-    if (!pick) continue;
-    const out = plantPick(db, pick, { target_node_id: projectNode.id, report_id });
+  report.parts.forEach((part, part_index) => {
+    const pickIdx = Number.isInteger(part.recommended_index) && part.picks?.[part.recommended_index] ? part.recommended_index : 0;
+    const pick = part.picks?.[pickIdx];
+    if (!pick) return;
+    const out = plantPick(db, pick, { target_node_id: projectNode.id, report_id, part_index, pick_index: pickIdx });
     if (!out.error) childNodes.push(out.node);
-  }
+  });
 
   return { project_node: projectNode, child_nodes: childNodes };
 }

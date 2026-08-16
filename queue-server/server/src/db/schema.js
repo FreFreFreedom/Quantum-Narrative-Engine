@@ -940,6 +940,21 @@ export function initDiscoverySchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_node_evidence_node ON architecture_node_evidence(node_id)`); } catch {}
+
+  // One row per discovery pick actually planted into the tree, of ANY kind (not
+  // just proven-repo evidence above) — lets "On the Horizon" tell an already-
+  // planted bold/imagined idea apart from one still living only inside a report
+  // (see codeDiscovery.listUnplantedBoldPicks).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS discovery_pick_plants (
+      report_id TEXT NOT NULL,
+      part_index INTEGER NOT NULL,
+      pick_index INTEGER NOT NULL,
+      node_id TEXT NOT NULL REFERENCES architecture_nodes(id),
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      PRIMARY KEY (report_id, part_index, pick_index)
+    )
+  `);
 }
 
 // ─── Idea Studio conversations (plan "universal-conversations-core-architecture") ──

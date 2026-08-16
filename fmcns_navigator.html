@@ -550,6 +550,10 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-alt-chip { display:inline-block; font-size:9.5px; border:1px dashed var(--c-border-3); border-radius:8px; padding:1px 7px; color:var(--c-ink-3); margin-left:6px; vertical-align:1px; }
 .q-inspire-best { font-size:11px; margin-top:4px; color:var(--c-ink-2); font-weight:600; }
 .q-inspire-legend { font-size:10.5px; color:var(--c-ink-3); margin:0 0 8px; }
+/* Substitute-group picks read as radios (pick one), ungrouped picks stay checkboxes (pick any) */
+.q-inspire-card.q-inspire-in-group { border-left:2px solid var(--c-border-3); }
+.q-inspire-radio-btn { border-radius:999px !important; }
+.q-inspire-card.q-inspire-sel.q-inspire-in-group { border-left-color:var(--c-accent); }
 /* Self-updating tree: pending proposals bar (Architecture tab) */
 .arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; padding:8px 12px; margin-bottom:8px; }
 .arch-proposals-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11.5px; font-weight:600; margin-bottom:6px; }
@@ -971,7 +975,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <span class="flow-typecips" id="flowTypeBtns">
               <button class="active" data-ftype="all">All</button>
               <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
-              <button data-ftype="notbuilt">Not built</button>
+              <button data-ftype="notbuilt">On the Horizon</button>
               <button data-ftype="suggestions">Suggestions</button>
               <button data-ftype="seeds">Seeds</button>
               <button data-ftype="done">✓ Done</button>
@@ -4380,6 +4384,23 @@ function qInspireReviewFacts(review) {
   return { removed, groupOf, bestOf };
 }
 
+// Toggles `key` ({part_index,pick_index}) in `list` in place. Picks in the same
+// substitute group (facts.groupOf) behave like a radio group — selecting one clears
+// any other member of that group first. Ungrouped (complementary) picks behave like
+// today's plain checkboxes, independent of everything else.
+function applyInspireToggle(list, key, facts) {
+  const idx = list.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
+  if (idx >= 0) { list.splice(idx, 1); return; }
+  const group = facts?.groupOf.get(key.part_index + ':' + key.pick_index);
+  if (group) {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const gk = facts.groupOf.get(list[i].part_index + ':' + list[i].pick_index);
+      if (gk && gk.id === group.id) list.splice(i, 1);
+    }
+  }
+  list.push(key);
+}
+
 function qInspireCard(pick, pi, i, applied, sel, facts = null, pickAction = 'inspire-pick') {
   const key = pi + ':' + i;
   const isApplied = applied.has(key);
@@ -4410,13 +4431,13 @@ function qInspireCard(pick, pi, i, applied, sel, facts = null, pickAction = 'ins
   const removedLine = removed ? `<div class="sg-rationale q-inspire-reason">Not used: ${qEsc(removed)}</div>` : '';
   const btnLabel = isApplied ? '✓ In the plan' : isSel ? '✓ Selected' : 'Use in plan';
   return `
-    <div class="sg-card q-inspire-card ${isApplied ? 'q-inspire-applied' : ''} ${isSel ? 'q-inspire-sel' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
+    <div class="sg-card q-inspire-card ${isApplied ? 'q-inspire-applied' : ''} ${isSel ? 'q-inspire-sel' : ''} ${removed ? 'q-inspire-removed' : ''} ${group ? 'q-inspire-in-group' : ''}" data-partidx="${pi}" data-pickidx="${i}">
       <div class="sg-card-top">${head}${groupChip}</div>
       ${body}
       ${bestLine}
       ${removedLine}
       <div class="sg-actions">
-        <button data-action="${pickAction}" class="${isApplied || isSel ? 'primary' : ''}" ${isApplied ? 'disabled title="Already baked into the plan."' : ''}>${btnLabel}</button>
+        <button data-action="${pickAction}" class="${isApplied || isSel ? 'primary' : ''} ${group ? 'q-inspire-radio-btn' : ''}" ${isApplied ? 'disabled title="Already baked into the plan."' : group ? `title="Alternatives ${qEsc(group.id)} — picking this clears the others in that group."` : ''}>${isSel && group ? '◉ ' + btnLabel : btnLabel}</button>
       </div>
     </div>`;
 }
@@ -4459,7 +4480,7 @@ function qInspireFullHtml(p, data) {
   const sel = new Set((qInspireSel[p.id] || []).map(x => x.part_index + ':' + x.pick_index));
   const facts = qInspireReviewFacts(data.review);
   const legend = (data.review?.groups?.length || 0) > 0
-    ? `<div class="q-inspire-legend">🔄 Some ideas are alternatives of each other — you only need one of each group. ⭐ marks our pick; a greyed-out idea was left out of the plan (your choice always wins).</div>`
+    ? `<div class="q-inspire-legend">🔄 Ideas marked "Alternatives" are substitutes — picking one clears the others in that same group automatically, like a radio button. Ungrouped ideas are complementary and can all be combined. ⭐ marks our pick; a greyed-out idea was left out of the plan (your choice always wins).</div>`
     : ((data.review?.removed?.length || 0) > 0
       ? `<div class="q-inspire-legend">Greyed-out ideas were left out of the plan — apply any of them if you disagree.</div>`
       : '');
@@ -4508,8 +4529,8 @@ function qWireInspireButtons(p) {
       const card = b.closest('.q-inspire-card');
       const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
       const list = qInspireSel[p.id] || (qInspireSel[p.id] = []);
-      const idx = list.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
-      if (idx >= 0) list.splice(idx, 1); else list.push(key);
+      const facts = qInspireReviewFacts(qInspireCache[p.id]?.review);
+      applyInspireToggle(list, key, facts);
       qInspireReRender(p);
     };
   });
@@ -4667,7 +4688,7 @@ function flowWorldPanelHtml(source, id) {
     const sel = new Set(e.sel.map(x => x.part_index + ':' + x.pick_index));
     const facts = qInspireReviewFacts(e.report.review);
     const legend = (e.report.review?.groups?.length || 0) > 0
-      ? `<div class="q-inspire-legend">🔄 Some ideas are alternatives of each other — you only need one of each group. ⭐ marks our pick; a greyed-out idea was left out by the quick check (pick it if you disagree — your picks travel with the item).</div>`
+      ? `<div class="q-inspire-legend">🔄 Ideas marked "Alternatives" are substitutes — picking one clears the others in that same group automatically, like a radio button. Ungrouped ideas are complementary and can all be combined. ⭐ marks our pick; a greyed-out idea was left out by the quick check (pick it if you disagree — your picks travel with the item).</div>`
       : ((e.report.review?.removed?.length || 0) > 0
         ? `<div class="q-inspire-legend">Greyed-out ideas were left out by the quick check — pick any you disagree with; your picks travel with the item.</div>`
         : '');
@@ -4698,8 +4719,8 @@ function flowWorldRender(source, id, host, ideaText) {
     b.onclick = () => {
       const card = b.closest('.q-inspire-card');
       const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
-      const idx = e.sel.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
-      if (idx >= 0) e.sel.splice(idx, 1); else e.sel.push(key);
+      const facts = qInspireReviewFacts(e.report?.review);
+      applyInspireToggle(e.sel, key, facts);
       flowWorldRender(source, id, host, ideaText);
     };
   });
@@ -5016,17 +5037,29 @@ async function runBkIdeaSearch() {
   }
 }
 
-function bkPickCard(pick, partIdx, pickIdx, recommended) {
+// facts = the same removed/groupOf/bestOf lookup Queue/Suggestions/Seeds/Not-built
+// use (qInspireReviewFacts) — the idea box gets the same "these are alternatives,
+// pick just one" chip and dimming, kept lighter since planting here is instant
+// (one click, no select-then-apply step) rather than a hard radio enforcement.
+function bkPickCard(pick, partIdx, pickIdx, recommended, facts = null) {
+  const key = partIdx + ':' + pickIdx;
+  const group = facts?.groupOf.get(key);
+  const removedReason = facts?.removed.get(key);
+  const isBest = facts?.bestOf.has(key);
+  const dim = !!(group && !isBest);
+  const groupChip = group ? `<span class="q-inspire-alt-chip" title="${qEsc(group.note || 'These ideas are alternatives — you only need one.')}">🔄 Alternatives ${qEsc(group.id)}</span>` : '';
   return `
-    <div class="sg-card" data-partidx="${partIdx}" data-pickidx="${pickIdx}">
+    <div class="sg-card ${dim ? 'q-inspire-removed' : ''} ${group ? 'q-inspire-in-group' : ''}" data-partidx="${partIdx}" data-pickidx="${pickIdx}">
       <div class="sg-card-top">
         <span class="sg-card-title">${qEsc(pick.kind === 'proven' ? (pick.repo || 'Repo') : (pick.tree_target?.name || 'Proposal'))}</span>
         ${recommended ? `<span class="bk-stars" title="AI-recommended pick for this part">★ AI pick</span>` : ''}
         ${pick.kind === 'proven' && pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
+        ${groupChip}
       </div>
       ${pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${qEsc(pick.why_fits)}</div>` : ''}
       ${pick.use ? `<div class="sg-rationale"><b>How FMCNS would use it:</b> ${qEsc(pick.use)}</div>` : ''}
       ${pick.kind === 'proven' && pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${pick.repo}" target="_blank" rel="noopener">github.com/${pick.repo}</a></div>` : ''}
+      ${removedReason ? `<div class="sg-rationale q-inspire-reason">Not used: ${qEsc(removedReason)}</div>` : ''}
       <div class="sg-actions">
         <button data-action="plant">🌱 Plant in tree</button>
         ${pick.kind === 'proven' && pick.repo ? `<button data-action="useful">Useful</button><button data-action="not_useful">Not useful</button>` : ''}
@@ -5035,7 +5068,7 @@ function bkPickCard(pick, partIdx, pickIdx, recommended) {
   `;
 }
 
-function bkPartSection(part, partIdx, report) {
+function bkPartSection(part, partIdx, report, facts) {
   const proven = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'proven');
   const imagined = part.picks.map((p, i) => ({ p, i })).filter(x => x.p.kind === 'imagined');
   const header = report.parts.length > 1
@@ -5045,9 +5078,9 @@ function bkPartSection(part, partIdx, report) {
   return `
     ${header}
     <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--c-ink-3);margin:14px 0 6px;">Already-built options</h3>
-    ${proven.length ? proven.map(({p,i}) => bkPickCard(p, partIdx, i, i === part.recommended_index)).join('') : '<div class="tv-empty">Nothing usable found on GitHub for this part.</div>'}
+    ${proven.length ? proven.map(({p,i}) => bkPickCard(p, partIdx, i, i === part.recommended_index, facts)).join('') : '<div class="tv-empty">Nothing usable found on GitHub for this part.</div>'}
     <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--c-ink-3);margin:14px 0 6px;">Build-it-ourselves options</h3>
-    ${imagined.length ? imagined.map(({p,i}) => bkPickCard(p, partIdx, i, i === part.recommended_index)).join('') : '<div class="tv-empty">No imagined proposals — GitHub had good matches instead.</div>'}
+    ${imagined.length ? imagined.map(({p,i}) => bkPickCard(p, partIdx, i, i === part.recommended_index, facts)).join('') : '<div class="tv-empty">No imagined proposals — GitHub had good matches instead.</div>'}
   `;
 }
 
@@ -5055,6 +5088,10 @@ function renderBkReportView(report) {
   const host = document.getElementById('bkReportHost');
   if (!host || !report) return;
   const isProject = report.parts.length > 1;
+  const facts = qInspireReviewFacts(report.review);
+  const legend = (report.review?.groups?.length || 0) > 0
+    ? `<div class="q-inspire-legend">🔄 Ideas marked "Alternatives" are substitutes — you only need one of each group (greyed-out ones were the quick check's non-picks). Ungrouped ideas are complementary and can all be planted.</div>`
+    : '';
   host.innerHTML = `
     <div class="tv-toolbar-top" style="margin-top:10px;">
       <button class="id-addbtn" id="bkBackBtn">← All reports</button>
@@ -5062,7 +5099,8 @@ function renderBkReportView(report) {
       ${isProject ? `<button class="id-addbtn" id="bkPlantProjectBtn">🏗️ Create project</button>` : ''}
       <button class="id-addbtn" data-action="save-seed">⇩ Save as seed</button>
     </div>
-    ${report.parts.map((part, i) => bkPartSection(part, i, report)).join('')}
+    ${legend}
+    ${report.parts.map((part, i) => bkPartSection(part, i, report, facts)).join('')}
   `;
   document.getElementById('bkBackBtn').onclick = () => { bkOpenReport = null; renderBlocks(); };
   const seedBtn = host.querySelector('[data-action="save-seed"]');
@@ -5487,6 +5525,58 @@ function archDepth(c, visited) {
 let nbInited = false, nbSearch = '', nbOrder = null, nbConvos = {};
 let nbWorldOpen = null; // component id whose world-look panel is open under its row
 let nbFilterTerr = '', nbFilterReady = '', nbShortlist = null, nbShortlistBusy = false;
+// Bold/imagined world-look ideas not yet planted into the tree — a lighter row
+// than a real architecture_node, shown below the main list. null = not loaded yet.
+let nbUnplanted = null, nbUnplantedBusy = false;
+
+async function nbLoadUnplanted() {
+  if (nbUnplantedBusy) return;
+  nbUnplantedBusy = true;
+  try {
+    const data = await api('/api/discovery/unplanted');
+    nbUnplanted = data.items || [];
+  } catch (e) { nbUnplanted = nbUnplanted || []; }
+  finally { nbUnplantedBusy = false; }
+  renderNotbuilt();
+}
+
+function nbUnplantedSectionHtml() {
+  if (nbUnplanted === null) return '';
+  let items = nbUnplanted;
+  const q = nbSearch.trim().toLowerCase();
+  if (q) items = items.filter(it => [it.name, it.summary, it.idea_text].join(' ').toLowerCase().includes(q));
+  if (!items.length) return '';
+  return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">🌱 Not yet in the tree</span></div>
+    <div class="id-form-hint" style="margin-bottom:6px;">Bold ideas from world-looks across the app — queue tasks, suggestions, seeds, components — that haven't been planted into the tech tree yet.</div>
+    ${items.map(it => `
+      <div class="nb-row" data-unplanted="${it.report_id}:${it.part_index}:${it.pick_index}">
+        <div class="nb-top">
+          <span class="nb-name">✦ ${qEsc(it.name)}</span>
+          <span class="nb-terr">from ${qEsc(it.part_name ? it.part_name + ' — ' : '')}${qEsc(it.idea_text || '')}</span>
+        </div>
+        ${it.summary ? `<div class="nb-what clamped">${qEsc(it.summary)}</div>` : ''}
+        <div class="nb-actions">
+          <button class="nb-build" data-unplanted-plant="${it.report_id}:${it.part_index}:${it.pick_index}">🌱 Plant in tree</button>
+        </div>
+      </div>
+    `).join('')}`;
+}
+
+function wireNbUnplanted(host) {
+  host.querySelectorAll('[data-unplanted-plant]').forEach(b => {
+    b.onclick = async () => {
+      const [report_id, partStr, pickStr] = b.getAttribute('data-unplanted-plant').split(':');
+      const part_index = Number(partStr), pick_index = Number(pickStr);
+      b.disabled = true; b.textContent = '…';
+      try {
+        await apiWrite('/api/discovery/plant', 'POST', { report_id, part_index, pick_index });
+        nbUnplanted = (nbUnplanted || []).filter(x => !(x.report_id === report_id && x.part_index === part_index && x.pick_index === pick_index));
+        await loadArchNodes();
+        renderNotbuilt();
+      } catch (e) { b.disabled = false; b.textContent = '🌱 Plant in tree'; alert('Error: ' + e.message); }
+    };
+  });
+}
 
 function nbUnbuiltItems() {
   const items = [];
@@ -5573,7 +5663,7 @@ function renderNotbuiltFlow() {
     `<button class="ctrlbtn nb-chip${nbFilterReady === rv ? ' on' : ''}" data-nbready="${rv}">${rv === '' ? 'Any readiness' : rv === 'buildable' ? 'Ready to build' : 'Waiting on others'}</button>`).join('');
   host.innerHTML = `
     <div class="nb-toolbar" style="border-bottom:none;padding:4px 2px 10px;">
-      <span class="arch-title">Not built</span>
+      <span class="arch-title">On the Horizon</span>
       <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEsc(nbSearch)}">
       <button class="ctrlbtn" id="nbShortlistBtn" title="One AI call — picks the 3 best next moves with a one-line reason each">✨ Show my next 3</button>
       <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project">✨ AI recommends order</button>
@@ -5600,6 +5690,7 @@ function renderNotbuiltFlow() {
     // advance (one at a time, no waiting when you click).
     loadArchNodes().then(() => { renderNotbuilt(); nbAutoLook(); }).catch(() => {});
     loadNbConvos();
+    nbLoadUnplanted();
   }
   renderNotbuilt();
   // The open world-look panel: one lookup after a reload, then poll while a
@@ -5624,7 +5715,8 @@ function renderNotbuilt() {
     items = nbSmartOrder(items);
   }
   if (!items.length) {
-    host.innerHTML = '<div class="nb-empty">Nothing here — everything matching is either built or filtered out.</div>';
+    host.innerHTML = '<div class="nb-empty">Nothing here — everything matching is either built or filtered out.</div>' + nbUnplantedSectionHtml();
+    wireNbUnplanted(host);
     return;
   }
   // In-flight looks (the background sweep included) tick forward on each
@@ -5683,7 +5775,9 @@ function renderNotbuilt() {
     </div>
     ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}</div>` : ''}`;
   });
+  html += nbUnplantedSectionHtml();
   host.innerHTML = html;
+  wireNbUnplanted(host);
   host.querySelectorAll('[data-nbbuild]').forEach(b => {
     b.onclick = () => {
       const c = ARCH_BY_ID[b.getAttribute('data-nbbuild')];
@@ -5724,8 +5818,8 @@ function renderNotbuilt() {
       b.onclick = () => {
         const card = b.closest('.q-inspire-card');
         const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
-        const idx = e.sel.findIndex(x => x.part_index === key.part_index && x.pick_index === key.pick_index);
-        if (idx >= 0) e.sel.splice(idx, 1); else e.sel.push(key);
+        const facts = qInspireReviewFacts(e.report?.review);
+        applyInspireToggle(e.sel, key, facts);
         renderNotbuilt();
       };
     });

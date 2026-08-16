@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
-  isWorldLookRunning, runWorldLookGuarded, plant, plantProject, CURATED_QUERIES,
+  isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -56,6 +56,12 @@ export function discoveryRoutes(db) {
     const out = plantProject(db, req.body || {});
     if (out.error) return res.status(400).json(out);
     res.json(out);
+  });
+
+  // Bold/imagined world-look ideas not yet planted into the tech tree — feeds the
+  // "On the Horizon" section alongside real unbuilt architecture_nodes.
+  router.get('/unplanted', (req, res) => {
+    res.json({ items: listUnplantedBoldPicks(db) });
   });
 
   // ── World-look for any item (suggestion, seed, component) ──────────────────
