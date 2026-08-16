@@ -11,7 +11,14 @@ if (!JWT_SECRET) {
 }
 
 export function issueToken() {
-  return jwt.sign({ sub: 'antoine' }, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ sub: 'antoine' }, JWT_SECRET, { expiresIn: '7d' });
+}
+
+// Shared by requireAuth (HTTP) and realtime.js (WebSocket) so both auth paths
+// verify the same way — pinning algorithms is cheap defense-in-depth against a
+// signature-downgrade attack, even though only HS256 is ever used to sign.
+export function verifyToken(token) {
+  return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 }
 
 export function requireAuth(req, res, next) {
@@ -19,7 +26,7 @@ export function requireAuth(req, res, next) {
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'missing_token' });
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = verifyToken(token);
     next();
   } catch {
     res.status(401).json({ error: 'invalid_token' });
