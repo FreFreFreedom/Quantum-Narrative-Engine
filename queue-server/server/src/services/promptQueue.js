@@ -820,6 +820,28 @@ export function updatePrompt(id, patch) {
   return updated;
 }
 
+// Per-task pause: unlike pauseQueue()/reclaimRunning() (which reclaim a killed
+// task back to 'queued' so it's immediately eligible to restart), this leaves
+// the row 'paused' so it's actually skipped by advanceQueue() until resumed.
+// Mirrors reclaimRunning()'s kill for the running case; a queued row just
+// flips status directly since there's no process to stop.
+export function pausePrompt(id) {
+  let row = getPrompt(id);
+  if (!row) return null;
+  row = reclaimPending(row) || row;
+  if (row.status === 'running' && row.agent_task_id) {
+    stopTask(row.agent_task_id);
+    db.prepare(`
+      UPDATE work_prompts SET status='paused', agent_task_id=NULL, started_at=NULL,
+        updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(row.id);
+  } else if (row.status === 'queued') {
+    db.prepare(`UPDATE work_prompts SET status='paused', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(row.id);
+  }
+  broadcast();
+  return getPrompt(id);
+}
+
 export function deletePrompt(id) {
   const row = getPrompt(id);
   if (!row) return false;

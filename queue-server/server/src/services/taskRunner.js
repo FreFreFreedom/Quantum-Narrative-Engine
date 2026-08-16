@@ -571,7 +571,7 @@ export function stopTask(taskId) {
   const pidFile = PID_FILE(taskId);
   let pid = null;
   try { pid = parseInt(readFileSync(pidFile, 'utf8').trim().split('\n')[0], 10); } catch {}
-  const updated = updateTask(taskId, { stop_requested: true, run_state: 'stopped' });
+  const updated = updateTask(taskId, { stop_requested: 1, run_state: 'stopped' });
   if (updated) broadcastTask(updated);
   if (pid) killGroup(pid);
   return true;

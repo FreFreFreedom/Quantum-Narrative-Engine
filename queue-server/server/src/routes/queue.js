@@ -144,6 +144,12 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  router.post('/prompts/:id/pause', (req, res) => {
+    const row = queue.pausePrompt(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
   router.get('/prompts/:id/messages', (req, res) => {
     res.json({ messages: queue.listMessages(req.params.id) });
   });
