@@ -51,6 +51,10 @@ const SILENCE_MS = Number(process.env.SILENCE_MS || 5 * 60_000);
 const ATTEMPT_CAP_MS = Number(process.env.ATTEMPT_CAP_MS || 30 * 60_000);
 const POLL_IDLE_MS = 5_000;
 const STREAM_FLUSH_MS = 2_000;
+// How often to print what this runner currently sees in the queue — a quick
+// "is it actually looking at the same app I am" check, without spamming a line
+// on every 5s idle poll.
+const SNAPSHOT_MS = Number(process.env.SNAPSHOT_MS || 30_000);
 
 if (!ADMIN_PASSWORD) {
   console.error('ADMIN_PASSWORD is not set — the runner cannot log in to the queue.');
@@ -126,6 +130,35 @@ async function api(path, body, { method = 'POST' } = {}) {
   let r = await send();
   if (r.status === 401) { await login(); r = await send(); }
   return r;
+}
+
+// ─── Status snapshot ──────────────────────────────────────────────────────────
+// Reads the same list the app's Queue tab shows (GET /api/travaux/prompts), so
+// a printed line here can be checked directly against what's on screen in the
+// app — proof the runner is seeing the real, current queue and not something
+// stale or a different environment.
+let lastSnapshotAt = 0;
+async function printSnapshot({ force = false } = {}) {
+  if (!force && Date.now() - lastSnapshotAt < SNAPSHOT_MS) return;
+  lastSnapshotAt = Date.now();
+  const stamp = new Date().toLocaleTimeString();
+  let prompts;
+  try {
+    const r = await api('/prompts?space=fmcns', undefined, { method: 'GET' });
+    if (!r.ok) throw new Error(`status ${r.status}`);
+    prompts = (await r.json()).prompts || [];
+  } catch (e) {
+    console.log(`[${stamp}] could not read the queue — ${e.message}`);
+    return;
+  }
+  const running = prompts.filter((p) => p.status === 'running');
+  const ready = prompts.filter((p) => p.status === 'queued');
+  const label = (p) => p.title || `(untitled ${p.id.slice(0, 8)})`;
+  const runningTxt = running.length ? `● running: ${running.map(label).join(', ')}` : '○ idle — nothing running';
+  const readyTxt = ready.length
+    ? `${ready.length} ready to start: ${ready.slice(0, 5).map(label).join(', ')}${ready.length > 5 ? `, +${ready.length - 5} more` : ''}`
+    : '0 ready to start';
+  console.log(`[${stamp}] ${runningTxt} — ${readyTxt}`);
 }
 
 // ─── Worktree ─────────────────────────────────────────────────────────────────
@@ -400,6 +433,7 @@ async function main() {
   console.log(`  repo  : ${RUNNER_REPO}`);
   console.log(`  models: Go chain first, then free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`);
   console.log('Waiting for tasks… (Ctrl-C to stop)\n');
+  await printSnapshot({ force: true });
 
   while (!stopping) {
     let claimed = null;
@@ -416,8 +450,13 @@ async function main() {
       console.error('Queue unreachable —', e.message);
     }
 
-    if (!claimed) { await new Promise((s) => setTimeout(s, POLL_IDLE_MS)); continue; }
+    if (!claimed) {
+      await printSnapshot();
+      await new Promise((s) => setTimeout(s, POLL_IDLE_MS));
+      continue;
+    }
 
+    await printSnapshot({ force: true });
     try { await runTask(claimed); }
     catch (e) {
       console.error('  Task failed unexpectedly —', e.message);
@@ -425,6 +464,7 @@ async function main() {
         await api(`/worker/${claimed.id}/result`, { status: 'blocked', result: `The runner hit an error: ${e.message}` });
       } catch { /* the stale-claim reaper will free it */ }
     }
+    await printSnapshot({ force: true });
   }
   console.log('Runner stopped.');
 }
