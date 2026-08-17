@@ -67,6 +67,10 @@ export function queueRoutes() {
         messages: queue.listMessages(p.id),
         run_state: task?.run_state ?? null,
         heartbeat_at: task?.heartbeat_at ?? null,
+        // Which models this task has actually been through. Tracked in the DB
+        // since the fallback chain existed, but never sent to the UI — so a
+        // model switch was invisible unless you read the raw stream log.
+        tried_models: task?.tried_models ?? null,
         // Work-meter data for the UI's progress bar: real output volume so far,
         // plus the run's time budget (both only meaningful while running).
         output_bytes: running ? execOutputBytes(p.agent_task_id) : null,

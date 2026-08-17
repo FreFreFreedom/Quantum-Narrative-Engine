@@ -268,6 +268,12 @@ function initSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_queue ON agent_tasks(status, kind, priority, created_at)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_agent_tasks_prompt ON agent_tasks(work_prompt_id)`); } catch {}
+  // Local-runner execution: which runner claimed this task and when. Used to
+  // detect a claim whose runner went away (Mac slept, process killed) so the
+  // task can be released back to the queue instead of sitting 'in_progress'
+  // forever. Added after the table shipped, hence ALTER for existing installs.
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN claimed_by TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN claimed_at TEXT`); } catch {}
 
   // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
   // because node:sqlite enforces foreign keys by default — the REFERENCES above

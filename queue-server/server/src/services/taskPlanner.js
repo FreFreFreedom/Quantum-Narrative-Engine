@@ -14,6 +14,13 @@ import { generateText } from './ai/text.js';
 // 'standard'; anything that will plausibly take several hours of agent work,
 // or that touches many files/features at once, is 'deep'. The heuristic uses
 // raw word count plus a few robust markers, all lowercased.
+// Restored: both lists were introduced with tierForTask in 517c36e and removed
+// by accident in 6358ce0, leaving the function referencing two undefined names.
+// Since that commit EVERY call to createPrompt threw "DEEP_RAISERS is not
+// defined" — i.e. no new task could be added to the queue at all.
+const DEEP_RAISERS = ['refactor', 'redesign', 'rewrite', 'overhaul', 'migrate', 'multi-file', 'many files', 'architecture', 'full restructure', 'new feature', 'from scratch', 'entire'];
+const MINI_DOWNERS = ['typo', 'rename', 'wording', 'fix the', 'small fix', 'parameter', 'threshold', 'constant'];
+
 export function tierForTask(prompt, title = '') {
   const hay = `${title} ${prompt}`.toLowerCase();
   const words = hay.split(/\s+/).filter(Boolean).length;

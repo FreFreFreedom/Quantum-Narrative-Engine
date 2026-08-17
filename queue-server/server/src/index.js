@@ -25,6 +25,7 @@ import { startPreGen } from './services/preGen.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
+import { workerRoutes } from './routes/worker.js';
 import { reviewsRoutes } from './routes/reviews.js';
 import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
@@ -102,12 +103,19 @@ try {
 // (plan Part 6). Best-effort — it needs a git repo; on Railway there is none.
 try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate failed:', e.message); }
 
-// Fire-and-forget: pre-generate book suggestions + first-tag lens for every
-// character/country so they're already cached (instant) by the time a user
-// clicks, instead of everyone eating live Claude-API latency after each redeploy.
-// WARMUP_DISABLED=1 is used by the review runner's ephemeral boot check — a
-// throwaway server that must not spend any API credits.
-if (process.env.WARMUP_DISABLED !== '1') {
+// Background pre-generation: book suggestions + first-tag lens for every
+// character/country, plus the suggestion/architecture/world-look sweeps.
+//
+// OFF BY DEFAULT (opt in with PREGEN_ENABLED=1). It used to run on every boot,
+// which on Railway's free tier means every single deploy: the DB is reset each
+// redeploy, so the "already cached?" guards always read empty and the whole
+// sweep re-ran from scratch — ~369 AI calls per deploy for content that may
+// never be opened. Every one of these results is cached in the DB on first
+// view anyway (entity_book_suggestions / entity_tag_lenses), so generating on
+// demand costs one short wait once per item instead of a full bill per deploy.
+// WARMUP_DISABLED=1 is still honoured — the review runner's ephemeral boot
+// check relies on it and must never spend credits.
+if (process.env.PREGEN_ENABLED === '1' && process.env.WARMUP_DISABLED !== '1') {
   warmCaches(db, { getBooks: makeBooksHandler(db), getTagLens: makeTagLensHandler(db) })
     .catch((e) => console.error('Cache warm-up failed:', e.message));
   // Background pre-generation (suggestions + architecture "what's next") so those
@@ -175,6 +183,7 @@ function timingSafeEqualStrings(a, b) {
   return crypto.timingSafeEqual(ah, bh);
 }
 
+app.use('/api/travaux', requireAuth, workerRoutes());
 app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());

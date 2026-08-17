@@ -1257,6 +1257,10 @@ button:active { transform: translateY(1px) scale(.99); }
             </div>
             <div id="qAddErr" class="q-err"></div>
             <div id="qConnLost" style="display:none;color:var(--c-danger);font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
+            <!-- Tasks run on Antoine's Mac now (queue-server/scripts/queue-runner.js).
+                 If the runner isn't started, nothing will run — say so plainly here
+                 instead of letting the queue look busy with no one behind it. -->
+            <div id="qRunnerState" style="display:none;font-size:12px;margin-top:8px;"></div>
           </div>
         </div>
         <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
@@ -3435,6 +3439,29 @@ function startQueuePolling() {
   qPollTimer = setInterval(qLoad, flowVisible ? 4000 : 15000);
 }
 
+// Is the local runner attached? Tasks execute on Antoine's Mac, so a queue with
+// no runner running will sit there doing nothing — which used to be completely
+// invisible. Checked on a slower cadence than the task list; failures are
+// non-fatal (an older server without this endpoint just shows nothing).
+let qRunnerLastCheck = 0;
+async function qRefreshRunnerState() {
+  const el = document.getElementById('qRunnerState');
+  if (!el) return;
+  if (Date.now() - qRunnerLastCheck < 15000) return;
+  qRunnerLastCheck = Date.now();
+  let s;
+  try { s = await api('/api/travaux/worker/status'); } catch { el.style.display = 'none'; return; }
+  if (!s || s.mode !== 'local') { el.style.display = 'none'; return; }
+  el.style.display = '';
+  if (s.connected) {
+    el.style.color = 'var(--c-ink-4)';
+    el.textContent = `✓ Runner connected${s.running_count ? ` — ${s.running_count} task${s.running_count === 1 ? '' : 's'} running` : ' — idle'}`;
+  } else {
+    el.style.color = 'var(--c-warn, #b8860b)';
+    el.textContent = 'Runner not running — queued tasks will wait. Start it with: cd queue-server && npm run runner';
+  }
+}
+
 async function qLoad() {
   let data;
   try {
@@ -3450,6 +3477,7 @@ async function qLoad() {
   }
   const connEl = document.getElementById('qConnLost');
   if (connEl) connEl.style.display = 'none';
+  qRefreshRunnerState();
   const nextPrompts = data.prompts || [];
   const anyRunning = nextPrompts.some(p => p.status === 'running');
   const sig = JSON.stringify({ paused: data.queue_paused, prompts: nextPrompts });
@@ -3591,6 +3619,16 @@ function qProviderLabel(p) {
   }
   const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
   return `Claude Code · ${presetLabel}`;
+}
+
+// Which models this task actually went through. The runner walks the Go chain
+// then the free chain, dropping a model the moment it fails to produce anything,
+// so more than one entry here means "the first choice wasn't working".
+function qTriedModelsLine(p) {
+  const tried = Array.isArray(p.tried_models) ? p.tried_models : null;
+  if (!tried || tried.length < 2) return '';
+  const short = (id) => String(id || '').replace(/^opencode:/, '');
+  return `<div class="q-detail-row"><span title="Every model this task ran on, in order. A switch means the previous one hit its limit or produced nothing."><b>Tried:</b> ${tried.map((m) => qEsc(short(m))).join(' → ')}</span></div>`;
 }
 
 // Which agent a task is assigned to ("Auto" until the server picks one).
@@ -4553,6 +4591,7 @@ function qRenderDetail(p) {
         ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
         ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${qEsc(autoParent.title)}" (auto)</span>` : ''}
       </div>
+      ${qTriedModelsLine(p)}
       ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
       ${switchable ? `
         <div class="q-detail-row" style="gap:8px;align-items:center;">

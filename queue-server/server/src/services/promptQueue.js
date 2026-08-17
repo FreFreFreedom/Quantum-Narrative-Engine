@@ -240,7 +240,11 @@ export async function createPrompt({
       inspirationOverride: preInsp ? preInsp.digest : null, tier,
     });
   }
-  eagerSummarize(id); // free-lane purpose bullets ready before the owner opens it
+  // Purpose bullets are NOT generated here any more. They were an AI call fired
+  // on every task creation, for a panel that is only read once the task is
+  // opened — and the same bullets are generated again when the task finishes.
+  // The lazy route (POST /prompts/:id/summarize) still fills them in on first
+  // open and caches them on the row, so nothing is lost except the double spend.
   return getPrompt(id);
 }
 
@@ -504,7 +508,13 @@ export async function waitForInspiration(id, timeoutMs = INSPIRE_WAIT_MS) {
 
 // Manual re-run from the task detail (also the entry point for tasks created
 // before this feature: their state is 'off' and this starts their first pass).
-export async function refreshInspiration(id) {
+//
+// `force` bypasses the daily side-call budget, which is right for a button the
+// human just pressed and wrong for anything automatic. It used to be hardcoded
+// true, so the background sweep (autoWorldLookTasks) spent through the budget
+// cap that exists precisely to stop background work draining credit — the sweep
+// now passes force:false and gets throttled like any other background call.
+export async function refreshInspiration(id, { force = true } = {}) {
   const row = getPrompt(id);
   if (!row) return null;
   if (row.mode !== 'implement') return row;
@@ -524,7 +534,7 @@ export async function refreshInspiration(id) {
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(id);
   broadcast();
-  startInspiration(id, { title: row.title, prompt: row.raw_prompt || row.prompt }, { force: true });
+  startInspiration(id, { title: row.title, prompt: row.raw_prompt || row.prompt }, { force });
   return getPrompt(id);
 }
 
@@ -671,7 +681,9 @@ export async function autoWorldLookTasks({ limit = 16 } = {}) {
   let ran = 0, skipped = 0, failed = 0;
   for (const r of rows) {
     if (_inspiring.has(r.id)) { skipped++; continue; }          // already running
-    const row = await refreshInspiration(r.id);                 // -> 'pending' + starts runInspiration
+    // force:false — this is a background sweep, so it must respect the daily
+    // side-call budget instead of using the manual-click escape hatch.
+    const row = await refreshInspiration(r.id, { force: false }); // -> 'pending' + starts runInspiration
     if (!row) { skipped++; continue; }
     const run = _inspiring.get(r.id);                           // grab the in-flight promise
     if (run) {
@@ -1299,10 +1311,20 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
   // depth. Reuse the compact recap shape (title/purpose/last exchange) when the
   // thread has grown, to keep the cost small on the free floor while still
   // grounding the answer in what's actually happening on the task.
-  const messages = listMessages(id);
-  const thread = messages
-    .map((m) => `${m.author_name ? m.author_name : (m.role === 'user' ? 'Human' : 'You')}: ${clip(m.text, 2000)}`)
-    .join('\n\n');
+  // Only the tail of the thread. This used to serialize EVERY message at 2000
+  // chars each on every single reply, so the cost of answering grew with the
+  // length of the conversation — reply #20 re-sent 19 replies' worth of text,
+  // every time. The task title, original request and purpose below already carry
+  // the standing context, so the recent exchange is what actually needs to be
+  // here. Matches the intent the comment above always claimed.
+  const CHAT_TAIL = 8;
+  const allMessages = listMessages(id);
+  const messages = allMessages.slice(-CHAT_TAIL);
+  const omitted = allMessages.length - messages.length;
+  const thread = (omitted > 0 ? `(${omitted} earlier message${omitted === 1 ? '' : 's'} not shown)\n\n` : '')
+    + messages
+      .map((m) => `${m.author_name ? m.author_name : (m.role === 'user' ? 'Human' : 'You')}: ${clip(m.text, 2000)}`)
+      .join('\n\n');
   const system = `Respond to the latest message from the human as part of an ongoing conversation about this task. Plain English, no jargon, no file names unless I explain them.\n\n${USER_FACING_STYLE}\n\n`;
   const context = [
     `=== TASK ===\n${clip(row.title || '(untitled)', 160)}`,
@@ -1620,6 +1642,27 @@ export function onAgentTaskDeferred(task, { label = '', resumeAfter = null } = {
   }
   broadcast();
   notifyLimitOnce(label);
+}
+
+// The local runner that had claimed some tasks went away (Mac slept, process
+// killed) and taskRunner released their claims. Put the matching prompts back to
+// 'queued' so they're picked up again the next time a runner connects, instead
+// of sitting at 'running' with nothing behind them — the exact "says running but
+// isn't" symptom this whole rework is about.
+export function onClaimsReleased() {
+  if (!db) return 0;
+  let freed = 0;
+  for (const row of db.prepare(`${SELECT()} AND status='running'`).all()) {
+    const task = row.agent_task_id ? findAgentTask(row.agent_task_id) : null;
+    if (!task || task.status !== 'approved') continue;
+    db.prepare(`
+      UPDATE work_prompts SET status='queued', started_at=NULL,
+        updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(row.id);
+    freed += 1;
+  }
+  if (freed) broadcast();
+  return freed;
 }
 
 let _limitNotified = '';

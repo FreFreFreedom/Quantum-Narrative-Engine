@@ -577,7 +577,18 @@ function memoryBlocked() {
   return true;
 }
 
+// Where tasks actually execute. 'local' (the default) means a runner on
+// Antoine's Mac claims tasks over /api/travaux/worker and runs them there with
+// the real opencode CLI — so the server never spawns anything and kick() is a
+// no-op; approved tasks simply wait to be claimed. 'server' restores the old
+// in-container spawning. The container was always the weak link here: no way to
+// tell a working model from a dead one until a 20-35 min timeout expired, and a
+// small box that OOM-kills real work.
+export const EXECUTION_MODE = process.env.EXECUTION_MODE || 'local';
+export function isLocalExecution() { return EXECUTION_MODE === 'local'; }
+
 function kick() {
+  if (isLocalExecution()) return;
   if (!getSettings().enabled) return;
   if (memoryBlocked()) return;
   const tasks = readTasks().filter((t) => !(isQueuePaused() && t.kind === 'queue'));
@@ -1207,6 +1218,23 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   broadcastTask(task);
 
   const isQuestion = next.mode === 'question';
+  const prompt = buildTaskPrompt(next);
+
+  runDetachedExecution(next.id, prompt, {
+    model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
+    resumeSessionId: next.resume_session_id || null, lane,
+    provider, providerModel: (provider === 'opencode' || provider === 'ai-router') ? model : null, question: isQuestion,
+    cwd: execCwd,
+  });
+}
+
+// The exact prompt text a task is run with. Extracted so the local runner
+// (services/workerQueue.js → scripts/queue-runner.js) sends byte-identical text
+// to what in-container execution would have sent — the agent instructions, role
+// brief, summary-section and ask-the-user markers all have to match, or the
+// result parsing on the way back stops lining up.
+export function buildTaskPrompt(next) {
+  const isQuestion = next.mode === 'question';
   const brief = `Description:\n${next.description}`;
   const agent = getAgent(next.agent_key || 'dev1');
   const roleBrief = roleBriefFor(agent);
@@ -1219,13 +1247,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   if (roleBrief && !tpl.includes('{{roleBrief}}')) prompt += '\n\n' + roleBrief;
   if (!prompt.includes(SUMMARY_SECTION_MARKER)) prompt += '\n\n' + (isQuestion ? QUESTION_SUMMARY_INSTRUCTION : SUMMARY_SECTION_INSTRUCTION);
   if (next.work_prompt_id) prompt += ASK_USER_INSTRUCTION;
-
-  runDetachedExecution(next.id, prompt, {
-    model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
-    resumeSessionId: next.resume_session_id || null, lane,
-    provider, providerModel: (provider === 'opencode' || provider === 'ai-router') ? model : null, question: isQuestion,
-    cwd: execCwd,
-  });
+  return prompt;
 }
 
 export function enqueueAgentTask({
@@ -1288,8 +1310,188 @@ export function cancelPendingAgentTask(id) {
   return true;
 }
 
+// ─── Local runner protocol (/api/travaux/worker) ──────────────────────────────
+// Execution moved out of this container and onto Antoine's Mac, where the
+// opencode CLI is installed, authenticated and has real resources. The server
+// stays the queue: it decides WHAT runs next and records what came back; the
+// runner decides WHICH MODEL and does the work. Three calls: claim → stream* →
+// result.
+
+// Hand the next runnable task to a runner. Mirrors kick()'s selection rules
+// (queue pause, agent enabled/paused, questions before writers by priority) but
+// stops at one task: the runner executes serially, so concurrency caps are its
+// business, not ours. The UPDATE is guarded on status='approved' so two runners
+// racing for the same task can't both win it.
+export function claimNextTask({ runnerId = 'local' } = {}) {
+  if (!db) return null;
+  if (!getSettings().enabled) return null;
+  const paused = isQueuePaused();
+  const byPriority = (a, b) => (b.priority - a.priority) || a.created_at.localeCompare(b.created_at);
+  const candidates = readTasks()
+    .filter((t) => t.status === 'approved')
+    .filter((t) => !(paused && t.kind === 'queue'))
+    .filter((t) => {
+      const agent = agentRow(t.agent_key || 'dev1');
+      return !agent || (agent.enabled && !agent.paused);
+    })
+    .sort(byPriority);
+  // Questions are cheap and read-only — let them jump ahead of writers.
+  const next = candidates.find((t) => t.mode === 'question') || candidates[0];
+  if (!next) return null;
+
+  const now = new Date().toISOString();
+  const won = db.prepare(
+    `UPDATE agent_tasks SET status='in_progress', run_state='dispatched', started_at=?,
+       claimed_by=?, claimed_at=?, heartbeat_at=?, updated_at=? WHERE id=? AND status='approved'`
+  ).run(now, runnerId, now, now, now, next.id);
+  if (!won.changes) return null;
+
+  const task = findAgentTask(next.id);
+  broadcastTask(task);
+  console.log(`[taskRunner] task ${task.id} ("${task.title}") claimed by runner ${runnerId}`);
+  return {
+    id: task.id,
+    title: task.title,
+    mode: task.mode,
+    prompt: buildTaskPrompt(task),
+    resume_session_id: task.resume_session_id || null,
+    worktree_path: task.worktree_path || null,
+    branch: task.branch || null,
+    work_prompt_id: task.work_prompt_id || null,
+    agent_key: task.agent_key || 'dev1',
+  };
+}
+
+// Live progress from the runner: transcript chunks plus proof of life. Chunks go
+// through the same appendStreamChunk the in-container path uses, so the existing
+// UI stream view works unchanged.
+export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd = null } = {}) {
+  const task = readTasks().find((t) => t.id === taskId);
+  if (!task || task.status !== 'in_progress') return false;
+  for (const chunk of chunks) if (chunk && chunk.kind) appendStreamChunk(taskId, chunk);
+  if (Number.isFinite(cost_usd) && cost_usd > 0) runCostSoFar.set(taskId, cost_usd);
+  const patch = { heartbeat_at: new Date().toISOString(), run_state: 'working' };
+  if (model && model !== task.run_model) patch.run_model = model;
+  const updated = updateTask(taskId, patch);
+  if (updated) broadcastTask(updated);
+  return true;
+}
+
+// The runner finished (or gave up). Same post-processing the in-container
+// finalize() does — pull out an asked-the-user question and the user-summary
+// section — then hand off to promptQueue exactly as before, so everything
+// downstream (thread messages, retries, tree sync) behaves identically.
+export function recordRunnerResult(taskId, {
+  status = 'done', result = '', session_id = null, model = null, tried_models = null,
+  cost_usd = null, tokens_in = null, tokens_out = null, worktree_path = null, branch = null,
+} = {}) {
+  const task = readTasks().find((t) => t.id === taskId);
+  if (!task) return null;
+
+  let agent_result = String(result || '') || '(finished without a report)';
+  let pending_question = null;
+  { const cut = extractPendingQuestion(agent_result); agent_result = cut.text; pending_question = cut.question; }
+
+  let user_summary = null;
+  const i = agent_result.lastIndexOf(SUMMARY_SECTION_MARKER);
+  if (i !== -1) {
+    user_summary = agent_result.slice(i + SUMMARY_SECTION_MARKER.length).trim() || null;
+    agent_result = agent_result.slice(0, i).trim();
+  }
+
+  const finalStatus = ['done', 'blocked', 'cancelled'].includes(status) ? status : 'blocked';
+  const finalTask = updateTask(taskId, {
+    status: finalStatus, agent_result, user_summary, pending_question,
+    session_id: session_id || null,
+    run_model: model || task.run_model,
+    tried_models: Array.isArray(tried_models) ? tried_models : task.tried_models,
+    worktree_path: worktree_path || task.worktree_path,
+    branch: branch || task.branch,
+    cost_usd: Number.isFinite(cost_usd) && cost_usd > 0 ? cost_usd : task.cost_usd,
+    tokens_in: tokens_in ?? task.tokens_in, tokens_out: tokens_out ?? task.tokens_out,
+    run_state: pending_question?.question ? 'awaiting_input' : 'idle',
+    completed_at: new Date().toISOString(), heartbeat_at: new Date().toISOString(),
+    claimed_by: null, claimed_at: null,
+  });
+  if (finalTask) broadcastTask(finalTask);
+  console.log(`[taskRunner] task ${taskId} reported by runner — status=${finalStatus} model=${model || '?'}`);
+  runCostSoFar.delete(taskId);
+  setTimeout(() => streamBuffers.delete(taskId), 120_000).unref?.();
+
+  if (finalTask) {
+    setImmediate(() => {
+      import('./promptQueue.js')
+        .then((m) => m.onAgentTaskFinalized(finalTask))
+        .catch((e) => console.error('queue: finalize hand-off failed —', e.message));
+    });
+  }
+  return finalTask;
+}
+
+// Is a runner currently connected? Drives the UI's "nothing will run right now"
+// indicator — the one thing that was genuinely invisible before: a queue that
+// looks busy but has no executor attached.
+let _lastClaimPollAt = null;
+export function noteRunnerPoll() { _lastClaimPollAt = Date.now(); }
+export function runnerStatus() {
+  const running = readTasks().filter((t) => t.status === 'in_progress' && t.claimed_by);
+  const lastBeat = running
+    .map((t) => (t.heartbeat_at ? new Date(t.heartbeat_at).getTime() : 0))
+    .sort((a, b) => b - a)[0] || null;
+  const lastSeen = Math.max(_lastClaimPollAt || 0, lastBeat || 0) || null;
+  return {
+    mode: EXECUTION_MODE,
+    connected: !!lastSeen && (Date.now() - lastSeen) < 60_000,
+    last_seen_at: lastSeen ? new Date(lastSeen).toISOString() : null,
+    running_count: running.length,
+  };
+}
+
+// A claimed task whose runner stopped reporting. In local mode the only proof a
+// task is alive is the runner's heartbeat (posted every couple of seconds while
+// it streams). If that stops for this long — Mac slept, runner killed, network
+// dropped — the claim is dead and the task goes back to 'approved' so the next
+// runner picks it up. Deliberately generous: a model can legitimately think for
+// a while, and re-running a task that was actually fine costs real credit.
+const CLAIM_STALE_MS = 10 * 60_000;
+
+export function releaseStaleClaims() {
+  const cutoff = new Date(Date.now() - CLAIM_STALE_MS).toISOString();
+  let freed = 0;
+  for (const t of readTasks().filter((x) => x.status === 'in_progress')) {
+    const beat = t.heartbeat_at || t.started_at;
+    if (beat && beat > cutoff) continue;
+    const released = updateTask(t.id, {
+      status: 'approved', run_state: 'idle', started_at: null,
+      claimed_by: null, claimed_at: null,
+    });
+    if (released) { broadcastTask(released); freed += 1; }
+  }
+  if (freed) {
+    import('./promptQueue.js')
+      .then((m) => m.onClaimsReleased())
+      .catch((e) => console.error('queue: claim-release hand-off failed —', e.message));
+  }
+  return freed;
+}
+
 export function initTaskRunner() {
   const timer = setTimeout(() => {
+    // Local execution: this server never spawned anything, so there are no
+    // orphans of ours to sweep and nothing to re-attach a monitor to. Skipping
+    // the sweep also matters during local testing, where the server and the
+    // runner share a machine — the sweep matches opencode processes by command
+    // line and would happily kill the runner's live task. Instead, release any
+    // task whose runner went away (see releaseStaleClaims) so it can be
+    // re-claimed by the next runner that starts.
+    if (isLocalExecution()) {
+      try {
+        const freed = releaseStaleClaims();
+        if (freed) console.log(`[taskRunner] local mode: released ${freed} stale claim(s) back to the queue.`);
+      } catch (e) { console.error('[taskRunner] stale-claim release failed:', e.message); }
+      return;
+    }
+
     // Boot-time orphan sweep (fixes the 38h zombie): kill any queue-spawned
     // CLI process whose server is gone, and clean stale pid files. Runs BEFORE
     // re-attach so a task that looks 'in_progress' in the DB but whose process
