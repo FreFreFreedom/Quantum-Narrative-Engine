@@ -701,8 +701,8 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-statusseg button { opacity:.85; }
 .arch-focussel { margin-left:2px; padding:5px 8px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; color:var(--c-ink); cursor:pointer; font-family:inherit; }
 .arch-stage { flex:1; overflow:hidden; position:relative; box-shadow:inset 0 0 0 0 transparent; transition:box-shadow var(--t-med) var(--ease); }
-.arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
-.arch-canvas.arch-zoom-anim { transition:transform var(--t-fast) var(--ease); }
+.arch-svg { width:100%; height:100%; display:block; cursor:grab; }
+.arch-stage.panning .arch-svg { cursor:grabbing; }
 .arch-focusbar { position:absolute; top:12px; left:12px; z-index:6; display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:9px; background:rgba(var(--c-surface-rgb),.95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:11px; max-width:calc(100% - 200px); }
 .arch-focusbar .arch-focusname { font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
 .arch-focusbar .arch-focusmeta { color:var(--c-ink-4); }
@@ -711,8 +711,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-context-label { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); }
 .arch-ctxchip { border:1px solid; background:var(--c-surface); border-radius:20px; padding:3px 11px; font-size:10.5px; cursor:pointer; color:var(--c-ink); }
 .arch-ctxchip:hover { border-color:var(--c-ink); }
-.arch-node.st-off { opacity:.16; pointer-events:none; }
-.arch-node.tt-spec.st-off { opacity:.12; }
 .arch-zoombtns { position:absolute; right:14px; bottom:14px; display:flex; gap:6px; z-index:6; }
 .arch-ask { position:absolute; left:14px; bottom:14px; z-index:6; width:min(440px, calc(100% - 160px)); }
 .arch-ask-inputrow { display:flex; gap:6px; }
@@ -726,45 +724,52 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-ask-answer .arch-ask-tools button { padding:5px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-bg-2); font-size:11px; cursor:pointer; color:var(--c-ink); }
 .arch-ask-answer .arch-ask-tools button:hover { background:var(--c-surface-2); }
 .arch-ask-answer .arch-ask-status { font-size:11px; color:var(--c-ink-4); margin-top:6px; }
-.arch-hot { box-shadow:0 0 0 2px var(--c-violet); }
 .arch-zoombtns button { width:30px; height:30px; border-radius:8px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:14px; line-height:1; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.14); color:var(--c-ink); }
 .arch-zoombtns button:hover { background:var(--c-surface-2); }
 .arch-zoombtns button.off { opacity:.45; }
-.arch-node { transition:opacity .15s ease; }
-.arch-node.arch-dim { opacity:.4; }
-/* Tech Tree view — same .arch-node markup, laid out by prereq depth instead of territory. */
-.arch-cols { display:flex; gap:18px; min-width:1180px; position:relative; }
-.arch-col { flex:1; min-width:0; }
-.arch-col-headrow { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
-.arch-col-head { font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
-.arch-col-count { font-size:10px; color:var(--c-ink-4); margin-left:auto; white-space:nowrap; }
-.arch-col-fold, .arch-col-focusbtn { padding:2px 7px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; line-height:1.3; cursor:pointer; color:var(--c-ink); opacity:.7; }
-.arch-col-fold:hover, .arch-col-focusbtn:hover { opacity:1; background:var(--c-surface-2); }
-.arch-col-sub { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; line-height:1.4; }
-.arch-col.collapsed .arch-col-sub { margin-bottom:0; }
-.arch-col-stats { font-size:10.5px; color:var(--c-ink-4); line-height:1.5; border:1px dashed var(--c-border-2); border-radius:9px; background:var(--c-surface-2); padding:9px 11px; }
-.arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:10px; padding:10px 12px; margin-bottom:10px; cursor:pointer; position:relative; }
-.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.arch-node:hover { border-color:var(--c-border-3); }
-.arch-node.selected { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
-.arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:var(--c-on-solid); }
-.arch-node .an-what { margin-top:6px; font-size:11px; line-height:1.45; color:var(--c-ink-3); }
-.arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
-.arch-tiers { display:flex; flex-direction:column; gap:30px; min-width:1180px; position:relative; }
-.arch-tier { display:flex; gap:18px; align-items:flex-start; }
-.arch-tier-label { width:74px; flex-shrink:0; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); font-weight:600; padding-top:10px; }
-.arch-tier-nodes { flex:1; display:flex; flex-wrap:wrap; gap:12px; }
-.arch-tier-nodes .arch-node { width:200px; margin-bottom:0; }
-.arch-node.tt-buildable { border-color:#c08a3e; box-shadow:0 0 0 2px rgba(192,138,62,.22); background:var(--c-warm-tint); }
-.arch-node.tt-locked { opacity:.5; border-style:dashed; background:var(--c-surface-2); }
-.arch-node.tt-locked:hover { opacity:.78; }
 .arch-lockedreqs { font-size:11px; color:var(--c-ink-3); line-height:1.5; }
 .arch-lockedreqs a { color:var(--c-warn); cursor:pointer; text-decoration:underline; }
 .arch-buildbtn { width:100%; padding:9px 12px; border-radius:7px; border:none; background:var(--c-amber); color:#fff; font-size:12px; font-weight:600; cursor:pointer; margin-bottom:10px; }
 .arch-buildbtn:hover { background:#a9762f; }
+
+/* ---------- Architecture graph — real 2D canvas ---------- */
+/* Territories are spatial regions on a fixed-viewBox SVG (same technique as the
+   Content Navigator's entity graph), not columns of stacked cards — components
+   spread out via a small force simulation instead of stacking into one tall
+   list. Build state reads as a game-like glow/fog on each node instead of a
+   text badge: built = lit, buildable now = pulsing, locked = fogged. */
+.arch-zone-label { font-size:15px; font-weight:700; letter-spacing:.06em; pointer-events:none; opacity:.8; }
+.arch-zone-progress { font-size:10.5px; fill:var(--c-ink-4); pointer-events:none; }
+.arch-zone-hit { cursor:pointer; transition:opacity .15s ease; }
+.arch-zone-hit:hover { opacity:.13 !important; }
+.arch-hud { position:absolute; top:14px; right:14px; z-index:6; padding:9px 12px; border-radius:9px; background:rgba(var(--c-surface-rgb),.95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:10.5px; min-width:150px; }
+.arch-hud-label { font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:9.5px; color:var(--c-ink-3); margin-bottom:5px; }
+.arch-hud-bar { height:6px; border-radius:4px; background:var(--c-surface-3); overflow:hidden; margin-bottom:4px; }
+.arch-hud-fill { height:100%; background:var(--c-brand); border-radius:4px; transition:width .4s ease; }
+.arch-hud-count { color:var(--c-ink-3); }
+.arch-node { cursor:pointer; transition:opacity .15s ease; }
+.arch-node.st-off { opacity:.14; pointer-events:none; }
+.arch-node.arch-dim { opacity:.22; }
+.arch-node-ring { fill:none; stroke-width:2; transition:opacity .15s ease, stroke .15s ease; }
+.arch-node-fill { transition:opacity .15s ease; }
+.arch-node-check { font-size:9px; fill:#fff; text-anchor:middle; pointer-events:none; }
+.arch-node-label { font-size:11px; fill:var(--c-ink-2); pointer-events:none; }
+.arch-node.selected .arch-node-label { font-weight:700; fill:var(--c-ink); }
+.arch-node.selected .arch-node-ring { stroke:var(--c-ink); stroke-width:2.5; opacity:1; }
+.arch-node.arch-hot .arch-node-ring { stroke:var(--c-violet); stroke-width:3; opacity:1; }
+.arch-node.tt-built .arch-node-ring { stroke:var(--c-brand); opacity:.55; }
+.arch-node.tt-buildable .arch-node-ring { stroke:#c08a3e; opacity:.85; animation:archPulse 1.8s ease-in-out infinite; }
+.arch-node.tt-locked .arch-node-ring { stroke:var(--c-border-3); stroke-dasharray:3,3; opacity:.5; }
+.arch-node.tt-locked .arch-node-fill { opacity:.35; }
 /* Speculative nodes read as provisional — dashed and violet, distinct from the
    grey dashed "locked" look so proposal and unreachability aren't confusable. */
-.arch-node.tt-spec { border-style:dashed; border-color:var(--c-violet); background:var(--c-violet-tint-2); opacity:1; }
+.arch-node.tt-spec .arch-node-ring { stroke:var(--c-violet); stroke-dasharray:3,3; opacity:.85; }
+@keyframes archPulse { 0%,100% { r:13; opacity:.85; } 50% { r:18; opacity:.25; } }
+/* The "unlock" flourish — a brief pulse when a component's state flips to
+   built between two data reloads, so shipping something actually feels like
+   an event instead of a silently updated badge. */
+.arch-node.arch-unlock .arch-node-ring { animation:archUnlock .9s ease; }
+@keyframes archUnlock { 0% { r:10; opacity:1; stroke:#4f9d7a; stroke-width:2; } 60% { r:28; opacity:.2; stroke:#4f9d7a; stroke-width:3; } 100% { r:14; opacity:.55; } }
 .tt-addbtn { margin-left:12px; padding:4px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .tt-addbtn:hover { background:var(--c-surface-2); }
 .tt-addlabel { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.05em; }
@@ -847,16 +852,21 @@ button:active { transform: translateY(1px) scale(.99); }
 .mode-tabs { box-shadow: var(--sh-xs); }
 .mode-tabs button { font-size:12px; padding:6px 16px; }
 .core-tabs button { border-radius: var(--r-md); font-size:11px; }
-.arch-node, .mind-card, .sg-card, .id-card, .lcard, .book, .q-item, .flow-row {
+.mind-card, .sg-card, .id-card, .lcard, .book, .q-item, .flow-row {
   box-shadow: var(--sh-xs);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), opacity var(--t-med) var(--ease);
 }
-.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
 .legend { box-shadow: var(--sh-sm); }
 @keyframes fmcnsRise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @keyframes fmcnsSlideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
 @keyframes fmcnsFade { from { opacity:0; } to { opacity:1; } }
-.arch-node, .mind-card, .lcard, .book, .q-item, .flow-row, .sg-card, .id-card { animation: fmcnsRise .24s var(--ease) backwards; }
+/* .arch-node deliberately excluded here: it's an SVG <g> positioned via a
+   transform="translate(x,y)" presentation attribute — a CSS transform (the
+   hover-lift, or this entrance animation's translateY/none) would override
+   that positioning outright instead of composing with it, since the CSS
+   Transforms spec treats the two as the same property on SVG elements. */
+.mind-card, .lcard, .book, .q-item, .flow-row, .sg-card, .id-card { animation: fmcnsRise .24s var(--ease) backwards; }
 .ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
 #mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
 .header h1 { font-size:16px; }
@@ -864,8 +874,7 @@ button:active { transform: translateY(1px) scale(.99); }
 .arch-viewbtns button { font-size:11.5px; padding:6px 12px; }
 .flow-typecips button { font-size:11px; padding:5px 11px; }
 .mind-toolbtns button { font-size:11.5px; padding:6px 12px; }
-.arch-node .an-name { font-size:13px; }
-.arch-tier-nodes .arch-node { width:212px; }
+.arch-node-label { font-size:11.5px; }
 .lcard-name, .sg-card-title { font-size:13px; }
 .q-item-title, .flow-sgrow .q-item-title, .flow-idrow .q-item-title { font-size:12.5px; }
 .arch-ask-inputrow input { font-size:12.5px; padding:8px 11px; }
@@ -1025,11 +1034,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="arch-toolbar">
         <span class="arch-title">Architecture</span>
         <div class="arch-viewbtns">
-          <span class="arch-layoutseg" role="group" aria-label="Layout">
-            <button class="active" data-arch-layout="map" title="Territories side by side">Map</button>
-            <button data-arch-layout="tree" title="Dependency tiers — each row depends on the row above">Tree</button>
-          </span>
-          <span class="arch-statusseg arch-segdivider" role="group" aria-label="Status filter">
+          <span class="arch-statusseg" role="group" aria-label="Status filter">
             <button class="active" data-arch-status="all" title="Show everything">All</button>
             <button data-arch-status="issue" title="Only components whose prerequisites are missing">Needs work</button>
             <button data-arch-status="speculative" title="Only Claude-proposed components">Speculative</button>
@@ -2933,14 +2938,12 @@ function jumpToQueueItem(id) {
   }
 }
 
-// Mirror of jumpToQueueItem for the tech tree: switch to Architecture, force the
-// Tree layout (a planted Seed only appears there), and select the node.
+// Mirror of jumpToQueueItem for the tech tree: switch to Architecture and
+// select the node.
 function jumpToArchNode(id) {
   setMode('core');
   archTab = 'graph';
   switchCoreView('arch');
-  archLayout = 'tree';
-  syncArchControls();
   renderArchStage();
   selectArchNode(id);
 }
@@ -6210,12 +6213,27 @@ const TERRITORIES = [
   { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
   { id:'interface', label:'Interface', sub:'Layout & spacing, Typography & color, Interaction patterns, Per-view polish.' },
 ];
-let archLayout = 'map', archLayer = 'status', archSelected = null;
-const archViewport = { x: 0, y: 0, k: 1 };
+let archLayer = 'status', archSelected = null;
 let archEdgesOn = true, archHover = null;
 let archTrail = null; // ids highlighted by the last "ask about this architecture" answer
 let archInited = false;
 let archQueueStatus = null;
+
+// The graph is a real 2D canvas now, not a shrunk stack of boxes — same shape as
+// the Content Navigator's entity graph (fixed viewBox + a panned/scaled <g>, real
+// x/y per node from a small force simulation). Territories are spatial regions
+// instead of columns, so the layout uses whatever room is actually available
+// instead of growing one tall stack forever as components accumulate.
+// The viewBox is measured from the actual stage element right before each
+// render (see renderArchStage), not fixed — a fixed aspect ratio only ever
+// matches one shape of window, and preserveAspectRatio="xMidYMid meet" would
+// letterbox (empty bars top/bottom or left/right) every other shape instead
+// of actually using the screen it's given. These are just fallbacks for the
+// first tick before the stage has ever been measured.
+let ARCH_VBW = 1900, ARCH_VBH = 1000;
+const archCamera = { x: 0, y: 0, scale: 1 };
+let ARCH_CENTROIDS = {};
+let archPrevStates = {}; // last-seen archNodeState() per id, so a built transition can flash
 
 // Live component data (NOW/status/last_verified_at/evolution/suggestions) overrides
 // the static ARCH_DATA fallback text once fetched — this is what makes NOW actually
@@ -6366,9 +6384,6 @@ async function initArchNav() {
   document.querySelectorAll('[data-arch-tab]').forEach(b => {
     b.onclick = () => setArchTab(b.getAttribute('data-arch-tab'));
   });
-  document.querySelectorAll('[data-arch-layout]').forEach(b => {
-    b.onclick = () => { archLayout = b.getAttribute('data-arch-layout'); syncArchControls(); renderArchStage(); };
-  });
   document.querySelectorAll('[data-arch-layer]').forEach(b => {
     b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); syncArchControls(); renderArchStage(); };
   });
@@ -6393,39 +6408,52 @@ async function initArchNav() {
       renderArchStage();
     });
   }
+  // Hover is wired per-node (in archDrawGraph), same as the Content Navigator
+  // graph — no stage-level mousemove hit-testing needed.
   const stage = document.getElementById('archStage');
-  stage.addEventListener('mousemove', (e) => {
-    const node = e.target.closest('.arch-node');
-    const id = node ? node.getAttribute('data-arch-id') : null;
-    if (id !== archHover) { archHover = id; if (archEdgesOn) drawArchDeps(); }
-  });
   let drag = null;
   stage.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     if (e.target.closest('button, select, input, textarea, .arch-node, .arch-focusbar')) return;
-    drag = { sx: e.clientX, sy: e.clientY, ox: archViewport.x, oy: archViewport.y, moved: false };
+    drag = { sx: e.clientX, sy: e.clientY, ox: archCamera.x, oy: archCamera.y, moved: false };
     try { stage.setPointerCapture(e.pointerId); } catch (err) {}
   });
   stage.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-    if (!drag.moved && Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; stage.classList.add('panning'); }
     if (drag.moved) {
-      archViewport.x = drag.ox + dx; archViewport.y = drag.oy + dy;
-      applyArchTransform();
+      archCamera.x = drag.ox + dx; archCamera.y = drag.oy + dy;
+      applyArchCamera();
     }
   });
   stage.addEventListener('pointerup', () => {
     if (!drag) return;
     const wasDrag = drag.moved;
     drag = null;
+    stage.classList.remove('panning');
     if (!wasDrag) deselectArchNode();
   });
+  // Same fix as the Content Navigator graph: a trackpad pinch (or ctrl-wheel) is
+  // the only zoom trigger. A plain scroll — including a two-finger trackpad
+  // swipe — pans instead, so scrolling never feels like an unpredictable zoom.
   stage.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const rect = stage.getBoundingClientRect();
-    zoomArchCanvas(Math.exp(-e.deltaY * 0.002), { x: e.clientX - rect.left, y: e.clientY - rect.top });
+    if (e.ctrlKey) {
+      const rect = stage.getBoundingClientRect();
+      zoomArchCanvas(e.deltaY < 0 ? 1.06 : 0.94, { x: e.clientX - rect.left, y: e.clientY - rect.top });
+    } else {
+      archCamera.x -= e.deltaX; archCamera.y -= e.deltaY; applyArchCamera();
+    }
   }, { passive: false });
+  // Re-fit and reflow when the window (or a sidebar toggle, etc.) actually
+  // changes the stage's shape — debounced so resizing the window doesn't
+  // re-run the layout on every intermediate pixel.
+  let archResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(archResizeTimer);
+    archResizeTimer = setTimeout(() => { if (archTab === 'graph') renderArchStage(); }, 250);
+  });
   renderArchStage();
   await loadArchLiveData();
   renderArchStage();
@@ -6435,7 +6463,6 @@ async function initArchNav() {
 }
 
 function syncArchControls() {
-  document.querySelectorAll('[data-arch-layout]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-layout') === archLayout));
   document.querySelectorAll('[data-arch-layer]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-layer') === archLayer));
   document.querySelectorAll('[data-arch-status]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-status') === archStatusFilter));
   const focusSel = document.getElementById('archFocusSel');
@@ -6448,34 +6475,25 @@ function zoomArchCanvas(ratio, at) {
   if (!stage) return;
   const rect = stage.getBoundingClientRect();
   const vx = at ? at.x : rect.width / 2, vy = at ? at.y : rect.height / 2;
-  const k = Math.min(Math.max(archViewport.k * ratio, 0.18), 4);
-  const cxp = (vx - archViewport.x) / archViewport.k, cyp = (vy - archViewport.y) / archViewport.k;
-  archViewport.x = vx - cxp * k; archViewport.y = vy - cyp * k; archViewport.k = k;
-  applyArchTransform();
+  const oldScale = archCamera.scale;
+  const newScale = Math.min(Math.max(oldScale * ratio, 0.3), 6);
+  archCamera.x = vx - ((vx - archCamera.x) / oldScale) * newScale;
+  archCamera.y = vy - ((vy - archCamera.y) / oldScale) * newScale;
+  archCamera.scale = newScale;
+  applyArchCamera();
 }
 
-// Center the whole graph in the stage at a comfortable scale.
+// The svg's own viewBox already fits the graph to whatever room the stage has —
+// "fit" just means "back to the default view", not a size recomputation.
 function fitArchCanvas() {
-  const stage = document.getElementById('archStage');
-  const canvas = document.getElementById('archCanvas');
-  if (!stage || !canvas) return;
-  const sw = canvas.scrollWidth, sh = canvas.scrollHeight;
-  if (!sw || !sh) return;
-  const vr = stage.getBoundingClientRect();
-  const k = Math.min(Math.max(Math.min(vr.width / sw, vr.height / sh) * 0.94, 0.18), 2);
-  archViewport.k = k;
-  archViewport.x = (vr.width - sw * k) / 2;
-  archViewport.y = (vr.height - sh * k) / 2;
-  applyArchTransform();
+  archCamera.x = 0; archCamera.y = 0; archCamera.scale = 1;
+  applyArchCamera();
 }
 
-function applyArchTransform() {
-  const canvas = document.getElementById('archCanvas');
-  if (canvas) canvas.style.transform = `translate(${archViewport.x}px, ${archViewport.y}px) scale(${archViewport.k})`;
+function applyArchCamera() {
+  const g = document.getElementById('archViewportG');
+  if (g) g.setAttribute('transform', `translate(${archCamera.x},${archCamera.y}) scale(${archCamera.scale})`);
 }
-
-const TT_STATE_COLORS = { built:'#2f7d63', buildable:'#c08a3e', locked:'#8a8378' };
-const TT_STATE_LABELS = { built:'built', buildable:'buildable now', locked:'locked' };
 
 // Badge color + text follow the chosen layer: territory color, build status, or
 // the latest version tag. Speculative nodes always read provisional.
@@ -6485,84 +6503,217 @@ function archNodeBadge(c) {
   return { text: (TERRITORIES.find(t => t.id === c.territory) || {}).label || c.territory, color: TERRITORY_COLORS[c.territory] };
 }
 
-// Map layout — the territories side by side (or one focused territory alone).
-// Same node ids as ever, so the dependency edges draw across the whole canvas.
-// Collapsed territories render as slim summary bars; the status filter dims
-// non-matching components.
-// Tree layout — the one layout. Components are laid out by prereq depth, so the
-// dependency edges read top-to-bottom as an actual tech tree. Focus mode
-// restricts the tree to one territory (external dependencies become chips); the
-// status filter dims the rest.
-// Map layout — the territories side by side (or one focused territory alone).
-// Same node ids as ever, so the dependency edges draw across the whole canvas.
-// Collapsed territories render as slim summary bars; the status filter dims
-// non-matching components.
-function buildMapHtml() {
-  const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
-  let html = '<div class="arch-cols" id="archCols">';
-  territories.forEach(t => {
-    const nodes = ARCH_DATA.filter(c => c.territory === t.id);
-    const collapsed = !archFocus && archCollapsed.has(t.id);
-    const stats = archTerritoryStats(t.id);
-    html += `<div class="arch-col${collapsed ? ' collapsed' : ''}" data-terr="${t.id}">`;
-    html += `<div class="arch-col-headrow">
-        <button class="arch-col-fold" data-fold="${t.id}" title="${collapsed ? 'Expand' : 'Collapse'} this territory">${collapsed ? '▸' : '▾'}</button>
-        <div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div>
-        <span class="arch-col-count">${nodes.length} ${nodes.length === 1 ? 'component' : 'components'}</span>
-        <button class="arch-col-focusbtn" data-focus="${t.id}" title="Focus this territory — its connections stay visible as chips">⛶</button>
-      </div>`;
-    if (collapsed) {
-      html += `<div class="arch-col-sub">${t.sub}</div>`;
-      html += `<div class="arch-col-stats">${stats.built} built · ${stats.locked} need work${stats.spec ? ' · ' + stats.spec + ' speculative' : ''}</div>`;
-    } else {
-      html += `<div class="arch-col-sub">${t.sub}</div>`;
-      nodes.forEach(c => {
-        const b = archNodeBadge(c);
-        const spec = c.provenance === 'speculative';
-        const off = archFilteredOff(c) ? ' st-off' : '';
-        html += `<div class="arch-node${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
-          <div class="an-name">${spec?'✦ ':''}${c.name}</div>
-          <span class="an-badge" style="background:${b.color}">${b.text}</span>
-          ${c.what ? `<div class="an-what">${qEsc(c.what)}</div>` : ''}
-        </div>`;
-      });
-    }
-    html += '</div>';
-  });
-  html += '</div>';
-  if (archFocus) {
-    const ctx = archContextList(archFocus);
-    html += archContextHtml(ctx.pre, ctx.post);
-  }
-  return html;
+// The current pool of components: everything, or just one focused territory.
+function archPool() {
+  return archFocus ? ARCH_DATA.filter(c => c.territory === archFocus) : ARCH_DATA;
 }
 
-function buildTreeHtml() {
-  const pool = archFocus ? ARCH_DATA.filter(c => c.territory === archFocus) : ARCH_DATA;
-  const tiers = {};
-  pool.forEach(c => { const d = archDepth(c); (tiers[d] = tiers[d] || []).push(c); });
-  const order = {}; TERRITORIES.forEach((t, i) => order[t.id] = i);
-  let html = '<div class="arch-tiers" id="archTree">';
-  Object.keys(tiers).map(Number).sort((a,b) => a - b).forEach(d => {
-    const nodes = tiers[d].slice().sort((a,b) => (order[a.territory]-order[b.territory]) || a.name.localeCompare(b.name));
-    html += `<div class="arch-tier"><div class="arch-tier-label">${d === 0 ? 'Roots' : 'Tier ' + d}</div><div class="arch-tier-nodes">`;
-    nodes.forEach(c => {
-      const st = archNodeState(c);
-      const spec = c.provenance === 'speculative';
-      const off = archFilteredOff(c) ? ' st-off' : '';
-      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
-        <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
-        <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
-      </div>`;
-    });
-    html += '</div></div>';
-  });
-  html += '</div>';
-  if (archFocus) {
-    const ctx = archContextList(archFocus);
-    html += archContextHtml(ctx.pre, ctx.post);
+// Territory centroids spread left-to-right across the canvas in the same reading
+// order the old columns used (Perception → Interface) — one region if focused,
+// otherwise evenly spaced so every territory gets real room instead of a column.
+function archComputeCentroids(territories) {
+  ARCH_CENTROIDS = {};
+  if (territories.length <= 1) {
+    territories.forEach(t => { ARCH_CENTROIDS[t.id] = { x: ARCH_VBW / 2, y: ARCH_VBH / 2 }; });
+    return;
   }
-  return html;
+  const marginX = ARCH_VBW * 0.12;
+  const usable = ARCH_VBW - marginX * 2;
+  territories.forEach((t, i) => {
+    ARCH_CENTROIDS[t.id] = { x: marginX + usable * (i / (territories.length - 1)), y: ARCH_VBH / 2 };
+  });
+}
+
+// Seed x/y only for components that don't have a position yet (or whose
+// territory just changed) — so accepting one new proposal doesn't reshuffle
+// every component that was already settled.
+function archBuildGraph() {
+  const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
+  archComputeCentroids(territories);
+  archPool().forEach(c => {
+    const ctr = ARCH_CENTROIDS[c.territory] || { x: ARCH_VBW / 2, y: ARCH_VBH / 2 };
+    if (c._ax === undefined || c._aterr !== c.territory) {
+      c._ax = ctr.x + (Math.random() - .5) * 160;
+      c._ay = ctr.y + (Math.random() - .5) * 160;
+      c._avx = 0; c._avy = 0;
+      c._aterr = c.territory;
+    }
+  });
+}
+
+// Same shape as the Content Navigator's runSim(): pairwise repulsion (spreads
+// components apart instead of letting them stack), a weak pull back to the
+// territory's centroid (keeps regions visually distinct), and a weak pull along
+// dependency edges (things that depend on each other drift closer).
+//
+// Computed synchronously in one go — NOT spread across requestAnimationFrame
+// ticks. That was the actual bug behind components landing in a tight clump:
+// the trunk renders immediately on open, then the full set (every stored and
+// speculative component — the majority of what's really on the graph) lands a
+// moment later from the network and re-triggers this. If the tab isn't the
+// focused/foreground one at that moment (extremely common — the page is often
+// still loading in a background tab, or the person alt-tabbed away), Chrome
+// throttles or fully pauses requestAnimationFrame, so the animated settle for
+// that second, much larger batch could stall indefinitely — every newly-added
+// component just sat exactly where it was first seeded, clumped together,
+// until (if ever) the tab regained focus. The whole simulation finishes in
+// well under a millisecond even for hundreds of components, so there was
+// never a real need to animate it frame-by-frame in the first place.
+function archRunSim() {
+  const pool = archPool();
+  const poolIds = new Set(pool.map(n => n.id));
+  for (let tick = 0; tick < 240; tick++) {
+    pool.forEach(n => {
+      let fx = 0, fy = 0;
+      pool.forEach(o => {
+        if (o === n) return;
+        const dx = n._ax - o._ax, dy = n._ay - o._ay, d2 = dx * dx + dy * dy + .01, d = Math.sqrt(d2);
+        const f = 8500 / d2;
+        fx += (dx / d) * f; fy += (dy / d) * f;
+      });
+      const c = ARCH_CENTROIDS[n.territory] || { x: ARCH_VBW / 2, y: ARCH_VBH / 2 };
+      fx += (c.x - n._ax) * .007; fy += (c.y - n._ay) * .007;
+      (n.depends || []).forEach(depId => {
+        const o = ARCH_BY_ID[depId]; if (!o || !poolIds.has(o.id)) return;
+        fx += (o._ax - n._ax) * .006; fy += (o._ay - n._ay) * .006;
+      });
+      pool.forEach(o => { if (o !== n && (o.depends || []).includes(n.id)) { fx += (o._ax - n._ax) * .006; fy += (o._ay - n._ay) * .006; } });
+      n._avx = (n._avx + fx) * .78; n._avy = (n._avy + fy) * .78;
+    });
+    pool.forEach(n => {
+      n._ax += n._avx * .05; n._ay += n._avy * .05;
+      n._ax = Math.max(28, Math.min(ARCH_VBW - 28, n._ax));
+      n._ay = Math.max(28, Math.min(ARCH_VBH - 28, n._ay));
+    });
+  }
+  archDrawGraph();
+}
+
+function archLayoutAndDraw() {
+  archBuildGraph();
+  archRunSim();
+}
+
+// Debounced exactly like the Content graph's hover redraw — a full redraw on
+// every mousemove-driven hover would risk swallowing a click mid-gesture.
+let archHoverRedrawTimer = null;
+function archScheduleHoverRedraw() {
+  clearTimeout(archHoverRedrawTimer);
+  archHoverRedrawTimer = setTimeout(archDrawGraph, 200);
+}
+
+// The one draw function: territory zones (soft regions + a per-zone progress
+// readout), dependency edges, and components as glowing/fogged/lit nodes
+// depending on build state — the "gamified" read replacing the old text badges.
+function archDrawGraph() {
+  const zoneLayer = document.getElementById('archZoneLayer');
+  const edgeLayer = document.getElementById('archEdgeLayer');
+  const nodeLayer = document.getElementById('archNodeLayer');
+  if (!zoneLayer || !edgeLayer || !nodeLayer) return;
+  zoneLayer.innerHTML = ''; edgeLayer.innerHTML = ''; nodeLayer.innerHTML = '';
+
+  const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
+  const pool = archPool();
+  const poolIds = new Set(pool.map(n => n.id));
+
+  territories.forEach(t => {
+    const c = ARCH_CENTROIDS[t.id];
+    if (!c) return;
+    const stats = archTerritoryStats(t.id);
+    // The blob scales with how many components actually live in this
+    // territory, so a busy region visibly gets more room than a sparse one.
+    const zr = territories.length <= 1 ? 340 : Math.min(260, Math.max(150, 90 + stats.total * 9));
+    const blob = el('circle', { cx: c.x, cy: c.y, r: zr, fill: TERRITORY_COLORS[t.id], opacity: .07, class: 'arch-zone-hit' });
+    blob.onclick = () => { archFocus = t.id; renderArchStage(); };
+    zoneLayer.appendChild(blob);
+    const label = el('text', { x: c.x, y: c.y - zr - 14, 'text-anchor': 'middle', class: 'arch-zone-label', style: `fill:${TERRITORY_COLORS[t.id]}` });
+    label.textContent = t.label.toUpperCase();
+    zoneLayer.appendChild(label);
+    const sub = el('text', { x: c.x, y: c.y - zr + 5, 'text-anchor': 'middle', class: 'arch-zone-progress' });
+    sub.textContent = `${stats.built}/${stats.total} built`;
+    zoneLayer.appendChild(sub);
+  });
+
+  // Focus priority: hover > "ask" trail > click-selection — same as before.
+  let trailSet = null;
+  if (archTrail && archTrail.size) {
+    trailSet = new Set();
+    archTrail.forEach(id => archNeighbors(id).forEach(x => trailSet.add(x)));
+  }
+  const focus = archHover ? archNeighbors(archHover) : (trailSet || (archSelected ? archNeighbors(archSelected) : null));
+  const activeFocus = !!(focus && focus.size);
+
+  if (archEdgesOn) {
+    const defs = el('defs', {});
+    defs.innerHTML = '<marker id="arch-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>';
+    edgeLayer.appendChild(defs);
+    pool.forEach(c => {
+      (c.depends || []).forEach(depId => {
+        const a = ARCH_BY_ID[depId];
+        if (!a || a._ax === undefined || c._ax === undefined || !poolIds.has(a.id)) return;
+        const dimLocked = !activeFocus && archNodeState(c) === 'locked';
+        let stroke = 'var(--c-border-2)', width = 1, op = dimLocked ? 0.12 : 0.35;
+        if (activeFocus && (focus.has(c.id) || focus.has(depId))) { stroke = 'var(--c-ink)'; width = 1.8; op = 0.95; }
+        else if (activeFocus) op = 0.05;
+        const dx = c._ax - a._ax, dy = c._ay - a._ay;
+        const cx = a._ax + dx * 0.5 - dy * 0.12, cy = a._ay + dy * 0.5 + dx * 0.12;
+        edgeLayer.appendChild(el('path', { d: `M${a._ax},${a._ay} Q${cx},${cy} ${c._ax},${c._ay}`, fill: 'none', stroke, 'stroke-width': width, opacity: op, 'marker-end': 'url(#arch-arrow)' }));
+      });
+    });
+  }
+
+  pool.forEach(c => {
+    if (c._ax === undefined) return;
+    const state = archNodeState(c);
+    const spec = c.provenance === 'speculative';
+    const off = archFilteredOff(c);
+    const dimmed = activeFocus && !focus.has(c.id);
+    const justBuilt = archPrevStates[c.id] && archPrevStates[c.id] !== 'built' && state === 'built';
+    const badge = archNodeBadge(c);
+    const cls = ['arch-node', `tt-${state}`, spec && 'tt-spec', off && 'st-off', dimmed && 'arch-dim', archSelected === c.id && 'selected', justBuilt && 'arch-unlock', archTrail && archTrail.has(c.id) && 'arch-hot'].filter(Boolean).join(' ');
+    const g = el('g', { class: cls, id: 'archnode-' + c.id, 'data-arch-id': c.id, tabindex: '0', role: 'button', transform: `translate(${c._ax},${c._ay})` });
+    g.appendChild(el('circle', { r: 22, fill: 'transparent' })); // comfortable hit target
+    g.appendChild(el('circle', { class: 'arch-node-ring', r: 14 }));
+    g.appendChild(el('circle', { class: 'arch-node-fill', r: 10, fill: badge.color }));
+    if (state === 'built') {
+      const check = el('text', { class: 'arch-node-check', 'text-anchor': 'middle', y: 3 });
+      check.textContent = '✓';
+      g.appendChild(check);
+    }
+    const label = el('text', { class: 'arch-node-label', 'text-anchor': 'middle', y: 29 });
+    label.textContent = (spec ? '✦ ' : '') + truncate(c.name, 20);
+    g.appendChild(label);
+    g.onclick = () => selectArchNode(c.id);
+    g.onmouseenter = () => { archHover = c.id; archScheduleHoverRedraw(); };
+    g.onmouseleave = () => { archHover = null; archScheduleHoverRedraw(); };
+    g.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectArchNode(c.id); return; }
+      const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+      const backward = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+      if (!forward && !backward) return;
+      e.preventDefault();
+      const next = pool[pool.indexOf(c) + (forward ? 1 : -1)];
+      const nextEl = next && document.getElementById('archnode-' + next.id);
+      if (nextEl) nextEl.focus();
+    };
+    nodeLayer.appendChild(g);
+    if (justBuilt) setTimeout(() => g.classList.remove('arch-unlock'), 900);
+  });
+
+  pool.forEach(c => { archPrevStates[c.id] = archNodeState(c); });
+  archUpdateHud(pool);
+}
+
+function archUpdateHud(pool) {
+  const host = document.getElementById('archHud');
+  if (!host) return;
+  const total = pool.length;
+  const built = pool.filter(c => archNodeState(c) === 'built').length;
+  const pct = total ? Math.round((built / total) * 100) : 0;
+  host.innerHTML = `
+    <div class="arch-hud-label">${archFocus ? qEsc(archFocusName(archFocus)) : 'World'} progress</div>
+    <div class="arch-hud-bar"><div class="arch-hud-fill" style="width:${pct}%"></div></div>
+    <div class="arch-hud-count">${built}/${total} built</div>`;
 }
 
 // The live graph for the backend's idea endpoints — the trunk lives here in the
@@ -6621,7 +6772,7 @@ async function askArchGraph() {
   try {
     const out = await apiWrite('/api/architecture/graph/ask', 'POST', { question: q, catalog: archCatalog() });
     archTrail = new Set(out.ids || []);
-    drawArchDeps();
+    archDrawGraph();
     answerEl.innerHTML = '';
     const txt = document.createElement('div');
     txt.textContent = out.answer || '';
@@ -6637,7 +6788,7 @@ async function askArchGraph() {
     };
     const clearBtn = document.createElement('button');
     clearBtn.textContent = 'Clear';
-    clearBtn.onclick = () => { archTrail = null; drawArchDeps(); answerEl.hidden = true; answerEl.innerHTML = ''; };
+    clearBtn.onclick = () => { archTrail = null; archDrawGraph(); answerEl.hidden = true; answerEl.innerHTML = ''; };
     tools.appendChild(taskBtn);
     tools.appendChild(clearBtn);
     answerEl.appendChild(tools);
@@ -6648,18 +6799,16 @@ async function askArchGraph() {
   }
 }
 
-// Which territory (if any) is focused, which are collapsed (Map layout), and the
-// status filter. Collapsed set + filter persist between visits; focus never does.
+// Which territory (if any) is focused, and the status filter. The filter
+// persists between visits; focus never does.
 let archFocus = null;
-let archCollapsed = new Set();
 let archStatusFilter = 'all';
 try {
   const v = JSON.parse(localStorage.getItem('fmcns.archView') || '{}');
-  if (Array.isArray(v.collapsed)) archCollapsed = new Set(v.collapsed);
   if (v.status) archStatusFilter = v.status;
 } catch (e) {}
 function saveArchView() {
-  try { localStorage.setItem('fmcns.archView', JSON.stringify({ collapsed: [...archCollapsed], status: archStatusFilter })); } catch (e) {}
+  try { localStorage.setItem('fmcns.archView', JSON.stringify({ status: archStatusFilter })); } catch (e) {}
 }
 
 // Status chips: does this component fall outside the current filter?
@@ -6719,18 +6868,36 @@ function renderArchStage() {
   // A subtle stage-level accent so a territory focus stays visible even once
   // the focus bar (which sits at a fixed corner) scrolls out of view.
   stage.style.boxShadow = archFocus ? `inset 0 0 0 2px ${TERRITORY_COLORS[archFocus] || 'var(--c-ring)'}` : '';
-  // The overlay svg comes first in the DOM so it paints BELOW the cards: lines
-  // run in the gaps between cards instead of across their faces. The Ask bar,
-  // zoom buttons and focus bar are re-created here so they never get orphaned
-  // by re-renders.
+  // The viewBox is set to the stage's own current pixel size, not a fixed
+  // shape — that's what actually makes the map use the screen it's given. A
+  // fixed aspect ratio only ever matches one window shape; every other shape
+  // either letterboxes (empty bars) or leaves the layout looking squeezed into
+  // a fraction of the available room. Matching it exactly means the territory
+  // regions and the force layout below always spread across the real,
+  // current width and height, on any window size.
+  const stageRect = stage.getBoundingClientRect();
+  if (stageRect.width > 100 && stageRect.height > 100) {
+    ARCH_VBW = Math.round(stageRect.width);
+    ARCH_VBH = Math.round(stageRect.height);
+  }
+  // The svg's viewBox fits itself to whatever room the stage has — no manual
+  // fit math needed — so the camera (pan/zoom) simply carries over from
+  // whatever it was before this re-render instead of resetting every time a
+  // filter or color-by toggle is clicked.
   stage.innerHTML = `
     <div class="arch-focusbar" id="archFocusBar" style="display:${archFocus ? 'flex' : 'none'}">
       <button id="archFocusBack">← All territories</button>
       <span class="arch-focusname" style="color:${archFocus ? (TERRITORY_COLORS[archFocus] || 'var(--c-ink)') : 'var(--c-ink)'}">${archFocus ? qEsc(archFocusName(archFocus)) : ''}</span>
       ${archFocus ? `<span class="arch-focusmeta">${qEsc((() => { const s = archTerritoryStats(archFocus); return `${s.total} components · ${s.built} built · ${s.locked} need work${s.spec ? ' · ' + s.spec + ' speculative' : ''}`; })())}</span>` : ''}
-      ${!archFocus && archLayout === 'map' ? `<button id="archCollapseAll">${archCollapsed.size ? 'Expand all' : 'Collapse all'}</button>` : ''}
     </div>
-    <div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>
+    <svg class="arch-svg" id="archSvg" viewBox="0 0 ${ARCH_VBW} ${ARCH_VBH}" preserveAspectRatio="xMidYMid meet">
+      <g id="archViewportG">
+        <g id="archZoneLayer"></g>
+        <g id="archEdgeLayer"></g>
+        <g id="archNodeLayer"></g>
+      </g>
+    </svg>
+    <div class="arch-hud" id="archHud"></div>
     <div class="arch-ask" id="archAsk">
       <div class="arch-ask-inputrow">
         <input id="archAskInput" placeholder="Ask about this architecture…" autocomplete="off">
@@ -6745,54 +6912,19 @@ function renderArchStage() {
       <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
     </div>`;
   wireArchStageControls();
-  document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
-  // Keyboard nav on graph nodes (B4): Enter/Space activates like a click; arrow
-  // keys step through nodes in DOM order, which already matches reading order
-  // (territory columns left-to-right in Map, tiers top-to-bottom in Tree).
-  document.querySelectorAll('.arch-node[data-arch-id]').forEach(n => {
-    n.onkeydown = (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectArchNode(n.getAttribute('data-arch-id')); return; }
-      const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
-      const backward = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
-      if (!forward && !backward) return;
-      e.preventDefault();
-      const nodes = Array.from(document.querySelectorAll('.arch-node[data-arch-id]'));
-      const i = nodes.indexOf(n);
-      const next = nodes[i + (forward ? 1 : -1)];
-      if (next) next.focus();
-    };
-  });
   document.querySelectorAll('[data-ctx]').forEach(b => {
     b.onclick = () => selectArchNode(b.getAttribute('data-ctx'));
   });
   const backBtn = document.getElementById('archFocusBack');
   if (backBtn) backBtn.onclick = () => { archFocus = null; renderArchStage(); };
-  const collapseAllBtn = document.getElementById('archCollapseAll');
-  if (collapseAllBtn) collapseAllBtn.onclick = () => {
-    archCollapsed = archCollapsed.size ? new Set() : new Set(TERRITORIES.map(t => t.id));
-    saveArchView();
-    renderArchStage();
-  };
-  document.querySelectorAll('[data-fold]').forEach(b => {
-    b.onclick = () => {
-      const id = b.getAttribute('data-fold');
-      if (archCollapsed.has(id)) archCollapsed.delete(id); else archCollapsed.add(id);
-      saveArchView();
-      renderArchStage();
-    };
-  });
-  document.querySelectorAll('[data-focus]').forEach(b => {
-    b.onclick = () => {
-      archFocus = b.getAttribute('data-focus');
-      renderArchStage();
-    };
-  });
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { drawArchDeps(); fitArchCanvas(); });
-  else { drawArchDeps(); fitArchCanvas(); }
+  archLayoutAndDraw();
+  applyArchCamera();
 }
 
 // Ask / zoom / edges controls live inside the re-rendered stage, so their
-// handlers are (re)attached here on every render, not just at init.
+// handlers are (re)attached here on every render, not just at init. Node
+// click/hover/keyboard wiring lives in archDrawGraph() instead, since nodes
+// get rebuilt on every draw (hover included), not just on a full stage render.
 function wireArchStageControls() {
   const askInput = document.getElementById('archAskInput');
   const askGo = document.getElementById('archAskGo');
@@ -6802,13 +6934,8 @@ function wireArchStageControls() {
   }
   document.querySelectorAll('[data-arch-zoom]').forEach(b => {
     b.onclick = () => {
-      // Transition only the button-triggered jump, not live drag-panning (which
-      // calls applyArchTransform() continuously and would feel laggy if animated).
-      const canvas = document.getElementById('archCanvas');
-      if (canvas) canvas.classList.add('arch-zoom-anim');
       if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
       else zoomArchCanvas(b.getAttribute('data-arch-zoom') === 'in' ? 1.3 : 1 / 1.3, null);
-      if (canvas) setTimeout(() => canvas.classList.remove('arch-zoom-anim'), 160);
     };
   });
   const edgesBtn = document.getElementById('archEdgesBtn');
@@ -6816,7 +6943,7 @@ function wireArchStageControls() {
     archEdgesOn = !archEdgesOn;
     edgesBtn.classList.toggle('off', !archEdgesOn);
     edgesBtn.title = archEdgesOn ? 'Dependency lines: on' : 'Dependency lines: off';
-    drawArchDeps();
+    archDrawGraph();
   };
 }
 
@@ -6832,73 +6959,10 @@ function archNeighbors(id) {
   return out;
 }
 
-// Dependency edges, drawn once into the canvas's own coordinate space. The canvas
-// is panned/zoomed as one unit, so edges always stay glued to their nodes. At
-// rest the lines are thin and faint; hovering or selecting a component lights up
-// its neighbourhood and fades everything else (Content Navigator focus feel).
-function drawArchDeps() {
-  const overlay = document.getElementById('archOverlay');
-  const canvas = document.getElementById('archCanvas');
-  if (!overlay || !canvas) return;
-  // Focus: hover (mouse) > trail (ask answer) > selection (click). The trail is
-  // the union of the answered components' neighbourhoods.
-  let trailSet = null;
-  if (archTrail && archTrail.size) {
-    trailSet = new Set();
-    archTrail.forEach(id => archNeighbors(id).forEach(x => trailSet.add(x)));
-  }
-  const focus = archHover ? archNeighbors(archHover) : (trailSet || (archSelected ? archNeighbors(archSelected) : null));
-  const activeFocus = !!(focus && focus.size);
-  document.querySelectorAll('.arch-node').forEach(n => {
-    const id = n.getAttribute('data-arch-id');
-    n.classList.toggle('arch-dim', activeFocus && !focus.has(id));
-    n.classList.toggle('arch-hot', !!(archTrail && archTrail.has(id)));
-  });
-  if (!archEdgesOn) { overlay.innerHTML = ''; return; }
-  overlay.setAttribute('width', canvas.scrollWidth);
-  overlay.setAttribute('height', canvas.scrollHeight);
-  const cr = canvas.getBoundingClientRect();
-  const X = r => (r.left - cr.left) / archViewport.k;
-  const Y = r => (r.top - cr.top) / archViewport.k;
-  let svgHtml = '<defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>';
-  ARCH_DATA.forEach(c => {
-    (c.depends || []).forEach(depId => {
-      const a = document.getElementById('archnode-' + depId);
-      const b = document.getElementById('archnode-' + c.id);
-      if (!a || !b) return;
-      const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
-      let d;
-      if (archLayout === 'tree') {
-        const x1 = X(ar) + ar.width / archViewport.k / 2, y1 = Y(ar) + ar.height / archViewport.k;
-        const x2 = X(br) + br.width / archViewport.k / 2, y2 = Y(br);
-        const cy = Math.max(20, (y2 - y1) * 0.45);
-        d = `M${x1},${y1} C${x1},${y1 + cy} ${x2},${y2 - cy} ${x2},${y2}`;
-      } else {
-        const x1 = X(ar) + ar.width / archViewport.k, y1 = Y(ar) + ar.height / archViewport.k / 2;
-        const x2 = X(br), y2 = Y(br) + br.height / archViewport.k / 2;
-        const cx = Math.max(24, (x2 - x1) * 0.4);
-        d = `M${x1},${y1} C${x1 + cx},${y1} ${x2 - cx},${y2} ${x2},${y2}`;
-      }
-      const dimLocked = !activeFocus && archLayout === 'tree' && archNodeState(c) === 'locked';
-      let stroke = 'var(--c-border-2)', width = '0.9', op = dimLocked ? 0.12 : 0.32;
-      if (activeFocus && (focus.has(c.id) || focus.has(depId))) { stroke = 'var(--c-ink)'; width = '1.5'; op = 0.95; }
-      else if (activeFocus) op = 0.05;
-      svgHtml += `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" opacity="${op}" marker-end="url(#arch-arrow)"/>`;
-    });
-  });
-  overlay.innerHTML = svgHtml;
-  if (activeFocus) {
-    document.querySelectorAll('.arch-node').forEach(n => {
-      if (!focus.has(n.getAttribute('data-arch-id'))) n.classList.add('arch-dim');
-    });
-  }
-}
-
 function selectArchNode(id) {
   archSelected = id;
   archTrail = null; // clicking a component supersedes the ask trail
-  document.querySelectorAll('.arch-node').forEach(n => n.classList.toggle('selected', n.getAttribute('data-arch-id')===id));
-  drawArchDeps();
+  archDrawGraph();
   renderArchDetail(id);
   document.getElementById('archRight').classList.add('open'); // dock the detail panel beside the graph
 }
@@ -6907,9 +6971,8 @@ function selectArchNode(id) {
 function deselectArchNode() {
   if (!archSelected) return;
   archSelected = null;
-  document.querySelectorAll('.arch-node').forEach(n => n.classList.remove('selected'));
+  archDrawGraph();
   document.getElementById('archRight').classList.remove('open');
-  drawArchDeps();
 }
 
 function fmtVerified(iso) {
