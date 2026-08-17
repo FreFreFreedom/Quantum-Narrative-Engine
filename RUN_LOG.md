@@ -1633,3 +1633,37 @@ clean, master ↔ served copy checksums identical. Not locally booted (ship-dire
 - Same as before: the local 3000 server needs Antoine's restart to pick this up.
 - `pickFastFreeModel` is exported but unused so far — the fast floor is
   reached through `pickTaskModel`, keeping one public seam for later lanes.
+
+# Live session, 2026-08-17 — instant chat replies (the reply fix)
+
+Symptom reported: replying in a task/suggestion/component (horizon, queue, done)
+"did not answer anything at all" or "took forever."
+
+Root cause (verified in code): the reply box's "Reply now" did NOT chat — it
+relaunched the whole coding agent (`replyToPrompt` → `relaunchWithThread` →
+writer lane). A reply to a queued/paused/done task therefore flipped the card
+to "running" while nothing started if the writer lane was gated (memory block,
+2 writers full, execution disabled, queue paused) → no answer; when it did
+start it was a multi-minute code edit → "forever." Replying to a *running* task
+returned 409 → silence.
+
+Fix shipped:
+1. New endpoint `POST /prompts/:id/reply/chat` (`chatReplyToPrompt`) — appends
+   your message to the thread, builds an instant answer from the full thread
+   + the task's brief (free fast-floor model; deep-tier tasks get the strongest
+   live free model via the tier pick), posts the answer into the thread. No
+   agent launch, no writer slot, no queue, no advanceQueue (never disturbs the
+   queue). Counts as one helper call against the daily budget; fails fast with
+   a visible message instead of a silent agent launch. Quick-check questions
+   still route to `answerInspireQuestion`.
+2. Reply box is now chat-first: **Answer** (instant) primary, with **Reply &
+   relaunch task** (old behavior) and **Save & queue** secondary — relaunch is
+   now explicit, only when a real edit is wanted.
+3. While a task is running: the box now reads "Answer & add to run" — it posts
+   the instant chat answer AND forwards the same text to the live run as a
+   steer (so a directive reaches the running agent immediately), matching the
+   request to "give directives to tasks even while running."
+
+Verified: `node --check` on all changed server files, inline client script
+parses clean, served-index ↔ master checksums match (480e6de7…). Pushed to
+`main` (deployed). Local 3000 server still needs Antoine's restart.
