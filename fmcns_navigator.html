@@ -3854,18 +3854,20 @@ function qWireQuestionBlock(host, onAnswer) {
 // Reply textarea + two buttons: relaunch now (front of its turn) or save the answer and
 // let the task resume on its normal turn in the queue (back). `idPrefix` keeps multiple
 // instances (Flow detail pane vs. Queue panel) from colliding on element ids.
-function qReplyBoxHtml(idPrefix, { placeholder = 'Reply — this relaunches the task with the full thread as context…' } = {}) {
+function qReplyBoxHtml(idPrefix, { placeholder = 'Reply — this answers instantly with the full thread as context…' } = {}) {
   return `<div class="q-replybox2" data-prefix="${idPrefix}">
     <textarea id="${idPrefix}Text" placeholder="${qEsc(placeholder)}"></textarea>
     <div class="q-replybox2-row">
-      <button class="ctrlbtn" id="${idPrefix}Front" title="Sends your reply and relaunches the task right away.">Reply now</button>
+      <button class="ctrlbtn" id="${idPrefix}Chat" title="Answer instantly, right here in the thread. Doesn't relaunch the task.">Answer</button>
+      <button class="ctrlbtn" id="${idPrefix}Front" title="Sends your reply and relaunches the task right away (a real codebase edit).">Reply &amp; relaunch task</button>
       <button class="ctrlbtn" id="${idPrefix}Back" title="Saves your reply and returns the task to the queue — it resumes on its normal turn.">Save &amp; queue</button>
     </div>
     <div class="q-err" id="${idPrefix}Err"></div>
   </div>`;
 }
-// Wires a qReplyBoxHtml instance. `onSend(text, placement)` should call qReply and clear
-// the textarea/error on success.
+// Wires a qReplyBoxHtml instance. `onSend(text, placement)` should send the reply
+// and clear the textarea/error on success. placement: 'chat' (instant answer),
+// 'front' (relaunch now), 'back' (save & queue later).
 function qWireReplyBox(host, idPrefix, onSend) {
   const text = host.querySelector('#' + idPrefix + 'Text');
   const errEl = host.querySelector('#' + idPrefix + 'Err');
@@ -3876,11 +3878,13 @@ function qWireReplyBox(host, idPrefix, onSend) {
     try { await onSend(v, placement); text.value = ''; }
     catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
   };
+  const chatBtn = host.querySelector('#' + idPrefix + 'Chat');
   const frontBtn = host.querySelector('#' + idPrefix + 'Front');
   const backBtn = host.querySelector('#' + idPrefix + 'Back');
+  if (chatBtn) chatBtn.onclick = () => send('chat');
   if (frontBtn) frontBtn.onclick = () => send('front');
   if (backBtn) backBtn.onclick = () => send('back');
-  text.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send('front'); });
+  text.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send('chat'); });
 }
 
 // Small state marker on flow rows so Antoine can see at a glance which tasks
@@ -4496,10 +4500,11 @@ function qRenderDetail(p) {
     ${p.pending_question ? `<div id="qQuestionHost"></div>` : ''}
     ${p.status === 'running'
       ? `<div class="q-replybox">
-          <textarea id="qReplyText" placeholder="Send a message while it runs (steering)…"></textarea>
-          <button id="qReplyBtn">Steer</button>
-        </div>
-        <div id="qReplyErr" class="q-err"></div>`
+          <textarea id="qReplyText" placeholder="Answer here — this also adds your message to the running task."></textarea>
+          <div class="q-replybox2-row">
+            <button id="qReplyBtn" class="ctrlbtn">Answer &amp; add to run</button>
+          </div>
+          <div id="qReplyErr" class="q-err"></div>`
       : qReplyBoxHtml('qReply')}
     <div class="q-row" style="margin-top:10px;">
       ${['running','queued'].includes(p.status) ? `<button class="ctrlbtn" id="qPauseBtn" title="${p.status === 'running' ? 'Stop it now — it goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸ Pause</button>` : ''}
@@ -4586,10 +4591,12 @@ function qRenderDetail(p) {
   }
 
   if (p.status === 'running') {
+    // Reply while it runs: instant chat answer + the message is also forwarded
+    // to the live agent as a steer (so the directive reaches the run at once).
     document.getElementById('qReplyBtn').onclick = () => {
       const text = document.getElementById('qReplyText').value.trim();
       if (!text) return;
-      qSteer(p.id, text);
+      qReply(p.id, text, 'chat');
     };
   } else {
     qWireReplyBox(host, 'qReply', (text, placement) => qReply(p.id, text, placement));
@@ -5106,17 +5113,13 @@ function flowWorldRender(source, id, host, ideaText, onChange) {
 }
 
 async function qReply(id, text, placement = 'front') {
+  if (placement === 'chat') {
+    await apiWrite(`/api/travaux/prompts/${id}/reply/chat`, 'POST', { text });
+    await qLoad(); // thread refresh shows your message + the instant answer
+    return;
+  }
   await apiWrite(`/api/travaux/prompts/${id}/reply`, 'POST', { text, placement });
   await qLoad();
-}
-async function qSteer(id, text) {
-  const errEl = document.getElementById('qReplyErr');
-  if (errEl) errEl.textContent = '';
-  try {
-    await apiWrite(`/api/travaux/prompts/${id}/message`, 'POST', { text });
-    document.getElementById('qReplyText').value = '';
-    await qLoad();
-  } catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
 }
 
 // ---------- Travaux: Suggestions de Claude + Idées + Quotas strip ----------

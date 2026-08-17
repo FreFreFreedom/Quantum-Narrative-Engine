@@ -30,7 +30,7 @@ import {
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
-import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pickTaskModel } from './providers/index.js';
+import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pickTaskModel, pickFastFreeModel } from './providers/index.js';
 import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan, tierForTask } from './taskPlanner.js';
 import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday } from './ai/text.js';
@@ -1257,6 +1257,85 @@ export async function replyToPrompt(id, { text, userId = null, placement = 'fron
   addMessage(id, { role: 'user', text: clean, author: userId });
   if (placement === 'back') return requeueToBack(row);
   return relaunchWithThread(row);
+}
+
+// Instant conversational reply (no agent launch). The user's message goes to
+// the thread; a free model answers from the FULL thread context (so the reply
+// "has the full thread as context" exactly as intended); the answer is posted
+// back to the thread for visibility. Model choice is tier-driven: deep-tier
+// tasks get the strongest live free model (a real answer is worth the depth
+// for a big task), mini/standard get the fast floor — both free, both fast,
+// neither uses the paid Go lane. If the task is currently running, the same
+// text is ALSO forwarded to the live agent as a steer, so a directive reaches
+// the run immediately while the chat answer lands in-thread for reference.
+// Counts as one helper call against the daily budget. Never changes task
+// status/plan/pause and never calls advanceQueue — never disturbs the queue.
+export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  const clean = String(text || '').trim();
+  if (!clean) return { error: 'empty' };
+
+  // If a world-look review question is pending and the task hasn't started,
+  // this reply is the answer to that question — route it through the existing
+  // fast question path (shapes the world-look + re-draft), not a chat answer.
+  if (row.pending_question && isReviewQuestion(row) && !row.started_at && ['queued', 'paused'].includes(row.status)) {
+    return { prompt: await answerInspireQuestion(row, clean, userId), steered: false };
+  }
+
+  // Persist the human message so the answer has the full thread in context.
+  addMessage(id, { role: 'user', text: clean, author: userId });
+
+  // If a run is live, also steer it so a directive reaches it right now.
+  let steered = false;
+  if (row.status === 'running' && row.agent_task_id) {
+    const task = findAgentTask(row.agent_task_id);
+    if (task && task.status === 'in_progress' && sendSteeringMessage(row.agent_task_id, clean)) {
+      steered = true;
+    }
+  }
+
+  // Build the chat prompt from the full thread + the task's purpose, tier-aware
+  // depth. Reuse the compact recap shape (title/purpose/last exchange) when the
+  // thread has grown, to keep the cost small on the free floor while still
+  // grounding the answer in what's actually happening on the task.
+  const messages = listMessages(id);
+  const thread = messages
+    .map((m) => `${m.author_name ? m.author_name : (m.role === 'user' ? 'Human' : 'You')}: ${clip(m.text, 2000)}`)
+    .join('\n\n');
+  const system = `Respond to the latest message from the human as part of an ongoing conversation about this task. Plain English, no jargon, no file names unless I explain them.\n\n${USER_FACING_STYLE}\n\n`;
+  const context = [
+    `=== TASK ===\n${clip(row.title || '(untitled)', 160)}`,
+    `=== ORIGINAL REQUEST ===\n${clip(row.raw_prompt || row.prompt || '', 1200)}`,
+    row.summary ? `=== PURPOSE ===\n${clip(row.summary, 600)}` : '',
+    `=== THREAD ===\n${thread}`,
+    '=== NOW ===\nRespond to the human directly and concisely.',
+  ].filter(Boolean).join('\n\n');
+
+  let model;
+  try {
+    model = row.task_tier === 'deep' ? await pickTaskModel('deep') : await pickFastFreeModel();
+  } catch {
+    model = await defaultOpenCodeModel().catch(() => null);
+  }
+
+  let answer = '';
+  const result = await generateText({
+    prompt: `${system}\n\n${context}`,
+    feature: 'reply',
+    maxTokens: 800,
+    model,
+    label: 'chat-reply',
+  });
+  if (result?.text) {
+    answer = result.text;
+    addMessage(id, { role: 'agent', text: answer, author: null, agentTaskId: steered ? row.agent_task_id : null });
+  } else {
+    answer = `I couldn't reach a model right now (${result?.error || result?.message || 'no response'}). The message is in the thread; try again in a moment, or use "Reply & relaunch task" to restart it on the agent.`;
+  }
+
+  broadcast();
+  return { prompt: getPrompt(id), answer, steered, model };
 }
 
 // Save the answer without relaunching this instant — the task goes back to the

@@ -215,6 +215,22 @@ export function queueRoutes() {
     res.status(201).json(out.prompt);
   }));
 
+  // Instant conversational reply (plan: cheap-by-design queue). Posts the user
+  // message to the thread, asks a free model (fast floor, or the strongest free
+  // model for deep-tier tasks) to answer using the full thread as context, and
+  // posts the answer back to the thread — seconds, no agent launch. If the task
+  // is currently running, the same text is ALSO forwarded to the live run as a
+  // steer so a directive reaches the agent immediately while the answer lands
+  // in-thread for reference.
+  router.post('/prompts/:id/reply/chat', asyncHandler(async (req, res) => {
+    const out = await queue.chatReplyToPrompt(req.params.id, {
+      text: req.body?.text, userId: req.user?.sub,
+    });
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    if (out.error) return res.status(400).json({ error: out.error });
+    res.status(201).json(out);
+  }));
+
   router.post('/prompts/:id/message', (req, res) => {
     const out = queue.steerPrompt(req.params.id, { text: req.body?.text, userId: req.user?.sub });
     if (!out) return res.status(404).json({ error: 'not_found' });

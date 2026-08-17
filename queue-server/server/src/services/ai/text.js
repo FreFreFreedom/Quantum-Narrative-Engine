@@ -232,13 +232,15 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text' }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
   // free lane (never the Claude subscription, which is opt-in per feature/task).
+  // An explicit `model` passed by the caller (tier-driven picks, e.g. deep-tier
+  // uses the strongest free model) takes priority over the feature default.
   const providerId = featureDefaults.provider || 'opencode';
-  const model = featureDefaults.model || null;
+  const model = explicitModel || featureDefaults.model || null;
 
   // Primary: the configured provider + its own tier chain (e.g. claude-code's
   // sonnet -> opus -> haiku, or opencode's default free model as an add-on).
