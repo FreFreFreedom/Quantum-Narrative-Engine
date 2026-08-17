@@ -55,6 +55,9 @@ const STREAM_FLUSH_MS = 2_000;
 // "is it actually looking at the same app I am" check, without spamming a line
 // on every 5s idle poll.
 const SNAPSHOT_MS = Number(process.env.SNAPSHOT_MS || 30_000);
+// How often to print a progress line while a model is actively working — the
+// direct answer to "is it doing nothing right now."
+const PROGRESS_MS = Number(process.env.PROGRESS_MS || 15_000);
 
 if (!ADMIN_PASSWORD) {
   console.error('ADMIN_PASSWORD is not set — the runner cannot log in to the queue.');
@@ -256,6 +259,7 @@ function runOnce({ task, model, cwd }) {
     let pending = [];
     let settled = false;
     const startedAt = Date.now();
+    let lastProgressAt = startedAt;
 
     const finish = (outcome, extra = {}) => {
       if (settled) return;
@@ -279,6 +283,20 @@ function runOnce({ task, model, cwd }) {
 
     const watchdog = setInterval(() => {
       const now = Date.now();
+      // Progress line — the direct answer to "is it doing nothing right now."
+      // Ticks on its own cadence (PROGRESS_MS), separate from the timeouts below.
+      if (now - lastProgressAt > PROGRESS_MS) {
+        lastProgressAt = now;
+        const elapsed = Math.round((now - startedAt) / 1000);
+        if (!sawRealOutput) {
+          console.log(`  … ${elapsed}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`);
+        } else {
+          const sinceOutput = Math.round((now - lastRealOutputAt) / 1000);
+          const chars = text.length >= 1000 ? `${(text.length / 1000).toFixed(1)}k chars` : `${text.length} chars`;
+          const costTxt = cost ? `, $${cost.toFixed(4)}` : '';
+          console.log(`  … ${elapsed}s elapsed, last output ${sinceOutput}s ago, ${chars} so far${costTxt}`);
+        }
+      }
       if (!sawRealOutput && now - startedAt > FIRST_OUTPUT_MS) {
         return finish('model-bad', { why: `no output in ${Math.round(FIRST_OUTPUT_MS / 1000)}s` });
       }
