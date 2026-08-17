@@ -14,17 +14,17 @@ let db = null;
 export function bindAiTextDb(database) { db = database; }
 
 const SETTINGS_CACHE_TTL = 30_000;
-let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true }, intel: {} };
+let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1 }, intel: {} };
 
 function loadAiSettings() {
-  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true }, intel: {} };
+  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1 }, intel: {} };
   const now = Date.now();
   if (settingsCache.at && now - settingsCache.at < SETTINGS_CACHE_TTL) {
     return settingsCache;
   }
   const row = db.prepare(`SELECT * FROM ai_settings WHERE id='global'`).get();
   if (!row) return settingsCache;
-  let queue = { goBudgetUsd: 0.33, autoShip: true };
+  let queue = { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1 };
   if (typeof row.queue_go_budget_usd === 'number' && Number.isFinite(row.queue_go_budget_usd)) {
     queue.goBudgetUsd = row.queue_go_budget_usd;
   }
@@ -32,6 +32,10 @@ function loadAiSettings() {
   // human clicks Merge; 1 (default) = a task that passes every check publishes
   // itself. The switch lives in the Queue panel.
   queue.autoShip = Number(row.queue_auto_ship) !== 0;
+  // Per-task cost cap (free-only plan): the number of dollars a single task may
+  // spend in total before it stops itself. The Queue panel edits it.
+  queue.costCapUsd = (typeof row.queue_cost_cap_usd === 'number' && Number.isFinite(row.queue_cost_cap_usd) && row.queue_cost_cap_usd > 0)
+    ? row.queue_cost_cap_usd : 0.1;
   let intel = {};
   try { intel = JSON.parse(row.intel_json || '{}'); } catch {}
   try {
@@ -93,11 +97,14 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
       nextQueue.goBudgetUsd = Math.max(0, queue.goBudgetUsd);
     }
     if (typeof queue.autoShip === 'boolean') nextQueue.autoShip = queue.autoShip;
+    if (typeof queue.costCapUsd === 'number' && Number.isFinite(queue.costCapUsd) && queue.costCapUsd > 0) {
+      nextQueue.costCapUsd = queue.costCapUsd;
+    }
   }
   let nextIntel = { ...(current.intel || {}) };
   if (intel) nextIntel = { ...nextIntel, ...intel };
-  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, JSON.stringify(nextIntel));
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, JSON.stringify(nextIntel));
   return getAiSettings();
 }
 
@@ -163,8 +170,8 @@ async function getFallbackChain(feature, providerId, model) {
   }
 
   // If quota policy allows auto-free, add the opencode lane as backup: the
-  // default model (paid curated flagship) FIRST, then the free model — so a
-  // paid failure degrades to free opencode, never straight to the catalogue.
+  // free floor (the opencode default for side passes), never the paid
+  // subscription — paid models are explicit picks only.
   const { policy } = loadAiSettings();
   if (policy === 'auto_free') {
     const defId = await getDefaultModel('opencode', feature);

@@ -189,6 +189,26 @@ function goLaneAllowed() {
   } catch { return true; }
 }
 
+// Per-task cost cap (free-only plan): a single task may spend at most this many
+// dollars in TOTAL, across all its runs and retries, before it stops itself —
+// mid-run for the CLI providers (their usage lines are parsed incrementally) and
+// at every run boundary besides. This is the guarantee that one task can never
+// drain the credit bank. Default $0.10; editable in the Queue panel.
+function costCapUsd() {
+  try {
+    if (!db) return 0.1;
+    const row = db.prepare(`SELECT queue_cost_cap_usd FROM ai_settings WHERE id='global'`).get();
+    const cap = (row && typeof row.queue_cost_cap_usd === 'number') ? row.queue_cost_cap_usd : 0.1;
+    return Number.isFinite(cap) && cap > 0 ? cap : 0.1;
+  } catch { return 0.1; }
+}
+// A task's accumulated spend across its completed runs (agent_tasks.cost_usd is
+// the running total — each finalize ADDS the finished run's cost to it).
+function spentSoFar(task) {
+  const c = Number(task?.cost_usd);
+  return Number.isFinite(c) && c > 0 ? c : 0;
+}
+
 // Global cap on concurrent WRITER (implement) tasks (plan 2b). Env-configurable;
 // defaults to 1 — every agent run is a heavy CLI process, and on a small
 // Railway container even two at once can exhaust the memory allowance and get
@@ -357,6 +377,9 @@ export function setQueuePaused(paused, { reason = null } = {}) {
 const _runningByAgent = new Map();
 const _questionRuns = new Set();
 const streamBuffers = new Map();
+// In-run cost accumulation per task (see streamLine) — the live feed for the
+// per-task cost cap. Cleared with the stream buffer after cleanup.
+const runCostSoFar = new Map();
 
 function writerRunsFor(agentKey) { return _runningByAgent.get(agentKey || 'dev1')?.size || 0; }
 function totalWriterRuns() {
@@ -438,6 +461,15 @@ function streamLine(taskId, line) {
   if (!taskId || !line.trim()) return;
   try {
     const evt = JSON.parse(line);
+    // Incremental cost capture for the per-task cap (free-only plan): opencode
+    // reports each finished step's cost, Claude reports the run's cumulative
+    // total on every result event. Accumulated per task in runCostSoFar, so a
+    // run that crosses the cap can be stopped MID-RUN, not just at the end.
+    if (evt.type === 'step_finish' && typeof evt.part?.cost === 'number') {
+      runCostSoFar.set(taskId, (runCostSoFar.get(taskId) || 0) + evt.part.cost);
+    } else if (evt.type === 'result' && typeof evt.total_cost_usd === 'number') {
+      runCostSoFar.set(taskId, evt.total_cost_usd);
+    }
     getProvider(providerForTask(taskId)).streamEventToChunks(evt, (chunk) => appendStreamChunk(taskId, chunk));
   } catch {}
 }
@@ -652,6 +684,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     try { unlinkSync(EXEC_INBOX(taskId)); } catch {}
     try { unlinkSync(pidFile); } catch {}
     taskProviderCache.delete(taskId);
+    runCostSoFar.delete(taskId);
     setTimeout(() => streamBuffers.delete(taskId), 120_000).unref?.();
     if (lane === 'question') { _questionRuns.delete(taskId); setImmediate(kick); }
     else {
@@ -662,7 +695,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     }
   }
 
-  function finalize({ killedTimeout = false, stallReason = false } = {}) {
+  function finalize({ killedTimeout = false, stallReason = false, costCapHit = false } = {}) {
     if (finished) return;
     finished = true;
     clearInterval(poll);
@@ -680,7 +713,13 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
 
     let status, agent_result;
     console.log(`[taskRunner] task ${taskId} process finished — code=${code} killedTimeout=${killedTimeout} stall=${stallReason}`);
-    if (killedTimeout) {
+    if (costCapHit) {
+      // The per-task cost cap (free-only plan) stopped the run mid-flight. This
+      // is a deliberate stop, not a failure: the report explains it plainly and
+      // the task is not retried (a later run would only spend more).
+      status = 'blocked';
+      agent_result = `(stopped at your cost cap — the task crossed its $${costCapUsd().toFixed(2)} per-task spending limit, so it stopped itself)\n\n${text}`;
+    } else if (killedTimeout) {
       status = 'blocked';
       agent_result = stallReason
         ? `(stalled — no output for ${Math.round(EXEC_STALL_MS / 60000)} min)\n\n${text}`
@@ -706,8 +745,9 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
 
     // Check the assistant text, the structured error/result, and the raw transcript —
     // a real usage-limit hit often produces no assistant turn at all, only an error line.
+    // A cap-stopped run never takes this path: its stop was deliberate.
     const limit = detectLimitFor(provider, agent_result, parsed.resultText || parsed.errorMessage, raw);
-    if (limit) {
+    if (limit && !costCapHit) {
       const t = readTasks().find((x) => x.id === taskId);
       if (!t) { cleanup(); return; }
 
@@ -719,9 +759,9 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
       // Skip Claude tier fallback (all share same quota bank) — go straight to the
       // OpenCode model chain. Record this exhaustion in the ledger, resolve
       // OpenCode's live model list, and continue the SAME task on the next model:
-      // Go (paid subscription) pool first — gated by the daily spend guard — then
-      // the free floor, or defer back to the queue with an auto-wake window so
-      // nothing ever needs a manual "change the model and resume".
+      // the free floor first — the paid Go pool only when the task's own pick was
+      // paid (free-only policy) — or defer back to the queue with an auto-wake
+      // window so nothing ever needs a manual "change the model and resume".
       setImmediate(async () => {
         let evt = null;
         try {
@@ -737,10 +777,21 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
         let nextModel = null;
         try {
           const { models } = await listOpenCodeModels();
-          const polished = (models || []).filter((m) => m.id
+          const live = models || [];
+          const polished = live.filter((m) => m.id
             && !triedList.includes(`opencode:${m.id}`)
             && !isExhausted('opencode', m.id)
             && !isExhausted('opencode', ''));
+          // Free-only platform policy: the paid Go pool is eligible ONLY when
+          // this task's own stored pick was a paid model (an explicit user
+          // choice). A task running on the free default never auto-escalates
+          // into paid models — the queue spends paid credit only when a model
+          // is picked for a task. Unknown/unlisted ids count as explicit picks:
+          // they cannot be the free floor's default, so they were chosen.
+          // The daily spend guard still gates the paid lane when a budget is set.
+          const pickId = t.provider === 'opencode' ? (t.provider_model || t.model) : null;
+          const pickLive = pickId ? live.find((m) => m.id === pickId) : null;
+          const pickIsPaid = !!pickId && (!pickLive || !pickLive.free);
           // Paid pool = the Go subscription lane only: the curated order first
           // (cheapest-strong first, escalate on stall), then remaining
           // opencode-go/* flagships and opencode/* hosted models by cost.
@@ -753,10 +804,30 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
             .filter((m) => !m.free && isOpenCodeHosted(m))
             .sort((a, b) => (chainIndex(a) === -1 ? 999 : chainIndex(a)) - (chainIndex(b) === -1 ? 999 : chainIndex(b)) || byCost(a, b));
           const freePool = polished.filter((m) => m.free);
-          const goAllowed = goLaneAllowed();
-          if (goAllowed) nextModel = goPool[0];
+          const goEligible = t.provider === 'opencode' && pickIsPaid && goLaneAllowed();
+          if (goEligible) nextModel = goPool[0];
           if (!nextModel) nextModel = freePool[0];
         } catch (e) { console.error('[taskRunner] OpenCode model discovery failed —', e.message); }
+
+        // Per-task cost cap (free-only plan): a quota-hit retry is a NEW run, so
+        // the cap is checked again here — the just-failed run's spend is added
+        // to the task total, and if the cap is crossed the task stops for good
+        // with an honest reason instead of spending on more models.
+        const capNow = costCapUsd();
+        const capTotal = spentSoFar(t) + (runCostSoFar.get(taskId) || 0);
+        if (capNow > 0 && capTotal >= capNow) {
+          const capped = updateTask(taskId, {
+            status: 'blocked', cost_usd: capTotal, completed_at: new Date().toISOString(),
+            agent_result: `(stopped at your cost cap — the task crossed its $${capNow.toFixed(2)} per-task spending limit, so it stopped itself. Pick a free-to-run model (🆓) or leave Auto on for this task.)`,
+          });
+          if (capped) broadcastTask(capped);
+          appendStreamChunk(taskId, { kind: 'system', text: `Stopped: the task crossed its $${capNow.toFixed(2)} spending cap.` });
+          import('./promptQueue.js')
+            .then((m) => m.onAgentTaskFinalized(capped))
+            .catch((e) => console.error('queue: finalize hand-off failed —', e.message));
+          cleanup();
+          return;
+        }
 
         if (nextModel) {
           // Session continuity: only an OpenCode→OpenCode switch can resume —
@@ -768,9 +839,10 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
           const retried = updateTask(taskId, {
             provider: 'opencode', model: nextModel.id, provider_model: nextModel.id, run_model: nextModel.id,
             tried_models: finalTriedList, status: 'in_progress', started_at: new Date().toISOString(),
+            cost_usd: capTotal > 0 ? capTotal : null,
           });
           if (retried) broadcastTask(retried);
-          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${currentModel || currentProviderId} — switching to OpenCode (${nextModel.id}${goLaneAllowed() ? '' : ', free-floor mode'}).` });
+          appendStreamChunk(taskId, { kind: 'system', text: `Quota reached on ${currentModel || currentProviderId} — switching to OpenCode (${nextModel.id}${goEligible ? '' : ', free-floor mode'}).` });
           let prevPrompt = '';
           try { prevPrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
           runDetachedExecution(taskId, prevPrompt, {
@@ -847,10 +919,18 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     const runState = cur && cur.stop_requested ? 'stopped'
       : (pending_question?.question ? 'awaiting_input' : (cur?.run_state || 'idle'));
 
+    // Cumulative cost across the task's runs (free-only plan): ADD this run's
+    // spend to what earlier runs already cost, so the per-task cap sees the
+    // true total. opencode's own parser only reports the last step's cost, so
+    // prefer the incremental sum captured during streaming when available.
+    const thisRunCost = runCostSoFar.get(taskId) ?? (usage?.cost_usd ?? 0);
+    const totalCost = spentSoFar(cur) + (Number.isFinite(thisRunCost) && thisRunCost > 0 ? thisRunCost : 0);
+
     const finalTask = updateTask(taskId, {
       status, agent_result, user_summary, pending_question, missed_user_message,
       session_id: sessionId || null, completed_at: new Date().toISOString(),
-      cost_usd: usage?.cost_usd ?? null, tokens_in: usage?.tokens_in ?? null, tokens_out: usage?.tokens_out ?? null,
+      cost_usd: totalCost > 0 ? totalCost : (usage?.cost_usd ?? null),
+      tokens_in: usage?.tokens_in ?? null, tokens_out: usage?.tokens_out ?? null,
       run_state: runState, heartbeat_at: new Date().toISOString(),
     });
     if (finalTask) broadcastTask(finalTask);
@@ -885,6 +965,20 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     }
     drainLog();
     if (existsSync(CODE)) { finalize(); return; }
+    // Per-task cost cap (free-only plan): kill the run the moment its
+    // accumulated spend crosses the cap — no waiting for the run to finish.
+    // Free-floor runs cost ~nothing, so this only ever bites explicitly-picked
+    // paid models. The finalize() below records the honest stop reason.
+    if (Date.now() - startedAt > 10_000) {
+      const cap = costCapUsd();
+      const liveCost = runCostSoFar.get(taskId) || 0;
+      if (cap > 0 && spentSoFar(cur) + liveCost >= cap) {
+        const pid = currentPid();
+        if (pid) killGroup(pid);
+        finalize({ costCapHit: true });
+        return;
+      }
+    }
     if (Date.now() - startedAt > EXEC_TIMEOUT_MS) {
       const pid = currentPid();
       if (pid) killGroup(pid);
@@ -1073,16 +1167,25 @@ async function executeTask(next, { lane = 'exec' } = {}) {
      }
    }
 
+   // Per-task cost cap (free-only plan): a task whose past runs already crossed
+   // the cap never runs again — it is blocked here with the honest reason. The
+   // mid-run checks handle the rest; this is the boundary guard.
+   const capGate = costCapUsd();
+   if (capGate > 0 && spentSoFar(next) >= capGate) {
+     failEarly(next, `(stopped at your cost cap — this task already spent ~$${spentSoFar(next).toFixed(2)}, more than its $${capGate.toFixed(2)} per-task limit, so it won't run again. Pick a free-to-run model (🆓) or leave Auto on for this task.)`);
+     return;
+   }
+
    // Writer tasks get their own git worktree (plan 2a): an isolated checkout on
-  // its own branch, created at dispatch time. The task row records it
-  // (worktree_path/branch/base_sha) so continuations can land on the same branch.
-  // A task that ALREADY carries a worktree_path (a continuation inheriting its
-  // parent's tree, plan 2d) reuses it — same worktree, same branch, no new tree.
-  // On git failure the task still runs — in the main checkout, like before
-  // worktrees existed — with a logged warning, so one broken git repo can never
-  // wedge the queue.
-  let execCwd = null;
-  if (next.mode !== 'question') {
+   // its own branch, created at dispatch time. The task row records it
+   // (worktree_path/branch/base_sha) so continuations can land on the same branch.
+   // A task that ALREADY carries a worktree_path (a continuation inheriting its
+   // parent's tree, plan 2d) reuses it — same worktree, same branch, no new tree.
+   // On git failure the task still runs — in the main checkout, like before
+   // worktrees existed — with a logged warning, so one broken git repo can never
+   // wedge the queue.
+   let execCwd = null;
+   if (next.mode !== 'question') {
     if (next.worktree_path && existsSync(next.worktree_path)) {
       execCwd = next.worktree_path;
     } else {

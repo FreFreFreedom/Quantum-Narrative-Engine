@@ -4,7 +4,6 @@
 import * as claudeCode from '../providers/claudeCode.js';
 import * as opencode from '../providers/opencode.js';
 import * as openaiCompat from '../providers/openaiCompat.js';
-import { CURATED_GO_CHAIN, curatedMatch } from '../providers/index.js';
 import { listProviders as listCatalogProviders } from './catalog.js';
 
 export const PROVIDER_CAPABILITIES = {
@@ -127,17 +126,13 @@ export async function getFreeOpenCodeModel() {
 // Get the default model for a provider for a given work type
 export async function getDefaultModel(providerId, workType) {
   if (providerId === 'opencode') {
-    // Small features run on the Go subscription's curated flagship first (paid —
-    // reliable, complete answers; the free reasoning models truncate). Missing
-    // from the live list (or balance empty — the chain then fails over) → the
-    // free model keeps the feature alive, per the free-first fallback policy.
+    // Free-only platform policy: the opencode default for every side pass
+    // (plan drafts, summaries, tree sync, inspiration, chat) is the free floor —
+    // the queue never spends paid credit on its own. Paid models are reached
+    // only by an explicit per-feature or per-task pick.
     const { models } = await listOpenCodeModels();
     const live = models || [];
-    for (const entry of CURATED_GO_CHAIN) {
-      const hit = live.find((m) => curatedMatch(entry, m.id));
-      if (hit) return hit.id;
-    }
-    const free = live.find(m => m.free);
+    const free = live.find((m) => m.free);
     if (free) return free.id;
     if (live.length) return live[0].id;
     return 'opencode-default';

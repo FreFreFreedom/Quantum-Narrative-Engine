@@ -414,6 +414,10 @@ function initSchema(db) {
   // instead of waiting for the human's Merge click. The on/off switch lives in
   // the Queue panel. Off restores the old human-only merge.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_auto_ship INTEGER NOT NULL DEFAULT 1`); } catch {}
+  // Per-task cost cap (free-only plan): a task stops itself the moment its
+  // cumulative spend crosses this cap — mid-run when the CLI reports usage, and
+  // at every run boundary besides. Default $0.10; editable in the Queue panel.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_cost_cap_usd REAL NOT NULL DEFAULT 0.1`); } catch {}
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
   // provider_quota_ledger: append-only history of every exhaustion event, so the

@@ -64,15 +64,19 @@ export function curatedMatch(entry, id) {
   return false;
 }
 
+// Default model for NEW queue tasks — the free floor, never the paid
+// subscription. The queue spends paid credit only when a model is picked
+// explicitly per task; the curated paid chain survives only as a last-resort
+// fallback when no free model is reachable on this host.
 export async function defaultOpenCodeModel() {
   const { models, error } = await listOpenCodeModels();
   const live = models || [];
+  const free = live.find((m) => m.free);
+  if (free) return free.id;
   for (const entry of CURATED_GO_CHAIN) {
     const hit = live.find((m) => curatedMatch(entry, m.id));
     if (hit) return hit.id;
   }
-  const free = live.find((m) => m.free);
-  if (free) return free.id;
   if (live.length) return live[0].id;
   throw new Error(error || 'no OpenCode models available');
 }

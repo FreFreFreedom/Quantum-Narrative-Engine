@@ -6442,10 +6442,12 @@ function renderArchQueueBanner() {
   if (s.runningCount) parts.push(`${s.runningCount} running`);
   if (s.queuedCount) parts.push(`${s.queuedCount} queued`);
   parts.push(`auto-ship ${s.autoShip ? 'on' : 'off'}`);
+  if (s.todayCostUsd != null) parts.push(`today ~$${s.todayCostUsd.toFixed(2)}`);
   const detail = [
     `Tasks done: ${s.completedCount}`,
     s.pausedReason ? `Paused: ${s.pausedReason}` : '',
     s.memFreeMb != null ? `Free memory: ${s.memFreeMb} MB` : '',
+    s.costCapUsd != null ? `Per-task cost cap: $${s.costCapUsd.toFixed(2)} — a task stops itself the moment it crosses its cap, so one task can never drain your credits.` : '',
     'Auto-ship: a task that passes every check publishes itself — the on/off switch is in the Queue panel.',
   ].filter(Boolean).join(' · ');
   el.innerHTML = `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}`;
@@ -7609,6 +7611,7 @@ let qpPickBanner = null;
 // Auto-ship gate state (plan "auto-ship" item 2): true = a finished task that
 // passes every review check publishes itself; the switch below toggles it.
 let qAutoShip = true;
+let qCapUsd = 0.1;
 
 function qpSectionHtml(cls, title, count, rowsHtml, emptyText) {
   return `<div>
@@ -7664,6 +7667,10 @@ function renderQueuePanel() {
         <input type="checkbox" id="qpAutoShipChk" ${qAutoShip ? 'checked' : ''}>
         <span>Auto-ship: publish finished tasks after their checks pass</span>
       </label>
+      <label class="qp-opt-row" title="A task stops itself the moment its total spend crosses this cap — so one task can never drain your credits. Tasks run on free-to-use models by default, so this only matters when you pick a paid model for a task.">
+        <span>Per-task cost cap: $</span>
+        <input type="number" id="qpCapUsd" min="0.01" step="0.01" value="${qCapUsd}">
+      </label>
     </div>
   `;
 
@@ -7699,6 +7706,18 @@ function renderQueuePanel() {
       } catch (e) { alert('Could not save the auto-ship setting: ' + e.message); }
     };
   }
+  const capEl = document.getElementById('qpCapUsd');
+  if (capEl) {
+    capEl.onchange = async () => {
+      const v = parseFloat(capEl.value);
+      if (!Number.isFinite(v) || v <= 0) { capEl.value = qCapUsd; return; }
+      qCapUsd = v;
+      try {
+        await apiWrite('/api/travaux/ai-settings', 'PUT', { queue: { costCapUsd: qCapUsd } });
+        refreshCoreHeader(); // status line shows the new cap right away
+      } catch (e) { alert('Could not save the cost cap: ' + e.message); }
+    };
+  }
 }
 
 // Live-read the auto-ship gate for the switch above: the checkbox renders from
@@ -7708,9 +7727,12 @@ async function qpLoadAutoShip() {
   try {
     const s = await api('/api/travaux/ai-settings');
     qAutoShip = !!(s.queue && s.queue.autoShip);
+    if (s.queue && Number.isFinite(s.queue.costCapUsd) && s.queue.costCapUsd > 0) qCapUsd = s.queue.costCapUsd;
   } catch (e) { /* keep last-known state */ }
   const el = document.getElementById('qpAutoShipChk');
   if (el) el.checked = qAutoShip;
+  const capEl = document.getElementById('qpCapUsd');
+  if (capEl) capEl.value = qCapUsd;
 }
 
 async function qpSubmitTask() {

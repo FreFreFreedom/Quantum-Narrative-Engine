@@ -129,12 +129,22 @@ export function architectureRoutes(db) {
     const status = getQueueStatus(db);
     const pause = getQueuePauseState();
     const memMb = containerFreeBytes();
+    // Today's spend + the per-task cost cap (free-only plan): the status line
+    // shows what the queue has cost today and the cap that stops one task from
+    // ever draining the credit bank.
+    const dayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
+    const today = db.prepare(`SELECT COALESCE(SUM(cost_usd), 0) AS total FROM work_prompts WHERE cost_usd > 0 AND started_at >= ?`).get(dayStart);
+    const capRow = db.prepare(`SELECT queue_cost_cap_usd FROM ai_settings WHERE id='global'`).get();
+    const costCapUsd = (capRow && typeof capRow.queue_cost_cap_usd === 'number' && capRow.queue_cost_cap_usd > 0)
+      ? capRow.queue_cost_cap_usd : 0.1;
     res.json({
       ...status,
       paused: pause.paused,
       pausedReason: pause.reason || null,
       autoShip: autoShipEnabled(),
       memFreeMb: memMb === null ? null : Math.round(memMb / 1024 / 1024),
+      todayCostUsd: Number(today.total) || 0,
+      costCapUsd,
     });
   });
 

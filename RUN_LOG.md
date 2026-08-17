@@ -1543,3 +1543,46 @@ queue-server/). All items built in one round.
 - Anthropic-recalled detail: the plan's "one thing to know" (auto-ship goes
   live without human look, undo available) is now true as designed — nothing to
   do.
+
+---
+
+# Live session, 2026-08-17 — queue is free-only + cost-capped
+
+Antoine reported the online queue "ate all my credits" (one enabled task drained
+the credit bank). Root cause: the queue was **paid by default** — new tasks
+defaulted to the paid Go flagship (`defaultOpenCodeModel()` = curated paid
+chain), every side pass (plan draft, summaries, world-look, tree classifier)
+resolved the same paid flagship, the daily budget guard defaulted to **0 =
+disabled**, and quota-hit escalation walked the paid chain. Fixes (live session,
+pushed directly to `main` per ship-directly rule):
+
+1. **Free by default.** `defaultOpenCodeModel()` and `getDefaultModel('opencode')`
+   now return the free floor; the curated paid chain survives only as a
+   last-resort fallback when no free model exists on the host. New prompts and
+   every side pass resolve free automatically.
+2. **Free-first escalation.** Quota-hit retries go to the free floor; the paid
+   Go pool is eligible only when the task's stored pick was a paid model (an
+   explicit user choice) — and still gated by the daily guard when a budget is
+   set.
+3. **Per-task cost cap ($0.10 default).** New `queue_cost_cap_usd` column on
+   `ai_settings` (default 0.1). The cap is enforced **mid-run** (incremental
+   usage capture in `streamLine`: opencode step costs summed, claude cumulative
+   result costs) with a kill + honest "stopped at your cost cap" report, at the
+   retry boundary, and before dispatch. `cost_usd` now accumulates across a
+   task's runs instead of being overwritten.
+4. **Visibility.** Queue status line shows `today ~$X` plus the cap in the
+   hover detail; the Queue panel has a per-task cap input next to auto-ship.
+
+Verified: `node --check` on all 6 changed server files, inline scripts parsed
+clean, master ↔ served copy checksums identical.
+
+### Follow-ups
+
+- The local queue server (localhost:3000) still runs the previous build — it
+  needs a restart to pick up these changes (Antoine's call; killing his
+  session isn't mine).
+- The online app picks everything up from the push; no env changes needed.
+- Tasks already stored with a paid `provider_model` still honor it on resume
+  (they're capped at $0.10 per task now); clearing their model re-defaults to
+  free. Antoine was told to clear the model on the queued tasks if he wants
+  them free-only.
