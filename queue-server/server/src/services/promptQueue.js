@@ -186,13 +186,16 @@ export async function createPrompt({
   // Inspiration step (plan inspiration-before-planning): EVERY implement-mode
   // task — suggestion, hand-typed, seed, thought, handoff — gets a background
   // pass that looks at the world (open / hidden / bold shelves) before its plan
-  // is written. Question-mode tasks skip it, and mini-tier tasks skip it for
-  // speed (free-only plan: a tiny fix's plan cannot need world context — the
-  // card shows the skip reason and the world-look stays one click away). The
-  // pass never blocks creation: the row lands with inspire_state='pending' and
-  // the draft simply waits up to its timeout for the report (below), then
+  // is written. Question-mode tasks skip it, mini-tier tasks skip it for speed
+  // (free-only plan: a tiny fix's plan cannot need world context — the card
+  // shows the skip reason and the world-look stays one click away), and
+  // plan_source:'skip' skips it too — that flag already means "run this raw,
+  // no drafted plan", and a world-look for a plan that won't exist is pure
+  // waste (this is also the "Run raw" composer toggle's fast path). The pass
+  // never blocks creation: the row lands with inspire_state='pending' and the
+  // draft simply waits up to its timeout for the report (below), then
   // proceeds without it on failure.
-  const willInspire = useMode === 'implement' && tier !== 'mini';
+  const willInspire = useMode === 'implement' && tier !== 'mini' && plan_source !== 'skip';
   // Precomputed world-look: the item's own section (suggestion / seed / not-built
   // component) already ran the pass, so the task reuses it instead of searching
   // again. Picks are validated against the report; state lands 'applied' when

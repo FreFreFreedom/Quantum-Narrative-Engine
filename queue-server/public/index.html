@@ -1229,6 +1229,12 @@ button:active { transform: translateY(1px) scale(.99); }
                 <span id="qStrategyInfo" style="font-size:10px;color:var(--c-ink-3);align-self:center;"></span>
               </div>
               <div class="q-row">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Skips the automatic world-look and plan-draft passes that normally run before a task starts — use for a genuinely small/simple task you want to run about as fast as pasting it into a plain terminal session.">
+                  <input type="checkbox" id="qRunRaw">
+                  Run raw — skip inspiration &amp; planning (fastest)
+                </label>
+              </div>
+              <div class="q-row">
                 <span class="q-place-seg" id="qPlaceSeg" title="Where in the queue it lands">
                   <button data-pl="first">First</button>
                   <button class="active" data-pl="last">Last</button>
@@ -4475,9 +4481,14 @@ async function qAddPrompt(asPaused) {
       provider_model: usesModelPicker ? (modelSel.value || null) : null, // '' = Auto → server system default
       agent_key: document.getElementById('qAgent').value || null, // '' = Auto
       strategy: document.getElementById('qStrategy').value,
+      // "Run raw": skip the automatic world-look + plan-draft passes entirely —
+      // plan_source:'skip' already means "no drafted plan" server-side, and
+      // promptQueue.js now also treats it as "skip inspiration" for the same reason.
+      plan_source: document.getElementById('qRunRaw').checked ? 'skip' : 'auto',
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
+    document.getElementById('qRunRaw').checked = false;
     document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x.getAttribute('data-pl') === 'last'));
     await qLoad();
   } catch (e) {

@@ -299,7 +299,10 @@ function runOnce({ task, model, cwd }) {
       if (!pending.length && !sawRealOutput) return;
       const chunks = pending; pending = [];
       try {
-        const r = await api(`/worker/${task.id}/stream`, { chunks, model, cost_usd: cost });
+        // Send the session id as soon as it's known (not just at the very end)
+        // so a runner that dies mid-attempt leaves behind something the next
+        // claim can resume, instead of the task restarting from scratch.
+        const r = await api(`/worker/${task.id}/stream`, { chunks, model, cost_usd: cost, session_id: sessionId });
         if (r.status === 409) finish('cancelled');
       } catch { /* transient network — keep working, retry next tick */ }
     }, STREAM_FLUSH_MS);

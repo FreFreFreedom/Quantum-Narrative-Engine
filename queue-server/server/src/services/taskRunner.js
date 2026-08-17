@@ -1365,13 +1365,18 @@ export function claimNextTask({ runnerId = 'local' } = {}) {
 // Live progress from the runner: transcript chunks plus proof of life. Chunks go
 // through the same appendStreamChunk the in-container path uses, so the existing
 // UI stream view works unchanged.
-export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd = null } = {}) {
+export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd = null, session_id = null } = {}) {
   const task = readTasks().find((t) => t.id === taskId);
   if (!task || task.status !== 'in_progress') return false;
   for (const chunk of chunks) if (chunk && chunk.kind) appendStreamChunk(taskId, chunk);
   if (Number.isFinite(cost_usd) && cost_usd > 0) runCostSoFar.set(taskId, cost_usd);
   const patch = { heartbeat_at: new Date().toISOString(), run_state: 'working' };
   if (model && model !== task.run_model) patch.run_model = model;
+  // Persist the session id as soon as the runner has it (not just at /result) —
+  // if the runner dies mid-attempt, releaseStaleClaims() puts this task back to
+  // 'approved' without touching resume_session_id, so whatever's here already is
+  // what the next claim resumes from instead of restarting the whole task cold.
+  if (session_id && session_id !== task.resume_session_id) patch.resume_session_id = session_id;
   const updated = updateTask(taskId, patch);
   if (updated) broadcastTask(updated);
   return true;

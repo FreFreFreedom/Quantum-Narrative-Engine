@@ -48,11 +48,12 @@ export function workerRoutes() {
 
   router.post('/worker/:id/stream', (req, res) => {
     noteRunnerPoll();
-    const { chunks, model, cost_usd } = req.body || {};
+    const { chunks, model, cost_usd, session_id } = req.body || {};
     const ok = recordRunnerStream(req.params.id, {
       chunks: Array.isArray(chunks) ? chunks : [],
       model: model || null,
       cost_usd: Number(cost_usd),
+      session_id: session_id || null,
     });
     // 409 tells the runner to stop and drop this task: it was cancelled or
     // reclaimed server-side while it was working.
