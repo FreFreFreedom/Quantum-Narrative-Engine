@@ -1482,3 +1482,64 @@ vanish after the 2026-08-15 deploy, the cause is something other than disk wipin
    (volume already attached, `dbOnVolume:true` on the live 2026-08-15 deploy).
    If Antoine is still seeing post-deploy data loss, open a separate item to
    audit row-deleting code paths. Status: `DECIDED`. Blocks: nothing.
+
+---
+
+## Auto-ship + killed-task resumption + app-page deploy (session 2026-08-17, live)
+
+Plan Antoine approved ("Approve and I'll build it" → green light): the four-item
+auto-ship plan. Shipped as commit `271c53f` → origin/main (Railway deploys
+queue-server/). All items built in one round.
+
+### What shipped
+
+1. **Killed tasks continue where they left off (completed).** The OOM-retry path
+   (commit `98cdd69`) already retried once with a memory guard; it now ALSO
+   resumes the killed run's own workspace and conversation:
+   - `work_prompts.retry_worktree_path` / `retry_branch` (schema ALTERs) carry the
+     killed run's worktree + branch onto the retry; `startPrompt` reuses them
+     (precedence over the chain context), so the task's half-done files are still
+     there when it continues.
+   - The conversation resumes too: the retried run gets the killed run's CLI
+     session ids (`session_id` / `opencode_session_id`, written by finishPrompt
+     before the retry block runs). Columns are cleared on dispatch.
+   - Deploy-interruption case: in-progress tasks re-attach at boot and their
+     worktrees already survive restarts (pre-existing behaviour, unchanged).
+2. **Auto-ship finished tasks (new, on by default).** When a task finishes done
+   and all five review checks pass, the review self-merges — no Merge click.
+   - Setting: `ai_settings.queue_auto_ship` (default 1), exposed as
+     `queue.autoShip` through `/api/travaux/ai-settings` GET/PUT.
+   - `reviewRunner.scheduleAutoShip`: serialised on one promise chain (two
+     overlapping merges must never race the repo working tree); fires at most
+     once per approval (no retry loops); re-checks the switch right before
+     merging. Failed check / same-file conflict → review lands in
+     `changes_requested` and waits (unchanged behaviour). Failures that leave the
+     review approved (dirty repo, no network, push denied) append a concern
+     telling Antoine he can merge by hand. The Undo button stays as the net.
+   - Frontend switch: Queue panel bottom row ("Auto-ship: publish finished tasks
+     after their checks pass"), live-read from ai-settings on open.
+3. **Deploy always ships the newest app page.** `mergeReview` now refreshes
+   `queue-server/public/index.html` from the just-merged master
+   `fmcns_navigator.html` and commits it in the same push (only when they
+   differ). App-page refresh failure is non-fatal (copy stays stale).
+4. **Queue status line.** `/api/architecture/queue-status` now composes
+   paused state (promptQueue), auto-ship gate (ai/text) and container memory
+   headroom (memHeadroom) on top of the DB counts; the header banner shows
+   `Queue wired|paused · N running · M queued · auto-ship on|off` (detail on
+   hover: done count, pause reason, free memory).
+
+### Zero-cost checks (per AGENTS.md)
+
+- `node --check` on all 6 changed server files: OK.
+- Extracted inline scripts of `fmcns_navigator.html`, `node --check`: OK.
+- Frontend sync rule: master → `queue-server/public/index.html` copied,
+  sha256 matches (`03fa60a0…`).
+
+### Notes / follow-ups
+
+- The local repo must be clean for an auto-ship merge, same as a manual one —
+  if Antoine has uncommitted work, the auto-ship stops with a note on the card
+  (by design; the "status line" exists so he knows a task is running first).
+- Anthropic-recalled detail: the plan's "one thing to know" (auto-ship goes
+  live without human look, undo available) is now true as designed — nothing to
+  do.
