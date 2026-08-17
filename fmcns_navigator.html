@@ -468,17 +468,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-item-meta { font-size:10px; color:var(--c-ink-4); margin-top:4px; display:flex; gap:8px; align-items:center; }
 .q-item-meta .q-runstate { color:#2a6d3b; font-weight:600; }
 .q-item-meta .q-heartbeat-warn { color:#b3541e; font-weight:600; }
-.q-progress { margin-top:6px; }
-.q-progress-track { height:4px; border-radius:3px; background:var(--c-surface-3); overflow:hidden; }
-.q-progress-fill { height:100%; width:0; border-radius:3px; background:linear-gradient(90deg,#3a8f5a,#2a6d3b); transition:width .8s ease; }
-.q-progress-fill.amber { background:linear-gradient(90deg,#d99a3d,#b3541e); }
-.q-progress-fill.red { background:linear-gradient(90deg,#c65b3d,#a33a2a); }
-.q-progress-fill.live { animation:qShimmer 2s ease-in-out infinite; }
-.q-progress-fill.dim { opacity:.35; }
-.q-progress-caption { font-size:9.5px; color:var(--c-ink-4); margin-top:3px; display:flex; gap:8px; align-items:center; }
-.q-progress-caption .qp-live { color:#2a6d3b; font-weight:600; }
-.q-progress-caption .qp-stale { color:#b3541e; font-weight:600; }
-@keyframes qShimmer { 0%,100% { opacity:1; } 50% { opacity:.55; } }
 .q-item-q { font-size:10.5px; color:var(--c-warn); margin-top:5px; background:var(--c-warn-tint); border-radius:5px; padding:5px 7px; }
 .q-drag-handle { cursor:grab; color:var(--c-ink-5); font-size:12px; flex-shrink:0; }
 .q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
@@ -3479,9 +3468,8 @@ async function qLoad() {
   if (connEl) connEl.style.display = 'none';
   qRefreshRunnerState();
   const nextPrompts = data.prompts || [];
-  const anyRunning = nextPrompts.some(p => p.status === 'running');
   const sig = JSON.stringify({ paused: data.queue_paused, prompts: nextPrompts });
-  const changed = sig !== qLastSig || anyRunning;
+  const changed = sig !== qLastSig;
   qLastSig = sig;
   qPrompts = nextPrompts;
   qPaused = !!data.queue_paused;
@@ -3543,38 +3531,6 @@ function qMoveStep(id, dir) {
   if (idx === -1 || t < 0 || t >= ord.length) return;
   [ord[idx], ord[t]] = [ord[t], ord[idx]];
   qPersistReorder(qRebuildFullOrder(ord));
-}
-
-// Live work meter for a running task (plan: one element, two layers). The bar
-// FILL follows the agent's real output volume (bytes streamed to its transcript),
-// so a busy agent advances steadily and a wedged one visibly stalls; the caption
-// + color track the time budget (green → amber past 80% → red at timeout) and the
-// heartbeat freshness (shimmer while alive, dim + stale label when quiet).
-const Q_OUTPUT_CAP_BYTES = 32 * 1024;
-const Q_STALE_MS = 5 * 60_000;
-function qProgressBar(p) {
-  if (p.status !== 'running') return '';
-  const output = p.output_bytes || 0;
-  const fill = Math.max(4, Math.min(100, Math.round((output / Q_OUTPUT_CAP_BYTES) * 100)));
-  const elapsed = p.started_at ? Math.max(0, Date.now() - new Date(p.started_at).getTime()) : 0;
-  const budget = (p.timeout_minutes || 30) * 60_000;
-  const ratio = budget ? elapsed / budget : 0;
-  const hue = ratio > 0.95 ? 'red' : ratio > 0.8 ? 'amber' : '';
-  let live = true, staleMins = 0;
-  if (p.heartbeat_at) {
-    staleMins = (Date.now() - new Date(p.heartbeat_at).getTime()) / 60000;
-    live = staleMins < Q_STALE_MS / 60000;
-  }
-  const kb = (output / 1024).toFixed(output > 1024 ? 1 : 0);
-  const mins = Math.floor(elapsed / 60000), secs = Math.round((elapsed % 60000) / 1000);
-  const caption = live
-    ? `<span class="qp-live">live</span><span>${mins}:${String(secs).padStart(2,'0')} of ${p.timeout_minutes||30} min</span><span>${kb} KB output</span>`
-    : `<span class="qp-stale">no activity for ${Math.round(staleMins)} min</span><span>${mins}:${String(secs).padStart(2,'0')} of ${p.timeout_minutes||30} min</span><span>${kb} KB output</span>`;
-  return `
-    <div class="q-progress" title="Agent output so far vs the run budget — the bar fills with real work, the color tracks time left.">
-      <div class="q-progress-track"><div class="q-progress-fill ${hue} ${live?'live':'dim'}" style="width:${fill}%;"></div></div>
-      <div class="q-progress-caption">${caption}</div>
-    </div>`;
 }
 
 // Part 3 run_state surfacing: a running row says WHAT the process is doing
@@ -3929,7 +3885,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       ${qStopAfterBadge(p)}
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
-    ${p.status === 'running' ? qRunStateLine(p) + qProgressBar(p) : ''}
+    ${p.status === 'running' ? qRunStateLine(p) : ''}
     ${finished ? qCostLine(p) : ''}
     ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
     ${reorderable || pauseBtn ? `
@@ -4580,7 +4536,6 @@ function qRenderDetail(p) {
       <button class="q-startbtn" id="qStartBtn" title="Queue it — it runs in its normal turn, not necessarily right away.">▶ Start this task</button>
       <div class="q-primary-hint" id="qPrimaryHint">${qPrimaryHintHtml(p)}</div>
     </div>` : ''}
-    ${p.status === 'running' ? qProgressBar(p) : ''}
     <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
       <summary>Run details — agent, provider, timing, cost</summary>
       <div class="q-detail-row">
@@ -4995,7 +4950,9 @@ function qInspireReRender(p) {
   const cached = qInspireCache[p.id];
   if (!cached) return;
   const data = { state: cached.state, report: cached.report, picks: cached.picks, review: cached.review };
-  host.innerHTML = qInspireFullHtml(p, data);
+  const html = qInspireFullHtml(p, data);
+  cached.html = html; // keep the poll's cached-repaint path in sync with the live selection
+  host.innerHTML = html;
   qWireInspireButtons(p);
 }
 
