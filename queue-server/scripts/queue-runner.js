@@ -64,6 +64,21 @@ if (!ADMIN_PASSWORD) {
   process.exit(1);
 }
 
+// ─── Terminal styling ─────────────────────────────────────────────────────────
+// Plain ANSI codes, no dependency — and only used when stdout is a real
+// terminal, so piping/logging to a file stays clean text.
+const TTY = !!process.stdout.isTTY;
+const paint = (code, s) => (TTY ? `\x1b[${code}m${s}\x1b[0m` : s);
+const dim = (s) => paint('2', s);
+const bold = (s) => paint('1', s);
+const cyan = (s) => paint('36', s);
+const green = (s) => paint('32', s);
+const yellow = (s) => paint('33', s);
+const red = (s) => paint('31', s);
+const magenta = (s) => paint('35', s);
+const rule = () => console.log(dim('─'.repeat(TTY ? Math.min(process.stdout.columns || 60, 78) : 60)));
+const truncate = (s, n) => (String(s).length > n ? `${String(s).slice(0, n - 1)}…` : String(s));
+
 // ─── Model quarantine ─────────────────────────────────────────────────────────
 // A model that just failed should not be retried a minute later. Escalating
 // backoff, held in memory for this runner's lifetime: the second failure of the
@@ -82,7 +97,7 @@ function quarantineModel(modelId, why) {
   const until = step ? Date.now() + step : nextUtcMidnight();
   quarantine.set(modelId, { until, strikes });
   const mins = Math.round((until - Date.now()) / 60_000);
-  console.log(`  ✗ ${modelId} — ${why}. Benched for ${mins} min (strike ${strikes}).`);
+  console.log(`  ${red('✗')} ${modelId} — ${why}. ${dim(`Benched for ${mins} min (strike ${strikes}).`)}`);
 }
 function isQuarantined(modelId) {
   const q = quarantine.get(modelId);
@@ -151,17 +166,19 @@ async function printSnapshot({ force = false } = {}) {
     if (!r.ok) throw new Error(`status ${r.status}`);
     prompts = (await r.json()).prompts || [];
   } catch (e) {
-    console.log(`[${stamp}] could not read the queue — ${e.message}`);
+    console.log(dim(`[${stamp}] could not read the queue — ${e.message}`));
     return;
   }
   const running = prompts.filter((p) => p.status === 'running');
   const ready = prompts.filter((p) => p.status === 'queued');
   const label = (p) => p.title || `(untitled ${p.id.slice(0, 8)})`;
-  const runningTxt = running.length ? `● running: ${running.map(label).join(', ')}` : '○ idle — nothing running';
+  const runningTxt = running.length
+    ? `${green('●')} running: ${running.map(label).join(', ')}`
+    : dim('○ idle — nothing running');
   const readyTxt = ready.length
     ? `${ready.length} ready to start: ${ready.slice(0, 5).map(label).join(', ')}${ready.length > 5 ? `, +${ready.length - 5} more` : ''}`
-    : '0 ready to start';
-  console.log(`[${stamp}] ${runningTxt} — ${readyTxt}`);
+    : dim('0 ready to start');
+  console.log(dim(`[${stamp}]`) + ` ${runningTxt}${dim(' — ')}${readyTxt}`);
 }
 
 // ─── Worktree ─────────────────────────────────────────────────────────────────
@@ -259,13 +276,19 @@ function runOnce({ task, model, cwd }) {
     let pending = [];
     let settled = false;
     const startedAt = Date.now();
-    let lastProgressAt = startedAt;
+    // Last time anything was actually printed to the terminal — live chunks
+    // (text/tool events) count as much as the periodic heartbeat below, so the
+    // heartbeat only shows up during real silence instead of repeating what's
+    // already visible.
+    let lastPrintAt = startedAt;
+    let atLineStart = true;
 
     const finish = (outcome, extra = {}) => {
       if (settled) return;
       settled = true;
       clearInterval(flusher);
       clearInterval(watchdog);
+      if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
       try { child.kill('SIGKILL'); } catch {}
       done({ outcome, text, sessionId, errorMessage, usage, cost, ...extra });
     };
@@ -283,18 +306,19 @@ function runOnce({ task, model, cwd }) {
 
     const watchdog = setInterval(() => {
       const now = Date.now();
-      // Progress line — the direct answer to "is it doing nothing right now."
-      // Ticks on its own cadence (PROGRESS_MS), separate from the timeouts below.
-      if (now - lastProgressAt > PROGRESS_MS) {
-        lastProgressAt = now;
+      // Quiet heartbeat — only fires when nothing has actually been printed
+      // (no live text/tool line) for a while, so it never repeats what's
+      // already visible; it exists purely to prove things aren't stuck during
+      // real silence (a long tool call, a slow model start).
+      if (now - lastPrintAt > PROGRESS_MS) {
+        lastPrintAt = now;
+        if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
         const elapsed = Math.round((now - startedAt) / 1000);
         if (!sawRealOutput) {
-          console.log(`  … ${elapsed}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`);
+          console.log(dim(`  … ${elapsed}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`));
         } else {
           const sinceOutput = Math.round((now - lastRealOutputAt) / 1000);
-          const chars = text.length >= 1000 ? `${(text.length / 1000).toFixed(1)}k chars` : `${text.length} chars`;
-          const costTxt = cost ? `, $${cost.toFixed(4)}` : '';
-          console.log(`  … ${elapsed}s elapsed, last output ${sinceOutput}s ago, ${chars} so far${costTxt}`);
+          console.log(dim(`  … quiet for ${sinceOutput}s (${elapsed}s into this attempt)`));
         }
       }
       if (!sawRealOutput && now - startedAt > FIRST_OUTPUT_MS) {
@@ -335,7 +359,21 @@ function runOnce({ task, model, cwd }) {
         if (evt.type === 'error' && evt.error?.data?.message && !errorMessage) {
           errorMessage = String(evt.error.data.message);
         }
-        streamEventToChunks(evt, (chunk) => pending.push(chunk));
+        // Live transcript — print the model's own text and tool calls as they
+        // arrive, the same way a Claude Code conversation shows its work,
+        // instead of only a periodic summary line.
+        streamEventToChunks(evt, (chunk) => {
+          pending.push(chunk);
+          lastPrintAt = Date.now();
+          if (chunk.kind === 'text') {
+            process.stdout.write(chunk.text);
+            atLineStart = chunk.text.endsWith('\n');
+          } else if (chunk.kind === 'tool') {
+            if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+            const detail = chunk.input ? dim(` — ${truncate(chunk.input, 80)}`) : '';
+            console.log(`  ${magenta('⚙')} ${chunk.name || 'tool'}${detail}`);
+          }
+        });
       }
     });
 
@@ -373,11 +411,13 @@ function runOnce({ task, model, cwd }) {
 
 // ─── One task, walking the model chain ────────────────────────────────────────
 async function runTask(task) {
-  console.log(`\n▶ ${task.title || task.id}`);
+  console.log('');
+  rule();
+  console.log(bold(cyan(`▶ ${task.title || task.id}`)));
   const chain = await modelChain();
   const usable = chain.filter((m) => !isQuarantined(m));
   if (!usable.length) {
-    console.log('  No usable model right now — every model is benched.');
+    console.log(yellow('  No usable model right now — every model is benched.'));
     await api(`/worker/${task.id}/result`, {
       status: 'blocked',
       result: 'Could not run: every model in the chain is currently rate-limited or failing. It will be retried automatically.',
@@ -398,10 +438,10 @@ async function runTask(task) {
     if (deadLanes.has(laneOf(model))) continue;
 
     tried.push(model);
-    console.log(`  → ${model}`);
+    console.log(`  ${dim('→')} ${bold(model)}`);
     const r = await runOnce({ task, model, cwd: wt.path });
 
-    if (r.outcome === 'cancelled') { console.log('  (cancelled server-side)'); return; }
+    if (r.outcome === 'cancelled') { console.log(dim('  (cancelled server-side)')); return; }
 
     if (r.outcome === 'model-bad') {
       quarantineModel(model, r.why);
@@ -409,7 +449,7 @@ async function runTask(task) {
       if (r.fatal === 'quota' || r.fatal === 'billing') {
         const lane = laneOf(model);
         deadLanes.add(lane);
-        console.log(`    (that's the whole ${lane === 'go' ? 'OpenCode Go' : 'free'} lane — skipping its other models)`);
+        console.log(dim(`    (that's the whole ${lane === 'go' ? 'OpenCode Go' : 'free'} lane — skipping its other models)`));
       }
       continue; // straight to the next model — no waiting
     }
@@ -418,7 +458,8 @@ async function runTask(task) {
     const report = r.outcome === 'done'
       ? (r.text || '(finished without a report)')
       : `${r.text || ''}\n\n(stopped: ${r.why})`.trim();
-    console.log(`  ${status === 'done' ? '✓ done' : '✗ blocked'} on ${model}${r.cost ? ` — $${r.cost.toFixed(4)}` : ''}`);
+    const statusTxt = status === 'done' ? green('✓ done') : red('✗ blocked');
+    console.log(`  ${statusTxt} on ${bold(model)}${r.cost ? dim(` — $${r.cost.toFixed(4)}`) : ''}`);
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,
       cost_usd: r.cost || null, tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
@@ -429,8 +470,8 @@ async function runTask(task) {
 
   // Nothing could run. Say why in plain words — the whole point of the rework is
   // that a stuck queue explains itself instead of looking busy.
-  console.log('  Every model failed. Reasons:');
-  for (const r of reasons) console.log(`    · ${r}`);
+  console.log(red('  Every model failed. Reasons:'));
+  for (const r of reasons) console.log(dim(`    · ${r}`));
   const headline = deadLanes.size
     ? 'No model could run this: the OpenCode plan\'s usage limit is spent and the free models are rate-limited. Nothing will run until one of those frees up (or the plan is topped up).'
     : 'None of the models could run this task right now.';
@@ -443,14 +484,16 @@ async function runTask(task) {
 
 // ─── Main loop ────────────────────────────────────────────────────────────────
 let stopping = false;
-process.on('SIGINT', () => { console.log('\nStopping after this task…'); stopping = true; });
+process.on('SIGINT', () => { console.log(yellow('\nStopping after this task…')); stopping = true; });
 
 async function main() {
-  console.log(`Queue runner started.`);
-  console.log(`  queue : ${QUEUE_URL}`);
-  console.log(`  repo  : ${RUNNER_REPO}`);
-  console.log(`  models: Go chain first, then free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`);
-  console.log('Waiting for tasks… (Ctrl-C to stop)\n');
+  rule();
+  console.log(bold('  Queue runner'));
+  console.log(dim(`  queue : ${QUEUE_URL}`));
+  console.log(dim(`  repo  : ${RUNNER_REPO}`));
+  console.log(dim(`  models: Go chain first, then free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
+  rule();
+  console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   await printSnapshot({ force: true });
 
   while (!stopping) {
