@@ -264,6 +264,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .qp-submit { margin-left:auto; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); border-radius:8px; padding:7px 14px; font-size:12px; cursor:pointer; }
 .qp-submit:disabled { opacity:.5; cursor:default; }
 .qp-status { font-size:11px; color:var(--c-ink-4); }
+.qp-settings { margin-top:10px; border-top:1px solid var(--c-border-2); padding-top:8px; }
+.qp-opt-row { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--c-ink-3); cursor:pointer; }
+.qp-opt-row input { accent-color:var(--c-ink-solid); cursor:pointer; }
 .qp-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:7px; }
 .qp-card .q-item-title { font-size:12px; font-weight:600; }
 .qp-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--c-border); border-radius:8px; margin-bottom:6px; font-size:11.5px; background:var(--c-surface); }
@@ -6430,8 +6433,23 @@ function renderArchQueueBanner() {
   const el = document.getElementById('archQueueBanner');
   if (!el) return;
   if (!archQueueStatus) { el.textContent = ''; return; }
-  const dot = archQueueStatus.executionConfigured ? '●' : '○';
-  el.innerHTML = `<span style="color:${archQueueStatus.executionConfigured?'#4f9d7a':'var(--c-ink-4)'}">${dot}</span> Queue ${archQueueStatus.executionConfigured?'wired':'not configured'} · ${archQueueStatus.completedCount} run${archQueueStatus.completedCount===1?'':'s'} done`;
+  const s = archQueueStatus;
+  const dot = s.executionConfigured ? '●' : '○';
+  const dotColor = s.paused ? '#b8860b' : (s.executionConfigured ? '#4f9d7a' : 'var(--c-ink-4)');
+  // The queue status line (plan "auto-ship" item 4): what Antoine checks before
+  // he ships his own work, so his edits never clash with a running task.
+  const parts = [`Queue ${s.paused ? 'paused' : 'wired'}`];
+  if (s.runningCount) parts.push(`${s.runningCount} running`);
+  if (s.queuedCount) parts.push(`${s.queuedCount} queued`);
+  parts.push(`auto-ship ${s.autoShip ? 'on' : 'off'}`);
+  const detail = [
+    `Tasks done: ${s.completedCount}`,
+    s.pausedReason ? `Paused: ${s.pausedReason}` : '',
+    s.memFreeMb != null ? `Free memory: ${s.memFreeMb} MB` : '',
+    'Auto-ship: a task that passes every check publishes itself — the on/off switch is in the Queue panel.',
+  ].filter(Boolean).join(' · ');
+  el.innerHTML = `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}`;
+  el.title = detail;
 }
 
 async function initArchNav() {
@@ -7588,6 +7606,9 @@ let qpMode = 'implement';
 let qpPicked = null;
 let qpPickActive = false;
 let qpPickBanner = null;
+// Auto-ship gate state (plan "auto-ship" item 2): true = a finished task that
+// passes every review check publishes itself; the switch below toggles it.
+let qAutoShip = true;
 
 function qpSectionHtml(cls, title, count, rowsHtml, emptyText) {
   return `<div>
@@ -7638,6 +7659,12 @@ function renderQueuePanel() {
     ${qpSectionHtml('', 'In queue', queued.length,
       queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
       'Queue is empty — add a task above.')}
+    <div class="qp-settings">
+      <label class="qp-opt-row" title="When a task finishes and passes every automatic check, it publishes itself — no click from you. If the checks fail or two changes touch the same file, it stops and waits for you instead. Turn off to go back to approving every task by hand (you can always undo a published task on the review screen).">
+        <input type="checkbox" id="qpAutoShipChk" ${qAutoShip ? 'checked' : ''}>
+        <span>Auto-ship: publish finished tasks after their checks pass</span>
+      </label>
+    </div>
   `;
 
   // Cards are rendered in the same order as `asking`, so pair them up by index rather
@@ -7662,6 +7689,28 @@ function renderQueuePanel() {
   document.getElementById('qpSubmit').onclick = qpSubmitTask;
   const textEl = document.getElementById('qpText');
   if (textEl) textEl.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) qpSubmitTask(); });
+  const autoEl = document.getElementById('qpAutoShipChk');
+  if (autoEl) {
+    autoEl.onchange = async () => {
+      qAutoShip = autoEl.checked;
+      try {
+        await apiWrite('/api/travaux/ai-settings', 'PUT', { queue: { autoShip: qAutoShip } });
+        refreshCoreHeader(); // status line shows the new state right away
+      } catch (e) { alert('Could not save the auto-ship setting: ' + e.message); }
+    };
+  }
+}
+
+// Live-read the auto-ship gate for the switch above: the checkbox renders from
+// the last-known state, then settles on the server's value when it lands (the
+// panel is poll-driven, so a later re-render converges anyway).
+async function qpLoadAutoShip() {
+  try {
+    const s = await api('/api/travaux/ai-settings');
+    qAutoShip = !!(s.queue && s.queue.autoShip);
+  } catch (e) { /* keep last-known state */ }
+  const el = document.getElementById('qpAutoShipChk');
+  if (el) el.checked = qAutoShip;
 }
 
 async function qpSubmitTask() {
@@ -7766,6 +7815,7 @@ function openQueuePanel() {
   document.getElementById('queuePanelVeil').hidden = false;
   document.getElementById('queuePanel').hidden = false;
   renderQueuePanel();
+  qpLoadAutoShip(); // settle the auto-ship switch on the server's stored value
   const t = document.getElementById('qpText');
   if (t) t.focus();
 }

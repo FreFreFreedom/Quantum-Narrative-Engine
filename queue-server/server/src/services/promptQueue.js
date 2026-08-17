@@ -1026,7 +1026,19 @@ function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
   let resume = null;
   let worktreePath = null;
   let branch = null;
-  if (!forceFresh && row.parent_prompt_id) {
+  // Killed-run retry (plan "auto-ship" item 1): a task that was OOM-killed or
+  // interrupted by a deploy re-queues itself carrying the killed run's own
+  // workspace (retry_worktree_path / retry_branch, stashed by onAgentTaskFinalized)
+  // — the retry resumes that exact worktree AND the killed run's CLI session
+  // (session_id / opencode_session_id written by finishPrompt), so its half-done
+  // files and conversation are still there when it continues. Takes precedence
+  // over the chain context for the same reason. The columns are cleared on
+  // dispatch, so a later manual re-run starts clean.
+  if (!forceFresh && (row.retry_branch || row.retry_worktree_path)) {
+    resume = (row.provider === 'opencode' ? row.opencode_session_id : row.session_id) || null;
+    worktreePath = row.retry_worktree_path;
+    branch = row.retry_branch;
+  } else if (!forceFresh && row.parent_prompt_id) {
     const ctx = sessionOfParent(row);
     if (ctx) {
       resume = ctx.sessionId;
@@ -1045,6 +1057,7 @@ function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
   db.prepare(`
     UPDATE work_prompts SET status='running', agent_task_id=?, agent_key=COALESCE(agent_key, ?),
       started_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), pending_question=NULL,
+      retry_worktree_path=NULL, retry_branch=NULL,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(task.id, useAgentKey, row.id);
   broadcast();
@@ -1405,10 +1418,15 @@ export async function onAgentTaskFinalized(task) {
   if (finished.status === 'blocked' && String(task.agent_result || '').includes(OOM_KILL_MARKER) && !_oomRetried.has(row.id)) {
     _oomRetried.add(row.id);
     const resumeAt = new Date(Date.now() + OOM_RETRY_DELAY_MS).toISOString();
+    // Plan "auto-ship" item 1: the retry continues where the killed run left off,
+    // not from scratch — the killed run's own worktree + branch are stashed here
+    // so startPrompt's retry-context branch reuses them (half-done files intact),
+    // and the conversation resumes via the session id finishPrompt already stored
+    // on this row (session_id / opencode_session_id) a few lines above.
     db.prepare(`
       UPDATE work_prompts SET status='queued', agent_task_id=NULL, started_at=NULL, completed_at=NULL,
-        resume_after=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-    `).run(resumeAt, row.id);
+        retry_worktree_path=?, retry_branch=?, resume_after=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(task.worktree_path || null, task.branch || null, resumeAt, row.id);
     addMessage(row.id, {
       role: 'agent',
       text: 'The server ran out of memory and the system stopped this task before it could finish. It will retry itself automatically in a couple of minutes — nothing to do on your side.',

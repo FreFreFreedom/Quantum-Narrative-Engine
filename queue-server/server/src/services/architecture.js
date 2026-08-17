@@ -278,7 +278,9 @@ export function getComponents(db) {
 export function getQueueStatus(db) {
   const executionConfigured = !!(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.ANTHROPIC_API_KEY) && !!process.env.CLAUDE_BIN;
   const completed = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='done'`).get().n;
-  return { executionConfigured, completedCount: completed, checkedAt: new Date().toISOString() };
+  const running = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='running'`).get().n;
+  const queued = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='queued' AND deleted_at IS NULL`).get().n;
+  return { executionConfigured, completedCount: completed, runningCount: running, queuedCount: queued, checkedAt: new Date().toISOString() };
 }
 
 export function getComponentHistory(db, id) {

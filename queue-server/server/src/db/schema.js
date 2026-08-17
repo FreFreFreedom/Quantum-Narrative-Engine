@@ -156,6 +156,16 @@ function initSchema(db) {
   // { removed:[], groups:[], recommended:[], question:{question,options}|null }.
   // NULL = no review (legacy reports, or the check failed — full report used).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_review_json TEXT`); } catch {}
+  // Killed-task retry continuation (plan "auto-ship" item 1): when a run dies
+  // before finishing — container OOM kill (exit 137) or a deploy interrupting the
+  // server — the prompt is re-queued with these holding the KILLED RUN's own
+  // workspace (worktree + branch) and session (session_id / opencode_session_id,
+  // already stored by finishPrompt). The retry then resumes that exact workspace
+  // and conversation instead of starting a fresh tree from origin/main, so the
+  // task's half-done files are still there when it continues. Cleared once
+  // dispatched; NULL = no retry context pending.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_worktree_path TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_branch TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -399,6 +409,11 @@ function initSchema(db) {
   // - intel_json: intelligence engine budget (e.g. { thoughts_per_hour: 2 }).
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_go_budget_usd REAL NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN intel_json TEXT NOT NULL DEFAULT '{}'`); } catch {}
+  // Auto-ship gate (plan "auto-ship"): when a finished task passes every review
+  // check, the server merges and publishes it by itself (1 = on, the default)
+  // instead of waiting for the human's Merge click. The on/off switch lives in
+  // the Queue panel. Off restores the old human-only merge.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_auto_ship INTEGER NOT NULL DEFAULT 1`); } catch {}
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
   // provider_quota_ledger: append-only history of every exhaustion event, so the

@@ -14,20 +14,24 @@ let db = null;
 export function bindAiTextDb(database) { db = database; }
 
 const SETTINGS_CACHE_TTL = 30_000;
-let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33 }, intel: {} };
+let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true }, intel: {} };
 
 function loadAiSettings() {
-  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33 }, intel: {} };
+  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true }, intel: {} };
   const now = Date.now();
   if (settingsCache.at && now - settingsCache.at < SETTINGS_CACHE_TTL) {
     return settingsCache;
   }
   const row = db.prepare(`SELECT * FROM ai_settings WHERE id='global'`).get();
   if (!row) return settingsCache;
-  let queue = { goBudgetUsd: 0.33 };
+  let queue = { goBudgetUsd: 0.33, autoShip: true };
   if (typeof row.queue_go_budget_usd === 'number' && Number.isFinite(row.queue_go_budget_usd)) {
     queue.goBudgetUsd = row.queue_go_budget_usd;
   }
+  // Auto-ship gate (plan "auto-ship"): 0 = a finished task only merges when the
+  // human clicks Merge; 1 (default) = a task that passes every check publishes
+  // itself. The switch lives in the Queue panel.
+  queue.autoShip = Number(row.queue_auto_ship) !== 0;
   let intel = {};
   try { intel = JSON.parse(row.intel_json || '{}'); } catch {}
   try {
@@ -88,12 +92,19 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
     if (typeof queue.goBudgetUsd === 'number' && Number.isFinite(queue.goBudgetUsd)) {
       nextQueue.goBudgetUsd = Math.max(0, queue.goBudgetUsd);
     }
+    if (typeof queue.autoShip === 'boolean') nextQueue.autoShip = queue.autoShip;
   }
   let nextIntel = { ...(current.intel || {}) };
   if (intel) nextIntel = { ...nextIntel, ...intel };
-  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, JSON.stringify(nextIntel));
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, JSON.stringify(nextIntel));
   return getAiSettings();
+}
+
+// Cheap live read of the auto-ship gate for the review runner (no cache-reset
+// dance): true = an approved review merges itself; false = human click only.
+export function autoShipEnabled() {
+  return !!loadAiSettings().queue?.autoShip;
 }
 
 // One-time policy migration (plan self-aware-platform.md Part 1): flip any

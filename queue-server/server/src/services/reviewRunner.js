@@ -13,13 +13,14 @@
 
 import { randomUUID } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { mainRepo, removeWorktree } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { getPrompt } from './promptQueue.js';
 import { regenerateBriefing } from './briefing.js';
+import { autoShipEnabled } from './ai/text.js';
 import { broadcastAll } from '../realtime.js';
 
 let db = null;
@@ -123,11 +124,47 @@ function runChecksAndFinalize(reviewId, task) {
         plain_summary: result.plainSummary,
       });
       console.log(`[reviews] ${reviewId} — ${ok ? 'approved' : 'changes_requested'} (${result.checks.syntax.ok?'✓':'✗'}${result.checks.boot?.ok?'✓':'✗'}${result.checks.endpoints?.ok?'✓':'✗'}${result.checks.html?.ok?'✓':'✗'}${result.checks.scope?.ok?'✓':'✗'})`);
+      // Plan "auto-ship" item 2: every check passed → the task ships itself.
+      // Only a fully safe verdict auto-merges; a failed check or a same-file
+      // conflict already landed the review in changes_requested, where it stops
+      // and asks for attention instead of shipping.
+      if (ok) scheduleAutoShip(reviewId);
     }).catch((e) => {
       console.error(`[reviews] ${reviewId} check run failed:`, e.message);
       updateReview(reviewId, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['The checks could not run: ' + e.message]) });
     });
   });
+}
+
+// ─── Auto-ship (plan "auto-ship" item 2) ──────────────────────────────────────
+// When the review gate approves a finished task and auto-ship is on (the Queue
+// panel switch, default on), the merge runs itself — no human click. The merges
+// are serialized on one promise chain: the queue's git calls run against the SAME
+// local repo, and two overlapping merge/push sequences would race each other's
+// working tree. Failures never loop: the merge runs at most once per approval,
+// and the review stays visible with the "Undo this merge" safety net if it did
+// ship (or with a note telling Antoine to merge by hand if it could not).
+let _autoShipChain = Promise.resolve();
+function scheduleAutoShip(reviewId) {
+  _autoShipChain = _autoShipChain
+    .then(async () => {
+      if (!autoShipEnabled()) return; // switched off after the checks passed
+      const out = await mergeReview(reviewId);
+      if (out.error) {
+        console.log(`[reviews] auto-ship ${reviewId} did not publish: ${out.error}${out.detail ? ' — ' + out.detail : ''}`);
+        // mergeReview already flips conflicts/changes to changes_requested. For
+        // the failures that leave the review approved (dirty repo, no network,
+        // push denied), tell Antoine why it stayed in the gate — he can still
+        // click Merge himself.
+        const review = getReview(reviewId);
+        if (review && review.status === 'approved') {
+          updateReview(reviewId, {
+            concerns: JSON.stringify([...(review.concerns || []), `Auto-ship did not publish: ${out.detail || out.error}. The work is ready — you can merge it yourself below.`]),
+          });
+        }
+      }
+    })
+    .catch((e) => console.error(`[reviews] auto-ship ${reviewId} crashed:`, e.message));
 }
 
 // The five deterministic checks, run in the author's worktree. No API credits
@@ -424,6 +461,27 @@ export async function mergeReview(id) {
   } else {
     git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
   }
+
+  // Plan "auto-ship" item 3: the site serves the app page from
+  // queue-server/public/index.html (Railway only deploys queue-server/), so a
+  // merge that touched the master app file would otherwise leave the deployed
+  // page stale until a hand copy. Refresh the served copy from the freshly
+  // merged master and fold it into the same push — the site always serves the
+  // version that was just merged. Only commits when the two differ, and any
+  // failure just leaves the copy stale (the merge itself is not at risk).
+  step('refresh served app page');
+  try {
+    const masterApp = join(main, 'fmcns_navigator.html');
+    const servedApp = join(main, 'queue-server', 'public', 'index.html');
+    if (existsSync(masterApp) && existsSync(servedApp) && readFileSync(masterApp).toString('hex') !== readFileSync(servedApp).toString('hex')) {
+      copyFileSync(masterApp, servedApp);
+      git(['-C', main, 'add', 'queue-server/public/index.html'], { cwd: main, quiet: true });
+      if (git(['-C', main, 'commit', '-m', 'deploy: refresh served app page from merged master'], { cwd: main, quiet: true }) === null) {
+        git(['-C', main, 'checkout', '--', 'queue-server/public/index.html'], { cwd: main, quiet: true });
+        console.error('[reviews] app-page refresh commit failed — served copy left stale');
+      }
+    }
+  } catch (e) { console.error('[reviews] app-page refresh failed:', e.message); }
 
   step('push to main');
   if (git(['-C', main, 'push', 'origin', 'main'], { cwd: main, quiet: true }) === null) {

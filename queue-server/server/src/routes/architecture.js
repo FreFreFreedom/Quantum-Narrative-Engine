@@ -3,6 +3,9 @@ import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
 import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt, shortlistUnbuilt } from '../services/architectureNodes.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
+import { getQueuePauseState } from '../services/promptQueue.js';
+import { autoShipEnabled } from '../services/ai/text.js';
+import { containerFreeBytes } from '../lib/memHeadroom.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function architectureRoutes(db) {
@@ -119,7 +122,20 @@ export function architectureRoutes(db) {
   });
 
   router.get('/queue-status', (req, res) => {
-    res.json(getQueueStatus(db));
+    // The queue status line (plan "auto-ship" item 4): everything Antoine checks
+    // before he ships his own work, so his edits never clash with a running task.
+    // Counts come from the DB; paused state + the auto-ship gate live in the
+    // settings stores, so this endpoint composes them.
+    const status = getQueueStatus(db);
+    const pause = getQueuePauseState();
+    const memMb = containerFreeBytes();
+    res.json({
+      ...status,
+      paused: pause.paused,
+      pausedReason: pause.reason || null,
+      autoShip: autoShipEnabled(),
+      memFreeMb: memMb === null ? null : Math.round(memMb / 1024 / 1024),
+    });
   });
 
   router.get('/components/:id/history', (req, res) => {
