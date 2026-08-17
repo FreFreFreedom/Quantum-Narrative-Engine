@@ -1185,7 +1185,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <textarea id="qPromptText" class="q-textarea" placeholder="What should the agent do? Be specific — this becomes the task brief."></textarea>
             <div class="q-row">
               <button class="q-addbtn" id="qAddBtn">Add to queue</button>
-              <button class="ctrlbtn" id="qSetAsideBtn" title="Create the task without running it — it waits in Parked until you start it">Set aside</button>
+              <button class="ctrlbtn" id="qSetAsideBtn" title="Create the task without marking it ready — it waits in Parked until you mark it ready">Set aside</button>
               <button class="ctrlbtn" id="qMoreToggle" title="Rare options — everything here has a smart default">⚙ More</button>
             </div>
             <div id="qAdvanced" style="display:none;margin-top:4px;">
@@ -1246,11 +1246,15 @@ button:active { transform: translateY(1px) scale(.99); }
             </div>
             <div id="qAddErr" class="q-err"></div>
             <div id="qConnLost" style="display:none;color:var(--c-danger);font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
-            <!-- Tasks run on Antoine's Mac now (queue-server/scripts/queue-runner.js).
-                 If the runner isn't started, nothing will run — say so plainly here
-                 instead of letting the queue look busy with no one behind it. -->
-            <div id="qRunnerState" style="display:none;font-size:12px;margin-top:8px;"></div>
           </div>
+        </div>
+        <div class="flow-runner-banner" style="font-size:12px;padding:2px 0 8px;color:var(--c-ink-4);">
+          Tasks run on your Mac, not in this app. "Mark ready" / "Ready" just lines a task up — start the runner from a terminal to actually work through them.
+          <!-- Tasks run on Antoine's Mac now (queue-server/scripts/queue-runner.js).
+               If the runner isn't started, nothing will run — say so plainly here,
+               always visible, instead of letting the queue look busy with no one
+               behind it (this used to be tucked inside the collapsed composer). -->
+          <div id="qRunnerState" style="display:none;margin-top:4px;"></div>
         </div>
         <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
       </div>
@@ -3865,7 +3869,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   // arrows, easy to miss entirely. It's now a labeled, brand-colored button up
   // in the row's own title line, so starting a task never requires opening it.
   const startBtn = p.status === 'paused'
-    ? `<button class="ctrlbtn q-arrow q-rowstart" data-qplay="${p.id}" title="Start now — runs in its normal turn, not necessarily right away.">▶ Start</button>`
+    ? `<button class="ctrlbtn q-arrow q-rowstart" data-qplay="${p.id}" title="Marks this task ready — your local runner picks it up when it's running. This does not run anything in the app.">✓ Ready</button>`
     : '';
   const pauseBtn = ['running', 'queued'].includes(p.status)
     ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
@@ -4533,7 +4537,7 @@ function qRenderDetail(p) {
     </div>
     ${p.status === 'paused' ? `
     <div class="q-primary-action">
-      <button class="q-startbtn" id="qStartBtn" title="Queue it — it runs in its normal turn, not necessarily right away.">▶ Start this task</button>
+      <button class="q-startbtn" id="qStartBtn" title="Marks this task ready — your local runner picks it up when it's running. This does not run anything in the app.">✓ Mark ready for runner</button>
       <div class="q-primary-hint" id="qPrimaryHint">${qPrimaryHintHtml(p)}</div>
     </div>` : ''}
     <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
@@ -4592,8 +4596,8 @@ function qRenderDetail(p) {
         </label>` : ''}
       ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
       ${activeSession && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
-      ${canRerun ? `<button class="ctrlbtn" id="qRerunBtn"${p.status==='blocked' ? ' title="Retries one tier stronger if this was on the auto policy — a block usually means the model ran out of depth, not luck."' : ''}>Run again</button>` : ''}
-      ${canRerun ? `<button class="ctrlbtn" id="qRerunFreshBtn" title="Run again, but start a brand-new session instead of resuming the one that led here.">Run again fresh</button>` : ''}
+      ${canRerun ? `<button class="ctrlbtn" id="qRerunBtn" title="${p.status==='blocked' ? 'Marks it ready again, one tier stronger if this was on the auto policy — a block usually means the model ran out of depth, not luck. ' : 'Marks it ready again. '}Your local runner picks it up — this does not run anything in the app.">Ready again</button>` : ''}
+      ${canRerun ? `<button class="ctrlbtn" id="qRerunFreshBtn" title="Marks it ready again with a brand-new session instead of resuming the one that led here. Your local runner picks it up — this does not run anything in the app.">Ready again (fresh)</button>` : ''}
       <button class="ctrlbtn" id="qDiscussBtn" title="Open a conversation about this task — its world-look ideas included. Never touches the running work.">💬 Discuss</button>
       <button class="ctrlbtn" id="qDeleteBtn">Remove</button>
     </div>
@@ -4681,12 +4685,12 @@ function qRenderDetail(p) {
   }
   const startBtn = document.getElementById('qStartBtn');
   if (startBtn) startBtn.onclick = async () => {
-    startBtn.disabled = true; startBtn.textContent = 'Starting…';
+    startBtn.disabled = true; startBtn.textContent = 'Marking ready…';
     try {
       await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
       await apiWrite('/api/travaux/prompts/advance', 'POST');
       await qLoad();
-    } catch (e) { startBtn.disabled = false; startBtn.textContent = '▶ Start'; alert('Error: ' + e.message); }
+    } catch (e) { startBtn.disabled = false; startBtn.textContent = '✓ Mark ready for runner'; alert('Error: ' + e.message); }
   };
   const pauseBtn = document.getElementById('qPauseBtn');
   if (pauseBtn) pauseBtn.onclick = async () => {
@@ -4726,22 +4730,22 @@ function qRenderDetail(p) {
   };
   const rerunBtn = document.getElementById('qRerunBtn');
   if (rerunBtn) rerunBtn.onclick = async () => {
-    rerunBtn.disabled = true; rerunBtn.textContent = 'Starting…';
+    rerunBtn.disabled = true; rerunBtn.textContent = 'Marking ready…';
     try {
       await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
       await apiWrite('/api/travaux/prompts/advance', 'POST');
       await qLoad();
-    } catch (e) { rerunBtn.disabled = false; rerunBtn.textContent = 'Run again'; alert('Error: ' + e.message); }
+    } catch (e) { rerunBtn.disabled = false; rerunBtn.textContent = 'Ready again'; alert('Error: ' + e.message); }
   };
   const rerunFreshBtn = document.getElementById('qRerunFreshBtn');
   if (rerunFreshBtn) rerunFreshBtn.onclick = async () => {
-    rerunFreshBtn.disabled = true; rerunFreshBtn.textContent = 'Starting…';
+    rerunFreshBtn.disabled = true; rerunFreshBtn.textContent = 'Marking ready…';
     try {
       await apiWrite(`/api/travaux/prompts/${p.id}/clear-context`, 'POST');
       await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
       await apiWrite('/api/travaux/prompts/advance', 'POST');
       await qLoad();
-    } catch (e) { rerunFreshBtn.disabled = false; rerunFreshBtn.textContent = 'Run again fresh'; alert('Error: ' + e.message); }
+    } catch (e) { rerunFreshBtn.disabled = false; rerunFreshBtn.textContent = 'Ready again (fresh)'; alert('Error: ' + e.message); }
   };
   qRestoreInputs(host, snap);
   if (!p.summary) qSummarize(p);
