@@ -26,7 +26,7 @@ import {
   enqueueAgentTask, findAgentTask, getSettings, presetFor, getMaxParallelQuestions,
   generateUserSummary, isQueuePaused, setQueuePaused,
   updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage, stopTask,
-  MAX_CONCURRENT_WRITERS,
+  MAX_CONCURRENT_WRITERS, OOM_KILL_MARKER,
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
@@ -44,6 +44,14 @@ const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
 export const PROMPT_SPACES = ['fmcns'];
 
 const _resumeRetried = new Set();
+
+// OOM-killed runs (exit 137) retry themselves once — see the block in
+// onAgentTaskFinalized. Delay gives the container time to shed memory before
+// the retry is even eligible; the runner's memory guard gates the actual
+// dispatch. Woken by the 60s quota-scheduler tick (same resume_after mechanism
+// as quota deferrals), so the real wait is 2–3 minutes.
+const _oomRetried = new Set();
+const OOM_RETRY_DELAY_MS = 2 * 60_000;
 
 let db = null;
 export function bindDb(database) { db = database; }
@@ -1385,6 +1393,30 @@ export async function onAgentTaskFinalized(task) {
   addMessage(row.id, { role: 'agent', text: reply, agentTaskId: task.id });
 
   const finished = finishPrompt(row.id, task);
+
+  // OOM-killed runs (exit 137 — the container's memory allowance was exhausted)
+  // retry themselves once. The run produced nothing; the honest answer is a
+  // clear message and a fresh attempt after the container has had a couple of
+  // minutes to shed memory. The task's own memory guard (taskRunner.memoryBlocked)
+  // then only lets the retry dispatch once headroom is back. A second OOM ends
+  // the loop: the prompt stays blocked with the honest report, no infinite
+  // retry storm. _oomRetried is in-memory — a server restart allows one extra
+  // retry, which is harmless and usually desirable after a crash.
+  if (finished.status === 'blocked' && String(task.agent_result || '').includes(OOM_KILL_MARKER) && !_oomRetried.has(row.id)) {
+    _oomRetried.add(row.id);
+    const resumeAt = new Date(Date.now() + OOM_RETRY_DELAY_MS).toISOString();
+    db.prepare(`
+      UPDATE work_prompts SET status='queued', agent_task_id=NULL, started_at=NULL, completed_at=NULL,
+        resume_after=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+    `).run(resumeAt, row.id);
+    addMessage(row.id, {
+      role: 'agent',
+      text: 'The server ran out of memory and the system stopped this task before it could finish. It will retry itself automatically in a couple of minutes — nothing to do on your side.',
+      agentTaskId: task.id,
+    });
+    broadcast();
+    return;
+  }
 
   // Step 5: an implement task that finished done on a branch enters the review
   // gate — five deterministic checks run in its worktree; the human then merges

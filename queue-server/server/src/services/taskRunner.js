@@ -42,6 +42,7 @@ import { USER_FACING_STYLE } from './ai/style.js';
 import { recordExhaustion, isExhausted } from './ai/router.js';
 import { getClaudeUsage } from './claudeUsage.js';
 import { shq } from './shellQuote.js';
+import { containerFreeBytes } from '../lib/memHeadroom.js';
 
 // Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
 // before process.cwd(), so agent-tasks.json etc. land on durable storage even if DATA_DIR
@@ -149,9 +150,17 @@ const EXEC_TIMEOUT_MS = 35 * 60_000;
 // The heartbeat is updated on every drained log byte, so this measures output
 // silence, not wall-clock age.
 const EXEC_STALL_MS = 20 * 60_000;
+// Marker appended to a task's report when the agent process was killed by the
+// system (exit code 137 — the container OOM signature). promptQueue.js matches
+// this exact string to auto-retry the task once instead of parking it as a
+// dead-end 'blocked'. Keep the two in sync if you change the wording.
+export const OOM_KILL_MARKER = '(the server ran out of memory and the system killed the task — it will retry automatically once)';
 const READONLY_TOOLS = 'Read,Glob,Grep';
 const EXEC_TOOLS = 'Bash,Read,Write,Edit,Glob,Grep';
-const MAX_PARALLEL_QUESTIONS = 2;
+const MAX_PARALLEL_QUESTIONS = (() => {
+  const n = parseInt(process.env.MAX_PARALLEL_QUESTIONS || '1', 10);
+  return Number.isFinite(n) ? Math.max(1, n) : 1;
+})();
 const SUMMARY_TIMEOUT_MS = 3 * 60_000;
 
 // Self-aware platform (plan self-aware-platform.md Part 2): when a quota reset
@@ -181,10 +190,15 @@ function goLaneAllowed() {
 }
 
 // Global cap on concurrent WRITER (implement) tasks (plan 2b). Env-configurable;
-// defaults to 3 — every task runs in its own git worktree/branch, so parallel
-// writers can never collide on files (plan C4). Also exported for
-// promptQueue.js, which mirrors this gate at the prompt level.
-export const MAX_CONCURRENT_WRITERS = Math.max(1, parseInt(process.env.MAX_CONCURRENT_WRITERS || '3', 10));
+// defaults to 1 — every agent run is a heavy CLI process, and on a small
+// Railway container even two at once can exhaust the memory allowance and get
+// OOM-killed (exit 137). Tasks queue up and run one after another; raise the
+// cap only on a host with headroom to spare. Also exported for promptQueue.js,
+// which mirrors this gate at the prompt level.
+export const MAX_CONCURRENT_WRITERS = (() => {
+  const n = parseInt(process.env.MAX_CONCURRENT_WRITERS || '1', 10);
+  return Number.isFinite(n) ? Math.max(1, n) : 1;
+})();
 
 // `setsid` exists on Linux (util-linux) but not on macOS. Memoised at load time —
 // the platform does not change while the server runs. When absent, execution falls
@@ -508,8 +522,32 @@ function providerInCooldown(providerId) {
   } catch { return false; }
 }
 
+// Memory guard: each agent run spawns a heavy CLI process. Starting one when
+// the container is already near its limit is exactly how the OOM killer (exit
+// 137) gets invited in. Before dispatching anything, check real headroom from
+// the cgroup (see lib/memHeadroom.js); if it's below the floor, skip this kick
+// entirely — tasks stay 'approved' and the 60s quota-scheduler tick (or any
+// later kick) retries when memory has recovered. Unknown headroom (no cgroup,
+// unreadable files) never blocks dispatch — better to try than to stall.
+const MIN_FREE_MEMORY_MB = (() => {
+  const n = parseInt(process.env.MIN_FREE_MEMORY_MB || '300', 10);
+  return Number.isFinite(n) ? Math.max(0, n) : 300;
+})();
+let _lastLowMemLogAt = 0;
+function memoryBlocked() {
+  const free = containerFreeBytes();
+  if (free === null || free >= MIN_FREE_MEMORY_MB * 1024 * 1024) return false;
+  const now = Date.now();
+  if (now - _lastLowMemLogAt > 5 * 60_000) {
+    _lastLowMemLogAt = now;
+    console.log(`[taskRunner] memory guard: skipping dispatch — ${Math.round(free / 1024 / 1024)}MB free, need ${MIN_FREE_MEMORY_MB}MB`);
+  }
+  return true;
+}
+
 function kick() {
   if (!getSettings().enabled) return;
+  if (memoryBlocked()) return;
   const tasks = readTasks().filter((t) => !(isQueuePaused() && t.kind === 'queue'));
   const byPriority = (a, b) => (b.priority - a.priority) || a.created_at.localeCompare(b.created_at);
 
@@ -653,6 +691,14 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
     } else if (code === null) {
       status = 'blocked';
       agent_result = (text ? text + '\n\n' : '') + '(process ended without an exit code)';
+    } else if (code === 137) {
+      // SIGKILL — the classic container OOM signature (the kernel kills the
+      // biggest process when the platform memory allowance is exhausted). Not
+      // a code bug, not a model failure: the run never got to finish. Mark it
+      // blocked with the honest explanation; promptQueue re-queues it once
+      // automatically after the container has had time to recover.
+      status = 'blocked';
+      agent_result = (text ? text + '\n\n' : '') + OOM_KILL_MARKER;
     } else {
       status = 'blocked';
       agent_result = (text ? text + '\n\n' : '') + `(exit code: ${code})`;
