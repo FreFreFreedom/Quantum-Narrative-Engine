@@ -202,7 +202,7 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 240_000 }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -213,14 +213,14 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
   }
   if (p === 'opencode') {
     const mod = getProviderModule('opencode');
-    const r = await mod.runToolless({ prompt, model: m, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv() });
+    const r = await mod.runToolless({ prompt, model: m, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv(), timeoutMs });
     if (r.code === 0 && r.text) return { text: r.text, via: 'opencode' };
     return { error: 'opencode_failed', message: r.text || `exit ${r.code}` };
   }
   // Any catalogue (free OpenAI-compatible) provider
   const mod = getProviderModule(p);
   if (!mod) return { error: 'unknown_provider', message: p };
-  const r = await mod.runToolless({ prompt, model: m, providerId: p, maxTokens });
+  const r = await mod.runToolless({ prompt, model: m, providerId: p, maxTokens, timeoutMs });
   if (r.code === 0 && r.text) return { text: r.text, via: p };
   return { error: `${p}_failed`, message: r.text || `exit ${r.code}` };
 }
@@ -232,7 +232,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 240_000, maxAttempts = Infinity }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -258,18 +258,21 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
 
   // OpenCode-first ordering: the configured provider (default: opencode free
   // lane) is tried before the catalogue fallback (see the policy comment above
-  // generateText).
+  // generateText). maxAttempts bounds how many backends we will burn time on —
+  // chat replies pass a small limit so a stalled free model can never make a
+  // reply hang for minutes.
   const fullChain = [...primaryChain, ...catalogueChain];
   const failures = [];
 
   for (const attempt of fullChain) {
+    if (failures.length >= maxAttempts) break;
     const { provider: p, model: m } = attempt;
     if (router.isExhausted(p, m) || router.isExhausted(p, '')) {
       failures.push(`${p}:${m}:cooldown`);
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs });
 
     if (result?.text) {
       recordSideCall(); // one helper call in the daily budget ledger

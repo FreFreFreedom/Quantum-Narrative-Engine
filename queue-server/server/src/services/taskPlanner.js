@@ -14,9 +14,7 @@ import { generateText } from './ai/text.js';
 // 'standard'; anything that will plausibly take several hours of agent work,
 // or that touches many files/features at once, is 'deep'. The heuristic uses
 // raw word count plus a few robust markers, all lowercased.
-const DEEP_RAISERS = ['refactor', 'redesign', 'rewrite', 'overhaul', 'migrate', 'multi-file', 'many files', 'architecture', 'full restructure', 'new feature', 'from scratch', 'entire'];
-const MINI_DOWNERS = ['typo', 'rename', 'wording', 'fix the', 'small fix', 'parameter', 'threshold', 'constant'];
-function tierForTask(prompt, title = '') {
+export function tierForTask(prompt, title = '') {
   const hay = `${title} ${prompt}`.toLowerCase();
   const words = hay.split(/\s+/).filter(Boolean).length;
   if (words > 65) return 'deep';

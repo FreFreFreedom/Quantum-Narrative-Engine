@@ -1319,6 +1319,10 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
     model = await defaultOpenCodeModel().catch(() => null);
   }
 
+  // Bound this so a chat reply can never "take forever": 20s per backend, at
+  // most 2 backends (fast floor, then one free fallback) — the free fast model
+  // answers in ~2-3s normally; on a slow/free outage the reply degrades to a
+  // graceful error instead of hanging the user's browser.
   let answer = '';
   const result = await generateText({
     prompt: `${system}\n\n${context}`,
@@ -1326,12 +1330,18 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
     maxTokens: 800,
     model,
     label: 'chat-reply',
+    timeoutMs: 20_000,
+    maxAttempts: 2,
   });
   if (result?.text) {
     answer = result.text;
     addMessage(id, { role: 'agent', text: answer, author: null, agentTaskId: steered ? row.agent_task_id : null });
   } else {
+    // Always close the conversation turn in-thread so a failed/degraded model
+    // call never leaves an orphan human message with no reply — and the user
+    // sees the bound ("20s x 2 backends") and the relaunch escape hatch.
     answer = `I couldn't reach a model right now (${result?.error || result?.message || 'no response'}). The message is in the thread; try again in a moment, or use "Reply & relaunch task" to restart it on the agent.`;
+    addMessage(id, { role: 'agent', text: answer, author: null, agentTaskId: steered ? row.agent_task_id : null });
   }
 
   broadcast();
