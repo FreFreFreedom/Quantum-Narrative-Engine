@@ -782,15 +782,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-scrollwrap { position:absolute; inset:0; overflow:auto; padding:18px 20px 90px; }
 .arch-treesvg { display:block; }
 .arch-tcol-label { font-size:13px; font-weight:700; letter-spacing:.06em; fill:var(--c-ink-4); pointer-events:none; }
-/* Read-only readout, so it must not intercept clicks on whatever sits under
-   it — it floats over the top-right of the content and nothing in it is
-   interactive. */
-.arch-hud { position:absolute; top:14px; right:14px; z-index:6; padding:9px 12px; border-radius:9px; background:rgba(var(--c-surface-rgb),.95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:10.5px; min-width:150px; pointer-events:none; }
-.arch-hud-label { font-weight:700; text-transform:uppercase; letter-spacing:.05em; font-size:9.5px; color:var(--c-ink-3); margin-bottom:5px; }
-.arch-hud-bar { height:6px; border-radius:4px; background:var(--c-surface-3); overflow:hidden; margin-bottom:4px; }
-.arch-hud-fill { height:100%; background:var(--c-brand); border-radius:4px; transition:width .4s ease; }
-.arch-hud-count { color:var(--c-ink-3); }
-
 /* Tech Tree nodes. Deliberately NOT .arch-node — see the comment on
    archBuildTreeNodeEl: .arch-node is caught by the shared hover-transform and
    entrance-animation rules below, and a CSS transform on an SVG <g> replaces
@@ -2111,7 +2102,7 @@ function renderLegend(){
 function NavCtrl(container, state, applyFn, opts = {}) {
   const minScale = opts.minScale ?? 0.2, maxScale = opts.maxScale ?? 8,
     step = opts.step ?? 1.12, keyPan = opts.keyPan ?? 120, onZoom = opts.onZoom ?? null,
-    fitFn = opts.fit ?? null;
+    fitFn = opts.fit ?? null, fixedViewBox = opts.fixedViewBox ?? true;
   let activeTouch = null, lastTouchDist = 0, lastTouchCentroid = null, drag = null;
   const clamp = (s) => Math.min(maxScale, Math.max(minScale, s));
   const zoomAt = (delta, cx, cy) => {
@@ -2125,20 +2116,27 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   const panBy = (dx, dy) => { state.x += dx; state.y += dy; applyFn(); };
   const onWheel = (e) => {
     const isZoom = e.ctrlKey || e.metaKey;
-    // Only intercept wheel when zooming (Ctrl/Cmd) or actively dragging.
-    // Otherwise let native two-finger scroll pan through to the browser.
-    if (!isZoom && !drag) return;
-    e.preventDefault();
+    // For fixed-viewBox containers (SVG graphs), always intercept wheel for custom pan/zoom.
+    // Native scroll doesn't exist in fixed viewBox. For scrollable containers, only intercept on zoom/drag.
+    if (fixedViewBox) {
+      e.preventDefault();
+    } else if (!isZoom && !drag) {
+      return; // let native scroll handle it
+    } else {
+      e.preventDefault();
+    }
     const rect = container.getBoundingClientRect();
     const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
     if (isZoom) { zoomAt(e.deltaY < 0 ? step : 1 / step, cx, cy); }
-    else if (drag) { panBy(-e.deltaX, -e.deltaY); }
+    else { panBy(-e.deltaX, -e.deltaY); }
     if (onZoom) onZoom();
   };
   container.addEventListener('wheel', onWheel, { passive: false });
   container.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
-    if (e.target.closest && (e.target.closest('a, button, input, select, textarea, [data-no-pan]'))) return;
+    // Allow pan on SVG elements - only exclude interactive HTML elements
+    const target = e.target;
+    if (target.closest && target.closest('a, button, input, select, textarea, [data-no-pan]')) return;
     drag = { x: e.clientX, y: e.clientY, sx: state.x, sy: state.y, moved: false };
     try { container.setPointerCapture(e.pointerId); } catch (err) {}
   });
@@ -2234,6 +2232,7 @@ function setupZoomPan(){
     minScale: 0.3, maxScale: 16, step: 1.06, keyPan: 90,
     onZoom: deb,
     fit: () => { camera.x=0;camera.y=0;camera.scale=1; applyCamera(); clearTimeout(zoomLabelTimer); zoomLabelTimer=setTimeout(() => { layoutAndDraw(); }, 120); },
+    fixedViewBox: true,
   });
 }
 
@@ -2870,6 +2869,7 @@ function initMap() {
   NavCtrl(svg, mapViewport, applyMapTransform, {
     minScale: 0.5, maxScale: 6, step: 1.15, keyPan: 120,
     fit: () => { mapViewport.x = 0; mapViewport.y = 0; mapViewport.scale = 1; applyMapTransform(); },
+    fixedViewBox: true,
   });
   renderMapList();
   renderMapCard(null);
@@ -6599,6 +6599,7 @@ async function initArchNav() {
     NavCtrl(container, archViewport, applyArchTransform, {
       minScale: 0.18, maxScale: 4, step: 1.15, keyPan: 80,
       fit: fitArchCanvas,
+      fixedViewBox: true,
     });
   };
   attachNav();
@@ -7106,7 +7107,6 @@ function archDrawTree() {
   });
 
   pool.forEach(c => { archPrevStates[c.id] = archNodeState(c); });
-  archUpdateHud(pool);
 }
 
 // Checklist: one compact line per component, grouped by territory. No fixed
@@ -7166,7 +7166,6 @@ function archDrawChecklist() {
     r.onclick = () => selectArchNode(r.getAttribute('data-listrow'));
   });
   pool.forEach(c => { archPrevStates[c.id] = archNodeState(c); });
-  archUpdateHud(pool);
 }
 
 function renderArchStage() {
@@ -7189,7 +7188,6 @@ function renderArchStage() {
     ${archLayout === 'techtree' ? `<div class="arch-scrollwrap" id="archTreeHost"></div>`
       : archLayout === 'list' ? `<div class="arch-scrollwrap" id="archListHost"></div>`
       : `<div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>`}
-    ${archLayout === 'techtree' || archLayout === 'list' ? `<div class="arch-hud" id="archHud"></div>` : ''}
     <div class="arch-ask" id="archAsk">
       <div class="arch-ask-inputrow">
         <input id="archAskInput" placeholder="Ask about this architecture…" autocomplete="off">
