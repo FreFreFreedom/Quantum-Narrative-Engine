@@ -101,10 +101,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .graph-stage { flex:1; position:relative; overflow:hidden; background:var(--c-stage); }
 #graphSvg { width:100%; height:100%; display:block; cursor:grab; }
 #graphSvg.panning, #graphSvg.nav-panning { cursor:grabbing; }
-.arch-canvas { touch-action:none; }
+.arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
+.arch-canvas.arch-zoom-anim { transition:transform var(--t-fast) var(--ease); }
 .arch-canvas.nav-panning * { cursor:grabbing; }
+.arch-scrollwrap { cursor:grab; }
 .arch-scrollwrap.nav-panning { cursor:grabbing; }
-#mapSvg { touch-action:none; }
+#mapSvg { cursor:grab; }
 .gnode { cursor:pointer; transition:opacity .18s ease; }
 .gnode circle { stroke:var(--c-bg); stroke-width:1.6; }
 .gnode.focused circle { stroke:var(--c-ink); stroke-width:3; }
@@ -2122,12 +2124,15 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   };
   const panBy = (dx, dy) => { state.x += dx; state.y += dy; applyFn(); };
   const onWheel = (e) => {
+    const isZoom = e.ctrlKey || e.metaKey;
+    // Only intercept wheel when zooming (Ctrl/Cmd) or actively dragging.
+    // Otherwise let native two-finger scroll pan through to the browser.
+    if (!isZoom && !drag) return;
     e.preventDefault();
     const rect = container.getBoundingClientRect();
     const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
-    const isPinch = (e.ctrlKey || e.metaKey);
-    if (isPinch) { zoomAt(e.deltaY < 0 ? step : 1 / step, cx, cy); }
-    else { panBy(-e.deltaX, -e.deltaY); }
+    if (isZoom) { zoomAt(e.deltaY < 0 ? step : 1 / step, cx, cy); }
+    else if (drag) { panBy(-e.deltaX, -e.deltaY); }
     if (onZoom) onZoom();
   };
   container.addEventListener('wheel', onWheel, { passive: false });
@@ -6587,9 +6592,8 @@ async function initArchNav() {
   // Attaches to the actual content container for the current layout.
   const attachNav = () => {
     const isCanvas = archLayout === 'map' || archLayout === 'tree';
-    const container = isCanvas
-      ? document.getElementById('archCanvas')
-      : document.getElementById(archLayout === 'techtree' ? 'archTreeHost' : 'archListHost');
+    if (!isCanvas) return; // checklist/techtree use native overflow:auto scroll
+    const container = document.getElementById('archCanvas');
     if (!container || container._navAttached) return;
     container._navAttached = true;
     NavCtrl(container, archViewport, applyArchTransform, {
