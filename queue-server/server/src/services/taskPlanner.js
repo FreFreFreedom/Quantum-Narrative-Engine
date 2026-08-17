@@ -7,6 +7,36 @@
 
 import { generateText } from './ai/text.js';
 
+// Zero-cost task tiering (free-only plan §193): judge a task's size from its
+// own text — what a mini-tier can't possibly be must drift up, never the
+// reverse. A small wording tweak that must land in a handful of files is
+// 'mini'; anything broad, structural, or with multiple checkable outcomes is
+// 'standard'; anything that will plausibly take several hours of agent work,
+// or that touches many files/features at once, is 'deep'. The heuristic uses
+// raw word count plus a few robust markers, all lowercased.
+const DEEP_RAISERS = ['refactor', 'redesign', 'rewrite', 'overhaul', 'migrate', 'multi-file', 'many files', 'architecture', 'full restructure', 'new feature', 'from scratch', 'entire'];
+const MINI_DOWNERS = ['typo', 'rename', 'wording', 'fix the', 'small fix', 'parameter', 'threshold', 'constant'];
+function tierForTask(prompt, title = '') {
+  const hay = `${title} ${prompt}`.toLowerCase();
+  const words = hay.split(/\s+/).filter(Boolean).length;
+  if (words > 65) return 'deep';
+  const raises = DEEP_RAISERS.some((k) => hay.includes(k));
+  if (raises) return 'deep';
+  const lowers = MINI_DOWNERS.some((k) => hay.includes(k));
+  if (lowers && words <= 30) return 'mini';
+  return 'standard';
+}
+
+// Mini-tier execution brief (free-only plan §193): a stripped-down drafting
+// prompt — short, no world references, built to be one quick fast-model call.
+const MINI_INSTRUCTION = `You are drafting an execution brief for a coding agent with real file access, from a small task someone just submitted. Keep it short.
+
+Exactly this format, nothing else:
+TITLE: <one short line>
+BRIEF: <two or three lines: the concrete change, which likely files, and a checkable definition of done>
+
+Write for the coding agent. No questions, no invented details.`;
+
 const INSTRUCTION = `You are drafting an execution brief for a coding agent that has real file access to a codebase, based on a task someone just submitted. Turn the raw request below into a brief with zero ambiguity left in it.
 
 Respond in exactly this format, nothing else:
@@ -44,23 +74,25 @@ function parseDraft(text) {
 // plain-text digest of the world-look pass (see codeDiscovery.inspirationDigestFor):
 // passed through verbatim as context the drafting model can see. `ownerNote` is the
 // owner's answer to a rare quick-check question about the world-look ideas.
-export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null }) {
+// `fast` (free-only plan): mini-tier drafts skip the world-look and use the
+// short draft — one quick call, for tiny tasks whose plan cannot need nuance.
+export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null, fast = false }) {
   const text = String(prompt || '').trim();
   if (!text) return null;
   const input = [
     title ? `SUBMITTED TITLE: ${title}` : null,
     `MODE: ${mode}`,
-    inspiration ? `INSPIRATION FROM THE WORLD:\n${inspiration}` : null,
-    ownerNote ? `OWNER'S NOTE ON THE IDEAS (their answer to a question about the world-look — follow it):\n${String(ownerNote).trim()}` : null,
+    fast ? null : inspiration ? `INSPIRATION FROM THE WORLD:\n${inspiration}` : null,
+    fast ? null : ownerNote ? `OWNER'S NOTE ON THE IDEAS (their answer to a question about the world-look — follow it):\n${String(ownerNote).trim()}` : null,
     `RAW REQUEST:\n${text}`,
   ].filter(Boolean).join('\n\n');
 
   try {
     const result = await generateText({
-      prompt: `${INSTRUCTION}\n\n${input}`,
+      prompt: `${fast ? MINI_INSTRUCTION : INSTRUCTION}\n\n${input}`,
       feature: 'plan_draft',
-      maxTokens: 1200,
-      label: 'task-planner',
+      maxTokens: fast ? 500 : 1200,
+      label: fast ? 'task-planner-mini' : 'task-planner',
     });
     if (!result?.text) return null;
     return parseDraft(result.text);

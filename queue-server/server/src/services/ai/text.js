@@ -14,17 +14,17 @@ let db = null;
 export function bindAiTextDb(database) { db = database; }
 
 const SETTINGS_CACHE_TTL = 30_000;
-let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1 }, intel: {} };
+let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30 }, intel: {} };
 
 function loadAiSettings() {
-  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1 }, intel: {} };
+  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30 }, intel: {} };
   const now = Date.now();
   if (settingsCache.at && now - settingsCache.at < SETTINGS_CACHE_TTL) {
     return settingsCache;
   }
   const row = db.prepare(`SELECT * FROM ai_settings WHERE id='global'`).get();
   if (!row) return settingsCache;
-  let queue = { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1 };
+  let queue = { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30 };
   if (typeof row.queue_go_budget_usd === 'number' && Number.isFinite(row.queue_go_budget_usd)) {
     queue.goBudgetUsd = row.queue_go_budget_usd;
   }
@@ -36,6 +36,11 @@ function loadAiSettings() {
   // spend in total before it stops itself. The Queue panel edits it.
   queue.costCapUsd = (typeof row.queue_cost_cap_usd === 'number' && Number.isFinite(row.queue_cost_cap_usd) && row.queue_cost_cap_usd > 0)
     ? row.queue_cost_cap_usd : 0.1;
+  // Daily helper budget (free-only plan): short text steps (drafts, summaries,
+  // world-look) count against this limit per UTC day; overload lives here so
+  // the queue can throttle optional passes without blocking itself.
+  queue.sideCallBudget = (typeof row.side_call_budget === 'number' && Number.isFinite(row.side_call_budget))
+    ? Math.max(0, Math.round(row.side_call_budget)) : 30;
   let intel = {};
   try { intel = JSON.parse(row.intel_json || '{}'); } catch {}
   try {
@@ -100,11 +105,14 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
     if (typeof queue.costCapUsd === 'number' && Number.isFinite(queue.costCapUsd) && queue.costCapUsd > 0) {
       nextQueue.costCapUsd = queue.costCapUsd;
     }
+    if (typeof queue.sideCallBudget === 'number' && Number.isFinite(queue.sideCallBudget)) {
+      nextQueue.sideCallBudget = Math.max(0, Math.round(queue.sideCallBudget));
+    }
   }
   let nextIntel = { ...(current.intel || {}) };
   if (intel) nextIntel = { ...nextIntel, ...intel };
-  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, JSON.stringify(nextIntel));
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, side_call_budget=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, nextQueue.sideCallBudget, JSON.stringify(nextIntel));
   return getAiSettings();
 }
 
@@ -195,6 +203,11 @@ async function getFallbackChain(feature, providerId, model) {
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
 async function runAttempt({ provider: p, model: m, prompt, maxTokens, label }) {
+  // Soft cap (free-only plan): short-text calls never ask for more than 800
+  // output tokens — one stale big maxTokens can't turn a 2s side pass into a
+  // long, quota-hungry generation. Queue run calls set their own budget on the
+  // opencode lane separately and do not pass through here.
+  if (maxTokens && maxTokens > 800) maxTokens = 800;
   if (p === 'claude-code') {
     return legacyGenerateText({ prompt, maxTokens, label, cliModel: m });
   }
@@ -257,6 +270,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label });
 
     if (result?.text) {
+      recordSideCall(); // one helper call in the daily budget ledger
       if (failures.length) console.warn(`[${label}] recovered via ${result.via} after ${failures.join(' | ')}`);
       return result;
     }
@@ -278,10 +292,50 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
 export async function generateTextDirect({ prompt, provider, model, maxTokens = 800, label = 'ai-text-direct' }) {
   if (!isKnownProvider(provider)) return { error: 'unknown_provider', message: provider };
   const result = await runAttempt({ provider, model, prompt, maxTokens, label });
-  if (result?.text) return result;
+  if (result?.text) {
+    recordSideCall(); // one helper call in the daily budget ledger
+    return result;
+  }
   const errMsg = result?.message || result?.error || 'unknown';
   if (detectQuotaLimit(provider, errMsg)) {
     router.recordExhaustion({ providerId: provider, model, detectedBy: 'text', errText: errMsg });
   }
   return result;
+}
+
+// ─── Daily helper budget (free-only plan) ────────────────────────────────────
+// The queue's short text steps (plan drafts, world-look, summaries, tree
+// classification) count into a per-UTC-day ledger. The budget throttles only
+// the OPTIONAL passes (world-look, draft speed tiers) — the queue itself never
+// waits on it. Every call into an ai/text.js seam costs one ledger unit.
+
+// Rate limit: 10 ledger writes per second max — one per call is enough.
+let lastLedgerWriteAt = 0;
+function ledgerWriteThrottled() {
+  const now = Date.now();
+  if (now - lastLedgerWriteAt < 100) return true;
+  lastLedgerWriteAt = now;
+  return false;
+}
+
+// Today's helper-call count (rolls over at UTC midnight by the day key).
+export function sideCallsToday() {
+  if (!db) return 0;
+  const day = new Date().toISOString().slice(0, 10);
+  const row = db.prepare(`SELECT calls FROM side_call_ledger WHERE day=?`).get(day);
+  return row ? row.calls : 0;
+}
+
+// The configured daily helper budget (ai_settings.side_call_budget).
+export function sideCallBudgetLimit() {
+  return loadAiSettings().queue?.sideCallBudget ?? 30;
+}
+
+// Count one helper call for today. Idempotent-ish under burst: at most one
+// ledger UPDATE per 100ms, so a burst of side calls can't hammer the row.
+export function recordSideCall() {
+  if (!db || ledgerWriteThrottled()) return;
+  const day = new Date().toISOString().slice(0, 10);
+  db.prepare(`INSERT INTO side_call_ledger (day, calls, updated_at) VALUES (?, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    ON CONFLICT(day) DO UPDATE SET calls = calls + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`).run(day);
 }

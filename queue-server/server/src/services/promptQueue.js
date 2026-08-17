@@ -30,10 +30,10 @@ import {
 } from './taskRunner.js';
 import { resolvePreset, escalate } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
-import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow } from './providers/index.js';
+import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pickTaskModel } from './providers/index.js';
 import { listAgents, pickAgentFor } from './agents.js';
-import { draftPlan } from './taskPlanner.js';
-import { generateText } from './ai/text.js';
+import { draftPlan, tierForTask } from './taskPlanner.js';
+import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
 import { syncFromTask } from './treeSync.js';
@@ -131,6 +131,11 @@ export async function createPrompt({
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
   if (!isValidModelId(provider_model)) throw new Error('invalid provider_model');
+  // Task tier (free-only plan): zero-cost size judgment made once at creation —
+  // it selects the plan speed and the right free model. Mini tasks are tiny
+  // and instant; standard is the everyday lane; deep gets the strongest model
+  // and is the only tier that leaves the fast floor.
+  const tier = tierForTask(text, title);
   const useMode = mode === 'question' ? 'question' : 'implement';
   // Free-first platform policy (plan self-aware-platform.md): an unspecified or
   // unknown provider resolves to the OpenCode lane, never to the Claude
@@ -160,9 +165,14 @@ export async function createPrompt({
   const chained = !!(same_context || useParent);
   let useModel = provider_model || null;
   if (useProvider === 'opencode' && !useModel) {
-    // No model chosen — remember the best available default (free models first) at
-    // creation time, so the sync execution path never has to discover it lazily.
-    try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
+    // No model chosen — remember the best available default at creation time, so
+    // the sync execution path never has to discover it lazily. Free-only plan:
+    // the task's tier picks the model — deep tasks get the strongest live free
+    // model (curated), everything else the fast floor; falls back to the plain
+    // default if the tier chain can't resolve.
+    try { useModel = await pickTaskModel(tier); } catch {
+      try { useModel = await defaultOpenCodeModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
+    }
   } else if (useProvider === 'ai-router' && !useModel) {
     try { useModel = await getDefaultAiRouterModel(); } catch { /* stays null — executeTask blocks with a clear reason */ }
   }
@@ -176,10 +186,13 @@ export async function createPrompt({
   // Inspiration step (plan inspiration-before-planning): EVERY implement-mode
   // task — suggestion, hand-typed, seed, thought, handoff — gets a background
   // pass that looks at the world (open / hidden / bold shelves) before its plan
-  // is written. Question-mode tasks skip it. The pass never blocks creation:
-  // the row lands with inspire_state='pending' and the draft simply waits up to
-  // its timeout for the report (below), then proceeds without it on failure.
-  const willInspire = useMode === 'implement';
+  // is written. Question-mode tasks skip it, and mini-tier tasks skip it for
+  // speed (free-only plan: a tiny fix's plan cannot need world context — the
+  // card shows the skip reason and the world-look stays one click away). The
+  // pass never blocks creation: the row lands with inspire_state='pending' and
+  // the draft simply waits up to its timeout for the report (below), then
+  // proceeds without it on failure.
+  const willInspire = useMode === 'implement' && tier !== 'mini';
   // Precomputed world-look: the item's own section (suggestion / seed / not-built
   // component) already ran the pass, so the task reuses it instead of searching
   // again. Picks are validated against the report; state lands 'applied' when
@@ -199,16 +212,21 @@ export async function createPrompt({
       preInsp = { report: rep, applied, digest: inspirationDigestFor(rep, applied, rep.review) };
     }
   }
-  const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (willInspire ? 'pending' : 'off');
+  const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (!willInspire ? 'skipped' : 'pending');
+  // Why the world-look was skipped, shown on the card (free-only plan): mini
+  // tasks skip it for speed; the budget skip is set by startInspiration itself.
+  const preSkipNote = !willInspire && !preInsp
+    ? 'Mini task — the world-look was skipped so the plan runs instantly. One click re-runs it.'
+    : null;
   const resolved = (!willDraft && preset === 'auto' && useProvider === 'claude-code')
     ? await resolvePreset({ mode: useMode, prompt: text }).catch(() => 'standard') : null;
 
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
     useMode, preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]');
+    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
 
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
@@ -219,7 +237,7 @@ export async function createPrompt({
     runPlanDraft(id, {
       title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial,
       agentKey: useAgentKey, contextMode: context_mode, explicitParent: !!useParent,
-      inspirationOverride: preInsp ? preInsp.digest : null,
+      inspirationOverride: preInsp ? preInsp.digest : null, tier,
     });
   }
   eagerSummarize(id); // free-lane purpose bullets ready before the owner opens it
@@ -240,9 +258,13 @@ export async function createPrompt({
 // brief (a fine signal — the brief is mostly reformatting of the same content, and
 // the judge is explicitly instructed to err upward). Total warm-up drops to the
 // slowest single call.
-async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus, agentKey = null, contextMode = 'manual', explicitParent = false, inspirationOverride = null }) {
+async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetStatus, agentKey = null, contextMode = 'manual', explicitParent = false, inspirationOverride = null, tier = 'standard' }) {
   const needPreset = preset === 'auto' && provider === 'claude-code';
   const needParent = contextMode === 'auto' && !explicitParent;
+  // Mini-tier instant plan (free-only plan): tiny tasks draft on the short
+  // mini prompt and never wait on the world-look (auto-skipped at creation) —
+  // one quick fast-model call, plan ready in seconds.
+  const fast = tier === 'mini';
 
   // Inspiration step: the draft waits (bounded) for the automatic world-look
   // pass so the plan is written with real-world context — this is the "wait for
@@ -253,14 +275,15 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   // report may still land later and the human can re-draft by applying picks.
   // inspirationOverride: the world-look already ran in the item's own section
   // (suggestion / seed / not-built) — use that digest directly, no wait.
+  // Fast path: mini tasks draft immediately, no world-look at all.
   const inspiration = inspirationOverride !== null
     ? { digest: inspirationOverride }
-    : await waitForInspiration(id, INSPIRE_WAIT_MS);
+    : fast ? null : await waitForInspiration(id, INSPIRE_WAIT_MS);
   const inspDigest = inspiration ? (typeof inspiration === 'string' ? inspiration : inspiration.digest) : null;
   const inspNote = inspiration && typeof inspiration === 'object' ? inspiration.note : null;
 
   const [draft, presetOut, parentOut] = await Promise.all([
-    draftPlan({ title, prompt, mode, inspiration: inspDigest, ownerNote: inspNote }),
+    draftPlan({ title, prompt, mode, inspiration: inspDigest, ownerNote: inspNote, fast }),
     needPreset ? resolvePreset({ mode, prompt }).catch(() => 'standard') : Promise.resolve(null),
     needParent
       ? (async () => {
@@ -347,6 +370,21 @@ function settleInspireWaiter(id) {
 
 function startInspiration(id, { title, prompt }, { force = false } = {}) {
   const run = (async () => {
+    // Daily helper budget gate (free-only plan): with the day's short-call
+    // budget spent, new world-looks are skipped instead of started — the card
+    // explains and the force path (manual re-run button) always bypasses it, so
+    // one task can never eat the day's helper budget silently. Tasks are never
+    // blocked: 'skipped' releases the queue exactly like 'ready'.
+    if (!force && sideCallsToday() >= sideCallBudgetLimit()) {
+      db.prepare(`
+        UPDATE work_prompts SET inspire_state='skipped', inspire_error=?,
+          updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+      `).run('Daily helper budget spent — the world-look was skipped. It re-opens at UTC midnight.', id);
+      _inspiring.delete(id);
+      broadcast();
+      advanceQueue();
+      return;
+    }
     try {
       const report = await runInspiration(db, {
         idea_text: [title, prompt].filter(Boolean).join('\n'),

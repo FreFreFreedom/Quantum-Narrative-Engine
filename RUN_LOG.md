@@ -1586,3 +1586,50 @@ clean, master ↔ served copy checksums identical.
   (they're capped at $0.10 per task now); clearing their model re-defaults to
   free. Antoine was told to clear the model on the queued tasks if he wants
   them free-only.
+
+# Live session, 2026-08-17 — cheap-by-design queue + instant plans
+
+Builds on the free-only session above: the queue is now *cheaply* fast, not
+just free-ish. Same ship-directly flow (pushed to `main`).
+
+## What landed
+
+1. **Mini tier — instant plans for tiny tasks.** A zero-cost size judge
+   (`taskPlanner.tierForTask`: word count + small markers) tags every new task
+   at creation as `mini` / `standard` / `deep` (new `task_tier` column).
+   A mini task drafts its plan immediately on a short 2–3 line brief prompt
+   (new `taskPlanner.MINI_INSTRUCTION`), never waits on the world-look (it is
+   auto-skipped at creation with an explanatory note on the card), and runs on
+   the fast floor model. Small fixes go from submit to running in seconds.
+2. **Right model per tier.** `providers/index.js` gains `CURATED_FREE_CHAIN`
+   (deepseek-v4-flash-free, hy3-free, nemotron-3-ultra-free, mimo-v2.5-free,
+   laguna-s-2.1-free, nemotron-3.5-lightning-free, big-pickle) and
+   `pickTaskModel(tier)` — deep tasks get the strongest live curated free
+   model, mini/standard the latency-biased fast floor
+   (`pickFastFreeModel`). Creation-time model pick now goes through it
+   (fallback: old default).
+3. **Daily helper budget (30).** New `ai_settings.side_call_budget` column +
+   a `side_call_ledger` table (one row per UTC day). Every successful short
+   text call (`generateText` / `generateTextDirect` — drafts, summaries,
+   world-look, review) is counted. Past the budget: new world-looks auto-skip
+   (`startInspiration` writes `inspire_state='skipped'` + a human-readable
+   `inspire_error`; the manual re-run button always bypasses), and nothing
+   else stops — the queue never waits on the budget. Editable in the Queue
+   panel (`qpSideBudget`), shown on the status line as `helpers X/Y today`.
+4. **maxTokens soft cap.** `runAttempt` never asks a side call for more than
+   800 output tokens — one stale big budget can't turn a 2s pass into a quota
+   hog (queue run calls set their own budget on the opencode lane separately).
+5. **Skipped world-look visibility.** The task card's skipped state now shows
+   the stored `inspire_error` reason (mini for speed / budget spent), with the
+   world-look one click away.
+
+## Verified
+
+`node --check` on all 6 changed server files, inline client script parsed
+clean, master ↔ served copy checksums identical. Not locally booted (ship-directly).
+
+## Follow-ups
+
+- Same as before: the local 3000 server needs Antoine's restart to pick this up.
+- `pickFastFreeModel` is exported but unused so far — the fast floor is
+  reached through `pickTaskModel`, keeping one public seam for later lanes.

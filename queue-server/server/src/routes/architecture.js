@@ -4,7 +4,7 @@ import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions
 import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt, shortlistUnbuilt } from '../services/architectureNodes.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
 import { getQueuePauseState } from '../services/promptQueue.js';
-import { autoShipEnabled } from '../services/ai/text.js';
+import { autoShipEnabled, sideCallBudgetLimit, sideCallsToday } from '../services/ai/text.js';
 import { containerFreeBytes } from '../lib/memHeadroom.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -137,6 +137,10 @@ export function architectureRoutes(db) {
     const capRow = db.prepare(`SELECT queue_cost_cap_usd FROM ai_settings WHERE id='global'`).get();
     const costCapUsd = (capRow && typeof capRow.queue_cost_cap_usd === 'number' && capRow.queue_cost_cap_usd > 0)
       ? capRow.queue_cost_cap_usd : 0.1;
+    // Daily helper budget (free-only plan): today's short-call count + the
+    // configured budget — the status line shows the free allowance at a glance.
+    const sideCallsTodayN = sideCallsToday();
+    const sideBudget = sideCallBudgetLimit();
     res.json({
       ...status,
       paused: pause.paused,
@@ -145,6 +149,8 @@ export function architectureRoutes(db) {
       memFreeMb: memMb === null ? null : Math.round(memMb / 1024 / 1024),
       todayCostUsd: Number(today.total) || 0,
       costCapUsd,
+      sideCallsToday: sideCallsTodayN,
+      sideBudget,
     });
   });
 

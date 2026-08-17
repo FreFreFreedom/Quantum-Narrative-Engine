@@ -81,6 +81,46 @@ export async function defaultOpenCodeModel() {
   throw new Error(error || 'no OpenCode models available');
 }
 
+// Free model chain for task tiers (free-only plan): a task gets the right free
+// model for its size — the strongest free OpenCode-hosted model for big work
+// ('deep'), the fast floor otherwise. Walked in order; a curated entry missing
+// from the live list is skipped. Third-party free models (google/*, …) never
+// auto-run; they are reachable via the catalogue lane only.
+export const CURATED_FREE_CHAIN = [
+  'opencode/hy3-free',
+  'opencode/nemotron-3-ultra-free',
+  'opencode/mimo-v2.5-free',
+  'opencode/laguna-s-2.1-free',
+  'opencode/nemotron-3.5-lightning-free',
+  'opencode/big-pickle',
+  'opencode/deepseek-v4-flash-free',
+];
+
+// The fast floor: the discovery list's first free entry, which is
+// latency-biased (opencode/deepseek-v4-flash-free — ~2-3s toolless calls).
+export async function pickFastFreeModel() {
+  const { models } = await listOpenCodeModels();
+  const fast = (models || []).find((m) => m.free);
+  return fast ? fast.id : null;
+}
+
+// The right free model for a task tier: 'deep' → the strongest live entry of
+// the curated free chain; 'mini'/'standard' → the fast floor. Falls back to
+// the fast floor whenever the curated chain is unavailable, so a tier upgrade
+// can never block dispatch.
+export async function pickTaskModel(tier) {
+  const { models } = await listOpenCodeModels();
+  const live = models || [];
+  if (tier === 'deep') {
+    for (const entry of CURATED_FREE_CHAIN) {
+      const hit = live.find((m) => curatedMatch(entry, m.id) && m.free);
+      if (hit) return hit.id;
+    }
+  }
+  const fast = live.find((m) => m.free);
+  return fast ? fast.id : null;
+}
+
 // Context window for a model id, from the discovery cache. Unknown models get
 // the conservative fleet default (200k — the Go chain flagship's window). The
 // context-budget rule (plan "context budget") uses this to reset long sessions

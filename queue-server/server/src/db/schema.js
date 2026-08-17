@@ -166,6 +166,11 @@ function initSchema(db) {
   // dispatched; NULL = no retry context pending.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_worktree_path TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_branch TEXT`); } catch {}
+  // Task tier (free-only plan): 'mini' (tiny tweaks — instant mini-plan, no
+  // world-look, fastest free model), 'standard' (normal plans, fast free model),
+  // 'deep' (big builds — full plan on the strongest free model). Judged by a
+  // zero-cost heuristic at creation; drives model + plan-speed choices only.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN task_tier TEXT NOT NULL DEFAULT 'standard'`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -418,6 +423,26 @@ function initSchema(db) {
   // cumulative spend crosses this cap — mid-run when the CLI reports usage, and
   // at every run boundary besides. Default $0.10; editable in the Queue panel.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_cost_cap_usd REAL NOT NULL DEFAULT 0.1`); } catch {}
+  // Daily helper budget (free-only plan): how many short text-model steps
+  // (plan drafts, summaries, world-look, tree classification) the queue may
+  // spend per day. Past it, the optional world-look auto-skips for new tasks
+  // and big-task plans draft on the fast model — the queue keeps working, the
+  // free daily allowance is never drained by one small task. Editable in the
+  // Queue panel; resets at UTC midnight.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN side_call_budget INTEGER NOT NULL DEFAULT 30`); } catch {}
+
+  // Daily helper-call ledger (free-only plan): one row per UTC day counting the
+  // short text-model steps the queue spent (plan drafts, summaries, world-look,
+  // tree classification — every call through the ai/text.js seam). The daily
+  // budget (ai_settings.side_call_budget) throttles only the optional passes;
+  // the queue itself is never stopped by it.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS side_call_ledger (
+      day TEXT PRIMARY KEY,
+      calls INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
   // provider_quota_ledger: append-only history of every exhaustion event, so the

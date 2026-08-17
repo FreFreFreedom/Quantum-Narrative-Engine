@@ -4710,7 +4710,7 @@ async function qSummarize(p) {
 function qInspireHtml(p) {
   if (!p.inspire_state || p.inspire_state === 'off' || p.inspire_state === 'skipped') {
     const note = p.inspire_state === 'skipped'
-      ? 'This task runs on a plain plan — the world-look was skipped. The task will start when you start it.'
+      ? (p.inspire_error || 'This task runs on a plain plan — the world-look was skipped.')
       : 'This task has not looked at the world yet, so it will not start until it does (or you skip the search).';
     return `<div class="tv-empty">${note}<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">✨ Look at what exists before you start</button>${p.inspire_state !== 'skipped' ? '<button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button>' : ''}</div>`;
   }
@@ -6443,11 +6443,13 @@ function renderArchQueueBanner() {
   if (s.queuedCount) parts.push(`${s.queuedCount} queued`);
   parts.push(`auto-ship ${s.autoShip ? 'on' : 'off'}`);
   if (s.todayCostUsd != null) parts.push(`today ~$${s.todayCostUsd.toFixed(2)}`);
+  if (s.sideCallsToday != null && s.sideBudget != null) parts.push(`helpers ${s.sideCallsToday}/${s.sideBudget} today`);
   const detail = [
     `Tasks done: ${s.completedCount}`,
     s.pausedReason ? `Paused: ${s.pausedReason}` : '',
     s.memFreeMb != null ? `Free memory: ${s.memFreeMb} MB` : '',
     s.costCapUsd != null ? `Per-task cost cap: $${s.costCapUsd.toFixed(2)} — a task stops itself the moment it crosses its cap, so one task can never drain your credits.` : '',
+    s.sideBudget != null ? `Daily helper budget: ${s.sideCallsToday ?? 0} of ${s.sideBudget} short AI calls used today. Past it, optional passes skip (new world-looks, deep plan drafts) — the queue itself never stops.` : '',
     'Auto-ship: a task that passes every check publishes itself — the on/off switch is in the Queue panel.',
   ].filter(Boolean).join(' · ');
   el.innerHTML = `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}`;
@@ -7612,6 +7614,10 @@ let qpPickBanner = null;
 // passes every review check publishes itself; the switch below toggles it.
 let qAutoShip = true;
 let qCapUsd = 0.1;
+// Daily helper budget (free-only plan): short text steps the queue may spend
+// per UTC day — plans, summaries, world-look. Past it, only optional passes
+// throttle (world-look skip, deep plans draft fast); the queue never stops.
+let qSideBudget = 30;
 
 function qpSectionHtml(cls, title, count, rowsHtml, emptyText) {
   return `<div>
@@ -7671,6 +7677,10 @@ function renderQueuePanel() {
         <span>Per-task cost cap: $</span>
         <input type="number" id="qpCapUsd" min="0.01" step="0.01" value="${qCapUsd}">
       </label>
+      <label class="qp-opt-row" title="How many short helper calls (plans, summaries, world-look) the queue may spend per day. Past it, the world-look auto-skips for new tasks and big-task plans draft on the fast model — the queue keeps working, your free daily allowance is never drained by one small task. Resets at midnight UTC.">
+        <span>Daily helper budget:</span>
+        <input type="number" id="qpSideBudget" min="1" step="1" value="${qSideBudget}">
+      </label>
     </div>
   `;
 
@@ -7718,6 +7728,18 @@ function renderQueuePanel() {
       } catch (e) { alert('Could not save the cost cap: ' + e.message); }
     };
   }
+  const sideEl = document.getElementById('qpSideBudget');
+  if (sideEl) {
+    sideEl.onchange = async () => {
+      const v = parseInt(sideEl.value, 10);
+      if (!Number.isFinite(v) || v < 1) { sideEl.value = qSideBudget; return; }
+      qSideBudget = v;
+      try {
+        await apiWrite('/api/travaux/ai-settings', 'PUT', { queue: { sideCallBudget: qSideBudget } });
+        refreshCoreHeader(); // status line shows the new budget right away
+      } catch (e) { alert('Could not save the daily helper budget: ' + e.message); }
+    };
+  }
 }
 
 // Live-read the auto-ship gate for the switch above: the checkbox renders from
@@ -7728,11 +7750,14 @@ async function qpLoadAutoShip() {
     const s = await api('/api/travaux/ai-settings');
     qAutoShip = !!(s.queue && s.queue.autoShip);
     if (s.queue && Number.isFinite(s.queue.costCapUsd) && s.queue.costCapUsd > 0) qCapUsd = s.queue.costCapUsd;
+    if (s.queue && Number.isFinite(s.queue.sideCallBudget) && s.queue.sideCallBudget > 0) qSideBudget = s.queue.sideCallBudget;
   } catch (e) { /* keep last-known state */ }
   const el = document.getElementById('qpAutoShipChk');
   if (el) el.checked = qAutoShip;
   const capEl = document.getElementById('qpCapUsd');
   if (capEl) capEl.value = qCapUsd;
+  const sideEl = document.getElementById('qpSideBudget');
+  if (sideEl) sideEl.value = qSideBudget;
 }
 
 async function qpSubmitTask() {
