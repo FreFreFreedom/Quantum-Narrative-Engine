@@ -2126,7 +2126,12 @@ function NavCtrl(container, state, applyFn, opts = {}) {
       e.preventDefault();
     }
     const rect = container.getBoundingClientRect();
-    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    // Account for container padding so zoom anchors at the true cursor position inside the content box
+    const style = getComputedStyle(container);
+    const padLeft = parseFloat(style.paddingLeft) || 0;
+    const padTop = parseFloat(style.paddingTop) || 0;
+    const cx = e.clientX - rect.left - padLeft;
+    const cy = e.clientY - rect.top - padTop;
     if (isZoom) { zoomAt(e.deltaY < 0 ? step : 1 / step, cx, cy); }
     else { panBy(-e.deltaX, -e.deltaY); }
     if (onZoom) onZoom();
@@ -7248,6 +7253,7 @@ function renderArchStage() {
   if (archLayout === 'list') { archDrawChecklist(); return; }
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { drawArchDeps(); });
   else { drawArchDeps(); }
+  attachNav(); // re-attach NavCtrl after DOM is fully rendered
 }
 
 // Ask / zoom / edges controls live inside the re-rendered stage, so their
