@@ -1667,3 +1667,29 @@ Fix shipped:
 Verified: `node --check` on all changed server files, inline client script
 parses clean, served-index ↔ master checksums match (480e6de7…). Pushed to
 `main` (deployed). Local 3000 server still needs Antoine's restart.
+
+# Live session, 2026-08-17 — reply flow fix (crash recovery + instant chat)
+
+- **Crash fix:** last night's push crashed the server on boot because
+  `tierForTask` was defined in `taskPlanner.js` without `export` (the import in
+  `promptQueue.js` failed → server won't start → "Application failed to
+  respond"). Exported it. Verified boot locally before the follow-up push.
+- **Instant chat reply:** new `POST /prompts/:id/reply/chat` (`chatReplyToPrompt`)
+  answers from the full thread on a free model — fast floor for mini/standard
+  tasks, the strongest live free model for deep-tier tasks — and posts the
+  answer into the thread (seconds). If the task is running, the same text is
+  ALSO forwarded as a live steer so a directive reaches the run immediately
+  while the chat answer lands in-thread. Bounded to 20s x 2 backends; on a slow
+  free model it degrades to a graceful in-thread error instead of hanging.
+- **Timeout plumbing:** `generateText`/`runAttempt`/`runToolless` now accept
+  `timeoutMs` (and `maxAttempts`); chat uses 20s and ≤2 backends so replies can
+  never hang a browser the way the old relaunch could (multi-minutes).
+- **Client:** reply box is chat-first ("Answer"), with "Reply & relaunch task"
+  and "Save & queue" kept as secondary; the running-task "Steer" box is now
+  "Answer & add to run" (chat + live steer). qReply routes 'chat' → /reply/chat.
+- Verified locally: done task stays done (no silent flip to running), thread
+  shows human msg + agent answer or agent error, no agent launched, no queue
+  disturbance. Local free model was timing out (>20s) so the graceful path was
+  exercised; on Railway the hosted free model answers in ~2-3s normally.
+
+Pushed to `main` (deployed). Local 3000 server still needs Antoine's restart.
