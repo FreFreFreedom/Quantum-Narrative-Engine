@@ -6,8 +6,13 @@
   "description": "Claude-driven work queue, ported from the Orisha 'Travaux' spec for FMCNS. Step 1-2 of the suggested port order: DB + auth + WebSocket foundation, then a trimmed task runner.",
   "scripts": {
     "start": "node server/src/index.js",
-    "dev": "node server/src/index.js",
-    "runner": "node scripts/queue-runner.js"
+    "dev": "tsx watch server/src/index.ts",
+    "runner": "tsx scripts/queue-runner.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "tsx scripts/migrate-to-neon.ts",
+    "db:schema": "tsx scripts/apply-schema.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",
@@ -17,9 +22,28 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "opencode-ai": "^1.18.16",
+    "pg": "^8.23.0",
     "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=22.5"
-  }
+  },
+  "main": "index.js",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
+    "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "eslint": "^10.8.1",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
