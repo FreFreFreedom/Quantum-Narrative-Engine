@@ -3862,6 +3862,19 @@ function qStopAfterBadge(p) {
   return '<span class="q-badge" style="background:#8a5a5a;" title="The queue will pause once this task finishes.">⏹ pauses queue after</span>';
 }
 
+// Compact-row echo of the "Context: X/Y continued" line in the detail view — lets a
+// task nearing its auto-reset threshold (CONTEXT_RESET_THRESHOLD server-side) be seen
+// without opening the card.
+function qMemoryBadge(p) {
+  const activeSession = p.provider === 'opencode' ? p.opencode_session_id : p.session_id;
+  const ctxTurns = p.context_turns || 0;
+  if (!activeSession || !ctxTurns) return '';
+  const tier = p.preset === 'auto' ? (p.resolved_preset || 'standard') : p.preset;
+  const ctxLimit = Q_CONTEXT_LIMITS[tier] || 6;
+  const amber = ctxTurns >= ctxLimit - 1;
+  return `<span class="q-badge" style="background:${amber ? '#8a6a1e' : '#5a6b8a'};" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier).">🔁 ${ctxTurns}/${ctxLimit}</span>`;
+}
+
 function flowSection(icon, title, count, rowsHtml) {
   return `<div class="flow-section"><div class="flow-sec-head"><span class="flow-sec-title">${icon} ${title}</span><span class="flow-sec-count">${count}</span></div>${rowsHtml}</div>`;
 }
