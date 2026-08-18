@@ -3566,13 +3566,21 @@ async function qLoad() {
   if (connEl) connEl.style.display = 'none';
   qRefreshRunnerState();
   const nextPrompts = data.prompts || [];
-  // output_bytes/timeout_minutes grow on every single poll while a task is running
-  // (raw log byte count) but nothing in the UI renders them — including them in the
-  // change signature forced a full renderFlow() rebuild (and its CSS enter-animation
-  // on every row) on every poll tick for as long as anything was running, which is
-  // what read as constant flashing/refreshing in the Flow sub-tabs. Excluded here so
-  // the signature only trips on data the UI actually shows.
-  const sigPrompts = nextPrompts.map(({ output_bytes, timeout_minutes, ...rest }) => rest);
+  // output_bytes/timeout_minutes/heartbeat_at all grow or tick on essentially every
+  // single poll while a task is running (raw log byte count, and a ~2s server-side
+  // heartbeat write) but nothing in the UI renders their raw values — heartbeat_at
+  // is only ever surfaced once stale (qRunStateLine, mins > 5 below). Including them
+  // in the change signature forced a full renderFlow() rebuild (and its CSS
+  // enter-animation on every row) on nearly every poll tick for as long as anything
+  // was running, which is what read as constant flashing/refreshing in the Flow
+  // sub-tabs. heartbeat_at is bucketed to a stale/not-stale boolean rather than
+  // dropped outright, so a hung task still flips the signature once it crosses the
+  // same 5-minute threshold qRunStateLine warns on — otherwise a lone stalled task
+  // with nothing else changing would never trip a re-render at all.
+  const sigPrompts = nextPrompts.map(({ output_bytes, timeout_minutes, heartbeat_at, ...rest }) => ({
+    ...rest,
+    heartbeat_stale: heartbeat_at ? (Date.now() - new Date(heartbeat_at).getTime()) / 60000 > 5 : null,
+  }));
   const sig = JSON.stringify({ paused: data.queue_paused, prompts: sigPrompts });
   const changed = sig !== qLastSig;
   qLastSig = sig;
@@ -5079,21 +5087,37 @@ let flowWorld = {};
 function flowWorldEntry(source, id) {
   const key = source + ':' + id;
   let e = flowWorld[key];
-  if (!e) { e = { state: 'idle', synced: false, startedAt: 0, report: null, error: '', sel: [], autoAttempted: false }; flowWorld[key] = e; }
+  if (!e) { e = { state: 'idle', synced: false, startedAt: 0, report: null, error: '', sel: [], autoAttempted: false, fetching: false }; flowWorld[key] = e; }
   return e;
+}
+// renderFlow() rebuilds the whole Flow list from scratch and replays every row's
+// enter-animation — fine for a single user click, but flowWorldSync/flowWorldPoll
+// can each independently land a state change (report ready, look settled, timed
+// out) for many items in quick succession (nbAutoLook's background sweep, or
+// several suggestions/ideas resolving around the same time), which used to fire
+// one renderFlow() per item, back to back, and read as rapid flashing. Coalescing
+// those into a single render per short window fixes that without touching the
+// instant renders used for direct user actions (row clicks, tab switches, etc.).
+let flowRenderScheduled = false;
+function scheduleFlowRender() {
+  if (flowRenderScheduled) return;
+  flowRenderScheduled = true;
+  setTimeout(() => { flowRenderScheduled = false; renderFlow(); }, 150);
 }
 // One silent lookup per item per session: after a reload, the panel and the
 // row markers come back without re-searching. If the server is already running
 // a look for this item (background sweep), join it instead of offering start.
 async function flowWorldSync(source, id) {
   const e = flowWorldEntry(source, id);
-  if (e.synced || e.state !== 'idle') return;
+  if (e.synced || e.state !== 'idle' || e.fetching) return;
   e.synced = true;
+  e.fetching = true;
   try {
     const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
-    if (data.report) { e.report = data.report; e.state = 'ready'; renderFlow(); }
-    else if (data.running) { e.state = 'pending'; e.startedAt = Date.now(); renderFlow(); }
-  } catch (err) { /* stays idle — the start button still works */ }
+    if (data.report) { e.report = data.report; e.state = 'ready'; scheduleFlowRender(); }
+    else if (data.running) { e.state = 'pending'; e.startedAt = Date.now(); scheduleFlowRender(); }
+  } catch (err) { /* stays idle — the start button still works */
+  } finally { e.fetching = false; }
 }
 // Polled from the render loop while a look is running; flips to ready the
 // moment the report lands. Gives up after four minutes with a retry path, and
@@ -5101,13 +5125,15 @@ async function flowWorldSync(source, id) {
 // start button.
 async function flowWorldPoll(source, id) {
   const e = flowWorldEntry(source, id);
-  if (e.state !== 'pending') return;
-  if (Date.now() - e.startedAt > 240000) { e.state = 'failed'; e.error = 'The look took too long — try again.'; renderFlow(); return; }
+  if (e.state !== 'pending' || e.fetching) return;
+  if (Date.now() - e.startedAt > 240000) { e.state = 'failed'; e.error = 'The look took too long — try again.'; scheduleFlowRender(); return; }
+  e.fetching = true;
   try {
     const data = await api(`/api/discovery/world-look?source=${encodeURIComponent(source)}&source_id=${encodeURIComponent(id)}`);
-    if (data.report) { e.report = data.report; e.state = 'ready'; renderFlow(); }
-    else if (!data.running) { e.state = 'idle'; e.startedAt = 0; renderFlow(); }
-  } catch (err) { /* the next poll tick retries */ }
+    if (data.report) { e.report = data.report; e.state = 'ready'; scheduleFlowRender(); }
+    else if (!data.running) { e.state = 'idle'; e.startedAt = 0; scheduleFlowRender(); }
+  } catch (err) { /* the next poll tick retries */
+  } finally { e.fetching = false; }
 }
 async function flowWorldStart(source, id, ideaText) {
   const e = flowWorldEntry(source, id);
