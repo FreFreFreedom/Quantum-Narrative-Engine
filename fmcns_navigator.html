@@ -559,6 +559,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .flow-donehead { cursor:pointer; }
 .flow-donehead:hover .flow-sec-title { color:var(--c-ink); }
 .flow-done-chev { color:var(--c-ink-4); }
+.flow-clearbtn { margin-left:auto; font-size:10.5px; font-weight:600; letter-spacing:.03em; padding:2px 9px; border-radius:9px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; transition:color .15s var(--ease), border-color .15s var(--ease), background .15s var(--ease); }
+.flow-clearbtn:hover { color:#b23a2f; border-color:#b23a2f; background:var(--c-surface-3); }
+.flow-clearbtn:disabled { opacity:.5; cursor:default; }
 .flow-row { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:6px; cursor:pointer; }
 .flow-row:hover { border-color:var(--c-border-2); }
 .flow-row.sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
@@ -587,6 +590,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-filterbtns { display:flex; gap:5px; }
 .sg-filterbtns button { padding:5px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; }
 .sg-filterbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
+.flow-sg-filters { display:flex; align-items:center; gap:8px; }
+.flow-sg-filters .sg-filterbtns { gap:4px; }
+.flow-sg-filters .sg-filterbtns button { padding:4px 8px; font-size:10px; }
 .sg-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:11px 13px; margin-bottom:9px; }
 .sg-card-top { display:flex; align-items:flex-start; gap:8px; }
 .sg-card-title { font-size:12.5px; font-weight:600; flex:1; }
@@ -1153,23 +1159,30 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
     <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done) + the New-prompt composer | fmcns_navigator.html: renderFlow(), qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js">
       <div id="corePaneFlow" class="core-pane" data-src="CORE ARCHITECTURE → Flow | fmcns_navigator.html: renderFlow() into #tvBodyFlow, item detail into the right zone | backend: services/promptQueue.js, services/suggestions.js, services/workIdeas.js">
-        <div class="tv-toolbar">
-          <div class="tv-toolbar-top">
-            <span class="arch-title">Flow</span>
-          </div>
-          <span class="flow-controls">
-            <span class="flow-typecips" id="flowTypeBtns">
-              <button class="active" data-ftype="all">All</button>
-              <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
-              <button data-ftype="notbuilt">On the Horizon</button>
-              <button data-ftype="suggestions">Suggestions</button>
-              <button data-ftype="seeds">Seeds</button>
-              <button data-ftype="done">✓ Done</button>
-            </span>
-            <input id="flowSearch" class="flow-search" placeholder="Search the flow…" autocomplete="off">
-          </span>
+<div class="tv-toolbar">
+        <div class="tv-toolbar-top">
+          <span class="arch-title">Flow</span>
         </div>
-        <div id="flowReviews" class="flow-reviews" style="display:none;"></div>
+        <span class="flow-controls">
+          <span class="flow-typecips" id="flowTypeBtns">
+            <button class="active" data-ftype="all">All</button>
+            <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
+            <button data-ftype="notbuilt">On the Horizon</button>
+            <button data-ftype="suggestions">Suggestions</button>
+            <button data-ftype="seeds">Seeds</button>
+            <button data-ftype="done">✓ Done</button>
+          </span>
+          <span class="flow-sg-filters" id="flowSgFilters" style="display:none; margin-left:8px;">
+            <span class="sg-filterbtns" role="group" aria-label="Suggestion status filter">
+              <button class="active" data-sg-status="all" title="Show all suggestions">All</button>
+              <button data-sg-status="new" title="Only unread suggestions">New</button>
+              <button data-sg-status="accepted" title="Only accepted suggestions">Accepted</button>
+              <button data-sg-status="dismissed" title="Only dismissed suggestions">Dismissed</button>
+            </span>
+          </span>
+          <input id="flowSearch" class="flow-search" placeholder="Search the flow…" autocomplete="off">
+        </span>
+      </div>
         <div class="flow-composer" id="flowComposer" data-src="CORE ARCHITECTURE → Flow → New-prompt composer (collapsed by default) | fmcns_navigator.html: qAddBtn/qSetAsideBtn handlers, qAddPrompt() | backend: POST /api/travaux/prompts, services/promptQueue.js">
           <button class="q-addbtn" id="flowComposerToggle">＋ New prompt</button>
           <div class="flow-composer-form" style="display:none;">
@@ -3009,7 +3022,7 @@ let coreInited = false;
 const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
-let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
+let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null, flowDoneIds = [];
 // Inspiration panel state: rendered HTML per task (avoids refetching on every
 // 4s poll), the human's un-applied selections, and the in-flight guard.
 let qInspireCache = {}, qInspireSel = {};
@@ -3026,6 +3039,13 @@ function initCore() {
     document.getElementById('queuePauseBtn').onclick = qTogglePause;
     document.querySelectorAll('#flowTypeBtns button').forEach(b => {
       b.onclick = () => { flowType = b.getAttribute('data-ftype'); renderFlow(); };
+    });
+    document.querySelectorAll('#flowSgFilters button').forEach(b => {
+      b.onclick = () => {
+        tvSuggestionFilter.status = b.getAttribute('data-sg-status');
+        document.querySelectorAll('#flowSgFilters button').forEach(x => x.classList.toggle('active', x === b));
+        loadSuggestions();
+      };
     });
     const searchEl = document.getElementById('flowSearch');
     if (searchEl) searchEl.oninput = () => { flowSearch = searchEl.value.trim(); renderFlow(); };
@@ -3548,7 +3568,6 @@ async function qLoad() {
   if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
   if (coreView === 'flow' && changed) renderFlow();
   if (queuePanelOpen && changed) renderQueuePanel();
-  qRenderReviews(); // the review gate cards — a finished task may have entered the gate
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
     // Poll re-render: stand down while the human is typing in the expanded card,
@@ -3646,228 +3665,6 @@ function qAgentLabel(p) {
   if (!key) return '🤖 Auto';
   const a = qAgents.find(x => x.key === key);
   return a ? `${a.emoji ? a.emoji + ' ' : ''}${a.label}` : key;
-}
-
-// Memory badge: how much of the dev's context window the task's session fills
-// (server-computed). Only shown when there is a measured session to report.
-function qMemoryBadge(p) {
-  const pct = p.context_pct;
-  if (!Number.isFinite(pct) || pct <= 0) return '';
-  const hot = pct >= 75;
-  const color = hot ? '#c46a3a' : (pct >= 50 ? '#b8934a' : '#7d8677');
-  return ` · <span title="Session memory used vs. the model's window — at 75% the next reply starts a fresh session with a compact recap" style="color:${color};">🧠 ${pct}%</span>`;
-}
-
-const REVIEW_ORDER = { pending: 0, approved: 1, changes_requested: 2, merged: 3, rejected: 4, reverted: 5 };
-const REVIEW_STATUS_LABELS = { pending: 'Checking…', approved: 'Ready to merge', changes_requested: 'Needs changes', merged: 'Merged', rejected: 'Discarded', reverted: 'Reverted' };
-const REVIEW_STATUS_COLORS = { pending: '#a19a8e', approved: '#2f7d63', changes_requested: '#b8860b', merged: '#4f9d7a', rejected: '#8a8378', reverted: '#8a8378' };
-let qReviews = [];
-
-function qReviewCard(r) {
-  const checks = r.checks || {};
-  const rows = [
-    ['syntax', 'Changed files parse'],
-    ['boot', 'Server starts'],
-    ['endpoints', 'Pages respond'],
-    ['html', 'Main page intact'],
-    ['scope', 'Scope respected'],
-  ].map(([k, label]) => {
-    const c = checks[k];
-    if (!c) return '';
-    return `<div class="q-review-check"><span class="${c.ok ? 'q-check-ok' : 'q-check-bad'}">${c.ok ? '✓' : '✗'}</span><span>${label}</span></div>`;
-  }).join('');
-  const conflict = (r.conflicts_with && r.conflicts_with.length)
-    ? `<div class="q-review-conflict">⚠ Conflicts with : ${qEsc(r.conflicts_with.join(', '))}</div>` : '';
-  const concerns = (r.concerns && r.concerns.length)
-    ? `<div class="q-review-concerns">${r.concerns.map(c => qEsc(c)).join('<br>')}</div>` : '';
-  const stats = (r.files_changed && r.files_changed.length)
-    ? `<div class="q-review-meta">${r.files_changed.length} file(s) · +${r.insertions || 0} / −${r.deletions || 0}</div>` : '';
-  const canMerge = r.status === 'approved';
-  const canRevert = r.status === 'merged';
-  const canReject = ['pending', 'approved', 'changes_requested'].includes(r.status);
-  return `
-  <div class="q-review" data-review-id="${r.id}">
-    <div class="q-item-top">
-      <span class="q-item-title">${qEsc(r.prompt_title || r.branch || 'Work')}</span>
-      <span class="q-badge" style="background:${REVIEW_STATUS_COLORS[r.status]||'var(--c-ink-4)'};">${REVIEW_STATUS_LABELS[r.status]||r.status}</span>
-    </div>
-    <div class="q-review-plain">${qEsc(r.plain_summary || '')}</div>
-    <div class="q-review-checks">${rows}</div>
-    ${conflict}
-    ${concerns}
-    ${stats}
-    <div class="q-review-actions">
-      ${canMerge ? `<button class="ctrlbtn q-mergebtn" data-merge="${r.id}">Merge → publish online</button>` : ''}
-      ${canRevert ? `<button class="ctrlbtn q-revertbtn" data-revert="${r.id}">Undo this merge</button>` : ''}
-      ${canReject ? `<button class="ctrlbtn q-rejectbtn" data-reject="${r.id}">Discard</button>` : ''}
-    </div>
-  </div>`;
-}
-
-// Competition comparison card — shows both variants side by side
-function qCompetitionCard(p) {
-  const stages = p.stages || [];
-  const buildStages = stages.filter(s => s.stage === 'build');
-  const judgeStage = stages.find(s => s.stage === 'judge');
-  const variantA = buildStages.find(s => s.variant === 'A');
-  const variantB = buildStages.find(s => s.variant === 'B');
-  const verdict = judgeStage?.verdict_json || {};
-  const winner = verdict.winner || 'neither';
-  const why = verdict.why || '';
-  const tradeoffs = verdict.tradeoffs || {};
-  const verdictA = verdict.verdict_A || '';
-  const verdictB = verdict.verdict_B || '';
-  
-  const aStats = variantA ? `${variantA.files_changed?.length || 0} files · +${variantA.insertions || 0} / −${variantA.deletions || 0}` : '—';
-  const bStats = variantB ? `${variantB.files_changed?.length || 0} files · +${variantB.insertions || 0} / −${variantB.deletions || 0}` : '—';
-  const aCost = variantA?.cost_usd != null ? `~$${variantA.cost_usd.toFixed(2)}` : '—';
-  const bCost = variantB?.cost_usd != null ? `~$${variantB.cost_usd.toFixed(2)}` : '—';
-  const aChecks = variantA?.checks ? Object.values(variantA.checks).filter(c => c.ok).length + '/' + Object.keys(variantA.checks).length : '—';
-  const bChecks = variantB?.checks ? Object.values(variantB.checks).filter(c => c.ok).length + '/' + Object.keys(variantB.checks).length : '—';
-
-  return `
-  <div class="q-review" data-review-id="competition-${p.id}" style="border-left-color:var(--c-warn);">
-    <div class="q-item-top">
-      <span class="q-item-title">⚔️ Compétition — ${qEsc(p.title)}</span>
-      <span class="q-badge" style="background:#8a5a1e;">Judge recommends ${winner === 'A' ? 'Version A' : winner === 'B' ? 'Version B' : 'neither'}</span>
-    </div>
-    <div class="q-review-plain">${qEsc(why)}</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
-        <thead>
-          <tr style="background:var(--c-warn-tint);">
-            <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #d4c4a0;"></th>
-            <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #d4c4a0;">Version A (Dev 1)</th>
-            <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #d4c4a0;">Version B (Dev 2) ${winner === 'B' ? '⭐' : winner === 'A' ? '⭐' : ''}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td style="padding:6px 8px;font-weight:600;">Files / changes</td><td style="padding:6px 8px;">${qEsc(aStats)}</td><td style="padding:6px 8px;">${qEsc(bStats)}</td></tr>
-          <tr style="background:var(--c-bg);"><td style="padding:6px 8px;font-weight:600;">Checks passed</td><td style="padding:6px 8px;">${qEsc(aChecks)}</td><td style="padding:6px 8px;">${qEsc(bChecks)}</td></tr>
-          <tr><td style="padding:6px 8px;font-weight:600;">Judge verdict</td><td style="padding:6px 8px;color:${verdictA==='safe'?'#2f7d63':verdictA==='risky'?'#b8860b':'#b23a2f'}">${qEsc(verdictA)}</td><td style="padding:6px 8px;color:${verdictB==='safe'?'#2f7d63':verdictB==='risky'?'#b8860b':'#b23a2f'}">${qEsc(verdictB)}</td></tr>
-          <tr style="background:var(--c-bg);"><td style="padding:6px 8px;font-weight:600;">Cost</td><td style="padding:6px 8px;">${qEsc(aCost)}</td><td style="padding:6px 8px;">${qEsc(bCost)}</td></tr>
-          <tr><td style="padding:6px 8px;font-weight:600;vertical-align:top;">Trade-offs</td><td style="padding:6px 8px;">${(tradeoffs.A || []).map(t => '• ' + qEsc(t)).join('<br>')}</td><td style="padding:6px 8px;">${(tradeoffs.B || []).map(t => '• ' + qEsc(t)).join('<br>')}</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="q-review-actions">
-      ${['A','B'].includes(winner) ? `
-        <button class="ctrlbtn q-mergebtn" data-choose="${p.id}" data-variant="${winner}">Choose ${winner} and publish</button>
-        <button class="ctrlbtn" data-choose="${p.id}" data-variant="${winner === 'A' ? 'B' : 'A'}">Choose ${winner === 'A' ? 'B' : 'A'} instead</button>
-      ` : `
-        <button class="ctrlbtn q-mergebtn" data-choose="${p.id}" data-variant="A">Choose A and publish</button>
-        <button class="ctrlbtn q-mergebtn" data-choose="${p.id}" data-variant="B">Choose B and publish</button>
-      `}
-      <button class="ctrlbtn q-rejectbtn" data-abandon="${p.id}">Discard both</button>
-    </div>
-  </div>`;
-}
-
-async function qRenderReviews() {
-  const host = document.getElementById('flowReviews');
-  if (!host || coreView !== 'flow') return;
-  try {
-    const [reviewsData, strategiesData] = await Promise.all([
-      api('/api/travaux/reviews'),
-      api('/api/travaux/prompts?space=fmcns'),
-    ]);
-    const sig = JSON.stringify([reviewsData, strategiesData]);
-    if (sig === qReviewsLastSig) return;
-    qReviewsLastSig = sig;
-    qReviews = reviewsData.reviews || [];
-    const strategyPrompts = (strategiesData.prompts || []).filter(p => p.strategy === 'competition' && p.strategy_state === 'awaiting_choice');
-    
-    const visible = qReviews
-      .filter(r => ['pending', 'approved', 'changes_requested'].includes(r.status))
-      .sort((a, b) => (REVIEW_ORDER[a.status] || 9) - (REVIEW_ORDER[b.status] || 9));
-    
-    const competitionCards = strategyPrompts.map(qCompetitionCard).join('');
-    const normalCards = visible.map(qReviewCard).join('');
-    
-    if (!visible.length && !competitionCards) { host.style.display = 'none'; host.innerHTML = ''; return; }
-    host.style.display = '';
-    host.innerHTML = `<div style="font-size:13px;color:var(--c-ink-4);margin-bottom:6px;">Ready to merge (${visible.length})</div>` + normalCards + competitionCards;
-    
-    // Normal review actions
-    host.querySelectorAll('[data-merge]').forEach(b => {
-      b.onclick = async (e) => {
-        e.stopPropagation();
-        const id = b.getAttribute('data-merge');
-        const typed = prompt('Type MERGE (capital letters) to merge and publish online:');
-        if (typed !== 'MERGE') { alert('Merge cancelled.'); return; }
-        b.disabled = true; b.textContent = 'Merging…';
-        try {
-          const out = await apiWrite('/api/travaux/reviews/' + id + '/merge', 'POST', {});
-          alert('Merged ✓ The work is online.');
-        } catch (err) {
-          alert('Merge failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-        }
-        b.disabled = false; b.textContent = 'Merge → publish online';
-        qRenderReviews();
-      };
-    });
-    host.querySelectorAll('[data-revert]').forEach(b => {
-      b.onclick = async (e) => {
-        e.stopPropagation();
-        const id = b.getAttribute('data-revert');
-        if (!confirm('Undo this merge? The online site will go back to how it was before.')) return;
-        b.disabled = true; b.textContent = 'Reverting…';
-        try {
-          await apiWrite('/api/travaux/reviews/' + id + '/revert', 'POST', {});
-          alert('Reverted ✓');
-        } catch (err) {
-          alert('Revert failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-        }
-        b.disabled = false; b.textContent = 'Undo this merge';
-        qRenderReviews();
-      };
-    });
-    host.querySelectorAll('[data-reject]').forEach(b => {
-      b.onclick = async (e) => {
-        e.stopPropagation();
-        const id = b.getAttribute('data-reject');
-        if (!confirm('Discard this work? Its working folder will be removed.')) return;
-        try {
-          await apiWrite('/api/travaux/reviews/' + id + '/reject', 'POST', {});
-        } catch (err) {
-          alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-        }
-        qRenderReviews();
-      };
-    });
-    
-    // Competition actions
-    host.querySelectorAll('[data-choose]').forEach(b => {
-      b.onclick = async (e) => {
-        e.stopPropagation();
-        const promptId = b.getAttribute('data-choose');
-        const variant = b.getAttribute('data-variant');
-        if (!confirm(`Choose variant ${variant} and merge? This will publish variant ${variant} and discard the other.`)) return;
-        b.disabled = true; b.textContent = 'Merging…';
-        try {
-          const out = await apiWrite('/api/travaux/strategies/' + promptId + '/choose-winner', 'POST', { variant });
-          alert('Winner chosen and merged ✓ The work is online.');
-        } catch (err) {
-          alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-        }
-        b.disabled = false; b.textContent = `Choose ${variant} and publish`;
-        qRenderReviews();
-      };
-    });
-    host.querySelectorAll('[data-abandon]').forEach(b => {
-      b.onclick = async (e) => {
-        e.stopPropagation();
-        const promptId = b.getAttribute('data-abandon');
-        if (!confirm('Discard both variants? Their working folders will be removed.')) return;
-        try {
-          await apiWrite('/api/travaux/strategies/' + promptId + '/abandon', 'POST', {});
-        } catch (err) {
-          alert('Failed: ' + (err.message === 'unauthorized' ? 'session expired' : err.message));
-        }
-        qRenderReviews();
-      };
-    });
-  } catch { return; }
 }
 
 // ── The Flow — one aggregated list over the feeds the app already loads ────────
@@ -4057,6 +3854,9 @@ function renderFlow() {
   // stays current (polls update it) and renders again right after.
   if (qTypingGuard() || qDragQId) return;
   document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
+  // Show/hide suggestion filter bar based on active flow tab
+  const sgFilters = document.getElementById('flowSgFilters');
+  if (sgFilters) sgFilters.style.display = flowType === 'suggestions' ? 'flex' : 'none';
 
   // "Not built" lives in the Flow now — the siftable list of unbuilt tree
   // components, its own toolbar included.
@@ -4072,6 +3872,8 @@ function renderFlow() {
 
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
   const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
+  // Snapshot of finished-task ids, used by the bulk "Clear done" action below.
+  flowDoneIds = done.map(p => p.id);
 
   // In-flight world-looks (server-side auto-looks included) tick forward here,
   // so ✨ markers appear on rows the moment a look lands — no need to open the
@@ -4100,7 +3902,7 @@ function renderFlow() {
       const doneRows = flowType === 'done'
         ? done.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
         : done;
-      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}<button class="flow-clearbtn" data-cleardone title="Archive every finished task at once — they stay in the logbook, just cleared from view">Clear done (${done.length})</button></div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
     if (flowType === 'done' && !done.length) {
       html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
@@ -4285,6 +4087,25 @@ function renderFlow() {
   });
   const doneToggle = document.getElementById('flowDoneToggle');
   if (doneToggle) doneToggle.onclick = () => { flowDoneOpen = !flowDoneOpen; renderFlow(); };
+  // Bulk "Clear done": archive every finished task in one click. Soft-deletes
+  // (deleted_at) keep them in the DB logbook and never touch character-memory
+  // links — they just leave the active view.
+  const clearBtn = host.querySelector('[data-cleardone]');
+  if (clearBtn) clearBtn.onclick = async (e) => {
+    e.stopPropagation();
+    const ids = flowDoneIds.slice();
+    if (!ids.length) return;
+    if (!confirm(`Archive ${ids.length} finished task${ids.length === 1 ? '' : 's'}? They stay in the logbook and can be found later — this just clears them from view.`)) return;
+    clearBtn.disabled = true;
+    try {
+      await Promise.all(ids.map(id => apiWrite(`/api/travaux/prompts/${id}`, 'DELETE')));
+      flowDoneIds = [];
+      await qLoad();
+    } catch (err) {
+      clearBtn.disabled = false;
+      alert('Could not clear all tasks: ' + err.message);
+    }
+  };
   const genBtn = document.getElementById('flowGenBtn');
   if (genBtn) genBtn.onclick = () => flowGenerateNow();
   const seedToggle = document.getElementById('flowSeedToggle');
@@ -5268,7 +5089,7 @@ async function qReply(id, text, placement = 'front') {
 // the human still has to press start. Suggestions and Ideas used to share one internal
 // tab strip (tv-tabs); each is now its own center-zone list view (Suggestion Engine /
 // Seeds), so switching between them goes through switchCoreView() instead.
-let tvSuggestions = [], tvSuggestionFilter = { status: 'new', kind: 'all' };
+let tvSuggestions = [], tvSuggestionFilter = { status: 'all', kind: 'all' };
 let tvIdeas = [];
 let usagePollTimer = null;
 
