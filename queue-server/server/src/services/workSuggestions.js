@@ -13,7 +13,7 @@
 //     that decision for every other short-text feature.
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
-import { USER_FACING_STYLE_FR } from './ai/style.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 import { autoWorldLookSuggestions } from './codeDiscovery.js';
 import * as queue from './promptQueue.js';
 
@@ -129,36 +129,36 @@ export function buildContextDigest() {
     const total = db.prepare(`SELECT COUNT(*) n FROM entities`).get().n;
     const grounded = db.prepare(`SELECT COUNT(*) n FROM entities WHERE grounded=1`).get().n;
     const films = db.prepare(`SELECT COUNT(*) n FROM entities WHERE type='film'`).get().n;
-    lines.push(`Ontologie : ${total} entités (${grounded} groundées), ${films} films.`);
+    lines.push(`Ontology: ${total} entities (${grounded} grounded), ${films} films.`);
   } catch {}
   try {
     const clusters = db.prepare(`SELECT code, grounding_status FROM clusters`).all();
     const ungrounded = clusters.filter((c) => c.grounding_status !== 'grounded').map((c) => c.code);
-    if (ungrounded.length) lines.push(`Clusters pas encore groundés : ${ungrounded.join(', ')}.`);
+    if (ungrounded.length) lines.push(`Clusters not yet grounded: ${ungrounded.join(', ')}.`);
   } catch {}
   try {
     const recent = db.prepare(`
       SELECT title, status FROM work_prompts WHERE deleted_at IS NULL ORDER BY updated_at DESC LIMIT 8
     `).all();
-    if (recent.length) lines.push(`Derniers items de la file : ${recent.map((r) => `${r.title} [${r.status}]`).join(' · ')}.`);
+    if (recent.length) lines.push(`Latest queue items: ${recent.map((r) => `${r.title} [${r.status}]`).join(' · ')}.`);
   } catch {}
   try {
     const known = db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 20`).all();
-    if (known.length) lines.push(`Suggestions déjà connues (ne pas répéter) : ${known.map((r) => r.title).join(' · ')}.`);
+    if (known.length) lines.push(`Suggestions already known (don't repeat): ${known.map((r) => r.title).join(' · ')}.`);
   } catch {}
   return lines.join('\n');
 }
 
-const SUGGESTION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS (Fractal Mythic Consciousness Navigation System), une plateforme de recherche personnelle qui cartographie des motifs archétypaux à travers des personnages de films, des pays, et bientôt d'autres sources (Reddit). Voici un résumé de l'état actuel :
+const SUGGESTION_PROMPT = (digest) => `You are a product copilot for FMCNS (Fractal Mythic Consciousness Navigation System), a personal research platform that maps archetypal patterns across film characters, countries, and soon other sources (Reddit). Here's a summary of the current state:
 
 ${digest}
 
-Propose jusqu'à ${MAX_NEW_PER_RUN} pistes de travail concrètes (« chantiers ») qui feraient avancer l'app — features, corrections, nettoyage de données, etc. Chaque piste doit être un vrai prompt actionnable, pas juste une idée vague. Le titre et la rationale sont lus par le propriétaire de l'app, qui n'est pas programmeur : jamais d'identifiants internes, de noms de composants techniques ni de jargon anglais — dis ce que ça change pour lui, avec des mots simples.
+Propose up to ${MAX_NEW_PER_RUN} concrete work items ("chantiers") that would move the app forward — features, fixes, data cleanup, etc. Each item must be a real, actionable prompt, not just a vague idea. The title and rationale are read by the app's owner, who is not a programmer: never use internal ids, technical component names or jargon — say what it changes for him, in simple words.
 
-${USER_FACING_STYLE_FR}
+${USER_FACING_STYLE}
 
-Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
-[{"title": "titre court (< 80 caractères)", "rationale": "une phrase courte (max 15 mots) : pourquoi c'est utile maintenant", "prompt": "le prompt complet à donner à l'agent pour l'implémenter", "area": "zone concernée (ex: exploration, graph, queue, data)"}]`;
+Reply with ONLY a JSON array, no surrounding text:
+[{"title": "short title (< 80 characters)", "rationale": "one short sentence (max 15 words): why it's useful now", "prompt": "the full prompt to hand the agent to implement it", "area": "affected area (e.g. exploration, graph, queue, data)"}]`;
 
 export async function generateSuggestions() {
   const digest = buildContextDigest();
@@ -187,26 +187,26 @@ function buildIntegrationDigest() {
   const lines = [];
   const wired = ENV_VENDORS.filter((v) => !!process.env[v.envVar]).map((v) => v.name);
   const missing = ENV_VENDORS.filter((v) => !process.env[v.envVar]).map((v) => v.name);
-  lines.push(`Déjà branché : ${wired.join(', ') || 'aucun'}.`);
-  if (missing.length) lines.push(`Pas encore branché : ${missing.join(', ')}.`);
-  lines.push(`Pages actuelles de l'app : graphe/exploration des entités, navigateur d'architecture, file de tâches (queue), chat avec base de connaissances.`);
+  lines.push(`Already wired up: ${wired.join(', ') || 'none'}.`);
+  if (missing.length) lines.push(`Not yet wired up: ${missing.join(', ')}.`);
+  lines.push(`Current pages in the app: entity graph/exploration, architecture navigator, task queue, knowledge-base chat.`);
   try {
     const known = db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL AND kind='integration' ORDER BY created_at DESC LIMIT 20`).all();
-    if (known.length) lines.push(`Intégrations déjà suggérées (ne pas répéter) : ${known.map((r) => r.title).join(' · ')}.`);
+    if (known.length) lines.push(`Integrations already suggested (don't repeat): ${known.map((r) => r.title).join(' · ')}.`);
   } catch {}
   return lines.join('\n');
 }
 
-const INTEGRATION_PROMPT = (digest) => `Tu es un copilote produit pour FMCNS, une plateforme de recherche personnelle sur les motifs archétypaux (films, pays, futur : Reddit). Voici l'état des intégrations externes :
+const INTEGRATION_PROMPT = (digest) => `You are a product copilot for FMCNS, a personal research platform on archetypal patterns (films, countries, soon: Reddit). Here's the state of external integrations:
 
 ${digest}
 
-Propose jusqu'à ${MAX_NEW_INTEGRATIONS_PER_RUN} intégrations externes concrètes qui enrichiraient la recherche (nouvelles sources de données, APIs, outils) — pas des tâches internes. Le titre et la rationale sont lus par le propriétaire, qui n'est pas programmeur : jamais de jargon technique ni de termes internes — dis ce que ça lui apporte, avec des mots simples.
+Propose up to ${MAX_NEW_INTEGRATIONS_PER_RUN} concrete external integrations that would enrich the research (new data sources, APIs, tools) — not internal tasks. The title and rationale are read by the owner, who is not a programmer: never use technical jargon or internal terms — say what it brings him, in simple words.
 
-${USER_FACING_STYLE_FR}
+${USER_FACING_STYLE}
 
-Réponds UNIQUEMENT avec un tableau JSON, sans texte autour :
-[{"title": "titre court", "rationale": "une phrase courte (max 15 mots) : pourquoi", "prompt": "prompt complet pour l'implémenter", "area": "integration"}]`;
+Reply with ONLY a JSON array, no surrounding text:
+[{"title": "short title", "rationale": "one short sentence (max 15 words): why", "prompt": "full prompt to implement it", "area": "integration"}]`;
 
 export async function generateIntegrationSuggestions() {
   const digest = buildIntegrationDigest();

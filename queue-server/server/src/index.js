@@ -15,7 +15,7 @@ import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
-import { migrateOntology, seedKnowledge, seedArchitectureHistory } from './services/bootstrapData.js';
+import { migrateOntology, seedKnowledge, seedArchitectureHistory, cleanupFrenchSuggestions } from './services/bootstrapData.js';
 import { initTaskRunner, bindTaskDb, DATA_DIR } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
@@ -94,7 +94,8 @@ try {
   const ontologyResult = migrateOntology(db);
   const knowledgeResult = seedKnowledge(db);
   const architectureHistoryResult = seedArchitectureHistory(db);
-  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult, architectureHistoryResult }));
+  const suggestionsRelangResult = cleanupFrenchSuggestions(db);
+  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult, architectureHistoryResult, suggestionsRelangResult }));
 } catch (e) {
   console.error('Bootstrap data load failed:', e.message);
 }

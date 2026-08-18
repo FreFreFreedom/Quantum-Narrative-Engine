@@ -121,3 +121,20 @@ export function seedArchitectureHistory(db) {
   seedComponentCommits(db, COMPONENT_COMMIT_SEED);
   return { commits: COMPONENT_COMMIT_SEED.length };
 }
+
+// One-time cleanup: "Suggestions de Claude" (workSuggestions.js) used to be
+// generated in French — its prompts have since been rewritten in English, but
+// the old French-language rows are still cached in work_suggestions and would
+// block fresh English ones with the same fingerprint. Runs on every boot but
+// only has an effect once, guarded by ai_settings.suggestions_relang_done
+// (schema.js) — same idempotent-migration shape as the rest of this file.
+export function cleanupFrenchSuggestions(db) {
+  const row = db.prepare(`SELECT suggestions_relang_done FROM ai_settings WHERE id='global'`).get();
+  if (!row || row.suggestions_relang_done) return { skipped: true };
+  const result = db.prepare(`
+    UPDATE work_suggestions SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    WHERE deleted_at IS NULL AND status='new'
+  `).run();
+  db.prepare(`UPDATE ai_settings SET suggestions_relang_done=1 WHERE id='global'`).run();
+  return { cleared: result.changes };
+}

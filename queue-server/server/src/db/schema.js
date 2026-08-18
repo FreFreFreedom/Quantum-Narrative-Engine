@@ -436,6 +436,12 @@ function initSchema(db) {
   // free daily allowance is never drained by one small task. Editable in the
   // Queue panel; resets at UTC midnight.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN side_call_budget INTEGER NOT NULL DEFAULT 30`); } catch {}
+  // One-time migration flag: "Suggestions de Claude" used to generate in
+  // French (workSuggestions.js's prompts were literally written in French).
+  // Once fixed, the old French-language cached rows in work_suggestions need
+  // clearing so regeneration isn't blocked by their title fingerprints — see
+  // bootstrapData.js. This flips to 1 after that cleanup runs once, ever.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN suggestions_relang_done INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   // Daily helper-call ledger (free-only plan): one row per UTC day counting the
   // short text-model steps the queue spent (plan drafts, summaries, world-look,
