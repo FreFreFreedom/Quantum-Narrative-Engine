@@ -541,11 +541,16 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .tv-toolbar-top { display:flex; align-items:center; gap:14px; }
 .tv-toolbar .arch-title, .arch-toolbar .arch-title { font-size:13px; font-weight:600; }
 .tv-body { flex:1; overflow-y:auto; padding:16px; }
-.flow-controls { display:flex; align-items:center; gap:10px; }
+.flow-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .flow-typecips { display:flex; gap:2px; }
 .flow-typecips button { padding:4px 10px; font-size:10.5px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; border-radius:6px; }
 .flow-typecips button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
-.flow-search { border:1px solid var(--c-border-2); border-radius:6px; padding:5px 9px; font-size:11.5px; background:var(--c-surface); color:var(--c-ink); width:170px; }
+.flow-sg-filters { display:none; align-items:center; gap:8px; margin-left:auto; }
+.flow-sg-filters.visible { display:flex; }
+.flow-sg-filters .sg-filterbtns { display:flex; gap:4px; }
+.flow-sg-filters .sg-filterbtns button { padding:4px 8px; font-size:10px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; border-radius:6px; }
+.flow-sg-filters .sg-filterbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
+.flow-search { border:1px solid var(--c-border-2); border-radius:6px; padding:5px 9px; font-size:11.5px; background:var(--c-surface); color:var(--c-ink); width:170px; margin-left:auto; }
 .flow-composer { border-bottom:1px solid var(--c-border); padding:10px 14px; flex-shrink:0; }
 .flow-composer-form h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:6px 0 8px; }
 .q-place-seg { display:flex; border:1px solid var(--c-border-2); border-radius:6px; overflow:hidden; align-self:center; }
@@ -1163,7 +1168,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="tv-toolbar-top">
           <span class="arch-title">Flow</span>
         </div>
-        <span class="flow-controls">
+        <div class="flow-controls">
           <span class="flow-typecips" id="flowTypeBtns">
             <button class="active" data-ftype="all">All</button>
             <button data-ftype="queue">Queue<span class="core-tab-count" id="coreCountAsking"></span></button>
@@ -1181,7 +1186,7 @@ button:active { transform: translateY(1px) scale(.99); }
             </span>
           </span>
           <input id="flowSearch" class="flow-search" placeholder="Search the flow…" autocomplete="off">
-        </span>
+        </div>
       </div>
         <div class="flow-composer" id="flowComposer" data-src="CORE ARCHITECTURE → Flow → New-prompt composer (collapsed by default) | fmcns_navigator.html: qAddBtn/qSetAsideBtn handlers, qAddPrompt() | backend: POST /api/travaux/prompts, services/promptQueue.js">
           <button class="q-addbtn" id="flowComposerToggle">＋ New prompt</button>
@@ -3721,6 +3726,9 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
     : '';
   const state = qCardState(p);
+  const worldIdeaBtn = finished
+    ? `<button class="ctrlbtn q-worldidea-btn" data-qid="${p.id}" title="Add a bold idea from this completed task" style="font-size:11px;padding:1px 6px;">✨ Idea</button>`
+    : '';
   return `
   <div class="flow-row q-item${sel ? ' sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="q-item-top">
@@ -3733,6 +3741,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
       ${qInspireBadge(p)}
       ${qStopAfterBadge(p)}
+      ${worldIdeaBtn}
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) : ''}
@@ -3856,7 +3865,7 @@ function renderFlow() {
   document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
   // Show/hide suggestion filter bar based on active flow tab
   const sgFilters = document.getElementById('flowSgFilters');
-  if (sgFilters) sgFilters.style.display = flowType === 'suggestions' ? 'flex' : 'none';
+  if (sgFilters) sgFilters.classList.toggle('visible', flowType === 'suggestions');
 
   // "Not built" lives in the Flow now — the siftable list of unbuilt tree
   // components, its own toolbar included.
@@ -4108,6 +4117,13 @@ function renderFlow() {
   };
   const genBtn = document.getElementById('flowGenBtn');
   if (genBtn) genBtn.onclick = () => flowGenerateNow();
+  host.querySelectorAll('.q-worldidea-btn').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const taskId = b.getAttribute('data-qid');
+      qWorldIdeaModal(taskId, () => { renderFlow(); });
+    };
+  });
   const seedToggle = document.getElementById('flowSeedToggle');
   if (seedToggle) seedToggle.onclick = () => {
     const box = document.getElementById('flowSeedAdd');
@@ -4443,7 +4459,7 @@ function qRenderDetail(p) {
     <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : qPurposePreview(p)}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
-      <div class="arch-field-label">Inspired by — the world's ideas</div>
+      <div class="arch-field-label">Inspired by — the world's ideas <button class="ctrlbtn" id="qAddWorldIdeaBtn" style="font-size:11px;padding:2px 8px;margin-left:8px;" title="Add your own bold idea to this task's world-look">✨ Add world idea</button></div>
       <div id="qInspireHost">${qInspireHtml(p)}</div>
     </div>` : ''}
     <details class="q-fullprompt"><summary>Show full prompt</summary><div class="arch-field-body">${qEsc(p.prompt)}</div></details>
@@ -4603,6 +4619,8 @@ function qRenderDetail(p) {
       onDone: () => { qLoad(); },
     });
   };
+  const addWorldIdeaBtn = document.getElementById('qAddWorldIdeaBtn');
+  if (addWorldIdeaBtn) addWorldIdeaBtn.onclick = () => qWorldIdeaModal(p.id, () => qInspireReRender(p));
   const rerunBtn = document.getElementById('qRerunBtn');
   if (rerunBtn) rerunBtn.onclick = async () => {
     rerunBtn.disabled = true; rerunBtn.textContent = 'Marking ready…';
@@ -4819,6 +4837,69 @@ function qInspireFullHtml(p, data) {
     </div>
     ${legend}
     ${worldPartsHtml(report, { applied, sel, facts })}`;
+}
+
+// Modal: add a custom world idea to a task's world-look report
+function qWorldIdeaModal(taskId, onSaved) {
+  const task = qPrompts.find(p => p.id === taskId);
+  const prefillVision = task ? [task.title, task.prompt].filter(Boolean).join('\n\n') : '';
+
+  const html = `
+    <div class="q-modal-backdrop" id="qWorldIdeaBackdrop"></div>
+    <div class="q-modal" id="qWorldIdeaModal" role="dialog" style="max-width:520px;">
+      <h3>✨ Add World Idea</h3>
+      <p style="color:var(--c-ink-4);font-size:13px;margin-bottom:12px;">Add a bold idea to this task's world-look. It will appear in the "Bold" shelf and feed the On the Horizon recommender.</p>
+      <div class="arch-field"><div class="arch-field-label">Name *</div><input class="arch-field-body" id="wiName" placeholder="Short name for the idea" autocomplete="off"></div>
+      <div class="arch-field"><div class="arch-field-label">Vision</div><textarea class="arch-field-body" id="wiVision" rows="2" placeholder="1-2 punchy sentences: the big idea">${qEsc(prefillVision)}</textarea></div>
+      <div class="arch-field"><div class="arch-field-label">Why possible</div><textarea class="arch-field-body" id="wiWhy" rows="2" placeholder="Why this is achievable with today's or near-future technology"></textarea></div>
+      <div class="arch-field"><div class="arch-field-label">How FMCNS</div><textarea class="arch-field-body" id="wiHow" rows="2" placeholder="How FMCNS could be the first to build it"></textarea></div>
+      <div class="q-row" style="margin-top:10px;justify-content:flex-end;">
+        <button class="ctrlbtn" id="wiCancel">Cancel</button>
+        <button class="ctrlbtn primary" id="wiSave">Save idea</button>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  const modal = document.getElementById('qWorldIdeaModal');
+  const backdrop = document.getElementById('qWorldIdeaBackdrop');
+  const nameInput = document.getElementById('wiName');
+
+  const close = () => {
+    backdrop.remove();
+    modal.remove();
+  };
+
+  backdrop.onclick = close;
+  document.getElementById('wiCancel').onclick = close;
+
+  nameInput.focus();
+
+  document.getElementById('wiSave').onclick = async () => {
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+
+    const btn = document.getElementById('wiSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    try {
+      await apiWrite(`/api/discovery/world-look/prompt/${taskId}/custom-pick`, 'POST', {
+        name,
+        vision: document.getElementById('wiVision').value.trim(),
+        why_possible: document.getElementById('wiWhy').value.trim(),
+        how_fmcns: document.getElementById('wiHow').value.trim(),
+      });
+      close();
+      if (onSaved) onSaved();
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Save idea';
+      if (e.message === 'no_report') {
+        alert('This task has no world-look yet. Run one first (click "✨ Look at what exists"), then add your idea.');
+      } else {
+        alert('Could not save: ' + e.message);
+      }
+    }
+  };
 }
 
 // Re-render the panel from the cached report after a selection toggle (cheap —
