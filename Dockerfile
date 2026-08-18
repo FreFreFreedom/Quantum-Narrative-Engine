@@ -4,4 +4,4 @@ COPY queue-server/package*.json ./
 RUN npm install
 COPY queue-server/ ./
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["npx", "tsx", "server/src/index.ts"]
