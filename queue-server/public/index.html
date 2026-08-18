@@ -2107,9 +2107,12 @@ function renderLegend(){
 // back via applyFn so it can re-render nodes/labels at the new zoom.
 function NavCtrl(container, state, applyFn, opts = {}) {
   const minScale = opts.minScale ?? 0.2, maxScale = opts.maxScale ?? 8,
-    step = opts.step ?? 1.12, keyPan = opts.keyPan ?? 120, onZoom = opts.onZoom ?? null,
-    fitFn = opts.fit ?? null, fixedViewBox = opts.fixedViewBox ?? true;
+    step = opts.step ?? 1.03, keyPan = opts.keyPan ?? 80, onZoom = opts.onZoom ?? null,
+    fitFn = opts.fit ?? null, fixedViewBox = opts.fixedViewBox ?? true,
+    momentumEnabled = opts.momentum ?? true, dragThreshold = opts.dragThreshold ?? 8;
   let activeTouch = null, lastTouchDist = 0, lastTouchCentroid = null, drag = null;
+  // Momentum state
+  let momentumVX = 0, momentumVY = 0, momentumRAF = null;
   const clamp = (s) => Math.min(maxScale, Math.max(minScale, s));
   const zoomAt = (delta, cx, cy) => {
     const k = clamp(state.scale * delta);
@@ -2120,10 +2123,24 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     applyFn();
   };
   const panBy = (dx, dy) => { state.x += dx; state.y += dy; applyFn(); };
+  // Momentum animation loop
+  const animateMomentum = () => {
+    if (Math.abs(momentumVX) < 0.5 && Math.abs(momentumVY) < 0.5) {
+      momentumVX = momentumVY = 0;
+      momentumRAF = null;
+      return;
+    }
+    panBy(momentumVX, momentumVY);
+    momentumVX *= 0.92; // decay
+    momentumVY *= 0.92;
+    momentumRAF = requestAnimationFrame(animateMomentum);
+  };
+  const stopMomentum = () => {
+    if (momentumRAF) { cancelAnimationFrame(momentumRAF); momentumRAF = null; }
+    momentumVX = momentumVY = 0;
+  };
   const onWheel = (e) => {
     const isZoom = e.ctrlKey || e.metaKey;
-    // For fixed-viewBox containers (SVG graphs), always intercept wheel for custom pan/zoom.
-    // Native scroll doesn't exist in fixed viewBox. For scrollable containers, only intercept on zoom/drag.
     if (fixedViewBox) {
       e.preventDefault();
     } else if (!isZoom && !drag) {
@@ -2132,14 +2149,24 @@ function NavCtrl(container, state, applyFn, opts = {}) {
       e.preventDefault();
     }
     const rect = container.getBoundingClientRect();
-    // Account for container padding so zoom anchors at the true cursor position inside the content box
     const style = getComputedStyle(container);
     const padLeft = parseFloat(style.paddingLeft) || 0;
     const padTop = parseFloat(style.paddingTop) || 0;
     const cx = e.clientX - rect.left - padLeft;
     const cy = e.clientY - rect.top - padTop;
-    if (isZoom) { zoomAt(e.deltaY < 0 ? step : 1 / step, cx, cy); }
-    else { panBy(-e.deltaX, -e.deltaY); }
+    if (isZoom) {
+      stopMomentum();
+      zoomAt(e.deltaY < 0 ? step : 1 / step, cx, cy);
+    } else {
+      const dx = -e.deltaX, dy = -e.deltaY;
+      panBy(dx, dy);
+      // Build momentum from wheel velocity
+      if (momentumEnabled && !drag) {
+        momentumVX += dx * 1.5;
+        momentumVY += dy * 1.5;
+        if (!momentumRAF) momentumRAF = requestAnimationFrame(animateMomentum);
+      }
+    }
     if (onZoom) onZoom();
   };
   container.addEventListener('wheel', onWheel, { passive: false });
@@ -2149,19 +2176,25 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     const target = e.target;
     if (target.closest && target.closest('a, button, input, select, textarea, [data-no-pan]')) return;
     drag = { x: e.clientX, y: e.clientY, sx: state.x, sy: state.y, moved: false };
+    stopMomentum();
     try { container.setPointerCapture(e.pointerId); } catch (err) {}
   });
   container.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; container.classList.add('nav-panning'); }
+    if (!drag.moved && Math.hypot(dx, dy) > dragThreshold) { drag.moved = true; container.classList.add('nav-panning'); }
     if (drag.moved) panBy(dx, dy);
   });
-  const endDrag = () => { if (drag) { drag = null; container.classList.remove('nav-panning'); } };
+  const endDrag = () => {
+    if (drag) {
+      drag = null;
+      container.classList.remove('nav-panning');
+    }
+  };
   container.addEventListener('pointerup', endDrag);
   container.addEventListener('pointercancel', endDrag);
   container.addEventListener('pointerleave', endDrag);
-  // Native pinch + two-finger pan via touch events.
+  // Touch events
   container.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       activeTouch = { t: Date.now() };
@@ -2171,7 +2204,10 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   }, { passive: true });
   const touchCenterInStage = (cx, cy) => {
     const rect = container.getBoundingClientRect();
-    return { x: cx - rect.left, y: cy - rect.top };
+    const style = getComputedStyle(container);
+    const padLeft = parseFloat(style.paddingLeft) || 0;
+    const padTop = parseFloat(style.paddingTop) || 0;
+    return { x: cx - rect.left - padLeft, y: cy - rect.top - padTop };
   };
   container.addEventListener('touchmove', (e) => {
     if (!activeTouch || e.touches.length !== 2) return;
@@ -2180,9 +2216,8 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     const pt = touchCenterInStage(cx, cy);
     if (lastTouchDist > 0) { zoomAt(dist / lastTouchDist, pt.x, pt.y); }
     const ptc = touchCenterInStage(lastTouchCentroid.x, lastTouchCentroid.y);
-    const lx = cx - (ptc.x - state.x) * state.scale, ly = cy - (ptc.y - state.y) * state.scale;
-    // Two-finger scroll: only pan when zoom didn't change much.
-    if (Math.abs(dist - lastTouchDist) < 3) panBy((ptc.x - lastTouchCentroid.x) * state.scale, (ptc.y - lastTouchCentroid.y) * state.scale);
+    // Fixed pixel delta for touch pan (no scale multiplier)
+    if (Math.abs(dist - lastTouchDist) < 3) panBy(ptc.x - lastTouchCentroid.x, ptc.y - lastTouchCentroid.y);
     lastTouchDist = dist;
     e.preventDefault();
   }, { passive: false });
@@ -2190,7 +2225,7 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     if (e.touches.length < 2) activeTouch = null;
     lastTouchCentroid = null;
   }, { passive: true });
-  // Keyboard navigation when the container (or a child) is focused.
+  // Keyboard
   container.tabIndex = container.tabIndex >= 0 ? container.tabIndex : 0;
   container.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
