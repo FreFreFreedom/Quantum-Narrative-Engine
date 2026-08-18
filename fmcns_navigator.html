@@ -4871,6 +4871,20 @@ function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = 
   }).join('');
 }
 
+// What "applying" a pick does depends on where the task is: not started yet
+// (rewrite the plan), running (steer it live — the plan already shaped what's
+// executing), or done/cancelled (the plan is history, so the idea starts a
+// linked follow-up task instead of overwriting the record of what ran).
+function qInspireApplyMeta(p) {
+  if (p.status === 'running') {
+    return { label: '↪ Send now', busy: 'Sending…', title: 'Sends the selected idea to the live agent right now, as a steer — it does not rewrite the plan.' };
+  }
+  if (['done', 'cancelled'].includes(p.status)) {
+    return { label: '✨ Create follow-up task', busy: 'Creating…', title: 'Starts a new task for this idea, linked to this one — the finished plan stays exactly as it ran.' };
+  }
+  return { label: '✨ Apply to plan', busy: 'Applying…', title: "Rewrite this task's plan with the selected ideas as its compass." };
+}
+
 function qInspireFullHtml(p, data) {
   const report = data.report;
   if (!report || !report.parts || !report.parts.length) {
@@ -4884,9 +4898,10 @@ function qInspireFullHtml(p, data) {
     : ((data.review?.removed?.length || 0) > 0
       ? `<div class="q-inspire-legend">Greyed-out ideas were left out of the plan — apply any of them if you disagree.</div>`
       : '');
+  const applyMeta = qInspireApplyMeta(p);
   return `
     <div class="q-inspire-toolbar">
-      <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="Rewrite this task's plan with the selected ideas as its compass.">✨ Apply to plan</button>
+      <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="${qEsc(applyMeta.title)}">${applyMeta.label}</button>
       <button class="ctrlbtn" data-action="inspire-start" title="Fresh search — GitHub lookups are cached for a day, the bold ideas are brand new every time.">↻ New ideas</button>
     </div>
     ${legend}
@@ -5003,15 +5018,24 @@ function qWireInspireButtons(p) {
   });
   const applyBtn = host.querySelector('[data-action="inspire-apply"]');
   if (applyBtn) {
+    const meta = qInspireApplyMeta(p);
     applyBtn.onclick = async () => {
       const sel = qInspireSel[p.id] || [];
       if (!sel.length) return;
-      applyBtn.disabled = true; applyBtn.textContent = 'Applying…';
+      applyBtn.disabled = true; applyBtn.textContent = meta.busy;
       try {
-        await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/apply`, 'POST', { picks: sel });
+        const result = await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/apply`, 'POST', { picks: sel });
         qInspireCache[p.id] = null; qInspireSel[p.id] = [];
         await qLoad();
-      } catch (e) { applyBtn.disabled = false; applyBtn.textContent = '✨ Apply to plan'; alert('Error: ' + e.message); }
+        if (result.followup) {
+          // Jump straight to the new follow-up task so picking an idea on a
+          // finished task reads as "this idea now has its own task", not a
+          // silent no-op.
+          flowSideSel = null;
+          qSelected = qPrompts.find(x => x.id === result.id) || null;
+          renderFlow();
+        }
+      } catch (e) { applyBtn.disabled = false; applyBtn.textContent = meta.label; alert('Error: ' + e.message); }
     };
   }
 }

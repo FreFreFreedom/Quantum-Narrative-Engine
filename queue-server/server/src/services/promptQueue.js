@@ -543,15 +543,22 @@ export async function refreshInspiration(id, { force = true } = {}) {
 
 // The human picked shelves/blocks → store them and re-draft the plan once with
 // the chosen items emphasized ("you pick, plan re-drafts"). The raw submitted
-// text stays the drafting source so drafts never compound on themselves. Guarded
-// against running tasks — steering is the right tool once it is executing.
+// text stays the drafting source so drafts never compound on themselves.
+//
+// A picked idea can land on a task in three different states, and each needs
+// a different destination for the pick rather than a flat "not allowed":
+//   - queued/paused/blocked/awaiting: the plan hasn't run yet — rewrite it in
+//     place (original behavior).
+//   - running: the plan already shaped what's executing right now — steering
+//     is the right tool once it's executing, so the pick is forwarded as a
+//     live steer message instead of rewriting a plan the agent already has.
+//   - done/cancelled: the plan is the historical record of what ran and
+//     stays read-only, but the idea shouldn't just be dropped — it spawns a
+//     linked follow-up task instead (same "you pick, plan re-drafts" shape,
+//     just seeded fresh rather than mutating history).
 export async function applyInspiration(id, { picks = [] } = {}) {
   const row = getPrompt(id);
   if (!row) return null;
-  if (row.status === 'running') return { ...row, error: 'running' };
-  // A finished task's plan is the historical record of what ran — picks on a
-  // done/cancelled task are read-only (its world-look stays visible to read).
-  if (['done', 'cancelled'].includes(row.status)) return { ...row, error: 'finished' };
   const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
   if (!report) return { ...row, error: 'no_report' };
   const applied = [];
@@ -563,14 +570,45 @@ export async function applyInspiration(id, { picks = [] } = {}) {
     applied.push({ part_index: pi, pick_index: ii, kind: pick.kind, name: pick.repo || pick.name || pick.kind });
   }
   if (!applied.length) return { ...row, error: 'no_valid_picks' };
+  // The quick check still shapes the digest around the owner's picks: their
+  // choices always win, everything else keeps the filtered form.
+  const digest = inspirationDigestFor(report, applied, parseInspireReview(row) || report.review);
+  const ideaNames = applied.map((a) => a.name).filter(Boolean).join(', ');
+
+  if (row.status === 'running') {
+    if (!row.agent_task_id) return { ...row, error: 'no_agent_task' };
+    const task = findAgentTask(row.agent_task_id);
+    const steerText = `New idea from the world-look, please fold this in: ${digest}`;
+    if (!task || task.status !== 'in_progress' || !sendSteeringMessage(row.agent_task_id, steerText)) {
+      return { ...row, error: 'steer_failed' };
+    }
+    addMessage(id, { role: 'user', text: steerText });
+    broadcast();
+    return { ...getPrompt(id), steered: true };
+  }
+
+  if (['done', 'cancelled'].includes(row.status)) {
+    const followTitle = `Follow-up: ${row.title || 'task'} — ${ideaNames || 'world idea'}`.slice(0, 200);
+    const followPrompt = `Follow-up to the finished task "${row.title || ''}". Its own plan stays as it ran — this is a separate task to bring in an idea that came up in its world-look afterward.\n\nIdea to bring in: ${digest}`;
+    const created = await createPrompt({
+      title: followTitle,
+      prompt: followPrompt,
+      mode: row.mode,
+      provider: row.provider,
+      provider_model: row.provider_model,
+      parent_prompt_id: row.id,
+      status: 'paused',
+      space: row.space,
+      inspiration: { report_id: report.id, picks: applied.map((a) => ({ part_index: a.part_index, pick_index: a.pick_index })) },
+    });
+    broadcast();
+    return { ...created, followup: true };
+  }
+
   db.prepare(`
     UPDATE work_prompts SET inspire_picks_json=?, inspire_state='applied',
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(JSON.stringify(applied), id);
-
-  // The quick check still shapes the draft around the owner's picks: their
-  // choices always win, everything else keeps the filtered form.
-  const digest = inspirationDigestFor(report, applied, parseInspireReview(row) || report.review);
   const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt || row.prompt, mode: row.mode, inspiration: digest });
   if (draft) {
     db.prepare(`
