@@ -3064,7 +3064,7 @@ function initCore() {
         const btn = e.target.closest('button[data-sg-status]');
         if (btn) {
           tvSuggestionFilter.status = btn.getAttribute('data-sg-status');
-          document.querySelectorAll('#flowSgFilters button').forEach(x => x.classList.toggle('active', x === b));
+          document.querySelectorAll('#flowSgFilters button').forEach(x => x.classList.toggle('active', x === btn));
           loadSuggestions();
         }
       };
