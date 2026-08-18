@@ -3042,16 +3042,33 @@ function initCore() {
     document.getElementById('qAddBtn').onclick = () => qAddPrompt(false);
     document.getElementById('qSetAsideBtn').onclick = () => qAddPrompt(true);
     document.getElementById('queuePauseBtn').onclick = qTogglePause;
-    document.querySelectorAll('#flowTypeBtns button').forEach(b => {
-      b.onclick = () => { flowType = b.getAttribute('data-ftype'); renderFlow(); };
-    });
-    document.querySelectorAll('#flowSgFilters button').forEach(b => {
-      b.onclick = () => {
-        tvSuggestionFilter.status = b.getAttribute('data-sg-status');
-        document.querySelectorAll('#flowSgFilters button').forEach(x => x.classList.toggle('active', x === b));
-        loadSuggestions();
+    // Event delegation for flow type tabs - handles dynamically rendered buttons
+    const flowTypeBtns = document.getElementById('flowTypeBtns');
+    if (flowTypeBtns) {
+      flowTypeBtns.onclick = async (e) => {
+        const btn = e.target.closest('button[data-ftype]');
+        if (btn) {
+          try {
+            flowType = btn.getAttribute('data-ftype');
+            await renderFlow();
+          } catch (err) {
+            console.error('Flow tab switch error:', err);
+          }
+        }
       };
-    });
+    }
+    // Event delegation for suggestion filter buttons
+    const flowSgFilters = document.getElementById('flowSgFilters');
+    if (flowSgFilters) {
+      flowSgFilters.onclick = (e) => {
+        const btn = e.target.closest('button[data-sg-status]');
+        if (btn) {
+          tvSuggestionFilter.status = btn.getAttribute('data-sg-status');
+          document.querySelectorAll('#flowSgFilters button').forEach(x => x.classList.toggle('active', x === b));
+          loadSuggestions();
+        }
+      };
+    }
     const searchEl = document.getElementById('flowSearch');
     if (searchEl) searchEl.oninput = () => { flowSearch = searchEl.value.trim(); renderFlow(); };
     document.getElementById('flowComposerToggle').onclick = () => {
@@ -3862,7 +3879,13 @@ function renderFlow() {
   // expanded task card — reply box, seed fields) or mid-drag — the data below
   // stays current (polls update it) and renders again right after.
   if (qTypingGuard() || qDragQId) return;
-  document.querySelectorAll('#flowTypeBtns button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
+  // Defensive: verify tab buttons exist before toggling active class
+  const flowTypeBtns = document.getElementById('flowTypeBtns');
+  if (flowTypeBtns) {
+    flowTypeBtns.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.getAttribute('data-ftype') === flowType));
+  } else {
+    console.warn('Flow tab buttons not found in DOM');
+  }
   // Show/hide suggestion filter bar based on active flow tab
   const sgFilters = document.getElementById('flowSgFilters');
   if (sgFilters) sgFilters.classList.toggle('visible', flowType === 'suggestions');
