@@ -18,8 +18,10 @@
     "paths": {
       "@/*": ["server/src/*"]
     },
-    "types": ["node", "vitest/globals"],
-    "ignoreDeprecations": "6.0"
+    "types": ["node"],
+    "ignoreDeprecations": "6.0",
+    "allowJs": true,
+    "checkJs": false
   },
   "include": ["server/src/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "dist", "data"]
