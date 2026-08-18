@@ -1,6 +1,7 @@
 {
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "workingDirectory": "queue-server"
   },
   "deploy": {
     "startCommand": "npm start",
