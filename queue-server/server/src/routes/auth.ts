@@ -179,6 +179,31 @@ router.post('/logout', (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+// Admin password login (for admin access with ADMIN_PASSWORD)
+router.post('/admin', async (req: Request, res: Response) => {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ error: 'Password required' });
+  }
+  
+  const { verifyAdminPassword, issueToken } = await import('../services/auth.js');
+  const valid = await verifyAdminPassword(password);
+  if (!valid) {
+    return res.status(401).json({ error: 'Invalid admin password' });
+  }
+  
+  // Create a temporary admin user for token issuance
+  const adminUser: User = {
+    id: 'admin',
+    name: 'Admin',
+    provider: 'password',
+    created_at: new Date(),
+  };
+  
+  const token = issueToken(adminUser);
+  res.json({ token, user: { id: adminUser.id, name: adminUser.name } });
+});
+
 // Password login (for backwards compatibility)
 router.post('/password', async (req: Request, res: Response) => {
   const { email, password } = req.body;
