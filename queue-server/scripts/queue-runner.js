@@ -303,7 +303,14 @@ function runOnce({ task, model, cwd }) {
         // so a runner that dies mid-attempt leaves behind something the next
         // claim can resume, instead of the task restarting from scratch.
         const r = await api(`/worker/${task.id}/stream`, { chunks, model, cost_usd: cost, session_id: sessionId });
-        if (r.status === 409) finish('cancelled');
+        if (r.status === 409) {
+          let body = {}; try { body = await r.json(); } catch {}
+          if (body.error === 'cost_cap_exceeded') {
+            finish('gave-up', { why: `crossed its $${Number(body.cap).toFixed(2)} cost cap` });
+          } else {
+            finish('cancelled');
+          }
+        }
       } catch { /* transient network — keep working, retry next tick */ }
     }, STREAM_FLUSH_MS);
 

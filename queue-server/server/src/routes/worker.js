@@ -49,15 +49,15 @@ export function workerRoutes() {
   router.post('/worker/:id/stream', (req, res) => {
     noteRunnerPoll();
     const { chunks, model, cost_usd, session_id } = req.body || {};
-    const ok = recordRunnerStream(req.params.id, {
+    const result = recordRunnerStream(req.params.id, {
       chunks: Array.isArray(chunks) ? chunks : [],
       model: model || null,
       cost_usd: Number(cost_usd),
       session_id: session_id || null,
     });
-    // 409 tells the runner to stop and drop this task: it was cancelled or
-    // reclaimed server-side while it was working.
-    if (!ok) return res.status(409).json({ error: 'not_running' });
+    // 409 tells the runner to stop: either the task was cancelled/reclaimed
+    // server-side, or it crossed the per-task cost cap and must not continue.
+    if (!result.ok) return res.status(409).json({ error: result.reason, cap: result.cap });
     res.json({ ok: true });
   });
 

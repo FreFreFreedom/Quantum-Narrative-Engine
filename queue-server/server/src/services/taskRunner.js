@@ -194,7 +194,7 @@ function goLaneAllowed() {
 // mid-run for the CLI providers (their usage lines are parsed incrementally) and
 // at every run boundary besides. This is the guarantee that one task can never
 // drain the credit bank. Default $0.10; editable in the Queue panel.
-function costCapUsd() {
+export function costCapUsd() {
   try {
     if (!db) return 0.1;
     const row = db.prepare(`SELECT queue_cost_cap_usd FROM ai_settings WHERE id='global'`).get();
@@ -1365,9 +1365,16 @@ export function claimNextTask({ runnerId = 'local' } = {}) {
 // Live progress from the runner: transcript chunks plus proof of life. Chunks go
 // through the same appendStreamChunk the in-container path uses, so the existing
 // UI stream view works unchanged.
+// Returns { ok: true } on a normal update, or { ok: false, reason } when the
+// runner should stop: 'not_running' (cancelled/reclaimed server-side, same as
+// before) or 'cost_cap_exceeded' (this task's cumulative cost — reported by the
+// runner on every flush — has crossed the global per-task cap). Enforcing the
+// cap here, not just in the in-container path, is what actually backs the "a
+// task can never drain your credits" promise for local-mode execution, where
+// all real runs happen (see EXECUTION_MODE above).
 export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd = null, session_id = null } = {}) {
   const task = readTasks().find((t) => t.id === taskId);
-  if (!task || task.status !== 'in_progress') return false;
+  if (!task || task.status !== 'in_progress') return { ok: false, reason: 'not_running' };
   for (const chunk of chunks) if (chunk && chunk.kind) appendStreamChunk(taskId, chunk);
   if (Number.isFinite(cost_usd) && cost_usd > 0) runCostSoFar.set(taskId, cost_usd);
   const patch = { heartbeat_at: new Date().toISOString(), run_state: 'working' };
@@ -1379,7 +1386,9 @@ export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd
   if (session_id && session_id !== task.resume_session_id) patch.resume_session_id = session_id;
   const updated = updateTask(taskId, patch);
   if (updated) broadcastTask(updated);
-  return true;
+  const cap = costCapUsd();
+  if (Number.isFinite(cost_usd) && cost_usd > cap) return { ok: false, reason: 'cost_cap_exceeded', cap };
+  return { ok: true };
 }
 
 // The runner finished (or gave up). Same post-processing the in-container

@@ -1323,7 +1323,10 @@ const byId = {};
 async function api(path) {
   const resp = await fetch(API_BASE + path, { headers: { Authorization: 'Bearer ' + TOKEN } });
   if (resp.status === 401) throw new Error('unauthorized');
-  return resp.json();
+  let data = {};
+  try { data = await resp.json(); } catch {}
+  if (!resp.ok) throw new Error(data && data.error ? data.error : `HTTP ${resp.status}`);
+  return data;
 }
 // api() only ever did GET; the queue page needs POST/PATCH/DELETE with a body, so
 // rather than bolt that onto api() and risk changing its (widely-called) GET
