@@ -3566,7 +3566,14 @@ async function qLoad() {
   if (connEl) connEl.style.display = 'none';
   qRefreshRunnerState();
   const nextPrompts = data.prompts || [];
-  const sig = JSON.stringify({ paused: data.queue_paused, prompts: nextPrompts });
+  // output_bytes/timeout_minutes grow on every single poll while a task is running
+  // (raw log byte count) but nothing in the UI renders them — including them in the
+  // change signature forced a full renderFlow() rebuild (and its CSS enter-animation
+  // on every row) on every poll tick for as long as anything was running, which is
+  // what read as constant flashing/refreshing in the Flow sub-tabs. Excluded here so
+  // the signature only trips on data the UI actually shows.
+  const sigPrompts = nextPrompts.map(({ output_bytes, timeout_minutes, ...rest }) => rest);
+  const sig = JSON.stringify({ paused: data.queue_paused, prompts: sigPrompts });
   const changed = sig !== qLastSig;
   qLastSig = sig;
   qPrompts = nextPrompts;
