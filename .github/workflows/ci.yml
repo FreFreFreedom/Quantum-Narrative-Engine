@@ -44,6 +44,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: queue-server/package-lock.json
       - run: cd queue-server && npm ci
+      - run: sleep 10
       - run: cd queue-server && npm run db:schema
         env:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/fmcns_test
