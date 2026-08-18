@@ -1087,9 +1087,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <span class="arch-title">Architecture</span>
         <div class="arch-viewbtns">
           <span class="arch-layoutseg" role="group" aria-label="Layout">
-            <button class="active" data-arch-layout="map" title="Territories side by side">Map</button>
-            <button data-arch-layout="tree" title="Dependency tiers — each row depends on the row above">Tree</button>
-            <button data-arch-layout="list" title="Compact checklist grouped by territory — best for tracking progress">Checklist</button>
+            <button class="active" data-arch-layout="list" title="Compact checklist grouped by territory — best for tracking progress">Checklist</button>
             <button data-arch-layout="techtree" title="Dependency columns by build order — shows what unlocks what">Tech Tree</button>
           </span>
           <span class="arch-statusseg arch-segdivider" role="group" aria-label="Status filter">
@@ -6041,7 +6039,7 @@ function archDepth(c, visited) {
 // world-look early, or open a discussion — all without leaving the list.
 let nbInited = false, nbSearch = '', nbOrder = null, nbConvos = {};
 let nbWorldOpen = null; // component id whose world-look panel is open under its row
-let nbFilterTerr = '', nbFilterReady = '', nbShortlist = null, nbShortlistBusy = false;
+let nbFilterTerr = '', nbFilterReady = '', nbShortlist = null;
 // Bold/imagined world-look ideas not yet planted into the tree — a lighter row
 // than a real architecture_node, shown below the main list. null = not loaded yet.
 let nbUnplanted = null, nbUnplantedBusy = false;
@@ -6182,7 +6180,6 @@ function renderNotbuiltFlow() {
     <div class="nb-toolbar" style="border-bottom:none;padding:4px 2px 10px;">
       <span class="arch-title">On the Horizon</span>
       <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEsc(nbSearch)}">
-      <button class="ctrlbtn" id="nbShortlistBtn" title="One AI call — picks the 3 best next moves with a one-line reason each">✨ Show my next 3</button>
       <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project">✨ AI recommends order</button>
       <div class="nb-chips">${terrChips}</div>
       <div class="nb-chips">${readyChips}</div>
@@ -6192,8 +6189,6 @@ function renderNotbuiltFlow() {
   if (search) search.oninput = () => { nbSearch = search.value; renderNotbuilt(); };
   const aiBtn = document.getElementById('nbAiOrderBtn');
   if (aiBtn) aiBtn.onclick = nbAiOrder;
-  const shortBtn = document.getElementById('nbShortlistBtn');
-  if (shortBtn) shortBtn.onclick = nbShowShortlist;
   host.querySelectorAll('[data-nbterr]').forEach(b => {
     b.onclick = () => { nbFilterTerr = b.getAttribute('data-nbterr'); renderNotbuiltFlow(); };
   });
@@ -6366,22 +6361,6 @@ function renderNotbuilt() {
   host.querySelectorAll('[data-nbshort-clear]').forEach(b => {
     b.onclick = () => { nbShortlist = null; renderNotbuilt(); };
   });
-}
-
-async function nbShowShortlist() {
-  if (nbShortlistBusy) return;
-  nbShortlistBusy = true;
-  const btn = document.getElementById('nbShortlistBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Thinking…'; }
-  try {
-    const items = nbUnbuiltItems().map(({ c, state }) => ({
-      id: c.id, name: c.name, territory: c.territory, status: c.status, what: c.what, next: c.next, buildable: state === 'buildable',
-    }));
-    const out = await apiWrite('/api/architecture/notbuilt-shortlist', 'POST', { items });
-    nbShortlist = out.picks || null;
-  } catch (e) { alert('Could not get a shortlist: ' + e.message); }
-  nbShortlistBusy = false;
-  renderNotbuiltFlow();
 }
 
 async function nbAiOrder() {
@@ -6903,7 +6882,7 @@ function archPool() {
 
 let archPrevStates = {}; // last-seen archNodeState() per id, so a built transition can flash
 
-// Status chips: does this component fall outside the current filter?
+// Status filter: returns true if component should be HIDDEN (filtered out)
 function archFilteredOff(c) {
   if (archStatusFilter === 'issue') return archNodeState(c) !== 'locked';
   if (archStatusFilter === 'speculative') return c.provenance !== 'speculative';
@@ -7088,7 +7067,7 @@ function archComputeDepths(pool) {
 function archDrawTree() {
   const host = document.getElementById('archTreeHost');
   if (!host) return;
-  const pool = archPool();
+  const pool = archPool().filter(c => !archFilteredOff(c));
   const poolIds = new Set(pool.map(c => c.id));
   const depths = archComputeDepths(pool);
   const TERR_ORDER = {}; TERRITORIES.forEach((t, i) => { TERR_ORDER[t.id] = i; });
@@ -7104,11 +7083,11 @@ function archDrawTree() {
   // Columns are sized to the room actually available so the whole tree fits
   // on screen without horizontal scrolling wherever it can. Scrolling sideways
   // to reach a column is exactly the kind of "I can't get at that one" friction
-  // worth avoiding; the 150px floor keeps names readable when there are many
+  // worth avoiding; the 200px floor keeps names readable when there are many
   // dependency steps, and only then does a scrollbar appear.
   const avail = (host.clientWidth || 900) - 44;
   const leftPad = 92;
-  const colWidth = Math.max(150, Math.min(240, Math.floor((avail - leftPad * 2) / Math.max(maxDepth, 1))));
+  const colWidth = Math.max(200, Math.min(300, Math.floor((avail - leftPad * 2) / Math.max(maxDepth, 1))));
   const labelW = colWidth - 14;
   const svgW = Math.max(avail, leftPad * 2 + maxDepth * colWidth);
   const svgH = topPad * 2 + maxRows * rowHeight;
@@ -7170,14 +7149,13 @@ function archListRowHtml(c) {
   const spec = c.provenance === 'speculative';
   const unmet = state === 'locked' ? archUnmet(c) : [];
   const icon = state === 'built' ? '✓' : state === 'buildable' ? '●' : spec ? '✦' : '○';
-  const off = archFilteredOff(c);
-  const cls = ['arch-list-row', `tt-${state}`, spec && 'tt-spec', off && 'st-off', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
+  const cls = ['arch-list-row', `tt-${state}`, spec && 'tt-spec', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
   // "Waiting on" is a tooltip, not its own line — it's the one detail that can
   // get long, and this view is built to stay one line per component.
   const waitText = unmet.length ? `Waiting on ${unmet.map(p => qEsc(p.name)).join(', ')}` : '';
   return `<div class="${cls}" data-listrow="${c.id}" title="${qEsc(c.name)}${waitText ? ' — ' + waitText : ''}">
       <span class="arch-list-icon">${icon}</span>
-      <span class="arch-list-name">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
+      <span class="arch-list-name" style="white-space:normal;overflow:visible;text-overflow:clip;">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
       <span class="arch-list-status">${qEsc(c.status || 'Concept')}</span>
     </div>`;
 }
@@ -7185,7 +7163,7 @@ function archListRowHtml(c) {
 function archDrawChecklist() {
   const host = document.getElementById('archListHost');
   if (!host) return;
-  const pool = archPool();
+  const pool = archPool().filter(c => !archFilteredOff(c));
   const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
   let html = '';
   territories.forEach(t => {
@@ -7234,11 +7212,9 @@ function renderArchStage() {
       <button id="archFocusBack">← All territories</button>
       <span class="arch-focusname" style="color:${archFocus ? (TERRITORY_COLORS[archFocus] || 'var(--c-ink)') : 'var(--c-ink)'}">${archFocus ? qEsc(archFocusName(archFocus)) : ''}</span>
       ${archFocus ? `<span class="arch-focusmeta">${qEsc((() => { const s = archTerritoryStats(archFocus); return `${s.total} components · ${s.built} built · ${s.locked} need work${s.spec ? ' · ' + s.spec + ' speculative' : ''}`; })())}</span>` : ''}
-      ${!archFocus && archLayout === 'map' ? `<button id="archCollapseAll">${archCollapsed.size ? 'Expand all' : 'Collapse all'}</button>` : ''}
     </div>
     ${archLayout === 'techtree' ? `<div class="arch-scrollwrap" id="archTreeHost"></div>`
-      : archLayout === 'list' ? `<div class="arch-scrollwrap" id="archListHost"></div>`
-      : `<div class="arch-canvas" id="archCanvas"><svg class="arch-svg-overlay" id="archOverlay"></svg>${archLayout === 'tree' ? buildTreeHtml() : buildMapHtml()}</div>`}
+      : `<div class="arch-scrollwrap" id="archListHost"></div>`}
     <div class="arch-ask" id="archAsk">
       <div class="arch-ask-inputrow">
         <input id="archAskInput" placeholder="Ask about this architecture…" autocomplete="off">
@@ -7246,10 +7222,10 @@ function renderArchStage() {
       </div>
       <div class="arch-ask-answer" id="archAskAnswer" hidden></div>
     </div>
-    ${archLayout !== 'list' ? `<div class="arch-zoombtns">
-      ${archLayout === 'map' || archLayout === 'tree' ? `<button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
+    ${archLayout === 'techtree' ? `<div class="arch-zoombtns">
+      <button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
       <button data-arch-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
-      <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>` : ''}
+      <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>
       <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
     </div>` : ''}`;
   wireArchStageControls();
@@ -7296,9 +7272,7 @@ function renderArchStage() {
     };
   });
   if (archLayout === 'techtree') { archDrawTree(); return; }
-  if (archLayout === 'list') { archDrawChecklist(); return; }
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { drawArchDeps(); });
-  else { drawArchDeps(); }
+  archDrawChecklist(); // default to list
   attachNav(); // re-attach NavCtrl after DOM is fully rendered
 }
 
