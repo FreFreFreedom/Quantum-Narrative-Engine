@@ -636,6 +636,40 @@ export function storeReportReview(db, reportId, review) {
   db.prepare(`UPDATE discovery_reports SET review_json=? WHERE id=?`).run(JSON.stringify(structural), reportId);
 }
 
+// Add a custom bold pick to an existing world-look report for a task.
+export function addCustomBoldPick(db, { source, source_id, pick } = {}) {
+  const report = findReportBySource(db, source, source_id);
+  if (!report) return { error: 'no_report', message: 'No world-look report exists for this task yet. Run a world-look first.' };
+
+  const customPartName = 'Custom ideas';
+  let customPart = report.parts.find(p => p.name === customPartName);
+
+  const newPick = {
+    kind: 'bold',
+    name: pick.name,
+    vision: pick.vision || '',
+    why_possible: pick.why_possible || '',
+    how_fmcns: pick.how_fmcns || '',
+  };
+
+  if (!customPart) {
+    customPart = {
+      name: customPartName,
+      description: 'Manually added bold ideas',
+      queries: [],
+      picks: [newPick],
+      recommended_index: 0,
+    };
+    report.parts.push(customPart);
+  } else {
+    customPart.picks.push(newPick);
+  }
+
+  db.prepare(`UPDATE discovery_reports SET parts_json=? WHERE id=?`).run(JSON.stringify(report.parts), report.id);
+
+  return getReport(db, report.id);
+}
+
 // Latest world-look report attached to any item (suggestion, seed, component —
 // anything that stores its look under a source + item id pair).
 export function findReportBySource(db, source, source_id) {

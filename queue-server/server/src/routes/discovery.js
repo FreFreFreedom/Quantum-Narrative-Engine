@@ -4,6 +4,7 @@ import { Router } from 'express';
 import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
+  addCustomBoldPick,
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -94,6 +95,30 @@ export function discoveryRoutes(db) {
       report: findReportBySource(db, key.source, key.source_id),
       running: isWorldLookRunning(key.source, key.source_id),
     });
+  });
+
+  // Add a custom bold idea to a task's world-look report
+  router.post('/world-look/prompt/:taskId/custom-pick', (req, res) => {
+    const { taskId } = req.params;
+    const pick = req.body || {};
+
+    if (!pick.name || !String(pick.name).trim()) {
+      return res.status(400).json({ error: 'name_required' });
+    }
+
+    const out = addCustomBoldPick(db, {
+      source: 'prompt',
+      source_id: taskId,
+      pick: {
+        name: String(pick.name).trim(),
+        vision: pick.vision ? String(pick.vision).trim() : '',
+        why_possible: pick.why_possible ? String(pick.why_possible).trim() : '',
+        how_fmcns: pick.how_fmcns ? String(pick.how_fmcns).trim() : '',
+      },
+    });
+
+    if (out?.error) return res.status(404).json(out);
+    res.json({ report: out });
   });
 
   return router;
