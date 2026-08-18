@@ -1,0 +1,11 @@
+[phases.setup]
+cmds = ['echo "Setting up Node.js"']
+
+[phases.install]
+cmds = ['npm ci']
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = 'npm start'
