@@ -428,40 +428,75 @@ export function inspirationDigestFor(report, appliedPicks = [], review = null) {
     if (best) groupBest.add(`${best.part_index}:${best.pick_index}`);
   }
   const parts = (report.parts || []).slice(0, 3);
-  const byShelf = { open: [], hidden: [], bold: [] };
-  parts.forEach((part, pi) => {
-    (part.picks || []).forEach((pick, i) => {
-      if (!byShelf[pick.kind]) return;
-      const key = `${pi}:${i}`;
-      // Survives when: the owner applied it, or the review did not remove it and
-      // (it is not part of an alternative group, or it is the group's best).
-      const kept = chosen.has(key) || (!removed.has(key) && (!groupMembers.has(key) || groupBest.has(key)));
-      if (!kept) return;
-      byShelf[pick.kind].push({ ...pick, mark: chosen.has(key) });
-    });
-  });
   const fmt = {
     open: p => `- ${p.repo || '?'} (${p.stars || 0}★): ${p.why_fits || ''} Use: ${p.use || ''}`,
     hidden: p => `- ${p.name || '?'}: ${p.what || ''} Lesson: ${p.lesson || ''} For FMCNS: ${p.use || ''}`,
     bold: p => `- ${p.name || '?'}: ${p.vision || ''} Possible because: ${p.why_possible || ''} For FMCNS: ${p.how_fmcns || ''}`,
   };
+  // Two separate jobs, and only one of them gets capped.
+  //   chosen  — what the owner actually ticked. Never pooled, never capped, never
+  //             trimmed: the caps used to be applied across the whole report, so a
+  //             third ticked open-source project (one per part of a 3-part task,
+  //             which is the normal case) was silently dropped before the agent
+  //             ever saw it. "The owner's picks always win" has to be literal.
+  //   context — the survivors nobody ticked, riding along as background. This is
+  //             what the caps were for (cost control), so they stay exactly as
+  //             they were: 2 open / 2 hidden / 3 bold across the report.
+  // A chosen pick is never dropped, but one line is still bounded — a corrupt or
+  // freakishly long field should not be able to blow up the prompt on its own.
+  // The cut is far beyond anything the model writes (a sentence or two per field)
+  // and keeps the head of the line, so the repo/product name always survives.
+  const CHOSEN_LINE_MAX = 1200;
+  const boundLine = (l) => (l.length > CHOSEN_LINE_MAX ? l.slice(0, CHOSEN_LINE_MAX).replace(/\s\S*$/, '') + '…' : l);
+  const chosenByPart = new Map();
+  const byShelf = { open: [], hidden: [], bold: [] };
+  parts.forEach((part, pi) => {
+    (part.picks || []).forEach((pick, i) => {
+      if (!fmt[pick.kind]) return;
+      const key = `${pi}:${i}`;
+      if (chosen.has(key)) {
+        if (!chosenByPart.has(pi)) chosenByPart.set(pi, { name: part.name || '', lines: [] });
+        chosenByPart.get(pi).lines.push(boundLine(fmt[pick.kind](pick)));
+        return;
+      }
+      // Survives as context when the review did not remove it and it is either
+      // ungrouped or its group's recommended pick.
+      if (removed.has(key) || (groupMembers.has(key) && !groupBest.has(key))) return;
+      byShelf[pick.kind].push(pick);
+    });
+  });
   const caps = { open: 2, hidden: 2, bold: 3 };
-  const mark = p => (p.mark ? ' (CHOSEN)' : '');
-  const lines = [];
+  const chosenLines = [];
+  if (chosenByPart.size) {
+    chosenLines.push('CHOSEN BY THE OWNER — build with these:');
+    for (const [pi, entry] of [...chosenByPart.entries()].sort((a, b) => a[0] - b[0])) {
+      // Which part an idea belongs to only matters when there is more than one —
+      // otherwise the heading is noise.
+      if (parts.length > 1) chosenLines.push(`PART ${pi + 1}${entry.name ? ' — ' + entry.name : ''}:`);
+      chosenLines.push(...entry.lines);
+    }
+  }
+  const contextLines = [];
   for (const shelf of ['bold', 'open', 'hidden']) {
-    const items = byShelf[shelf];
+    const items = byShelf[shelf].slice(0, caps[shelf]);
     if (!items.length) continue;
-    const chosenFirst = [...items.filter(p => p.mark), ...items.filter(p => !p.mark)].slice(0, caps[shelf]);
-    const label = shelf === 'bold'
+    contextLines.push(shelf === 'bold'
       ? 'SHELF 3 — BOLD IDEAS (may not exist anywhere yet — design targets, not dependencies)'
       : shelf === 'open'
         ? 'SHELF 1 — OPEN SOURCE (real, verifiable projects)'
-        : 'SHELF 2 — CLOSED PRODUCTS (exist in the world, code not public — match or beat them)';
-    lines.push(label + ':');
-    lines.push(...chosenFirst.map(p => fmt[shelf](p) + mark(p)));
+        : 'SHELF 2 — CLOSED PRODUCTS (exist in the world, code not public — match or beat them)');
+    contextLines.push(...items.map(fmt[shelf]));
   }
-  const out = lines.join('\n');
-  return out.length > 2600 ? out.slice(0, 2600) : out;
+  if (contextLines.length && chosenLines.length) contextLines.unshift('ALSO FOUND — context, not instructions:');
+  // The ceiling drops whole context lines off the end rather than slicing
+  // mid-sentence, and never touches a chosen line. A handful of ticked ideas is
+  // small next to the draft response it feeds, so carrying them all is cheap —
+  // far cheaper than an agent building the wrong thing because a pick vanished.
+  const LIMIT = 4000;
+  const chosenText = chosenLines.join('\n');
+  const kept = [...contextLines];
+  while (kept.length && [chosenText, kept.join('\n')].filter(Boolean).join('\n\n').length > LIMIT) kept.pop();
+  return [chosenText, kept.join('\n')].filter(Boolean).join('\n\n');
 }
 
 // ─── Quick check: between world-look and plan draft ───────────────────────────
