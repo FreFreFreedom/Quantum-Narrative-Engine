@@ -406,8 +406,10 @@ async function runHelperJobs() {
   }
 
   // A job may come with a read-only tool grant (the task-card chat, so it can
-  // check the code instead of guessing). Those get a tighter cap: a look should
-  // be quick, and someone is waiting on the answer.
+  // check the code instead of guessing). Measured: answering "does the expanded
+  // card already hide those fields?" against this repo takes haiku about 25s of
+  // grepping and reading — so it gets the same full 60s as any other helper job.
+  // A 30s cap looked generous on paper and failed almost every real question.
   const tools = job.allowed_tools || null;
   console.log(`  helper ${job.label || job.feature} → claude:haiku${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
@@ -415,7 +417,7 @@ async function runHelperJobs() {
     out = await claudeCli.runToolless({
       prompt: job.prompt,
       model: job.model || 'haiku',
-      timeoutMs: tools ? 30_000 : 60_000,
+      timeoutMs: 60_000,
       cwd: RUNNER_REPO,
       env: claudeCli.spawnEnv(),
       allowedTools: tools,

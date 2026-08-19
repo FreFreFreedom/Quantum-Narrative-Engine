@@ -4447,6 +4447,27 @@ function qStartChatTyping(promptId) {
   }, stepMs);
 }
 
+// Railway cuts a held HTTP connection at about 19 seconds, and a real answer —
+// one that greps the code before replying instead of guessing — takes around 25.
+// So the POST response is a bonus, never the delivery mechanism: the answer is
+// written into the thread server-side regardless, and this watches for it there.
+// Without this, every honest answer would look like a failure in the browser
+// while sitting perfectly fine in the database.
+async function qChatAwaitAnswer(promptId, minCount) {
+  const deadline = Date.now() + 80000;
+  while (Date.now() < deadline) {
+    if (!qChatPending || qChatPending.promptId !== promptId) return null;
+    await new Promise(r => setTimeout(r, 1500));
+    let list = null;
+    try {
+      const got = await api(`/api/travaux/prompts/${promptId}/messages`);
+      list = (got && got.messages) || null;
+    } catch { continue; }   // a blip mid-wait is not an answer either way
+    if (list && list.length >= minCount && list[list.length - 1].role === 'agent') return list;
+  }
+  return null;
+}
+
 function qFinishChatTyping() {
   if (qChatTypeTimer) { clearInterval(qChatTypeTimer); qChatTypeTimer = null; }
   const id = qChatPending && qChatPending.promptId;
@@ -6017,14 +6038,19 @@ async function qReply(id, text, placement = 'front') {
     qSetReplyBusy(true);
     qRenderThread(id, before);       // your message is on screen before the request leaves
 
-    let res;
+    let res = null;
     try {
       res = await apiWrite(`/api/travaux/prompts/${id}/reply/chat`, 'POST', { text });
     } catch (e) {
-      qChatPending = null;
-      qSetReplyBusy(false);
-      qRenderThread(id, before);
-      throw e;                       // the box shows why and hands the text back
+      // A gateway cut or a network blip says nothing about whether the answer is
+      // coming — only a real refusal does, and those we surface at once.
+      const msg = String(e.message || '');
+      if (/unauthorized|empty|not_found/.test(msg)) {
+        qChatPending = null;
+        qSetReplyBusy(false);
+        qRenderThread(id, before);
+        throw e;                     // the box shows why and hands the text back
+      }
     }
 
     // The endpoint already returns the updated task and the answer, so there is no
@@ -6035,9 +6061,26 @@ async function qReply(id, text, placement = 'front') {
       if (i >= 0) qPrompts[i] = fresh;
       if (qSelected && qSelected.id === id) qSelected = fresh;
     }
-    const msgs = (fresh && fresh.messages) || before;
-    const answer = (res && res.answer) || '';
-    if (answer && msgs.length && msgs[msgs.length - 1].role === 'agent') {
+    let msgs = (fresh && fresh.messages) || before;
+    let answer = (res && res.answer) || '';
+    if (!answer) {
+      // Still thinking, or the connection was cut. Keep the dots and watch the
+      // thread: your message is message before+1, its answer is before+2.
+      const polled = await qChatAwaitAnswer(id, before.length + 2);
+      if (!qChatPending || qChatPending.promptId !== id) return;
+      if (polled) {
+        msgs = polled;
+        answer = polled[polled.length - 1].text || '';
+        if (qSelected && qSelected.id === id) qSelected = { ...qSelected, messages: polled };
+      }
+    }
+    if (!answer) {
+      qChatPending = null;
+      qSetReplyBusy(false);
+      qRenderThread(id, msgs);
+      throw new Error('no answer came back in time — it may still land in the thread');
+    }
+    if (msgs.length && msgs[msgs.length - 1].role === 'agent') {
       qChatPending.phase = 'typing';
       qChatPending.answer = answer;
       qChatPending.shown = '';

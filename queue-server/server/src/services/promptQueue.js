@@ -1546,8 +1546,12 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
     claudeLastResort: true,
     // Read-only: it may check the code, never touch it.
     helperTools: 'Read,Grep,Glob',
-    // Someone is watching a bubble — not the 120s a background rescue may take.
-    helperWaitMs: 45_000,
+    // Must exceed the runner's own 60s cap plus its claim poll, or a perfectly
+    // good answer gets marked "caller timed out" seconds before it arrives.
+    // Nobody waits this long in practice: the browser stops trusting this
+    // response after ~19s (Railway cuts a held connection) and watches the
+    // thread instead, which is where the answer lands either way.
+    helperWaitMs: 75_000,
   });
   if (result?.text) {
     answer = result.text;
