@@ -336,8 +336,11 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .nb-search { flex:1; min-width:160px; max-width:340px; border:1px solid var(--c-border-2); border-radius:8px; padding:6px 10px; font-size:12px; font-family:inherit; }
 .nb-hint { font-size:10.5px; color:var(--c-ink-4); }
 .nb-body { flex:1; overflow-y:auto; }
-.nb-row { border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); padding:9px 12px; margin-bottom:8px; }
+.nb-row { border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); padding:9px 12px; margin-bottom:8px; cursor:pointer; transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
 .nb-row.nb-buildable { border-color:#c08a3e; background:var(--c-warm-tint); }
+.nb-row.nb-open { border-color:var(--c-ink-4); }
+.nb-chev { margin-left:auto; font-size:11px; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), transform var(--t-med) var(--ease); user-select:none; }
+.nb-row.nb-open .nb-chev { color:var(--c-ink); }
 .nb-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .nb-name { font-size:13px; font-weight:700; }
 .nb-terr { font-size:10.5px; color:var(--c-ink-4); }
@@ -621,6 +624,8 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .flow-row:hover { border-color:var(--c-border-2); }
 .flow-row.sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
 .flow-row .q-item-top { gap:8px; }
+.flow-chev { margin-left:auto; font-size:11px; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), transform var(--t-med) var(--ease); user-select:none; }
+.flow-row.sel .flow-chev { color:var(--c-ink); }
 .flow-sgrow .q-item-title, .flow-idrow .q-item-title { font-size:12px; font-weight:600; }
 .id-tag-pill { font-size:9.5px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:9px; padding:1px 8px; }
 .flow-genrow { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
@@ -672,7 +677,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-note-active { color:var(--c-brand); font-weight:600; }
 .world-r { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .q-inspire-wrap { margin:4px 0 8px; }
-.nb-world { margin:2px 0 6px 14px; padding:8px 10px; border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); }
+.nb-world { margin:2px 0 6px 14px; padding:8px 10px; border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); animation:fmcnsRise .24s var(--ease); }
 .q-inspire-tag { font-size:9.5px; border:1px solid var(--c-border-2); border-radius:8px; padding:1px 7px; color:var(--c-ink-4); flex-shrink:0; }
 .q-inspire-part { font-size:11.5px; margin:8px 0 4px; }
 .q-inspire-part span { color:var(--c-ink-4); }
@@ -997,7 +1002,7 @@ button:active { transform: translateY(1px) scale(.99); }
   box-shadow: var(--sh-xs);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), opacity var(--t-med) var(--ease);
 }
-.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover, .nb-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
 .legend { box-shadow: var(--sh-sm); }
 @keyframes fmcnsRise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @keyframes fmcnsSlideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
@@ -4432,6 +4437,7 @@ function renderFlow() {
             ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
             <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
+            <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? '▾' : '▸'}</span>
           </div>
           ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
           ${cardActions([
@@ -4467,6 +4473,7 @@ function renderFlow() {
             ${i.tag ? `<span class="id-tag-pill">${qEsc(i.tag)}</span>` : ''}
             ${i.work_prompt_id ? '<span class="q-badge" style="background:#4f9d7a;">Queued</span>' : ''}
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
+            <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '▾' : '▸'}</span>
           </div>
           ${i.notes ? `<div class="sg-rationale">${qEsc(i.notes)}</div>` : ''}
           ${cardActions([
@@ -6772,18 +6779,20 @@ function renderNotbuilt() {
     const we = flowWorldEntry('component', c.id);
     const markers = [];
     if (inspireReady) markers.push('<span title="World-look ideas are ready — open the task in the Flow">✨</span>');
-    if (we.state === 'ready') markers.push('<span title="World-look ideas are ready right here, in this section">✨</span>');
+    if (we.state === 'ready') markers.push('<span title="World-look ideas are ready — tap the card to open them">✨</span>');
+    else if (we.state === 'pending') markers.push('<span title="Looking at the world for this — tap the card to open">🔭</span>');
     if (nbConvos[c.id]) markers.push('<span title="A conversation is open about this">💬</span>');
     const spec = c.provenance === 'speculative' ? '✦ ' : '';
     const whatText = String(c.what || '');
     const trunc = whatText.length > 140;
-    const worldLabel = we.state === 'ready' ? '✨ World ideas ready' : we.state === 'pending' ? '🔭 Looking at the world…' : '✨ Look at the world';
-    html += `<div class="nb-row${state === 'buildable' ? ' nb-buildable' : ''}" data-nbid="${c.id}">
+    const isOpen = nbWorldOpen === c.id;
+    html += `<div class="nb-row${state === 'buildable' ? ' nb-buildable' : ''}${isOpen ? ' nb-open' : ''}" data-nbid="${c.id}">
       <div class="nb-top">
         <span class="nb-name">${qEsc(spec + c.name)}</span>
         <span class="nb-terr">${terr ? terr.label : c.territory}</span>
         <span class="nb-status">${qEsc(c.status || 'Concept')}</span>
         <span class="nb-markers">${markers.join(' ')}</span>
+        <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
       </div>
       ${whatText ? `<div class="nb-what clamped" data-nbwhat="${c.id}">${qEsc(whatText.slice(0, 140))}${trunc ? ` <span class="nb-more" data-nbmore="${c.id}">more ▾</span>` : ''}</div>` : ''}
       ${state === 'locked' ? `<div class="nb-wait">Waiting on: ${unmet.map(p => `<a data-nbjump="${p.id}">${qEsc(p.name)}</a> (${qEsc(p.status)})`).join(', ')}</div>` : ''}
@@ -6792,7 +6801,6 @@ function renderNotbuilt() {
         ${state === 'buildable'
           ? `<button class="nb-build" data-nbbuild="${c.id}">⚡ Build — all prerequisites met${flowWorldPickSuffix('component', c.id)}</button>`
           : `<button data-nbbuild="${c.id}" title="Queues it anyway — it waits until its prerequisites are done">Queue anyway${flowWorldPickSuffix('component', c.id)}</button>`}
-        <button data-nbworld="${c.id}" title="Real projects, hidden products, bold ideas — right here, without queueing">${worldLabel}</button>
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
       </div>
     </div>
@@ -6801,6 +6809,18 @@ function renderNotbuilt() {
   html += nbUnplantedSectionHtml();
   host.innerHTML = html;
   wireNbUnplanted(host);
+  // Tap anywhere on the card (except its own buttons/links) to expand the
+  // world-look panel — same click-anywhere interaction the queue/task and
+  // suggestion/seed cards already have. The old dedicated "world ideas" button
+  // is gone; this replaces it.
+  host.querySelectorAll('.nb-row').forEach(row => {
+    row.onclick = (e) => {
+      if (e.target.closest('a, button, .nb-more')) return;
+      const id = row.getAttribute('data-nbid');
+      nbWorldOpen = nbWorldOpen === id ? null : id;
+      renderNotbuilt();
+    };
+  });
   host.querySelectorAll('[data-nbbuild]').forEach(b => {
     b.onclick = () => {
       const c = ARCH_BY_ID[b.getAttribute('data-nbbuild')];
@@ -6816,14 +6836,6 @@ function renderNotbuilt() {
           b.textContent = (archNodeState(c) === 'buildable' ? '⚡ Build — all prerequisites met' : 'Queue anyway') + flowWorldPickSuffix('component', c.id);
         }
       });
-    };
-  });
-  host.querySelectorAll('[data-nbworld]').forEach(b => {
-    b.onclick = () => {
-      const c = ARCH_BY_ID[b.getAttribute('data-nbworld')];
-      if (!c) return;
-      nbWorldOpen = nbWorldOpen === c.id ? null : c.id;
-      renderNotbuilt();
     };
   });
   host.querySelectorAll('[data-nbworldpanel]').forEach(panel => {
