@@ -5032,13 +5032,16 @@ function renderSeedDetail(idea) {
   const title = (idea.title || '').replace(/"/g, '&quot;');
   const notes = (idea.notes || '');
   const tag = (idea.tag || '').replace(/"/g, '&quot;');
+  // The card above already reads out the title, the notes, the tag and the
+  // Queued/Planted badges. What it cannot do is edit them or follow them, so the
+  // panel is exactly that: the boxes, and the links the badges have no room for.
   host.innerHTML = `
-    <h2>Seed</h2>
+    <div class="arch-field-label">Edit — each box saves when you leave it</div>
     <input class="q-input" data-role="title" value="${title}">
     <textarea class="q-input" data-role="notes" rows="4">${notes}</textarea>
     <input class="q-input" data-role="tag" placeholder="tag" value="${tag}" style="max-width:140px;">
-    ${idea.work_prompt_id ? `<div class="id-done-pill">Queued — <a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">view in Flow</a></div>` : ''}
-    ${idea.arch_node_id ? `<div class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></div>` : ''}
+    ${idea.work_prompt_id ? `<div class="id-done-pill"><a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">Open the task it became</a></div>` : ''}
+    ${idea.arch_node_id ? `<div class="id-done-pill"><a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">Open where it is planted in the Tech Tree</a></div>` : ''}
     <div class="id-form-hint">Queue it, plant it, discuss it or remove it with the symbols on the card above.</div>
     <div class="q-inspire-wrap" id="seedWorldHost"></div>
     <div class="arch-qf-status" id="seedDetailStatus"></div>`;
@@ -5067,19 +5070,14 @@ function renderSuggestionDetail(s) {
   const host = document.getElementById('flowExpanded');
   if (!host) return;
   const snap = qSnapInputs(host);
+  // The card above already shows the title, the kind and status badges and the
+  // "why" line — the panel opens straight onto the editable prompt and the ideas.
   host.innerHTML = `
-    <h2>Suggestion</h2>
-    <div class="arch-detail-name">${qEsc(s.title)}</div>
-    <div class="q-item-meta" style="margin:6px 0 10px;">
-      <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
-      <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
-    </div>
-    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(s.rationale, 180, 'arch-field-body')}</div>` : ''}
     ${s.status === 'new' ? `
       <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
       <textarea class="q-input" data-role="prompt" rows="6" style="display:none;">${qEsc(s.prompt)}</textarea></div>
-      <div class="id-form-hint">Accept, discuss or dismiss it with the symbols on the card above — any edit you make here is what gets accepted.</div>` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Flow</a>` : 'Already in the queue.'}</div>` : ''}
+      <div class="id-form-hint">Accept, discuss or dismiss it with the symbols on the card above — any edit you make here is what gets accepted.</div>` : s.status === 'accepted' && s.work_prompt_id ? `<div class="sg-rationale"><a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">Open the task it became</a></div>` : ''}
     <div class="q-inspire-wrap" id="sgWorldHost"></div>
     <div class="arch-qf-status" id="sgDetailStatus"></div>`;
   const promptToggle = document.getElementById('sgPromptToggle');
@@ -5188,11 +5186,6 @@ function qRenderDetail(p) {
   const isOpen = provVal === 'opencode';
   const isAiRouter = provVal === 'ai-router';
   const usesModelPicker = isOpen || isAiRouter;
-  const tier = p.preset === 'auto' ? (p.resolved_preset || 'standard') : p.preset;
-  const ctxLimit = Q_CONTEXT_LIMITS[tier] || 6;
-  const ctxTurns = p.context_turns || 0;
-  const ctxAmber = ctxTurns >= ctxLimit - 1;
-  const activeSession = isOpen ? p.opencode_session_id : p.session_id;
   const autoParent = p.parent_prompt_id ? qPrompts.find(x => x.id === p.parent_prompt_id) : null;
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
   const switchable = p.status !== 'running';
@@ -5200,10 +5193,24 @@ function qRenderDetail(p) {
     <option value="claude-code"${provVal === 'claude-code' ? ' selected' : ''}>Claude Code</option>
     <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode (free models supported)</option>
     <option value="ai-router"${isAiRouter ? ' selected' : ''}>AI Router (free — questions only)</option>`;
+  // The card's own cost line already names the model and the dollar figure once a
+  // task is finished, so there the panel adds only the token counts. While a task is
+  // still active the card prints no cost line at all — then the panel carries it all.
+  const cardHasCost = !Q_ACTIVE_STATUSES.includes(p.status);
   const costParts = [];
-  if (p.run_model) costParts.push(p.run_model);
+  if (p.run_model && !cardHasCost) costParts.push(p.run_model);
   if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
-  if (p.cost_usd != null) costParts.push('~$' + p.cost_usd.toFixed(3));
+  if (p.cost_usd != null && !cardHasCost) costParts.push('~$' + p.cost_usd.toFixed(3));
+  // Timing and an auto-chosen parent task are the only run facts the card has no
+  // room for; agent, provider and the memory count are all on it already.
+  const runFacts = [
+    p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : '',
+    p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : '',
+    autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Carries on from:</b> "${qEsc(autoParent.title)}" (auto)</span>` : '',
+  ].filter(Boolean);
+  // Only worth its tinted box when it actually says something — with the repeated
+  // status row gone this would otherwise open the panel with an empty box.
+  const primaryHint = p.status === 'paused' ? qPrimaryHintHtml(p) : '';
   const rdOpen = host.querySelector('.flow-rundetails')?.open || false;
   // A frozen preparation step is invisible from the status pill alone — it just
   // reads as "still working". This says it plainly, once, at the top, and works
@@ -5214,28 +5221,18 @@ function qRenderDetail(p) {
       <span>This task stopped part-way through getting ready — the server restarted while it was working, so nothing is on it any more. It clears itself within 10 minutes, or reset it now.</span>
       <button class="ctrlbtn" data-action="unstick-detail">Reset and continue</button>
     </div>` : '';
+  // Nothing in this panel repeats the card it opens under. The card already carries
+  // the title, the status pill, the mode, the agent, the provider and the memory
+  // badge, so the panel starts straight at what the card cannot show.
   host.innerHTML = `
-    <h2>Task</h2>
-    <div class="arch-detail-name">${qEsc(p.title || '(untitled)')}</div>
     ${stuckBanner}
-    <div class="q-detail-row">
-      <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
-      <span style="color:var(--c-ink-4);">${p.mode === 'question' ? 'Question' : 'Implement'}</span>
-    </div>
-    ${p.status === 'paused' ? `
+    ${primaryHint ? `
     <div class="q-primary-action">
-      <div class="q-primary-hint" id="qPrimaryHint">${qPrimaryHintHtml(p)}</div>
+      <div class="q-primary-hint" id="qPrimaryHint">${primaryHint}</div>
     </div>` : ''}
     <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
-      <summary>Run details — agent, provider, timing, cost</summary>
-      <div class="q-detail-row">
-        <span><b>Agent:</b> ${qAgentLabel(p)}</span>
-        <span><b>Runs on:</b> ${qProviderLabel(p)}</span>
-        ${p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : ''}
-        ${p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : ''}
-        ${activeSession ? `<span style="${ctxAmber?'color:#b8860b;':''}" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier)."><b>Context:</b> ${ctxTurns}/${ctxLimit} continued</span>` : ''}
-        ${autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Context:</b> continuing "${qEsc(autoParent.title)}" (auto)</span>` : ''}
-      </div>
+      <summary>Run details — timing, cost, which provider it runs on</summary>
+      ${runFacts.length ? `<div class="q-detail-row">${runFacts.join('')}</div>` : ''}
       ${qTriedModelsLine(p)}
       ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
       ${switchable ? `
@@ -5265,7 +5262,6 @@ function qRenderDetail(p) {
     </div>` : ''}
     <div class="arch-field-label" style="margin-top:14px;">Thread</div>
     <div id="qThread"></div>
-    ${p.pending_question ? `<div id="qQuestionHost"></div>` : ''}
     ${p.status === 'running'
       ? qReplyBoxHtml('qReply', { chatOnly: true, placeholder: 'Ask or answer — this also passes your message to the running task. Enter sends…' })
       : qReplyBoxHtml('qReply')}
@@ -5334,14 +5330,9 @@ function qRenderDetail(p) {
 
   qRenderThread(p.id, messages);
 
-  if (p.pending_question) {
-    const qh = document.getElementById('qQuestionHost');
-    qh.innerHTML = qQuestionBlockHtml(p, { showQuestion: true });
-    qWireQuestionBlock(qh, async (id, text, placement) => {
-      try { await qReply(id, text, placement); }
-      catch (e) { alert('Could not send: ' + e.message); }
-    });
-  }
+  // No question block here: an open question and its answer buttons are already on
+  // the card above, wired by the list's own handler — a second identical copy inside
+  // the panel just asked the same thing twice. Free-text answers use the reply box.
 
   // Running or not, the same box and the same wiring. While it runs, the message
   // is also forwarded to the live agent as a steer, so the directive reaches the
