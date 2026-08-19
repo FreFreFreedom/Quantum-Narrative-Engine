@@ -4454,7 +4454,10 @@ function qStartChatTyping(promptId) {
 // Without this, every honest answer would look like a failure in the browser
 // while sitting perfectly fine in the database.
 async function qChatAwaitAnswer(promptId, minCount) {
-  const deadline = Date.now() + 80000;
+  // Measured range on the real thing: 5s when the free model is warm, 90s for a
+  // long question it has to go and read the code for. The window has to clear the
+  // slow end, or the answer lands in the thread just after the dots gave up.
+  const deadline = Date.now() + 150000;
   while (Date.now() < deadline) {
     if (!qChatPending || qChatPending.promptId !== promptId) return null;
     await new Promise(r => setTimeout(r, 1500));
