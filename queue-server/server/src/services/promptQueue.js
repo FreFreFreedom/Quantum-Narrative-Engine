@@ -1571,7 +1571,11 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
   }
 
   broadcast();
-  return { prompt: getPrompt(id), answer, steered, model };
+  // `model` is the free model this function PICKED before it knew where the
+  // 'reply' feature was pointed — it is not necessarily what answered. Reporting
+  // it alone made a Claude answer look like a free-lane one, so the backend that
+  // actually produced the text is reported alongside it.
+  return { prompt: getPrompt(id), answer, steered, model, via: result?.via || null };
 }
 
 // Save the answer without relaunching this instant — the task goes back to the
