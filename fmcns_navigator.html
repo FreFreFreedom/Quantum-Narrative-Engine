@@ -296,6 +296,26 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .core-hbtn { padding:var(--sp-1) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:10.5px; cursor:pointer; }
 .core-hbtn:hover { background:var(--c-surface-2); color:var(--c-ink); }
 
+/* ---------- Claude usage strip (5h + weekly subscription limits) ----------
+   Back by request (2026-08-18) now that the queue runs on the Claude Code
+   subscription as its priority engine: if Claude is what builds the app, its two
+   real limits — the rolling 5h window and the weekly cap — belong on screen.
+   Backend: GET /api/agent/usage (services/claudeUsage.js). The numbers are read
+   from the account's own usage endpoint, not estimated from tokens. */
+.usage-strip { display:flex; align-items:center; gap:12px; font-size:10px; }
+.usage-item { display:flex; align-items:center; gap:5px; min-width:0; }
+.usage-item .ui-label { color:var(--c-ink-4); font-weight:600; letter-spacing:.02em; }
+.usage-bar { width:56px; height:5px; border-radius:4px; background:var(--c-border); overflow:hidden; flex-shrink:0; }
+.usage-bar-fill { display:block; height:100%; border-radius:4px; background:#4f9d7a; transition:width .4s var(--ease); }
+.usage-bar-fill.warn { background:#d99a3d; }
+.usage-bar-fill.hot { background:var(--c-danger); }
+.usage-pct { font-weight:700; color:var(--c-ink); }
+.usage-pct.warn { color:var(--c-warn); }
+.usage-pct.hot { color:var(--c-danger); }
+.usage-reset { color:var(--c-ink-4); }
+.usage-alert { padding:3px 8px; border-radius:6px; background:var(--c-danger-tint); color:var(--c-danger); font-size:10px; }
+.usage-none { font-size:10px; color:var(--c-ink-4); }
+
 /* ---------- Core workspace shell (three zones) ---------- */
 .ws-shell { flex:1; min-height:0; display:flex; }
 .ws-map { flex:1; min-width:0; display:none; flex-direction:column; min-height:0; }
@@ -1075,6 +1095,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabFlow" data-core-tab="flow">Flow <span class="core-tab-count" id="coreCountFlow"></span></button>
     </div>
+    <div id="usageStripHost" data-src="CORE ARCHITECTURE → slim header → Claude usage (5h + weekly) | fmcns_navigator.html: loadUsage(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
     <span id="archQueueBanner" class="core-banner" data-src="CORE ARCHITECTURE → slim header → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
     <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
     <button class="core-hbtn" id="queuePauseBtn" title="Pause / resume the task queue">Pause queue</button>
@@ -1213,7 +1234,7 @@ button:active { transform: translateY(1px) scale(.99); }
                 </label>
                 <label>Speed / depth
                   <select id="qPreset">
-                    <option value="auto" selected>Auto (judges the task — recommended)</option>
+                    <option value="auto" selected>Auto (sized from the task, free — recommended)</option>
                     <option value="fast">Fast (haiku)</option>
                     <option value="standard">Standard (sonnet)</option>
                     <option value="deep">Deep (strongest model)</option>
@@ -1223,8 +1244,8 @@ button:active { transform: translateY(1px) scale(.99); }
               <div class="q-row">
                 <label>Runs on
                   <select id="qProvider">
-                    <option value="claude-code">Claude Code</option>
-                    <option value="opencode">OpenCode (supports free models for implement)</option>
+                    <option value="claude-code">Claude Code (subscription — the priority engine)</option>
+                    <option value="opencode">OpenCode (free models)</option>
                     <option value="ai-router">AI Router (free — questions only)</option>
                   </select>
                 </label>
@@ -5280,8 +5301,76 @@ function stopUsagePolling() { if (usagePollTimer) { clearInterval(usagePollTimer
 // Shared header refresh: the arch/queue-status banner, which lives in the slim
 // header across all four sub-tabs.
 async function refreshCoreHeader() {
+  loadUsage();
   try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
   renderArchQueueBanner();
+}
+
+// ── Claude usage: the 5h window and the weekly limit ───────────────────────────
+// Two bars, because those are the only two limits Claude actually enforces on a
+// subscription (there is no daily cap). Each bar fills with what has been USED and
+// the number beside it is what is LEFT, since "how much have I got left" is the
+// question being asked. Amber past 70% used, red past 90% — or immediately when
+// Claude's own reply flags the window as severe.
+function usageTone(pct, severity) {
+  if (severity && severity !== 'normal') return 'hot';
+  if (pct >= 90) return 'hot';
+  if (pct >= 70) return 'warn';
+  return '';
+}
+function fmtResetIn(iso) {
+  if (!iso) return '';
+  const ms = new Date(iso).getTime() - Date.now();
+  if (!(ms > 0)) return '';
+  const totalMin = Math.round(ms / 60000);
+  const days = Math.floor(totalMin / 1440), hours = Math.floor((totalMin % 1440) / 60), mins = totalMin % 60;
+  if (days >= 1) return `${days}d ${hours}h`;
+  if (hours >= 1) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+function fmtTokens(n) {
+  if (!(n > 0)) return '0';
+  if (n >= 1000000) return (n/1000000).toFixed(n >= 10000000 ? 0 : 1) + ' M';
+  if (n >= 1000) return (n/1000).toFixed(n >= 100000 ? 0 : 1) + ' k';
+  return String(Math.round(n));
+}
+function usageBarHtml(label, bucket, hint) {
+  const b = bucket || {};
+  const pct = typeof b.utilizationPct === 'number' ? Math.max(0, Math.min(100, Math.round(b.utilizationPct))) : null;
+  if (pct == null) return '';
+  const tone = usageTone(pct, b.severity);
+  const resetIn = fmtResetIn(b.resetsAt);
+  const tip = `${hint}${resetIn ? ` Resets in ${resetIn}.` : ''}`.replace(/"/g, '&quot;');
+  return `<div class="usage-item" title="${tip}">
+    <span class="ui-label">${label}</span>
+    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
+    <span class="usage-pct ${tone}">${100 - pct}% left</span>
+    ${resetIn ? `<span class="usage-reset">· ${resetIn}</span>` : ''}
+  </div>`;
+}
+async function loadUsage() {
+  const host = document.getElementById('usageStripHost');
+  if (!host) return;
+  let u;
+  try { u = await api('/api/agent/usage'); } catch (e) { host.innerHTML = ''; return; }
+  const bars = [
+    usageBarHtml('Claude 5h', u.session, 'The rolling 5-hour window — the limit that bites first during a working session.'),
+    usageBarHtml('week', u.week, 'The weekly limit across all models.'),
+    u.weekScoped ? usageBarHtml((u.weekScoped.label || 'model').toLowerCase(), u.weekScoped, 'The weekly limit for the strongest model, which runs out sooner than the overall one.') : '',
+  ].filter(Boolean).join('');
+  // No reading available: say so plainly rather than showing empty bars. This is
+  // normal when no local runner is attached (Claude runs on the Mac, so the runner
+  // is what reports the account's real numbers — see noteRunnerUsage server-side).
+  if (!bars) {
+    const today = fmtTokens(u.today && u.today.totalTokens);
+    host.innerHTML = `<span class="usage-none" title="Attach the local runner (npm run runner) and the 5h + weekly limits appear here.">Claude limits unavailable${today !== '0' ? ` · ${today} tokens today` : ''}</span>`;
+    return;
+  }
+  const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
+  const alert = u.schedulerLimitResetAt
+    ? 'Limit reached — the queue is paused and resumes automatically at reset.'
+    : (hot.length ? 'Claude is close to a limit — the queue will hand new work to the free models.' : '');
+  host.innerHTML = `<div class="usage-strip">${bars}${alert ? `<span class="usage-alert">${alert}</span>` : ''}</div>`;
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
@@ -7416,7 +7505,7 @@ async function queuePromptDirect(title, promptText, componentId, statusHost, ins
     // space to 'fmcns' when omitted, so this didn't reproduce as a live bug, but sending
     // it explicitly matches qAddPrompt's payload and isn't dependent on that default.
     const prompt = await apiWrite('/api/travaux/prompts', 'POST', {
-      title, prompt: promptText, component_id: componentId, mode: 'implement', preset: 'deep', space: 'fmcns', inspiration,
+      title, prompt: promptText, component_id: componentId, mode: 'implement', preset: 'auto', space: 'fmcns', inspiration,
     });
     await qLoad();
     if (statusHost) {

@@ -123,6 +123,14 @@ export async function getFreeOpenCodeModel() {
   return null;
 }
 
+// Every live free OpenCode model, in discovery order (the list is latency-biased,
+// so the first entry is the fast floor). Used as the side-call fallback list: one
+// stalled free model must never be the only backend a short text call can try.
+export async function listFreeOpenCodeModels() {
+  const { models } = await listOpenCodeModels();
+  return (models || []).filter((m) => m.free).map((m) => m.id);
+}
+
 // Get the default model for a provider for a given work type
 export async function getDefaultModel(providerId, workType) {
   if (providerId === 'opencode') {

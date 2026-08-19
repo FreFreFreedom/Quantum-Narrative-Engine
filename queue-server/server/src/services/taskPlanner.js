@@ -93,11 +93,18 @@ export async function draftPlan({ title = '', prompt, mode = 'implement', inspir
   ].filter(Boolean).join('\n\n');
 
   try {
+    // Time budget: drafting is a nice-to-have that runs BEFORE the task can
+    // start, so it must never be the reason a task sits in "drafting a plan" for
+    // minutes. Each backend gets a short window, and we try at most a handful —
+    // a draft that can't be produced in about a minute is not worth waiting for,
+    // since the caller falls back to the raw request and the task runs anyway.
     const result = await generateText({
       prompt: `${fast ? MINI_INSTRUCTION : INSTRUCTION}\n\n${input}`,
       feature: 'plan_draft',
       maxTokens: fast ? 500 : 1200,
       label: fast ? 'task-planner-mini' : 'task-planner',
+      timeoutMs: fast ? 30_000 : 60_000,
+      maxAttempts: 3,
     });
     if (!result?.text) return null;
     return parseDraft(result.text);

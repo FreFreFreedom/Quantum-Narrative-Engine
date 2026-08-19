@@ -13,7 +13,7 @@
 import { Router } from 'express';
 import {
   claimNextTask, recordRunnerStream, recordRunnerResult,
-  noteRunnerPoll, runnerStatus, releaseStaleClaims, isLocalExecution,
+  noteRunnerPoll, runnerStatus, releaseStaleClaims, isLocalExecution, noteRunnerUsage,
 } from '../services/taskRunner.js';
 import * as queue from '../services/promptQueue.js';
 
@@ -31,6 +31,9 @@ export function workerRoutes() {
     if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
     noteRunnerPoll();
     const runnerId = String(req.body?.runner_id || 'local').slice(0, 64);
+    // The runner rides its Claude usage reading along on this poll (see
+    // noteRunnerUsage) — it's the only process that can read the local account.
+    if (req.body?.usage) noteRunnerUsage(req.body.usage);
 
     // Free anything whose previous runner died before handing this one a new
     // task — otherwise a task stranded by a closed laptop would never come back.

@@ -16,7 +16,7 @@ import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory, cleanupFrenchSuggestions } from './services/bootstrapData.js';
-import { initTaskRunner, bindTaskDb, DATA_DIR } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
@@ -192,7 +192,14 @@ app.use('/api/travaux', requireAuth, reviewsRoutes());
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {
-    const usage = await getClaudeUsage();
+    const local = await getClaudeUsage();
+    // Claude runs on Antoine's Mac now, so the container's own read is usually
+    // empty. When the attached runner has reported real subscription numbers,
+    // those are the truthful ones — fall back to the local read otherwise.
+    const fromRunner = runnerReportedUsage();
+    const usage = (!local.subscriptionAvailable && fromRunner?.subscriptionAvailable)
+      ? { ...fromRunner, source: 'runner' }
+      : { ...local, source: 'server' };
     res.json({ ...usage, schedulerLimitResetAt: earliestResetAt() });
   } catch (err) {
     res.status(500).json({ error: 'usage_failed', message: err.message });

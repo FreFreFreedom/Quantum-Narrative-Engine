@@ -1359,7 +1359,29 @@ export function claimNextTask({ runnerId = 'local' } = {}) {
     branch: task.branch || null,
     work_prompt_id: task.work_prompt_id || null,
     agent_key: task.agent_key || 'dev1',
+    // Which engine this task was queued for, and on which model. The runner needs
+    // all four: 'claude-code' tasks run on the Claude Code CLI (the queue's
+    // priority lane) with `model`/`effort` from the preset, everything else on the
+    // opencode CLI with `provider_model`. Absent these the runner would silently
+    // treat every task as opencode, which is how the Claude lane would never run.
+    provider: task.provider || 'opencode',
+    provider_model: task.provider_model || null,
+    model: task.model || null,
+    effort: task.effort || null,
+    // Size tier, from the queue row (work_prompts.task_tier). The runner's Claude
+    // credit gate uses it to keep tiny work off the subscription entirely.
+    task_tier: taskTier(task),
   };
+}
+
+// The queue row's size tier for an agent task ('mini' | 'standard' | 'deep'), or
+// null when the task didn't come from a queue prompt. Read here rather than joined
+// into readTasks() because only the claim payload needs it.
+function taskTier(task) {
+  if (!db || !task?.work_prompt_id) return null;
+  try {
+    return db.prepare(`SELECT task_tier FROM work_prompts WHERE id=?`).get(task.work_prompt_id)?.task_tier || null;
+  } catch { return null; }
 }
 
 // Live progress from the runner: transcript chunks plus proof of life. Chunks go
@@ -1447,6 +1469,22 @@ export function recordRunnerResult(taskId, {
 // looks busy but has no executor attached.
 let _lastClaimPollAt = null;
 export function noteRunnerPoll() { _lastClaimPollAt = Date.now(); }
+
+// Claude usage as seen ON THE MACHINE THAT RUNS CLAUDE. Since execution moved to
+// the Mac, the container can no longer read the account's local transcripts, and
+// its OAuth token may not even be set — so the runner reports its own reading on
+// every claim poll and the app's usage bar prefers it over a blank server read.
+let _runnerUsage = null;
+export function noteRunnerUsage(usage) {
+  if (usage && typeof usage === 'object') _runnerUsage = { at: Date.now(), usage };
+}
+// Only trusted while the runner is actually attached (5 min grace) — a stale
+// reading from a laptop closed yesterday is worse than no reading.
+export function runnerReportedUsage() {
+  if (!_runnerUsage) return null;
+  if (Date.now() - _runnerUsage.at > 5 * 60_000) return null;
+  return _runnerUsage.usage;
+}
 export function runnerStatus() {
   const running = readTasks().filter((t) => t.status === 'in_progress' && t.claimed_by);
   const lastBeat = running

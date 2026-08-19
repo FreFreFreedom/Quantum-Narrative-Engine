@@ -7,7 +7,7 @@
 // no-fallback-provider behavior instead of this module's free-first policy.
 
 import { generateText as legacyGenerateText } from '../claudeText.js';
-import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, isKnownProvider } from './providers.js';
+import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, listFreeOpenCodeModels, isKnownProvider } from './providers.js';
 import * as router from './router.js';
 
 let db = null;
@@ -149,6 +149,28 @@ export function migrateFreeFirstDefaults() {
   return { changed };
 }
 
+// ─── Stall memory ────────────────────────────────────────────────────────────
+// A free model that answered nothing at all inside the timeout is not
+// quota-exhausted (the router's ledger, which needs a reset window, would be the
+// wrong home for it) — it is simply unresponsive right now. Remember that for a
+// few minutes, in-process, so the NEXT side call skips it instead of paying the
+// same full timeout again. Cheap, self-healing, no DB row.
+const STALL_COOLDOWN_MS = 10 * 60_000;
+const stalledUntil = new Map();
+
+function isStall(errMsg) {
+  return /no response after|timed out|timeout/i.test(String(errMsg || ''));
+}
+function markStalled(provider, model) {
+  stalledUntil.set(`${provider}:${model}`, Date.now() + STALL_COOLDOWN_MS);
+}
+function isStalled(provider, model) {
+  const until = stalledUntil.get(`${provider}:${model}`);
+  if (!until) return false;
+  if (Date.now() >= until) { stalledUntil.delete(`${provider}:${model}`); return false; }
+  return true;
+}
+
 // Detect quota/limit from provider-specific error text
 function detectQuotaLimit(providerId, text) {
   const module = getProviderModule(providerId);
@@ -182,10 +204,25 @@ async function getFallbackChain(feature, providerId, model) {
   // subscription — paid models are explicit picks only.
   const { policy } = loadAiSettings();
   if (policy === 'auto_free') {
-    const defId = await getDefaultModel('opencode', feature);
-    if (defId) chain.push({ provider: 'opencode', model: defId });
-    const freeId = await getFreeOpenCodeModel();
-    if (freeId && freeId !== defId) chain.push({ provider: 'opencode', model: freeId });
+    // Every live free OpenCode model, not just the floor. Before this, the two
+    // pushes here both resolved to the SAME fast-floor model, so a side call had
+    // exactly one real backend: when that model stalled, the whole call burned
+    // its full timeout and gave up ("all backends failed — <one model>: no
+    // response after 240s"), which is what left plan drafts hanging for minutes.
+    const backups = [await getDefaultModel('opencode', feature), ...(await listFreeOpenCodeModels().catch(() => []))];
+    const seen = new Set(chain.map((a) => `${a.provider}:${a.model}`));
+    for (const id of backups) {
+      if (!id) continue;
+      const key = `opencode:${id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      chain.push({ provider: 'opencode', model: id });
+      if (chain.length >= 5) break; // bounded: five backends is plenty for a side call
+    }
+    if (!chain.length) {
+      const freeId = await getFreeOpenCodeModel();
+      if (freeId) chain.push({ provider: 'opencode', model: freeId });
+    }
   }
 
   return chain;
@@ -202,7 +239,7 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 240_000 }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000 }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -232,7 +269,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 240_000, maxAttempts = Infinity }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -271,6 +308,10 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       failures.push(`${p}:${m}:cooldown`);
       continue;
     }
+    if (isStalled(p, m)) {
+      failures.push(`${p}:${m}:stalled-recently`);
+      continue;
+    }
 
     const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs });
 
@@ -283,6 +324,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     const errMsg = result?.message || result?.error || 'unknown';
     failures.push(`${p}:${m}:${errMsg}`);
 
+    if (isStall(errMsg)) markStalled(p, m);
     if (detectQuotaLimit(p, errMsg)) {
       router.recordExhaustion({ providerId: p, model: m, detectedBy: 'text', errText: errMsg });
     }

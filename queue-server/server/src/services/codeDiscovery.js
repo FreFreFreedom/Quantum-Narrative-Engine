@@ -11,12 +11,13 @@
 //      same as before. (1 + 2*parts) AI calls total, only on an explicit click —
 //      never on page load (see CLAUDE.md cost rules).
 //
-// AI calls go through services/claudeText.js (subscription CLI first, metered API
-// fallback), same seam as architectureNodes.js#speculate — not the raw
-// api.anthropic.com fetch used elsewhere, and not billed per token unless the
-// subscription path is down.
+// AI calls go through services/ai/text.js on the FREE lane. They used to call
+// claudeText.js (always-Claude), which meant the world-look quietly spent
+// subscription quota on every implement task. Antoine's rule (2026-08-18): the
+// Claude subscription belongs to the QUEUE — the engine that writes real code —
+// and nothing else in the app may draw on it. Everything here is short helper
+// text, exactly what the free lane is for.
 import { randomUUID, createHash } from 'node:crypto';
-import { generateText } from './claudeText.js';
 import { generateText as generateTextByFeature } from './ai/text.js';
 import { createNode } from './architectureNodes.js';
 import { USER_FACING_STYLE } from './ai/style.js';
@@ -216,7 +217,7 @@ export function parseJsonObject(text) {
 }
 
 async function searchAndPick(partDescription) {
-  const pass1 = await generateText({ prompt: buildQueryPrompt(partDescription), maxTokens: 500, label: 'discovery-queries' });
+  const pass1 = await generateTextByFeature({ prompt: buildQueryPrompt(partDescription), feature: 'inspire', maxTokens: 500, label: 'discovery-queries', maxAttempts: 3 });
   if (pass1.error) return { error: pass1.error, message: pass1.message };
   const parsed1 = parseJsonObject(pass1.text);
   const queries = (parsed1?.queries || []).filter(q => q && q.q).slice(0, 3);
@@ -228,7 +229,7 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
   const ideaText = String(idea_text || '').trim();
   if (!ideaText) return { error: 'idea_text_required' };
 
-  const pass0 = await generateText({ prompt: buildDecomposePrompt(ideaText), maxTokens: 600, label: 'discovery-decompose' });
+  const pass0 = await generateTextByFeature({ prompt: buildDecomposePrompt(ideaText), feature: 'inspire', maxTokens: 600, label: 'discovery-decompose', maxAttempts: 3 });
   if (pass0.error) return { error: pass0.error, message: pass0.message };
   const parsed0 = parseJsonObject(pass0.text);
   const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, MAX_PARTS);
@@ -250,7 +251,7 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
       const out = await getResults(db, qId, q.q, {});
       resultsByQuery.push({ q, why: q.why, results: out.results || [] });
     }
-    const pass2 = await generateText({ prompt: buildPicksPrompt(partDescription, resultsByQuery), maxTokens: 1200, label: 'discovery-picks' });
+    const pass2 = await generateTextByFeature({ prompt: buildPicksPrompt(partDescription, resultsByQuery), feature: 'inspire', maxTokens: 1200, label: 'discovery-picks', maxAttempts: 3 });
     const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
     const picks = (parsed2?.picks || []).filter(p => p && p.kind && (p.kind === 'proven' || p.kind === 'imagined'));
     const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;

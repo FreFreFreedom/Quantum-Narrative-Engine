@@ -122,9 +122,9 @@ function candidateParents({ agentKey, provider }) {
 }
 
 export async function createPrompt({
-  title = '', prompt, mode = 'implement', preset = 'deep', same_context = 0,
+  title = '', prompt, mode = 'implement', preset = 'auto', same_context = 0,
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
-  component_id = null, provider = 'opencode', provider_model = null, agent_key = null,
+  component_id = null, provider = null, provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null, thought_id = null, inspiration = null,
 }) {
@@ -137,10 +137,27 @@ export async function createPrompt({
   // and is the only tier that leaves the fast floor.
   const tier = tierForTask(text, title);
   const useMode = mode === 'question' ? 'question' : 'implement';
-  // Free-first platform policy (plan self-aware-platform.md): an unspecified or
-  // unknown provider resolves to the OpenCode lane, never to the Claude
-  // subscription — Claude tasks only exist when explicitly chosen.
-  const useProvider = ['opencode', 'ai-router'].includes(provider) ? provider : 'opencode';
+  // Claude-first QUEUE lane (Antoine, 2026-08-18). The Claude Code subscription is
+  // now the queue's priority engine — but only for the queue. Every other Claude-
+  // calling feature in the app stays on the free lane (see ai/text.js's free-first
+  // policy and codeDiscovery.js), so the subscription's 5h/weekly windows are spent
+  // on actual coding work and nothing else.
+  //
+  // Credit discipline, decided here at zero cost (no judge call):
+  //   • 'mini' tier (typos, renames, one-constant tweaks) stays on the FREE OpenCode
+  //     lane — tiny work must never eat subscription quota.
+  //   • everything else runs 'claude-code', with the free lane as the automatic
+  //     fallback when Claude is out of quota or throttled (the local runner walks
+  //     Claude → OpenCode Go → free, see scripts/queue-runner.js).
+  // An explicit provider from the caller (the composer's picker) always wins.
+  const requestedProvider = ['opencode', 'ai-router', 'claude-code'].includes(provider) ? provider : null;
+  const useProvider = requestedProvider || (tier === 'mini' ? 'opencode' : 'claude-code');
+  // Preset → Claude model (fast=haiku, standard=sonnet, deep=opus). 'auto' resolves
+  // from the tier heuristic instead of asking a model to judge it: opus is reserved
+  // for genuinely deep work, so an ordinary task cannot quietly cost 5× what it
+  // should. Only claude-code uses presets (the other lanes carry a model id).
+  const TIER_PRESET = { mini: 'fast', standard: 'standard', deep: 'deep' };
+  const usePreset = ['fast', 'standard', 'deep'].includes(preset) ? preset : (TIER_PRESET[tier] || 'standard');
   const id = randomUUID();
   const given = String(title || '').trim();
   const label = given || heuristicTitle(text);
@@ -221,14 +238,16 @@ export async function createPrompt({
   const preSkipNote = !willInspire && !preInsp
     ? 'Mini task — the world-look was skipped so the plan runs instantly. One click re-runs it.'
     : null;
-  const resolved = (!willDraft && preset === 'auto' && useProvider === 'claude-code')
-    ? await resolvePreset({ mode: useMode, prompt: text }).catch(() => 'standard') : null;
+  // No judge call here any more: usePreset above already resolved 'auto' from the
+  // free tier heuristic, so resolved_preset is simply that (kept for the UI and for
+  // onAgentTaskFinalized's "retry one tier stronger" valve).
+  const resolved = useProvider === 'claude-code' ? usePreset : null;
 
   db.prepare(`
     INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
-    useMode, preset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
+    useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
     willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
 
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
@@ -238,7 +257,7 @@ export async function createPrompt({
   }
   if (willDraft) {
     runPlanDraft(id, {
-      title: label, prompt: text, mode: useMode, preset, provider: useProvider, targetStatus: initial,
+      title: label, prompt: text, mode: useMode, preset: usePreset, provider: useProvider, targetStatus: initial,
       agentKey: useAgentKey, contextMode: context_mode, explicitParent: !!useParent,
       inspirationOverride: preInsp ? preInsp.digest : null, tier,
     });

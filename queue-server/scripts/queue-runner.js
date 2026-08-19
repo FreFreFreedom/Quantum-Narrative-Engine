@@ -32,6 +32,8 @@ import {
   CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels,
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin } from '../server/src/services/providers/opencode.js';
+import * as claudeCli from '../server/src/services/providers/claudeCode.js';
+import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
@@ -50,6 +52,68 @@ const SILENCE_MS = Number(process.env.SILENCE_MS || 5 * 60_000);
 // Absolute ceiling for one attempt on one model.
 const ATTEMPT_CAP_MS = Number(process.env.ATTEMPT_CAP_MS || 30 * 60_000);
 const POLL_IDLE_MS = 5_000;
+
+// ─── Claude lane: credit discipline ───────────────────────────────────────────
+// The Claude Code subscription is the queue's PRIORITY engine (Antoine, 2026-08-18),
+// and the whole point of putting it first is that it must not be wasted. Four rules,
+// all enforced here because this runner is the only place a Claude run can start:
+//
+//   1. Tier gate — 'mini' work never reaches Claude at all (the app already queues
+//      those on the free lane; this is the belt-and-braces check).
+//   2. Window gate — before starting, read the account's real 5h and weekly
+//      utilisation (services/claudeUsage.js, the same numbers the app's usage bar
+//      shows). Past the reserve thresholds the task drops to the free lane instead
+//      of eating the last of a window that other work will need.
+//   3. One shot — Claude gets exactly ONE attempt per task. All Claude models share
+//      one quota bank, so retrying a second Claude model after a failure spends more
+//      quota to be told the same thing. Failure means "next lane", not "next Claude".
+//   4. No dollar cap — subscription runs are already paid for, so their notional
+//      cost is NOT streamed against the per-task cost cap (that cap exists to protect
+//      metered spend, and a $0.10 cap would kill every real Claude task in a minute).
+//      They are bounded by time (ATTEMPT_CAP_MS) and by the window gate instead.
+//
+// Reserve levels: stop starting new Claude runs once the 5h window is this full, or
+// the week is. Tunable by env for a crunch week.
+const CLAUDE_SESSION_RESERVE_PCT = Number(process.env.CLAUDE_SESSION_RESERVE_PCT || 85);
+const CLAUDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_WEEK_RESERVE_PCT || 90);
+// Deep (opus) work is the expensive kind — hold it to a stricter weekly reserve so a
+// single big task can't be what finally exhausts the week.
+const CLAUDE_DEEP_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_DEEP_WEEK_RESERVE_PCT || 70);
+// Set CLAUDE_QUEUE=0 to switch the priority lane off entirely (everything free).
+const CLAUDE_LANE_ENABLED = process.env.CLAUDE_QUEUE !== '0';
+
+// ─── Slack ping when a task finishes ──────────────────────────────────────────
+// Sent from HERE, not from the server, for one reason: this is where tasks actually
+// run and finish now, so the message is sent by the process that knows the outcome
+// first-hand and needs no extra variable on Railway. Set SLACK_WEBHOOK_URL in
+// queue-server/.env (the webhook posts into Antoine's DM). Never blocks the queue:
+// a failed post is logged and the runner moves on.
+const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
+const APP_URL = (process.env.APP_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
+
+async function slackNotify(text) {
+  if (!SLACK_WEBHOOK_URL) return;
+  try {
+    const r = await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!r.ok) console.log(dim(`  (Slack ping not sent — HTTP ${r.status})`));
+  } catch (e) { console.log(dim(`  (Slack ping not sent — ${e.message})`)); }
+}
+
+// What the DM says: outcome, task, which engine ran it, how long it took, and — when
+// Claude ran it — what it drew from the subscription, so credit use is visible
+// without opening the app.
+function slackLine({ task, status, engine, startedAt, cost, why }) {
+  const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60_000));
+  const icon = status === 'done' ? '✅' : '⚠️';
+  const head = status === 'done' ? 'Task done' : 'Task blocked';
+  const spend = cost ? (engine.startsWith('Claude') ? ` · ~$${cost.toFixed(2)} of subscription quota` : ` · $${cost.toFixed(4)}`) : '';
+  const reason = status === 'done' ? '' : ` — ${why || 'see the task for details'}`;
+  return `${icon} *${head}* — ${task.title || task.id}${reason}\n_${engine} · ${mins} min${spend}_ · <${APP_URL}|open the queue>`;
+}
 const STREAM_FLUSH_MS = 2_000;
 // How often to print what this runner currently sees in the queue — a quick
 // "is it actually looking at the same app I am" check, without spamming a line
@@ -237,7 +301,31 @@ function classifyProviderError(text) {
 // balance) kills every model in that lane at once, so there is no point paying
 // a fresh attempt for each of them.
 function laneOf(modelId) {
+  if (String(modelId).startsWith('claude:')) return 'claude';
   return String(modelId).startsWith('opencode-go/') ? 'go' : 'free';
+}
+const claudeModelOf = (id) => String(id).slice('claude:'.length);
+
+// Rule 2: is there enough room in the Claude windows to start this task? Returns
+// null when the lane is clear, or a plain-English reason to skip it. Unknown usage
+// (no local credentials, endpoint down) never blocks — the CLI's own limit message
+// still rotates us off the lane, so a missing reading shouldn't stall the queue.
+async function claudeGate({ tier, preset }) {
+  if (!CLAUDE_LANE_ENABLED) return 'the Claude lane is switched off (CLAUDE_QUEUE=0)';
+  if (tier === 'mini') return 'a mini task — free models handle it, no reason to spend subscription quota';
+  let usage = null;
+  try { usage = await getClaudeUsage(); } catch { /* unknown — allow */ }
+  if (!usage || !usage.subscriptionAvailable) return null;
+  const sess = usage.session?.utilizationPct;
+  const week = usage.week?.utilizationPct;
+  const weekCap = preset === 'deep' ? CLAUDE_DEEP_WEEK_RESERVE_PCT : CLAUDE_WEEK_RESERVE_PCT;
+  if (Number.isFinite(sess) && sess >= CLAUDE_SESSION_RESERVE_PCT) {
+    return `the 5h Claude window is ${Math.round(sess)}% used (reserve kicks in at ${CLAUDE_SESSION_RESERVE_PCT}%)`;
+  }
+  if (Number.isFinite(week) && week >= weekCap) {
+    return `the weekly Claude limit is ${Math.round(week)}% used (reserve for ${preset === 'deep' ? 'deep' : 'normal'} work kicks in at ${weekCap}%)`;
+  }
+  return null;
 }
 
 // ─── One attempt on one model ─────────────────────────────────────────────────
@@ -419,12 +507,158 @@ function runOnce({ task, model, cwd }) {
   });
 }
 
+// ─── One attempt on the Claude Code CLI ───────────────────────────────────────
+// Same contract as runOnce() above ({ outcome, ... }), same watchdogs — only the
+// process and its event shape differ (Claude's stream-json vs opencode's json).
+// Parsing is reused from the app's own provider module so there is one definition
+// of "what a Claude transcript event means".
+function runClaudeOnce({ task, model, effort, cwd }) {
+  return new Promise((done) => {
+    const bin = claudeCli.resolveBin();
+    const args = ['-p', '--output-format', 'stream-json', '--verbose'];
+    if (model) args.push('--model', model);
+    if (effort) args.push('--effort', effort);
+    if (task.resume_session_id) args.push('--resume', task.resume_session_id);
+    args.push('--allowedTools', task.mode === 'question' ? 'Read,Glob,Grep' : 'Bash,Read,Write,Edit,Glob,Grep');
+
+    // spawnEnv() strips ANTHROPIC_API_KEY — with it set the CLI silently bills
+    // per-token against the API instead of using the subscription, which is the
+    // single most expensive mistake available here.
+    const child = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: claudeCli.spawnEnv() });
+    child.stdin.write(task.prompt);
+    child.stdin.end();
+
+    let text = '', resultText = '', sessionId = null, errorMessage = '';
+    let usage = null, cost = 0;
+    let sawRealOutput = false;
+    let lastRealOutputAt = Date.now();
+    let stderrTail = '';
+    let pending = [];
+    let settled = false;
+    const startedAt = Date.now();
+    let lastPrintAt = startedAt;
+    let atLineStart = true;
+
+    const finish = (outcome, extra = {}) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(flusher);
+      clearInterval(watchdog);
+      if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+      try { child.kill('SIGKILL'); } catch {}
+      done({ outcome, text: resultText || text, sessionId, errorMessage, usage, cost, ...extra });
+    };
+
+    const flusher = setInterval(async () => {
+      if (!pending.length && !sawRealOutput) return;
+      const chunks = pending; pending = [];
+      try {
+        // cost_usd is deliberately 0 for the Claude lane (rule 4 above): this run is
+        // covered by the subscription, so its notional dollar figure must not trip
+        // the per-task metered cost cap. The real figure still goes in the result.
+        const r = await api(`/worker/${task.id}/stream`, { chunks, model: `claude:${model}`, cost_usd: 0, session_id: sessionId });
+        if (r.status === 409) finish('cancelled');
+      } catch { /* transient network — retry next tick */ }
+    }, STREAM_FLUSH_MS);
+
+    const watchdog = setInterval(() => {
+      const now = Date.now();
+      if (now - lastPrintAt > PROGRESS_MS) {
+        lastPrintAt = now;
+        if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+        const elapsed = Math.round((now - startedAt) / 1000);
+        console.log(dim(sawRealOutput
+          ? `  … quiet for ${Math.round((now - lastRealOutputAt) / 1000)}s (${elapsed}s into this attempt)`
+          : `  … ${elapsed}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`));
+      }
+      if (!sawRealOutput && now - startedAt > FIRST_OUTPUT_MS) {
+        return finish('model-bad', { why: `no output in ${Math.round(FIRST_OUTPUT_MS / 1000)}s` });
+      }
+      if (sawRealOutput && now - lastRealOutputAt > SILENCE_MS) {
+        return finish('model-bad', { why: `went silent for ${Math.round(SILENCE_MS / 60_000)} min` });
+      }
+      if (now - startedAt > ATTEMPT_CAP_MS) {
+        return finish('gave-up', { why: `hit the ${Math.round(ATTEMPT_CAP_MS / 60_000)} min limit` });
+      }
+    }, 1_000);
+
+    let buf = '';
+    child.stdout.on('data', (d) => {
+      buf += d.toString('utf8');
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        let evt;
+        try { evt = JSON.parse(line); } catch { continue; }
+        sawRealOutput = true;
+        lastRealOutputAt = Date.now();
+        if (evt.session_id && !sessionId) sessionId = evt.session_id;
+        if (evt.type === 'assistant' && evt.message?.content) {
+          for (const b of evt.message.content) if (b.type === 'text') text += b.text;
+        }
+        if (evt.type === 'result') {
+          if (typeof evt.result === 'string' && evt.result.trim()) resultText = evt.result;
+          if (typeof evt.total_cost_usd === 'number') cost = evt.total_cost_usd;
+          const u = evt.usage || {};
+          usage = {
+            tokens_in: (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) || null,
+            tokens_out: u.output_tokens || null,
+          };
+          if (evt.is_error && !errorMessage) errorMessage = String(evt.result || 'run reported an error');
+        }
+        claudeCli.streamEventToChunks(evt, (chunk) => {
+          pending.push(chunk);
+          lastPrintAt = Date.now();
+          if (chunk.kind === 'text') {
+            process.stdout.write(chunk.text);
+            atLineStart = chunk.text.endsWith('\n');
+          } else {
+            if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+            const detail = chunk.input ? dim(` — ${truncate(chunk.input, 80)}`) : '';
+            console.log(`  ${magenta('⚙')} ${chunk.name || 'tool'}${detail}`);
+          }
+        });
+      }
+    });
+
+    child.stderr.on('data', (d) => { stderrTail = (stderrTail + d.toString('utf8')).slice(-4000); });
+    child.on('error', (e) => finish('model-bad', { why: `could not start (${e.message})` }));
+    child.on('close', (code) => {
+      if (settled) return;
+      // A quota/limit message means the whole Claude lane is spent, not this model.
+      if (claudeCli.detectLimit(`${text}\n${resultText}\n${errorMessage}\n${stderrTail}`)) {
+        return finish('model-bad', { why: 'the Claude subscription hit its usage limit', fatal: 'quota' });
+      }
+      if (!sawRealOutput) {
+        return finish('model-bad', { why: `exited (code ${code}) without producing anything` });
+      }
+      if (code === 0 && !errorMessage) return finish('done');
+      return finish('gave-up', { why: errorMessage || `exited with code ${code}` });
+    });
+  });
+}
+
 // ─── One task, walking the model chain ────────────────────────────────────────
 async function runTask(task) {
   console.log('');
   rule();
   console.log(bold(cyan(`▶ ${task.title || task.id}`)));
   const chain = await modelChain();
+  // Priority lane: a task queued for Claude tries the Claude Code CLI FIRST, then
+  // falls through to the existing opencode chain (Go, then free) if Claude can't or
+  // shouldn't run it. claudeGate() is what keeps that from being wasteful — see the
+  // credit-discipline block at the top of this file.
+  if ((task.provider || 'opencode') === 'claude-code') {
+    const preset = task.effort === 'high' ? 'deep' : task.effort === 'low' ? 'fast' : 'standard';
+    const skip = await claudeGate({ tier: task.task_tier, preset });
+    if (skip) {
+      console.log(yellow(`  Skipping the Claude lane — ${skip}.`));
+      console.log(dim('  Running on free models instead.'));
+    } else {
+      chain.unshift(`claude:${task.model || 'sonnet'}`);
+    }
+  }
   const usable = chain.filter((m) => !isQuarantined(m));
   if (!usable.length) {
     console.log(yellow('  No usable model right now — every model is benched.'));
@@ -437,6 +671,7 @@ async function runTask(task) {
   }
 
   const wt = task.mode === 'question' ? { path: RUNNER_REPO, branch: null } : makeWorktree(task.id, task.title);
+  const taskStartedAt = Date.now();
   const tried = [];
   const reasons = [];
   const deadLanes = new Set();
@@ -448,14 +683,25 @@ async function runTask(task) {
     if (deadLanes.has(laneOf(model))) continue;
 
     tried.push(model);
-    console.log(`  ${dim('→')} ${bold(model)}`);
-    const r = await runOnce({ task, model, cwd: wt.path });
+    const isClaude = laneOf(model) === 'claude';
+    console.log(`  ${dim('→')} ${bold(isClaude ? `Claude (${claudeModelOf(model)})` : model)}`);
+    const r = isClaude
+      ? await runClaudeOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path })
+      : await runOnce({ task, model, cwd: wt.path });
 
     if (r.outcome === 'cancelled') { console.log(dim('  (cancelled server-side)')); return; }
 
     if (r.outcome === 'model-bad') {
       quarantineModel(model, r.why);
       reasons.push(`${model}: ${r.why}`);
+      // One shot on Claude (credit rule 3): every Claude model draws on the same
+      // quota bank, so a second Claude attempt buys nothing and spends more. Any
+      // Claude failure closes the lane and hands the task to the free models.
+      if (isClaude) {
+        deadLanes.add('claude');
+        console.log(dim('    (dropping to the free models — Claude gets one attempt per task)'));
+        continue;
+      }
       if (r.fatal === 'quota' || r.fatal === 'billing') {
         const lane = laneOf(model);
         deadLanes.add(lane);
@@ -465,16 +711,27 @@ async function runTask(task) {
     }
 
     const status = r.outcome === 'done' ? 'done' : 'blocked';
-    const report = r.outcome === 'done'
+    let report = r.outcome === 'done'
       ? (r.text || '(finished without a report)')
       : `${r.text || ''}\n\n(stopped: ${r.why})`.trim();
+    // A subscription run costs no dollars, so it must not be recorded as spend:
+    // agent_tasks.cost_usd is what the per-task cost cap checks at every dispatch,
+    // and a $0.10 cap against Claude's notional figure would permanently block the
+    // task from ever running again. The figure is still shown — in the report and
+    // in the Slack ping — it just isn't counted as money spent.
+    if (isClaude && r.cost) {
+      report += `\n\n---\nRan on Claude ${claudeModelOf(model)} — drew about $${r.cost.toFixed(2)} worth of the subscription (covered by the plan, not billed).`;
+    }
     const statusTxt = status === 'done' ? green('✓ done') : red('✗ blocked');
-    console.log(`  ${statusTxt} on ${bold(model)}${r.cost ? dim(` — $${r.cost.toFixed(4)}`) : ''}`);
+    const shown = isClaude ? `Claude (${claudeModelOf(model)})` : model;
+    const costTxt = r.cost ? dim(isClaude ? ` — ${'$' + r.cost.toFixed(4)} of subscription quota (not billed)` : ` — $${r.cost.toFixed(4)}`) : '';
+    console.log(`  ${statusTxt} on ${bold(shown)}${costTxt}`);
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,
-      cost_usd: r.cost || null, tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
+      cost_usd: isClaude ? null : (r.cost || null), tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
       worktree_path: wt.path, branch: wt.branch,
     });
+    await slackNotify(slackLine({ task, status, engine: shown, startedAt: taskStartedAt, cost: r.cost, why: r.why }));
     return;
   }
 
@@ -490,6 +747,7 @@ async function runTask(task) {
     result: `${headline}\n\nWhat each model said:\n${reasons.map((r) => `• ${r}`).join('\n')}\n\nThe task stays in the queue and will be retried automatically.`,
     tried_models: tried, worktree_path: wt.path, branch: wt.branch,
   });
+  await slackNotify(slackLine({ task, status: 'blocked', engine: 'no engine could run it', startedAt: taskStartedAt, cost: 0, why: headline }));
 }
 
 // ─── Main loop ────────────────────────────────────────────────────────────────
@@ -501,7 +759,8 @@ async function main() {
   console.log(bold('  Queue runner'));
   console.log(dim(`  queue : ${QUEUE_URL}`));
   console.log(dim(`  repo  : ${RUNNER_REPO}`));
-  console.log(dim(`  models: Go chain first, then free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
+  console.log(dim(`  models: Claude (queue's priority lane) → OpenCode Go → free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
+  console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   await printSnapshot({ force: true });
@@ -509,7 +768,12 @@ async function main() {
   while (!stopping) {
     let claimed = null;
     try {
-      const r = await api('/worker/claim', { runner_id: RUNNER_ID });
+      // getClaudeUsage() caches for 60s, so sending it on every 5s poll costs one
+      // real read per minute — that's what keeps the app's usage bar truthful now
+      // that Claude runs here rather than in the container.
+      let usage = null;
+      try { usage = await getClaudeUsage(); } catch { /* no reading — the bar falls back */ }
+      const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage });
       if (r.ok) {
         const body = await r.json();
         claimed = body.none ? null : body.task;

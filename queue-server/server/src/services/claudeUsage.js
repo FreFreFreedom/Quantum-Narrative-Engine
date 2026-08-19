@@ -15,6 +15,7 @@
 // Result cached 60s (15s on failure, so a transient hiccup recovers fast).
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
+import { execFile } from 'node:child_process';
 
 const HOME = process.env.HOME || '/root';
 const PROJECTS_DIR = resolve(HOME, '.claude', 'projects');
@@ -102,6 +103,20 @@ async function computeTokens() {
   return { session, week, today, todayFrom };
 }
 
+// Read the OAuth token out of the macOS Keychain. Non-darwin platforms and any
+// failure (no entry, user denied access, `security` missing) resolve to null so the
+// caller simply falls through to the env var.
+function keychainToken() {
+  if (process.platform !== 'darwin') return Promise.resolve(null);
+  return new Promise((res) => {
+    execFile('security', ['find-generic-password', '-s', 'Claude Code-credentials', '-w'], { timeout: 5000 }, (err, stdout) => {
+      if (err) return res(null);
+      try { res(JSON.parse(String(stdout).trim())?.claudeAiOauth?.accessToken || null); }
+      catch { res(null); }
+    });
+  });
+}
+
 let _lastSub = null;
 const SUB_STALE_MAX_MS = 30 * 60 * 1000;
 
@@ -115,7 +130,13 @@ async function fetchSubscription() {
   let token;
   try {
     token = JSON.parse(await readFile(CREDENTIALS_PATH, 'utf8'))?.claudeAiOauth?.accessToken;
-  } catch { /* fall through to env var */ }
+  } catch { /* fall through */ }
+  // macOS keeps the Claude Code login in the login Keychain, NOT in
+  // ~/.claude/.credentials.json — which is why this returned "no subscription
+  // data" on the Mac even with Claude Code logged in and working. Now that the
+  // queue's Claude runs happen on the Mac (the local runner reports its reading
+  // back to the app), this is the source that actually has the token.
+  if (!token) token = await keychainToken();
   if (!token) token = process.env.CLAUDE_CODE_OAUTH_TOKEN || null;
   if (!token) return null;
 
