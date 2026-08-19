@@ -76,7 +76,11 @@ export function workerRoutes() {
 
   router.post('/worker/:id/stream', (req, res) => {
     noteRunnerPoll();
-    const { chunks, model, cost_usd, session_id } = req.body || {};
+    const { chunks, model, cost_usd, session_id, usage } = req.body || {};
+    // The runner rides its usage reading on these too, not just on the idle
+    // claim poll — otherwise the app's usage bar goes blank for the whole
+    // duration of every task.
+    if (usage) noteRunnerUsage(usage);
     const result = recordRunnerStream(req.params.id, {
       chunks: Array.isArray(chunks) ? chunks : [],
       model: model || null,

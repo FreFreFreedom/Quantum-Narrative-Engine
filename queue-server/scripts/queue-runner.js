@@ -337,6 +337,15 @@ async function claudeGate({ tier, preset }) {
   return null;
 }
 
+// The app's usage bar is fed by whatever this runner last reported, and the only
+// place that used to happen was the idle claim poll — so the bar went blank for
+// the entire duration of every task, which is exactly when it matters. The
+// stream flush carries it too now. getClaudeUsage() caches for 60s, so this is
+// one real read per minute however often we flush.
+async function usageForReport() {
+  try { return await getClaudeUsage(); } catch { return null; }
+}
+
 // ─── Claude helper lane ───────────────────────────────────────────────────────
 // Small text steps on the server (the plan draft, the world-look) run on free
 // models. When every one of those is cooled down, the server has nowhere left to
@@ -452,7 +461,7 @@ function runOnce({ task, model, cwd }) {
         // Send the session id as soon as it's known (not just at the very end)
         // so a runner that dies mid-attempt leaves behind something the next
         // claim can resume, instead of the task restarting from scratch.
-        const r = await api(`/worker/${task.id}/stream`, { chunks, model, cost_usd: cost, session_id: sessionId });
+        const r = await api(`/worker/${task.id}/stream`, { chunks, model, cost_usd: cost, session_id: sessionId, usage: await usageForReport() });
         if (r.status === 409) {
           let body = {}; try { body = await r.json(); } catch {}
           if (body.error === 'cost_cap_exceeded') {
@@ -618,7 +627,7 @@ function runClaudeOnce({ task, model, effort, cwd }) {
         // cost_usd is deliberately 0 for the Claude lane (rule 4 above): this run is
         // covered by the subscription, so its notional dollar figure must not trip
         // the per-task metered cost cap. The real figure still goes in the result.
-        const r = await api(`/worker/${task.id}/stream`, { chunks, model: `claude:${model}`, cost_usd: 0, session_id: sessionId });
+        const r = await api(`/worker/${task.id}/stream`, { chunks, model: `claude:${model}`, cost_usd: 0, session_id: sessionId, usage: await usageForReport() });
         if (r.status === 409) finish('cancelled');
       } catch { /* transient network — retry next tick */ }
     }, STREAM_FLUSH_MS);
