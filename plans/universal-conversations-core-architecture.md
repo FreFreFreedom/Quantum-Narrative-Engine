@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED |
+| **Status** | Backend DONE as specified · front end SUPERSEDED. Audited against the code 2026-08-19. Previously mislabelled PLANNED. The backend is essentially 1:1 with this document — `convos`/`convo_messages`, `services/anthropicLoop.js` (`runToolLoop` with the promised signature), `services/subjectContext.js`, `services/conversations.js` (every promised export), `routes/conversations.js`, and the handoff back-links — including the `task` subject this doc deferred to v2. **The front end shipped as a different design:** one global "Idea Studio" modal rather than three inline detail-pane widgets, so §11's Seeds and Suggestion-Engine right-hand panes were never needed and were never built. `renderConvoThread`, `.convo-plan`, `.convo-badge`, `#archConvoHost` do not exist. **Do not implement §11 as written.** One real gap: §8's cost split was not honoured — `CONVO_CHAT_MODEL` and `CONVO_PLAN_MODEL` are both `claude-sonnet-4-5`, so chatting costs the same as planning. |
 | **Created** | 2026-08-10 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | Backend: 4 new files, 2 new tables, 1 new column, 1 new router. Frontend: 1 new widget + 3 mount points in `fmcns_navigator.html`. |

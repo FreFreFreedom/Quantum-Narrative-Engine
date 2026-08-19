@@ -5,28 +5,54 @@ brief**: enough context, decisions, file references, implementation detail, risk
 testing steps that a coding agent (Claude Code, OpenCode, or another) can implement it
 later without the conversation that produced it.
 
-## Plans
+**Audited 2026-08-19** against the actual code, not against these labels. Five of twelve
+statuses were materially wrong — two said PLANNED about work that was largely shipped and
+running. What follows is what the code says. The percentages are rough but the named
+"what's left" is specific and was verified.
 
-| Plan | What it is | Status |
+---
+
+## Open work
+
+Four plans still have something in them. Each row names the actual remaining piece.
+
+| Plan | What is left | State |
 |---|---|---|
-| [multi-agent-development-team.md](multi-agent-development-team.md) | Evolve the Dispatch Queue into the control center for a team of specialist agents (researcher, 2 developers, UI/UX, immersive, red-team tester, judge, integrator) working in parallel on isolated git worktrees, with selectable collaboration strategies (Single / Competition / Team), a plain-language review screen and a human-pressed merge button. Includes the subscription-only migration and making OpenCode actually work. | PLANNED |
-| [universal-conversations-core-architecture.md](universal-conversations-core-architecture.md) | Make conversation a universal primitive across the whole CORE ARCHITECTURE tab — chat with any Architecture component, tech-tree node, Seed or Suggestion to understand what it would actually do, refine it in dialogue, then send the resulting plan to the Dispatch Queue as a paused task. | PLANNED |
-| [always-on-models.md](always-on-models.md) | Free-provider gateway + quota-exhaustion ledger so every FMCNS feature (text seam, Dispatch Queue, chat) always has a model to run, falling through a codingRank-ordered catalogue of free OpenAI-compatible providers when the Claude Code subscription is exhausted — no paid fallback ever. | DONE |
-| [dispatch-queue-free-model-fallback.md](dispatch-queue-free-model-fallback.md) | Closes always-on-models.md's one gap: Dispatch Queue coding jobs now automatically walk Claude's tiers then every free OpenCode model (no confirmation) instead of pausing once Claude quota runs out. | DONE |
-| [github-code-discovery.md](github-code-discovery.md) | Building blocks — evidence-backed discovery: Discover (curated, cached GitHub search with feedback re-ranking) and Idea box (idea in, two-channel report out — real GitHub repos or a build-it-ourselves proposal — plantable into the tech tree). Shipped independently by an overnight agent before this doc was picked up; live code may differ in detail from this doc. | DONE (MVP) |
-| [plan-first-queue-and-idea-composition.md](plan-first-queue-and-idea-composition.md) | Part A: every Dispatch Queue task, from any entry point, is auto-drafted into an unambiguous plan before it runs. Part B: Idea box "Frankenstein" flow — superseded by an already-shipped overnight-agent implementation with a different design; not built as specified here. | Part A DONE, Part B SUPERSEDED |
-| [idea-studio-conversational-task-creation.md](idea-studio-conversational-task-creation.md) | Idea Studio — one conversational widget opened from everywhere (top bar, note/suggestion/architecture cards, dispatch form) that grills an idea, writes a coder-brief plan, and hands it off as a paused Dispatch Queue task. Built on the floating assistant's chat engine as a shared module. Phase 2 revives the two verified building-blocks branches inside it. | IN PROGRESS |
-| [core-workspace-unified-flow.md](core-workspace-unified-flow.md) | Merge the five CORE ARCHITECTURE sub-tabs into one three-zone workspace (Architecture graph with layers · unified Flow · one Detail pane), night mode for the whole app, a merged resizable floating window (Chat · New task with element picker · New idea · Queue panel), auto-placed "Add an idea" node creation, and the Building blocks (Idea box + Library) restored additively. | DONE |
-| [design-system-pass.md](design-system-pass.md) | Whole-app UI/UX pass on `fmcns_navigator.html`: spacing/typography scale, consolidate 10+ one-off button classes into a shared `.btn` component, responsive/mobile support (currently none), finish the dark-mode pass (hardcoded-hex escapes remain), and a basic accessibility pass (aria-labels, alt text, focus states, keyboard nav on the graph views). Coordinates with core-workspace-unified-flow.md's overlapping Phase 0–2 rather than duplicating it. | IN PROGRESS |
-| [travaux-quick-panel.md](travaux-quick-panel.md) | Right-anchored slide-over Queue panel reachable from anywhere (header button or ⌘/Ctrl+/), bundling a task composer with a live queue read-out; folds the floating widget's New-task/Queue tabs into it; adds front/back reply placement to the backend; factors shared status-pill/question/reply-box render helpers used by both the panel and the Flow tab. Adapted from two React/Tailwind ERP reference docs. | DONE |
-| [ranked-next-steps.md](ranked-next-steps.md) | One ranked answer to "what do I build next, and in what order?", replacing about fifteen competing ones. A free server-side ranking (`services/nextSteps.js`) scores unbuilt work by readiness, how much it unlocks (transitive unbuilt dependents — the signal the paid ranker used to ask a model to guess), momentum, health score and territory balance, with a plain-English reason assembled from the fact that caused each rank. Feeds the finished-but-never-connected "Your next 3" panel, promoted to the top of the Flow. Also: Architecture and Flow become one side-by-side workspace, Claude demoted to an optional second opinion, `intel_thoughts.priority` derived instead of always 0, a re-runnable import for the roadmap in `plans/` + `BUILD_STATUS.md`, and six dead/broken things fixed (tech-tree zoom, a per-render ReferenceError, an unreachable filter bar). | DONE |
-| [self-aware-platform.md](self-aware-platform.md) | Make the platform default self-aware: free-first model policy everywhere (Claude opt-in-only), task queue on the OpenCode Go lane with a daily spend guard and zero-touch automatic model switching, a free self-observation "pulse" on the architecture graph (vitals: bottleneck/aging/unbuilt-dep/orphan/isolated/stale), durable thought files with state-memory and a Mind feed (accept → paused Flow task), then the same intelligence on the content navigator. Part 6 adds the inspiration round (health score + history, acknowledged signals, outcome post-mortems, usage-pattern feature radar, adoption-rate meter, nightly ranked drain). | Parts 1–2 DONE (2026-08-14) · Parts 3–6 PLANNED |
+| [design-system-pass.md](design-system-pass.md) | Its **headline deliverable was never built**: there is no shared `.btn` component anywhere in `fmcns_navigator.html`, so the 10+ one-off button classes it exists to consolidate are all still one-offs. Also outstanding: real per-view responsive behaviour (only 3 breakpoints exist, none of them collapsing Content or Map), `alt` text (2 occurrences in the whole file), and keyboard access on the graphs (`tabindex` appears once, on the Architecture SVG only). Spacing/type tokens and the accessibility labels **are** done. | **IN PROGRESS ~40%** |
+| [multi-agent-development-team.md](multi-agent-development-team.md) | Most of it shipped — parallel developer worktrees, per-agent slots, the review/publish gate, role briefs, AI settings. What is left is the **specialist roster**: 3 of the 7 named agents exist (`dev1`/`dev2`/`dev3`), and `.agents/roles/` is missing `explorer.md`, `tester.md`, `integrator.md`. Its **collaboration-strategies half is CANCELLED** — see below. | **~70% DONE · roster outstanding** |
+| [self-aware-platform.md](self-aware-platform.md) | All six parts are built and live. Two loose ends behind them: (1) **the learning loop does not close** — retrospectives are written to `intel_task_lessons` but nothing ever reads them back, so no future thought or task is told "you tried this before and here is what happened"; (2) **the nightly ranked drain has no runner** — `GET /intel/drain` exists and nothing calls it, so the list is never worked. Smaller gaps: the "Acknowledge" endpoint has no button in the UI, and Part 5's content-graph panel was never built (its two buttons live in the Mind toolbar instead). | **Parts 1–6 DONE · 2 loose ends** |
+| [github-code-discovery.md](github-code-discovery.md) | MVP complete, and ~70% of the "not started" Phase 2 is in fact built (history view, save-as-Seed, entry points, queue wiring). Genuinely missing: **`architecture_node_evidence` is written but has no read path** (`GET /evidence/:nodeId` does not exist), so the evidence behind a planted idea cannot be seen; plus tech-tree evidence icons, report delete, and `/reports/:id/rerun`. | **DONE (MVP + most of Phase 2)** |
+
+### Cancelled
+
+| Plan | Why |
+|---|---|
+| [multi-agent-development-team.md](multi-agent-development-team.md) — *collaboration strategies only* | Antoine's decision, 2026-08-19: "not relevant anymore". The Single / Competition / Team picker was removed from the New-prompt form, and the `task_stages` table that would have driven it (zero reads, zero writes since it was created) is no longer created. Picking Competition or Team had been storing a value, setting a state nothing read, and running one single agent while quoting a 2.5×–4× cost. The rest of this plan stays open — see above. |
+
+---
+
+## Shipped
+
+| Plan | What it is | Note |
+|---|---|---|
+| [ranked-next-steps.md](ranked-next-steps.md) | One ranked answer to "what do I build next, and in what order?", replacing about fifteen competing ones. Free server-side ranking on readiness, how much each piece unlocks, momentum, health and territory balance, with a plain-English reason per row. Also demoted Claude to an optional second opinion and made `intel_thoughts.priority` mean something. | DONE 2026-08-19 |
+| [always-on-models.md](always-on-models.md) | Free-provider gateway + quota-exhaustion ledger so every feature always has a model, falling through a free catalogue when the Claude subscription is exhausted. No paid fallback ever. | DONE (step 6 replaced by `dispatch-queue-free-model-fallback.md`). **Note:** the daily spend guard `queue_go_budget_usd` ships as `0`, which the code treats as *disabled* |
+| [dispatch-queue-free-model-fallback.md](dispatch-queue-free-model-fallback.md) | Queue coding jobs walk Claude's tiers then every free OpenCode model instead of pausing when quota runs out. | DONE. **Its prose is stale** — the Claude-tier walk it describes was later replaced by `self-aware-platform.md` Parts 1–2 (all Claude tiers share one quota bank, so the code now goes straight to the OpenCode chain) |
+| [plan-first-queue-and-idea-composition.md](plan-first-queue-and-idea-composition.md) | Part A: every queue task, from any entry point, is auto-drafted into an unambiguous plan before it runs. Part B: Idea box "Frankenstein" composition. | Part A DONE — and it grew beyond the plan (a second pre-flight world-look stage, a "Run raw" escape hatch, a backfill path). Implemented as a `plan_pending` flag, **not** the `drafting_plan` status the doc describes. Part B SUPERSEDED by already-shipped overnight-agent work |
+| [travaux-quick-panel.md](travaux-quick-panel.md) | Right-anchored slide-over Queue panel reachable from anywhere (⌘/Ctrl+/), bundling a task composer with a live queue read-out; factors the shared status-pill/question/reply-box helpers used by both it and the Flow. | DONE. Its two French ERP source docs were deleted from this folder on 2026-08-19 — recover with `git show d5068c1 -- plans/<name>` |
+| [idea-studio-conversational-task-creation.md](idea-studio-conversational-task-creation.md) | Idea Studio — one conversational widget opened from everywhere that grills an idea, writes a coder-brief plan, and hands it off as a paused queue task. | DONE (was mislabelled IN PROGRESS). Two small gaps: the promised top-bar "💬 New idea" button was never added (`openNewIdeaStudio` is defined and never called), and both chat and plan steps run on `claude-sonnet-4-5` although the plan specified a cheap model for chatting |
+| [universal-conversations-core-architecture.md](universal-conversations-core-architecture.md) | Make conversation a universal primitive — chat with any Architecture component, tree node, Seed or Suggestion, refine it in dialogue, then send the result to the queue as a paused task. | Backend DONE essentially as written (`convos`, `anthropicLoop.js`, `subjectContext.js`, `conversations.js` — including the `task` subject that was deferred to v2). Front end SUPERSEDED: it shipped as the one Idea Studio modal rather than three inline detail panes, so §11's Seeds/Suggestions panes were never needed. Was mislabelled PLANNED |
+| [core-workspace-unified-flow.md](core-workspace-unified-flow.md) | Merge the five CORE ARCHITECTURE sub-tabs into one workspace, night mode for the whole app, a merged floating window, auto-placed idea creation, Building blocks restored. | DONE, with **two claims corrected**: it shipped as **two** zones plus a detail pane docked inside the graph zone (there is no `.ws-detail` third zone), and the "merged four-tab floating window" is now **Chat-only** — the New-task and Queue tabs were removed again by `travaux-quick-panel.md`. Night mode works but has no theme API/event, and its hardcoded-hex sweep is unfinished (owned by `design-system-pass.md`) |
+
+---
 
 ## Statuses
 
 - **PLANNED** — written and approved, not started.
 - **IN PROGRESS** — implementation underway.
 - **DONE** — implemented and verified.
+- **SUPERSEDED** — the need was met, but by a different design than this doc describes.
+  The doc is kept for its reasoning; **do not implement it as written**.
 - **CANCELLED** — decided against; kept for the reasoning.
 
 ## Working rules
@@ -34,13 +60,26 @@ later without the conversation that produced it.
 - **Nothing here is implemented until Antoine explicitly asks.** A plan landing in this
   folder is not a green light.
 - **When a feature is finished being planned**, save the final approved plan here as a
-  new Markdown file with a descriptive kebab-case filename, and add a row to the table
-  above.
+  new Markdown file with a descriptive kebab-case filename, and add a row to the right
+  table above.
 - **When Antoine says "implement \<plan name\>"**: read the saved plan first, then inspect
   the current state of the project and verify the plan still fits — file paths, function
   names, line references and assumptions all drift. Report anything important that has
   changed *before* writing code, then implement.
-- **Keep the status column current** — flip to IN PROGRESS when starting and DONE when
-  verified.
+- **Update the status when work FINISHES, not only when a plan is added.** This is the
+  rule that was being broken. This file had been edited 15 times and every single edit
+  came from the session that *added* a plan; none came from a session that completed one.
+  So finished work silently kept its old label, and by 2026-08-19 two plans claimed
+  "PLANNED" about features that had been live for days. If you ship something a plan
+  covers, move its row and say what is left — in the same commit as the code.
+- **A plan is not evidence.** Before trusting any status here, check the code: grep for
+  the concrete artefacts the plan promises (table names, endpoints, service filenames,
+  function names). That is how this audit was done and it is the only thing that works.
+- **Prefer "SUPERSEDED" to "DONE" when the design changed.** Several plans here were
+  satisfied by a different implementation than they specify; marking those DONE invites
+  the next agent to "finish" them by rebuilding what already exists differently.
 - Each plan carries its own status in a header table at the top of its file. That header
-  and this table must agree.
+  and this table must agree — three of them disagreed before this audit.
+- **This folder is for plans only.** Large external reference documents do not belong
+  here; three of them once made up two-thirds of it. Keep such material next to what it
+  documents (as `queue-server/SPEC.md` is), or drop it once it has been used.

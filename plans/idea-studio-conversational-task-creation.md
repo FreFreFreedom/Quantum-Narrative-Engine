@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | IN PROGRESS |
+| **Status** | DONE. Audited against the code 2026-08-19. Previously mislabelled IN PROGRESS. Phase 1 is complete: the studio widget, all four commands (`/grill-me`, `/plan`, `/handoff`, `/help` — plus a bonus `/compare`), and every entry point (seed, suggestion, architecture, queue task, and the dispatch form's "💬 Shape it in conversation first"). Phase 2 is satisfied by `github-code-discovery.md`'s work, which is woven into the studio's context. **Two small gaps left, not worth their own plan:** the promised permanent top-bar "💬 New idea" button was never added — `window.openNewIdeaStudio` is defined and called from nowhere — and the cheap-model-for-chatting default was not implemented (both model constants are `claude-sonnet-4-5`; shared with `universal-conversations-core-architecture.md`). |
 | **Created** | 2026-08-12 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | Phase 1: conversational Idea Studio (backend conversation storage + commands, frontend studio widget + entry points). Phase 2: revival of the two verified building-blocks branches, woven into the studio. |

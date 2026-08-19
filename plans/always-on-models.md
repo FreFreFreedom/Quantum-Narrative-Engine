@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | DONE — steps 1-5, 7-8 shipped 2026-08-11; step 6 (CCR) replaced by an in-codebase fix, see `plans/dispatch-queue-free-model-fallback.md` |
+| **Status** | DONE — steps 1-5, 7-8 shipped 2026-08-11; step 6 (CCR) replaced by an in-codebase fix, see `plans/dispatch-queue-free-model-fallback.md`. Audited against the code 2026-08-19. Verified complete: `ai/catalog.js`, `ai/router.js`, `ai/resetWindow.js`, `providers/openaiCompat.js`, `quotaScheduler.js`, the two quota tables, `work_prompts.resume_after`, the free-providers endpoint and the frontend panel all exist, and the raw `api.anthropic.com` call this plan objected to is gone. **One thing worth knowing:** the daily spend guard ships disabled — `queue_go_budget_usd` defaults to `0`, and `taskRunner.js` treats `0` as "no limit". The 0.33/day this plan recommended exists only as an in-memory cache default. |
 | **Created** | 2026-08-11 |
 | **Implemented (partial)** | 2026-08-11 — see note below |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |

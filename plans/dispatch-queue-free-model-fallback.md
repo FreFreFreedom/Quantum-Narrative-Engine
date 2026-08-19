@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | DONE — implemented 2026-08-12 |
+| **Status** | DONE — implemented 2026-08-11. **Its prose is now stale.** Audited against the code 2026-08-19. The feature works, but the logic described here was replaced by `plans/self-aware-platform.md` Parts 1–2: this doc's step 1 ("stays synchronous for the cheap case — same-tier Claude retry, haiku→sonnet→opus") is no longer what happens. All Claude tiers share one quota bank, so `taskRunner.js` now skips Claude tier fallback entirely and goes straight to the OpenCode model chain, with a curated Go lane and a free floor layered on top. Also: there is no `buildFallbackChain` function — the logic is inline in `finalize()`. Read the code, not this document, for current behaviour. |
 | **Created** | 2026-08-12 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`) |
 | **Follow-up to** | `plans/always-on-models.md` (already implemented for the text seam + chat; this closed the one gap left there — the Dispatch Queue's coding jobs) |

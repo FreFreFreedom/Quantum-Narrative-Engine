@@ -419,16 +419,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-detail-close:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .ws-flow { flex:1; min-width:0; min-height:0; display:none; flex-direction:column; }
 .ws-flow.open { display:flex; }
-/* ── One workspace, two halves ────────────────────────────────────────────────
-   The architecture and the work were two mutually exclusive tabs of a shell that
-   already held them as flex:1 siblings, so uniting them is mostly a matter of
-   letting both be open. The map gets the larger share because it is a graph; the
-   work column has a floor so it never squeezes to an unreadable strip. Below
-   CORE_SPLIT_MIN (renderWorkspace) the chips come back and this all switches off. */
-.core-split .ws-map { flex:1.4 1 0; }
-.core-split .ws-flow { flex:1 1 0; min-width:380px; border-left:1px solid var(--c-border); }
-.core-split .core-tabs { display:none; }          /* nothing left to switch between */
-.core-split #corePaneFlow { padding-left:2px; }
 /* Inline task/seed/suggestion detail — the row expands downwards into this card. */
 .flow-expanded { border:1px solid var(--c-border-2); background:var(--c-surface-2); border-radius:10px; padding:14px; margin:2px 0 10px; animation:fmcnsRise .22s var(--ease); }
 .flow-expanded h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 10px; }
@@ -488,21 +478,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-addbtn:disabled { background:var(--c-border-3); cursor:default; }
 .q-err { font-size:10.5px; color:var(--c-danger); margin-top:5px; }
 .q-item { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:7px; cursor:pointer; }
-.q-review { border:1px solid var(--c-border-2); border-left:4px solid #b8860b; background:var(--c-warm-tint); border-radius:8px; padding:9px 11px; margin-bottom:8px; }
-.q-review[data-review-status="approved"] { border-left-color:var(--c-brand); }
-.q-review-plain { font-size:11px; color:#5c564c; margin-top:5px; }
-.q-review-checks { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px 12px; }
-.q-review-check { font-size:10.5px; color:#5c564c; display:flex; gap:4px; align-items:center; }
-.q-check-ok { color:var(--c-brand); font-weight:700; }
-.q-check-bad { color:var(--c-danger); font-weight:700; }
-.q-review-conflict { font-size:10.5px; color:var(--c-danger); margin-top:5px; }
-.q-review-concerns { font-size:10.5px; color:var(--c-warn); margin-top:5px; background:var(--c-warn-tint); border-radius:5px; padding:5px 7px; }
-.q-review-meta { font-size:10px; color:var(--c-ink-4); margin-top:5px; }
-.q-review-actions { margin-top:7px; display:flex; gap:6px; flex-wrap:wrap; }
-.q-mergebtn { background:var(--c-brand); color:#fff; }
-.q-mergebtn:disabled { background:var(--c-border-3); }
-.q-revertbtn { background:var(--c-danger); color:#fff; }
-.q-revertbtn:disabled { background:var(--c-border-3); }
+/* (Deleted here: 15 rules for the old review card — .q-review*, .q-check-ok/bad,
+   .q-mergebtn, .q-revertbtn. Nothing has emitted class="q-review" since the
+   ship-state pills replaced that card, so none of it reached a screen. Worth noting
+   because a dark-mode audit flagged .q-review-plain/.q-review-check for unreadable
+   grey (#5c564c) text: real in the stylesheet, invisible in the app, and now gone
+   either way. */
 .q-item:hover { border-color:var(--c-border-3); }
 .q-item.sel { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
 .q-item-top { display:flex; align-items:center; gap:7px; }
@@ -1366,16 +1347,6 @@ button:active { transform: translateY(1px) scale(.99); }
                     <option value="">(loading models…)</option>
                   </select>
                 </label>
-              </div>
-              <div class="q-row">
-                <label>Strategy
-                  <select id="qStrategy">
-                    <option value="single" selected>Single (one agent, normal review)</option>
-                    <option value="competition">Competition (two devs, judge compares, you pick)</option>
-                    <option value="team">Team (research → build → test → judge → integrate)</option>
-                  </select>
-                </label>
-                <span id="qStrategyInfo" style="font-size:10px;color:var(--c-ink-3);align-self:center;"></span>
               </div>
               <div class="q-row">
                 <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Skips the automatic world-look and plan-draft passes that normally run before a task starts — use for a genuinely small/simple task you want to run about as fast as pasting it into a plain terminal session.">
@@ -3284,7 +3255,6 @@ function initCore() {
       b.onclick = () => { document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x === b)); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
-    document.getElementById('qStrategy').onchange = qStrategyInfo; // update cost multiplier info
     document.getElementById('aiSheetBtn').onclick = () => {
       document.getElementById('aiSheetRoot').style.display = 'flex';
       loadAiSettings();
@@ -3324,23 +3294,12 @@ function teardownCore() {
 // docked inside the graph zone and driven by selection, not by view; the Graph
 // and Building blocks are inner tabs of the Architecture view); the center
 // shows the Flow list; the right detail zone is the shared item detail on Flow.
-// Is there room to show the architecture and the work side by side? Below this
-// width they go back to one-at-a-time with the two chips, reusing the same
-// mechanism — the panes were already flex:1 siblings of one shell, so the only
-// difference between "two tabs" and "one workspace" is which of them is open.
-const CORE_SPLIT_MIN = 1100;
-const coreSplit = () => window.innerWidth >= CORE_SPLIT_MIN;
-
 function renderWorkspace() {
   const v = coreView;
-  const split = coreSplit();
-  document.getElementById('coreApp').classList.toggle('core-split', split);
   document.querySelectorAll('[data-core-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-core-tab') === v));
-  // Split: both halves are open at once, and the loop reads left-to-right — the
-  // map of what exists, then the ranked list of what to do and what is running.
-  document.getElementById('wsMap').classList.toggle('open', split || v === 'arch');
-  document.getElementById('wsFlow').classList.toggle('open', split || v !== 'arch');
-  Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', split || p === v));
+  document.getElementById('wsMap').classList.toggle('open', v === 'arch');
+  document.getElementById('wsFlow').classList.toggle('open', v !== 'arch');
+  Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
 }
 
 // Architecture view inner tabs: Graph (the canvas), Building blocks
@@ -3359,24 +3318,10 @@ function setArchTab(t) {
 function switchCoreView(v) {
   coreView = v;
   renderWorkspace();
-  // With both panes on screen, both need their data — not just the one whose chip
-  // was last clicked.
-  const split = coreSplit();
-  if (split || v === 'arch') { initArchNav(); setArchTab(archTab); }
-  if (split || v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
-  if (coreInited) startQueuePolling();
+  if (v === 'arch') { initArchNav(); setArchTab(archTab); }
+  if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
+  if (coreInited) startQueuePolling(); // rate depends on which view is now active
 }
-
-// Crossing the breakpoint changes which panes exist, so the workspace has to be
-// laid out again — and whichever half was hidden has never loaded its data.
-let _coreWasSplit = null;
-window.addEventListener('resize', () => {
-  if (!document.getElementById('coreApp').classList.contains('open')) return;
-  const now = coreSplit();
-  if (now === _coreWasSplit) return;
-  _coreWasSplit = now;
-  switchCoreView(coreView);
-});
 
 // Jump to the Flow view and open a given task in the detail pane — used by the
 // hand-off confirmation after queuing a prompt from Architecture/Seeds/Studio.
@@ -3554,22 +3499,13 @@ function qProviderUi() {
   }
 }
 
-// Strategy info: show the cost multiplier and a plain-French explanation
-const STRATEGY_INFO = {
-  single: { mult: '1×', text: 'One agent does the task, then the normal review gate.' },
-  competition: { mult: '~2.5×', text: 'Two developers solve the same task separately. A judge compares both and recommends a winner. You pick which to merge.' },
-  team: { mult: '~3–4×', text: 'Explorer researches → Developer builds → Tester tries to break it → Judge reviews → Integrator prepares the merge. Research and test run on free models.' },
-};
-
-function qStrategyInfo() {
-  const sel = document.getElementById('qStrategy');
-  const info = document.getElementById('qStrategyInfo');
-  if (!sel || !info) return;
-  const s = STRATEGY_INFO[sel.value] || { mult: '', text: '' };
-  info.textContent = s.mult ? `Cost: ${s.mult} — ${s.text}` : '';
-}
-// Call once on init so the default shows
-qStrategyInfo();
+// (Removed here: the Strategy picker — "Single / Competition / Team" — along with
+// STRATEGY_INFO and qStrategyInfo(). Competition and Team were never built. Picking
+// either stored the value on the task row, set a `strategy_state` that nothing ever
+// read, and ran one single agent exactly as before, while quoting a "~2.5×" or
+// "~3–4×" cost that could not happen. A control that promises work the app cannot
+// do is worse than no control. The orchestrator that would have driven it is recorded
+// as cancelled in plans/multi-agent-development-team.md.)
 
 // ---------- AI Settings sub-tab ----------
 // Per-work-type default model + the quota policy that decides what happens when
@@ -3764,10 +3700,7 @@ function renderAiSettings() {
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
-  // In split mode the Flow is on screen whatever the chips say, so the fast rate
-  // has to follow "is Core open and the Flow showing", not "is the Flow tab active".
-  const coreOpen = document.getElementById('coreApp').classList.contains('open');
-  const flowVisible = coreOpen && (coreSplit() || coreView === 'flow');
+  const flowVisible = coreView === 'flow' && document.getElementById('coreApp').classList.contains('open');
   qPollTimer = setInterval(qLoad, flowVisible ? 4000 : 15000);
 }
 
@@ -4776,13 +4709,9 @@ function renderFlow() {
       if (e.target.closest('.q-optbtn')) return;
       if (e.target.closest('.nb-more')) return;
       if (e.target.closest('.q-title-inline')) return;
-      if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; archHighlightFor(null); renderFlow(); return; }
+      if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; renderFlow(); return; }
       flowSideSel = null;
       qSelected = qPrompts.find(p => p.id === id);
-      // The other half of the link: picking a task lights up the piece of the
-      // architecture it belongs to. (Tasks created before component_id was set on
-      // every path carry no piece — those simply highlight nothing.)
-      archHighlightFor(qSelected ? qSelected.component_id : null);
       if (qSelected && !qSelected.seen_at) {
         qSelected.seen_at = '1';
         apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
@@ -5072,7 +5001,6 @@ async function qAddPrompt(asPaused) {
       provider,
       provider_model: usesModelPicker ? (modelSel.value || null) : null, // '' = Auto → server system default
       agent_key: document.getElementById('qAgent').value || null, // '' = Auto
-      strategy: document.getElementById('qStrategy').value,
       // "Run raw": skip the automatic world-look + plan-draft passes entirely —
       // plan_source:'skip' already means "no drafted plan" server-side, and
       // promptQueue.js now also treats it as "skip inspiration" for the same reason.
@@ -7853,17 +7781,6 @@ function archRedrawCurrent() {
   else drawArchDeps();
 }
 
-// Show, on the map, which piece a task belongs to. Only meaningful when both
-// halves are on screen, so it costs nothing otherwise. It reuses archTrail and
-// archApplyHoverDim — a class toggle on elements that already exist, never a
-// rebuild, so selecting a task cannot disturb the graph you are looking at.
-function archHighlightFor(componentId) {
-  if (!coreSplit()) return;
-  if (!document.getElementById('archStage')) return;
-  archTrail = componentId ? new Set([componentId]) : null;
-  try { archApplyHoverDim(); } catch { /* stage not drawn yet */ }
-}
-
 // Hover highlighting for Tech Tree. It only ever toggles a class / sets an
 // attribute on elements that already exist — it never rebuilds them. An
 // earlier version redrew the whole view on a hover debounce, which destroyed
@@ -8491,9 +8408,6 @@ function renderArchDetail(id) {
   const flowBtn = document.getElementById('archFlowBtn');
   if (flowBtn) flowBtn.onclick = () => {
     flowComponentFilter = c.id;
-    // With both halves on screen there is nothing to switch to — just narrow the
-    // column beside it, and keep the component selected here.
-    if (coreSplit()) { renderFlow(); return; }
     setMode('core');
     switchCoreView('flow');
   };

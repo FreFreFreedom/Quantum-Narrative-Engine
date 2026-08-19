@@ -6,6 +6,63 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 
 ## What exists right now
 
+**The plan backlog now tells the truth.** `plans/` held twelve plans whose status column
+was wrong more often than right — five of twelve materially misleading, and the two worst
+saying **PLANNED** ("not started") about work that was largely shipped and running.
+`self-aware-platform.md` claimed Parts 3–6 were unbuilt; all six are live, and its own
+header still said they sat unmerged on `overnight/2026-08-10` awaiting a decision — that
+work reached `main` on 2026-08-14 (`5aa29c1`) and had been running for five days.
+`multi-agent-development-team.md` claimed not-started for something ~70% built (parallel
+dev worktrees, per-agent slots, the review/publish gate, role briefs, AI settings).
+`universal-conversations-core-architecture.md` claimed not-started for a backend that
+matches its spec almost 1:1. Two others were overstated the other way:
+`core-workspace-unified-flow.md` is marked DONE but shipped **two** zones not three (there
+is no `.ws-detail`) and its "merged four-tab floating window" is now Chat-only, the other
+tabs having been removed again by `travaux-quick-panel.md`. Every claim was checked by
+grepping for the concrete artefacts each plan promises, not by reading its label.
+
+**The cause was structural, and is now written into the folder's rules.** `plans/README.md`
+had been edited 15 times and *every* edit came from the session that **added** a plan;
+none from a session that finished one. So completed work silently kept its old label. The
+index is now two tables — **Open work** (four plans, each naming the specific piece that
+is actually left) and **Shipped** — and the working rules say to move a row when work
+finishes, in the same commit as the code. Each plan's own header was rewritten to agree,
+which three of them did not.
+
+**What is genuinely left**, once the labels are honest: the shared `.btn` component that
+`design-system-pass.md` exists to create and never started; four of seven specialist
+agents; and two loose ends behind the otherwise-complete self-aware work — retrospectives
+are written to `intel_task_lessons` and **never read back**, so nothing ever learns from
+them, and the nightly ranked drain has an endpoint that nothing calls. Plus
+`architecture_node_evidence`, which is written but has no read path. These are now nodes
+in the tree, so they rank in "What to do next" instead of sitting in a Markdown file the
+server cannot see.
+
+**Two fake choices removed.** The New-prompt form offered "Competition (two devs, judge
+compares, you pick)" and "Team (research → build → test → judge → integrate)". Neither
+existed: picking either stored the value, set a `strategy_state` that nothing ever read,
+ran one single agent, and quoted a "~2.5×"/"~3–4×" cost that could not happen. The picker
+is gone, the `task_stages` table that would have driven it (zero reads, zero writes since
+creation) is no longer created, and the strategies half of the multi-agent plan is recorded
+as cancelled. `createPrompt` still accepts `strategy` so older callers keep working —
+verified against a running server, along with a task that sends no strategy at all.
+
+**And 584 KB of the plans folder wasn't plans.** Three French code exports from the Orisha
+ERP — a different application, zero mentions of FMCNS — supplied as source material for
+the Queue panel that shipped on 16 August. Deleted (recoverable via
+`git show d5068c1 -- plans/<name>`, verified byte-identical before removal); the folder went
+from 856 KB to 272 KB. The one dangling reference to them was rewritten rather than left
+broken. `queue-server/SPEC.md` is a fourth such export and was deliberately left alone —
+it sits outside `plans/` with a pointer from `queue-server/README.md`, which is where
+reference material belongs.
+
+One bug of my own, caught by the plan's own verification step: rewriting the index with
+honest notes broke `import-roadmap.js`, which had been matching the words PLANNED/IN
+PROGRESS anywhere in a status cell — so a shipped plan whose note read "was mislabelled IN
+PROGRESS" matched, while a genuinely open one reading "~70% DONE · roster outstanding" did
+not. It now reads only the rows under the "Open work" heading, stopping at "Cancelled",
+which stays correct as the wording changes.
+
 **The app can finally say what to build next, and in what order.** The question had no
 answer not because nothing computed one, but because about fifteen things did and none
 was in charge: seven orderings computed in the browser (`nbSmartOrder`, the tech tree's

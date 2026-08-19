@@ -8,6 +8,10 @@ Implemented in full. `queue-server/scripts/import-roadmap.js` is a one-time impo
 re-run by hand; everything else is live. Verified by `npm run next:selftest` (22 checks,
 no model spend).
 
+One correction to the plan as written below: Step 5's side-by-side workspace **was built
+and then reverted the same day** at Antoine's request — the Architecture and Flow chips
+remain the way to switch. Everything else in Steps 1–4 and 6 shipped.
+
 ---
 
 ## Context

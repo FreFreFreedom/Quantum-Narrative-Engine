@@ -55,28 +55,47 @@ function adminPassword() {
 
 // ─── Reading the two documents ────────────────────────────────────────────────
 
-// plans/README.md keeps a status table: | [name](file) | description | STATUS |
-// Only work that is still ahead of us is worth importing.
+// plans/README.md is now two tables: "## Open work" (what still has work in it) and
+// "## Shipped". Read ONLY the open one, and stop at its "### Cancelled" subsection.
+//
+// It used to scan every row for the words PLANNED / IN PROGRESS anywhere in the status
+// cell, which broke the moment the index was rewritten with honest notes: a shipped
+// plan whose note read "was mislabelled IN PROGRESS" matched, and a genuinely open one
+// whose status read "~70% DONE · roster outstanding" did not. Matching on the section a
+// row lives in is the thing that stays true as the wording changes.
 function fromPlans() {
   const p = join(REPO, 'plans', 'README.md');
   if (!existsSync(p)) return [];
+  const text = readFileSync(p, 'utf8');
+
+  const start = text.search(/^##\s+Open work\s*$/m);
+  if (start === -1) return [];                       // no such section — import nothing
+  const rest = text.slice(start);
+  // Ends at the next same-or-higher heading, or at the Cancelled subsection.
+  const stop = rest.search(/^(##\s+(?!Open work)|###\s+Cancelled)/m);
+  const section = stop === -1 ? rest : rest.slice(0, stop);
+
   const out = [];
-  for (const line of readFileSync(p, 'utf8').split('\n')) {
+  for (const line of section.split('\n')) {
     if (!line.startsWith('|')) continue;
     const cells = line.split('|').map((c) => c.trim());
     if (cells.length < 4) continue;
     const [, nameCell, what, status] = cells;
-    if (!/PLANNED|IN PROGRESS/i.test(status)) continue;
-    if (/^Plan$/i.test(nameCell)) continue;                    // header row
+    if (/^Plan$/i.test(nameCell) || /^-+$/.test(nameCell)) continue;   // header / rule
     const link = nameCell.match(/\[([^\]]+)\]\(([^)]+)\)/);
     if (!link) continue;
     const file = link[2];
+    if (out.some((o) => o.source === `plans/${file}`)) continue;       // listed twice
+    // The status cell is now prose, so infer only what is safe: work already under way
+    // reads as a Prototype, anything else as Designed. Getting this wrong only nudges
+    // the ranking's momentum tie-break, never correctness.
+    const started = /IN PROGRESS|DONE|%/i.test(status);
     out.push({
       name: titleFromFilename(file),
       what: stripMd(what).slice(0, 600),
-      why: `An approved plan in plans/${file}, still ${/IN PROGRESS/i.test(status) ? 'in progress' : 'waiting to be started'}.`,
-      next: `Read plans/${file} and carry it out.`,
-      status: /IN PROGRESS/i.test(status) ? 'Prototype' : 'Designed',
+      why: `An open plan in plans/${file}. What is left: ${stripMd(what).slice(0, 200)}`,
+      next: `Read plans/${file} and carry out what it says is still outstanding.`,
+      status: started ? 'Prototype' : 'Designed',
       source: `plans/${file}`,
     });
   }

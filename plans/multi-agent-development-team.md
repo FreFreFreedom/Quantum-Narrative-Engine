@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED |
+| **Status** | ~70% DONE · roster outstanding · collaboration strategies **CANCELLED**. Audited against the code 2026-08-19. Previously mislabelled PLANNED, which was wrong: `gitOps.js`, `agents.js`, `reviewRunner.js`, `briefing.js`, `routes/agents.js`, `routes/reviews.js`, the `agents`/`reviews` tables, role briefs, Part 7R AI settings and Part 0S style policy are all live, and steps 0–9 substantially landed. **Outstanding:** the specialist roster — only `dev1`/`dev2`/`dev3` are seeded, and `.agents/roles/` lacks `explorer.md`, `tester.md`, `integrator.md`. **Cancelled 2026-08-19 (Antoine: "not relevant anymore"):** the Single/Competition/Team strategies and the orchestrator behind them. `services/orchestrator.js` and `routes/strategies.js` were never written; `task_stages` was created but never read or written and is no longer created; the picker has been removed from the New-prompt form. Do not rebuild it without asking. **Superseded:** the review screen described here (a card with checks and a typed `FUSIONNER` confirmation) shipped instead as the ship-state pills driven by `services/shipChecks.js`. |
 | **Created** | 2026-08-10 |
 | **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | Large. ~12 new files, 5 new tables, a git-operations layer, a review/merge gate, a collaboration-strategy engine, and a subscription-only migration. Built in 12 independently shippable steps; steps 0–3 already deliver parallel development. |

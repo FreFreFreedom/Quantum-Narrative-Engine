@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Parts 1–2 DONE (shipped 2026-08-14, commits `448c27e` + `f627ee7` on main) · Parts 3–6 IMPLEMENTED on `overnight/2026-08-10` (`5aa29c1` + `356956f`, not yet merged — Antoine's call). Part 5 (content-graph Intelligence) implemented, pending Antoine's test and commit word. Remaining: overnight-agent drain workflow (6.6 runner), and the plan's 6.1–6.6 verification pass in the live app. |
+| **Status** | Parts 1–6 all DONE and live on `develop`+`main`. Audited against the code 2026-08-19. The previous status here — "Parts 3–6 implemented on `overnight/2026-08-10`, not yet merged, Antoine's call" — was stale: that work reached `main` on 2026-08-14 (`5aa29c1`) and has been running since. Rough completeness: Part 1 ~100%, Part 2 ~95%, Part 3 ~75%, Part 4 ~95%, Part 5 ~70%, Part 6 ~70%. **Two loose ends outstanding:** (1) 6.3's learning loop does not close — lessons are written to `intel_task_lessons` and never read back by anything, so nothing is ever told "you tried this before"; (2) 6.6 has no runner — `GET /intel/drain` exists and nothing calls it. Smaller: 6.2's acknowledge endpoint has no button in the UI; Part 3's node vitals and 6.1's score ring/sparkline were deliberately deleted (Antoine found them unhelpful — `fmcns_navigator.html`, "Mind block removed"), though the same data now feeds the ranked next-steps panel; Part 5's content-graph panel was never built, its two buttons living in the Mind toolbar instead. |
 | **Created** | 2026-08-13 |
 | **Updated** | 2026-08-14 — status corrected to reality; Part 6 added (inspiration round, Antoine approved all six) |
 | **Project** | FMCNS — `quantum-narrative-engine` (frontend `fmcns_navigator.html`, backend `queue-server/`) |

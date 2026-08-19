@@ -1,6 +1,8 @@
 # Travaux quick panel — right-anchored slide-over + reply placement
 
-**Status: DONE**
+| | |
+|---|---|
+| **Status** | DONE. Audited against the code 2026-08-19. Verified complete: `#queuePanelVeil`/`#queuePanel`, the open/close/render trio, the ⌘/Ctrl+/ shortcut, all four shared render helpers used by both the panel and the Flow, the self-contained element picker, and the backend front/back placement. Both copies of the frontend are byte-identical. Its own two caveats still stand: no live browser click-through was ever done, and `placement:'back'` has not been exercised against a running server. The two French ERP reference docs it was adapted from were deleted from `plans/` on 2026-08-19 — recover with `git show d5068c1 -- plans/<name>`. |
 
 ## What this is
 
@@ -11,12 +13,15 @@ composer (prompt text, Implement/Question toggle, "point at an element" picker, 
 placement) with a live read-out of the queue (questions waiting on you, running, queued),
 and an "Open full page →" link into Core Architecture → Flow for the full view.
 
-Adapted from two reference docs Antoine supplied (`plans/file-de-travaux-panneau.md` and
-`plans/Travaux — interface _ style, structure et code complet.md`, extracted from a
-separate React/Tailwind ERP project) — the *pattern* was ported, not the code: this repo
-has no React/Tailwind/build step, so everything is plain DOM/template-string JS using the
-app's existing CSS custom-property token system (dark mode is automatic, no new `.dark`
-rules needed).
+Adapted from two French reference docs Antoine supplied — code exports from a separate
+React/Tailwind ERP project (Orisha), not from this app. They were **deleted from `plans/`
+on 2026-08-19** once this panel had shipped, since they described a different codebase and
+made up two-thirds of the folder; recover them with
+`git show d5068c1 -- plans/file-de-travaux-panneau.md` (and
+`plans/'Travaux — interface _ style, structure et code complet.md'`) if ever needed.
+The *pattern* was ported, not the code: this repo has no React/Tailwind/build step, so
+everything is plain DOM/template-string JS using the app's existing CSS
+custom-property token system (dark mode is automatic, no new `.dark` rules needed).
 
 This replaces two overlapping partial versions of the same idea that existed before:
 - The bottom-right floating widget's **New task** and **Queue** tabs (folded into this

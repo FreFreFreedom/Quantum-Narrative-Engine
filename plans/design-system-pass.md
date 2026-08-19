@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | IN PROGRESS |
+| **Status** | IN PROGRESS ~40% — accurate, and stalled on its headline item. Audited against the code 2026-08-19. **Phase 2 has not been started at all:** `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-danger`, `.btn-sm`, `.btn-accent` have zero occurrences in `fmcns_navigator.html`, so the 10+ one-off button classes this plan exists to consolidate are all still one-offs. Only the `.q-addbtn, .id-addbtn` merge landed. Done: Phase 1's spacing/type tokens (`--sp-*`, `--fs-*`, `--fw-*`), the viewport meta, `:focus-visible`, and aria-labels (7 → 26). Outstanding besides Phase 2: real per-view responsive behaviour (4 `@media` blocks exist; none collapses Content or Map, and there is no Architecture tab switcher), `alt` text (2 occurrences file-wide — the planned cover-image sweep did not land), and keyboard access on the graphs (`tabindex` appears once, on the Architecture SVG). Phase 4 is partly undone by drift: new code since has re-introduced hex escapes (e.g. the Idea Studio's `.studio-msg` rules). |
 | **Scope** | Frontend only — `fmcns_navigator.html` (+ synced `queue-server/public/index.html`). No backend changes. |
 | **Related** | `plans/core-workspace-unified-flow.md` (IN PROGRESS) — see Coordination note below before starting Phase 2. |
 
