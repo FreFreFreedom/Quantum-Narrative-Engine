@@ -27,8 +27,8 @@ import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
 loadEnvFile(new URL('../.env', import.meta.url));
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdtempSync, existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { tmpdir, homedir, hostname } from 'node:os';
 import { resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
@@ -821,11 +821,75 @@ async function runTask(task) {
   await slackNotify(slackLine({ task, status: 'blocked', engine: 'no engine could run it', startedAt: taskStartedAt, cost: 0, why: headline }));
 }
 
+// ─── One runner at a time ─────────────────────────────────────────────────────
+// Two runners on the same queue is not a data-corruption problem — the server's
+// claim is a guarded `UPDATE … WHERE status='approved'`, so a task can only ever
+// be won once. It is a DIAGNOSIS problem, and an expensive one: both runners
+// push quota readings for the same subscription bank, both race for helper_jobs,
+// and the older process keeps running whatever code it was started with — so a
+// fix you just made looks like it did nothing. This machine was found in exactly
+// that state (two runners, the older one on pre-fix code). Refuse to be the
+// second one. RUNNER_ALLOW_MULTI=1 opts out deliberately.
+const LOCK_FILE = process.env.RUNNER_LOCK_FILE || join(homedir(), '.fmcns-queue-runner.pid');
+
+// EPERM means the pid exists but belongs to someone else — still alive.
+function processAlive(pid) {
+  try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
+}
+
+function claimSingleInstance() {
+  if (process.env.RUNNER_ALLOW_MULTI === '1') return;
+  let prev = 0;
+  try { prev = Number(String(readFileSync(LOCK_FILE, 'utf8')).trim()); } catch { /* no lock yet */ }
+  if (prev && prev !== process.pid && processAlive(prev)) {
+    console.error(red(`A queue runner is already working this queue (pid ${prev}).`));
+    console.error(dim(`  Running two of them means the older one may be on stale code.`));
+    console.error(dim(`  Stop that one first:   kill ${prev}`));
+    console.error(dim(`  Or, deliberately:      RUNNER_ALLOW_MULTI=1 npm run runner`));
+    process.exit(1);
+  }
+  try { writeFileSync(LOCK_FILE, String(process.pid)); } catch { /* not worth failing over */ }
+}
+
+// Only ever remove OUR lock — never a live runner's.
+function releaseSingleInstance() {
+  try {
+    if (Number(String(readFileSync(LOCK_FILE, 'utf8')).trim()) === process.pid) unlinkSync(LOCK_FILE);
+  } catch { /* already gone */ }
+}
+
+// ─── Say when the runner starts and stops ─────────────────────────────────────
+// A dead runner used to be completely silent: tasks simply stopped moving, and
+// the only hint was one line in a tab you might not have open. Since this
+// process is the single point of failure for the whole Dispatch Queue, it
+// announces its own life on the same Slack DM that reports finished tasks — so
+// "the queue is not running" arrives, instead of being discovered hours later.
+let stopNotified = false;
+
+async function notifyStarted() {
+  await slackNotify(`▶️ *Queue runner started* — \`${RUNNER_ID}\` on ${hostname()}\n_watching ${QUEUE_URL} · tasks will run again_`);
+}
+
+async function notifyStopped(why) {
+  if (stopNotified) return;
+  stopNotified = true;
+  await slackNotify(`🛑 *Queue runner stopped* — ${why}\n_Nothing in the Dispatch Queue will run until it is started again._`);
+}
+
 // ─── Main loop ────────────────────────────────────────────────────────────────
 let stopping = false;
 process.on('SIGINT', () => { console.log(yellow('\nStopping after this task…')); stopping = true; });
+// launchd stops a job with SIGTERM and does not wait long, so the ping goes out
+// here rather than after the loop unwinds.
+process.on('SIGTERM', () => {
+  console.log(yellow('\nSIGTERM — stopping after this task…'));
+  stopping = true;
+  notifyStopped('it was asked to stop (SIGTERM)').catch(() => {});
+});
+process.on('exit', releaseSingleInstance);
 
 async function main() {
+  claimSingleInstance();
   rule();
   console.log(bold('  Queue runner'));
   console.log(dim(`  queue : ${QUEUE_URL}`));
@@ -835,6 +899,7 @@ async function main() {
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
+  await notifyStarted();
   await printSnapshot({ force: true });
 
   while (!stopping) {
@@ -878,6 +943,11 @@ async function main() {
     await printSnapshot({ force: true });
   }
   console.log('Runner stopped.');
+  await notifyStopped('it was stopped by hand');
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch(async (e) => {
+  console.error(e);
+  await notifyStopped(`it crashed — ${e.message}`);
+  process.exit(1);
+});

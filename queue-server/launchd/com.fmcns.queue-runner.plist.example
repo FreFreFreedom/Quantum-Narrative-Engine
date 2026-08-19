@@ -7,10 +7,14 @@
   the window, sleep the Mac, or let it crash, and the entire Dispatch Queue stops
   with no error anywhere — tasks just sit there. KeepAlive restarts it.
 
+  The password is deliberately NOT in this file. The runner reads
+  queue-server/.env (gitignored) on startup, so put it there once:
+
+    echo 'ADMIN_PASSWORD=<the production password>' >> queue-server/.env
+
   Install:
     cp queue-server/launchd/com.fmcns.queue-runner.plist.example \
        ~/Library/LaunchAgents/com.fmcns.queue-runner.plist
-    # edit ADMIN_PASSWORD below to the real production password
     mkdir -p ~/Library/Logs/fmcns
     launchctl load ~/Library/LaunchAgents/com.fmcns.queue-runner.plist
 
@@ -33,9 +37,9 @@
 
     <key>EnvironmentVariables</key>
     <dict>
-        <!-- The PRODUCTION admin password, not the local dev server's. -->
-        <key>ADMIN_PASSWORD</key>
-        <string>REPLACE_WITH_PRODUCTION_ADMIN_PASSWORD</string>
+        <!-- No ADMIN_PASSWORD here on purpose: it lives in queue-server/.env,
+             which is gitignored, so the password is in one place instead of two
+             and never ends up in a file that gets copied around. -->
         <key>QUEUE_URL</key>
         <string>https://quantum-narrative-engine-production.up.railway.app</string>
         <!-- claude and opencode both have to be findable from a launchd context,
@@ -48,6 +52,10 @@
     <true/>
     <key>KeepAlive</key>
     <true/>
+    <!-- If the runner exits straight away (no password, or the single-instance
+         lock refusing a second copy), don't let launchd spin on it. -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
 
     <key>StandardOutPath</key>
     <string>/Users/antoinelambert/Library/Logs/fmcns/queue-runner.out.log</string>
