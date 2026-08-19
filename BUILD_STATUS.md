@@ -37,7 +37,15 @@ dependency-line buttons all addressed `#archCanvas`, which no live layout render
 were dead controls; the suggestion filter bar was unreachable behind a duplicate CSS rule
 *and* an inline `display:none`. Architecture and Flow are now one side-by-side workspace
 (they were already `flex:1` siblings of one shell) with selection linked both ways, and
-"On the Horizon" follows the same ranking instead of its own. `npm run next:selftest`
+"On the Horizon" follows the same ranking instead of its own. The roadmap that lived only in
+`plans/` and this file — nineteen already-decided steps the container never receives,
+since Railway deploys only `queue-server/` — is now importable as tree nodes by
+`queue-server/scripts/import-roadmap.js` (eleven landed; three were recognised as
+existing components' own next steps and skipped). Its idempotency is its own check
+against the live node list, not the table's fingerprint index: that index is
+`(parent_node_id, fingerprint)` and SQLite treats NULLs as distinct, so parentless roots
+are never rejected — the first version trusted it and made three copies of everything
+before this was caught and cleaned up. `npm run next:selftest`
 covers it — 22 checks, no model spend, including the unlock counts re-derived by a separate
 brute-force implementation.
 

@@ -16,9 +16,15 @@
 // dependencies. Pretending a parser can keep the two in step would be a lie, and
 // a re-runnable script is honest about it.
 //
-// Safe to run repeatedly: architecture_nodes dedups on
-// fingerprint = sha1(parent :: lowercased name) (services/architectureNodes.js),
-// so a second run adds nothing and reports as much.
+// Safe to run repeatedly — but NOT because the server dedups it. The unique index
+// is (parent_node_id, fingerprint) and SQLite treats NULLs as distinct, so rows with
+// no parent (which these are, being roots) are never rejected as duplicates. That is
+// deliberate on the server's part: it must stay possible to hand-add two root nodes
+// sharing a name. Found the hard way — an early version of this script trusted the
+// fingerprint and made three copies of all eleven items.
+//
+// So this script does its own check: it asks the app what is already there and skips
+// anything already present by name.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -193,6 +199,12 @@ async function login(password) {
   token = (await r.json()).token;
 }
 
+async function get(path) {
+  const r = await fetch(`${QUEUE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) throw new Error(`GET ${path} failed (${r.status})`);
+  return r.json();
+}
+
 async function post(path, body) {
   const r = await fetch(`${QUEUE_URL}${path}`, {
     method: 'POST',
@@ -224,10 +236,27 @@ async function main() {
     process.exit(1);
   }
   await login(password);
-  console.log(`\nSending to ${QUEUE_URL} …\n`);
+
+  // What the app already holds. This, not the server's fingerprint index, is what
+  // makes a re-run a no-op.
+  let live = new Set();
+  try {
+    const { nodes } = await get('/api/architecture/nodes');
+    live = new Set((nodes || []).map((n) => normalize(n.name)));
+  } catch (e) {
+    console.error(`\nCould not read the existing components (${e.message}). Stopping rather than`);
+    console.error('risking a second copy of everything.');
+    process.exit(1);
+  }
+
+  const fresh = items.filter((it) => !live.has(normalize(it.name)));
+  const present = items.length - fresh.length;
+  if (present) console.log(`\n${present} of these are already in the app — skipping those.`);
+  if (!fresh.length) { console.log('\nNothing new to add.'); return; }
+  console.log(`\nSending ${fresh.length} to ${QUEUE_URL} …\n`);
 
   let added = 0, already = 0, failed = 0;
-  for (const it of items) {
+  for (const it of fresh) {
     const { status, json } = await post('/api/architecture/nodes', {
       territory: TERRITORY,
       name: it.name,
@@ -245,7 +274,7 @@ async function main() {
     else { failed++; console.log(`  ! failed (${status}): ${it.name} — ${json.message || json.error || ''}`); }
   }
 
-  console.log(`\n${added} added, ${already} already present, ${failed} failed.`);
+  console.log(`\n${added} added, ${already + present} already present, ${failed} failed.`);
   console.log('They now rank alongside everything else in "What to do next".');
   console.log('Territory and dependencies were left blank on purpose — set them from');
   console.log('each item\'s detail panel in the app, where a wrong guess is easy to fix.');

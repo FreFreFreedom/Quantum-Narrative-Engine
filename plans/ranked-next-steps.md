@@ -182,9 +182,12 @@ receives) — `queue-server/scripts/import-roadmap.js`:
   "Open threads" and "Known gaps" bullets;
 - creates one node each through the existing `POST /api/architecture/nodes`, tagging
   `provenance` with the source doc so they stay distinguishable from hand-authored ones;
-- **idempotent for free** — the table already dedups on
-  `fingerprint = sha1(parent :: lowercased name)` (`architectureNodes.js:26`), so a
-  second run adds nothing.
+- **idempotent by asking the app what it already holds.** Not, as first assumed, for
+  free: the unique index is `(parent_node_id, fingerprint)` and SQLite treats NULLs as
+  distinct, so root nodes — which these are — are never rejected as duplicates. That is
+  deliberate on the server's part (it must stay possible to hand-add two roots sharing a
+  name). Found the hard way: the first version trusted the fingerprint and made three
+  copies of all eleven items in production, since cleaned up.
 
 They then rank alongside everything else. `architecture_nodes` sits on the Railway volume
 and is the one non-regenerable table, so the import survives redeploys. Territory and
