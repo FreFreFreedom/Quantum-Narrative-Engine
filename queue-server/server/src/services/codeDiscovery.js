@@ -353,11 +353,18 @@ Respond with ONLY a JSON object, no prose, no markdown fence:
 // The automatic inspiration pass. Never throws — a failure returns {error} and
 // the caller marks the task inspire_state='failed' so the human gets a retry
 // button, and the plan is drafted without inspiration (the queue never blocks).
+// Bounds note: these calls used to pass neither maxAttempts nor timeoutMs, so
+// they inherited generateText's defaults — Infinity attempts at 90s each, over
+// the primary chain PLUS the whole free catalogue, three parts deep. One pass
+// could quietly occupy tens of minutes walking dead free models. They now use
+// the same 3-attempt / 45s bound runIdeaSearch already uses, with Claude as a
+// last resort (one cheap haiku call via the local runner) so a fully cooled-down
+// free lane produces an answer instead of a stall.
 export async function runInspiration(db, { idea_text, source = 'prompt', source_id = null, forceRefresh = false } = {}) {
   const ideaText = String(idea_text || '').trim();
   if (!ideaText) return { error: 'idea_text_required' };
 
-  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(ideaText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose' });
+  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(ideaText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
   if (pass0.error) return { error: pass0.error, message: pass0.message };
   const parsed0 = parseJsonObject(pass0.text);
   const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, INSPIRE_MAX_PARTS);
@@ -374,7 +381,7 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
       const out = await getResults(db, qId, q.q, { forceRefresh });
       if (!out.error) resultsByQuery.push({ q, why: q.why, results: out.results || [] });
     }
-    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks' });
+    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
     const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
     const picks = (parsed2?.picks || []).filter(p => p && ['open', 'hidden', 'bold'].includes(p.kind));
     const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;
@@ -589,6 +596,9 @@ export async function reviewInspiration({ report, prompt, answer = null, allowQu
       feature: 'inspire',
       maxTokens: 800,
       label: 'inspire-review',
+      maxAttempts: 3,
+      timeoutMs: 45_000,
+      claudeLastResort: true,
     });
     if (out.error) {
       console.error('inspireReview failed —', out.message);

@@ -17,7 +17,21 @@ async function tick() {
   try {
     const cleared = clearExpired();
 
-    const { isQueuePaused, getSettings, setQueuePaused, kickQueue } = await import('./taskRunner.js');
+    const { isQueuePaused, getSettings, setQueuePaused, kickQueue, releaseStaleClaims } = await import('./taskRunner.js');
+
+    // Stuck-stage recovery. A restart mid-plan-draft or mid-world-look leaves a
+    // task's flags set in the DB with nothing alive to clear them, and the
+    // dispatch gate then hides it forever. Sweeping here rather than on a new
+    // timer keeps this to one background clock.
+    const { sweepStuckStages } = await import('./promptQueue.js');
+    sweepStuckStages();
+
+    // The matching hole one layer down: releaseStaleClaims() frees a task whose
+    // runner died mid-execution, but it is only called from POST /worker/claim —
+    // which the runner issues ONLY while idle. A task wedged in_progress while
+    // the runner is busy (or gone) was therefore never checked at all.
+    try { releaseStaleClaims(); } catch (e) { console.error('quotaScheduler: stale-claim release failed —', e.message); }
+
     if (cleared.length && isQueuePaused()) {
       const reason = getSettings().queuePausedReason || '';
       // Only auto-clear pauses this system itself put in place for a quota reason —

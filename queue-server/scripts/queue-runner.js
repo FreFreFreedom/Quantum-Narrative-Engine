@@ -337,6 +337,55 @@ async function claudeGate({ tier, preset }) {
   return null;
 }
 
+// ─── Claude helper lane ───────────────────────────────────────────────────────
+// Small text steps on the server (the plan draft, the world-look) run on free
+// models. When every one of those is cooled down, the server has nowhere left to
+// go: the Claude subscription lives HERE, on the Mac, not in the container. So it
+// parks the request as a helper job and this runner answers it between queue
+// polls.
+//
+// Kept deliberately cheap, because the whole point is to rescue a stalled step,
+// not to move work onto the subscription:
+//   • haiku only, one attempt, 60s cap;
+//   • the same window reserve as real tasks (claudeGate), so a nearly-spent
+//     week declines the job and the caller just sees its normal free-lane failure;
+//   • only ever reached after every free backend already failed.
+async function runHelperJobs() {
+  let r;
+  try { r = await api('/worker/helper/claim', {}); } catch { return; }
+  if (!r.ok) return;
+  const body = await r.json().catch(() => ({ none: true }));
+  if (body.none || !body.job) return;
+  const job = body.job;
+
+  const gate = await claudeGate({ tier: 'standard', preset: 'fast' });
+  if (gate) {
+    console.log(`  helper ${job.label || job.feature}: declined — ${gate}`);
+    try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${gate}` }); } catch {}
+    return;
+  }
+
+  console.log(`  helper ${job.label || job.feature} → claude:haiku`);
+  let out = null;
+  try {
+    out = await claudeCli.runToolless({
+      prompt: job.prompt,
+      model: job.model || 'haiku',
+      timeoutMs: 60_000,
+      cwd: RUNNER_REPO,
+      env: claudeCli.spawnEnv(),
+    });
+  } catch (e) {
+    out = { code: -1, text: '', error: e.message };
+  }
+  const text = out && out.code === 0 ? (out.text || '').trim() : '';
+  try {
+    await api(`/worker/helper/${job.id}/result`,
+      text ? { text } : { error: out?.text || out?.error || `exit ${out?.code}` });
+  } catch { /* the caller's own deadline covers this */ }
+  console.log(`  helper ${job.label || job.feature} ${text ? 'answered' : 'failed'}`);
+}
+
 // ─── One attempt on one model ─────────────────────────────────────────────────
 // Resolves { outcome, ... } where outcome is:
 //   'done'        finished cleanly
@@ -800,6 +849,10 @@ async function main() {
     }
 
     if (!claimed) {
+      // Idle is exactly when the helper lane should be worked: no task is
+      // competing for the subscription, and a server-side step is stalled
+      // waiting on this.
+      try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }
       await printSnapshot();
       await new Promise((s) => setTimeout(s, POLL_IDLE_MS));
       continue;

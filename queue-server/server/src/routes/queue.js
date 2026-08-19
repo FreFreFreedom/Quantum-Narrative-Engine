@@ -3,7 +3,7 @@ import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
 import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
-import { findAgentTask, execOutputBytes, getExecTimeoutMinutes } from '../services/taskRunner.js';
+import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution } from '../services/taskRunner.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -74,7 +74,11 @@ export function queueRoutes() {
         // Work-meter data for the UI's progress bar: real output volume so far,
         // plus the run's time budget (both only meaningful while running).
         output_bytes: running ? execOutputBytes(p.agent_task_id) : null,
-        timeout_minutes: running ? getExecTimeoutMinutes() : null,
+        // Only meaningful when the container itself runs the task. In local mode
+        // execution is the runner's, and its limits are per-ATTEMPT (first output
+        // 90s / silence 5min / attempt cap 30min) — reporting a per-task budget
+        // here drew a progress bar against a deadline nothing enforced.
+        timeout_minutes: running && !isLocalExecution() ? getExecTimeoutMinutes() : null,
       };
     });
     res.json({
@@ -144,6 +148,15 @@ export function queueRoutes() {
 
   router.post('/prompts/:id/first', (req, res) => {
     const row = queue.moveToFront(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
+  // Escape hatch for a task frozen in a preparation step (see sweepStuckStages).
+  // The 60s sweep clears these on its own after 10 minutes; this is the button
+  // for when the owner is looking right at it and does not want to wait.
+  router.post('/prompts/:id/unstick', (req, res) => {
+    const row = queue.unstickPrompt(req.params.id);
     if (!row) return res.status(404).json({ error: 'not_found' });
     res.json(row);
   });

@@ -1474,16 +1474,30 @@ export function noteRunnerPoll() { _lastClaimPollAt = Date.now(); }
 // the Mac, the container can no longer read the account's local transcripts, and
 // its OAuth token may not even be set — so the runner reports its own reading on
 // every claim poll and the app's usage bar prefers it over a blank server read.
+// Persisted, not just in-memory: a module variable is blanked by every redeploy
+// (and is invisible to a second container instance), which is why the app's usage
+// bar read 0% while the Mac was reporting a live subscription. The DB row is the
+// source of truth; the in-memory copy is only a same-process fast path.
 let _runnerUsage = null;
 export function noteRunnerUsage(usage) {
-  if (usage && typeof usage === 'object') _runnerUsage = { at: Date.now(), usage };
+  if (!usage || typeof usage !== 'object') return;
+  _runnerUsage = { at: Date.now(), usage };
+  try {
+    db?.prepare(`UPDATE ai_settings SET runner_usage_json=?, runner_usage_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+      .run(JSON.stringify(usage));
+  } catch (e) { console.error('[worker] could not persist runner usage —', e.message); }
 }
 // Only trusted while the runner is actually attached (5 min grace) — a stale
 // reading from a laptop closed yesterday is worse than no reading.
 export function runnerReportedUsage() {
-  if (!_runnerUsage) return null;
-  if (Date.now() - _runnerUsage.at > 5 * 60_000) return null;
-  return _runnerUsage.usage;
+  if (_runnerUsage && Date.now() - _runnerUsage.at <= 5 * 60_000) return _runnerUsage.usage;
+  try {
+    const row = db?.prepare(`SELECT runner_usage_json, runner_usage_at FROM ai_settings WHERE id='global'`).get();
+    if (!row?.runner_usage_at) return null;
+    if (Date.now() - new Date(row.runner_usage_at).getTime() > 5 * 60_000) return null;
+    const usage = JSON.parse(row.runner_usage_json || '{}');
+    return usage && Object.keys(usage).length ? usage : null;
+  } catch { return null; }
 }
 export function runnerStatus() {
   const running = readTasks().filter((t) => t.status === 'in_progress' && t.claimed_by);

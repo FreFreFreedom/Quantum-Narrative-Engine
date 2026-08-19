@@ -1332,10 +1332,13 @@ button:active { transform: translateY(1px) scale(.99); }
 </div>
 </div>
 <script>
+// One queue, one database. This used to swing to http://localhost:3000 whenever
+// the file was opened from disk — which silently showed a DIFFERENT queue (the
+// local dev server keeps its own DB) while the runner was working the Railway
+// one. Production is the real backend; localStorage.fmcns_api_base is the
+// deliberate escape hatch for local development.
 const API_BASE = localStorage.getItem('fmcns_api_base')
-  || (location.hostname === 'localhost' || location.protocol === 'file:'
-      ? 'http://localhost:3000'
-      : 'https://quantum-narrative-engine-production.up.railway.app');
+  || 'https://quantum-narrative-engine-production.up.railway.app';
 let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
 let ENTITIES = [], CLUSTERS = {}, AXES = {};
 let ENRICHMENTS = {}; // entity_id -> tmdb_enrichments row (merged into entities as e.enrichment)
@@ -3231,8 +3234,29 @@ const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', block
 // doesn't collide with the status column's own set of allowed values — this just
 // overrides the label/color shown while it's set.
 function qIsAsking(p) { return !!p.pending_question?.question && ['done', 'blocked', 'queued', 'paused'].includes(p.status); }
-function qStatusLabel(p) { return qIsAsking(p) ? 'Waiting for you' : (p.plan_pending ? 'Drafting plan…' : (Q_STATUS_LABELS[p.status] || p.status)); }
-function qStatusColor(p) { return qIsAsking(p) ? '#b8860b' : (p.plan_pending ? '#7a7568' : (Q_STATUS_COLORS[p.status] || '#8a8378')); }
+// A preparation step (the plan draft, the world-look) only exists in the
+// server's memory while it runs, but the flag that holds the task back lives in
+// the database — so a restart mid-step used to leave "Drafting plan…" on screen
+// forever with no error and no way out. The server now sweeps these after 10
+// minutes; this shows the same thing to Antoine so a frozen step reads as frozen
+// instead of as slow, and gives him a button rather than a wait.
+const Q_STAGE_STALE_MS = 10 * 60 * 1000;
+function qStageStuck(p) {
+  if (!p || p.pending_question) return false;
+  if (!p.plan_pending && !['pending', 'reviewing'].includes(p.inspire_state)) return false;
+  const t = Date.parse(p.updated_at || p.created_at || '');
+  return Number.isFinite(t) && (Date.now() - t) > Q_STAGE_STALE_MS;
+}
+function qStatusLabel(p) {
+  if (qIsAsking(p)) return 'Waiting for you';
+  if (p.plan_pending) return qStageStuck(p) ? 'Getting ready — stuck' : 'Drafting plan…';
+  return Q_STATUS_LABELS[p.status] || p.status;
+}
+function qStatusColor(p) {
+  if (qIsAsking(p)) return '#b8860b';
+  if (p.plan_pending) return qStageStuck(p) ? '#b23a2f' : '#7a7568';
+  return Q_STATUS_COLORS[p.status] || '#8a8378';
+}
 const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
 const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
 const Q_CONTEXT_LIMITS = { fast: 8, standard: 6, deep: 4 };
@@ -3884,6 +3908,9 @@ function qWireReplyBox(host, idPrefix, onSend) {
 // have inspiration ready — the panel itself lives in the task detail.
 function qInspireBadge(p) {
   if (p.mode !== 'implement' || !p.inspire_state || p.inspire_state === 'off') return '';
+  if (qStageStuck(p) && ['pending', 'reviewing'].includes(p.inspire_state)) {
+    return '<span class="q-badge" style="background:#b23a2f;" title="This step stopped part-way (the server restarted while it was running). Open the task to reset it.">⚠ Stuck — open to reset</span>';
+  }
   if (p.inspire_state === 'pending') return '<span class="q-badge" style="background:#6b7baa;" title="Looking at the world before the plan is written — real projects, hidden products, bold ideas.">🔭 Inspiring…</span>';
   if (p.inspire_state === 'reviewing') return '<span class="q-badge" style="background:#8a7a5a;" title="A quick check is cleaning up the ideas — keeping what earns its place, marking the alternatives.">🔎 Checking ideas…</span>';
   if (p.inspire_state === 'ready') return '<span class="q-badge" style="background:#8a5a1e;" title="Ideas from the world are ready — open the task to see them and pick.">✨ Ideas ready</span>';
@@ -4494,9 +4521,19 @@ function qRenderDetail(p) {
   if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
   if (p.cost_usd != null) costParts.push('~$' + p.cost_usd.toFixed(3));
   const rdOpen = host.querySelector('.flow-rundetails')?.open || false;
+  // A frozen preparation step is invisible from the status pill alone — it just
+  // reads as "still working". This says it plainly, once, at the top, and works
+  // for the plan-draft case too (the world-look panel below only exists for
+  // implement-mode tasks).
+  const stuckBanner = qStageStuck(p) ? `
+    <div class="q-detail-row" style="background:rgba(178,58,47,0.10);border-left:3px solid #b23a2f;padding:8px 10px;margin:6px 0;">
+      <span>This task stopped part-way through getting ready — the server restarted while it was working, so nothing is on it any more. It clears itself within 10 minutes, or reset it now.</span>
+      <button class="ctrlbtn" data-action="unstick-detail">Reset and continue</button>
+    </div>` : '';
   host.innerHTML = `
     <h2>Task</h2>
     <div class="arch-detail-name">${qEsc(p.title || '(untitled)')}</div>
+    ${stuckBanner}
     <div class="q-detail-row">
       <span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>
       <span style="color:var(--c-ink-4);">${p.mode === 'question' ? 'Question' : 'Implement'}</span>
@@ -4716,6 +4753,15 @@ function qRenderDetail(p) {
     } catch (e) { rerunFreshBtn.disabled = false; rerunFreshBtn.textContent = 'Ready again (fresh)'; alert('Error: ' + e.message); }
   };
   qRestoreInputs(host, snap);
+  host.querySelector('[data-action="unstick-detail"]')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget;
+    b.disabled = true; b.textContent = 'Resetting…';
+    try {
+      await apiWrite(`/api/travaux/prompts/${p.id}/unstick`, 'POST', {});
+      qInspireCache[p.id] = null;
+      await qLoad();
+    } catch (err) { b.disabled = false; b.textContent = 'Reset and continue'; alert('Error: ' + err.message); }
+  });
   if (!p.summary) qSummarize(p);
   qWireInspire(p);
 }
@@ -4770,6 +4816,9 @@ function qInspireHtml(p) {
       ? (p.inspire_error || 'This task runs on a plain plan — the world-look was skipped.')
       : 'This task has not looked at the world yet, so it will not start until it does (or you skip the search).';
     return `<div class="tv-empty">${note}<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">✨ Look at what exists before you start</button>${p.inspire_state !== 'skipped' ? '<button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button>' : ''}</div>`;
+  }
+  if (['pending', 'reviewing'].includes(p.inspire_state) && qStageStuck(p)) {
+    return `<div class="tv-empty">This step stopped part-way — the server restarted while it was running, so nothing is working on it any more. Resetting it lets the task carry on.<br><button class="ctrlbtn" data-action="unstick" style="margin-top:8px;">Reset this step</button></div>`;
   }
   if (p.inspire_state === 'pending') {
     return `<div class="tv-empty">🔭 Looking for inspiration… real projects, hidden products, bold ideas. This task will not start before these ideas are ready.</div>`;
@@ -5100,6 +5149,16 @@ function qWireInspire(p) {
             qInspireCache[p.id] = null;
             await qLoad();
           } catch (e) { b.disabled = false; b.textContent = '✨ Look at what exists before you start'; alert('Error: ' + e.message); }
+        };
+      });
+      host.querySelectorAll('[data-action="unstick"]').forEach(b => {
+        b.onclick = async () => {
+          b.disabled = true; b.textContent = 'Resetting…';
+          try {
+            await apiWrite(`/api/travaux/prompts/${p.id}/unstick`, 'POST', {});
+            qInspireCache[p.id] = null;
+            await qLoad();
+          } catch (e) { b.disabled = false; b.textContent = 'Reset this step'; alert('Error: ' + e.message); }
         };
       });
       host.querySelectorAll('[data-action="inspire-skip"]').forEach(b => {

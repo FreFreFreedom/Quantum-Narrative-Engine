@@ -758,6 +758,96 @@ export async function autoWorldLookTasks({ limit = 16 } = {}) {
   return { ran, skipped, failed };
 }
 
+// ─── Stuck-stage recovery ────────────────────────────────────────────────────
+// Both pre-execution stages — the plan draft (plan_pending=1) and the world-look
+// (inspire_state 'pending'/'reviewing') — are async jobs whose only in-flight
+// record is a Map in THIS process (_inspiring / _inspireWaiters). The flags that
+// hold the task back live in the database. So any restart mid-stage — a Railway
+// redeploy, a crash, a local restart — leaves the flags set with nothing left
+// alive to clear them, and the dispatch gate (see advanceQueue) hides the task
+// forever. That is not hypothetical: it is exactly how a task sat at "Drafting
+// plan… / Checking ideas…" for a full day with no error and no way out.
+//
+// This sweep is the missing half: a row whose stage flag is set, whose id is NOT
+// in this process's in-flight maps, and which has not been touched for
+// STAGE_STALE_MS, is by definition orphaned. Reset it and say so on the thread.
+//
+// STAGE_STALE_MS is deliberately well above the real worst case for a live
+// stage (a bounded draft is ~180s, plus INSPIRE_WAIT_MS at 75s), so a slow-but-
+// alive stage in another process is never stolen out from under itself.
+const STAGE_STALE_MS = 10 * 60_000;
+
+function stuckStageFields(row) {
+  const fields = {};
+  if (row.plan_pending) fields.plan_pending = 0;
+  if (['pending', 'reviewing'].includes(row.inspire_state)) {
+    // The ideas themselves may well have landed before the interruption — the
+    // report is a separate row. If it is there, hand it over as 'ready' so the
+    // picks are usable; if not, 'failed' surfaces the existing retry button.
+    fields.inspire_state = row.inspire_report_id ? 'ready' : 'failed';
+    fields.inspire_error = 'This step was interrupted — the server restarted while it was running.';
+  }
+  return fields;
+}
+
+function applyStageReset(row, fields, note) {
+  const sets = Object.keys(fields).map((k) => `${k}=?`).join(', ');
+  if (!sets) return false;
+  db.prepare(`UPDATE work_prompts SET ${sets}, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+    .run(...Object.values(fields), row.id);
+  _inspiring.delete(row.id);
+  _inspireWaiters.delete(row.id);
+  addMessage(row.id, { role: 'agent', text: note });
+  return true;
+}
+
+// Reset one task's stalled stages on demand, whatever its age — the button
+// behind a "stuck" badge in the UI, for when the owner does not want to wait
+// out STAGE_STALE_MS.
+export function unstickPrompt(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  const fields = stuckStageFields(row);
+  if (!Object.keys(fields).length) return { ...row, unstick_skipped: 'nothing_stuck' };
+  applyStageReset(row, fields,
+    'Reset by hand: the preparation step was stuck and has been cleared. The task can run now.');
+  broadcast();
+  advanceQueue();
+  return getPrompt(id);
+}
+
+// The periodic sweep (quotaScheduler's 60s tick). Never throws.
+export function sweepStuckStages() {
+  const cutoff = new Date(Date.now() - STAGE_STALE_MS).toISOString();
+  let freed = 0;
+  try {
+    const rows = db.prepare(`
+      SELECT * FROM work_prompts
+      WHERE deleted_at IS NULL
+        AND (plan_pending=1 OR inspire_state IN ('pending','reviewing'))
+        AND COALESCE(updated_at, created_at) < ?
+    `).all(cutoff);
+    for (const row of rows) {
+      // Still alive in this process? Then it is slow, not stuck — leave it.
+      if (_inspiring.has(row.id) || _inspireWaiters.has(row.id)) continue;
+      // An unanswered question is a legitimate reason to sit there: the task is
+      // waiting for Antoine, not for a dead process. Never clear those.
+      if (row.pending_question) continue;
+      const fields = stuckStageFields(row);
+      if (!applyStageReset(row, fields,
+        'This task was interrupted while getting ready (the server restarted). '
+        + 'The preparation step has been reset so it can run.')) continue;
+      freed++;
+      console.warn(`[sweepStuckStages] recovered ${row.id} ("${(row.title || '').slice(0, 60)}")`);
+    }
+  } catch (e) {
+    console.error('sweepStuckStages failed —', e.message);
+    return { freed: 0, error: e.message };
+  }
+  if (freed) { broadcast(); advanceQueue(); }
+  return { freed };
+}
+
 // Everything the task detail's "Inspired by" panel needs in one call: the state,
 // the last error (for the retry note), the applied picks, the quick-check review
 // (removed picks with reasons, alternative groups, best-per-group) and the full

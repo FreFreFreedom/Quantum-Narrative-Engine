@@ -1099,4 +1099,41 @@ export function initFilmEnrichmentSchema(db) {
       fetched_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
   `);
+
+  // Helper jobs — the Claude last-resort lane for small text calls.
+  //
+  // Claude lives on Antoine's Mac, not in this container (the container's own
+  // read of the subscription is empty; the attached runner's is the real one).
+  // So a server-side feature whose free models have ALL failed cannot simply
+  // "fall back to Claude" in-process. It parks the request here instead, and the
+  // local runner — which does have the subscription — picks it up between queue
+  // polls, runs one cheap toolless call, and posts the text back.
+  //
+  // Deliberately small: haiku only, one attempt, and only reached after every
+  // free backend has already failed. Rows are disposable; nothing re-reads a
+  // finished job, so a redeploy losing them costs nothing.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS helper_jobs (
+      id TEXT PRIMARY KEY,
+      feature TEXT NOT NULL,
+      label TEXT NOT NULL DEFAULT '',
+      prompt TEXT NOT NULL,
+      max_tokens INTEGER NOT NULL DEFAULT 800,
+      model TEXT NOT NULL DEFAULT 'haiku',
+      status TEXT NOT NULL DEFAULT 'queued',
+      result_text TEXT,
+      error TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      claimed_at TEXT,
+      finished_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_helper_jobs_status ON helper_jobs(status, created_at)`); } catch {}
+
+  // The runner's last Claude-usage reading, persisted. It used to live only in a
+  // module variable, so every redeploy blanked the app's usage bar even though
+  // the runner re-reports it every 5s — and a multi-instance container could
+  // answer /api/agent/usage from a process that had never seen a claim poll.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN runner_usage_json TEXT NOT NULL DEFAULT '{}'`); } catch {}
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN runner_usage_at TEXT`); } catch {}
 }

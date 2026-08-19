@@ -10,12 +10,17 @@
 //   POST /worker/claim         → the next runnable task, or {none:true}
 //   POST /worker/:id/stream    → transcript chunks + proof of life, while running
 //   POST /worker/:id/result    → final status/report, once
+// Plus the Claude helper lane (see helper_jobs in db/schema.js) — small text
+// calls the container cannot make, because the Claude subscription is on the Mac:
+//   POST /worker/helper/claim       → one parked text job, or {none:true}
+//   POST /worker/helper/:jobId/result → its answer
 import { Router } from 'express';
 import {
   claimNextTask, recordRunnerStream, recordRunnerResult,
   noteRunnerPoll, runnerStatus, releaseStaleClaims, isLocalExecution, noteRunnerUsage,
 } from '../services/taskRunner.js';
 import * as queue from '../services/promptQueue.js';
+import { claimHelperJob, recordHelperResult } from '../services/ai/text.js';
 
 export function workerRoutes() {
   const router = Router();
@@ -47,6 +52,26 @@ export function workerRoutes() {
     const task = claimNextTask({ runnerId });
     if (!task) return res.json({ none: true });
     res.json({ task });
+  });
+
+  // Registered before the /worker/:id/* routes so 'helper' can never be read as
+  // a task id.
+  router.post('/worker/helper/claim', (req, res) => {
+    if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
+    noteRunnerPoll();
+    const job = claimHelperJob();
+    if (!job) return res.json({ none: true });
+    res.json({ job });
+  });
+
+  router.post('/worker/helper/:jobId/result', (req, res) => {
+    noteRunnerPoll();
+    const ok = recordHelperResult(req.params.jobId, {
+      text: req.body?.text || null,
+      error: req.body?.error || null,
+    });
+    if (!ok) return res.status(409).json({ error: 'not_claimable' });
+    res.json({ ok: true });
   });
 
   router.post('/worker/:id/stream', (req, res) => {

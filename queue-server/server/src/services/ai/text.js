@@ -9,6 +9,7 @@
 import { generateText as legacyGenerateText } from '../claudeText.js';
 import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, listFreeOpenCodeModels, isKnownProvider } from './providers.js';
 import * as router from './router.js';
+import { randomUUID } from 'node:crypto';
 
 let db = null;
 export function bindAiTextDb(database) { db = database; }
@@ -269,7 +270,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -330,8 +331,89 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     }
   }
 
+  // Last resort: hand it to Claude via the local runner (see helper_jobs in
+  // schema.js). Opt-in per caller, and only reachable HERE — after every free
+  // backend has already failed — so the ordinary path still costs nothing.
+  if (claudeLastResort) {
+    const viaClaude = await runHelperJob({ prompt, feature, maxTokens, label });
+    if (viaClaude?.text) {
+      recordSideCall();
+      console.warn(`[${label}] recovered via claude-helper after ${failures.join(' | ')}`);
+      return viaClaude;
+    }
+    failures.push(`claude-helper:${viaClaude?.message || 'unavailable'}`);
+  }
+
   console.error(`[${label}] all backends failed — ${failures.join(' | ')}`);
   return { error: 'generation_failed', message: failures.join(' | ') };
+}
+
+// ─── Helper-job worker side (called by routes/worker.js) ─────────────────────
+// The runner claims one job at a time between its queue polls. A job left
+// 'running' by a runner that died is re-offered after HELPER_CLAIM_STALE_MS —
+// the caller's own 120s deadline means a lost job simply expires either way.
+const HELPER_CLAIM_STALE_MS = 90_000;
+
+export function claimHelperJob() {
+  if (!db) return null;
+  const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
+  db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  if (!job) return null;
+  db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
+  return job;
+}
+
+export function recordHelperResult(id, { text = null, error = null } = {}) {
+  if (!db) return false;
+  const row = db.prepare(`SELECT status FROM helper_jobs WHERE id=?`).get(id);
+  if (!row) return false;
+  // The caller may already have given up and marked it failed — leave that alone
+  // so a late answer can't look like a success nobody is waiting for.
+  if (row.status !== 'running') return false;
+  if (text) {
+    db.prepare(`UPDATE helper_jobs SET status='done', result_text=?, finished_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(text, id);
+  } else {
+    db.prepare(`UPDATE helper_jobs SET status='failed', error=?, finished_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(error || 'no text', id);
+  }
+  return true;
+}
+
+// How long a caller will wait for the runner to pick up and answer a helper job
+// before giving up. The runner polls every 5s while idle and the call itself is
+// capped at 60s on its side, so this is generous rather than tight — but it IS
+// a hard cap: a helper job must never become a second way for a task to hang.
+const HELPER_WAIT_MS = 120_000;
+const HELPER_POLL_MS = 1_500;
+
+// Park a request for the local runner and wait for its answer. Returns
+// { text } on success, { error, message } otherwise. Never throws.
+async function runHelperJob({ prompt, feature, maxTokens, label }) {
+  if (!db) return { error: 'no_db' };
+  try {
+    // Only worth parking if a runner is actually attached — otherwise this is a
+    // guaranteed 120s wait for nothing.
+    const { runnerStatus } = await import('../taskRunner.js');
+    if (!runnerStatus()?.connected) return { error: 'no_runner', message: 'no runner attached' };
+
+    const id = randomUUID();
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens) VALUES (?,?,?,?,?)`)
+      .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800);
+
+    const deadline = Date.now() + HELPER_WAIT_MS;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, HELPER_POLL_MS));
+      const row = db.prepare(`SELECT status, result_text, error FROM helper_jobs WHERE id=?`).get(id);
+      if (!row) return { error: 'helper_lost' };
+      if (row.status === 'done' && row.result_text) return { text: row.result_text, via: 'claude-helper' };
+      if (row.status === 'failed') return { error: 'helper_failed', message: row.error || 'unknown' };
+    }
+    // Timed out waiting: mark it so the runner does not answer into the void.
+    db.prepare(`UPDATE helper_jobs SET status='failed', error='caller timed out', finished_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND status IN ('queued','running')`).run(id);
+    return { error: 'helper_timeout', message: `no answer in ${HELPER_WAIT_MS / 1000}s` };
+  } catch (e) {
+    return { error: 'helper_error', message: e.message };
+  }
 }
 
 // Low-level: call a specific provider/model directly (for the judge/summary which

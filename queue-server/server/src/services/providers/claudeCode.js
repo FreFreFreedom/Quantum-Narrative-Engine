@@ -124,11 +124,14 @@ export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, 
     const timer = setTimeout(() => {
       try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
       try { proc.kill('SIGKILL'); } catch {}
-      settle({ code: -1, text: '' });
+      // Say WHY, the way opencode.js does. A bare empty string made a timeout
+      // indistinguishable from a crash, so callers could not report it and
+      // ai/text.js's stall detector never benched the model.
+      settle({ code: -1, text: `no response after ${Math.round(timeoutMs / 1000)}s` });
     }, timeoutMs);
     proc.stdout.on('data', (c) => { output += c.toString(); });
     proc.stderr.on('data', () => {});
-    proc.on('error', () => settle({ code: -1, text: '' }));
+    proc.on('error', (e) => settle({ code: -1, text: `could not start the Claude CLI: ${e.message}` }));
     proc.on('close', (code) => settle({ code, text: output.trim() }));
   });
 }

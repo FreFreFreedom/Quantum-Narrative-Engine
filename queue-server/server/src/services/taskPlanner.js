@@ -105,6 +105,9 @@ export async function draftPlan({ title = '', prompt, mode = 'implement', inspir
       label: fast ? 'task-planner-mini' : 'task-planner',
       timeoutMs: fast ? 30_000 : 60_000,
       maxAttempts: 3,
+      // If every free backend is cooled down, one cheap haiku call via the local
+      // runner beats returning null and shipping the raw request as the brief.
+      claudeLastResort: true,
     });
     if (!result?.text) return null;
     return parseDraft(result.text);

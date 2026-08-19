@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps the local task runner alive.
+
+  Without this, the runner is whatever terminal window it was started in: close
+  the window, sleep the Mac, or let it crash, and the entire Dispatch Queue stops
+  with no error anywhere — tasks just sit there. KeepAlive restarts it.
+
+  Install:
+    cp queue-server/launchd/com.fmcns.queue-runner.plist.example \
+       ~/Library/LaunchAgents/com.fmcns.queue-runner.plist
+    # edit ADMIN_PASSWORD below to the real production password
+    mkdir -p ~/Library/Logs/fmcns
+    launchctl load ~/Library/LaunchAgents/com.fmcns.queue-runner.plist
+
+  Check it: GET /api/travaux/worker/status should report connected: true, and the
+  app's Queue header stops showing "Runner not running".
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.fmcns.queue-runner</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/antoinelambert/.nvm/versions/node/v24.19.0/bin/node</string>
+        <string>/Users/antoinelambert/Projects/quantum-narrative-engine/queue-server/scripts/queue-runner.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/antoinelambert/Projects/quantum-narrative-engine/queue-server</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- The PRODUCTION admin password, not the local dev server's. -->
+        <key>ADMIN_PASSWORD</key>
+        <string>REPLACE_WITH_PRODUCTION_ADMIN_PASSWORD</string>
+        <key>QUEUE_URL</key>
+        <string>https://quantum-narrative-engine-production.up.railway.app</string>
+        <!-- claude and opencode both have to be findable from a launchd context,
+             which does NOT inherit a login shell's PATH. -->
+        <key>PATH</key>
+        <string>/Users/antoinelambert/.local/bin:/Users/antoinelambert/.nvm/versions/node/v24.19.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/antoinelambert/Library/Logs/fmcns/queue-runner.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/antoinelambert/Library/Logs/fmcns/queue-runner.err.log</string>
+</dict>
+</plist>

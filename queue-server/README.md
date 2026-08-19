@@ -31,15 +31,34 @@ below) — not yet with the real thing.
   advance, pause.
 - `GET /api/health` — unauthenticated liveness check.
 
-## The real blocker, still unresolved
+## Where tasks actually execute: the local runner
 
-`taskRunner.js` spawns `CLAUDE_BIN` as a subprocess against a real git working tree
-(`AGENT_CWD`). That means whatever machine runs this needs the Claude Code CLI
-**installed and authenticated** — Railway can't do an interactive OAuth login for
-you. Until that's sorted (most likely: an API key as an env var, or some other
-non-interactive auth path), tasks will enqueue and either fail to spawn or hang
-depending on what `CLAUDE_BIN` resolves to. Nothing in this repo can paper over
-that — it needs an explicit decision.
+Railway can't do an interactive OAuth login, so the container has no Claude
+subscription and no authenticated CLI. Execution therefore lives on Antoine's
+Mac. `scripts/queue-runner.js` polls this server for work, runs it with the CLIs
+installed locally, and reports results back. This is the default
+(`EXECUTION_MODE=local`); the in-container spawn path in `taskRunner.js` is a
+no-op unless `EXECUTION_MODE=server`.
+
+```bash
+cd queue-server && ADMIN_PASSWORD=<production password> npm run runner
+```
+
+`QUEUE_URL` defaults to the production Railway URL — the runner works the real
+queue, not a local one.
+
+**Keep it alive.** Started by hand, the runner is only as durable as its terminal
+window: close it and the whole queue silently stops, with no error anywhere. Copy
+`launchd/com.fmcns.queue-runner.plist.example` to
+`~/Library/LaunchAgents/com.fmcns.queue-runner.plist`, fill in the production
+password, and `launchctl load` it. Install instructions are in the file's own
+comment. `GET /api/travaux/worker/status` tells you whether a runner is attached;
+the app's Queue header shows the same thing.
+
+The runner also serves the **Claude helper lane** while idle: small server-side
+text steps (the plan draft, the world-look) whose free models have all failed
+park a job in `helper_jobs`, and the runner answers it with one cheap haiku call
+— the only way the container can reach a subscription that lives on the Mac.
 
 ## Environment variables
 
