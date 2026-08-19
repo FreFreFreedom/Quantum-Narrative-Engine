@@ -11,8 +11,24 @@
 // written by the old prompts. This script redoes them, in place, for tasks,
 // suggestions, pieces of the architecture and seeds alike.
 //
-// Run it from the Mac, not from Railway: it needs a model lane, and the Railway
-// container has no Claude. It uses the free lane first, like every other world-look.
+// ⚠ WHICH DATABASE THIS TOUCHES — read before running.
+//
+// It opens whatever `DB_PATH` points at. Run from the Mac with no DB_PATH set, that
+// is the LOCAL copy at queue-server/data/queue.db — **not** the database the live app
+// serves, which lives on Railway's volume and is not reachable from here. On
+// 2026-08-19 the local copy held 99 stale reports while production held 208, and an
+// earlier note recommended running this script to fix "the ~99" — a number taken from
+// the local copy. It would have rewritten a file nothing reads and left the live app
+// untouched.
+//
+// So: to fix what Antoine actually sees, use the app's "↻ Redo the old world ideas"
+// button, or POST /api/discovery/world-look/rewrite — both run inside the container,
+// against the live database. Production does have a model lane (it reports both
+// claude and opencode available), so it works there.
+//
+// This script is for the local copy, or for a machine whose DB_PATH is deliberately
+// pointed somewhere else. It refuses to run against a database that looks like the
+// wrong one unless you pass --i-know-which-database.
 //
 //   node queue-server/scripts/rewrite-world-looks.js --dry-run
 //   node queue-server/scripts/rewrite-world-looks.js --limit 20
@@ -37,6 +53,27 @@ const has = (name) => args.includes(`--${name}`);
 const dryRun = has('dry-run');
 const limit = Math.max(1, Math.min(500, Number(flag('limit')) || 25));
 const sources = flag('sources') ? String(flag('sources')).split(',').map((s) => s.trim()).filter(Boolean) : null;
+
+// Say plainly which file is about to be written, and stop if it is the local copy
+// being mistaken for the live one. A dry run is always allowed — it changes nothing.
+const { DB_PATH } = await import('../server/src/db/schema.js');
+const onVolume = !!process.env.RAILWAY_VOLUME_MOUNT_PATH;
+console.log(`Database: ${DB_PATH}${onVolume ? ' (Railway volume — the live one)' : ' (local file)'}`);
+if (!dryRun && !onVolume && !has('i-know-which-database')) {
+  console.error(`
+This is the LOCAL database, not the one the live app serves.
+
+  Rewriting here changes nothing that Antoine can see. To fix the live app, press
+  "↻ Redo the old world ideas" in the app, or:
+
+    curl -X POST "$APP_URL/api/discovery/world-look/rewrite" \\
+         -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \\
+         -d '{"limit":500}'
+
+  If you really do mean this local copy, re-run with --i-know-which-database.
+`);
+  process.exit(1);
+}
 
 const db = openDb();
 // The text seam and the model router need the database before any prompt can run —
