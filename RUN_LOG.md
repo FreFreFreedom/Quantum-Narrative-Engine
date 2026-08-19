@@ -1693,3 +1693,5 @@ parses clean, served-index ↔ master checksums match (480e6de7…). Pushed to
   exercised; on Railway the hosted free model answers in ~2-3s normally.
 
 Pushed to `main` (deployed). Local 3000 server still needs Antoine's restart.
+
+<!-- publish pipeline test -->
