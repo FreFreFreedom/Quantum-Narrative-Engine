@@ -1,0 +1,30 @@
+# Branches deleted 2026-08-19 — every one verified already in develop
+# Recover any of them with:  git branch <name> <sha>
+
+## Remote (GitHub)
+a29ea941e1b1082d857664fc2c25c179fce002a9  overnight/2026-08-10
+2602fadbf9c92ae8b2c7d4ff59e4c41ed9c53726  queue-local-runner
+7519dfab86415e0f632f1d137d18ebceacc74354  worktree-queue-stall-fallback
+
+## Local
+ccf3b026826dbd5e398c506145b6fe1c46db3b9e  abandoned/merge-check-2026-08-15
+5f5782289352844ca82e66b561ab56de3baee0f2  agent/dev1/3fe1f0a7-overnight-test-step3-dev
+5f5782289352844ca82e66b561ab56de3baee0f2  agent/dev1/b53ff577-overnight-test-step4-dev
+5f5782289352844ca82e66b561ab56de3baee0f2  agent/dev2/a2f9e798-overnight-test-step3-dev
+15cb5ee015b405610da7ed7d1603b3b16aa64cc0  agent/dev2/cd272ef5-test-opencode-free-model
+5f5782289352844ca82e66b561ab56de3baee0f2  agent/dev2/cebe2006-overnight-test-step4-dev
+5f5782289352844ca82e66b561ab56de3baee0f2  agent/dev2/eb356287-overnight-test-step4-dev
+11c3dbe152a2b555d4c833e527f0312c0f3998b7  agent/github-code-discovery
+95973883070a871453f953eaed610a8dd39813c9  agent/idea-box-decomposition
+380ae18f7a9b8a8d3646a362eb1433758eeb5e5b  agent/idea-studio
+ef23b5f10991f54c3f6f5244fbdc24afd270b0b9  overnight/2026-08-10
+bd0fe214db83cac28d34e7fb28270381342c8bf2  queue-local-runner
+42f6c0228638a4efa373ba3e62f3e7a12af2c27b  queue/add-microphone-button-to-task-composer-f-eecdee80
+5b0ba64164a8a773de866a7c98edd371c9e77261  queue/compress-task-questions-and-results-in-t-c45afdef
+3d254a7c190e3df2eca35cd58cd048be58f10842  queue/follow-up-add-visible-bulk-clear-button--e0a2136a
+6ad89f847f1ff0b6d99ebfff54f3f11ef81b2274  queue/remove-the-flow-runner-banner-block-from-67717a02
+4142889bc667dfd750721714c8b2d171975536f2  queue/remove-this-button-9eb45c65
+c50156de42a721650b17cf1367810b996ad12633  queue/replace-the-world-ideas-ready-button-wit-ef8f7eb0
+c37854e58fd4f3f5a521a5dba3f73f76e064a440  security-cleanup
+9c98f5a717e20e7611382cac695c6a043bb7b1b7  workers/snapshot-2026-08-13
+7519dfab86415e0f632f1d137d18ebceacc74354  worktree-queue-stall-fallback

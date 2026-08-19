@@ -138,6 +138,13 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
     *you*, an agent working by hand. It is **not** a reason to disable the automatic
     lane, gate it behind a click, or remove it. If you think it is unsafe, say so
     and ask; do not "fix" it.
+  - **Branches: there is one, and task branches clean themselves up.** A finished
+    task's `queue/*` branch is deleted by `tidyWorktrees()` once its work is on the
+    trunk *and* it is older than `RUNNER_BRANCH_KEEP_DAYS` (2). Branches used to be
+    kept forever "just in case", which is how 22 accumulated by 2026-08-19 — every one
+    holding work already published. An unpublished branch is never deleted, and neither
+    is one checked out when tidying starts. `npm run tidy:selftest` covers all four
+    cases; run it if you touch that logic.
   - **Branches: there is one.** `develop` is the trunk, all work is committed there,
     and it is the branch Railway deploys from — so `git push origin develop` *is* the
     deploy. Confirm what is live with `git ls-remote origin refs/heads/develop`.

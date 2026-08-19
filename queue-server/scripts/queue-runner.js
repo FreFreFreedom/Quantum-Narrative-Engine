@@ -52,6 +52,10 @@ const RUNNER_ID = process.env.RUNNER_ID || `mac-${process.pid}`;
 // Retired 2026-08-19.) Anything that bases a branch or lands a merge must use this,
 // never a hardcoded name and never HEAD.
 const TRUNK = process.env.RUNNER_TRUNK || 'develop';
+// How long a finished task's branch is kept after its work reaches the trunk, before
+// tidyWorktrees() deletes the name. Antoine chose 2 days: enough to look back at how a
+// task did something, short enough that branches stop accumulating.
+const BRANCH_KEEP_DAYS = Number(process.env.RUNNER_BRANCH_KEEP_DAYS || 2);
 
 // How long a model gets to produce its FIRST real output before we give up on
 // it. This is the number that replaces the old 20-35 minute wait: a model that
@@ -982,13 +986,27 @@ function commitWork({ wt, task, status, summary, model }) {
 // on the machine that owns the folders.
 //
 // A folder is only removed once its work is safely on the trunk, or once it is a
-// week old. The BRANCH is always kept either way — that is what makes the work
-// recoverable, and branches cost nothing.
+// week old. The branch is removed too, but only after a grace period
+// (BRANCH_KEEP_DAYS) and only once its commits are reachable from the trunk — at
+// which point the name is genuinely redundant and deleting it loses nothing. Keeping
+// branches forever was the old rule; it is how 22 of them accumulated by 2026-08-19,
+// every one holding work that was already published.
 function tidyWorktrees() {
   const root = join(RUNNER_REPO, '.claude', 'worktrees');
   if (!existsSync(root)) return;
   gitIn(RUNNER_REPO, ['worktree', 'prune']);
   gitIn(RUNNER_REPO, ['fetch', 'origin', TRUNK, '--quiet']);
+
+  // Which branches are checked out RIGHT NOW, captured before the loop below removes
+  // any folder. Reading this afterwards would be wrong: removing a task's folder makes
+  // its branch look unused, so the branch pass could delete a branch that was live when
+  // tidying began. Harmless today — this only runs at runner startup, before any task
+  // can be in flight — but the ordering is the kind of thing that bites later.
+  const checkedOutAtStart = new Set(
+    (gitIn(RUNNER_REPO, ['worktree', 'list', '--porcelain'], { lines: true }) || [])
+      .filter((l) => l.startsWith('branch refs/heads/'))
+      .map((l) => l.slice('branch refs/heads/'.length)),
+  );
 
   let removed = 0;
   for (const line of gitIn(RUNNER_REPO, ['worktree', 'list', '--porcelain'], { lines: true }) || []) {
@@ -1006,7 +1024,33 @@ function tidyWorktrees() {
 
     if (gitIn(RUNNER_REPO, ['worktree', 'remove', '--force', path]) !== null) removed++;
   }
-  if (removed) console.log(dim(`  tidied ${removed} finished task folder(s) — their branches are kept`));
+
+  // Delete the branch too, once its work is safely on the trunk AND it has had a
+  // grace period. Until 2026-08-19 branches were kept forever "just in case", which
+  // is how 22 of them accumulated — every one holding work that was already in
+  // develop. A published branch is genuinely redundant: its commits are reachable
+  // from the trunk, so deleting the name deletes nothing.
+  //
+  // The grace period is Antoine's call (2 days): long enough to go back and look at
+  // how a task did something, short enough that nothing piles up.
+  const branches = gitIn(RUNNER_REPO, ['for-each-ref', '--format=%(refname:short) %(committerdate:unix)', 'refs/heads/queue/'], { lines: true }) || [];
+  let prunedBranches = 0;
+  for (const row of branches) {
+    const [name, ts] = row.split(' ');
+    if (!name) continue;
+    // Never touch a branch that was checked out when tidying started — that is a task
+    // in flight (see checkedOutAtStart above for why it is a snapshot).
+    if (checkedOutAtStart.has(name)) continue;
+    const ageDays = (Date.now() / 1000 - Number(ts || 0)) / 86400;
+    if (!(ageDays >= BRANCH_KEEP_DAYS)) continue;
+    // Published? Only then is the name redundant.
+    if (gitIn(RUNNER_REPO, ['merge-base', '--is-ancestor', name, `origin/${TRUNK}`]) === null) continue;
+    if (gitIn(RUNNER_REPO, ['branch', '-D', name]) !== null) prunedBranches++;
+  }
+
+  if (removed || prunedBranches) {
+    console.log(dim(`  tidied ${removed} finished task folder(s)${prunedBranches ? ` and ${prunedBranches} published branch(es)` : ''}`));
+  }
 }
 
 // ─── Publishing, on this Mac ──────────────────────────────────────────────────
@@ -1199,4 +1243,4 @@ if (runDirectly) {
 }
 
 // Exported for the self-test only (scripts/ship-selftest.js).
-export { commitWork, makeWorktree, TRUNK };
+export { commitWork, makeWorktree, tidyWorktrees, TRUNK, BRANCH_KEEP_DAYS };
