@@ -27,9 +27,10 @@ import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
 loadEnvFile(new URL('../.env', import.meta.url));
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync, writeFileSync, unlinkSync, copyFileSync } from 'node:fs';
 import { tmpdir, homedir, hostname } from 'node:os';
 import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import {
   CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels,
@@ -37,12 +38,18 @@ import {
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
 import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
+import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const RUNNER_REPO = resolve(process.env.RUNNER_REPO || resolve(process.cwd(), '..'));
 const RUNNER_ID = process.env.RUNNER_ID || `mac-${process.pid}`;
+// The branch that actually holds this project's work. `main` is only a deploy
+// pointer that develop gets pushed onto (verified: local main sits 81 commits
+// behind origin/main, and shipping is `git push origin develop:main`). Anything
+// that bases a branch or lands a merge must use this, not `main` and not HEAD.
+const TRUNK = process.env.RUNNER_TRUNK || 'develop';
 
 // How long a model gets to produce its FIRST real output before we give up on
 // it. This is the number that replaces the old 20-35 minute wait: a model that
@@ -264,8 +271,26 @@ function makeWorktree(taskId, title) {
   const path = join(RUNNER_REPO, '.claude', 'worktrees', `queue-${taskId.slice(0, 8)}`);
   try {
     if (existsSync(path)) return { path, branch };
-    execFileSync('git', ['-C', RUNNER_REPO, 'worktree', 'add', '-b', branch, path, 'HEAD'], { stdio: 'pipe' });
-    return { path, branch };
+    // Base every task on freshly-fetched origin/develop, NOT on HEAD.
+    //
+    // HEAD is whatever the working checkout happens to be sitting on, including
+    // half-finished local commits. The ship step merges a task branch back into
+    // develop, so a branch based on a dirty/ahead HEAD would carry unrelated
+    // unpublished commits along with it and publish them unattended. develop is
+    // this repo's real trunk (main is only the deploy pointer that develop gets
+    // pushed onto), so origin/develop is the honest starting line. Fall back to
+    // HEAD only if that ref genuinely isn't there.
+    let base = 'HEAD';
+    try {
+      execFileSync('git', ['-C', RUNNER_REPO, 'fetch', 'origin', TRUNK, '--quiet'], { stdio: 'pipe' });
+    } catch { /* offline — the local ref below may still be good enough */ }
+    try {
+      execFileSync('git', ['-C', RUNNER_REPO, 'rev-parse', '--verify', '--quiet', `refs/remotes/origin/${TRUNK}`], { stdio: 'pipe' });
+      base = `origin/${TRUNK}`;
+    } catch { /* keep HEAD */ }
+    execFileSync('git', ['-C', RUNNER_REPO, 'worktree', 'add', '-b', branch, path, base], { stdio: 'pipe' });
+    console.log(dim(`  branch ${branch} from ${base}`));
+    return { path, branch, base };
   } catch (e) {
     console.error(`  worktree setup failed (${String(e.message).split('\n')[0]}) — running in a temp dir instead.`);
     return { path: mkdtempSync(join(tmpdir(), 'fmcns-task-')), branch: null };
@@ -797,10 +822,19 @@ async function runTask(task) {
     const shown = isClaude ? `Claude (${claudeModelOf(model)})` : model;
     const costTxt = r.cost ? dim(isClaude ? ` — ${'$' + r.cost.toFixed(4)} of subscription quota (not billed)` : ` — $${r.cost.toFixed(4)}`) : '';
     console.log(`  ${statusTxt} on ${bold(shown)}${costTxt}`);
+    // Save the work to git BEFORE reporting, so the result the server records
+    // already says whether there is a real commit to publish.
+    let ship = null;
+    try {
+      ship = commitWork({ wt, task, status, summary: r.text, model: shown });
+    } catch (e) {
+      console.error('  could not save the work to git —', e.message);
+      ship = { committed: false, reason: 'commit_failed', branch: wt.branch || null };
+    }
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,
       cost_usd: isClaude ? null : (r.cost || null), tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
-      worktree_path: wt.path, branch: wt.branch,
+      worktree_path: wt.path, branch: wt.branch, ship,
     });
     await slackNotify(slackLine({ task, status, engine: shown, startedAt: taskStartedAt, cost: r.cost, why: r.why }));
     return;
@@ -819,6 +853,117 @@ async function runTask(task) {
     tried_models: tried, worktree_path: wt.path, branch: wt.branch,
   });
   await slackNotify(slackLine({ task, status: 'blocked', engine: 'no engine could run it', startedAt: taskStartedAt, cost: 0, why: headline }));
+}
+
+// ─── Saving the work ──────────────────────────────────────────────────────────
+// Until now the runner created a branch, let the agent edit files in it, and then
+// walked away leaving everything UNCOMMITTED. Nothing else committed it either —
+// the agent is explicitly told not to touch git (taskRunner.js), and the server's
+// merge step runs on Railway where this repo does not exist. The result was eight
+// finished tasks whose work existed only as loose files in a throwaway folder, one
+// `git worktree prune` from being gone, and 955MB of them on disk.
+//
+// So the runner commits its own output. That is the whole of this section, and on
+// its own — before anything auto-publishes — it is what stops finished work being
+// silently thrown away.
+
+function gitIn(cwd, args, { lines = false } = {}) {
+  try {
+    const out = execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const t = out.trim();
+    return lines ? (t ? t.split('\n').map((l) => l.trim()).filter(Boolean) : []) : t;
+  } catch (e) {
+    return lines ? [] : null;
+  }
+}
+
+// Paths a task's commit must never carry, whatever the agent did. The server also
+// enforces the per-agent scope rules on the file list we report back; this is the
+// cheap local belt to that braces.
+const NEVER_COMMIT = ['queue-server/data', 'queue-server/node_modules', '.env'];
+
+// Commit whatever the task changed, onto its own branch. Returns the `ship` record
+// that rides along on the existing result POST, so the server learns the outcome
+// in a call it already makes rather than a new round trip.
+function commitWork({ wt, task, status, summary, model }) {
+  const skip = (reason) => ({ committed: false, reason, branch: wt.branch || null });
+
+  if (status !== 'done') {
+    // Deliberate: the out-of-memory / continuation retry path reuses this same
+    // worktree and expects the half-done files to still be sitting in the working
+    // tree (promptQueue's retry_worktree_path). Committing them would turn half a
+    // feature into something shippable.
+    return skip('blocked');
+  }
+  if (task.mode === 'question') return skip('question_mode');   // read-only, ran in the repo itself
+  if (!wt.branch) return skip('no_branch');                     // temp-dir fallback, not a git worktree
+
+  gitIn(wt.path, ['add', '-A']);
+  for (const p of NEVER_COMMIT) gitIn(wt.path, ['reset', '-q', '--', p]);
+
+  const staged = gitIn(wt.path, ['diff', '--cached', '--name-only'], { lines: true });
+  if (!staged.length) return skip('nothing_changed');
+
+  // The frontend exists twice — the master at the repo root and the copy the server
+  // actually serves — and AGENTS.md makes keeping them identical a hard rule. Do it
+  // here so the branch is self-consistent: the diff we report is then exactly the
+  // diff that ships, and there is never a follow-up commit that only copies a file.
+  const APP = 'fmcns_navigator.html';
+  const SERVED = 'queue-server/public/index.html';
+  if (staged.includes(APP)) {
+    try {
+      copyFileSync(join(wt.path, APP), join(wt.path, SERVED));
+      gitIn(wt.path, ['add', '--', SERVED]);
+    } catch (e) {
+      console.log(dim(`  (could not sync the served copy of the app page — ${e.message})`));
+    }
+  }
+
+  const files = gitIn(wt.path, ['diff', '--cached', '--name-only'], { lines: true });
+  const checks = runShipChecks(wt.path, files);
+
+  // A failed check does NOT stop the commit. The work must be preserved and
+  // visible either way; what a failure stops is the *publishing*, and that call
+  // belongs to the server.
+  const subject = String(task.title || 'Queue task').replace(/\s+/g, ' ').trim().slice(0, 72);
+  const body = [
+    (summary || '').split(/\n\s*\n/)[0].trim().slice(0, 600),
+    '',
+    `Task-Id: ${task.id}`,
+    task.work_prompt_id ? `Prompt-Id: ${task.work_prompt_id}` : null,
+    `Ran-On: ${model || 'unknown'}`,
+    `Runner: ${RUNNER_ID}`,
+  ].filter((l) => l !== null).join('\n');
+
+  // Identity passed explicitly rather than relying on the environment: under
+  // launchd there is no login shell, and a missing identity would fail the commit
+  // for a reason that has nothing to do with the work.
+  const committed = gitIn(wt.path, [
+    '-c', 'user.name=FMCNS queue runner',
+    '-c', 'user.email=queue-runner@fmcns.local',
+    'commit', '-m', subject, '-m', body,
+  ]);
+  if (committed === null) return { ...skip('commit_failed'), files_changed: files };
+
+  const head = gitIn(wt.path, ['rev-parse', 'HEAD']);
+  const numstat = gitIn(wt.path, ['diff', '--numstat', `${wt.base || `origin/${TRUNK}`}...HEAD`], { lines: true });
+  let insertions = 0, deletions = 0;
+  for (const line of numstat) {
+    const [a, d] = line.split('\t');
+    insertions += parseInt(a, 10) || 0;
+    deletions += parseInt(d, 10) || 0;
+  }
+
+  const okTxt = checks.ok ? green('checks pass') : red('checks FAIL');
+  console.log(`  saved ${bold(files.length + ' file(s)')} to ${wt.branch} (+${insertions}/-${deletions}) — ${okTxt}`);
+  if (!checks.ok) console.log(red(`    ${shipCheckMessage(checks.checks)?.split('\n')[1] || ''}`));
+
+  return {
+    committed: true, reason: null,
+    branch: wt.branch, head_sha: head, base_sha: wt.base || null,
+    files_changed: files, insertions, deletions,
+    checks: checks.checks, checks_ok: checks.ok,
+  };
 }
 
 // ─── One runner at a time ─────────────────────────────────────────────────────
@@ -946,8 +1091,17 @@ async function main() {
   await notifyStopped('it was stopped by hand');
 }
 
-main().catch(async (e) => {
-  console.error(e);
-  await notifyStopped(`it crashed — ${e.message}`);
-  process.exit(1);
-});
+// Only start the runner when this file is the program being run. Importing it
+// (the ship self-test does) must not spin up a second runner against the live
+// queue — which the single-instance lock would refuse anyway, noisily.
+const runDirectly = process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url;
+if (runDirectly) {
+  main().catch(async (e) => {
+    console.error(e);
+    await notifyStopped(`it crashed — ${e.message}`);
+    process.exit(1);
+  });
+}
+
+// Exported for the self-test only (scripts/ship-selftest.js).
+export { commitWork, makeWorktree, TRUNK };

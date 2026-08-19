@@ -1420,6 +1420,7 @@ export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd
 export function recordRunnerResult(taskId, {
   status = 'done', result = '', session_id = null, model = null, tried_models = null,
   cost_usd = null, tokens_in = null, tokens_out = null, worktree_path = null, branch = null,
+  ship = null,
 } = {}) {
   const task = readTasks().find((t) => t.id === taskId);
   if (!task) return null;
@@ -1443,6 +1444,16 @@ export function recordRunnerResult(taskId, {
     tried_models: Array.isArray(tried_models) ? tried_models : task.tried_models,
     worktree_path: worktree_path || task.worktree_path,
     branch: branch || task.branch,
+    // What the runner did with the work in git. Until the runner started
+    // committing, a finished task left its edits as loose files in a throwaway
+    // folder and nothing recorded whether anything publishable existed at all —
+    // so a review could only ever guess (and always guessed wrong).
+    head_sha: ship?.head_sha || task.head_sha || null,
+    ship_skip_reason: ship && ship.committed === false ? (ship.reason || 'unknown') : null,
+    ship_checks: ship?.checks ? JSON.stringify(ship.checks) : (task.ship_checks || null),
+    ship_files: Array.isArray(ship?.files_changed) ? JSON.stringify(ship.files_changed) : (task.ship_files || null),
+    ship_insertions: Number.isFinite(ship?.insertions) ? ship.insertions : (task.ship_insertions ?? null),
+    ship_deletions: Number.isFinite(ship?.deletions) ? ship.deletions : (task.ship_deletions ?? null),
     cost_usd: Number.isFinite(cost_usd) && cost_usd > 0 ? cost_usd : task.cost_usd,
     tokens_in: tokens_in ?? task.tokens_in, tokens_out: tokens_out ?? task.tokens_out,
     run_state: pending_question?.question ? 'awaiting_input' : 'idle',

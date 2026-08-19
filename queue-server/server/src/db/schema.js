@@ -275,6 +275,19 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN claimed_by TEXT`); } catch {}
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN claimed_at TEXT`); } catch {}
 
+  // What the local runner did with the task's work in git. Before it started
+  // committing, a finished task's edits existed only as loose files in a throwaway
+  // worktree on the Mac, and nothing recorded whether there was anything
+  // publishable at all — so the review gate could only guess, and always guessed
+  // wrong ("The agent working folder no longer exists", every single time).
+  // head_sha is the commit to publish; ship_skip_reason says why there is none.
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN head_sha TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_skip_reason TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_checks TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_files TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_insertions INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_deletions INTEGER`); } catch {}
+
   // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
   // because node:sqlite enforces foreign keys by default — the REFERENCES above
   // needs the table to exist. Seeded with the roster rows in step 3
