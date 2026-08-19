@@ -27,7 +27,7 @@ import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
 loadEnvFile(new URL('../.env', import.meta.url));
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, existsSync, readFileSync, writeFileSync, unlinkSync, copyFileSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync, writeFileSync, unlinkSync, copyFileSync, statSync } from 'node:fs';
 import { tmpdir, homedir, hostname } from 'node:os';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -973,6 +973,41 @@ function commitWork({ wt, task, status, summary, model }) {
   };
 }
 
+// ─── Housekeeping ─────────────────────────────────────────────────────────────
+// The task folders pile up: 955MB of them had accumulated by the time anyone
+// looked. The server has a GC for this (gitOps.gcWorktrees) but it can never run —
+// it needs a git repository, and the container has none, and it only recognises
+// UUID-named folders anyway, not the runner's `queue-xxxxxxxx`. So it happens here,
+// on the machine that owns the folders.
+//
+// A folder is only removed once its work is safely on the trunk, or once it is a
+// week old. The BRANCH is always kept either way — that is what makes the work
+// recoverable, and branches cost nothing.
+function tidyWorktrees() {
+  const root = join(RUNNER_REPO, '.claude', 'worktrees');
+  if (!existsSync(root)) return;
+  gitIn(RUNNER_REPO, ['worktree', 'prune']);
+  gitIn(RUNNER_REPO, ['fetch', 'origin', TRUNK, '--quiet']);
+
+  let removed = 0;
+  for (const line of gitIn(RUNNER_REPO, ['worktree', 'list', '--porcelain'], { lines: true }) || []) {
+    if (!line.startsWith('worktree ')) continue;
+    const path = line.slice('worktree '.length);
+    const name = path.split('/').pop();
+    if (!/^queue-[0-9a-f]{8}$/.test(name)) continue;   // never the persistent 'ship' tree, never anything else
+    if (gitIn(path, ['status', '--porcelain'])) continue; // uncommitted work — leave it completely alone
+
+    const head = gitIn(path, ['rev-parse', 'HEAD']);
+    const merged = head && gitIn(path, ['merge-base', '--is-ancestor', head, `origin/${TRUNK}`]) !== null;
+    let old = false;
+    try { old = Date.now() - statSync(path).mtimeMs > 7 * 24 * 3600 * 1000; } catch { continue; }
+    if (!merged && !old) continue;
+
+    if (gitIn(RUNNER_REPO, ['worktree', 'remove', '--force', path]) !== null) removed++;
+  }
+  if (removed) console.log(dim(`  tidied ${removed} finished task folder(s) — their branches are kept`));
+}
+
 // ─── Publishing, on this Mac ──────────────────────────────────────────────────
 // The server decides that a finished task should go live but cannot do it: no git
 // repository in the container. It parks a job; this claims it and runs the git here.
@@ -1099,6 +1134,7 @@ async function main() {
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
+  try { tidyWorktrees(); } catch (e) { console.log(dim(`  (could not tidy old task folders — ${e.message})`)); }
   await notifyStarted();
   await printSnapshot({ force: true });
 

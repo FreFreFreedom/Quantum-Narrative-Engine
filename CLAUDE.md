@@ -179,10 +179,20 @@ edit in place, open in a browser to test.
 
 ## Deploying
 
-Railway auto-deploys from `main`. Shipping discipline is Antoine's rule, set in
-`AGENTS.md`: ship directly, no local test phase — syntax checks only, then
-commit and push. The `deploy` skill (`.claude/skills/deploy/SKILL.md`) has the
-step-by-step.
+Railway auto-deploys from `main` — but `main` is only the deploy pointer. Work is
+committed on **`develop`** (the trunk); local `main` is never checked out and sits
+far behind, so never judge what is live from it. Deploying is
+`git push origin develop` then `git push origin develop:main`, and the live commit
+is `git ls-remote origin refs/heads/main`.
+
+Shipping discipline is Antoine's rule, set in `AGENTS.md`: ship directly, no local
+test phase — syntax checks only, then commit and push. The `deploy` skill
+(`.claude/skills/deploy/SKILL.md`) has the step-by-step.
+
+The Dispatch Queue also ships on its own: the local runner commits a finished
+task's work and `queue-server/scripts/git-ship.js` pushes `develop` + `main`
+atomically from the Mac, with an "undo" path behind the app's **Put it back**
+button. See AGENTS.md "Git rules" before changing any of it.
 
 ## Credit/cost efficiency
 

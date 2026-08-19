@@ -129,6 +129,21 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
 - **Git rules (hard)**: never push, never merge, never checkout/reset away work
   on `main`. Agent work lives on `agent/*` branches in worktrees; merging and
   publishing are the human's call via the review screen.
+  - **Exception — the app's own publishing lane (Antoine's decision, 2026-08-19).**
+    The Dispatch Queue publishes finished tasks by itself: the local runner commits
+    the task's work (`scripts/queue-runner.js`), the server queues a `git_jobs` row,
+    and `scripts/git-ship.js` merges onto the trunk and pushes on the Mac. That is
+    deliberate, it is what Antoine asked for, and the safety net is the **Put it
+    back** button on the task — not a human merge step. The rule above applies to
+    *you*, an agent working by hand. It is **not** a reason to disable the automatic
+    lane, gate it behind a click, or remove it. If you think it is unsafe, say so
+    and ask; do not "fix" it.
+  - **Branches**: `develop` is the trunk — all work is committed there. `main` is
+    only the pointer Railway deploys from, and local `main` is usually far behind
+    (it is never checked out). Deploying is `git push origin develop:main`, or
+    `git push --atomic origin HEAD:develop HEAD:main` when landing both at once.
+    Pushing only `main` puts the deploy pointer ahead of the trunk and breaks every
+    later deploy, including by hand.
 - **Never touch `queue-server/data/`** — that is the live database (and the
   agents' per-task pid/exec files).
 - **Cost discipline**: model calls cost real quota. Prefer deterministic checks
