@@ -690,6 +690,32 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-card.q-inspire-in-group { border-left:2px solid var(--c-border-3); }
 .q-inspire-radio-btn { border-radius:999px !important; }
 .q-inspire-card.q-inspire-sel.q-inspire-in-group { border-left-color:var(--c-accent); }
+/* World-look rows: one line per idea, grouped by the decision to be made.
+   Substitutes live inside a .wl-group box (radio marks), everything else is a
+   plain checklist, and the full text only appears once a row is opened. */
+.wl-group { border:1px solid var(--c-border-2); border-radius:9px; padding:6px 8px 4px; margin:8px 0; background:var(--c-surface); }
+.wl-group-head { font-size:10.5px; color:var(--c-ink-3); margin:0 0 4px; display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; }
+.wl-group-head b { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-2); }
+.wl-rows-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:10px 0 3px; }
+.wl-row { border:none; background:none; padding:3px 2px; margin:0; border-radius:6px; }
+.wl-row:hover { background:var(--c-surface-2); }
+.wl-row.q-inspire-sel { background:color-mix(in srgb, var(--c-accent) 9%, transparent); }
+.wl-head { display:flex; align-items:center; gap:6px; min-height:20px; }
+.wl-mark { width:20px; height:20px; flex-shrink:0; padding:0; line-height:1; border:none; background:none; cursor:pointer; font-size:13px; color:var(--c-ink-3); border-radius:5px; font-family:inherit; }
+.wl-mark:hover:not(:disabled) { background:var(--c-surface); color:var(--c-ink); }
+.wl-mark:disabled { cursor:default; color:#4f9d7a; }
+.wl-row.q-inspire-sel .wl-mark { color:var(--c-accent); }
+.wl-title { font-size:12px; font-weight:600; color:var(--c-ink); cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wl-title:hover { text-decoration:underline; }
+.wl-star { font-size:10px; flex-shrink:0; }
+.wl-caret { margin-left:auto; font-size:10px; color:var(--c-ink-4); cursor:pointer; padding:0 2px; flex-shrink:0; }
+.wl-line { font-size:11px; color:var(--c-ink-3); margin:0 0 1px 26px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wl-reason { font-style:italic; cursor:default; }
+.wl-detail { margin:3px 0 5px 26px; }
+.wl-detail .sg-rationale { margin-bottom:3px; }
+.wl-leftout { margin:8px 0 2px; }
+.wl-leftout summary { font-size:10.5px; color:var(--c-ink-4); cursor:pointer; }
+.wl-row.q-inspire-removed { opacity:.6; }
 /* Self-updating tree: pending proposals bar (Architecture tab) */
 .arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; margin:0 14px 10px; flex-shrink:0; }
 .arch-proposals:not(.open) { padding:0; }
@@ -4035,6 +4061,38 @@ function flowQueueRow(p, reorderable, busy, ahead) {
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
 
+// Long bodies in the detail boxes (a suggestion's Why, a component's What) are
+// folded to their opening sentence with a `more ▾` link. Nothing is thrown away
+// — the full text sits hidden in the same element, one click away.
+function clampHtml(text, limit, cls = '') {
+  const full = String(text == null ? '' : text).trim();
+  if (!full) return '';
+  const flat = full.replace(/\s+/g, ' ');
+  if (flat.length <= limit) return `<div class="${cls}">${qEsc(full)}</div>`;
+  const cut = flat.slice(0, limit).replace(/\s\S*$/, '');
+  return `<div class="${cls}"><span data-clampshort>${qEsc(cut)}… <span class="nb-more" data-clampmore>more ▾</span></span><span data-clampfull hidden>${qEsc(full)}</span></div>`;
+}
+
+// One delegated handler for every clamp on the page, and for the task Purpose's
+// extra bullets — both are "reveal what is already in the DOM", so neither needs
+// a re-render (which would fight the panels that re-render on pick).
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest ? ev.target.closest('[data-clampmore], [data-purposemore]') : null;
+  if (!t) return;
+  const box = t.closest('div');
+  if (!box) return;
+  if (t.hasAttribute('data-clampmore')) {
+    const short = box.querySelector('[data-clampshort]');
+    const full = box.querySelector('[data-clampfull]');
+    if (short) short.hidden = true;
+    if (full) full.hidden = false;
+    return;
+  }
+  const rest = box.querySelector('[data-purposerest]');
+  if (rest) rest.hidden = false;
+  t.remove();
+});
+
 // ---------- Card action buttons ----------
 // One symbol button. `label` is the plain-English sentence shown on hover and
 // read out by a screen reader — it is the only place the action is spelled out,
@@ -4511,7 +4569,6 @@ function renderSeedDetail(idea) {
     <input class="q-input" data-role="title" value="${title}">
     <textarea class="q-input" data-role="notes" rows="4">${notes}</textarea>
     <input class="q-input" data-role="tag" placeholder="tag" value="${tag}" style="max-width:140px;">
-    <div class="id-form-hint" style="margin:6px 0;">Nothing runs from an idea — they sit here to be revisited, queued, planted, or discussed.</div>
     ${idea.work_prompt_id ? `<div class="id-done-pill">Queued — <a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">view in Flow</a></div>` : ''}
     ${idea.arch_node_id ? `<div class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></div>` : ''}
     <div class="id-form-hint">Queue it, plant it, discuss it or remove it with the symbols on the card above.</div>
@@ -4549,7 +4606,7 @@ function renderSuggestionDetail(s) {
       <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
       <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
     </div>
-    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${qEsc(s.rationale)}</div></div>` : ''}
+    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(s.rationale, 180, 'arch-field-body')}</div>` : ''}
     ${s.status === 'new' ? `
       <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
@@ -4866,7 +4923,10 @@ function qPurposeHtml(summary) {
   const lines = String(summary || '').split('\n')
     .map(l => l.replace(/^[-•*]\s*/, '').trim())
     .filter(Boolean);
-  return '<ul class="q-purpose">' + lines.map(l => `<li>${qEsc(l)}</li>`).join('') + '</ul>';
+  const li = l => `<li>${qEsc(l)}</li>`;
+  const head = lines.slice(0, 3), rest = lines.slice(3);
+  return '<ul class="q-purpose">' + head.map(li).join('') + '</ul>' +
+    (rest.length ? `<span class="nb-more" data-purposemore>${rest.length} more ▾</span><ul class="q-purpose" data-purposerest hidden>${rest.map(li).join('')}</ul>` : '');
 }
 
 // Instant placeholder while the AI bullets are on their way: the opening of the
@@ -4874,7 +4934,7 @@ function qPurposeHtml(summary) {
 // always one click away below.
 function qPurposePreview(p) {
   const text = String(p.raw_prompt || p.prompt || '').replace(/\s+/g, ' ').trim();
-  const cut = text.length > 240 ? text.slice(0, 240).replace(/\s\S*$/, '') + '…' : text;
+  const cut = text.length > 140 ? text.slice(0, 140).replace(/\s\S*$/, '') + '…' : text;
   return '<div class="q-purpose-preview">' + qEsc(cut || 'No prompt text.') + '</div>';
 }
 
@@ -4964,57 +5024,100 @@ function applyInspireToggle(list, key, facts) {
   list.push(key);
 }
 
-function qInspireCard(pick, pi, i, applied, sel, facts = null, pickAction = 'inspire-pick') {
+// The world-look list used to be three shelves of tall cards — 20 to 35 of them
+// stacked in one column inside an already-expanded card, which read as one long
+// drop-down. It is now organised by the *decision* a person actually makes:
+// substitutes sit together in a bordered "Pick one" box (they already behaved
+// like a radio group — see applyInspireToggle — the display simply never said
+// so), everything else is a plain checklist, and the ideas the quick check threw
+// out are folded away. Where an idea came from (open source / private / bold)
+// moves from a section header down to a tag on the row.
+const WORLD_KIND_TAG = {
+  open: { tag: 'open source', title: 'A real project with a link — you can go and check it yourself.' },
+  hidden: { tag: 'private', title: 'A real product, but the code stays inside a company. From general knowledge — may be out of date.' },
+  bold: { tag: '✨ bold', title: 'May not exist anywhere yet. The heart of this panel.' },
+};
+const WORLD_KIND_ORDER = ['open', 'hidden', 'bold'];
+
+// Which rows are open. Lives outside the DOM because picking an idea re-renders
+// the whole panel in place (flowWorldRender / qInspireReRender) — a plain DOM
+// toggle would snap every open row shut on the next click.
+const worldOpen = new Set();
+const worldRowKey = (scope, pi, i) => `${scope}|${pi}:${i}`;
+
+// The single line a closed row shows: the pick's leading field, cut to its first
+// sentence, or ~90 characters on a word boundary. Same idea as qPurposePreview.
+function worldOneLine(pick) {
+  const src = pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? pick.what : pick.vision;
+  const text = String(src || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const stop = text.search(/[.!?](\s|$)/);
+  const first = stop > 24 ? text.slice(0, stop + 1) : text;
+  return first.length > 90 ? first.slice(0, 90).replace(/\s\S*$/, '') + '…' : first;
+}
+
+function worldPickTitle(pick) {
+  if (pick.kind === 'open') return pick.repo || 'Project';
+  return pick.name || (pick.kind === 'hidden' ? 'Product' : 'Bold idea');
+}
+
+// The full text, shown only once a row is opened — the three rationale lines the
+// old tall card used to show all the time.
+function worldDetailHtml(pick) {
+  const r = (label, text) => `<div class="sg-rationale"><b>${label}</b> ${qEsc(text)}</div>`;
+  if (pick.kind === 'open') {
+    return (pick.why_fits ? r('Why it fits:', pick.why_fits) : '') +
+      (pick.use ? r("How we'd use it:", pick.use) : '') +
+      (pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${qEsc(pick.repo)}" target="_blank" rel="noopener">github.com/${qEsc(pick.repo)}</a></div>` : '');
+  }
+  if (pick.kind === 'hidden') {
+    return (pick.what ? r('What it is:', pick.what) : '') +
+      (pick.lesson ? r('What we can learn:', pick.lesson) : '') +
+      (pick.use ? r('What we could do even better:', pick.use) : '');
+  }
+  return (pick.vision ? r('The big idea:', pick.vision) : '') +
+    (pick.why_possible ? r("Why it's doable:", pick.why_possible) : '') +
+    (pick.how_fmcns ? r("How we'd get there first:", pick.how_fmcns) : '');
+}
+
+// One idea, one row. Keeps the .q-inspire-card class and the data-partidx /
+// data-pickidx attributes the existing pick handlers look for with closest(),
+// so nothing downstream needs rewiring.
+function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, inGroup = false }) {
   const key = pi + ':' + i;
   const isApplied = applied.has(key);
   const isSel = sel.has(key);
   const removed = facts?.removed.get(key);
-  const group = facts?.groupOf.get(key);
   const bestWhy = facts?.bestOf.get(key);
-  const r = (label, text) => `<div class="sg-rationale world-r" title="${qEsc(text)}"><b>${label}</b> ${qEsc(text)}</div>`;
-  let head = '', body = '';
-  if (pick.kind === 'open') {
-    head = `<span class="sg-card-title">${qEsc(pick.repo || 'Project')}</span>${pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}`;
-    body = (pick.why_fits ? r('Why it fits:', pick.why_fits) : '') +
-      (pick.use ? r("How we'd use it:", pick.use) : '') +
-      (pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${qEsc(pick.repo)}" target="_blank" rel="noopener">github.com/${qEsc(pick.repo)}</a></div>` : '');
-  } else if (pick.kind === 'hidden') {
-    head = `<span class="sg-card-title">${qEsc(pick.name || 'Product')}</span><span class="q-inspire-tag" title="The code stays inside a company — this comes from general knowledge and may be out of date.">not public</span>`;
-    body = (pick.what ? r('What it is:', pick.what) : '') +
-      (pick.lesson ? r('What we can learn:', pick.lesson) : '') +
-      (pick.use ? r('What we could do even better:', pick.use) : '');
-  } else {
-    head = `<span class="sg-card-title">✨ ${qEsc(pick.name || 'Bold idea')}</span>`;
-    body = (pick.vision ? r('The big idea:', pick.vision) : '') +
-      (pick.why_possible ? r("Why it's doable:", pick.why_possible) : '') +
-      (pick.how_fmcns ? r("How we'd get there first:", pick.how_fmcns) : '');
-  }
-  const groupChip = group ? `<span class="q-inspire-alt-chip" title="${qEsc(group.note || 'These ideas are alternatives — you only need one.')}">🔄 Alternatives ${qEsc(group.id)}</span>` : '';
-  const bestLine = bestWhy !== undefined ? `<div class="q-inspire-best">⭐ Our pick${bestWhy ? ' — ' + qEsc(bestWhy) : ''}</div>` : '';
-  const removedLine = removed ? `<div class="sg-rationale q-inspire-reason">Not used: ${qEsc(removed)}</div>` : '';
-  const btnLabel = isApplied ? '✓ In the plan' : isSel ? '✓ Selected' : 'Use in plan';
+  const meta = WORLD_KIND_TAG[pick.kind] || WORLD_KIND_TAG.bold;
+  const ek = worldRowKey(scope, pi, i);
+  const isOpen = worldOpen.has(ek);
+  const mark = isApplied ? '✓' : inGroup ? (isSel ? '◉' : '○') : (isSel ? '☑' : '☐');
+  const markTitle = isApplied ? 'Already baked into the plan.'
+    : inGroup ? 'Pick this one — it clears the other options in this box.'
+      : isSel ? 'Picked. Click to drop it.' : 'Include this idea.';
+  const line = worldOneLine(pick);
   return `
-    <div class="sg-card q-inspire-card ${isApplied ? 'q-inspire-applied' : ''} ${isSel ? 'q-inspire-sel' : ''} ${removed ? 'q-inspire-removed' : ''} ${group ? 'q-inspire-in-group' : ''}" data-partidx="${pi}" data-pickidx="${i}">
-      <div class="sg-card-top">${head}${groupChip}</div>
-      ${body}
-      ${bestLine}
-      ${removedLine}
-      <div class="sg-actions">
-        <button data-action="${pickAction}" class="${isApplied || isSel ? 'primary' : ''} ${group ? 'q-inspire-radio-btn' : ''}" ${isApplied ? 'disabled title="Already baked into the plan."' : group ? `title="Alternatives ${qEsc(group.id)} — picking this clears the others in that group."` : ''}>${isSel && group ? '◉ ' + btnLabel : btnLabel}</button>
+    <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
+      <div class="wl-head">
+        <button class="wl-mark ${inGroup ? 'wl-radio' : ''}" data-action="${pickAction}" title="${qEsc(markTitle)}" ${isApplied ? 'disabled' : ''}>${mark}</button>
+        <span class="wl-title" data-worldexpand="${ek}">${qEsc(worldPickTitle(pick))}</span>
+        ${pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
+        <span class="q-inspire-tag" title="${qEsc(meta.title)}">${meta.tag}</span>
+        ${bestWhy !== undefined ? `<span class="wl-star" title="${qEsc(bestWhy ? 'Our pick — ' + bestWhy : 'Our pick.')}">⭐</span>` : ''}
+        <span class="wl-caret" data-worldexpand="${ek}" title="The full idea">${isOpen ? '▾' : '▸'}</span>
       </div>
+      ${line ? `<div class="wl-line" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
+      ${removed ? `<div class="wl-line wl-reason">Left out: ${qEsc(removed)}</div>` : ''}
+      <div class="wl-detail" ${isOpen ? '' : 'hidden'}>${worldDetailHtml(pick)}</div>
     </div>`;
 }
 
-const WORLD_SHELF_META = [
-  { kind: 'open', title: 'Already built in the open', note: 'Real projects with links — you can check them yourself.', cls: '' },
-  { kind: 'hidden', title: 'Already built, but kept private', note: 'Real products, but the code stays inside companies. From general knowledge — may be out of date.', cls: '' },
-  { kind: 'bold', title: 'Bold new ideas — the future', note: 'May not exist anywhere yet. The heart of this panel.', cls: 'q-inspire-bold' },
-];
-
-// The three shelves themselves — shared by the task panel and the world-look
-// panels in Suggestion / Seeds / Not built. applied = picks already baked into a
-// plan; sel = picks currently ticked in this panel; facts = optional review map.
-function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = null, pickAction = 'inspire-pick' } = {}) {
+// The body of every world-look panel — task, suggestion, seed, component.
+// applied = picks already baked into a plan; sel = picks ticked right now;
+// facts = the review lookup (removed / substitute groups / our pick);
+// scope = which panel this is, so open rows don't leak between panels.
+function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = null, pickAction = 'inspire-pick', scope = '' } = {}) {
   return report.parts.map((part, pi) => {
     const desc = String(part.description || '');
     const descHtml = desc.length > 220
@@ -5023,16 +5126,59 @@ function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = 
     const header = report.parts.length > 1
       ? `<div class="q-inspire-part"><b>${pi + 1}. ${qEsc(part.name || 'Part')}</b> ${descHtml}</div>`
       : `<div class="q-inspire-part">${descHtml}</div>`;
-    const shelfHtml = WORLD_SHELF_META.map(sh => {
-      const items = (part.picks || []).map((pick, i) => ({ pick, i })).filter(x => x.pick.kind === sh.kind);
-      if (!items.length) return '';
-      return `<h4 class="q-inspire-shelf ${sh.cls}">${sh.title}</h4>` +
-        (sh.note ? `<div class="q-inspire-note">${sh.note}</div>` : '') +
-        items.map(({ pick, i }) => qInspireCard(pick, pi, i, applied, sel, facts, pickAction)).join('');
+    const opts = { applied, sel, facts, pickAction, scope };
+    const groups = new Map();
+    const loose = [];
+    const leftOut = [];
+    (part.picks || []).forEach((pick, i) => {
+      const k = pi + ':' + i;
+      if (facts?.removed.has(k)) { leftOut.push({ pick, i }); return; }
+      const g = facts?.groupOf.get(k);
+      if (!g) { loose.push({ pick, i }); return; }
+      if (!groups.has(g.id)) groups.set(g.id, { note: g.note, bestKey: g.bestKey, items: [] });
+      groups.get(g.id).items.push({ pick, i });
+    });
+    // A group with one surviving member is not a choice any more — it goes back
+    // in the plain list rather than sitting alone in a "pick one" box.
+    for (const [id, g] of groups) if (g.items.length < 2) { loose.push(...g.items); groups.delete(id); }
+    const kindRank = (it) => { const n = WORLD_KIND_ORDER.indexOf(it.pick.kind); return n < 0 ? WORLD_KIND_ORDER.length : n; };
+    loose.sort((a, b) => kindRank(a) - kindRank(b) || a.i - b.i);
+    const groupsHtml = [...groups.values()].map(g => {
+      const items = g.items.slice().sort((a, b) =>
+        ((pi + ':' + a.i) === g.bestKey ? 0 : 1) - ((pi + ':' + b.i) === g.bestKey ? 0 : 1));
+      return `<div class="wl-group">
+        <div class="wl-group-head"><b>🔄 Pick one</b> <span>${qEsc(g.note || 'These do the same job — you only need one of them.')}</span></div>
+        ${items.map(({ pick, i }) => worldRowHtml(pick, pi, i, { ...opts, inGroup: true })).join('')}
+      </div>`;
     }).join('');
-    return header + shelfHtml;
+    const looseHtml = loose.length
+      ? `<div class="wl-rows-label">${groups.size ? 'Add if you want' : 'Ideas'}</div>` +
+        loose.map(({ pick, i }) => worldRowHtml(pick, pi, i, opts)).join('')
+      : '';
+    const leftOutHtml = leftOut.length
+      ? `<details class="wl-leftout"><summary>${leftOut.length} idea${leftOut.length === 1 ? '' : 's'} left out — pick any of them if you disagree</summary>
+          ${leftOut.map(({ pick, i }) => worldRowHtml(pick, pi, i, opts)).join('')}</details>`
+      : '';
+    return header + groupsHtml + looseHtml + leftOutHtml;
   }).join('');
 }
+
+// Opening a row is a local DOM toggle, not a re-render: a re-render here would
+// tear down the panel the click came from. The Set keeps it open across the
+// re-renders that picking does cause.
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest ? ev.target.closest('[data-worldexpand]') : null;
+  if (!t) return;
+  const row = t.closest('.wl-row');
+  if (!row) return;
+  const ek = t.getAttribute('data-worldexpand');
+  const wasOpen = worldOpen.has(ek);
+  if (wasOpen) worldOpen.delete(ek); else worldOpen.add(ek);
+  const body = row.querySelector('.wl-detail');
+  if (body) body.hidden = wasOpen;
+  const caret = row.querySelector('.wl-caret');
+  if (caret) caret.textContent = wasOpen ? '▸' : '▾';
+});
 
 // What "applying" a pick does depends on where the task is: not started yet
 // (rewrite the plan), running (steer it live — the plan already shaped what's
@@ -5057,9 +5203,9 @@ function qInspireFullHtml(p, data) {
   const sel = new Set((qInspireSel[p.id] || []).map(x => x.part_index + ':' + x.pick_index));
   const facts = qInspireReviewFacts(data.review);
   const legend = (data.review?.groups?.length || 0) > 0
-    ? `<div class="q-inspire-legend">🔄 Ideas marked "Alternatives" are substitutes — picking one clears the others in that same group automatically, like a radio button. Ungrouped ideas are complementary and can all be combined. ⭐ marks our pick; a greyed-out idea was left out of the plan (your choice always wins).</div>`
+    ? `<div class="q-inspire-legend">⭐ marks our pick. Everything under "Add if you want" combines freely.</div>`
     : ((data.review?.removed?.length || 0) > 0
-      ? `<div class="q-inspire-legend">Greyed-out ideas were left out of the plan — apply any of them if you disagree.</div>`
+      ? `<div class="q-inspire-legend">Ideas left out of the plan are folded away below — open them if you disagree.</div>`
       : '');
   const applyMeta = qInspireApplyMeta(p);
   return `
@@ -5068,7 +5214,7 @@ function qInspireFullHtml(p, data) {
       <button class="ctrlbtn" data-action="inspire-start" title="Fresh search — GitHub lookups are cached for a day, the bold ideas are brand new every time.">↻ New ideas</button>
     </div>
     ${legend}
-    ${worldPartsHtml(report, { applied, sel, facts })}`;
+    ${worldPartsHtml(report, { applied, sel, facts, scope: 'task:' + p.id })}`;
 }
 
 // Modal: add a custom world idea to a task's world-look report
@@ -5370,14 +5516,14 @@ function flowWorldPanelHtml(source, id) {
     const sel = new Set(e.sel.map(x => x.part_index + ':' + x.pick_index));
     const facts = qInspireReviewFacts(e.report.review);
     const legend = (e.report.review?.groups?.length || 0) > 0
-      ? `<div class="q-inspire-legend">🔄 Ideas marked "Alternatives" are substitutes — picking one clears the others in that same group automatically, like a radio button. Ungrouped ideas are complementary and can all be combined. ⭐ marks our pick; a greyed-out idea was left out by the quick check (pick it if you disagree — your picks travel with the item).</div>`
+      ? `<div class="q-inspire-legend">⭐ marks our pick. Everything under "Add if you want" combines freely — your picks travel with the item.</div>`
       : ((e.report.review?.removed?.length || 0) > 0
-        ? `<div class="q-inspire-legend">Greyed-out ideas were left out by the quick check — pick any you disagree with; your picks travel with the item.</div>`
+        ? `<div class="q-inspire-legend">Ideas the quick check dropped are folded away below — pick any you disagree with.</div>`
         : '');
     return `<div class="q-inspire-toolbar">
       <button class="ctrlbtn" data-action="flowworld-rerun" title="Fresh search — the bold ideas are brand new every time.">↻ New ideas</button>
       ${sel.size ? `<span class="q-inspire-note q-inspire-note-active">✓ ${sel.size} picked — included automatically when you press the button below to queue or build this.</span>` : `<span class="q-inspire-note">Pick ideas here — they'll be included automatically when you press the button below to queue or build this.</span>`}
-    </div>${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick' })}`;
+    </div>${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id })}`;
   }
   return `<div class="tv-empty">
     <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
@@ -6516,7 +6662,7 @@ function renderNotbuilt() {
     if (nbConvos[c.id]) markers.push('<span title="A conversation is open about this">💬</span>');
     const spec = c.provenance === 'speculative' ? '✦ ' : '';
     const whatText = String(c.what || '');
-    const trunc = whatText.length > 240;
+    const trunc = whatText.length > 140;
     const worldLabel = we.state === 'ready' ? '✨ World ideas ready' : we.state === 'pending' ? '🔭 Looking at the world…' : '✨ Look at the world';
     html += `<div class="nb-row${state === 'buildable' ? ' nb-buildable' : ''}" data-nbid="${c.id}">
       <div class="nb-top">
@@ -6525,7 +6671,7 @@ function renderNotbuilt() {
         <span class="nb-status">${qEsc(c.status || 'Concept')}</span>
         <span class="nb-markers">${markers.join(' ')}</span>
       </div>
-      ${whatText ? `<div class="nb-what clamped" data-nbwhat="${c.id}">${qEsc(whatText.slice(0, 240))}${trunc ? ` <span class="nb-more" data-nbmore="${c.id}">more ▾</span>` : ''}</div>` : ''}
+      ${whatText ? `<div class="nb-what clamped" data-nbwhat="${c.id}">${qEsc(whatText.slice(0, 140))}${trunc ? ` <span class="nb-more" data-nbmore="${c.id}">more ▾</span>` : ''}</div>` : ''}
       ${state === 'locked' ? `<div class="nb-wait">Waiting on: ${unmet.map(p => `<a data-nbjump="${p.id}">${qEsc(p.name)}</a> (${qEsc(p.status)})`).join(', ')}</div>` : ''}
       ${linked.length ? `<div class="nb-status-line">${linked.map(p => `<a href="#" class="core-handoff-link" data-jump="${p.id}">${p.status === 'running' ? 'Running now' : p.status === 'queued' ? 'Queued' : p.status === 'paused' ? 'Set aside' : p.status === 'done' ? 'Done' : p.status}</a>`).join(' · ')} — open in the Flow</div>` : ''}
       <div class="nb-actions">
@@ -7737,8 +7883,8 @@ function renderArchDetail(id) {
   let html = `<h2 class="arch-detail-head">Component<button id="archDetailClose" class="arch-detail-close" title="Close this panel" aria-label="Close component panel">✕</button></h2>
     <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
     <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span></div>`;
-  html += `<div class="arch-field"><div class="arch-field-label">What</div><div class="arch-field-body">${c.what}</div></div>
-    <div class="arch-field"><div class="arch-field-label">Why</div><div class="arch-field-body">${c.why}</div></div>
+  html += `<div class="arch-field"><div class="arch-field-label">What</div>${clampHtml(c.what, 180, 'arch-field-body')}</div>
+    <div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(c.why, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
     <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${c.now || '—'}</div></div>
     <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${c.next || '—'}</div></div>`;
