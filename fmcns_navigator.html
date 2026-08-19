@@ -270,9 +270,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .qp-submit { margin-left:auto; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); border-radius:8px; padding:7px 14px; font-size:12px; cursor:pointer; }
 .qp-submit:disabled { opacity:.5; cursor:default; }
 .qp-status { font-size:11px; color:var(--c-ink-4); }
-.qp-settings { margin-top:10px; border-top:1px solid var(--c-border-2); padding-top:8px; }
-.qp-opt-row { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--c-ink-3); cursor:pointer; }
-.qp-opt-row input { accent-color:var(--c-ink-solid); cursor:pointer; }
 .qp-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:7px; }
 .qp-card .q-item-title { font-size:12px; font-weight:600; }
 .qp-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--c-border); border-radius:8px; margin-bottom:6px; font-size:11.5px; background:var(--c-surface); }
@@ -8224,14 +8221,6 @@ let qpMode = 'implement';
 let qpPicked = null;
 let qpPickActive = false;
 let qpPickBanner = null;
-// Auto-ship gate state (plan "auto-ship" item 2): true = a finished task that
-// passes every review check publishes itself; the switch below toggles it.
-let qAutoShip = true;
-let qCapUsd = 0.1;
-// Daily helper budget (free-only plan): short text steps the queue may spend
-// per UTC day — plans, summaries, world-look. Past it, only optional passes
-// throttle (world-look skip, deep plans draft fast); the queue never stops.
-let qSideBudget = 30;
 
 function qpSectionHtml(cls, title, count, rowsHtml, emptyText) {
   return `<div>
@@ -8306,58 +8295,6 @@ function renderQueuePanel() {
   document.getElementById('qpSubmit').onclick = qpSubmitTask;
   const textEl = document.getElementById('qpText');
   if (textEl) textEl.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) qpSubmitTask(); });
-  const autoEl = document.getElementById('qpAutoShipChk');
-  if (autoEl) {
-    autoEl.onchange = async () => {
-      qAutoShip = autoEl.checked;
-      try {
-        await apiWrite('/api/travaux/ai-settings', 'PUT', { queue: { autoShip: qAutoShip } });
-        refreshCoreHeader(); // status line shows the new state right away
-      } catch (e) { alert('Could not save the auto-ship setting: ' + e.message); }
-    };
-  }
-  const capEl = document.getElementById('qpCapUsd');
-  if (capEl) {
-    capEl.onchange = async () => {
-      const v = parseFloat(capEl.value);
-      if (!Number.isFinite(v) || v <= 0) { capEl.value = qCapUsd; return; }
-      qCapUsd = v;
-      try {
-        await apiWrite('/api/travaux/ai-settings', 'PUT', { queue: { costCapUsd: qCapUsd } });
-        refreshCoreHeader(); // status line shows the new cap right away
-      } catch (e) { alert('Could not save the cost cap: ' + e.message); }
-    };
-  }
-  const sideEl = document.getElementById('qpSideBudget');
-  if (sideEl) {
-    sideEl.onchange = async () => {
-      const v = parseInt(sideEl.value, 10);
-      if (!Number.isFinite(v) || v < 1) { sideEl.value = qSideBudget; return; }
-      qSideBudget = v;
-      try {
-        await apiWrite('/api/travaux/ai-settings', 'PUT', { queue: { sideCallBudget: qSideBudget } });
-        refreshCoreHeader(); // status line shows the new budget right away
-      } catch (e) { alert('Could not save the daily helper budget: ' + e.message); }
-    };
-  }
-}
-
-// Live-read the auto-ship gate for the switch above: the checkbox renders from
-// the last-known state, then settles on the server's value when it lands (the
-// panel is poll-driven, so a later re-render converges anyway).
-async function qpLoadAutoShip() {
-  try {
-    const s = await api('/api/travaux/ai-settings');
-    qAutoShip = !!(s.queue && s.queue.autoShip);
-    if (s.queue && Number.isFinite(s.queue.costCapUsd) && s.queue.costCapUsd > 0) qCapUsd = s.queue.costCapUsd;
-    if (s.queue && Number.isFinite(s.queue.sideCallBudget) && s.queue.sideCallBudget > 0) qSideBudget = s.queue.sideCallBudget;
-  } catch (e) { /* keep last-known state */ }
-  const el = document.getElementById('qpAutoShipChk');
-  if (el) el.checked = qAutoShip;
-  const capEl = document.getElementById('qpCapUsd');
-  if (capEl) capEl.value = qCapUsd;
-  const sideEl = document.getElementById('qpSideBudget');
-  if (sideEl) sideEl.value = qSideBudget;
 }
 
 async function qpSubmitTask() {
@@ -8462,7 +8399,6 @@ function openQueuePanel() {
   document.getElementById('queuePanelVeil').hidden = false;
   document.getElementById('queuePanel').hidden = false;
   renderQueuePanel();
-  qpLoadAutoShip(); // settle the auto-ship switch on the server's stored value
   const t = document.getElementById('qpText');
   if (t) t.focus();
 }
