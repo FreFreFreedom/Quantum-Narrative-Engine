@@ -184,9 +184,10 @@ Railway auto-deploys from **`develop`**, which is the only branch that matters �
 `git ls-remote origin refs/heads/develop`.
 
 There used to be a second branch, `main`, that Railway watched; the two never
-diverged, so it protected nothing and was an extra push to forget. Retired
-2026-08-19, together with the unused `qne-staging` Railway service that had been
-failing on every push. Do not reintroduce a `develop:main` push.
+diverged, so it protected nothing and was an extra push to forget. **Deleted
+2026-08-19**, together with the unused `qne-staging` Railway service that had been
+failing on every push. Do not reintroduce a `develop:main` push — the branch no
+longer exists, so such a push would recreate it.
 
 Shipping discipline is Antoine's rule, set in `AGENTS.md`: ship directly, no local
 test phase — syntax checks only, then commit and push. The `deploy` skill
