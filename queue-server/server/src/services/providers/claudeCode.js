@@ -110,9 +110,16 @@ export function buildRunCommand({ bin, taskId, promptPath, logPath, codePath, mo
 }
 
 // ─── Toolless call (model-policy judge, user-summary generation) ─────────────
-export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env }) {
+// `allowedTools` is the one exception to "toolless": pass a comma-separated list
+// (e.g. 'Read,Grep,Glob') and the call gets exactly those, via the same
+// --allowedTools flag buildRunCommand uses. It exists for the task-card chat,
+// which has to be able to check the code before answering instead of guessing.
+// Omit it and the flags stay byte-identical to before — the model-policy judge
+// and summary generation must keep getting no tools at all.
+export function runToolless({ prompt, model = 'sonnet', timeoutMs = 4 * 60_000, cwd, bin = resolveBin(), env, allowedTools = null }) {
   return new Promise((resolveP) => {
-    const proc = spawn(bin, ['-p', '--model', model, '--tools', ''], {
+    const toolFlags = allowedTools ? ['--allowedTools', allowedTools] : ['--tools', ''];
+    const proc = spawn(bin, ['-p', '--model', model, ...toolFlags], {
       cwd, env, stdio: 'pipe', detached: true,
     });
     const callId = registerTextCall(proc.pid, { label: 'claude-code' });

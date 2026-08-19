@@ -270,7 +270,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -335,7 +335,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // schema.js). Opt-in per caller, and only reachable HERE — after every free
   // backend has already failed — so the ordinary path still costs nothing.
   if (claudeLastResort) {
-    const viaClaude = await runHelperJob({ prompt, feature, maxTokens, label });
+    const viaClaude = await runHelperJob({ prompt, feature, maxTokens, label, tools: helperTools, waitMs: helperWaitMs });
     if (viaClaude?.text) {
       recordSideCall();
       console.warn(`[${label}] recovered via claude-helper after ${failures.join(' | ')}`);
@@ -358,7 +358,7 @@ export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -388,7 +388,7 @@ const HELPER_POLL_MS = 1_500;
 
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
-async function runHelperJob({ prompt, feature, maxTokens, label }) {
+async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null }) {
   if (!db) return { error: 'no_db' };
   try {
     // Only worth parking if a runner is actually attached — otherwise this is a
@@ -397,10 +397,14 @@ async function runHelperJob({ prompt, feature, maxTokens, label }) {
     if (!runnerStatus()?.connected) return { error: 'no_runner', message: 'no runner attached' };
 
     const id = randomUUID();
-    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens) VALUES (?,?,?,?,?)`)
-      .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800);
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools) VALUES (?,?,?,?,?,?)`)
+      .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null);
 
-    const deadline = Date.now() + HELPER_WAIT_MS;
+    // A caller with a person waiting on the other end (the task-card chat) sets
+    // its own, much shorter deadline: 120s is right for rescuing a background
+    // step, and far too long for someone watching a chat bubble.
+    const budgetMs = Number.isFinite(waitMs) && waitMs > 0 ? waitMs : HELPER_WAIT_MS;
+    const deadline = Date.now() + budgetMs;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, HELPER_POLL_MS));
       const row = db.prepare(`SELECT status, result_text, error FROM helper_jobs WHERE id=?`).get(id);
@@ -410,7 +414,7 @@ async function runHelperJob({ prompt, feature, maxTokens, label }) {
     }
     // Timed out waiting: mark it so the runner does not answer into the void.
     db.prepare(`UPDATE helper_jobs SET status='failed', error='caller timed out', finished_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND status IN ('queued','running')`).run(id);
-    return { error: 'helper_timeout', message: `no answer in ${HELPER_WAIT_MS / 1000}s` };
+    return { error: 'helper_timeout', message: `no answer in ${Math.round(budgetMs / 1000)}s` };
   } catch (e) {
     return { error: 'helper_error', message: e.message };
   }

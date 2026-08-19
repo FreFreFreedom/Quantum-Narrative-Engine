@@ -542,6 +542,17 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
 .q-thread-msg.user { background:var(--c-info-tint); margin-left:auto; }
 .q-thread-msg.agent { background:var(--c-surface); border:1px solid var(--c-border); }
+/* The chat has to look alive while Claude thinks: three dots, then the answer
+   reveals itself. Before this, pressing Answer changed nothing on screen until
+   the whole reply landed — which is why it got clicked four times in a row. */
+.q-thread-thinking { display:flex; align-items:center; gap:5px; }
+.q-thread-thinking .q-dot { width:5px; height:5px; border-radius:50%; background:var(--c-text-dim, currentColor); opacity:.35; animation:qDotPulse 1.1s infinite ease-in-out; }
+.q-thread-thinking .q-dot:nth-child(2) { animation-delay:.18s; }
+.q-thread-thinking .q-dot:nth-child(3) { animation-delay:.36s; }
+@keyframes qDotPulse { 0%,80%,100% { opacity:.25; transform:translateY(0); } 40% { opacity:.9; transform:translateY(-2px); } }
+.q-thread-caret { display:inline-block; width:2px; height:1em; margin-left:1px; background:currentColor; opacity:.6; vertical-align:text-bottom; animation:qCaret 1s steps(2) infinite; }
+@keyframes qCaret { 0%,100% { opacity:.65; } 50% { opacity:0; } }
+#qThread { max-height:340px; overflow-y:auto; }
 .q-thread-role { font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); margin-bottom:3px; }
 .q-optbtn { display:block; width:100%; text-align:left; padding:7px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11.5px; margin-top:5px; cursor:pointer; }
 .q-optbtn:hover { background:var(--c-surface-2); border-color:var(--c-border-3); }
@@ -3806,7 +3817,9 @@ async function qLoad() {
     // and skip entirely when the data hasn't changed (no pointless card reset).
     if (fresh) {
       qSelected = fresh;
-      if (changed && !qTypingGuard()) qRenderDetail(fresh);
+      // Never rebuild the card out from under a chat turn: it would kill the dots
+      // mid-thought or cut the reveal off in the middle of a sentence.
+      if (changed && !qTypingGuard() && !qChatPending) qRenderDetail(fresh);
     }
   }
 }
@@ -4310,13 +4323,19 @@ function qWireQuestionBlock(host, onAnswer) {
 // Reply textarea + two buttons: relaunch now (front of its turn) or save the answer and
 // let the task resume on its normal turn in the queue (back). `idPrefix` keeps multiple
 // instances (Flow detail pane vs. Queue panel) from colliding on element ids.
-function qReplyBoxHtml(idPrefix, { placeholder = 'Reply — this answers instantly with the full thread as context…' } = {}) {
+// `chatOnly` is for a task that is already running: relaunching it is not a valid
+// move (the server answers 409), so that box offers the one button. It used to be
+// a separate hand-rolled copy of this markup with its own half-finished wiring —
+// never awaited, never cleared, and its error div was never written to. One box
+// and one wiring means the running case gets the echo, the dots and the errors
+// for free instead of being the forgotten twin.
+function qReplyBoxHtml(idPrefix, { placeholder = 'Ask a question or reply — Enter sends, Shift+Enter for a new line…', chatOnly = false } = {}) {
   return `<div class="q-replybox2" data-prefix="${idPrefix}">
     <textarea id="${idPrefix}Text" placeholder="${qEsc(placeholder)}"></textarea>
     <div class="q-replybox2-row">
-      <button class="ctrlbtn" id="${idPrefix}Chat" title="Answer instantly, right here in the thread. Doesn't relaunch the task.">Answer</button>
-      <button class="ctrlbtn" id="${idPrefix}Front" title="Sends your reply and relaunches the task right away (a real codebase edit).">Reply &amp; relaunch task</button>
-      <button class="ctrlbtn" id="${idPrefix}Back" title="Saves your reply and returns the task to the queue — it resumes on its normal turn.">Save &amp; queue</button>
+      <button class="ctrlbtn" id="${idPrefix}Chat" title="${chatOnly ? 'Answers here in the thread, and passes your message to the running task.' : "Answer instantly, right here in the thread. Doesn't relaunch the task."}">${chatOnly ? 'Answer &amp; add to run' : 'Answer'}</button>
+      ${chatOnly ? '' : `<button class="ctrlbtn" id="${idPrefix}Front" title="Sends your reply and relaunches the task right away (a real codebase edit).">Reply &amp; relaunch task</button>
+      <button class="ctrlbtn" id="${idPrefix}Back" title="Saves your reply and returns the task to the queue — it resumes on its normal turn.">Save &amp; queue</button>`}
     </div>
     <div class="q-err" id="${idPrefix}Err"></div>
   </div>`;
@@ -4331,8 +4350,16 @@ function qWireReplyBox(host, idPrefix, onSend) {
     const v = (text.value || '').trim();
     if (!v) return;
     if (errEl) errEl.textContent = '';
-    try { await onSend(v, placement); text.value = ''; }
-    catch (e) { if (errEl) errEl.textContent = 'Could not send: ' + e.message; }
+    // A chat message is echoed into the thread the instant it is sent, so the box
+    // empties now rather than after the round-trip — and gets its text back if the
+    // send fails, so nothing typed is ever lost.
+    const instant = placement === 'chat';
+    if (instant) { text.value = ''; text.style.height = 'auto'; }
+    try { await onSend(v, placement); if (!instant) text.value = ''; }
+    catch (e) {
+      if (instant && !text.value) text.value = v;
+      if (errEl) errEl.textContent = 'Could not send: ' + e.message;
+    }
   };
   const chatBtn = host.querySelector('#' + idPrefix + 'Chat');
   const frontBtn = host.querySelector('#' + idPrefix + 'Front');
@@ -4340,7 +4367,92 @@ function qWireReplyBox(host, idPrefix, onSend) {
   if (chatBtn) chatBtn.onclick = () => send('chat');
   if (frontBtn) frontBtn.onclick = () => send('front');
   if (backBtn) backBtn.onclick = () => send('back');
-  text.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send('chat'); });
+  // Enter sends, like every other chat. Shift+Enter is a new line; ⌘/Ctrl+Enter
+  // keeps working for the muscle memory it was built with.
+  text.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    e.preventDefault();
+    send('chat');
+  });
+}
+
+// ─── The chat turn in flight ─────────────────────────────────────────────────
+// One chat turn at a time, held here rather than in the DOM so the 4s queue poll
+// can rebuild the card underneath it without losing the bubble in progress.
+//   phase 'sending' — your message is on screen, the dots are running;
+//   phase 'typing'  — the answer is here and revealing itself word by word.
+// Holding it also makes a second send impossible while one is in flight, which is
+// the whole fix for the four identical questions that went out one morning.
+let qChatPending = null;
+let qChatTypeTimer = null;
+
+function qThreadMsgHtml(role, bodyHtml) {
+  return `<div class="q-thread-msg ${role}"><div class="q-thread-role">${role}</div>${bodyHtml}</div>`;
+}
+
+// The single place the thread is drawn. `messages` is the server's list; anything
+// in flight is appended on top of it.
+function qRenderThread(promptId, messages) {
+  const host = document.getElementById('qThread');
+  if (!host) return;
+  const pend = qChatPending && qChatPending.promptId === promptId ? qChatPending : null;
+  let list = messages || [];
+  let extra = '';
+  if (pend && pend.phase === 'sending') {
+    extra = qThreadMsgHtml('user', qThreadBodyHtml(pend.userText))
+      + '<div class="q-thread-msg agent q-thread-thinking"><span class="q-dot"></span><span class="q-dot"></span><span class="q-dot"></span></div>';
+  } else if (pend && pend.phase === 'typing') {
+    // The answer is already the last message on the server's list — drop it there
+    // and draw it here instead, as far as it has been revealed.
+    list = list.slice(0, -1);
+    extra = qThreadMsgHtml('agent', qThreadBodyHtml(pend.shown) + '<span class="q-thread-caret"></span>');
+  }
+  const body = list.map(m => qThreadMsgHtml(m.role, qThreadBodyHtml(m.text))).join('') + extra;
+  host.innerHTML = body || '<div class="empty">No exchanges yet.</div>';
+  if (pend) host.scrollTop = host.scrollHeight;
+}
+
+// Buttons off while a turn is in flight — the visible half of "you can't send twice".
+function qSetReplyBusy(busy) {
+  const host = document.getElementById('flowExpanded');
+  if (!host) return;
+  ['qReplyChat', 'qReplyFront', 'qReplyBack'].forEach(id => {
+    const b = host.querySelector('#' + id);
+    if (b) b.disabled = busy;
+  });
+  const chat = host.querySelector('#qReplyChat');
+  if (chat && !chat.dataset.label) chat.dataset.label = chat.innerHTML;
+  if (chat) chat.innerHTML = busy ? 'Answering…' : (chat.dataset.label || 'Answer');
+}
+
+// Reveal the answer word by word. Capped at about 1.2s in total however long the
+// answer is: this is an animation of text that has already fully arrived, so it
+// must never become the reason you wait.
+function qStartChatTyping(promptId) {
+  if (qChatTypeTimer) { clearInterval(qChatTypeTimer); qChatTypeTimer = null; }
+  if (!qChatPending || qChatPending.promptId !== promptId) return;
+  const parts = String(qChatPending.answer || '').split(/(\s+)/).filter(x => x !== '');
+  const stepMs = Math.max(10, Math.min(28, Math.floor(1200 / Math.max(parts.length, 1))));
+  let i = 0;
+  qChatTypeTimer = setInterval(() => {
+    // The card closed, or another turn took over — show the finished text and stop.
+    if (!qChatPending || qChatPending.promptId !== promptId || !document.getElementById('qThread')) {
+      qFinishChatTyping();
+      return;
+    }
+    i += 1;
+    qChatPending.shown = parts.slice(0, i).join('');
+    if (i >= parts.length) { qFinishChatTyping(); return; }
+    qRenderThread(promptId, (qSelected && qSelected.messages) || []);
+  }, stepMs);
+}
+
+function qFinishChatTyping() {
+  if (qChatTypeTimer) { clearInterval(qChatTypeTimer); qChatTypeTimer = null; }
+  const id = qChatPending && qChatPending.promptId;
+  qChatPending = null;
+  qSetReplyBusy(false);
+  if (id && qSelected && qSelected.id === id) qRenderThread(id, qSelected.messages || []);
 }
 
 // Small state marker on flow rows so Antoine can see at a glance which tasks
@@ -5131,12 +5243,7 @@ function qRenderDetail(p) {
     <div id="qThread"></div>
     ${p.pending_question ? `<div id="qQuestionHost"></div>` : ''}
     ${p.status === 'running'
-      ? `<div class="q-replybox">
-          <textarea id="qReplyText" placeholder="Answer here — this also adds your message to the running task."></textarea>
-          <div class="q-replybox2-row">
-            <button id="qReplyBtn" class="ctrlbtn">Answer &amp; add to run</button>
-          </div>
-          <div id="qReplyErr" class="q-err"></div>`
+      ? qReplyBoxHtml('qReply', { chatOnly: true, placeholder: 'Ask or answer — this also passes your message to the running task. Enter sends…' })
       : qReplyBoxHtml('qReply')}
     ${['queued','running'].includes(p.status) ? `
       <div class="q-row" style="margin-top:10px;">
@@ -5201,10 +5308,7 @@ function qRenderDetail(p) {
   }
 
 
-  const threadHost = document.getElementById('qThread');
-  threadHost.innerHTML = messages.length
-    ? messages.map(m => `<div class="q-thread-msg ${m.role}"><div class="q-thread-role">${m.role}</div>${qThreadBodyHtml(m.text)}</div>`).join('')
-    : '<div class="empty">No exchanges yet.</div>';
+  qRenderThread(p.id, messages);
 
   if (p.pending_question) {
     const qh = document.getElementById('qQuestionHost');
@@ -5215,17 +5319,10 @@ function qRenderDetail(p) {
     });
   }
 
-  if (p.status === 'running') {
-    // Reply while it runs: instant chat answer + the message is also forwarded
-    // to the live agent as a steer (so the directive reaches the run at once).
-    document.getElementById('qReplyBtn').onclick = () => {
-      const text = document.getElementById('qReplyText').value.trim();
-      if (!text) return;
-      qReply(p.id, text, 'chat');
-    };
-  } else {
-    qWireReplyBox(host, 'qReply', (text, placement) => qReply(p.id, text, placement));
-  }
+  // Running or not, the same box and the same wiring. While it runs, the message
+  // is also forwarded to the live agent as a steer, so the directive reaches the
+  // run at once — that happens server-side, nothing extra is needed here.
+  qWireReplyBox(host, 'qReply', (text, placement) => qReply(p.id, text, placement));
   const stopAfterChk = document.getElementById('qStopAfterChk');
   if (stopAfterChk) stopAfterChk.onchange = async () => {
     try { await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { stop_after: stopAfterChk.checked }); await qLoad(); }
@@ -5912,8 +6009,46 @@ function flowWorldRender(source, id, host, ideaText, onChange) {
 
 async function qReply(id, text, placement = 'front') {
   if (placement === 'chat') {
-    await apiWrite(`/api/travaux/prompts/${id}/reply/chat`, 'POST', { text });
-    await qLoad(); // thread refresh shows your message + the instant answer
+    // One turn at a time. Without this, a slow answer invites a second click —
+    // and a third, and a fourth, each one a real message and a real cost.
+    if (qChatPending) return;
+    const before = (qSelected && qSelected.id === id && qSelected.messages) ? qSelected.messages : [];
+    qChatPending = { promptId: id, userText: text, phase: 'sending', shown: '', answer: '' };
+    qSetReplyBusy(true);
+    qRenderThread(id, before);       // your message is on screen before the request leaves
+
+    let res;
+    try {
+      res = await apiWrite(`/api/travaux/prompts/${id}/reply/chat`, 'POST', { text });
+    } catch (e) {
+      qChatPending = null;
+      qSetReplyBusy(false);
+      qRenderThread(id, before);
+      throw e;                       // the box shows why and hands the text back
+    }
+
+    // The endpoint already returns the updated task and the answer, so there is no
+    // reason to re-fetch the whole queue and wait for it before showing anything.
+    const fresh = res && res.prompt ? res.prompt : null;
+    if (fresh) {
+      const i = qPrompts.findIndex(x => x.id === id);
+      if (i >= 0) qPrompts[i] = fresh;
+      if (qSelected && qSelected.id === id) qSelected = fresh;
+    }
+    const msgs = (fresh && fresh.messages) || before;
+    const answer = (res && res.answer) || '';
+    if (answer && msgs.length && msgs[msgs.length - 1].role === 'agent') {
+      qChatPending.phase = 'typing';
+      qChatPending.answer = answer;
+      qChatPending.shown = '';
+      qRenderThread(id, msgs);
+      qStartChatTyping(id);
+    } else {
+      qChatPending = null;
+      qSetReplyBusy(false);
+      qRenderThread(id, msgs);
+    }
+    qLoad();                         // deliberately not awaited — counters catch up quietly
     return;
   }
   await apiWrite(`/api/travaux/prompts/${id}/reply`, 'POST', { text, placement });

@@ -405,15 +405,20 @@ async function runHelperJobs() {
     return;
   }
 
-  console.log(`  helper ${job.label || job.feature} → claude:haiku`);
+  // A job may come with a read-only tool grant (the task-card chat, so it can
+  // check the code instead of guessing). Those get a tighter cap: a look should
+  // be quick, and someone is waiting on the answer.
+  const tools = job.allowed_tools || null;
+  console.log(`  helper ${job.label || job.feature} → claude:haiku${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {
     out = await claudeCli.runToolless({
       prompt: job.prompt,
       model: job.model || 'haiku',
-      timeoutMs: 60_000,
+      timeoutMs: tools ? 30_000 : 60_000,
       cwd: RUNNER_REPO,
       env: claudeCli.spawnEnv(),
+      allowedTools: tools,
     });
   } catch (e) {
     out = { code: -1, text: '', error: e.message };
@@ -424,6 +429,25 @@ async function runHelperJobs() {
       text ? { text } : { error: out?.text || out?.error || `exit ${out?.code}` });
   } catch { /* the caller's own deadline covers this */ }
   console.log(`  helper ${job.label || job.feature} ${text ? 'answered' : 'failed'}`);
+}
+
+// The helper lane on its own clock, because the loop below only reaches it when
+// the runner is IDLE — and while runTask() holds the main loop, that is never.
+// The task-card chat parks its question here with a person watching the bubble,
+// so answering it "after the current task finishes" means minutes, which reads
+// as broken. One haiku answer (~30k tokens) is noise beside a task run (~1M), so
+// it is safe to answer while a task is running. Guarded to one at a time, and the
+// idle path below still calls it too — harmless, and it keeps publishing first.
+let helperBusy = false;
+function startHelperLane() {
+  const timer = setInterval(async () => {
+    if (stopping || helperBusy) return;
+    helperBusy = true;
+    try { await runHelperJobs(); }
+    catch (e) { console.error('Helper job failed —', e.message); }
+    finally { helperBusy = false; }
+  }, 2_000);
+  timer.unref(); // never the reason the process refuses to exit
 }
 
 // ─── One attempt on one model ─────────────────────────────────────────────────
@@ -1180,6 +1204,7 @@ async function main() {
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   try { tidyWorktrees(); } catch (e) { console.log(dim(`  (could not tidy old task folders — ${e.message})`)); }
+  startHelperLane();
   await notifyStarted();
   await printSnapshot({ force: true });
 
@@ -1210,7 +1235,11 @@ async function main() {
       // Publishing first: a finished task sitting unpublished matters more than
       // rescuing a text call, and a git job is seconds long.
       try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
-      try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }
+      if (!helperBusy) {
+        helperBusy = true;
+        try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }
+        finally { helperBusy = false; }
+      }
       await printSnapshot();
       await new Promise((s) => setTimeout(s, POLL_IDLE_MS));
       continue;

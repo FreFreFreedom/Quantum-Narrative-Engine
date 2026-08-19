@@ -1500,7 +1500,7 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
     + messages
       .map((m) => `${m.author_name ? m.author_name : (m.role === 'user' ? 'Human' : 'You')}: ${clip(m.text, 2000)}`)
       .join('\n\n');
-  const system = `Respond to the latest message from the human as part of an ongoing conversation about this task. Plain English, no jargon, no file names unless I explain them.\n\n${USER_FACING_STYLE}\n\n`;
+  const system = `Respond to the latest message from the human as part of an ongoing conversation about this task. Plain English, no jargon, no file names unless I explain them.\n\nYou can read this project's files to check what is actually true before answering — and you should, whenever the question is about how something behaves ("does this also cover X?"). Never guess at it. You can only look: you can never change anything, and you are not doing the task, just answering the question.\n\n${USER_FACING_STYLE}\n\n`;
   const context = [
     `=== TASK ===\n${clip(row.title || '(untitled)', 160)}`,
     `=== ORIGINAL REQUEST ===\n${clip(row.raw_prompt || row.prompt || '', 1200)}`,
@@ -1520,6 +1520,20 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
   // most 2 backends (fast floor, then one free fallback) — the free fast model
   // answers in ~2-3s normally; on a slow/free outage the reply degrades to a
   // graceful error instead of hanging the user's browser.
+  //
+  // Then Claude, on the Mac, via the helper lane — and this is what actually
+  // answers in production. The container has no opencode CLI and no catalogue
+  // API key, so every free backend above fails in a few seconds; without the
+  // last resort this whole function could only ever write "I couldn't reach a
+  // model" into the thread, which is exactly what it did (four times in one
+  // morning, because the box gave no sign of life and got clicked four times).
+  //
+  // Cheap on purpose, and measured rather than assumed: ~30k tokens a question
+  // with the read-only look, against a weekly bank of ~2.2 billion — roughly
+  // 700 questions per 1% of the week, where a single Sonnet task run costs the
+  // same as 33 of them. The runner answers on haiku behind its own weekly
+  // reserve gate, so a nearly-spent week declines the job and the thread says
+  // so instead of eating into real work.
   let answer = '';
   const result = await generateText({
     prompt: `${system}\n\n${context}`,
@@ -1529,6 +1543,11 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
     label: 'chat-reply',
     timeoutMs: 20_000,
     maxAttempts: 2,
+    claudeLastResort: true,
+    // Read-only: it may check the code, never touch it.
+    helperTools: 'Read,Grep,Glob',
+    // Someone is watching a bubble — not the 120s a background rescue may take.
+    helperWaitMs: 45_000,
   });
   if (result?.text) {
     answer = result.text;

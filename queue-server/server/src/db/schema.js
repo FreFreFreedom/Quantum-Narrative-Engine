@@ -1154,6 +1154,11 @@ export function initFilmEnrichmentSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_helper_jobs_status ON helper_jobs(status, created_at)`); } catch {}
+  // Read-only tool grant for the rare helper job that must CHECK something rather
+  // than answer from its prompt alone (the task-card chat: "does this also cover
+  // the remove button?" cannot be answered honestly without looking). NULL keeps
+  // the original toolless behaviour, which is what every other caller wants.
+  try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN allowed_tools TEXT`); } catch {}
 
   // Git work the SERVER wants doing but cannot do: it runs in a Railway container
   // with no git repository, so publishing a finished task (merge the branch onto the
