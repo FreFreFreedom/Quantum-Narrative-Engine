@@ -624,9 +624,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .flow-donehead { cursor:pointer; }
 .flow-donehead:hover .flow-sec-title { color:var(--c-ink); }
 .flow-done-chev { color:var(--c-ink-4); }
-.flow-clearbtn { margin-left:auto; font-size:10.5px; font-weight:600; letter-spacing:.03em; padding:2px 9px; border-radius:9px; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; transition:color .15s var(--ease), border-color .15s var(--ease), background .15s var(--ease); }
-.flow-clearbtn:hover { color:#b23a2f; border-color:#b23a2f; background:var(--c-surface-3); }
-.flow-clearbtn:disabled { opacity:.5; cursor:default; }
 .flow-row { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:6px; cursor:pointer; }
 .flow-row:hover { border-color:var(--c-border-2); }
 .flow-row.sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
@@ -3147,7 +3144,7 @@ let coreInited = false;
 const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
-let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null, flowDoneIds = [];
+let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
 // Inspiration panel state: rendered HTML per task (avoids refetching on every
 // 4s poll), the human's un-applied selections, and the in-flight guard.
 let qInspireCache = {}, qInspireSel = {};
@@ -4428,8 +4425,6 @@ function renderFlow() {
 
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
   const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
-  // Snapshot of finished-task ids, used by the bulk "Clear done" action below.
-  flowDoneIds = done.map(p => p.id);
 
   // In-flight world-looks (server-side auto-looks included) tick forward here,
   // so ✨ markers appear on rows the moment a look lands — no need to open the
@@ -4458,7 +4453,7 @@ function renderFlow() {
       const doneRows = flowType === 'done'
         ? done.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
         : done;
-      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}<button class="flow-clearbtn" data-cleardone title="Archive every finished task at once — they stay in the logbook, and the work you've done quietly shapes what Claude suggests next">Clear done (${done.length})</button></div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
     if (flowType === 'done' && !done.length) {
       html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
@@ -4655,29 +4650,6 @@ function renderFlow() {
   });
   const doneToggle = document.getElementById('flowDoneToggle');
   if (doneToggle) doneToggle.onclick = () => { flowDoneOpen = !flowDoneOpen; renderFlow(); };
-  // Bulk "Clear done": archive every finished task in one click. Soft-deletes
-  // (deleted_at) keep them in the DB logbook and never touch character-memory
-  // links — they just leave the active view. Hand to the Hive: the same click
-  // also surrenders the finished tasks to the recommender, so what you've just
-  // shipped quietly shapes the next suggestions Claude offers.
-  const clearBtn = host.querySelector('[data-cleardone]');
-  if (clearBtn) clearBtn.onclick = async (e) => {
-    e.stopPropagation();
-    const ids = flowDoneIds.slice();
-    if (!ids.length) return;
-    if (!confirm(`Archive ${ids.length} finished task${ids.length === 1 ? '' : 's'}? They stay in the logbook and can be found later — this just clears them from view. The work you've done also quietly shapes what Claude suggests next.`)) return;
-    clearBtn.disabled = true;
-    try {
-      // Surrender to the hive first (prompts still present), then clear from view.
-      await apiWrite(`/api/travaux/prompts/feed-recommender`, 'POST', { ids }).catch(() => {});
-      await Promise.all(ids.map(id => apiWrite(`/api/travaux/prompts/${id}`, 'DELETE')));
-      flowDoneIds = [];
-      await qLoad();
-    } catch (err) {
-      clearBtn.disabled = false;
-      alert('Could not clear all tasks: ' + err.message);
-    }
-  };
   const genBtn = document.getElementById('flowGenBtn');
   if (genBtn) genBtn.onclick = () => flowGenerateNow();
   const seedToggle = document.getElementById('flowSeedToggle');
