@@ -454,6 +454,8 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-textarea { resize:vertical; min-height:70px; }
 .q-row { display:flex; gap:8px; margin-bottom:7px; }
 .q-row label { flex:1; font-size:10px; color:var(--c-ink-3); }
+.q-mic-btn.recording { background:var(--c-danger, #d33); color:#fff; border-color:transparent; animation:qMicPulse 1.2s ease-in-out infinite; }
+@keyframes qMicPulse { 0%, 100% { opacity:1; } 50% { opacity:.55; } }
 .q-check { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--c-ink-2); flex:none !important; }
 /* Shared "primary" button base — .q-addbtn and .id-addbtn are the same solid-fill
    control at two sizes; kept as separate selectors (not renamed) so no JS/markup
@@ -1295,6 +1297,7 @@ button:active { transform: translateY(1px) scale(.99); }
               <button class="q-addbtn" id="qAddBtn">Add to queue</button>
               <button class="ctrlbtn" id="qSetAsideBtn" title="Create the task without marking it ready — it waits in Parked until you mark it ready">Set aside</button>
               <button class="ctrlbtn" id="qMoreToggle" title="Rare options — everything here has a smart default">⚙ More</button>
+              <button class="ctrlbtn q-mic-btn" id="qMicBtn" title="Dictate the task by voice" style="display:none;">🎤</button>
             </div>
             <div id="qAdvanced" style="display:none;margin-top:4px;">
               <input class="q-input" id="qPromptTitle" placeholder="Title (leave blank — auto-generated)">
@@ -3140,6 +3143,51 @@ const qInspireBusy = new Set();
 let flowComponentFilter = null; // architecture node id → only its related prompts show
 let qDragQId = null;             // prompt id being drag-reordered
 
+// Voice dictation for the task composer textarea, via the browser's built-in
+// SpeechRecognition API — no external library. Button stays hidden if the
+// browser doesn't support it (feature detection only, no error UI).
+let qMicRecognition = null;
+let qMicListening = false;
+
+function initQMic() {
+  const btn = document.getElementById('qMicBtn');
+  if (!btn) return;
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionCtor) return; // unsupported browser: leave the button hidden
+  btn.style.display = '';
+
+  const recognition = new SpeechRecognitionCtor();
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (e) => {
+    const textarea = document.getElementById('qPromptText');
+    if (!textarea) return;
+    let transcript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) transcript += e.results[i][0].transcript;
+    }
+    transcript = transcript.trim();
+    if (!transcript) return;
+    const needsSpace = textarea.value && !/\s$/.test(textarea.value);
+    textarea.value += (needsSpace ? ' ' : '') + transcript;
+  };
+  recognition.onerror = () => { qMicListening = false; btn.classList.remove('recording'); };
+  recognition.onend = () => { qMicListening = false; btn.classList.remove('recording'); };
+
+  qMicRecognition = recognition;
+  btn.onclick = () => {
+    if (qMicListening) {
+      qMicRecognition.stop();
+    } else {
+      qMicListening = true;
+      btn.classList.add('recording');
+      qMicRecognition.start();
+    }
+  };
+}
+
 function initCore() {
   if (!coreInited) {
     coreInited = true;
@@ -3189,6 +3237,7 @@ function initCore() {
       adv.style.display = open ? 'none' : 'block';
       document.getElementById('qMoreToggle').textContent = open ? '⚙ More' : '⚙ Less';
     };
+    initQMic();
     document.querySelectorAll('#qPlaceSeg button').forEach(b => {
       b.onclick = () => { document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x === b)); };
     });
