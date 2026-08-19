@@ -4410,7 +4410,7 @@ function renderFlow() {
       const doneRows = flowType === 'done'
         ? done.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
         : done;
-      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}<button class="flow-clearbtn" data-cleardone title="Archive every finished task at once — they stay in the logbook, just cleared from view">Clear done (${done.length})</button></div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}<button class="flow-clearbtn" data-cleardone title="Archive every finished task at once — they stay in the logbook, and the work you've done quietly shapes what Claude suggests next">Clear done (${done.length})</button></div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
     if (flowType === 'done' && !done.length) {
       html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
@@ -4598,15 +4598,19 @@ function renderFlow() {
   if (doneToggle) doneToggle.onclick = () => { flowDoneOpen = !flowDoneOpen; renderFlow(); };
   // Bulk "Clear done": archive every finished task in one click. Soft-deletes
   // (deleted_at) keep them in the DB logbook and never touch character-memory
-  // links — they just leave the active view.
+  // links — they just leave the active view. Hand to the Hive: the same click
+  // also surrenders the finished tasks to the recommender, so what you've just
+  // shipped quietly shapes the next suggestions Claude offers.
   const clearBtn = host.querySelector('[data-cleardone]');
   if (clearBtn) clearBtn.onclick = async (e) => {
     e.stopPropagation();
     const ids = flowDoneIds.slice();
     if (!ids.length) return;
-    if (!confirm(`Archive ${ids.length} finished task${ids.length === 1 ? '' : 's'}? They stay in the logbook and can be found later — this just clears them from view.`)) return;
+    if (!confirm(`Archive ${ids.length} finished task${ids.length === 1 ? '' : 's'}? They stay in the logbook and can be found later — this just clears them from view. The work you've done also quietly shapes what Claude suggests next.`)) return;
     clearBtn.disabled = true;
     try {
+      // Surrender to the hive first (prompts still present), then clear from view.
+      await apiWrite(`/api/travaux/prompts/feed-recommender`, 'POST', { ids }).catch(() => {});
       await Promise.all(ids.map(id => apiWrite(`/api/travaux/prompts/${id}`, 'DELETE')));
       flowDoneIds = [];
       await qLoad();
