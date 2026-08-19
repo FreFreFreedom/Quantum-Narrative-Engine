@@ -21,6 +21,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { generateText as generateTextByFeature } from './ai/text.js';
 import { createNode } from './architectureNodes.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { conciseQuestionPayload } from '../lib/concise.js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -531,7 +532,7 @@ function buildReviewPrompt(ideaText, reportJson, answer, allowQuestion) {
     ? `THE OWNER ALREADY ANSWERED A QUESTION ABOUT THESE IDEAS: "${String(answer).trim()}". Take it as their decision — incorporate it into your removals/recommendations, and do NOT ask any new question.`
     : '';
   const questionRule = allowQuestion
-    ? `4. QUESTION: only if there is a real fork the owner must choose — two genuinely different directions for the task, or a bold idea that would make the task much bigger than asked. Then write ONE question with 2-3 short options. Otherwise "question": null. When in doubt, decide alone.`
+    ? `4. QUESTION: only if there is a real fork the owner must choose — two genuinely different directions for the task, or a bold idea that would make the task much bigger than asked. Then write ONE question with 2-3 short options. It is shown to him as a single short line with the options as buttons: 15 words or fewer, ending in a question mark, no preamble and no background; each option 8 words or fewer. Otherwise "question": null. When in doubt, decide alone.`
     : `4. QUESTION: do NOT ask any question this time — decide alone. "question": null always.`;
   return `You are the quick-check editor for ${FMCNS_BLURB}. A world-look just returned inspiration ideas for one task, and the task's plan will be written from what survives your check. Keep the report lean and honest: remove what does not earn its place, flag alternatives, and pick the best of each family.
 
@@ -557,7 +558,7 @@ Respond with ONLY a JSON object, no prose, no markdown fence:
 // Validate the model's review against the real report shape: indices must exist,
 // groups need at least two surviving members, the question needs options. Returns
 // a clean review object, or null when nothing usable came back.
-function sanitizeReview(parsed, report) {
+function sanitizeReview(parsed, report, allowQuestion = true) {
   if (!parsed || typeof parsed !== 'object') return null;
   const parts = report.parts || [];
   const counts = parts.map(p => (p.picks || []).length);
@@ -607,7 +608,8 @@ function sanitizeReview(parsed, report) {
     const options = (Array.isArray(parsed.question.options) ? parsed.question.options : [])
       .map(o => String(o || '').trim()).filter(Boolean).slice(0, 3);
     if (options.length >= 2) {
-      question = { question: String(parsed.question.question).trim().slice(0, 300), options };
+      question = conciseQuestionPayload({ question: String(parsed.question.question).trim(), options })
+        || { question: String(parsed.question.question).trim().slice(0, 200), options };
     }
   }
 
@@ -639,7 +641,7 @@ export async function reviewInspiration({ report, prompt, answer = null, allowQu
       console.error('inspireReview failed —', out.message);
       return null;
     }
-    return sanitizeReview(parseJsonObject(out.text), report);
+    return sanitizeReview(parseJsonObject(out.text), report, allowQuestion);
   } catch (e) {
     console.error('inspireReview threw —', e.message);
     return null;

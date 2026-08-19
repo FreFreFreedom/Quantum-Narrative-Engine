@@ -36,6 +36,7 @@ import { draftPlan, tierForTask } from './taskPlanner.js';
 import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
+import { conciseQuestionPayload, conciseResult } from '../lib/concise.js';
 import { syncFromTask } from './treeSync.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
@@ -434,13 +435,17 @@ function startInspiration(id, { title, prompt }, { force = false } = {}) {
         console.error('🤖 File de travaux: quick check —', e.message);
       }
       if (review) storeReportReview(db, report.id, review); // canonical home on the report
-      if (review?.question) {
+      // Trimmed to the actionable ask before it is stored (same as an agent
+      // question) — null only if nothing survives the trim, in which case there is
+      // no question to ask and the task must not be held waiting for one.
+      const askedReview = review?.question ? conciseQuestionPayload({ ...review.question, kind: 'review' }) : null;
+      if (askedReview) {
         // The quick check needs the owner: the question shows on the card (same
         // mechanism as agent questions) and the draft waits for the answer.
         db.prepare(`
           UPDATE work_prompts SET inspire_state='ready', inspire_review_json=?, pending_question=?,
             updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-        `).run(JSON.stringify(review), JSON.stringify({ ...review.question, kind: 'review' }), id);
+        `).run(JSON.stringify(review), JSON.stringify(askedReview), id);
       } else {
         db.prepare(`
           UPDATE work_prompts SET inspire_state='ready', inspire_review_json=?,
@@ -1266,7 +1271,10 @@ function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
 
 function finishPrompt(id, task) {
   const status = task.status === 'done' ? 'done' : 'blocked';
-  const q = task.pending_question && task.pending_question.question ? JSON.stringify(task.pending_question) : null;
+  // Trimmed on the way INTO the row, so every reader gets the short form — the
+  // card, the detail panel and the recap notification all read this one column.
+  const asked = conciseQuestionPayload(task.pending_question);
+  const q = asked ? JSON.stringify(asked) : null;
   const isOpen = (task.provider || 'opencode') === 'opencode';
   const sessionCol = isOpen ? 'opencode_session_id' : 'session_id';
   db.prepare(`
@@ -1288,6 +1296,23 @@ function finishPrompt(id, task) {
     syncFromTask(db, id).catch(() => {});
   }
   return done;
+}
+
+// The one-glance outcome shown on a finished task's card: the opening sentences of
+// the last thing the agent said, flattened and capped. DERIVED rather than stored,
+// so tasks that finished before this existed shorten too with no migration — and
+// the full report stays in the thread right underneath, one click away.
+export function resultLineFor(promptRow, messages = null) {
+  if (!promptRow || !['done', 'blocked'].includes(promptRow.status)) return null;
+  const list = messages || listMessages(promptRow.id);
+  for (let i = list.length - 1; i >= 0; i--) {
+    if (list[i].role !== 'agent') continue;
+    // onAgentTaskFinalized appends "❓ <question>" to the reply when the task is
+    // asking something — that belongs to the question block, not to the result.
+    const line = conciseResult(String(list[i].text || '').split('\n❓')[0]);
+    if (line) return line;
+  }
+  return null;
 }
 
 // ─── Conversation thread ───────────────────────────────────────────────────────
