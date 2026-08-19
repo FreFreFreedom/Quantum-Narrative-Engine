@@ -62,7 +62,16 @@ function nextUtcMidnight() {
   return next.toISOString();
 }
 
+// A Claude subscription is not a per-minute or per-day API quota: it runs on a
+// rolling five-hour window. Without this, a second-account limit hit fell through
+// to the per-day default and benched that subscription until UTC midnight — hours
+// after it had actually come back.
+const SUBSCRIPTION_WINDOW_MS = 5 * 60 * 60 * 1000;
+
 function catalogueDefault(providerId, scope) {
+  if (providerId === 'claude-side' || providerId === 'claude-code' || scope === 'session') {
+    return { resetsAt: new Date(Date.now() + SUBSCRIPTION_WINDOW_MS).toISOString(), known: false, source: 'subscription:5h-window' };
+  }
   const cat = getProviderCatalog(providerId);
   if (scope === 'rpd' || !cat?.limits?.rpm) {
     return { resetsAt: nextUtcMidnight(), known: false, source: 'catalogue:rpd-default' };

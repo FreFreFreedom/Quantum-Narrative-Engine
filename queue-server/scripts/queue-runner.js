@@ -435,11 +435,12 @@ async function runHelperJobs() {
   // A 30s cap looked generous on paper and failed almost every real question.
   const tools = job.allowed_tools || null;
   const model = job.model || 'haiku';
-  // A second-account job is the ordinary path for the features pointed at that
-  // subscription, not a rescue, and it may be reading code before it answers —
-  // so it gets real room. The caller waits longer for these too (see
-  // HELPER_SIDE_WAIT_MS), and this stays under that deadline.
-  const timeoutMs = side ? 120_000 : 60_000;
+  // 60s was set when every helper job was a cheap rescue answered from its prompt
+  // alone. Two kinds need more: a job on the second account (the ordinary path for
+  // those features now, including the same question re-asked on the main account
+  // when the small one runs out), and any job with a tool grant, which is reading
+  // code before it answers. Both stay under the caller's own deadline.
+  const timeoutMs = (side || tools) ? 120_000 : 60_000;
   console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {

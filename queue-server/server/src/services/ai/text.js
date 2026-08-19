@@ -261,13 +261,34 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // The second subscription. The server cannot call it — the token is on the Mac —
   // so the request is parked for the runner, which spawns the CLI with that token
   // and nothing else changed. Same waiting machinery as the last-resort path.
+  //
+  // When that account's five-hour window runs out, the answer is the OTHER
+  // subscription, not the free lane: the whole point of moving these features was
+  // to spare the big account's quota, not to give up the moment the small one is
+  // spent. So a limit hit here is remembered (so the next call doesn't wait on a
+  // door that is shut) and the same question is asked again on the main account.
   if (p === 'claude-side') {
-    const r = await runHelperJob({
+    const ask = (account) => runHelperJob({
       prompt, feature, maxTokens, label, model: m,
-      tools: helperTools, waitMs: helperWaitMs, account: 'side',
+      tools: helperTools, waitMs: helperWaitMs, account,
     });
-    if (r?.text) return { text: r.text, via: 'claude-side' };
-    return { error: r?.error || 'claude_side_failed', message: r?.message || 'no answer' };
+    let sideWhy = null;
+    if (router.isExhausted('claude-side', m || '')) {
+      sideWhy = 'second account is out of its five-hour window';
+    } else {
+      const r = await ask('side');
+      if (r?.text) return { text: r.text, via: 'claude-side' };
+      sideWhy = r?.message || r?.error || 'no answer';
+      if (!detectQuotaLimit('claude-side', sideWhy)) {
+        // An ordinary failure, not a spent window. Let the chain decide what is
+        // next rather than spending the big account on a hiccup.
+        return { error: r?.error || 'claude_side_failed', message: sideWhy };
+      }
+      router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
+    }
+    const main = await ask('main');
+    if (main?.text) return { text: main.text, via: 'claude-main' };
+    return { error: 'claude_both_accounts_failed', message: `second account: ${sideWhy} | main account: ${main?.message || main?.error || 'no answer'}` };
   }
   if (p === 'opencode') {
     const mod = getProviderModule('opencode');
@@ -311,9 +332,13 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
 
   // Primary: the configured provider + its own tier chain (e.g. claude-code's
   // sonnet -> opus -> haiku, or opencode's default free model as an add-on).
-  const primaryChain = isKnownProvider(providerId) && !router.isExhausted(providerId, model || '')
-    ? await getFallbackChain(feature, providerId, model)
-    : [];
+  // claude-side is the one provider that is NOT dropped from its own chain when
+  // the ledger says it is spent: its branch in runAttempt knows to go straight to
+  // the main subscription instead. Removing it here would leave only the free lane
+  // — the outcome this whole arrangement exists to avoid.
+  const primaryUsable = isKnownProvider(providerId)
+    && (providerId === 'claude-side' || !router.isExhausted(providerId, model || ''));
+  const primaryChain = primaryUsable ? await getFallbackChain(feature, providerId, model) : [];
 
   // Catalogue tail: every free model with a key present, sorted by codingRank
   // descending, skipping anything the ledger currently marks exhausted. This is

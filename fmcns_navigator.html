@@ -3663,7 +3663,7 @@ function renderAiSettings() {
       <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <div class="ai-fp-sub" style="margin-top:6px;">&ldquo;Second account&rdquo; means your smaller Claude subscription. Those jobs run on your Mac, so the runner has to be on. If its token isn&rsquo;t set, they quietly use the main account instead. Coding tasks always stay on the main account.</div>
+    <div class="ai-fp-sub" style="margin-top:6px;">&ldquo;Second account&rdquo; means your smaller Claude subscription. Those jobs run on your Mac, so the runner has to be on. When that account runs out for the next few hours, the same question is asked again on your main account rather than dropping to a free model &mdash; and the same happens if its token isn&rsquo;t set. Coding tasks always stay on the main account.</div>
     <details class="ai-adv">
       <summary>Advanced — queue budget &amp; intel (JSON)</summary>
       <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
