@@ -34,8 +34,8 @@ export function workerRoutes() {
 
   router.post('/worker/claim', (req, res) => {
     if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
-    noteRunnerPoll();
     const runnerId = String(req.body?.runner_id || 'local').slice(0, 64);
+    noteRunnerPoll(runnerId);
     // The runner rides its Claude usage reading along on this poll (see
     // noteRunnerUsage) — it's the only process that can read the local account.
     if (req.body?.usage) noteRunnerUsage(req.body.usage);

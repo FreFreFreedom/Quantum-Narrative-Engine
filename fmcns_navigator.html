@@ -3640,7 +3640,21 @@ async function qRefreshRunnerState() {
   el.style.display = '';
   if (s.connected) {
     el.style.color = 'var(--c-ink-4)';
-    el.textContent = `✓ Runner connected${s.running_count ? ` — ${s.running_count} task${s.running_count === 1 ? '' : 's'} running` : ' — idle'}`;
+    let status = '✓ Runner connected';
+    if (s.runner_id) {
+      const lastSeenMs = s.last_seen_at ? Date.now() - new Date(s.last_seen_at).getTime() : null;
+      let freshness = '';
+      if (lastSeenMs !== null) {
+        if (lastSeenMs < 60000) {
+          freshness = Math.round(lastSeenMs / 1000) + 's ago';
+        } else {
+          freshness = Math.round(lastSeenMs / 60000) + 'm ago';
+        }
+      }
+      status += ` — ${s.runner_id}${freshness ? `, last seen ${freshness}` : ''}`;
+    }
+    status += s.running_count ? ` — ${s.running_count} task${s.running_count === 1 ? '' : 's'} running` : ' — idle';
+    el.textContent = status;
   } else {
     el.style.color = 'var(--c-warn, #b8860b)';
     el.textContent = 'Runner not running — queued tasks will wait. Start it with: cd queue-server && npm run runner';

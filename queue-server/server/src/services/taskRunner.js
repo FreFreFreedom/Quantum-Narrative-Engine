@@ -1468,7 +1468,16 @@ export function recordRunnerResult(taskId, {
 // indicator — the one thing that was genuinely invisible before: a queue that
 // looks busy but has no executor attached.
 let _lastClaimPollAt = null;
-export function noteRunnerPoll() { _lastClaimPollAt = Date.now(); }
+// Which runner polled last. Kept separately from the claimed_by on a running task
+// because the identity matters MOST when nothing is running: that is exactly when
+// you cannot otherwise tell whether the attached runner is the one you just
+// started or an older copy on stale code, which is the confusion this whole
+// indicator exists to remove.
+let _lastPollRunnerId = null;
+export function noteRunnerPoll(runnerId = null) {
+  _lastClaimPollAt = Date.now();
+  if (runnerId) _lastPollRunnerId = runnerId;
+}
 
 // Claude usage as seen ON THE MACHINE THAT RUNS CLAUDE. Since execution moved to
 // the Mac, the container can no longer read the account's local transcripts, and
@@ -1505,11 +1514,13 @@ export function runnerStatus() {
     .map((t) => (t.heartbeat_at ? new Date(t.heartbeat_at).getTime() : 0))
     .sort((a, b) => b - a)[0] || null;
   const lastSeen = Math.max(_lastClaimPollAt || 0, lastBeat || 0) || null;
+  const runnerId = running[0]?.claimed_by || _lastPollRunnerId || null;
   return {
     mode: EXECUTION_MODE,
     connected: !!lastSeen && (Date.now() - lastSeen) < 60_000,
     last_seen_at: lastSeen ? new Date(lastSeen).toISOString() : null,
     running_count: running.length,
+    runner_id: runnerId,
   };
 }
 
