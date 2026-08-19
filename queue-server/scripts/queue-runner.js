@@ -430,7 +430,9 @@ async function runHelperJobs() {
     await api(`/worker/helper/${job.id}/result`,
       text ? { text } : { error: out?.text || out?.error || `exit ${out?.code}` });
   } catch { /* the caller's own deadline covers this */ }
-  console.log(`  helper ${job.label || job.feature} ${text ? 'answered' : 'failed'}`);
+  // Say WHY it failed. "helper chat-reply failed" with no reason is the same blind
+  // spot that let the task chat look broken for days.
+  console.log(`  helper ${job.label || job.feature} ${text ? 'answered' : `failed — ${String(out?.text || out?.error || `exit ${out?.code}`).slice(0, 300)}`}`);
 }
 
 // The helper lane on its own clock, because the loop below only reaches it when
