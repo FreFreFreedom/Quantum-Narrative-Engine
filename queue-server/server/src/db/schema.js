@@ -1125,18 +1125,20 @@ export function initFilmEnrichmentSchema(db) {
     )
   `);
 
-  // Helper jobs — the Claude last-resort lane for small text calls.
+  // Helper jobs — the lane that lets a server feature reach Claude at all.
   //
   // Claude lives on Antoine's Mac, not in this container (the container's own
   // read of the subscription is empty; the attached runner's is the real one).
-  // So a server-side feature whose free models have ALL failed cannot simply
-  // "fall back to Claude" in-process. It parks the request here instead, and the
-  // local runner — which does have the subscription — picks it up between queue
-  // polls, runs one cheap toolless call, and posts the text back.
+  // So a server-side feature cannot call Claude in-process. It parks the request
+  // here instead, and the local runner — which does have the subscriptions —
+  // picks it up between queue polls, runs one toolless call, and posts the text
+  // back.
   //
-  // Deliberately small: haiku only, one attempt, and only reached after every
-  // free backend has already failed. Rows are disposable; nothing re-reads a
-  // finished job, so a redeploy losing them costs nothing.
+  // It began as a last resort for when every free model had failed. It is now
+  // also the ordinary route for the features aimed at the SECOND subscription
+  // (account='side'), which the server can reach no other way. One attempt
+  // either way. Rows are disposable; nothing re-reads a finished job, so a
+  // redeploy losing them costs nothing.
   db.exec(`
     CREATE TABLE IF NOT EXISTS helper_jobs (
       id TEXT PRIMARY KEY,
@@ -1159,6 +1161,12 @@ export function initFilmEnrichmentSchema(db) {
   // the remove button?" cannot be answered honestly without looking). NULL keeps
   // the original toolless behaviour, which is what every other caller wants.
   try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN allowed_tools TEXT`); } catch {}
+  // Which Claude subscription answers this job. 'main' is the account the runner
+  // itself is logged into (and the one every queue coding task uses); 'side' is the
+  // second, smaller subscription, reached only by handing its token to that one
+  // spawn — never by writing it into the runner's own environment, which would
+  // silently move the queue's coding work onto it too.
+  try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN account TEXT NOT NULL DEFAULT 'main'`); } catch {}
 
   // Git work the SERVER wants doing but cannot do: it runs in a Railway container
   // with no git repository, so publishing a finished task (merge the branch onto the

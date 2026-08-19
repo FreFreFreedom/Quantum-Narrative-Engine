@@ -24,6 +24,25 @@ export const PROVIDER_CAPABILITIES = {
     // Free models available
     freeModels: [],
   },
+  // The second Claude subscription. Deliberately NOT a spawn-based module of its
+  // own: the token for it lives only on Antoine's Mac, so the only way the server
+  // can reach it is to park the request as a helper job and let the runner answer
+  // it with that token (see ai/text.js and scripts/queue-runner.js). Hence no CLI
+  // path here — text generation happens through the helper channel.
+  'claude-side': {
+    id: 'claude-side',
+    label: 'Claude (second account, via your Mac)',
+    hasCliText: true,
+    cliModels: ['haiku', 'sonnet', 'opus'],
+    // No direct API path: this account is a subscription, never pay-per-token.
+    hasApiText: false,
+    apiModels: [],
+    // Coding tasks stay on the main account — see the plan's "the queue did not move".
+    hasQueueExecution: false,
+    queueModels: [],
+    hasAutoFallback: false,
+    freeModels: [],
+  },
   opencode: {
     id: 'opencode',
     label: 'OpenCode',
@@ -48,6 +67,9 @@ export const PROVIDER_CAPABILITIES = {
 // parameterised per-call by providerId; only claude-code and opencode are
 // distinct spawn-based modules.
 export function getProviderModule(id) {
+  // claude-side has no module: ai/text.js routes it to the helper channel before
+  // it ever asks for one. Returning claudeCode here would be the bug this whole
+  // design exists to avoid — a side call spawning on the MAIN account's login.
   if (id === 'claude-code') return claudeCode;
   if (id === 'opencode') return opencode;
   if (isCatalogProvider(id)) return openaiCompat;
@@ -62,7 +84,7 @@ function isCatalogProvider(id) {
 // a hard-coded pair, so adding a provider to catalog.js is enough to make it
 // routable everywhere that calls this.
 export function isKnownProvider(id) {
-  return id === 'claude-code' || id === 'opencode' || isCatalogProvider(id);
+  return id === 'claude-code' || id === 'claude-side' || id === 'opencode' || isCatalogProvider(id);
 }
 
 // Get capability object for a provider. Catalogue (free) providers synthesize

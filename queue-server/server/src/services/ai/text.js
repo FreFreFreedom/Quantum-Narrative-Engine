@@ -62,7 +62,10 @@ function loadAiSettings() {
 
 export function refreshAiSettings() { settingsCache.at = 0; return loadAiSettings(); }
 
-const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio'];
+// 'reply' is the chat on a task card. It was missing here for as long as the chat
+// existed, which meant no per-feature choice could ever reach it: an unlisted
+// feature falls through to the free lane below no matter what the settings say.
+const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply'];
 
 // Read-only snapshot for the AI Settings panel: per-feature defaults, the global
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
@@ -174,7 +177,10 @@ function isStalled(provider, model) {
 
 // Detect quota/limit from provider-specific error text
 function detectQuotaLimit(providerId, text) {
-  const module = getProviderModule(providerId);
+  // claude-side has no module of its own (on purpose — see providers.js), but a
+  // second subscription hits a five-hour ceiling with exactly the same wording, so
+  // it borrows claude-code's pattern matching. Pure text inspection, no spawning.
+  const module = getProviderModule(providerId === 'claude-side' ? 'claude-code' : providerId);
   if (module?.detectLimit) {
     const det = module.detectLimit(text);
     return det?.label ? true : false;
@@ -190,6 +196,9 @@ async function getFallbackChain(feature, providerId, model) {
   const chain = [];
   // Primary: configured model for this feature
   if (model) chain.push({ provider: providerId, model });
+  // The second account is reached by name, not by tier chain, so an unset model
+  // would drop it out of its own chain entirely. Cheap by default.
+  else if (providerId === 'claude-side') chain.push({ provider: providerId, model: 'haiku' });
 
   // If provider has auto-fallback (claude-code), add tier chain
   if (cap.hasAutoFallback && providerId === 'claude-code') {
@@ -240,7 +249,7 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000 }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -248,6 +257,17 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   if (maxTokens && maxTokens > 800) maxTokens = 800;
   if (p === 'claude-code') {
     return legacyGenerateText({ prompt, maxTokens, label, cliModel: m });
+  }
+  // The second subscription. The server cannot call it — the token is on the Mac —
+  // so the request is parked for the runner, which spawns the CLI with that token
+  // and nothing else changed. Same waiting machinery as the last-resort path.
+  if (p === 'claude-side') {
+    const r = await runHelperJob({
+      prompt, feature, maxTokens, label, model: m,
+      tools: helperTools, waitMs: helperWaitMs, account: 'side',
+    });
+    if (r?.text) return { text: r.text, via: 'claude-side' };
+    return { error: r?.error || 'claude_side_failed', message: r?.message || 'no answer' };
   }
   if (p === 'opencode') {
     const mod = getProviderModule('opencode');
@@ -278,7 +298,16 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // An explicit `model` passed by the caller (tier-driven picks, e.g. deep-tier
   // uses the strongest free model) takes priority over the feature default.
   const providerId = featureDefaults.provider || 'opencode';
-  const model = explicitModel || featureDefaults.model || null;
+  let model = explicitModel || featureDefaults.model || null;
+  // A caller's explicit model is a free-lane model id (the chat picks a fast free
+  // one before it knows where the feature is pointed). If the feature has since
+  // been aimed at a Claude subscription, that id names nothing there — so it is
+  // dropped in favour of the configured model rather than passed on to produce a
+  // provider/model pair that cannot exist.
+  if (explicitModel && (providerId === 'claude-side' || providerId === 'claude-code')) {
+    const cap = getProviderCapability(providerId);
+    if (cap && !cap.cliModels.includes(explicitModel)) model = featureDefaults.model || null;
+  }
 
   // Primary: the configured provider + its own tier chain (e.g. claude-code's
   // sonnet -> opus -> haiku, or opencode's default free model as an add-on).
@@ -314,10 +343,14 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs });
 
     if (result?.text) {
-      recordSideCall(); // one helper call in the daily budget ledger
+      // The daily ledger exists to restrain the shared lanes — the free models and
+      // the main subscription. The second account has its own ceiling and its own
+      // bill, so counting it here would let a few chat questions starve the day's
+      // world-looks for no reason.
+      if (result.via !== 'claude-side') recordSideCall();
       if (failures.length) console.warn(`[${label}] recovered via ${result.via} after ${failures.join(' | ')}`);
       return result;
     }
@@ -358,7 +391,7 @@ export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -384,11 +417,16 @@ export function recordHelperResult(id, { text = null, error = null } = {}) {
 // capped at 60s on its side, so this is generous rather than tight — but it IS
 // a hard cap: a helper job must never become a second way for a task to hang.
 const HELPER_WAIT_MS = 120_000;
+// A second-account job is not a rescue — it is the ordinary path for the features
+// pointed at that subscription, and one that may be reading code before it answers.
+// 120s was already what produced most of the "no response" failures when this
+// channel was only ever a fallback; as the primary route it needs real room.
+const HELPER_SIDE_WAIT_MS = 180_000;
 const HELPER_POLL_MS = 1_500;
 
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
-async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null }) {
+async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main' }) {
   if (!db) return { error: 'no_db' };
   try {
     // Only worth parking if a runner is actually attached — otherwise this is a
@@ -397,13 +435,20 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     if (!runnerStatus()?.connected) return { error: 'no_runner', message: 'no runner attached' };
 
     const id = randomUUID();
-    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools) VALUES (?,?,?,?,?,?)`)
-      .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null);
+    // The model goes on the row. It used to be accepted and then dropped, so every
+    // helper job silently ran on the runner's own default — invisible while haiku
+    // was the only answer anyone wanted, and wrong the moment one feature (the
+    // task-card chat) needs a stronger model than the rest.
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account) VALUES (?,?,?,?,?,?,?,?)`)
+      .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
+        model || 'haiku', account === 'side' ? 'side' : 'main');
 
     // A caller with a person waiting on the other end (the task-card chat) sets
     // its own, much shorter deadline: 120s is right for rescuing a background
     // step, and far too long for someone watching a chat bubble.
-    const budgetMs = Number.isFinite(waitMs) && waitMs > 0 ? waitMs : HELPER_WAIT_MS;
+    const budgetMs = Number.isFinite(waitMs) && waitMs > 0
+      ? waitMs
+      : (account === 'side' ? HELPER_SIDE_WAIT_MS : HELPER_WAIT_MS);
     const deadline = Date.now() + budgetMs;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, HELPER_POLL_MS));

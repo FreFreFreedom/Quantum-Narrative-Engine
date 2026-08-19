@@ -1543,15 +1543,21 @@ export async function chatReplyToPrompt(id, { text, userId = null } = {}) {
     label: 'chat-reply',
     timeoutMs: 20_000,
     maxAttempts: 2,
-    claudeLastResort: true,
+    // No `claudeLastResort` any more: Claude is this feature's FIRST choice now,
+    // not its rescue. Pointing 'reply' at the second subscription puts it at the
+    // head of the chain (see FEATURES / getFallbackChain in ai/text.js), with the
+    // free lane demoted to the backup it should always have been. Free-first is
+    // what made this function's only reachable answer an apology.
     // Read-only: it may check the code, never touch it.
     helperTools: 'Read,Grep,Glob',
-    // Must exceed the runner's own 60s cap plus its claim poll, or a perfectly
-    // good answer gets marked "caller timed out" seconds before it arrives.
-    // Nobody waits this long in practice: the browser stops trusting this
-    // response after ~19s (Railway cuts a held connection) and watches the
+    // Must exceed the runner's own cap plus its claim poll, or a perfectly good
+    // answer gets marked "caller timed out" seconds before it arrives. Reading
+    // code to answer honestly takes longer than 60s did — a rushed answer here
+    // was measured being confidently wrong, and a slower one being right.
+    // Nobody waits this long staring at a connection: the browser stops trusting
+    // this response after ~19s (Railway cuts a held connection) and watches the
     // thread instead, which is where the answer lands either way.
-    helperWaitMs: 75_000,
+    helperWaitMs: 140_000,
   });
   if (result?.text) {
     answer = result.text;

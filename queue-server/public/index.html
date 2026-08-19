@@ -3525,12 +3525,20 @@ function qProviderUi() {
 // OpenCode model list are the same /api/travaux/providers data the Dispatch
 // Queue's New-prompt form already uses (qProviders), so this reuses loadProviders()
 // rather than fetching it twice.
+// Every feature the server can route (FEATURES in services/ai/text.js). Five of
+// these used to be missing here, which meant they could only ever be changed
+// through the API — so where they ran was invisible from the app itself.
 const AI_FEATURES = [
   { key: 'quick', label: 'Quick reads', note: 'Book picks, tag lenses, pattern explanations' },
   { key: 'build', label: 'Suggestions', note: 'Work-suggestion and architecture-node engines' },
   { key: 'judge', label: 'Model judge', note: 'Picks how much depth an auto-speed task needs' },
   { key: 'summary', label: 'Task summaries', note: 'Plain-language recap once a queued task finishes' },
   { key: 'warmup', label: 'Cache warm-up', note: 'Pre-generates book picks/lenses right after boot' },
+  { key: 'reply', label: 'Chat on a task card', note: 'Answers your questions about a task — reads the code first' },
+  { key: 'inspire', label: 'What the world does', note: 'The outside-world look attached to each task and idea' },
+  { key: 'studio', label: 'Idea Studio', note: 'Turning a rough idea into something buildable' },
+  { key: 'plan_draft', label: 'Plan drafts', note: 'The first draft of how a task should be done' },
+  { key: 'treesync', label: 'Tree sorting', note: 'Files the codebase into the right part of the tree' },
 ];
 const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
 let aiSettings = null;
@@ -3628,7 +3636,8 @@ function renderAiSettings() {
         <td><div class="ai-feature-name">${f.label}</div><div class="ai-feature-note">${f.note}</div></td>
         <td>
           <select class="ai-provider-sel">
-            <option value="claude-code"${provider === 'claude-code' ? ' selected' : ''}>Claude Code</option>
+            <option value="claude-code"${provider === 'claude-code' ? ' selected' : ''}>Claude — main account</option>
+            <option value="claude-side"${provider === 'claude-side' ? ' selected' : ''}>Claude — second account (your Mac)</option>
             <option value="opencode"${provider === 'opencode' ? ' selected' : ''}>OpenCode (free)</option>
           </select>
         </td>
@@ -3654,6 +3663,7 @@ function renderAiSettings() {
       <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    <div class="ai-fp-sub" style="margin-top:6px;">&ldquo;Second account&rdquo; means your smaller Claude subscription. Those jobs run on your Mac, so the runner has to be on. If its token isn&rsquo;t set, they quietly use the main account instead. Coding tasks always stay on the main account.</div>
     <details class="ai-adv">
       <summary>Advanced — queue budget &amp; intel (JSON)</summary>
       <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>

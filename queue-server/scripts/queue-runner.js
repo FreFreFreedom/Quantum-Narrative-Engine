@@ -378,6 +378,17 @@ async function usageForReport() {
 }
 
 // ─── Claude helper lane ───────────────────────────────────────────────────────
+// The second subscription's token. Set in queue-server/.env on this Mac and
+// nowhere else — never on Railway, never committed. Absent is a supported state:
+// the job simply runs on the main account instead of failing.
+const SIDE_TOKEN = process.env.CLAUDE_SIDE_OAUTH_TOKEN || '';
+let sideTokenWarned = false;
+function warnSideTokenMissingOnce() {
+  if (sideTokenWarned) return;
+  sideTokenWarned = true;
+  console.warn('  helper: this job asked for the second Claude account, but CLAUDE_SIDE_OAUTH_TOKEN is not set — running it on the main account instead.');
+}
+
 // Small text steps on the server (the plan draft, the world-look) run on free
 // models. When every one of those is cooled down, the server has nowhere left to
 // go: the Claude subscription lives HERE, on the Mac, not in the container. So it
@@ -398,11 +409,23 @@ async function runHelperJobs() {
   if (body.none || !body.job) return;
   const job = body.job;
 
-  const gate = await claudeGate({ tier: 'standard', preset: 'fast' });
-  if (gate) {
-    console.log(`  helper ${job.label || job.feature}: declined — ${gate}`);
-    try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${gate}` }); } catch {}
-    return;
+  // Which subscription answers this one. 'side' is the second, smaller account,
+  // reached ONLY by handing its token to this single spawn as an extra — never by
+  // writing it into this process's environment, which would silently move every
+  // queue coding task onto it as well.
+  const side = job.account === 'side' && !!SIDE_TOKEN;
+  if (job.account === 'side' && !SIDE_TOKEN) warnSideTokenMissingOnce();
+
+  // The window reserve protects the MAIN account's week. A second-account job has
+  // nothing to do with that bank, so gating it on this would decline work the main
+  // account was never going to pay for.
+  if (!side) {
+    const gate = await claudeGate({ tier: 'standard', preset: 'fast' });
+    if (gate) {
+      console.log(`  helper ${job.label || job.feature}: declined — ${gate}`);
+      try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${gate}` }); } catch {}
+      return;
+    }
   }
 
   // A job may come with a read-only tool grant (the task-card chat, so it can
@@ -411,15 +434,21 @@ async function runHelperJobs() {
   // grepping and reading — so it gets the same full 60s as any other helper job.
   // A 30s cap looked generous on paper and failed almost every real question.
   const tools = job.allowed_tools || null;
-  console.log(`  helper ${job.label || job.feature} → claude:haiku${tools ? ` (may read: ${tools})` : ''}`);
+  const model = job.model || 'haiku';
+  // A second-account job is the ordinary path for the features pointed at that
+  // subscription, not a rescue, and it may be reading code before it answers —
+  // so it gets real room. The caller waits longer for these too (see
+  // HELPER_SIDE_WAIT_MS), and this stays under that deadline.
+  const timeoutMs = side ? 120_000 : 60_000;
+  console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {
     out = await claudeCli.runToolless({
       prompt: job.prompt,
-      model: job.model || 'haiku',
-      timeoutMs: 60_000,
+      model,
+      timeoutMs,
       cwd: RUNNER_REPO,
-      env: claudeCli.spawnEnv(),
+      env: claudeCli.spawnEnv(side ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
       allowedTools: tools,
     });
   } catch (e) {
