@@ -107,6 +107,37 @@ export function deleteSuggestion(id) {
   return info.changes > 0;
 }
 
+// ─── Hand to the Hive: finished tasks as labelled examples ─────────────────────
+// The "Clear done" button surrenders finished prompts here. Each becomes a
+// labelled example (title + outcome) the chantier engine reads when it proposes
+// the next work — done work quietly shapes what comes next. The ledger is
+// idempotent per prompt and survives the soft-delete that removes the prompt
+// from the active views, so clearing never loses the signal.
+export function feedCompletedToRecommender(promptIds) {
+  const ids = Array.isArray(promptIds) ? promptIds : [];
+  let fed = 0;
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO work_completed_examples (id, prompt_id, title, outcome, summary)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  for (const id of ids) {
+    if (!id) continue;
+    const p = db.prepare(`SELECT id, title, status, summary FROM work_prompts WHERE id=?`).get(id);
+    if (!p) continue;
+    if (!['done', 'cancelled'].includes(p.status)) continue; // only finished work feeds the hive
+    insert.run(randomUUID(), id, p.title, p.status, (p.summary || '').trim() || null);
+    fed++;
+  }
+  return { fed, total: recentCompletedExamples().length };
+}
+
+export function recentCompletedExamples(limit = 12) {
+  return db.prepare(`
+    SELECT title, outcome, summary FROM work_completed_examples
+    ORDER BY created_at DESC LIMIT ?
+  `).all(limit);
+}
+
 // ─── Tolerant JSON parsing — the model sometimes wraps its answer in prose or a
 // fenced code block despite being asked for raw JSON. ──────────────────────────
 function parseSuggestionsJson(text) {
@@ -145,6 +176,21 @@ export function buildContextDigest() {
   try {
     const known = db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 20`).all();
     if (known.length) lines.push(`Suggestions already known (don't repeat): ${known.map((r) => r.title).join(' · ')}.`);
+  } catch {}
+  try {
+    // Hand to the Hive: finished work, surrendered via the "Clear done" button,
+    // is the best available labelled signal of what the owner actually ships.
+    const done = db.prepare(`
+      SELECT title, outcome FROM work_completed_examples ORDER BY created_at DESC LIMIT 12
+    `).all();
+    if (done.length) {
+      const shipped = done.filter((d) => d.outcome === 'done').map((d) => d.title);
+      const dropped = done.filter((d) => d.outcome === 'cancelled').map((d) => d.title);
+      const parts = [];
+      if (shipped.length) parts.push(`Recently finished (build on these): ${shipped.join(' · ')}`);
+      if (dropped.length) parts.push(`Recently cancelled (don't re-propose): ${dropped.join(' · ')}`);
+      if (parts.length) lines.push(parts.join('. ') + '.');
+    }
   } catch {}
   return lines.join('\n');
 }

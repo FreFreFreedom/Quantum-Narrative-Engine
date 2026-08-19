@@ -220,6 +220,22 @@ function initSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_pos ON work_ideas(position)`); } catch {}
 
+  // "Hand to the Hive": a ledger of finished (done/cancelled) tasks that the
+  // "Clear done" button surrenders to the recommender. Survives the soft-delete
+  // that clears those prompts from the active views, so finished work keeps
+  // quietly shaping future suggestions as a set of labelled examples.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS work_completed_examples (
+      id TEXT PRIMARY KEY,
+      prompt_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      outcome TEXT NOT NULL DEFAULT 'done' CHECK(outcome IN ('done','cancelled')),
+      summary TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_work_completed_examples_pid ON work_completed_examples(prompt_id)`); } catch {}
+
   // Agent task executions — the runner's own record, previously a JSON file
   // (data/agent-tasks.json). Moved to SQLite because an unlocked whole-file
   // read-modify-write loses writes when two tasks finalize in the same tick;

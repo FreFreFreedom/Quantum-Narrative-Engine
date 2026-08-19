@@ -46,6 +46,12 @@ export function travauxRoutes() {
     res.json({ ok: true });
   });
 
+  // ── Hand to the Hive: the "Clear done" button surrenders finished tasks here ──
+  router.post('/prompts/feed-recommender', (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    res.json(suggestions.feedCompletedToRecommender(ids));
+  });
+
   // ── Idées ───────────────────────────────────────────────────────────────────
   router.get('/ideas', (req, res) => {
     res.json({ ideas: ideas.listIdeas() });
