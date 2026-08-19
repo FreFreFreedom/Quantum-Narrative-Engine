@@ -471,14 +471,21 @@ async function runHelperJobs() {
 // as broken. One haiku answer (~30k tokens) is noise beside a task run (~1M), so
 // it is safe to answer while a task is running. Guarded to one at a time, and the
 // idle path below still calls it too — harmless, and it keeps publishing first.
-let helperBusy = false;
+// More than one at a time, because a helper job is now an ordinary path rather
+// than a rescue: the world-look sweep asks three questions per idea and waits for
+// each, so one-at-a-time made the whole sweep as slow as the slowest single answer
+// end to end. Two toolless haiku calls on a Mac is nothing; this is not the
+// container's memory ceiling. claimHelperJob hands out a different row to each
+// caller (its claim is one synchronous SQLite step), so they never collide.
+const HELPER_CONCURRENCY = Math.max(1, Number(process.env.RUNNER_HELPER_CONCURRENCY || 2));
+let helperInFlight = 0;
 function startHelperLane() {
   const timer = setInterval(async () => {
-    if (stopping || helperBusy) return;
-    helperBusy = true;
+    if (stopping || helperInFlight >= HELPER_CONCURRENCY) return;
+    helperInFlight++;
     try { await runHelperJobs(); }
     catch (e) { console.error('Helper job failed —', e.message); }
-    finally { helperBusy = false; }
+    finally { helperInFlight--; }
   }, 2_000);
   timer.unref(); // never the reason the process refuses to exit
 }
@@ -1268,10 +1275,10 @@ async function main() {
       // Publishing first: a finished task sitting unpublished matters more than
       // rescuing a text call, and a git job is seconds long.
       try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
-      if (!helperBusy) {
-        helperBusy = true;
+      if (helperInFlight < HELPER_CONCURRENCY) {
+        helperInFlight++;
         try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }
-        finally { helperBusy = false; }
+        finally { helperInFlight--; }
       }
       await printSnapshot();
       await new Promise((s) => setTimeout(s, POLL_IDLE_MS));
