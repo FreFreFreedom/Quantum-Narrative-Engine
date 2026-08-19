@@ -32,6 +32,7 @@ import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
+import { logBillingPosture } from './services/billingGuard.js';
 import { bindAiTextDb, migrateFreeFirstDefaults } from './services/ai/text.js';
 import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
@@ -189,6 +190,9 @@ app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
 app.use('/api/travaux', requireAuth, reviewsRoutes());
+
+// Say plainly at boot whether anything here can spend real money (billingGuard.js).
+logBillingPosture();
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {

@@ -28,6 +28,8 @@
 
 import { spawn } from 'node:child_process';
 
+import { meteredAllowed, meteredRefusal } from './billingGuard.js';
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CHAT_MODEL = process.env.CHAT_MODEL || 'claude-sonnet-4-5';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -76,6 +78,10 @@ function callCli(prompt, cliModel) {
 }
 
 async function callApi(prompt, maxTokens, label) {
+  // Real-spending guard: this fallback is the one that used to turn a broken
+  // subscription into a per-token bill. It now refuses by default — a failed
+  // subscription call fails visibly instead of quietly costing money.
+  if (!meteredAllowed()) return meteredRefusal(`the metered API fallback for ${label}`);
   if (!ANTHROPIC_API_KEY) return { error: 'no_api_key' };
   let resp;
   try {

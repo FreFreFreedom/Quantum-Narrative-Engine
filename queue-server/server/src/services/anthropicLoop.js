@@ -15,6 +15,8 @@ import { chatCompletion as freeChatCompletion, detectLimit as freeDetectLimit } 
 import * as opencode from './providers/opencode.js';
 import { listOpenCodeModels } from './providers/index.js';
 
+import { meteredAllowed, meteredRefusal } from './billingGuard.js';
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -22,6 +24,10 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const CHAT_MIN_RANK = 55;
 
 export async function callAnthropic({ model, system, tools, messages, maxTokens }) {
+  // Real-spending guard: this is the pay-per-token path. Blocked unless explicitly
+  // allowed, in which case runToolLoop below simply starts on the free providers
+  // instead — chat keeps working, it just never bills.
+  if (!meteredAllowed()) return meteredRefusal('an Anthropic API chat call');
   if (!ANTHROPIC_API_KEY) return { error: 'no_api_key', message: 'ANTHROPIC_API_KEY not set' };
   let resp;
   try {
@@ -108,7 +114,9 @@ export async function callFreeProvider({ system, tools, messages, maxTokens }) {
 export async function runToolLoop({ model, system, messages, tools = [], dispatch = null,
                                     maxTokens = 1500, maxRounds = 6, toolResultCap = 8000 }) {
   const hasTools = Array.isArray(tools) && tools.length > 0;
-  let backend = ANTHROPIC_API_KEY ? 'anthropic' : 'free';
+  // Free-first, and free-ONLY while metered billing is switched off (see
+  // billingGuard.js) — no point starting on a backend that will refuse.
+  let backend = (ANTHROPIC_API_KEY && meteredAllowed()) ? 'anthropic' : 'free';
   let finalText = '';
   let usedFallbackVia = null;
 

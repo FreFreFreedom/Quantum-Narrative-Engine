@@ -31,7 +31,7 @@ import { execFileSync } from 'node:child_process';
 import {
   CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels,
 } from '../server/src/services/providers/index.js';
-import { streamEventToChunks, detectLimit, resolveBin } from '../server/src/services/providers/opencode.js';
+import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
 import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 
@@ -173,6 +173,12 @@ function isQuarantined(modelId) {
 // The order to try models in: Go chain first (cheapest-strong, escalating),
 // then the free chain. Only ids opencode actually reports as live are kept, so
 // a renamed or withdrawn model is skipped rather than wasting an attempt.
+// The OpenCode Go lane is a paid plan. It sits between Claude and the free models,
+// and it is the only remaining lane whose usage could conceivably cost something
+// beyond a flat subscription — so it gets its own off switch. OPENCODE_GO=0 skips
+// every opencode-go/* model and runs Claude → free only.
+const GO_LANE_ENABLED = process.env.OPENCODE_GO !== '0';
+
 async function modelChain() {
   let live = [];
   try {
@@ -185,7 +191,7 @@ async function modelChain() {
   const pick = (entries) => entries
     .map((entry) => [...liveIds].find((id) => curatedMatch(entry, id) || id === entry))
     .filter(Boolean);
-  const chain = [...pick(CURATED_GO_CHAIN), ...pick(CURATED_FREE_CHAIN)];
+  const chain = [...(GO_LANE_ENABLED ? pick(CURATED_GO_CHAIN) : []), ...pick(CURATED_FREE_CHAIN)];
   // Never let an empty/none-matched chain stall the queue: fall back to whatever
   // free models opencode reports.
   if (!chain.length) return live.filter((m) => m.free).map((m) => m.id);
@@ -349,7 +355,11 @@ function runOnce({ task, model, cwd }) {
     if (task.mode === 'question') args.push('--agent', 'fmcns-question');
     args.push('--auto');
 
-    const child = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
+    // Pass opencode its credential env with the pay-per-token keys stripped
+    // (services/billingGuard.js): this process inherits whatever is exported in
+    // the shell, and opencode would spend an ANTHROPIC_API_KEY or OPENAI_API_KEY
+    // without ever asking. Free opencode models need no key.
+    const child = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: opencodeEnv() });
     child.stdin.write(task.prompt);
     child.stdin.end();
 
@@ -760,6 +770,7 @@ async function main() {
   console.log(dim(`  queue : ${QUEUE_URL}`));
   console.log(dim(`  repo  : ${RUNNER_REPO}`));
   console.log(dim(`  models: Claude (queue's priority lane) → OpenCode Go → free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
+  console.log(dim(`  money : nothing bills per token — subscriptions only (ALLOW_METERED_API=1 would permit real spending). Paid OpenCode Go lane: ${GO_LANE_ENABLED ? 'on (OPENCODE_GO=0 turns it off)' : 'off'}.`));
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));

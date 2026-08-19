@@ -26,6 +26,8 @@ import { homedir } from 'node:os';
 import { registerTextCall, unregisterTextCall } from '../textCallRegistry.js';
 import { shq } from '../shellQuote.js';
 
+import { scrubMeteredKeys } from '../billingGuard.js';
+
 export const id = 'opencode';
 export const label = 'OpenCode';
 
@@ -41,9 +43,16 @@ export function resolveBin() {
 
 // opencode reads its own provider credentials (auth.json, provider env vars such
 // as OPENCODE_API_KEY for Zen, project .env) — so unlike the Claude provider we
-// must NOT strip API keys from the spawned env; they are the credential source.
+// keep the credential env in place; those keys are the credential source. The one
+// exception is the pay-per-token pair, stripped by the billing guard below.
 export function spawnEnv(extra = {}) {
-  return { ...process.env, ...extra };
+  // Unlike the Claude Code provider, opencode is *given* provider keys on purpose —
+  // that's how it reaches backends. But pay-per-token keys are removed unless real
+  // spending is explicitly allowed (billingGuard.js): opencode would use an
+  // ANTHROPIC_API_KEY or OPENAI_API_KEY without asking, and that bill would only
+  // show up on an invoice. The free opencode models need no key at all, and the
+  // Go-plan models authenticate through the plan, so nothing legitimate is lost.
+  return scrubMeteredKeys({ ...process.env, ...extra });
 }
 
 export function streamEventToChunks(evt, onChunk) {
