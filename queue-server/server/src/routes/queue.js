@@ -66,10 +66,15 @@ export function queueRoutes() {
       // with no live agent task.
       const task = p.agent_task_id ? findAgentTask(p.agent_task_id) : null;
       const running = p.status === 'running';
+      const messages = queue.listMessages(p.id);
       return {
         ...p,
         pending_question: p.pending_question ? JSON.parse(p.pending_question) : null,
-        messages: queue.listMessages(p.id),
+        messages,
+        // The three-line outcome the card shows for a finished task, so the Flow
+        // reads as a list of results rather than a list of statuses. Derived from
+        // the thread (which keeps the full report) — see promptQueue.resultLineFor.
+        result_line: queue.resultLineFor(p, messages),
         run_state: task?.run_state ?? null,
         heartbeat_at: task?.heartbeat_at ?? null,
         // Which models this task has actually been through. Tracked in the DB

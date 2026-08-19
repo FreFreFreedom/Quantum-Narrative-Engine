@@ -38,11 +38,12 @@ import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { roleBriefFor } from './briefing.js';
 import { generateText as generateAiText } from './ai/text.js';
-import { USER_FACING_STYLE } from './ai/style.js';
+import { USER_FACING_STYLE, CONCISE_STYLE } from './ai/style.js';
 import { recordExhaustion, isExhausted } from './ai/router.js';
 import { getClaudeUsage } from './claudeUsage.js';
 import { shq } from './shellQuote.js';
 import { containerFreeBytes } from '../lib/memHeadroom.js';
+import { conciseQuestionPayload } from '../lib/concise.js';
 
 // Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
 // before process.cwd(), so agent-tasks.json etc. land on durable storage even if DATA_DIR
@@ -81,7 +82,27 @@ const ASK_USER_INSTRUCTION = [
   QUESTION_MARKER, '\n',
   'Followed by a single-line JSON object: {"question":"...", "options":["choice 1","choice 2"]}\n',
   'Two to four options, each a complete actionable answer (not bare yes/no). ',
+  'The question is shown on a card as a single short line with the options as ',
+  'buttons underneath, so: ONE sentence of 15 words or fewer ending in a question ',
+  'mark, no preamble and no background, and each option 8 words or fewer. Anything ',
+  'longer is trimmed away before the user sees it. ',
   'Only emit this if you genuinely need an answer before continuing.',
+].join('');
+
+// The report length rule lives OUTSIDE the two prompt templates on purpose:
+// setSettings() writes the whole merged settings object to agent-settings.json, so a
+// queue that has ever been paused has a frozen copy of executionPrompt/questionPrompt
+// on disk — editing the defaults here would silently not reach it. buildTaskPrompt
+// appends this instead, guarded on the marker so a template that already carries it
+// is not given it twice.
+export const BREVITY_MARKER = 'SUMMARY LENGTH RULE';
+const BREVITY_INSTRUCTION = [
+  '\n\n', BREVITY_MARKER, ' — the summary section is read on a card in the app that ',
+  'shows THREE SHORT LINES and trims the rest away. Write it that short: one plain ',
+  'sentence (under 20 words) saying what now works or what stopped you, then at most ',
+  'two more short lines, and only if the user must do or know something. No preamble, ',
+  'no restating the request, no file lists, no sign-off. Full technical detail belongs ',
+  'in the body of your reply ABOVE the summary section, never inside it.',
 ].join('');
 
 export const PRESETS = {
@@ -512,11 +533,12 @@ async function runUserSummary(taskId) {
       task.status === 'blocked' ? 'The task was BLOCKED: explain briefly why. ' : '',
       'Do NOT invent or assume: only state what the report actually shows. ',
       `${USER_FACING_STYLE} `,
+      `${CONCISE_STYLE} `,
       'Produce ONLY the summary, no preamble.\n\n',
       `Original request:\n${task.description || task.title || '(unknown)'}\n\n`,
       `Technical report:\n${report.slice(-12000)}`,
     ].join('');
-    const out = await generateAiText({ prompt, feature: 'summary', maxTokens: 400, label: 'taskRunner:summary' });
+    const out = await generateAiText({ prompt, feature: 'summary', maxTokens: 180, label: 'taskRunner:summary' });
     if (out.text) {
       const updated = updateTask(taskId, { user_summary: out.text });
       if (updated) broadcastTask(updated);
@@ -1246,6 +1268,7 @@ export function buildTaskPrompt(next) {
   // append it rather than silently dropping the role brief for custom templates.
   if (roleBrief && !tpl.includes('{{roleBrief}}')) prompt += '\n\n' + roleBrief;
   if (!prompt.includes(SUMMARY_SECTION_MARKER)) prompt += '\n\n' + (isQuestion ? QUESTION_SUMMARY_INSTRUCTION : SUMMARY_SECTION_INSTRUCTION);
+  if (!prompt.includes(BREVITY_MARKER)) prompt += BREVITY_INSTRUCTION;
   if (next.work_prompt_id) prompt += ASK_USER_INSTRUCTION;
   return prompt;
 }
@@ -1711,9 +1734,9 @@ export function extractPendingQuestion(raw) {
       const q = String(parsed.question || '').trim();
       if (!q) return { text: head, question: null };
       const options = Array.isArray(parsed.options) ? parsed.options.map((o) => String(o).trim()).filter(Boolean).slice(0, 4) : [];
-      return { text: head, question: { question: q, options } };
+      return { text: head, question: conciseQuestionPayload({ question: q, options }) };
     } catch {}
   }
   const plain = body.replace(/```\w*|```/g, '').trim();
-  return { text: head, question: plain ? { question: plain, options: [] } : null };
+  return { text: head, question: plain ? conciseQuestionPayload({ question: plain, options: [] }) : null };
 }

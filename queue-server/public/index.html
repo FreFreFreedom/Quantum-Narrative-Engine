@@ -493,6 +493,13 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-item-meta .q-runstate { color:#2a6d3b; font-weight:600; }
 .q-item-meta .q-heartbeat-warn { color:#b3541e; font-weight:600; }
 .q-item-q { font-size:10.5px; color:var(--c-warn); margin-top:5px; background:var(--c-warn-tint); border-radius:5px; padding:5px 7px; }
+/* Three lines, hard. Both the question a task is waiting on and the result a
+   finished task reports are already trimmed by the server, but a clamp here is
+   what actually guarantees a card never grows into a paragraph — the full text is
+   always in the thread inside the card. */
+.q-item-q.clamped, .q-result.clamped { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.q-result { font-size:10.5px; color:var(--c-ink-3); margin-top:5px; background:var(--c-surface-2); border-radius:5px; padding:5px 7px; line-height:1.5; }
+.q-result.blocked { color:var(--c-danger); background:var(--c-danger-tint); }
 .q-drag-handle { cursor:grab; color:var(--c-ink-5); font-size:12px; flex-shrink:0; }
 .q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
 .q-item-arrows { display:flex; gap:5px; margin-top:6px; }
@@ -4166,15 +4173,20 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) : ''}
+    ${p.pending_question ? qQuestionBlockHtml(p) : ''}
+    ${finished ? qResultLineHtml(p) : ''}
     ${finished ? qCostLine(p) : ''}
     ${finished ? qShipLine(p) : ''}
-    ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
     ${actions}
   </div>
   ${qSelected && qSelected.id === p.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
 }
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+// qEsc goes through a text node, which escapes & < > but NOT quotes — fine for element
+// bodies, not for an attribute holding agent-written text (a single " in a task result
+// would end the attribute early and spill the rest as markup).
+function qEscAttr(s) { return qEsc(s).replace(/"/g, '&quot;'); }
 
 // Long bodies in the detail boxes (a suggestion's Why, a component's What) are
 // folded to their opening sentence with a `more ▾` link. Nothing is thrown away
@@ -4255,19 +4267,50 @@ function qCardState(p) {
   if (p.status === 'running') return 'running';
   return '';
 }
+// Roughly where three lines of this 10.5px text run out — past it the `.clamped`
+// CSS folds the box and the full wording stays in the title tooltip and the thread.
 function qQuestionBlockHtml(p, { showQuestion = true } = {}) {
   if (!p.pending_question) return '';
   const opts = p.pending_question.options || [];
+  const q = String(p.pending_question.question || '');
   return `<div class="q-question-block" data-qid="${p.id}">
-    ${showQuestion ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
+    ${showQuestion ? `<div class="q-item-q clamped" title="${qEscAttr(q)}">🙋 ${qEsc(q)}</div>` : ''}
     ${opts.length ? `<div class="q-opts-row">${opts.map(o => `<button class="q-optbtn" data-opt="${encodeURIComponent(o)}">${qEsc(o)}</button>`).join('')}</div>` : ''}
   </div>`;
+}
+// A long agent report inside the thread pushed the reply box off the screen — the
+// one thing you open a finished task to reach. Folded to its opening lines with the
+// page's existing `more ▾` reveal (the delegated [data-clampmore] handler above),
+// so nothing is lost and no re-render is needed to expand it.
+const Q_THREAD_CLAMP_CHARS = 260;
+function qThreadBodyHtml(text) {
+  const full = String(text == null ? '' : text);
+  const flat = full.replace(/\s+/g, ' ').trim();
+  if (flat.length <= Q_THREAD_CLAMP_CHARS) return qEsc(full);
+  const cut = flat.slice(0, Q_THREAD_CLAMP_CHARS).replace(/\s\S*$/, '');
+  return `<span data-clampshort>${qEsc(cut)}… <span class="nb-more" data-clampmore>more ▾</span></span><span data-clampfull hidden>${qEsc(full)}</span>`;
+}
+
+// What a finished task actually produced, in three lines, right on the card — the
+// Flow used to show only a status pill, so "what happened?" meant opening every
+// finished task in turn. The server derives this from the agent's own summary
+// (result_line); the full summary is in the thread when the card is opened.
+function qResultLineHtml(p) {
+  const line = String(p.result_line || '').trim();
+  if (!line || p.pending_question) return '';
+  const mark = p.status === 'blocked' ? '⚠️' : p.status === 'cancelled' ? '⛔' : '✅';
+  return `<div class="q-result clamped${p.status === 'blocked' ? ' blocked' : ''}" title="${qEscAttr(line)}">${mark} ${qEsc(line)}</div>`;
 }
 // Wires option buttons rendered by qQuestionBlockHtml — a click both answers AND relaunches
 // right away (placement 'front'), matching how picking an option always meant "go" here.
 function qWireQuestionBlock(host, onAnswer) {
   host.querySelectorAll('.q-question-block [data-opt]').forEach(b => {
-    b.onclick = () => onAnswer(host.querySelector('.q-question-block').getAttribute('data-qid'), decodeURIComponent(b.getAttribute('data-opt')), 'front');
+    b.onclick = (ev) => {
+      ev.stopPropagation();
+      const block = b.closest('.q-question-block');
+      if (!block) return;
+      onAnswer(block.getAttribute('data-qid'), decodeURIComponent(b.getAttribute('data-opt')), 'front');
+    };
   });
 }
 // Reply textarea + two buttons: relaunch now (front of its turn) or save the answer and
@@ -4502,11 +4545,20 @@ function renderFlow() {
   // Row wiring
   const filterClear = document.getElementById('flowFilterClear');
   if (filterClear) filterClear.onclick = () => { flowComponentFilter = null; renderFlow(); };
+  // Preset answers now live on the row itself, so a question can be answered
+  // without opening anything. Wired before the row's own click handler so the
+  // stopPropagation inside it wins over "toggle the card".
+  qWireQuestionBlock(host, async (id, text, placement) => {
+    try { await qReply(id, text, placement); }
+    catch (e) { alert('Could not send: ' + e.message); }
+  });
   host.querySelectorAll('.q-item').forEach(el => {
     const id = el.getAttribute('data-qid');
     el.onclick = (e) => {
       if (e.target.closest('.q-arrow')) return;
       if (e.target.closest('.cardbtn')) return;
+      if (e.target.closest('.q-optbtn')) return;
+      if (e.target.closest('.nb-more')) return;
       if (e.target.closest('.q-title-inline')) return;
       if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; renderFlow(); return; }
       flowSideSel = null;
@@ -4993,7 +5045,7 @@ function qRenderDetail(p) {
 
   const threadHost = document.getElementById('qThread');
   threadHost.innerHTML = messages.length
-    ? messages.map(m => `<div class="q-thread-msg ${m.role}"><div class="q-thread-role">${m.role}</div>${qEsc(m.text)}</div>`).join('')
+    ? messages.map(m => `<div class="q-thread-msg ${m.role}"><div class="q-thread-role">${m.role}</div>${qThreadBodyHtml(m.text)}</div>`).join('')
     : '<div class="empty">No exchanges yet.</div>';
 
   if (p.pending_question) {
