@@ -495,6 +495,35 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
 .q-item-arrows { display:flex; gap:5px; margin-top:6px; }
 .q-item-arrows .q-arrow { padding:1px 7px; font-size:9px; }
+/* ---------- Card action bar ----------
+   Every box in the Queue and in Flow carries its own row of small symbol
+   buttons, always on screen — no click-to-open required to act on a card.
+   The symbols come from the #ic-* sprite at the top of <body>; the plain
+   English name of each one lives in its title/aria-label, not on screen, so
+   a list of cards stays scannable. Resting opacity is deliberately .62 and
+   not 0: a hover-only reveal would hide the buttons from touch entirely. */
+.card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
+.q-item:hover .card-actions, .flow-row:hover .card-actions, .arch-node:hover .card-actions, .card-actions:focus-within { opacity:1; }
+.cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
+.cardbtn:hover { color:var(--c-ink); background:var(--c-surface-2); }
+.cardbtn:focus-visible { outline:2px solid var(--c-accent); outline-offset:1px; }
+.cardbtn.primary { background:var(--c-brand); color:#fff; }
+.cardbtn.primary:hover { background:var(--c-brand); color:#fff; opacity:.88; }
+.cardbtn.danger:hover { color:var(--c-danger); background:var(--c-danger-tint, var(--c-surface-2)); }
+/* Armed = first click on a destructive icon; a second click within 3s commits. */
+.cardbtn.armed { color:#fff; background:var(--c-danger); }
+.cardbtn.armed:hover { color:#fff; background:var(--c-danger); }
+.cardbtn .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+/* On a graph node the row has to stay small — three symbols, tighter buttons. */
+.arch-node .card-actions { justify-content:flex-start; margin-top:6px; gap:0; }
+.arch-node .cardbtn { width:22px; height:22px; }
+.arch-node .cardbtn .ic { width:13px; height:13px; }
+/* The checklist stays one line per component, so its symbols sit inline at the
+   end of the row rather than under it — no rule, no margin. */
+.arch-list-row .card-actions { margin:0; padding:0; border-top:none; flex:none; gap:0; }
+.arch-list-row:hover .card-actions, .arch-list-row .card-actions:focus-within { opacity:1; }
+.arch-list-row .cardbtn { width:22px; height:22px; }
+.arch-list-row .cardbtn .ic { width:13px; height:13px; }
 /* The row-level Start button for a parked task — deliberately louder than the
    small ▲▼ reorder arrows so it reads as "press this to run it", not just
    another control, and never requires opening the task to find. */
@@ -625,8 +654,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-kind-badge.chantier { background:#5c7a9d; }
 .sg-kind-badge.integration { background:#8a5a1e; }
 .sg-status-badge { font-size:9px; padding:2px 8px; border-radius:20px; flex-shrink:0; background:var(--c-surface-3); color:var(--c-ink-3); }
-.sg-dismiss-x { margin-left:auto; padding:2px 8px; font-size:11px; color:var(--c-ink-4); flex-shrink:0; }
-.sg-dismiss-x:hover { color:#b23a2f; border-color:#b23a2f; background:var(--c-surface-3); }
 .sg-rationale { font-size:11px; color:var(--c-ink-3); margin:5px 0 8px; line-height:1.4; }
 .sg-rationale.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:4px; }
 .sg-more { font-size:10px; color:var(--c-brand); cursor:pointer; }
@@ -989,6 +1016,32 @@ button:active { transform: translateY(1px) scale(.99); }
 </style>
 </head>
 <body>
+<!-- ---------- Card-action icon sprite ----------
+     One 16x16 line-drawn symbol per card action. Every path is stroked with
+     currentColor and no fill, so a button just sets `color:` and the icon
+     follows — which is how these stay legible in both light and dark themes
+     without a second set of assets. Used only through iconBtn() below. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ic-play" viewBox="0 0 16 16"><path d="M5 3.4v9.2L13 8z"/></symbol>
+  <symbol id="ic-pause" viewBox="0 0 16 16"><path d="M6 3.5v9M10 3.5v9"/></symbol>
+  <symbol id="ic-top" viewBox="0 0 16 16"><path d="M3 3h10M8 13V6M4.5 9.5 8 6l3.5 3.5"/></symbol>
+  <symbol id="ic-up" viewBox="0 0 16 16"><path d="M3.5 10 8 5.5l4.5 4.5"/></symbol>
+  <symbol id="ic-down" viewBox="0 0 16 16"><path d="M3.5 6 8 10.5 12.5 6"/></symbol>
+  <symbol id="ic-again" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.6V5h-2.4"/></symbol>
+  <symbol id="ic-again-fresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.6V5h-2.4"/><path d="M8 6.4v3.2M6.4 8h3.2"/></symbol>
+  <symbol id="ic-chat" viewBox="0 0 16 16"><path d="M13.5 9.5a1.5 1.5 0 0 1-1.5 1.5H6l-3 2.5V4.5A1.5 1.5 0 0 1 4.5 3H12a1.5 1.5 0 0 1 1.5 1.5z"/></symbol>
+  <symbol id="ic-trash" viewBox="0 0 16 16"><path d="M2.8 4.3h10.4M6.4 4.3V2.9h3.2v1.4M4.2 4.3l.6 8.3a.9.9 0 0 0 .9.8h4.6a.9.9 0 0 0 .9-.8l.6-8.3"/></symbol>
+  <symbol id="ic-spark" viewBox="0 0 16 16"><path d="M8 2.2 9.4 6 13 7.4 9.4 8.8 8 12.6 6.6 8.8 3 7.4 6.6 6z"/><path d="M12.6 11.4v2.4M11.4 12.6h2.4"/></symbol>
+  <symbol id="ic-eraser" viewBox="0 0 16 16"><path d="M7.6 12.8H13"/><path d="m9.6 12.8-6-6 4.8-4.2 5.2 5.2z"/><path d="m6.2 4.4 4.6 4.6"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 16 16"><path d="m3.2 8.4 3.2 3.2 6.4-7.2"/></symbol>
+  <symbol id="ic-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+  <symbol id="ic-bolt" viewBox="0 0 16 16"><path d="M9 1.8 3.6 9h3.6l-.6 5.2L12.4 7H8.8z"/></symbol>
+  <symbol id="ic-seed" viewBox="0 0 16 16"><path d="M8 14V7.4"/><path d="M8 7.4C8 4.6 10 2.4 13.2 2.4c0 3-2 5-5.2 5z"/><path d="M8 10.2C8 8.4 6.6 7 4.2 7c0 2 1.5 3.2 3.8 3.2z"/></symbol>
+  <symbol id="ic-queue" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h6"/></symbol>
+  <symbol id="ic-pencil" viewBox="0 0 16 16"><path d="M11.2 2.6 13.4 4.8 5.6 12.6l-3 .8.8-3z"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 0 1-8.6 3.5"/><path d="M3 8a5 5 0 0 1 8.6-3.5"/><path d="M11.6 1.9v2.6H9M4.4 14.1v-2.6H7"/></symbol>
+</defs></svg>
+
 <div id="loginGate" class="loginbox">
   <h2 style="margin-top:0;">FMCNS Fractal Navigator</h2>
   <p>Enter the app password to load live data.</p>
@@ -3681,6 +3734,125 @@ async function qPersistReorder(fullIds) {
   catch (e) { console.error('reorder failed', e); }
   await qLoad();
 }
+// ---------- One place where every task action lives ----------
+// Both the symbol buttons on a card and (where they remain) the buttons in the
+// opened panel go through here, so the two surfaces can never drift apart.
+// Each branch is the same endpoint the detail panel used to call directly.
+async function qAction(action, id, btn) {
+  const p = qPrompts.find(x => x.id === id);
+  if (btn) btn.disabled = true;
+  try {
+    switch (action) {
+      case 'up': qMoveStep(id, -1); break;
+      case 'down': qMoveStep(id, 1); break;
+      case 'pause':
+        await apiWrite(`/api/travaux/prompts/${id}/pause`, 'POST');
+        await qLoad();
+        break;
+      case 'first':
+        await apiWrite(`/api/travaux/prompts/${id}/first`, 'POST');
+        await qLoad();
+        break;
+      case 'clear-context':
+        await apiWrite(`/api/travaux/prompts/${id}/clear-context`, 'POST');
+        await qLoad();
+        break;
+      case 'start':
+      case 'rerun':
+        await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
+        await apiWrite('/api/travaux/prompts/advance', 'POST');
+        await qLoad();
+        break;
+      case 'rerun-fresh':
+        await apiWrite(`/api/travaux/prompts/${id}/clear-context`, 'POST');
+        await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
+        await apiWrite('/api/travaux/prompts/advance', 'POST');
+        await qLoad();
+        break;
+      case 'delete':
+        await apiWrite(`/api/travaux/prompts/${id}`, 'DELETE');
+        if (qSelected && qSelected.id === id) qSelected = null;
+        await qLoad();
+        break;
+      case 'discuss':
+        openStudio({ type: 'task', subjectId: id, title: (p && p.title) || 'Task', onDone: () => { qLoad(); } });
+        break;
+      case 'world-idea':
+        qWorldIdeaModal(id, () => { if (qSelected && qSelected.id === id) qInspireReRender(qSelected); else renderFlow(); });
+        break;
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Suggestion + seed actions, same idea as qAction: one implementation shared by
+// the symbol buttons on the card and by the opened detail panel. When the card
+// happens to be open, its editable prompt box wins over the stored prompt — the
+// only thing the panel still adds that the card can't.
+async function sgAction(action, id, btn) {
+  const s = tvSuggestions.find(x => x.id === id);
+  if (!s) return;
+  if (action === 'sg-discuss') {
+    openStudio({ type: 'suggestion', subjectId: id, title: s.title || 'Suggestion', onDone: () => { loadSuggestions(); qLoad(); } });
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    if (action === 'sg-accept') {
+      const edited = document.querySelector('#flowExpanded [data-role="prompt"]');
+      const we = flowWorldEntry('suggestion', id);
+      const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
+      await apiWrite(`/api/travaux/suggestions/${id}/accept`, 'POST', { prompt: edited ? edited.value : s.prompt, inspiration });
+      await loadSuggestions();
+      await qLoad();
+    } else if (action === 'sg-dismiss') {
+      await apiWrite(`/api/travaux/suggestions/${id}/dismiss`, 'POST', {});
+      await loadSuggestions();
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function seedAction(action, id, btn) {
+  const idea = tvIdeas.find(x => x.id === id);
+  if (!idea) return;
+  if (action === 'seed-discuss') {
+    openStudio({ type: 'seed', subjectId: id, title: idea.title || 'Seed', onDone: () => { loadIdeas(); qLoad(); } });
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    if (action === 'seed-queue') {
+      const we = flowWorldEntry('idea', id);
+      const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
+      await apiWrite(`/api/travaux/ideas/${id}/promote`, 'POST', { inspiration });
+      await loadIdeas();
+      await qLoad();
+    } else if (action === 'seed-plant') {
+      await apiWrite(`/api/travaux/ideas/${id}/plant`, 'POST', {});
+      await loadIdeas();
+      await loadArchNodes();
+    } else if (action === 'seed-delete') {
+      // Optimistic: the row disappears at once, the DELETE catches up behind it.
+      tvIdeas = tvIdeas.filter(x => x.id !== id);
+      if (flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === id) flowSideSel = null;
+      renderFlow();
+      try { await apiWrite(`/api/travaux/ideas/${id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+// The single entry point every symbol button in the Flow list goes through.
+function qCardDispatch(action, id, btn) {
+  if (action.startsWith('sg-')) return sgAction(action, id, btn);
+  if (action.startsWith('seed-')) return seedAction(action, id, btn);
+  return qAction(action, id, btn);
+}
+
 function qMoveStep(id, dir) {
   const ord = qReorderableIds();
   const idx = ord.indexOf(id);
@@ -3802,13 +3974,29 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const startBtn = p.status === 'paused'
     ? `<button class="ctrlbtn q-arrow q-rowstart" data-qplay="${p.id}" title="Marks this task ready — your local runner picks it up when it's running. This does not run anything in the app.">✓ Ready</button>`
     : '';
-  const pauseBtn = ['running', 'queued'].includes(p.status)
-    ? `<button class="ctrlbtn q-arrow" data-qpause="${p.id}" title="${p.status === 'running' ? 'Stop it now — goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸</button>`
-    : '';
   const state = qCardState(p);
-  const worldIdeaBtn = finished
-    ? `<button class="ctrlbtn q-worldidea-btn" data-qid="${p.id}" title="Add a bold idea from this completed task" style="font-size:11px;padding:1px 6px;">✨ Idea</button>`
-    : '';
+  // Every action a task has, as symbols, right on the card — nothing here needs
+  // the card opened first. Conditions mirror the detail panel's exactly.
+  const activeSession = p.provider === 'opencode' ? p.opencode_session_id : p.session_id;
+  const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
+  const actions = cardActions([
+    ['running', 'queued'].includes(p.status)
+      ? iconBtn('pause', p.status === 'running'
+          ? 'Stop it now — it goes back to parked, not queued, so it won’t restart on its own'
+          : 'Skip it for now — it won’t start until you resume it', 'pause', p.id)
+      : '',
+    ['queued', 'paused'].includes(p.status)
+      ? iconBtn('top', 'Move it to the front of the queue', 'first', p.id) : '',
+    reorderable ? iconBtn('up', 'Move it up one place', 'up', p.id) : '',
+    reorderable ? iconBtn('down', 'Move it down one place', 'down', p.id) : '',
+    activeSession && p.status !== 'running'
+      ? iconBtn('eraser', 'Forget the saved conversation and start fresh next time — saves credit', 'clear-context', p.id) : '',
+    canRerun ? iconBtn('again', 'Run it again, carrying on from where it left off', 'rerun', p.id) : '',
+    canRerun ? iconBtn('again-fresh', 'Run it again from scratch, with no memory of the last try', 'rerun-fresh', p.id) : '',
+    finished ? iconBtn('spark', 'Add a bold idea from this finished task', 'world-idea', p.id) : '',
+    iconBtn('chat', 'Talk about this task — it never touches the work itself', 'discuss', p.id),
+    iconBtn('trash', 'Remove this task', 'delete', p.id, 'danger'),
+  ]);
   return `
   <div class="flow-row q-item${sel ? ' sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="q-item-top">
@@ -3821,24 +4009,51 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
       ${qInspireBadge(p)}
       ${qStopAfterBadge(p)}
-      ${worldIdeaBtn}
     </div>
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) : ''}
     ${finished ? qCostLine(p) : ''}
     ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
-    ${reorderable || pauseBtn ? `
-      <div class="q-item-arrows">
-        ${pauseBtn}
-        ${reorderable ? `
-        <button class="ctrlbtn q-arrow" data-qup="${p.id}" title="Move up">▲</button>
-        <button class="ctrlbtn q-arrow" data-qdown="${p.id}" title="Move down">▼</button>` : ''}
-      </div>` : ''}
+    ${actions}
   </div>
   ${qSelected && qSelected.id === p.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
 }
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+// ---------- Card action buttons ----------
+// One symbol button. `label` is the plain-English sentence shown on hover and
+// read out by a screen reader — it is the only place the action is spelled out,
+// so it is never allowed to be jargon. `act` + `id` are what the single
+// delegated click handler on each list dispatches on.
+function iconBtn(icon, label, act, id, kind = '', extra = '') {
+  return `<button type="button" class="cardbtn${kind ? ' ' + kind : ''}" data-act="${act}" data-id="${qEsc(id)}" title="${qEsc(label)}" aria-label="${qEsc(label)}"${extra}><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-${icon}"/></svg></button>`;
+}
+// Wraps a list of iconBtn()s; returns '' for an empty set so a card with no
+// available action does not grow an empty hairline rule.
+function cardActions(btns) {
+  const html = btns.filter(Boolean).join('');
+  return html ? `<div class="card-actions">${html}</div>` : '';
+}
+// Destructive icons ask twice: the first click arms the button (turns it red,
+// swaps the hover label), a second within 3s commits. A 26px trash icon is a
+// mis-click away from losing a task, and there is no undo behind it.
+const CARDBTN_ARM_MS = 3000;
+function cardBtnConfirm(btn, doIt) {
+  if (btn.dataset.armed === '1') { delete btn.dataset.armed; doIt(); return; }
+  const label = btn.getAttribute('aria-label');
+  btn.dataset.armed = '1';
+  btn.classList.add('armed');
+  btn.title = 'Click again to confirm';
+  btn.setAttribute('aria-label', 'Click again to confirm');
+  setTimeout(() => {
+    if (!btn.isConnected || btn.dataset.armed !== '1') return;
+    delete btn.dataset.armed;
+    btn.classList.remove('armed');
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  }, CARDBTN_ARM_MS);
+}
 
 // ---------- Shared queue-row bricks — used by the Flow tab AND the Queue panel ----------
 // One place for the status pill, the question/options block and the reply box, so the two
@@ -4035,9 +4250,13 @@ function renderFlow() {
             ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
             <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
-            ${s.status === 'new' ? `<button class="ctrlbtn sg-dismiss-x" data-dismiss-sid="${s.id}" title="Dismiss — clear this suggestion">✕</button>` : ''}
           </div>
           ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
+          ${cardActions([
+            s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
+            iconBtn('chat', 'Talk it over before deciding', 'sg-discuss', s.id),
+            s.status === 'new' ? iconBtn('x', 'Dismiss this suggestion', 'sg-dismiss', s.id, 'danger') : '',
+          ])}
         </div>
         ${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`).join(''));
     }
@@ -4068,6 +4287,12 @@ function renderFlow() {
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
           </div>
           ${i.notes ? `<div class="sg-rationale">${qEsc(i.notes)}</div>` : ''}
+          ${cardActions([
+            iconBtn('queue', 'Send it to the queue as a task', 'seed-queue', i.id, 'primary'),
+            iconBtn('chat', 'Talk this idea over', 'seed-discuss', i.id),
+            i.arch_node_id ? '' : iconBtn('seed', 'Plant it in the tech tree', 'seed-plant', i.id),
+            iconBtn('trash', 'Remove this idea', 'seed-delete', i.id, 'danger'),
+          ])}
         </div>
         ${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
   }
@@ -4092,6 +4317,7 @@ function renderFlow() {
     const id = el.getAttribute('data-qid');
     el.onclick = (e) => {
       if (e.target.closest('.q-arrow')) return;
+      if (e.target.closest('.cardbtn')) return;
       if (e.target.closest('.q-title-inline')) return;
       if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; renderFlow(); return; }
       flowSideSel = null;
@@ -4142,14 +4368,15 @@ function renderFlow() {
     });
     el.addEventListener('dragend', () => { qDragQId = null; host.querySelectorAll('.flow-row').forEach(x => x.classList.remove('drag-over', 'drag')); });
   });
-  host.querySelectorAll('[data-qup]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qup'), -1); }; });
-  host.querySelectorAll('[data-qdown]').forEach(b => { b.onclick = (e) => { e.stopPropagation(); qMoveStep(b.getAttribute('data-qdown'), 1); }; });
-  host.querySelectorAll('[data-qpause]').forEach(b => {
-    b.onclick = async (e) => {
+  // Every symbol button on every card in this list, in one delegated handler.
+  // stopPropagation is what keeps a button press from also toggling the card open.
+  host.querySelectorAll('.cardbtn').forEach(b => {
+    b.onclick = (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      b.disabled = true;
-      try { await apiWrite(`/api/travaux/prompts/${b.getAttribute('data-qpause')}/pause`, 'POST'); await qLoad(); }
-      catch (err) { b.disabled = false; alert('Error: ' + err.message); }
+      const act = b.dataset.act, id = b.dataset.id;
+      if (b.classList.contains('danger')) { cardBtnConfirm(b, () => qCardDispatch(act, id, b)); return; }
+      qCardDispatch(act, id, b);
     };
   });
   host.querySelectorAll('[data-qplay]').forEach(b => {
@@ -4172,17 +4399,6 @@ function renderFlow() {
       flowSideSel = { kind: 'suggestion', id };
       qSelected = null;
       renderFlow();
-    };
-  });
-  // One-click dismiss right on the row — no need to open the detail first.
-  host.querySelectorAll('[data-dismiss-sid]').forEach(b => {
-    b.onclick = async (e) => {
-      e.stopPropagation();
-      b.disabled = true;
-      try {
-        await apiWrite(`/api/travaux/suggestions/${b.getAttribute('data-dismiss-sid')}/dismiss`, 'POST', {});
-        await loadSuggestions();
-      } catch (err) { b.disabled = false; }
     };
   });
   host.querySelectorAll('.flow-idrow').forEach(el => {
@@ -4219,13 +4435,6 @@ function renderFlow() {
   };
   const genBtn = document.getElementById('flowGenBtn');
   if (genBtn) genBtn.onclick = () => flowGenerateNow();
-  host.querySelectorAll('.q-worldidea-btn').forEach(b => {
-    b.onclick = (e) => {
-      e.stopPropagation();
-      const taskId = b.getAttribute('data-qid');
-      qWorldIdeaModal(taskId, () => { renderFlow(); });
-    };
-  });
   const seedToggle = document.getElementById('flowSeedToggle');
   if (seedToggle) seedToggle.onclick = () => {
     const box = document.getElementById('flowSeedAdd');
@@ -4291,12 +4500,7 @@ function renderSeedDetail(idea) {
     <div class="id-form-hint" style="margin:6px 0;">Nothing runs from an idea — they sit here to be revisited, queued, planted, or discussed.</div>
     ${idea.work_prompt_id ? `<div class="id-done-pill">Queued — <a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">view in Flow</a></div>` : ''}
     ${idea.arch_node_id ? `<div class="id-done-pill">Planted — <a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">view in Tech Tree</a></div>` : ''}
-    <div class="arch-actionrow">
-      <button id="seedDiscussBtn">💬 Discuss</button>
-      <button id="seedPromoteBtn">→ Queue${flowWorldPickSuffix('idea', idea.id)}</button>
-      ${idea.arch_node_id ? '' : '<button id="seedPlantBtn">🌱 Plant in tree</button>'}
-      <button class="danger" id="seedDeleteBtn">Remove</button>
-    </div>
+    <div class="id-form-hint">Queue it, plant it, discuss it or remove it with the symbols on the card above.</div>
     <div class="q-inspire-wrap" id="seedWorldHost"></div>
     <div class="arch-qf-status" id="seedDetailStatus"></div>`;
   const save = () => apiWrite(`/api/travaux/ideas/${idea.id}`, 'PATCH', {
@@ -4307,35 +4511,6 @@ function renderSeedDetail(idea) {
   host.querySelector('[data-role="title"]').onblur = save;
   host.querySelector('[data-role="notes"]').onblur = save;
   host.querySelector('[data-role="tag"]').onblur = save;
-  document.getElementById('seedDiscussBtn').onclick = () => {
-    openStudio({
-      type: 'seed',
-      subjectId: idea.id,
-      title: (host.querySelector('[data-role="title"]').value || 'Seed').trim(),
-      onDone: () => { loadIdeas(); qLoad(); },
-    });
-  };
-  const promoteBtn = document.getElementById('seedPromoteBtn');
-  const promoteLabel = () => '→ Queue' + flowWorldPickSuffix('idea', idea.id);
-  promoteBtn.onclick = async (e) => {
-    e.target.disabled = true; e.target.textContent = '…';
-    const we = flowWorldEntry('idea', idea.id);
-    const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
-    try { await apiWrite(`/api/travaux/ideas/${idea.id}/promote`, 'POST', { inspiration }); await loadIdeas(); await qLoad(); }
-    catch (err) { e.target.disabled = false; e.target.textContent = promoteLabel(); alert('Error: ' + err.message); }
-  };
-  const plantBtn = document.getElementById('seedPlantBtn');
-  if (plantBtn) plantBtn.onclick = async (e) => {
-    e.target.disabled = true; e.target.textContent = '…';
-    try { await apiWrite(`/api/travaux/ideas/${idea.id}/plant`, 'POST', {}); await loadIdeas(); await loadArchNodes(); }
-    catch (err) { e.target.disabled = false; e.target.textContent = '🌱 Plant in tree'; alert('Error: ' + err.message); }
-  };
-  document.getElementById('seedDeleteBtn').onclick = async () => {
-    tvIdeas = tvIdeas.filter(x => x.id !== idea.id);
-    flowSideSel = null;
-    renderFlow();
-    try { await apiWrite(`/api/travaux/ideas/${idea.id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
-  };
   const jump = host.querySelector('[data-jump]');
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
   const plantJump = host.querySelector('[data-plantjump]');
@@ -4343,7 +4518,7 @@ function renderSeedDetail(idea) {
   // The world-look, right on the seed: three shelves, picks carried to the
   // queue on promote. Rendered after the card so it never fights snap/restore.
   flowWorldRender('idea', idea.id, document.getElementById('seedWorldHost'), [idea.title, idea.notes].filter(Boolean).join('\n'),
-    () => { if (promoteBtn && !promoteBtn.disabled) promoteBtn.textContent = promoteLabel(); });
+    () => flowUpdatePickTitle('idea', idea.id, 'seed-queue', 'Send it to the queue as a task'));
   flowWorldSync('idea', idea.id);
   flowWorldPoll('idea', idea.id);
   qRestoreInputs(host, snap);
@@ -4365,11 +4540,7 @@ function renderSuggestionDetail(s) {
       <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
       <textarea class="q-input" data-role="prompt" rows="6" style="display:none;">${qEsc(s.prompt)}</textarea></div>
-      <div class="arch-actionrow">
-        <button class="primary" id="sgAcceptBtn">Accept → queue (set aside)${flowWorldPickSuffix('suggestion', s.id)}</button>
-        <button id="sgDiscussBtn">💬 Discuss first</button>
-        <button id="sgDismissBtn">Dismiss</button>
-      </div>` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Flow</a>` : 'Already in the queue.'}</div>` : ''}
+      <div class="id-form-hint">Accept, discuss or dismiss it with the symbols on the card above — any edit you make here is what gets accepted.</div>` : s.status === 'accepted' ? `<div class="sg-rationale">${s.work_prompt_id ? `Queued — <a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">view in Flow</a>` : 'Already in the queue.'}</div>` : ''}
     <div class="q-inspire-wrap" id="sgWorldHost"></div>
     <div class="arch-qf-status" id="sgDetailStatus"></div>`;
   const promptToggle = document.getElementById('sgPromptToggle');
@@ -4381,39 +4552,14 @@ function renderSuggestionDetail(s) {
       promptToggle.textContent = open ? 'Show full prompt ▸' : 'Hide prompt ▾';
     };
   }
-  const discussBtn = document.getElementById('sgDiscussBtn');
-  if (discussBtn) discussBtn.onclick = () => {
-    openStudio({
-      type: 'suggestion',
-      subjectId: s.id,
-      title: s.title || 'Suggestion',
-      onDone: () => { loadSuggestions(); qLoad(); },
-    });
-  };
-  const acceptBtn = document.getElementById('sgAcceptBtn');
-  const acceptLabel = () => 'Accept → queue (set aside)' + flowWorldPickSuffix('suggestion', s.id);
-  if (acceptBtn) acceptBtn.onclick = async () => {
-    const promptText = host.querySelector('[data-role="prompt"]').value;
-    acceptBtn.disabled = true; acceptBtn.textContent = 'Adding…';
-    const we = flowWorldEntry('suggestion', s.id);
-    const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
-    try { await apiWrite(`/api/travaux/suggestions/${s.id}/accept`, 'POST', { prompt: promptText, inspiration }); await loadSuggestions(); await qLoad(); }
-    catch (e) { acceptBtn.disabled = false; acceptBtn.textContent = acceptLabel(); alert('Error: ' + e.message); }
-  };
-  const dismissBtn = document.getElementById('sgDismissBtn');
-  if (dismissBtn) dismissBtn.onclick = async () => {
-    dismissBtn.disabled = true;
-    try { await apiWrite(`/api/travaux/suggestions/${s.id}/dismiss`, 'POST', {}); await loadSuggestions(); }
-    catch (e) { dismissBtn.disabled = false; alert('Error: ' + e.message); }
-  };
   const jump = host.querySelector('[data-jump]');
   if (jump) jump.onclick = (e) => { e.preventDefault(); jumpToQueueItem(jump.getAttribute('data-jump')); };
   // The world-look, right on the suggestion: three shelves, picks carried to the
   // queue on accept. Rendered after the card so it never fights the snap/restore.
-  // onChange keeps the Accept button's own label in sync with the pick count,
-  // since picking only re-renders the world panel, not this whole card.
+  // onChange keeps the card's Accept symbol hover-label in sync with the pick
+  // count, since picking only re-renders the world panel, not the whole list.
   flowWorldRender('suggestion', s.id, document.getElementById('sgWorldHost'), [s.title, s.prompt].filter(Boolean).join('\n'),
-    () => { if (acceptBtn && !acceptBtn.disabled) acceptBtn.textContent = acceptLabel(); });
+    () => flowUpdatePickTitle('suggestion', s.id, 'sg-accept', 'Accept it — adds it to the queue, parked'));
   flowWorldSync('suggestion', s.id);
   flowWorldPoll('suggestion', s.id);
   qRestoreInputs(host, snap);
@@ -4540,7 +4686,6 @@ function qRenderDetail(p) {
     </div>
     ${p.status === 'paused' ? `
     <div class="q-primary-action">
-      <button class="q-startbtn" id="qStartBtn" title="Marks this task ready — your local runner picks it up when it's running. This does not run anything in the app.">✓ Mark ready for runner</button>
       <div class="q-primary-hint" id="qPrimaryHint">${qPrimaryHintHtml(p)}</div>
     </div>` : ''}
     <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
@@ -4591,19 +4736,12 @@ function qRenderDetail(p) {
           </div>
           <div id="qReplyErr" class="q-err"></div>`
       : qReplyBoxHtml('qReply')}
-    <div class="q-row" style="margin-top:10px;">
-      ${['running','queued'].includes(p.status) ? `<button class="ctrlbtn" id="qPauseBtn" title="${p.status === 'running' ? 'Stop it now — it goes back to paused, not queued, so it won’t restart on its own.' : 'Skip it for now — it won’t start until you resume it.'}">⏸ Pause</button>` : ''}
-      ${['queued','running'].includes(p.status) ? `
+    ${['queued','running'].includes(p.status) ? `
+      <div class="q-row" style="margin-top:10px;">
         <label class="ctrlbtn" style="cursor:pointer;" title="When this task finishes, stop the whole queue instead of moving on to the next one.">
           <input type="checkbox" id="qStopAfterChk" ${p.stop_after ? 'checked' : ''} style="margin-right:4px;vertical-align:middle;">Pause queue after this
-        </label>` : ''}
-      ${['queued','paused'].includes(p.status) ? `<button class="ctrlbtn" id="qFirstBtn">Move to front</button>` : ''}
-      ${activeSession && p.status!=='running' ? `<button class="ctrlbtn" id="qClearCtxBtn" title="Drop the resumed session and start fresh on the next reply — saves credit on a long thread.">Clear context</button>` : ''}
-      ${canRerun ? `<button class="ctrlbtn" id="qRerunBtn" title="${p.status==='blocked' ? 'Marks it ready again, one tier stronger if this was on the auto policy — a block usually means the model ran out of depth, not luck. ' : 'Marks it ready again. '}Your local runner picks it up — this does not run anything in the app.">Ready again</button>` : ''}
-      ${canRerun ? `<button class="ctrlbtn" id="qRerunFreshBtn" title="Marks it ready again with a brand-new session instead of resuming the one that led here. Your local runner picks it up — this does not run anything in the app.">Ready again (fresh)</button>` : ''}
-      <button class="ctrlbtn" id="qDiscussBtn" title="Open a conversation about this task — its world-look ideas included. Never touches the running work.">💬 Discuss</button>
-      <button class="ctrlbtn" id="qDeleteBtn">Remove</button>
-    </div>
+        </label>
+      </div>` : ''}
   `;
 
   qWirePrimaryHint(host);
@@ -4686,72 +4824,13 @@ function qRenderDetail(p) {
   } else {
     qWireReplyBox(host, 'qReply', (text, placement) => qReply(p.id, text, placement));
   }
-  const startBtn = document.getElementById('qStartBtn');
-  if (startBtn) startBtn.onclick = async () => {
-    startBtn.disabled = true; startBtn.textContent = 'Marking ready…';
-    try {
-      await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
-      await apiWrite('/api/travaux/prompts/advance', 'POST');
-      await qLoad();
-    } catch (e) { startBtn.disabled = false; startBtn.textContent = '✓ Mark ready for runner'; alert('Error: ' + e.message); }
-  };
-  const pauseBtn = document.getElementById('qPauseBtn');
-  if (pauseBtn) pauseBtn.onclick = async () => {
-    pauseBtn.disabled = true; pauseBtn.textContent = 'Pausing…';
-    try {
-      await apiWrite(`/api/travaux/prompts/${p.id}/pause`, 'POST');
-      await qLoad();
-    } catch (e) { pauseBtn.disabled = false; pauseBtn.textContent = '⏸ Pause'; alert('Error: ' + e.message); }
-  };
   const stopAfterChk = document.getElementById('qStopAfterChk');
   if (stopAfterChk) stopAfterChk.onchange = async () => {
     try { await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { stop_after: stopAfterChk.checked }); await qLoad(); }
     catch (e) { stopAfterChk.checked = !stopAfterChk.checked; alert('Error: ' + e.message); }
   };
-  const firstBtn = document.getElementById('qFirstBtn');
-  if (firstBtn) firstBtn.onclick = async () => { await apiWrite(`/api/travaux/prompts/${p.id}/first`, 'POST'); await qLoad(); };
-  const clearCtxBtn = document.getElementById('qClearCtxBtn');
-  if (clearCtxBtn) clearCtxBtn.onclick = async () => {
-    clearCtxBtn.disabled = true; clearCtxBtn.textContent = 'Clearing…';
-    try { await apiWrite(`/api/travaux/prompts/${p.id}/clear-context`, 'POST'); await qLoad(); }
-    catch (e) { clearCtxBtn.disabled = false; clearCtxBtn.textContent = 'Clear context'; alert('Error: ' + e.message); }
-  };
-  const delBtn = document.getElementById('qDeleteBtn');
-  if (delBtn) delBtn.onclick = async () => {
-    await apiWrite(`/api/travaux/prompts/${p.id}`, 'DELETE');
-    qSelected = null;
-    await qLoad();
-  };
-  const discussBtn = document.getElementById('qDiscussBtn');
-  if (discussBtn) discussBtn.onclick = () => {
-    openStudio({
-      type: 'task',
-      subjectId: p.id,
-      title: p.title || 'Task',
-      onDone: () => { qLoad(); },
-    });
-  };
   const addWorldIdeaBtn = document.getElementById('qAddWorldIdeaBtn');
   if (addWorldIdeaBtn) addWorldIdeaBtn.onclick = () => qWorldIdeaModal(p.id, () => qInspireReRender(p));
-  const rerunBtn = document.getElementById('qRerunBtn');
-  if (rerunBtn) rerunBtn.onclick = async () => {
-    rerunBtn.disabled = true; rerunBtn.textContent = 'Marking ready…';
-    try {
-      await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
-      await apiWrite('/api/travaux/prompts/advance', 'POST');
-      await qLoad();
-    } catch (e) { rerunBtn.disabled = false; rerunBtn.textContent = 'Ready again'; alert('Error: ' + e.message); }
-  };
-  const rerunFreshBtn = document.getElementById('qRerunFreshBtn');
-  if (rerunFreshBtn) rerunFreshBtn.onclick = async () => {
-    rerunFreshBtn.disabled = true; rerunFreshBtn.textContent = 'Marking ready…';
-    try {
-      await apiWrite(`/api/travaux/prompts/${p.id}/clear-context`, 'POST');
-      await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { status: 'queued' });
-      await apiWrite('/api/travaux/prompts/advance', 'POST');
-      await qLoad();
-    } catch (e) { rerunFreshBtn.disabled = false; rerunFreshBtn.textContent = 'Ready again (fresh)'; alert('Error: ' + e.message); }
-  };
   qRestoreInputs(host, snap);
   host.querySelector('[data-action="unstick-detail"]')?.addEventListener('click', async (e) => {
     const b = e.currentTarget;
@@ -5302,6 +5381,18 @@ function flowWorldPickCount(source, id) {
 function flowWorldPickSuffix(source, id) {
   const n = flowWorldPickCount(source, id);
   return n ? ` — with ${n} idea${n === 1 ? '' : 's'}` : '';
+}
+
+// The world-look pick count used to be spelled out in the Accept/Queue button's
+// own label. Those buttons are symbols now, so the count moves into the hover
+// label instead — updated in place, because a full re-render here would tear
+// down the very world panel the click came from.
+function flowUpdatePickTitle(source, id, act, base) {
+  const btn = document.querySelector(`.cardbtn[data-act="${act}"][data-id="${id}"]`);
+  if (!btn) return;
+  const label = base + flowWorldPickSuffix(source, id);
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
 }
 
 function flowWorldRender(source, id, host, ideaText, onChange) {
@@ -6879,6 +6970,7 @@ function buildMapHtml() {
           <div class="an-name">${spec?'✦ ':''}${c.name}</div>
           <span class="an-badge" style="background:${b.color}">${b.text}</span>
           ${c.what ? `<div class="an-what">${qEsc(c.what)}</div>` : ''}
+          ${archCardActions(c)}
         </div>`;
       });
     }
@@ -6908,6 +7000,7 @@ function buildTreeHtml() {
       html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
         <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
         <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
+        ${archCardActions(c)}
       </div>`;
     });
     html += '</div></div>';
@@ -7290,6 +7383,48 @@ function archDrawTree() {
 let archListCollapsed = {};
 try { archListCollapsed = JSON.parse(localStorage.getItem('fmcns.archListCollapsed') || '{}'); } catch (e) {}
 
+// The three actions worth having on a component card itself. Everything else a
+// component can do stays in the right-hand panel — a graph node has no room for
+// a full toolbar, and putting one there would make the tree unreadable.
+function archCardActions(c) {
+  return cardActions([
+    archNodeState(c) === 'buildable'
+      ? iconBtn('bolt', 'Build this — every prerequisite is met', 'arch-build', c.id, 'primary') : '',
+    iconBtn('queue', 'Queue a task about this component', 'arch-queue', c.id),
+    iconBtn('chat', 'Talk this component over', 'arch-discuss', c.id),
+  ]);
+}
+
+// Shared by every surface that draws a component card.
+async function archCardAction(action, id, btn) {
+  const c = ARCH_BY_ID[id];
+  if (!c) return;
+  if (action === 'arch-discuss') { openArchDiscuss(c); return; }
+  if (action === 'arch-queue') { selectArchNode(id); document.getElementById('archQueueBtn')?.click(); return; }
+  if (action === 'arch-build') {
+    if (btn) btn.disabled = true;
+    try {
+      await queuePromptDirect(
+        `${c.name}: ${(c.next || 'build this').split('.')[0]}`,
+        `${c.next || ''}\n\nContext — ${c.name} (${c.territory}, ${c.status}): ${c.what}`,
+        c.id, null,
+      );
+    } finally { if (btn) btn.disabled = false; }
+  }
+}
+
+// One delegated listener per container that draws component cards.
+function archWireCardBtns(host) {
+  if (!host) return;
+  host.querySelectorAll('.cardbtn').forEach(b => {
+    b.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      archCardAction(b.dataset.act, b.dataset.id, b);
+    };
+  });
+}
+
 function archListRowHtml(c) {
   const state = archNodeState(c);
   const spec = c.provenance === 'speculative';
@@ -7303,6 +7438,7 @@ function archListRowHtml(c) {
       <span class="arch-list-icon">${icon}</span>
       <span class="arch-list-name" style="white-space:normal;overflow:visible;text-overflow:clip;">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
       <span class="arch-list-status">${qEsc(c.status || 'Concept')}</span>
+      ${archCardActions(c)}
     </div>`;
 }
 
@@ -7338,8 +7474,9 @@ function archDrawChecklist() {
     };
   });
   host.querySelectorAll('[data-listrow]').forEach(r => {
-    r.onclick = () => selectArchNode(r.getAttribute('data-listrow'));
+    r.onclick = (e) => { if (e.target.closest('.cardbtn')) return; selectArchNode(r.getAttribute('data-listrow')); };
   });
+  archWireCardBtns(host);
   pool.forEach(c => { archPrevStates[c.id] = archNodeState(c); });
 }
 
@@ -7375,7 +7512,8 @@ function renderArchStage() {
       <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
     </div>` : ''}`;
   wireArchStageControls();
-  document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = () => selectArchNode(n.getAttribute('data-arch-id')); });
+  document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = (e) => { if (e.target.closest && e.target.closest('.cardbtn')) return; selectArchNode(n.getAttribute('data-arch-id')); }; });
+  archWireCardBtns(document.getElementById('archStage'));
   // Keyboard nav on graph nodes (B4): Enter/Space activates like a click; arrow
   // keys step through nodes in DOM order, which already matches reading order
   // (territory columns left-to-right in Map, tiers top-to-bottom in Tree).
@@ -7778,7 +7916,10 @@ function renderArchSuggestions(c) {
   let html = '';
   if (c.suggestions && c.suggestions.length) {
     c.suggestions.forEach(s => {
-      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(s.prompt)}</div></div>`;
+      // The whole card has always been clickable to queue it, with nothing on
+      // screen saying so. The symbol makes that action visible; the card click
+      // still works for anyone used to it.
+      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(s.prompt)}</div>${cardActions([iconBtn('queue', 'Send this suggestion to the queue', 'as-queue', s.id, 'primary')])}</div>`;
     });
     const genAt = fmtVerified(c.suggestions_generated_at);
     if (genAt) html += `<div class="arch-verified" style="margin-top:2px;">Generated ${genAt}</div>`;
@@ -7789,15 +7930,19 @@ function renderArchSuggestions(c) {
   html += `<div class="arch-qf-status" id="archRegenStatus"></div>`;
   el.innerHTML = html;
 
+  const queueSuggestion = async (node) => {
+    const s = c.suggestions.find(x => x.id === node.getAttribute('data-sid'));
+    if (!s) return;
+    node.style.opacity = '0.5';
+    await queuePromptDirect(s.title, s.prompt, c.id, null);
+    node.style.opacity = '1';
+    node.querySelector('.as-title').textContent = '✓ Queued: ' + s.title;
+  };
   el.querySelectorAll('.arch-suggestion').forEach(node => {
-    node.onclick = async () => {
-      const s = c.suggestions.find(x => x.id === node.getAttribute('data-sid'));
-      if (!s) return;
-      node.style.opacity = '0.5';
-      await queuePromptDirect(s.title, s.prompt, c.id, null);
-      node.style.opacity = '1';
-      node.querySelector('.as-title').textContent = '✓ Queued: ' + s.title;
-    };
+    node.onclick = (e) => { if (e.target.closest('.cardbtn')) return; queueSuggestion(node); };
+    node.querySelector('.cardbtn')?.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation(); queueSuggestion(node);
+    });
   });
 
   document.getElementById('archRegenBtn').onclick = async () => {
@@ -7821,7 +7966,7 @@ async function loadArchHistory(id) {
     const data = await api('/api/architecture/components/' + id + '/history');
     let html = '';
     (data.commits || []).forEach(c => {
-      html += `<div class="arch-history-item">📦 ${c.message}<div class="ah-meta"><span class="arch-history-sha">${c.sha.slice(0,7)}</span> · ${fmtVerified(c.committed_at)||c.committed_at}</div></div>`;
+      html += `<div class="arch-history-item">📦 ${qEsc(c.message)}<div class="ah-meta"><span class="arch-history-sha">${c.sha.slice(0,7)}</span> · ${fmtVerified(c.committed_at)||c.committed_at}</div></div>`;
     });
     (data.prompts || []).forEach(p => {
       html += `<div class="arch-history-item">📋 ${qEsc(p.title)} <span style="color:${p.status==='done'?'#4f9d7a':'var(--c-ink-4)'}">(${p.status})</span><div class="ah-meta">${fmtVerified(p.created_at)||p.created_at}</div></div>`;
