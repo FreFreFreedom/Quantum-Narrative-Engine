@@ -221,6 +221,19 @@ export function shipStateFor(review, { runnerConnected = true } = {}) {
       ? { ...base, state: 'shipping', message: 'Going live…' }
       : { ...base, state: 'waiting_runner', message: 'Waiting for your Mac. Start the runner and this goes live on its own.' };
   }
+  // Reviews written before publishing worked at all. Every one of them carries the
+  // old gate's failure text, and their file counts are the meaningless 2/0/0 it
+  // recorded — so showing them as a live failure would tell Antoine the bug is
+  // still there, on tasks that were never given a fair chance. Say what is
+  // actually true instead, and drop the bogus numbers.
+  if (!review.head_sha && /working folder no longer exists/i.test((review.concerns || []).join(' '))) {
+    return {
+      ...base, files: 0, insertions: 0, deletions: 0,
+      state: 'legacy',
+      message: 'This finished before publishing worked. Run it again if you still want it.',
+    };
+  }
+
   if (review.status === 'changes_requested') {
     const why = (review.concerns || [])[0] || 'It is not ready to go live.';
     const nothing = /^Nothing changed/.test(why);

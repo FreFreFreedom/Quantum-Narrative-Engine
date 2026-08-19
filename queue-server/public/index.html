@@ -3958,6 +3958,7 @@ const Q_SHIP_STYLE = {
   needs_fix:      { text: 'Not live',             color: '#b23a2f' },
   put_back:       { text: 'Put back',             color: 'var(--c-ink-3)' },
   nothing_changed:{ text: 'Nothing changed',      color: 'var(--c-ink-3)' },
+  legacy:         { text: 'Not published',       color: 'var(--c-ink-3)' },
 };
 
 function qShipLine(p) {
@@ -3972,7 +3973,7 @@ function qShipLine(p) {
   const detail = [scale, when].filter(Boolean).join(' · ');
   // The message is only worth its own line when it says something the badge does
   // not — i.e. when something went wrong.
-  const explain = ['needs_fix', 'waiting_runner', 'put_back'].includes(sh.state) && sh.message
+  const explain = ['needs_fix', 'waiting_runner', 'put_back', 'legacy'].includes(sh.state) && sh.message
     ? `<div class="q-item-meta q-ship-why">${qEsc(sh.message)}</div>` : '';
   return `<div class="q-item-meta"><span class="q-ship-pill" style="color:${style.color};border-color:${style.color}">${style.text}</span>${detail ? `<span>${qEsc(detail)}</span>` : ''}</div>${explain}`;
 }
@@ -7032,7 +7033,7 @@ function renderArchQueueBanner() {
     s.memFreeMb != null ? `Free memory: ${s.memFreeMb} MB` : '',
     s.costCapUsd != null ? `Per-task cost cap: $${s.costCapUsd.toFixed(2)} — a task stops itself the moment it crosses its cap, so one task can never drain your credits.` : '',
     s.sideBudget != null ? `Daily helper budget: ${s.sideCallsToday ?? 0} of ${s.sideBudget} short AI calls used today. Past it, optional passes skip (new world-looks, deep plan drafts) — the queue itself never stops.` : '',
-    'Auto-ship: a task that passes every check publishes itself — the on/off switch is in the Queue panel.',
+    'Auto-ship: a task that passes every check publishes itself, and you can put it back from the task afterwards.',
   ].filter(Boolean).join(' · ');
   el.innerHTML = `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}`;
   el.title = detail;
@@ -8281,20 +8282,6 @@ function renderQueuePanel() {
     ${qpSectionHtml('', 'In queue', queued.length,
       queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
       'Queue is empty — add a task above.')}
-    <div class="qp-settings">
-      <label class="qp-opt-row" title="When a task finishes and passes every automatic check, it publishes itself — no click from you. If the checks fail or two changes touch the same file, it stops and waits for you instead. Turn off to go back to approving every task by hand (you can always undo a published task on the review screen).">
-        <input type="checkbox" id="qpAutoShipChk" ${qAutoShip ? 'checked' : ''}>
-        <span>Auto-ship: publish finished tasks after their checks pass</span>
-      </label>
-      <label class="qp-opt-row" title="A task stops itself the moment its total spend crosses this cap — so one task can never drain your credits. Tasks run on free-to-use models by default, so this only matters when you pick a paid model for a task.">
-        <span>Per-task cost cap: $</span>
-        <input type="number" id="qpCapUsd" min="0.01" step="0.01" value="${qCapUsd}">
-      </label>
-      <label class="qp-opt-row" title="How many short helper calls (plans, summaries, world-look) the queue may spend per day. Past it, the world-look auto-skips for new tasks and big-task plans draft on the fast model — the queue keeps working, your free daily allowance is never drained by one small task. Resets at midnight UTC.">
-        <span>Daily helper budget:</span>
-        <input type="number" id="qpSideBudget" min="1" step="1" value="${qSideBudget}">
-      </label>
-    </div>
   `;
 
   // Cards are rendered in the same order as `asking`, so pair them up by index rather
