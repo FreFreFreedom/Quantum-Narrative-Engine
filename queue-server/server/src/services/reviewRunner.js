@@ -40,6 +40,10 @@ function reviewFromRow(row) {
     checks: parseJsonOr(row.checks, null),
     concerns: parseJsonOr(row.concerns, []),
     conflicts_with: parseJsonOr(row.conflicts_with, []),
+    // files_changed was left as its raw JSON string here, so anything counting it
+    // measured the STRING — a one-file change reported as "14 files changed",
+    // because that is how long `["RUN_LOG.md"]` is.
+    files_changed: parseJsonOr(row.files_changed, []),
   };
 }
 
