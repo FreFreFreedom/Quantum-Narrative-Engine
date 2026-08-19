@@ -46,10 +46,11 @@ const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-pr
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const RUNNER_REPO = resolve(process.env.RUNNER_REPO || resolve(process.cwd(), '..'));
 const RUNNER_ID = process.env.RUNNER_ID || `mac-${process.pid}`;
-// The branch that actually holds this project's work. `main` is only a deploy
-// pointer that develop gets pushed onto (verified: local main sits 81 commits
-// behind origin/main, and shipping is `git push origin develop:main`). Anything
-// that bases a branch or lands a merge must use this, not `main` and not HEAD.
+// The one branch this project has: it holds the work AND it is what Railway deploys
+// from, so pushing it is the deploy. (There used to be a second branch, `main`, that
+// Railway watched; the two never diverged, so it was purely an extra push to forget.
+// Retired 2026-08-19.) Anything that bases a branch or lands a merge must use this,
+// never a hardcoded name and never HEAD.
 const TRUNK = process.env.RUNNER_TRUNK || 'develop';
 
 // How long a model gets to produce its FIRST real output before we give up on

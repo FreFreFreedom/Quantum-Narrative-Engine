@@ -17,7 +17,7 @@ opinion on correctness:
 4. **html** — the frontend inline scripts parse and structural anchors are intact.
 5. **scope** — changed files respect the agent's `path_allow`/`path_deny`; hard
    fail on `queue-server/data/`, `.env`, `.github/`.
-6. **conflict** — `git merge-tree --write-tree` against `origin/main` and other
+6. **conflict** — `git merge-tree --write-tree` against `origin/develop` and other
    open `agent/*` branches.
 
 The verdict (`safe | risky | unsafe`) derives from the checks alone. A human

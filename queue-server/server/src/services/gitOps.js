@@ -11,13 +11,24 @@
 //   GIT_OPS_DISABLED — env '1' hard-disables worktrees; agents then run in the main
 //                      checkout (pre-worktree behaviour). Safety valve only.
 //
-// Branching rule (plan 2a): branch from `origin/main`, NOT local `main` — local
-// main may hold a merge that isn't pushed; branching from origin keeps every
-// agent's base identical to what Railway will see. On machines where the remote
-// has never been fetched (or fetch fails), fall back to local `main` — a routine
+// Branching rule (plan 2a): branch from `origin/<trunk>`, NOT the local branch — the
+// local one may hold a merge that isn't pushed; branching from origin keeps every
+// agent's base identical to what Railway will see. On machines where the remote has
+// never been fetched (or fetch fails), fall back to the local branch — a routine
 // technical fallback so a missing network can't block dispatch entirely.
+//
+// This used to say `main` throughout, hardcoded. That was a quiet landmine: once
+// `main` was retired, the fallback would have branched every agent worktree off a
+// local `main` more than a hundred commits stale, so agents would have worked against
+// August code and produced enormous bogus diffs — with no error anywhere.
 
 import { execFileSync } from 'node:child_process';
+
+// The one branch this project has. `develop` is the trunk and the branch Railway
+// deploys from; `main` was retired on 2026-08-19 (the two had never diverged, so the
+// second push bought nothing and was a step to forget). Same env var and default as
+// queue-server/scripts/queue-runner.js, so there is one place to change it.
+const TRUNK = process.env.RUNNER_TRUNK || 'develop';
 import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync, appendFileSync, readFileSync } from 'node:fs';
 import { resolve, join, basename } from 'node:path';
 
@@ -95,7 +106,9 @@ function slugify(title) {
 // ─── Read-only history helpers for the self-updating tech tree ───────────────
 // (treeSync.js). Quiet and null-safe: on any failure the sync simply skips this
 // round — the tree must never be able to break the queue or the server.
-export function gitLogSummaries(cwd, { since = null, until = 'main', max = 20 } = {}) {
+// `until` has no default on purpose: every caller passes a ref explicitly, and a
+// default branch name here is a landmine for the next caller who doesn't.
+export function gitLogSummaries(cwd, { since = null, until = TRUNK, max = 20 } = {}) {
   const range = since ? `${since}..${until}` : until;
   const out = git(['-C', cwd, 'log', '--format=%h|%s', '-n', String(max), range], { quiet: true });
   if (out === null) return [];
@@ -115,16 +128,17 @@ export function gitChangedFiles(cwd, from, to = 'HEAD') {
   return out.split('\n').filter(Boolean);
 }
 
-export function gitHeadSha(cwd, ref = 'main') {
+export function gitHeadSha(cwd, ref = TRUNK) {
   return git(['-C', cwd, 'rev-parse', '--verify', '--quiet', ref], { quiet: true }) || null;
 }
 
-// Best-effort, read-only remote refresh for the tree watcher: local `main` can
-// lag behind pushed work (e.g. a deploy push from another machine), and the
-// watcher should see it. Quiet and never fatal — with no network or no remote
-// the watcher simply falls back to local main.
-export function gitFetchOriginMain(cwd) {
-  return gitWithRetry(['-C', cwd, 'fetch', 'origin', 'main', '--quiet'], { quiet: true });
+// Best-effort, read-only remote refresh for the tree watcher: the local branch can
+// lag behind pushed work (e.g. a deploy push from another machine), and the watcher
+// should see it. Quiet and never fatal — with no network or no remote the watcher
+// simply falls back to the local branch. (Was `gitFetchOriginMain`, renamed with the
+// branch it fetches so the name cannot go stale again.)
+export function gitFetchOriginTrunk(cwd) {
+  return gitWithRetry(['-C', cwd, 'fetch', 'origin', TRUNK, '--quiet'], { quiet: true });
 }
 
 // Create one worktree + branch for a task. Returns
@@ -149,14 +163,14 @@ export function createWorktree({ taskId, title, agentKey }) {
 
     // Best-effort remote refresh (read-only). Quiet: a machine with no network or
     // no remote must still be able to dispatch. Retried on lock races.
-    gitWithRetry(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { quiet: true });
+    gitWithRetry(['-C', main, 'fetch', 'origin', TRUNK, '--quiet'], { quiet: true });
 
-    // Plan rule: branch from origin/main. If origin/main is not present locally
-    // (never fetched, no network), fall back to local main — documented deviation.
-    const base = git(['-C', main, 'rev-parse', '--verify', '--quiet', 'origin/main'], { quiet: true })
-      ? 'origin/main'
-      : (git(['-C', main, 'rev-parse', '--verify', '--quiet', 'main'], { quiet: true }) ? 'main' : null);
-    if (!base) throw new Error('no origin/main or main ref to branch from');
+    // Plan rule: branch from origin/<trunk>. If it is not present locally (never
+    // fetched, no network), fall back to the local branch — documented deviation.
+    const base = git(['-C', main, 'rev-parse', '--verify', '--quiet', `origin/${TRUNK}`], { quiet: true })
+      ? `origin/${TRUNK}`
+      : (git(['-C', main, 'rev-parse', '--verify', '--quiet', TRUNK], { quiet: true }) ? TRUNK : null);
+    if (!base) throw new Error(`no origin/${TRUNK} or ${TRUNK} ref to branch from`);
 
     // Retried on lock races: the user may be mid-commit in the main checkout at
     // this exact moment — a momentary index.lock must not push the task into the

@@ -43,7 +43,7 @@ never spend time on local verification:
    before a deploy and cost nothing.
 2. Apply the frontend sync rule (copy master →
    `queue-server/public/index.html`, checksums match).
-3. Commit and push to `main` right away — pushing is the deploy. No local
+3. Commit and push to `develop` right away — pushing is the deploy. No local
    boot, no `curl` checks, no localhost testing.
 4. One quick check that production serves the new version (frontend checksum
    or the changed route answering) is deploy confirmation, not a test phase.
@@ -58,9 +58,9 @@ still never push (below).
 When implementation happens in an unattended run (see the `fmcns-overnight`
 agent and the `/overnight` command):
 
-- Never push, merge to main, or deploy anything. Publishing is Antoine's call,
-  always. (The ship-directly rule above applies to live sessions only — it does
-  not relax this.)
+- Never push, merge to the trunk, or deploy anything. Publishing is Antoine's
+  call, always. (The ship-directly rule above applies to live sessions only — it
+  does not relax this.)
 - Never do anything destructive or irreversible merely to avoid asking a
   question.
 - Commit locally, step by step, on a dedicated branch (`overnight/<date>`), so
@@ -127,7 +127,7 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
   the sanity check. Skip local boot/`curl`/browser verification: changes ship
   directly (see the ship-directly rule under "Working with Antoine").
 - **Git rules (hard)**: never push, never merge, never checkout/reset away work
-  on `main`. Agent work lives on `agent/*` branches in worktrees; merging and
+  on `develop`. Agent work lives on `agent/*` branches in worktrees; merging and
   publishing are the human's call via the review screen.
   - **Exception — the app's own publishing lane (Antoine's decision, 2026-08-19).**
     The Dispatch Queue publishes finished tasks by itself: the local runner commits
@@ -138,12 +138,21 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
     *you*, an agent working by hand. It is **not** a reason to disable the automatic
     lane, gate it behind a click, or remove it. If you think it is unsafe, say so
     and ask; do not "fix" it.
-  - **Branches**: `develop` is the trunk — all work is committed there. `main` is
-    only the pointer Railway deploys from, and local `main` is usually far behind
-    (it is never checked out). Deploying is `git push origin develop:main`, or
-    `git push --atomic origin HEAD:develop HEAD:main` when landing both at once.
-    Pushing only `main` puts the deploy pointer ahead of the trunk and breaks every
-    later deploy, including by hand.
+  - **Branches: there is one.** `develop` is the trunk, all work is committed there,
+    and it is the branch Railway deploys from — so `git push origin develop` *is* the
+    deploy. Confirm what is live with `git ls-remote origin refs/heads/develop`.
+
+    There used to be a second branch, `main`, that Railway watched. The two never
+    once diverged in the project's whole history, so it protected nothing and was
+    purely an extra push to forget — and forgetting it looked exactly like a broken
+    pipeline. Retired 2026-08-19 (Antoine's decision), along with the unused
+    `qne-staging` Railway service that had been failing on every push.
+
+    **Do not add a second ref back.** Not in `git push origin develop:main`, and
+    especially not in `scripts/git-ship.js` — with `main` gone, an atomic two-ref
+    push either recreates the branch or is refused outright, and a refused atomic
+    push means `develop` never moves either, so every automatic publish and every
+    "Put it back" silently stops working.
 - **Never touch `queue-server/data/`** — that is the live database (and the
   agents' per-task pid/exec files).
 - **Cost discipline**: model calls cost real quota. Prefer deterministic checks

@@ -8,7 +8,7 @@
 //                                 open branches, plan backlog).
 //
 // regenerateBriefing() runs at boot after bootstrapData and after every merge;
-// the merge step commits it, so agents branching from origin/main always get a
+// the merge step commits it, so agents branching from the trunk always get a
 // fresh copy. Pure SQLite reads + one file write — zero tokens, zero API spend.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';

@@ -14,11 +14,15 @@
 //    repo, and a branch cannot be checked out twice. Reset hard before every job,
 //    so a previous failure can never poison the next one.
 //
-// 2. It lands on the TRUNK and pushes both refs in one go. `develop` is where this
-//    project's work lives; `main` is only the pointer Railway deploys from (local
-//    main sits ~80 commits behind). Merging into `main` alone — what the old code
-//    did — would put the deploy pointer ahead of the trunk and break every
-//    subsequent ordinary deploy, including by hand.
+// 2. It lands on the TRUNK and pushes exactly one ref. There used to be two:
+//    `develop` for the work and `main` as a separate pointer for Railway to watch.
+//    They never once diverged in the project's whole history, so the second push
+//    bought nothing and was a step you could forget — and forgetting it looked
+//    exactly like a broken pipeline. On 2026-08-19 Railway was pointed at `develop`
+//    and `main` retired. Do NOT add a second ref back here: with `main` gone, an
+//    atomic two-ref push either recreates the branch or is refused outright, and a
+//    refused atomic push means `develop` never moves either, so every publish and
+//    every "Put it back" silently stops working.
 //
 // GIT_SHIP_DRY_RUN=1 does everything except the push, and reports what it would
 // have pushed. That is how this gets proven before it is trusted.
@@ -53,8 +57,13 @@ function shipTree(repo, trunk) {
 }
 
 function fetchTrunk(repo, wt, trunk) {
-  // Both refs: the trunk to merge onto, and the deploy pointer we also move.
-  git(wt, ['fetch', 'origin', trunk, 'main', '--quiet']);
+  // One ref. This used to fetch `main` alongside the trunk, which becomes a trap the
+  // moment `main` stops existing: git fails the ENTIRE fetch on an unknown ref rather
+  // than fetching what it can, git() swallows the error, and this function then
+  // returns the stale local `origin/<trunk>` as though all were well — so every
+  // publish would merge onto an out-of-date trunk and be rejected with a misleading
+  // "push refused" instead of the real cause.
+  git(wt, ['fetch', 'origin', trunk, '--quiet']);
   return git(wt, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${trunk}`]);
 }
 
@@ -65,13 +74,13 @@ function resetToTrunk(wt, trunk) {
   git(wt, ['clean', '-fd', '-e', 'node_modules']);
 }
 
-function pushBoth(wt, trunk, dryRun) {
-  if (dryRun) return { ok: true, dry: true, would_push: [trunk, 'main'] };
-  // One command for both refs so the trunk and the deploy pointer can never end up
-  // pointing at different commits — which is what breaks ordinary deploys.
-  const out = git(wt, ['push', '--atomic', 'origin', `HEAD:refs/heads/${trunk}`, 'HEAD:refs/heads/main']);
+// One branch, one push. Named `pushTrunk` rather than the old `pushBoth` because the
+// name was the thing most likely to invite a second ref back.
+function pushTrunk(wt, trunk, dryRun) {
+  if (dryRun) return { ok: true, dry: true, would_push: [trunk] };
+  const out = git(wt, ['push', 'origin', `HEAD:refs/heads/${trunk}`]);
   if (out === null) return { ok: false, error: 'push_rejected' };
-  return { ok: true, pushed: [trunk, 'main'] };
+  return { ok: true, pushed: [trunk] };
 }
 
 // ─── ship ─────────────────────────────────────────────────────────────────────
@@ -132,7 +141,7 @@ export function shipJob(job, { repo, trunk = 'develop', dryRun = false, log = ()
   }
 
   const mergeCommit = git(wt, ['rev-parse', 'HEAD']);
-  const pushed = pushBoth(wt, trunk, dryRun);
+  const pushed = pushTrunk(wt, trunk, dryRun);
   if (!pushed.ok) {
     resetToTrunk(wt, trunk);   // nothing half-done is left behind
     return { ok: false, error: pushed.error, detail: 'publishing was refused — nothing changed online' };
@@ -180,7 +189,7 @@ export function undoJob(job, { repo, trunk = 'develop', dryRun = false, log = ()
     return { ok: false, error: 'revert_conflict' };
   }
 
-  const pushed = pushBoth(wt, trunk, dryRun);
+  const pushed = pushTrunk(wt, trunk, dryRun);
   if (!pushed.ok) { resetToTrunk(wt, trunk); return { ok: false, error: pushed.error }; }
   if (pushed.dry) {
     resetToTrunk(wt, trunk);

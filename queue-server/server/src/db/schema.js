@@ -165,7 +165,7 @@ function initSchema(db) {
   // server — the prompt is re-queued with these holding the KILLED RUN's own
   // workspace (worktree + branch) and session (session_id / opencode_session_id,
   // already stored by finishPrompt). The retry then resumes that exact workspace
-  // and conversation instead of starting a fresh tree from origin/main, so the
+  // and conversation instead of starting a fresh tree from the trunk, so the
   // task's half-done files are still there when it continues. Cleared once
   // dispatched; NULL = no retry context pending.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_worktree_path TEXT`); } catch {}

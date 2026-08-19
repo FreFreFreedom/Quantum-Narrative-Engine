@@ -46,7 +46,7 @@ will not answer you. Everything you do must be safe to leave running alone.
 Read AGENTS.md first and follow its "Autonomous overnight runs" rules. They are
 your contract. The essence:
 
-- NEVER push, merge to main, or deploy. Publishing is Antoine's decision,
+- NEVER push, merge to the trunk, or deploy. Publishing is Antoine's decision,
   always. Commit locally, step by step, on a dedicated branch (`overnight/<date>`).
 - NEVER do anything destructive or irreversible merely to avoid asking.
 - Decision rules. Before answering any open question, classify it:

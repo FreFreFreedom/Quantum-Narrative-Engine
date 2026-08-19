@@ -216,5 +216,3 @@ new `services/workSuggestions.js`, `services/workIdeas.js`, `services/claudeUsag
 Verified live via curl: `/api/agent/usage`, `/api/travaux/ideas`,
 `/api/travaux/suggestions` all return 200. Smoketest extended to cover the new tab
 (`node smoketest.js` — PASSED).
-
-<!-- one-branch deploy test 2026-08-19T19:47:38Z -->

@@ -24,7 +24,7 @@ import { existsSync } from 'node:fs';
 import { createNode } from './architectureNodes.js';
 import { generateText } from './ai/text.js';
 import { parseJsonObject } from './codeDiscovery.js';
-import { mainRepo, gitLogSummaries, gitDiffStat, gitChangedFiles, gitHeadSha, gitFetchOriginMain } from './gitOps.js';
+import { mainRepo, gitLogSummaries, gitDiffStat, gitChangedFiles, gitHeadSha, gitFetchOriginTrunk } from './gitOps.js';
 
 const FMCNS_BLURB = 'FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool: single-file vanilla-JS frontend, Node/Express + SQLite backend, a knowledge graph of "characters", an agent task queue, fractal navigation UI, and recommender ambitions';
 const MAX_PROPOSALS = 3;
@@ -110,19 +110,28 @@ export async function syncFromTask(db, promptId) {
 }
 
 // ─── Capture path 2: git history outside the app ─────────────────────────────
-// Reads main since the last processed sha. First run = baseline only. Skips
+// Reads the trunk since the last processed sha. First run = baseline only. Skips
 // cheaply (no model call) when nothing new. Never throws.
+// Same env var and default as gitOps.js and queue-runner.js.
+const TRUNK = process.env.RUNNER_TRUNK || 'develop';
+
 export async function syncFromGit(db) {
   try {
     const root = mainRepo();
     if (!root) return { skipped: 'no_repo' };
-    // Best-effort remote refresh so pushed work is visible even when local main
-    // lags (read-only, quiet, never fatal). Prefer origin/main, fall back to
-    // local main — the same branching rule the worktree code uses.
-    gitFetchOriginMain(root);
-    const syncRef = gitHeadSha(root, 'origin/main') ? 'origin/main' : 'main';
+    // Best-effort remote refresh so pushed work is visible even when the local branch
+    // lags (read-only, quiet, never fatal). Prefer origin/<trunk>, fall back to the
+    // local branch — the same branching rule the worktree code uses.
+    //
+    // This read `main` until 2026-08-19, which would have failed in the quietest way
+    // possible once that branch was retired: the ref would resolve to a stale local
+    // `main`, its head sha would never change, so every run returned
+    // `no_new_commits` and the self-updating tech tree would simply stop noticing
+    // git history forever, with nothing logged anywhere.
+    gitFetchOriginTrunk(root);
+    const syncRef = gitHeadSha(root, `origin/${TRUNK}`) ? `origin/${TRUNK}` : TRUNK;
     const head = gitHeadSha(root, syncRef);
-    if (!head) return { skipped: 'no_main' };
+    if (!head) return { skipped: 'no_trunk' };
     const now = () => new Date().toISOString();
     let state = db.prepare(`SELECT * FROM tree_sync_state WHERE id=1`).get();
     if (!state) {
