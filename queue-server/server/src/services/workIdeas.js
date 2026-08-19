@@ -98,6 +98,12 @@ export async function promoteIdea(id, { userId = 'antoine', prompt = null, inspi
     preset: 'deep',
     status: 'paused', // set aside — nothing launches until the user starts it
     created_by: userId,
+    // Carry the seed's tree node onto the task. Without this the task landed with
+    // component_id NULL, so it was invisible to everything that joins work to the
+    // architecture: the component's own build history, the "never worked on"
+    // signal, the Flow's per-component filter, and the ranked next-steps list
+    // (which must know a piece is already under way to stop proposing it).
+    component_id: idea.arch_node_id || null,
     inspiration: inspiration || null, // world-look already ran on the seed — no re-search
   });
   db.prepare(`UPDATE work_ideas SET work_prompt_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(promptRow.id, id);

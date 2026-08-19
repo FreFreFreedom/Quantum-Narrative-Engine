@@ -65,7 +65,7 @@ const DEFAULT_WEIGHTS = (() => {
   return w;
 })();
 
-function loadIntelConfig(db) {
+export function loadIntelConfig(db) {
   let cfg = {};
   try {
     const row = db.prepare(`SELECT intel_json FROM ai_settings WHERE id='global'`).get();
@@ -138,7 +138,7 @@ export function unifiedNodes(db, catalog) {
   };
 }
 
-function adjacency(nodes) {
+export function adjacency(nodes) {
   const dependents = new Map();
   for (const n of nodes) {
     for (const d of n.depends || []) {
@@ -443,11 +443,39 @@ export function listThoughts(db, { status = null, scope = null } = {}) {
   return db.prepare(sql).all(...args).map(thoughtRow);
 }
 
+// Score a thought from what is already known about its target, rather than trusting
+// the number the model sent.
+//
+// Every deliberation prompt hands the model the literal example `"priority":0` and
+// never asks it to score anything, so in practice every thought was written with
+// priority 0 — which made drainList()'s `ORDER BY priority DESC` silently degrade to
+// oldest-first, and made the `p<n>` badge in the Mind feed meaningless. The signals
+// already computed for the target say how urgent it is, for free, so use those and
+// keep the model's number only as a tie-break within the band it earns.
+function derivedPriority(db, scope, target_id, modelPriority) {
+  const base = Math.max(0, Math.min(100, Number(modelPriority) || 0));
+  if (scope !== 'node' || !target_id) return base;
+  try {
+    const { byTarget } = computeSignals(db, []);
+    const weights = loadIntelConfig(db).health_weights;
+    let severity = 0;
+    for (const sig of (byTarget[target_id] || [])) severity += weights[sig.type] || 0;
+    if (!severity) return base;
+    // Severity is a penalty against 100; a component carrying a bottleneck (15)
+    // therefore outranks one carrying only an orphan note (5). Capped so a very
+    // sick component cannot crowd out everything else entirely.
+    return Math.max(base, Math.min(90, severity * 3));
+  } catch {
+    return base;   // never let scoring break the write
+  }
+}
+
 export function createThought(db, { kind = 'deliberative', scope = 'node', target_id = '', title, body = '', prompt_draft = null, priority = 0, state_hash = null } = {}) {
   const t = String(title || '').trim();
   if (!t) return { error: 'title_required' };
   try {
     const id = randomUUID();
+    priority = derivedPriority(db, scope, target_id, priority);
     db.prepare(`
       INSERT INTO intel_thoughts (id, kind, scope, target_id, title, body, prompt_draft, state_hash, priority)
       VALUES (?,?,?,?,?,?,?,?,?)

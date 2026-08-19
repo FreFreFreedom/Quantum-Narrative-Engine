@@ -72,6 +72,10 @@ function initSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_status ON work_prompts(status, position)`); } catch {}
+  // component_id is the join between a task and the piece of architecture it
+  // belongs to. It had no index despite being read on every ranked-next-steps
+  // call, every component history view and every "never worked on" signal.
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_component ON work_prompts(component_id)`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN title_auto INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN pending_question TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN stop_after INTEGER NOT NULL DEFAULT 0`); } catch {}

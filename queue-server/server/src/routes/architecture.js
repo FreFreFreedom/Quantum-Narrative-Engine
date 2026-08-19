@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions } from '../services/architecture.js';
 import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt, shortlistUnbuilt } from '../services/architectureNodes.js';
+import { nextSteps } from '../services/nextSteps.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
 import { getQueuePauseState } from '../services/promptQueue.js';
 import { autoShipEnabled, sideCallBudgetLimit, sideCallsToday } from '../services/ai/text.js';
@@ -88,6 +89,16 @@ export function architectureRoutes(db) {
     }
     res.json(out);
   }));
+
+  // The project's ranked next steps — the one authoritative answer to "what do I
+  // build next, and in what order?". Free: no model call, SQL and arithmetic only,
+  // so it can be the default the screen always shows rather than something you
+  // have to ask (and pay) for. POSTed rather than GET because the component trunk
+  // lives in the frontend file, not the DB — same reason /intel/signals does.
+  router.post('/next', (req, res) => {
+    const limit = Math.min(10, Math.max(1, Number(req.body?.limit) || 3));
+    res.json(nextSteps(db, req.body?.catalog || [], { limit }));
+  });
 
   // "AI recommends order" in the Not built list — the client sends its items,
   // the model returns their ids best-first. Explicit click only.

@@ -6,6 +6,41 @@ Living status doc for the Fractal Mythic Consciousness Navigation System prototy
 
 ## What exists right now
 
+**The app can finally say what to build next, and in what order.** The question had no
+answer not because nothing computed one, but because about fifteen things did and none
+was in charge: seven orderings computed in the browser (`nbSmartOrder`, the tech tree's
+depth columns, a second unused depth-ordered tier list, the pulsing "buildable" rings,
+two territory-coverage read-outs), seven that cost a model call, and no endpoint anywhere
+returning an ordered list for the project as a whole. Two of the sources were invisible by
+construction — Railway deploys only `queue-server/`, so `plans/` and this file were never
+in the container. And the feature had already been built on both ends and never connected:
+a finished *"✨ Your next 3 — best moves right now"* panel with per-row reasons and a Build
+button (`fmcns_navigator.html`), a finished `shortlistUnbuilt` backend returning exactly
+the shape it reads, and `nbShortlist` never once assigned. New `services/nextSteps.js`
+ranks for free — SQL and arithmetic, no model call — on readiness, then **how much each
+piece unlocks** (transitive unbuilt dependents; the reverse-edge map already existed in
+`architectureIntelligence.js` as the highest-severity `bottleneck` signal and was only
+ever used to print a warning, while `rankUnbuilt`'s prompt paid a model to *guess* that
+same number), then momentum, then the per-component health score (`healthFor`, computed
+daily into `intel_health_snapshots` and previously used to draw a trend line and nothing
+else), then territory balance. Each row's sentence is **assembled from the fact that
+caused its rank**, so it is true rather than probably true, and anything with a queued or
+running task drops out so it never proposes work already under way. `POST
+/api/architecture/next`. Claude is now an optional *second opinion* on top of a list that
+is already correct without it. Also fixed: `intel_thoughts.priority` was written as 0 on
+every path (every prompt handed the model the literal example `"priority":0`), so
+`/intel/drain`'s `ORDER BY priority DESC` silently meant oldest-first — it is now derived
+from the target's signals; `promoteIdea` never set `component_id`, so tasks from Seeds were
+invisible to every join with the architecture, and that column had no index; `attachNav()`
+threw a `ReferenceError` on every checklist render; the tech tree's `− + ⌂` zoom and `∿`
+dependency-line buttons all addressed `#archCanvas`, which no live layout renders, so they
+were dead controls; the suggestion filter bar was unreachable behind a duplicate CSS rule
+*and* an inline `display:none`. Architecture and Flow are now one side-by-side workspace
+(they were already `flex:1` siblings of one shell) with selection linked both ways, and
+"On the Horizon" follows the same ranking instead of its own. `npm run next:selftest`
+covers it — 22 checks, no model spend, including the unlock counts re-derived by a separate
+brute-force implementation.
+
 **The queue can no longer freeze silently.** A task sat at "Drafting plan… / Checking ideas…" for a full day with no error and no way out: both pre-execution stages are async jobs tracked only in the server process's memory, while the flags that hold the task back live in the database, so a Railway redeploy mid-stage stranded it permanently behind the dispatch gate. `promptQueue.sweepStuckStages()` now runs on quotaScheduler's existing 60s tick and resets any stage flag that is set with nothing alive behind it (10-minute grace, question rows exempt, a visible note on the thread); `releaseStaleClaims()` joined the same tick, closing the matching hole one layer down — it existed, but only ran from `POST /worker/claim`, which the runner issues *only while idle*, so a task wedged by a dead runner was never checked. The UI shows a frozen step as frozen with a Reset button (`POST /prompts/:id/unstick`). The three world-look calls in `codeDiscovery.js` were also unbounded — no `maxAttempts`, no `timeoutMs`, so they inherited Infinity attempts at 90s each across the whole free catalogue — now 3 × 45s. **Claude is a genuine last resort for the small pre-steps**: the subscription lives on the Mac, not in the container, so a step whose free models have all failed parks a `helper_jobs` row that the local runner answers with one haiku call between queue polls, gated by the same window reserve as real tasks and counted in the daily helper ledger. Nothing metered was touched. Also fixed: the runner's Claude-usage reading is persisted (a module variable was blanked by every redeploy, which is why the app's usage bar read 0% while the Mac reported a live subscription), the fake 35-minute task budget is gone in local mode, and the frontend no longer swings to `localhost:3000` when opened from disk — that silently showed a *different* queue than the one the runner works.
 
 **Live backend** (`queue-server/`, deployed on Railway, auto-reseeds its SQLite DB on every boot):

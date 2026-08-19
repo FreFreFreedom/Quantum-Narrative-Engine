@@ -364,6 +364,15 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .nb-shortlist-head { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; margin-bottom:4px; }
 .nb-short-row { display:flex; gap:10px; align-items:center; padding:6px 0; border-top:1px solid var(--c-border); }
 .nb-short-row:first-of-type { border-top:none; }
+.nu-reason { font-size:11.5px; color:var(--c-ink-2); margin:2px 0; line-height:1.45; }
+.nu-next { font-size:11px; color:var(--c-ink-3); line-height:1.4; }
+.nu-next b { color:var(--c-ink-4); font-weight:600; }
+.nu-blocked { opacity:.45; }
+.nu-head-btns { display:flex; gap:4px; align-items:center; }
+.nu-second { font-size:11.5px; color:var(--c-ink-2); border-top:1px solid var(--c-border); padding:6px 0 2px; font-style:italic; }
+.nu-moving { font-size:11px; color:var(--c-ink-3); border-top:1px solid var(--c-border); padding:6px 0 2px; }
+.nu-more { margin-top:6px; font-size:11px; }
+.nu-grouphead { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); font-weight:700; margin:8px 0 2px; }
 .nb-short-num { font-weight:800; color:#8a5a1e; font-size:14px; min-width:16px; }
 
 /* ---------- Mind pane (architecture intel feed) ---------- */
@@ -410,6 +419,16 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .arch-detail-close:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .ws-flow { flex:1; min-width:0; min-height:0; display:none; flex-direction:column; }
 .ws-flow.open { display:flex; }
+/* ── One workspace, two halves ────────────────────────────────────────────────
+   The architecture and the work were two mutually exclusive tabs of a shell that
+   already held them as flex:1 siblings, so uniting them is mostly a matter of
+   letting both be open. The map gets the larger share because it is a graph; the
+   work column has a floor so it never squeezes to an unreadable strip. Below
+   CORE_SPLIT_MIN (renderWorkspace) the chips come back and this all switches off. */
+.core-split .ws-map { flex:1.4 1 0; }
+.core-split .ws-flow { flex:1 1 0; min-width:380px; border-left:1px solid var(--c-border); }
+.core-split .core-tabs { display:none; }          /* nothing left to switch between */
+.core-split #corePaneFlow { padding-left:2px; }
 /* Inline task/seed/suggestion detail — the row expands downwards into this card. */
 .flow-expanded { border:1px solid var(--c-border-2); background:var(--c-surface-2); border-radius:10px; padding:14px; margin:2px 0 10px; animation:fmcnsRise .22s var(--ease); }
 .flow-expanded h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 10px; }
@@ -616,7 +635,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-place-seg button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
 .q-ship-pill { display:inline-block; border:1px solid; border-radius:999px; padding:0 6px; font-size:10px; font-weight:600; letter-spacing:.02em; margin-right:6px; }
 .q-ship-why { color:var(--c-ink-3); font-size:10.5px; white-space:pre-line; }
-.flow-reviews { border-bottom:1px solid var(--c-border); padding:10px 14px; flex-shrink:0; max-height:240px; overflow-y:auto; }
+/* (.flow-reviews deleted — orphaned since the review strip was removed; no element or code ever produced it.) */
 .flow-section { margin-bottom:18px; }
 .flow-sec-head { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
 .flow-sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); }
@@ -654,7 +673,10 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-filterbtns { display:flex; gap:5px; }
 .sg-filterbtns button { padding:5px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; }
 .sg-filterbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
-.flow-sg-filters { display:flex; align-items:center; gap:8px; }
+/* (A second, unconditional `display:flex` for .flow-sg-filters used to sit here.
+   It overrode the gated rule above, so the All/New/Accepted/Dismissed suggestion
+   filter was always laid out and its `.visible` toggle meant nothing. The size
+   overrides below are the only part that was wanted.) */
 .flow-sg-filters .sg-filterbtns { gap:4px; }
 .flow-sg-filters .sg-filterbtns button { padding:4px 8px; font-size:10px; }
 .sg-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:11px 13px; margin-bottom:9px; }
@@ -1287,7 +1309,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button data-ftype="seeds">Seeds</button>
             <button data-ftype="done">✓ Done</button>
           </span>
-          <span class="flow-sg-filters" id="flowSgFilters" style="display:none; margin-left:8px;">
+          <span class="flow-sg-filters" id="flowSgFilters">
             <span class="sg-filterbtns" role="group" aria-label="Suggestion status filter">
               <button class="active" data-sg-status="all" title="Show all suggestions">All</button>
               <button data-sg-status="new" title="Only unread suggestions">New</button>
@@ -3150,6 +3172,17 @@ let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
 let qInspireCache = {}, qInspireSel = {};
 const qInspireBusy = new Set();
 let flowComponentFilter = null; // architecture node id → only its related prompts show
+// ── "Next up": the one ranked answer to "what do I build next?" ──────────────
+// Before this, the app offered about fifteen competing answers — seven orderings
+// computed here in the browser, seven that cost a model call — and no single
+// place that ranked the project as a whole. This is that one place. The order is
+// computed on the server for free (services/nextSteps.js: no model call, SQL and
+// arithmetic), so it can be the default the screen always shows rather than
+// something you have to ask, and pay, for.
+let nextUp = null;          // { picks, rest, in_flight } from POST /api/architecture/next
+let nextUpOpen = false;     // is the full ranked list expanded?
+let nextUpBusy = false;     // a fetch (or a second opinion) is in flight
+let nextUpErr = '';         // last failure, shown plainly rather than as an empty box
 let qDragQId = null;             // prompt id being drag-reordered
 
 // Voice dictation for the task composer textarea, via the browser's built-in
@@ -3291,12 +3324,23 @@ function teardownCore() {
 // docked inside the graph zone and driven by selection, not by view; the Graph
 // and Building blocks are inner tabs of the Architecture view); the center
 // shows the Flow list; the right detail zone is the shared item detail on Flow.
+// Is there room to show the architecture and the work side by side? Below this
+// width they go back to one-at-a-time with the two chips, reusing the same
+// mechanism — the panes were already flex:1 siblings of one shell, so the only
+// difference between "two tabs" and "one workspace" is which of them is open.
+const CORE_SPLIT_MIN = 1100;
+const coreSplit = () => window.innerWidth >= CORE_SPLIT_MIN;
+
 function renderWorkspace() {
   const v = coreView;
+  const split = coreSplit();
+  document.getElementById('coreApp').classList.toggle('core-split', split);
   document.querySelectorAll('[data-core-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-core-tab') === v));
-  document.getElementById('wsMap').classList.toggle('open', v === 'arch');
-  document.getElementById('wsFlow').classList.toggle('open', v !== 'arch');
-  Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
+  // Split: both halves are open at once, and the loop reads left-to-right — the
+  // map of what exists, then the ranked list of what to do and what is running.
+  document.getElementById('wsMap').classList.toggle('open', split || v === 'arch');
+  document.getElementById('wsFlow').classList.toggle('open', split || v !== 'arch');
+  Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', split || p === v));
 }
 
 // Architecture view inner tabs: Graph (the canvas), Building blocks
@@ -3315,10 +3359,24 @@ function setArchTab(t) {
 function switchCoreView(v) {
   coreView = v;
   renderWorkspace();
-  if (v === 'arch') { initArchNav(); setArchTab(archTab); }
-  if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); }
-  if (coreInited) startQueuePolling(); // rate depends on which view is now active
+  // With both panes on screen, both need their data — not just the one whose chip
+  // was last clicked.
+  const split = coreSplit();
+  if (split || v === 'arch') { initArchNav(); setArchTab(archTab); }
+  if (split || v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
+  if (coreInited) startQueuePolling();
 }
+
+// Crossing the breakpoint changes which panes exist, so the workspace has to be
+// laid out again — and whichever half was hidden has never loaded its data.
+let _coreWasSplit = null;
+window.addEventListener('resize', () => {
+  if (!document.getElementById('coreApp').classList.contains('open')) return;
+  const now = coreSplit();
+  if (now === _coreWasSplit) return;
+  _coreWasSplit = now;
+  switchCoreView(coreView);
+});
 
 // Jump to the Flow view and open a given task in the detail pane — used by the
 // hand-off confirmation after queuing a prompt from Architecture/Seeds/Studio.
@@ -3339,7 +3397,10 @@ function jumpToQueueItem(id) {
       const card = document.createElement('div');
       card.className = 'flow-expanded';
       card.id = 'flowExpanded';
-      host.insertBefore(card, host.firstChild);
+      // Below the "what to do next" panel when it is showing — a task detail card
+      // above the project's ranked next steps reads as though it were one of them.
+      const nu = host.querySelector('.nb-shortlist');
+      host.insertBefore(card, nu ? nu.nextSibling : host.firstChild);
       qRenderDetail(qSelected);
     }
   }
@@ -3703,7 +3764,10 @@ function renderAiSettings() {
 
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
-  const flowVisible = coreView === 'flow' && document.getElementById('coreApp').classList.contains('open');
+  // In split mode the Flow is on screen whatever the chips say, so the fast rate
+  // has to follow "is Core open and the Flow showing", not "is the Flow tab active".
+  const coreOpen = document.getElementById('coreApp').classList.contains('open');
+  const flowVisible = coreOpen && (coreSplit() || coreView === 'flow');
   qPollTimer = setInterval(qLoad, flowVisible ? 4000 : 15000);
 }
 
@@ -4380,6 +4444,154 @@ function qMemoryBadge(p) {
   return `<span class="q-badge" style="background:${amber ? '#8a6a1e' : '#5a6b8a'};" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier).">🔁 ${ctxTurns}/${ctxLimit}</span>`;
 }
 
+// Fetch the ranked next steps. Free on the server, so this is safe to call on
+// entering the view — no click, no cost. The component trunk lives in this file
+// rather than the DB, so the catalog travels with the request, exactly as it
+// already does for the Mind's signals call.
+async function loadNextUp(quiet) {
+  if (nextUpBusy) return;
+  nextUpBusy = true;
+  if (!quiet) nextUpErr = '';
+  try {
+    const out = await apiWrite('/api/architecture/next', 'POST', { catalog: archCatalog(), limit: 3 });
+    nextUp = out && out.picks ? out : null;
+    nextUpErr = '';
+  } catch (e) {
+    // An older server without the endpoint, or an offline moment. Say so instead
+    // of showing an empty panel that looks like "there is nothing to do".
+    nextUpErr = 'Could not work out the order just now.';
+  } finally {
+    nextUpBusy = false;
+    scheduleFlowRender();
+  }
+}
+
+function nuTerrLabel(id) {
+  const t = TERRITORIES.find(x => x.id === id);
+  return t ? t.label : (id || '');
+}
+
+// One row of the ranked list. `n` is the position shown to the reader; blocked
+// rows get no number because they are not something you can start.
+function nuRowHtml(p, n) {
+  const numCell = n ? `<span class="nb-short-num">${n}</span>` : '<span class="nb-short-num nu-blocked">·</span>';
+  const build = p.ready
+    ? `<button class="nb-build" data-nubuild="${p.id}">⚡ Build${flowWorldPickSuffix('component', p.id)}</button>`
+    : `<button class="ctrlbtn" data-nubuild="${p.id}" title="Queues it anyway — it waits until the things it needs are done">Queue anyway</button>`;
+  return `<div class="nb-short-row">
+    ${numCell}
+    <div style="flex:1;min-width:0;">
+      <div class="nb-name">${qEsc(p.name)} <span class="nb-terr">${qEsc(nuTerrLabel(p.territory))}</span></div>
+      <div class="nu-reason">${qEsc(p.reason || '')}</div>
+      ${p.next ? `<div class="nu-next"><b>Next:</b> ${qEsc(p.next)}</div>` : ''}
+    </div>
+    ${build}
+  </div>`;
+}
+
+// The whole section, pinned at the top of the Flow. Deliberately three rows: the
+// question being answered is "what do I do next", and a list of twelve is the
+// thing that made that question unanswerable in the first place. The rest is one
+// click away.
+function flowNextUpHtml() {
+  if (!nextUp) {
+    if (nextUpErr) return `<div class="nb-shortlist"><div class="nb-shortlist-head"><span>✨ What to do next</span></div><div class="nu-reason">${qEsc(nextUpErr)}</div></div>`;
+    if (nextUpBusy) return `<div class="nb-shortlist"><div class="nb-shortlist-head"><span>✨ Working out what to do next…</span></div></div>`;
+    return '';
+  }
+  const picks = nextUp.picks || [], rest = nextUp.rest || [], moving = nextUp.in_flight || [];
+  if (!picks.length && !moving.length) return '';
+
+  let html = `<div class="nb-shortlist">
+    <div class="nb-shortlist-head">
+      <span>✨ What to do next</span>
+      <span class="nu-head-btns">
+        <button class="ctrlbtn" id="nuSecondBtn" title="One model call — asks Claude to look at this order and say if it would change it">✦ Second opinion</button>
+        <button class="ctrlbtn" id="nuRefreshBtn" title="Work the order out again — free, no model call">↻</button>
+      </span>
+    </div>`;
+
+  html += picks.map((p, i) => nuRowHtml(p, i + 1)).join('');
+
+  if (nextUp.second_opinion) {
+    html += `<div class="nu-second">✦ ${qEsc(nextUp.second_opinion)}</div>`;
+  }
+
+  if (moving.length) {
+    html += `<div class="nu-moving">Already under way: ${moving.map(m => qEsc(m.name)).join(', ')} — left off the list so it never tells you to start something twice.</div>`;
+  }
+
+  if (rest.length) {
+    html += `<button class="ctrlbtn nu-more" id="nuMoreBtn">${nextUpOpen ? '▾ Hide the rest' : `▸ Show the other ${rest.length}`}</button>`;
+    if (nextUpOpen) {
+      const ready = rest.filter(r => r.ready), blocked = rest.filter(r => !r.ready);
+      if (ready.length) html += `<div class="nu-grouphead">Also ready, lower down</div>` + ready.map((p, i) => nuRowHtml(p, picks.length + i + 1)).join('');
+      if (blocked.length) html += `<div class="nu-grouphead">Waiting on something else first</div>` + blocked.map(p => nuRowHtml(p, 0)).join('');
+    }
+  }
+  return html + '</div>';
+}
+
+// Wiring for the section. Called from renderFlow after the list is written.
+function wireNextUp(host) {
+  const more = host.querySelector('#nuMoreBtn');
+  if (more) more.onclick = () => { nextUpOpen = !nextUpOpen; renderFlow(); };
+  const refresh = host.querySelector('#nuRefreshBtn');
+  if (refresh) refresh.onclick = () => { nextUp = null; loadNextUp(); renderFlow(); };
+  const second = host.querySelector('#nuSecondBtn');
+  if (second) second.onclick = () => nuSecondOpinion(second);
+  host.querySelectorAll('[data-nubuild]').forEach(b => {
+    b.onclick = () => {
+      const c = ARCH_BY_ID[b.getAttribute('data-nubuild')];
+      if (!c) return;
+      const { title, prompt } = nbQueuePromptOf(c);
+      b.disabled = true; b.textContent = 'Queuing…';
+      const we = flowWorldEntry('component', c.id);
+      const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
+      queuePromptDirect(title, prompt, c.id, null, inspiration).then(p => {
+        // Re-rank straight away: the thing just queued must leave the list.
+        if (p) { qLoad(); loadNextUp(true); }
+        else { b.disabled = false; b.textContent = '⚡ Build'; }
+      });
+    };
+  });
+}
+
+// The model as a second opinion, never as the answer. The free order above is
+// already on screen and stays the baseline, so a bad or unavailable answer here
+// costs nothing — it can only add a remark. This finally wires up
+// /notbuilt-shortlist, which had a finished backend and a finished panel in this
+// file and was never once called.
+async function nuSecondOpinion(btn) {
+  if (!nextUp || nextUpBusy) return;
+  const all = [...(nextUp.picks || []), ...(nextUp.rest || [])];
+  if (!all.length) return;
+  btn.disabled = true; btn.textContent = '✦ Asking…';
+  try {
+    const items = all.map(p => ({
+      id: p.id, name: p.name, territory: p.territory, status: p.status,
+      what: (ARCH_BY_ID[p.id] || {}).what || '', next: p.next || '', buildable: !!p.ready,
+    }));
+    const out = await apiWrite('/api/architecture/notbuilt-shortlist', 'POST', { items });
+    const picks = (out && out.picks) || [];
+    const mine = (nextUp.picks || []).map(p => p.id);
+    const theirs = picks.map(p => p.id);
+    const same = theirs.length && theirs.every((id, i) => id === mine[i]);
+    if (!picks.length) nextUp.second_opinion = 'No clear answer came back — the order above stands.';
+    else if (same) nextUp.second_opinion = 'Claude agrees with this order.';
+    else {
+      const named = picks.slice(0, 3).map((p, i) => `${i + 1}. ${(ARCH_BY_ID[p.id] || {}).name || p.id}`).join('  ');
+      const why = picks.find(p => p.reason && !mine.includes(p.id)) || picks.find(p => p.reason);
+      nextUp.second_opinion = `Claude would order it: ${named}.${why && why.reason ? ' Its reason: ' + why.reason : ''}`;
+    }
+  } catch (e) {
+    nextUp.second_opinion = 'Could not get a second opinion just now — the order above stands.';
+  } finally {
+    btn.disabled = false;
+    renderFlow();
+  }
+}
+
 function flowSection(icon, title, count, rowsHtml) {
   return `<div class="flow-section"><div class="flow-sec-head"><span class="flow-sec-title">${icon} ${title}</span><span class="flow-sec-count">${count}</span></div>${rowsHtml}</div>`;
 }
@@ -4529,6 +4741,13 @@ function renderFlow() {
     html = `<div class="flow-filterchip">🔎 Showing only what touches <b>${qEsc(fnode.name || flowComponentFilter)}</b> <button class="ctrlbtn" id="flowFilterClear">✕ Clear</button></div>` + html;
   }
 
+  // "What to do next" rides at the very top, so the column reads straight down as
+  // the whole loop: what to do → what is being asked → what is running → what is
+  // done. Hidden while a component filter or a search is narrowing the view, where
+  // a project-wide ranking would be answering a question nobody asked.
+  const showNextUp = (flowType === 'all') && !flowComponentFilter && !flowSearch;
+  if (showNextUp) html = flowNextUpHtml() + html;
+
   if (!html) {
     const guide = flowComponentFilter
       ? 'Nothing in the Flow is tied to this component yet — queue a prompt from its detail page and it will show here.'
@@ -4538,6 +4757,7 @@ function renderFlow() {
   host.innerHTML = html;
 
   // Row wiring
+  if (showNextUp) wireNextUp(host);
   const filterClear = document.getElementById('flowFilterClear');
   if (filterClear) filterClear.onclick = () => { flowComponentFilter = null; renderFlow(); };
   // Preset answers now live on the row itself, so a question can be answered
@@ -4555,9 +4775,13 @@ function renderFlow() {
       if (e.target.closest('.q-optbtn')) return;
       if (e.target.closest('.nb-more')) return;
       if (e.target.closest('.q-title-inline')) return;
-      if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; renderFlow(); return; }
+      if (qSelected && qSelected.id === id) { qSelected = null; flowSideSel = null; archHighlightFor(null); renderFlow(); return; }
       flowSideSel = null;
       qSelected = qPrompts.find(p => p.id === id);
+      // The other half of the link: picking a task lights up the piece of the
+      // architecture it belongs to. (Tasks created before component_id was set on
+      // every path carry no piece — those simply highlight nothing.)
+      archHighlightFor(qSelected ? qSelected.component_id : null);
       if (qSelected && !qSelected.seen_at) {
         qSelected.seen_at = '1';
         apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
@@ -6714,6 +6938,9 @@ async function nbAutoLook() {
 function renderNotbuiltFlow() {
   const host = document.getElementById('tvBodyFlow');
   if (!host) return;
+  // The ranked order this list now follows is computed once and reused; ask for it
+  // if we arrived here without it (free, no model call).
+  if (!nextUp && !nextUpBusy) loadNextUp(true);
   const terrChips = ['', ...TERRITORIES.map(t => t.id)].map(tid =>
     `<button class="ctrlbtn nb-chip${nbFilterTerr === tid ? ' on' : ''}" data-nbterr="${tid}">${tid === '' ? 'All' : (TERRITORIES.find(t => t.id === tid) || {}).label}</button>`).join('');
   const readyChips = ['', 'buildable', 'locked'].map(rv =>
@@ -6761,10 +6988,25 @@ function renderNotbuilt() {
   if (nbFilterTerr) items = items.filter(it => it.c.territory === nbFilterTerr);
   if (nbFilterReady === 'buildable') items = items.filter(it => it.state === 'buildable');
   if (nbFilterReady === 'locked') items = items.filter(it => it.state === 'locked');
+  // One ordering, not three. This list used to sort itself with nbSmartOrder — a
+  // fourth opinion that ignored how much each piece unlocks and ranked
+  // least-started work first — so the detailed list and the "what to do next"
+  // panel could contradict each other in front of you. Both now follow the ranked
+  // order computed on the server; nbSmartOrder stays only as the offline fallback
+  // for when that call has not landed yet.
   if (nbOrder) {
     const pos = {};
     nbOrder.forEach((id, i) => { pos[id] = i; });
     items = items.slice().sort((a, b) => (pos[a.c.id] ?? 9999) - (pos[b.c.id] ?? 9999));
+  } else if (nextUp) {
+    const pos = {};
+    [...(nextUp.picks || []), ...(nextUp.rest || [])].forEach((p, i) => { pos[p.id] = i; });
+    // Anything already under way sorts to the end rather than vanishing: this list
+    // is the full browsable inventory, unlike the three-row panel.
+    const moving = new Set((nextUp.in_flight || []).map(p => p.id));
+    items = items.slice().sort((a, b) =>
+      (moving.has(a.c.id) - moving.has(b.c.id))
+      || ((pos[a.c.id] ?? 9999) - (pos[b.c.id] ?? 9999)));
   } else {
     items = nbSmartOrder(items);
   }
@@ -6956,7 +7198,7 @@ const TERRITORIES = [
   { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
   { id:'interface', label:'Interface', sub:'Layout & spacing, Typography & color, Interaction patterns, Per-view polish.' },
 ];
-let archLayout = 'map', archLayer = 'status', archSelected = null;
+let archLayout = 'list', archLayer = 'status', archSelected = null;
 const archViewport = { x: 0, y: 0, k: 1 };
 let archEdgesOn = true, archHover = null;
 let archTrail = null; // ids highlighted by the last "ask about this architecture" answer
@@ -7198,8 +7440,36 @@ function syncArchControls() {
   if (focusSel && focusSel.value !== (archFocus || '')) focusSel.value = archFocus || '';
 }
 
+// ── Zoom, for the view that is actually on screen ────────────────────────────
+// These four used to address `#archCanvas` exclusively — an element only the
+// (never-called) buildMapHtml/buildTreeHtml produced. So the − / + / ⌂ buttons and
+// the dependency-lines redraw were dead controls: every click ran, found nothing,
+// and returned. The tech tree renders an SVG into #archTreeHost instead, so that
+// is what gets scaled now, by setting width/height against the natural size
+// recorded on the element (which grows the scroll area with the zoom, unlike a CSS
+// transform, so native scrolling still reaches every column).
+let archTreeZoom = 1;
+
+function archTreeSvg() {
+  const host = document.getElementById('archTreeHost');
+  return host ? host.querySelector('svg.arch-treesvg') : null;
+}
+
 // Zoom around a point in the stage's coordinate space (null = stage center), clamped.
 function zoomArchCanvas(ratio, at) {
+  const svg = archTreeSvg();
+  if (svg) {
+    const host = document.getElementById('archTreeHost');
+    // Keep the stage's midpoint fixed, so zooming does not throw away your place.
+    const midX = host.scrollLeft + host.clientWidth / 2, midY = host.scrollTop + host.clientHeight / 2;
+    const prev = archTreeZoom;
+    archTreeZoom = Math.min(Math.max(archTreeZoom * ratio, 0.35), 3);
+    applyArchTransform();
+    const f = archTreeZoom / prev;
+    host.scrollLeft = midX * f - host.clientWidth / 2;
+    host.scrollTop = midY * f - host.clientHeight / 2;
+    return;
+  }
   const stage = document.getElementById('archStage');
   if (!stage) return;
   const rect = stage.getBoundingClientRect();
@@ -7212,6 +7482,16 @@ function zoomArchCanvas(ratio, at) {
 
 // Center the whole graph in the stage at a comfortable scale.
 function fitArchCanvas() {
+  const svg = archTreeSvg();
+  if (svg) {
+    // The tree is already laid out to fit the pane's width (see archDrawTree), so
+    // fitting is a return to natural size with the view scrolled back to the start.
+    archTreeZoom = 1;
+    applyArchTransform();
+    const host = document.getElementById('archTreeHost');
+    if (host) { host.scrollLeft = 0; host.scrollTop = 0; }
+    return;
+  }
   const stage = document.getElementById('archStage');
   const canvas = document.getElementById('archCanvas');
   if (!stage || !canvas) return;
@@ -7226,6 +7506,12 @@ function fitArchCanvas() {
 }
 
 function applyArchTransform() {
+  const svg = archTreeSvg();
+  if (svg) {
+    const nw = Number(svg.getAttribute('data-nw')) || 0, nh = Number(svg.getAttribute('data-nh')) || 0;
+    if (nw && nh) { svg.setAttribute('width', Math.round(nw * archTreeZoom)); svg.setAttribute('height', Math.round(nh * archTreeZoom)); }
+    return;
+  }
   const canvas = document.getElementById('archCanvas');
   if (canvas) canvas.style.transform = `translate(${archViewport.x}px, ${archViewport.y}px) scale(${archViewport.k})`;
 }
@@ -7249,79 +7535,11 @@ function archNodeBadge(c) {
 // dependency edges read top-to-bottom as an actual tech tree. Focus mode
 // restricts the tree to one territory (external dependencies become chips); the
 // status filter dims the rest.
-// Map layout — the territories side by side (or one focused territory alone).
-// Same node ids as ever, so the dependency edges draw across the whole canvas.
-// Collapsed territories render as slim summary bars; the status filter dims
-// non-matching components.
-function buildMapHtml() {
-  const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
-  let html = '<div class="arch-cols" id="archCols">';
-  territories.forEach(t => {
-    const nodes = ARCH_DATA.filter(c => c.territory === t.id);
-    const collapsed = !archFocus && archCollapsed.has(t.id);
-    const stats = archTerritoryStats(t.id);
-    html += `<div class="arch-col${collapsed ? ' collapsed' : ''}" data-terr="${t.id}">`;
-    html += `<div class="arch-col-headrow">
-        <button class="arch-col-fold" data-fold="${t.id}" title="${collapsed ? 'Expand' : 'Collapse'} this territory">${collapsed ? '▸' : '▾'}</button>
-        <div class="arch-col-head" style="color:${TERRITORY_COLORS[t.id]}">${t.label}</div>
-        <span class="arch-col-count">${nodes.length} ${nodes.length === 1 ? 'component' : 'components'}</span>
-        <button class="arch-col-focusbtn" data-focus="${t.id}" title="Focus this territory — its connections stay visible as chips">⛶</button>
-      </div>`;
-    if (collapsed) {
-      html += `<div class="arch-col-sub">${t.sub}</div>`;
-      html += `<div class="arch-col-stats">${stats.built} built · ${stats.locked} need work${stats.spec ? ' · ' + stats.spec + ' speculative' : ''}</div>`;
-    } else {
-      html += `<div class="arch-col-sub">${t.sub}</div>`;
-      nodes.forEach(c => {
-        const b = archNodeBadge(c);
-        const spec = c.provenance === 'speculative';
-        const off = archFilteredOff(c) ? ' st-off' : '';
-        html += `<div class="arch-node${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
-          <div class="an-name">${spec?'✦ ':''}${c.name}</div>
-          <span class="an-badge" style="background:${b.color}">${b.text}</span>
-          ${c.what ? `<div class="an-what">${qEsc(c.what)}</div>` : ''}
-          ${archCardActions(c)}
-        </div>`;
-      });
-    }
-    html += '</div>';
-  });
-  html += '</div>';
-  if (archFocus) {
-    const ctx = archContextList(archFocus);
-    html += archContextHtml(ctx.pre, ctx.post);
-  }
-  return html;
-}
-
-function buildTreeHtml() {
-  const pool = archFocus ? ARCH_DATA.filter(c => c.territory === archFocus) : ARCH_DATA;
-  const tiers = {};
-  pool.forEach(c => { const d = archDepth(c); (tiers[d] = tiers[d] || []).push(c); });
-  const order = {}; TERRITORIES.forEach((t, i) => order[t.id] = i);
-  let html = '<div class="arch-tiers" id="archTree">';
-  Object.keys(tiers).map(Number).sort((a,b) => a - b).forEach(d => {
-    const nodes = tiers[d].slice().sort((a,b) => (order[a.territory]-order[b.territory]) || a.name.localeCompare(b.name));
-    html += `<div class="arch-tier"><div class="arch-tier-label">${d === 0 ? 'Roots' : 'Tier ' + d}</div><div class="arch-tier-nodes">`;
-    nodes.forEach(c => {
-      const st = archNodeState(c);
-      const spec = c.provenance === 'speculative';
-      const off = archFilteredOff(c) ? ' st-off' : '';
-      html += `<div class="arch-node tt-${st}${spec?' tt-spec':''}${off}${archSelected===c.id?' selected':''}" data-arch-id="${c.id}" id="archnode-${c.id}" tabindex="0" role="button">
-        <div class="an-name" style="border-left:3px solid ${TERRITORY_COLORS[c.territory]}; padding-left:6px;">${spec?'✦ ':''}${c.name}</div>
-        <span class="an-badge" style="background:${spec?'#7a5ea8':TT_STATE_COLORS[st]}">${spec?'speculative':TT_STATE_LABELS[st]}</span>
-        ${archCardActions(c)}
-      </div>`;
-    });
-    html += '</div></div>';
-  });
-  html += '</div>';
-  if (archFocus) {
-    const ctx = archContextList(archFocus);
-    html += archContextHtml(ctx.pre, ctx.post);
-  }
-  return html;
-}
+// (Deleted here: buildMapHtml() and buildTreeHtml() — two more layouts that drew
+//  the architecture in their own dependency order. Neither had a single caller;
+//  the checklist and the tech tree replaced them. They were also the only code
+//  that ever produced #archCanvas, which is why the zoom and dependency-line
+//  buttons were pointing at nothing. See zoomArchCanvas/applyArchTransform above.
 
 // The live graph for the backend's idea endpoints — the trunk lives here in the
 // HTML, so the server works from what the user sees.
@@ -7329,6 +7547,11 @@ function archCatalog() {
   return ARCH_DATA.map(c => ({
     id: c.id, name: c.name, territory: c.territory,
     status: c.status || 'Concept', what: c.what || '', depends: c.depends || [],
+    // `next` and `why` travel too. Without `next`, the server's unifiedNodes()
+    // read it as absent for every trunk component, which fired the
+    // "no next step" signal on all 16 and quietly docked their health scores —
+    // and those scores now help order the Next-up list.
+    next: c.next || '', why: c.why || '',
   }));
 }
 
@@ -7495,9 +7718,22 @@ function archFocusName(id) {
 // Whichever layout is showing right now — selection, filters, edge toggle and
 // live-data reloads all funnel through this instead of assuming one renderer.
 function archRedrawCurrent() {
-  if (archLayout === 'techtree') archDrawTree();
+  // archDrawTree writes a fresh SVG at natural size, so the current zoom has to be
+  // re-applied or every redraw (an edges toggle, a filter change) silently resets it.
+  if (archLayout === 'techtree') { archDrawTree(); applyArchTransform(); }
   else if (archLayout === 'list') archDrawChecklist();
   else drawArchDeps();
+}
+
+// Show, on the map, which piece a task belongs to. Only meaningful when both
+// halves are on screen, so it costs nothing otherwise. It reuses archTrail and
+// archApplyHoverDim — a class toggle on elements that already exist, never a
+// rebuild, so selecting a task cannot disturb the graph you are looking at.
+function archHighlightFor(componentId) {
+  if (!coreSplit()) return;
+  if (!document.getElementById('archStage')) return;
+  archTrail = componentId ? new Set([componentId]) : null;
+  try { archApplyHoverDim(); } catch { /* stage not drawn yet */ }
 }
 
 // Hover highlighting for Tech Tree. It only ever toggles a class / sets an
@@ -7645,7 +7881,11 @@ function archDrawTree() {
     col.forEach((c, i) => { pos[c.id] = { x: leftPad + d * colWidth, y: topPad + i * rowHeight }; });
   });
 
-  host.innerHTML = `<svg class="arch-treesvg" width="${svgW}" height="${svgH}">
+  // viewBox + natural size recorded so the zoom buttons can scale this by setting
+  // width/height. Scaling an SVG that way (rather than with a CSS transform) grows
+  // the scroll area with it, so the wrapper's native scrolling still reaches every
+  // column when zoomed in.
+  host.innerHTML = `<svg class="arch-treesvg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" data-nw="${svgW}" data-nh="${svgH}">
       <defs><marker id="arch-tree-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
       <g id="archTreeColLabels"></g>
       <g id="archTreeEdgeLayer"></g>
@@ -7867,7 +8107,12 @@ function renderArchStage() {
   });
   if (archLayout === 'techtree') { archDrawTree(); return; }
   archDrawChecklist(); // default to list
-  attachNav(); // re-attach NavCtrl after DOM is fully rendered
+  // (Removed a call to attachNav() here: it is a const declared inside
+  // initArchNav(), so from this top-level function it threw a ReferenceError on
+  // every single checklist render. It was also a no-op by then — it returns
+  // immediately unless archLayout is 'map' or 'tree', and neither is reachable
+  // from the UI, which only produces 'list' and 'techtree'. The checklist and the
+  // tech tree both pan by native overflow scrolling.)
 }
 
 // Ask / zoom / edges controls live inside the re-rendered stage, so their
@@ -7883,11 +8128,8 @@ function wireArchStageControls() {
     b.onclick = () => {
       // Transition only the button-triggered jump, not live drag-panning (which
       // calls applyArchTransform() continuously and would feel laggy if animated).
-      const canvas = document.getElementById('archCanvas');
-      if (canvas) canvas.classList.add('arch-zoom-anim');
       if (b.getAttribute('data-arch-zoom') === 'fit') fitArchCanvas();
       else zoomArchCanvas(b.getAttribute('data-arch-zoom') === 'in' ? 1.3 : 1 / 1.3, null);
-      if (canvas) setTimeout(() => canvas.classList.remove('arch-zoom-anim'), 160);
     };
   });
   const edgesBtn = document.getElementById('archEdgesBtn');
@@ -8121,6 +8363,9 @@ function renderArchDetail(id) {
   const flowBtn = document.getElementById('archFlowBtn');
   if (flowBtn) flowBtn.onclick = () => {
     flowComponentFilter = c.id;
+    // With both halves on screen there is nothing to switch to — just narrow the
+    // column beside it, and keep the component selected here.
+    if (coreSplit()) { renderFlow(); return; }
     setMode('core');
     switchCoreView('flow');
   };
@@ -8208,7 +8453,7 @@ function renderArchDetail(id) {
   document.getElementById('archQueueBtn').onclick = () => {
     const qhost = document.getElementById('archQueueHost');
     qhost.innerHTML = `<div class="arch-queueform">
-        <input id="qfTitle" value="${c.name}: ${c.next.split('.')[0]}">
+        <input id="qfTitle" value="${c.name}: ${(c.next || '').split('.')[0]}">
         <textarea id="qfPrompt">${c.next}\n\nContext — ${c.name} (${c.territory}, ${c.status}): ${c.what}</textarea>
         <button id="qfSubmit">Create queued prompt</button>
         <div class="arch-qf-status" id="qfStatus"></div>
@@ -8552,40 +8797,11 @@ document.addEventListener('keydown', (e) => {
 #fmcns-chat-login input { width: 100%; padding: 7px 9px; border: 1px solid var(--c-border-2); border-radius: 6px; font-size: 12.5px; margin: 8px 0; }
 #fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: var(--c-ink); color: var(--c-bg); font-size: 12.5px; cursor: pointer; }
 .fw-resize { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; cursor: nwse-resize; z-index: 1; }
-.fw-task-form { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
-.fw-task-form textarea { border: 1px solid var(--c-border-2); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; resize: none; font-family: inherit; min-height: 80px; line-height: 1.45; }
-.fw-task-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.fw-mode-seg { display: flex; gap: 2px; }
-.fw-mode-seg button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--c-ink-3); }
-.fw-mode-seg button.active { background: var(--c-ink-solid); color: var(--c-on-solid); border-color: var(--c-ink-solid); }
-.fw-task-status { font-size: 11px; color: var(--c-ink-4); margin-left: auto; }
-.fw-task-status a { color: var(--c-ink-3); }
-.fw-task-submit { border: none; background: var(--c-ink-solid); color: var(--c-on-solid); border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; }
-.fw-task-submit:disabled { opacity: .5; cursor: default; }
-#fw-tab-queue { overflow: hidden; }
-#fw-queue-list { flex: 1; overflow-y: auto; padding: 10px 12px; }
-.fw-q-sec { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--c-ink-4); margin: 10px 0 6px; }
-.fw-q-sec:first-child { margin-top: 0; }
-.fw-q-card { border: 1px solid var(--c-border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: var(--c-surface); font-size: 12px; }
-.fw-q-card .fw-q-title { font-weight: 600; color: var(--c-ink); margin-bottom: 4px; }
-.fw-q-q { color: var(--c-ink-2); margin-bottom: 6px; font-size: 12.5px; }
-.fw-q-opts { display: flex; gap: 6px; flex-wrap: wrap; }
-.fw-q-opts button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--c-ink); }
-.fw-q-opts button:hover { border-color: var(--c-ink-3); }
-.fw-q-reply { display: flex; gap: 6px; margin-top: 6px; }
-.fw-q-reply input { flex: 1; border: 1px solid var(--c-border-2); border-radius: 6px; padding: 5px 8px; font-size: 11.5px; font-family: inherit; }
-.fw-q-reply button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
-.fw-q-row { display: flex; align-items: center; gap: 8px; padding: 5px 2px; font-size: 11.5px; border-bottom: 1px solid var(--c-border); }
-.fw-q-row:last-child { border-bottom: none; }
-.fw-q-row .fw-q-num { color: var(--c-ink-4); font-size: 10px; width: 16px; flex-shrink: 0; text-align: right; }
-.fw-q-row .fw-q-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-ink-2); }
-.fw-q-meta { color: var(--c-ink-4); font-size: 10px; flex-shrink: 0; }
-.fw-q-row button { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; flex-shrink: 0; }
-.fw-q-row button:hover { border-color: var(--c-ink-3); }
-.fw-pick-btn { border: 1px solid var(--c-border-2); background: var(--c-surface); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--c-ink-2); }
-.fw-pick-btn:hover { border-color: var(--c-ink-3); }
-.fw-pick-btn.active { border-color: var(--c-danger); color: var(--c-danger); }
-.fw-pick-ctx { font-size: 10.5px; color: var(--c-ink-4); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* (Deleted here: 34 rules for the floating widget's old New-task and Queue tabs
+   — .fw-task-*, .fw-mode-seg, .fw-q-*, .fw-pick-btn/.fw-pick-ctx. Those tabs were
+   folded into the Queue slide-over long ago and showFwTab() now forces 'chat', so
+   no element ever carried these classes again. The picker banner and hover
+   highlight below are still live.) */
 .fw-pick-banner { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: var(--c-ink-solid); color: var(--c-on-solid); padding: 8px 14px; border-radius: 10px; font-size: 12.5px; z-index: 10001; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
 .fw-pick-banner button { border: 1px solid var(--c-border-2); background: transparent; color: inherit; border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
 .fw-hover-hl { position: fixed; border: 1.5px solid var(--c-accent); border-radius: 4px; pointer-events: none; z-index: 10000; }

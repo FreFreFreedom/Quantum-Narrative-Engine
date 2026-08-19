@@ -8,7 +8,8 @@
     "start": "node server/src/index.js",
     "dev": "node server/src/index.js",
     "runner": "node scripts/queue-runner.js",
-    "ship:selftest": "node scripts/ship-selftest.js"
+    "ship:selftest": "node scripts/ship-selftest.js",
+    "next:selftest": "node scripts/nextsteps-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",
