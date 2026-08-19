@@ -132,6 +132,15 @@ if (process.env.PREGEN_ENABLED === '1' && process.env.WARMUP_DISABLED !== '1') {
 }
 
 const app = express();
+// Railway terminates TLS at exactly one proxy in front of this container, so the
+// client's real address arrives in X-Forwarded-For. Without this, express-rate-limit
+// throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR on every login AND keys its bucket on the
+// proxy's address instead of the caller's — meaning the 10-attempts-per-15-minutes
+// login limit below is shared by everyone at once. The local runner re-logs in on
+// start and on any 401, so that shared bucket can lock the runner out of its own
+// queue: the queue then silently stops, which is the exact failure this app can least
+// afford. One hop, not `true` — trusting every hop lets a caller spoof the header.
+app.set('trust proxy', 1);
 // Antoine opens fmcns_navigator.html either from the deployed frontend (same
 // origin as this API — no CORS involved) or directly as a local file (Origin:
 // null) — see CLAUDE.md. Allow just those, not any website that happens to
