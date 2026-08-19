@@ -355,11 +355,11 @@ function initSchema(db) {
       task_id TEXT REFERENCES agent_tasks(id),
       agent_key TEXT,
       branch TEXT NOT NULL, base_sha TEXT, head_sha TEXT,
-      status TEXT NOT NULL DEFAULT 'pending',   -- pending|approved|changes_requested|rejected|merged|reverted
+      status TEXT NOT NULL DEFAULT 'pending',   -- pending|approved|shipping|merged|reverting|reverted|changes_requested|rejected
       verdict TEXT,                             -- safe|risky|unsafe
-      plain_summary TEXT,                       -- French, for the human
+      plain_summary TEXT,                       -- one plain-English line, shown to Antoine verbatim
       concerns TEXT,                            -- JSON array
-      checks TEXT,                              -- JSON {syntax,boot,endpoints,html,scope,conflict}
+      checks TEXT,                              -- JSON {saved,syntax,html,scope} (boot/endpoints/conflict were removed)
       files_changed TEXT, insertions INTEGER, deletions INTEGER,
       conflicts_with TEXT,                      -- JSON array of branch names
       reviewer_task_id TEXT,
@@ -1142,6 +1142,38 @@ export function initFilmEnrichmentSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_helper_jobs_status ON helper_jobs(status, created_at)`); } catch {}
+
+  // Git work the SERVER wants doing but cannot do: it runs in a Railway container
+  // with no git repository, so publishing a finished task (merge the branch onto the
+  // trunk, push it) has to happen on Antoine's Mac, where the checkout and the local
+  // runner live. Same claim/result shape as helper_jobs above.
+  //
+  // A separate table rather than a `kind` on helper_jobs because these are the
+  // opposite kind of row: helper jobs are disposable and nobody re-reads them, while
+  // these must survive a redeploy (they are the record of what went live), nobody
+  // waits on them in-process, and they need a global one-at-a-time lock that would be
+  // wrong for text jobs.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS git_jobs (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,                       -- 'ship' | 'undo'
+      review_id TEXT NOT NULL,
+      branch TEXT,
+      head_sha TEXT,                            -- ship: the commit expected at the branch tip
+      merge_commit TEXT,                        -- undo: the commit to reverse
+      commit_subject TEXT,
+      status TEXT NOT NULL DEFAULT 'queued',    -- queued|running|done|failed|cancelled
+      attempts INTEGER NOT NULL DEFAULT 0,
+      result TEXT,
+      error TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      claimed_at TEXT,
+      heartbeat_at TEXT,
+      finished_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_git_jobs_status ON git_jobs(status, created_at)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_git_jobs_review ON git_jobs(review_id, created_at)`); } catch {}
 
   // The runner's last Claude-usage reading, persisted. It used to live only in a
   // module variable, so every redeploy blanked the app's usage bar even though

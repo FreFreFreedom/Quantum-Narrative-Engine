@@ -14,6 +14,9 @@
 // calls the container cannot make, because the Claude subscription is on the Mac:
 //   POST /worker/helper/claim       → one parked text job, or {none:true}
 //   POST /worker/helper/:jobId/result → its answer
+//   POST /worker/git/claim          → one publish/undo job, or {none:true}
+//   POST /worker/git/:jobId/heartbeat → proof of life while it works
+//   POST /worker/git/:jobId/result  → what happened
 import { Router } from 'express';
 import {
   claimNextTask, recordRunnerStream, recordRunnerResult,
@@ -21,6 +24,7 @@ import {
 } from '../services/taskRunner.js';
 import * as queue from '../services/promptQueue.js';
 import { claimHelperJob, recordHelperResult } from '../services/ai/text.js';
+import { claimGitJob, recordGitJobResult, noteGitJobHeartbeat } from '../services/gitJobs.js';
 
 export function workerRoutes() {
   const router = Router();
@@ -71,6 +75,32 @@ export function workerRoutes() {
       error: req.body?.error || null,
     });
     if (!ok) return res.status(409).json({ error: 'not_claimable' });
+    res.json({ ok: true });
+  });
+
+  // Git work this server cannot do itself: it has no repository. Registered
+  // before /worker/:id/* so 'git' is never read as a task id, same as 'helper'.
+  // One job runs at a time system-wide — claimGitJob enforces that in the DB.
+  router.post('/worker/git/claim', (req, res) => {
+    if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
+    noteRunnerPoll();
+    const job = claimGitJob();
+    if (!job) return res.json({ none: true });
+    res.json({ job });
+  });
+
+  // Without this, a long push would look like a dead runner and the job would be
+  // handed to someone else half-way through.
+  router.post('/worker/git/:jobId/heartbeat', (req, res) => {
+    noteRunnerPoll();
+    if (!noteGitJobHeartbeat(req.params.jobId)) return res.status(409).json({ error: 'not_running' });
+    res.json({ ok: true });
+  });
+
+  router.post('/worker/git/:jobId/result', (req, res) => {
+    noteRunnerPoll();
+    const out = recordGitJobResult(req.params.jobId, req.body || {});
+    if (out.error) return res.status(409).json(out);
     res.json({ ok: true });
   });
 

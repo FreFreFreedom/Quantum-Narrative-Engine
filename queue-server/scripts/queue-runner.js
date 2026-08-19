@@ -39,6 +39,7 @@ import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv }
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
 import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
+import { shipJob, undoJob } from './git-ship.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
@@ -837,6 +838,12 @@ async function runTask(task) {
       worktree_path: wt.path, branch: wt.branch, ship,
     });
     await slackNotify(slackLine({ task, status, engine: shown, startedAt: taskStartedAt, cost: r.cost, why: r.why }));
+    // Publish straight away rather than waiting for the next idle tick, so a
+    // finished task goes live in seconds. The server's one-at-a-time lock still
+    // applies, so this cannot collide with anything.
+    if (ship?.committed) {
+      try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
+    }
     return;
   }
 
@@ -966,6 +973,54 @@ function commitWork({ wt, task, status, summary, model }) {
   };
 }
 
+// ─── Publishing, on this Mac ──────────────────────────────────────────────────
+// The server decides that a finished task should go live but cannot do it: no git
+// repository in the container. It parks a job; this claims it and runs the git here.
+// Worked only when idle, so publishing never competes with a task for the repo, and
+// one at a time — the server also enforces that in the database, which is what
+// survives a restart.
+//
+// GIT_SHIP_DRY_RUN=1 runs everything except the push. Leave it on until the whole
+// path has been watched working.
+const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
+
+async function runGitJobs() {
+  let r;
+  try { r = await api('/worker/git/claim', {}); } catch { return; }
+  if (!r.ok) return;
+  const body = await r.json();
+  if (body.none || !body.job) return;
+  const job = body.job;
+
+  const label = job.kind === 'undo' ? 'putting back' : 'publishing';
+  console.log(`  ${bold(label)} ${job.branch || job.merge_commit?.slice(0, 8) || job.id}${GIT_SHIP_DRY_RUN ? dim(' (dry run — nothing will be pushed)') : ''}`);
+
+  // Proof of life: without it a slow push looks like a dead runner and the job gets
+  // handed to someone else half-way through.
+  const beat = setInterval(() => { api(`/worker/git/${job.id}/heartbeat`, {}).catch(() => {}); }, 10_000);
+
+  let out;
+  try {
+    const opts = { repo: RUNNER_REPO, trunk: TRUNK, dryRun: GIT_SHIP_DRY_RUN, log: (m) => console.log(dim(`    ${m}`)) };
+    out = job.kind === 'undo' ? undoJob(job, opts) : shipJob(job, opts);
+  } catch (e) {
+    out = { ok: false, error: 'crashed', detail: e.message };
+  } finally {
+    clearInterval(beat);
+  }
+
+  try { await api(`/worker/git/${job.id}/result`, out); } catch { /* the stale sweep re-offers it */ }
+
+  if (out.ok) {
+    console.log(`  ${green(job.kind === 'undo' ? '✓ put back' : '✓ live')}${out.merge_commit ? dim(' — ' + out.merge_commit.slice(0, 8)) : ''}`);
+    await slackNotify(job.kind === 'undo'
+      ? `↩️ *Put back* — the app is back to how it was before that task.\n_<${APP_URL}|open the queue>_`
+      : `🚀 *Live in the app* — ${job.commit_subject || job.branch}\n_<${APP_URL}|open the queue>_`);
+  } else if (out.error !== 'dry_run') {
+    console.log(`  ${red('✗ not published')} — ${out.error}${out.detail ? dim(' (' + out.detail + ')') : ''}`);
+  }
+}
+
 // ─── One runner at a time ─────────────────────────────────────────────────────
 // Two runners on the same queue is not a data-corruption problem — the server's
 // claim is a guarded `UPDATE … WHERE status='approved'`, so a task can only ever
@@ -1071,6 +1126,9 @@ async function main() {
       // Idle is exactly when the helper lane should be worked: no task is
       // competing for the subscription, and a server-side step is stalled
       // waiting on this.
+      // Publishing first: a finished task sitting unpublished matters more than
+      // rescuing a text call, and a git job is seconds long.
+      try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
       try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }
       await printSnapshot();
       await new Promise((s) => setTimeout(s, POLL_IDLE_MS));

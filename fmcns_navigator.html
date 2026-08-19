@@ -605,6 +605,8 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-place-seg { display:flex; border:1px solid var(--c-border-2); border-radius:6px; overflow:hidden; align-self:center; }
 .q-place-seg button { padding:5px 14px; font-size:11px; border:none; background:var(--c-surface); color:var(--c-ink-3); cursor:pointer; }
 .q-place-seg button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
+.q-ship-pill { display:inline-block; border:1px solid; border-radius:999px; padding:0 6px; font-size:10px; font-weight:600; letter-spacing:.02em; margin-right:6px; }
+.q-ship-why { color:var(--c-ink-3); font-size:10.5px; white-space:pre-line; }
 .flow-reviews { border-bottom:1px solid var(--c-border); padding:10px 14px; flex-shrink:0; max-height:240px; overflow-y:auto; }
 .flow-section { margin-bottom:18px; }
 .flow-sec-head { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
@@ -3817,6 +3819,16 @@ async function qAction(action, id, btn) {
       case 'discuss':
         openStudio({ type: 'task', subjectId: id, title: (p && p.title) || 'Task', onDone: () => { qLoad(); } });
         break;
+      case 'ship-undo':
+        // Publishes a reversing change and redeploys, so anything published after
+        // this one stays published. The button is armed twice before it fires.
+        await apiWrite(`/api/travaux/reviews/${p.ship.review_id}/revert`, 'POST');
+        await qLoad();
+        break;
+      case 'ship-now':
+        await apiWrite(`/api/travaux/reviews/${p.ship.review_id}/merge`, 'POST');
+        await qLoad();
+        break;
       case 'world-idea':
         qWorldIdeaModal(id, () => { if (qSelected && qSelected.id === id) qInspireReRender(qSelected); else renderFlow(); });
         break;
@@ -3930,6 +3942,52 @@ function qCostLine(p) {
   return parts.length ? `<div class="q-item-meta"><span>${parts.join(' · ')}</span></div>` : '';
 }
 
+// Did this finished task's work actually reach the app?
+//
+// This was the single biggest blind spot in the whole queue: a task that shipped
+// and a task whose work was silently thrown away looked EXACTLY the same here.
+// Every state word is plain English on purpose — never "merged", never "approved".
+// The wording itself comes from the server (one place decides it) so the two never
+// disagree.
+const Q_SHIP_STYLE = {
+  live:           { text: 'Live',                 color: '#4f9d7a' },
+  shipping:       { text: 'Going live…',          color: 'var(--c-accent)' },
+  putting_back:   { text: 'Putting it back…',     color: 'var(--c-accent)' },
+  waiting_runner: { text: 'Waiting for your Mac', color: '#b8860b' },
+  ready:          { text: 'Ready to go live',     color: '#b8860b' },
+  needs_fix:      { text: 'Not live',             color: '#b23a2f' },
+  put_back:       { text: 'Put back',             color: 'var(--c-ink-3)' },
+  nothing_changed:{ text: 'Nothing changed',      color: 'var(--c-ink-3)' },
+};
+
+function qShipLine(p) {
+  const sh = p.ship;
+  if (!sh || !sh.state || sh.state === 'not_shipped') return '';
+  const style = Q_SHIP_STYLE[sh.state];
+  if (!style) return '';
+  const scale = sh.files
+    ? `${sh.files} file${sh.files === 1 ? '' : 's'} · +${sh.insertions} / −${sh.deletions}`
+    : '';
+  const when = sh.at ? qShipWhen(sh.at) : '';
+  const detail = [scale, when].filter(Boolean).join(' · ');
+  // The message is only worth its own line when it says something the badge does
+  // not — i.e. when something went wrong.
+  const explain = ['needs_fix', 'waiting_runner', 'put_back'].includes(sh.state) && sh.message
+    ? `<div class="q-item-meta q-ship-why">${qEsc(sh.message)}</div>` : '';
+  return `<div class="q-item-meta"><span class="q-ship-pill" style="color:${style.color};border-color:${style.color}">${style.text}</span>${detail ? `<span>${qEsc(detail)}</span>` : ''}</div>${explain}`;
+}
+
+function qShipWhen(iso) {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return '';
+  const mins = Math.round((Date.now() - t) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 // Which CLI + model a task runs on: 'OpenCode · <model>' for opencode rows
 // (provider_model is the concrete model the user picked), 'Claude Code · <tier
 // label>' for claude-code rows (the preset, or the auto-resolved tier).
@@ -4033,6 +4091,10 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       ? iconBtn('eraser', 'Forget the saved conversation and start fresh next time — saves credit', 'clear-context', p.id) : '',
     canRerun ? iconBtn('again', 'Run it again, carrying on from where it left off', 'rerun', p.id) : '',
     canRerun ? iconBtn('again-fresh', 'Run it again from scratch, with no memory of the last try', 'rerun-fresh', p.id) : '',
+    p.ship && p.ship.state === 'live'
+      ? iconBtn('again', 'Put it back — the app goes back to how it was before this task', 'ship-undo', p.id, 'danger') : '',
+    p.ship && ['ready', 'needs_fix', 'put_back'].includes(p.ship.state) && p.ship.review_id
+      ? iconBtn('play', 'Send this live now', 'ship-now', p.id) : '',
     finished ? iconBtn('spark', 'Add a bold idea from this finished task', 'world-idea', p.id) : '',
     iconBtn('chat', 'Talk about this task — it never touches the work itself', 'discuss', p.id),
     iconBtn('trash', 'Remove this task', 'delete', p.id, 'danger'),
@@ -4053,6 +4115,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) : ''}
     ${finished ? qCostLine(p) : ''}
+    ${finished ? qShipLine(p) : ''}
     ${p.pending_question ? `<div class="q-item-q">🙋 ${qEsc(p.pending_question.question)}</div>` : ''}
     ${actions}
   </div>

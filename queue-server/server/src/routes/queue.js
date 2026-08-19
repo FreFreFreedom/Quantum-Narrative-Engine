@@ -3,7 +3,9 @@ import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
 import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
-import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution } from '../services/taskRunner.js';
+import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution, runnerStatus } from '../services/taskRunner.js';
+import { latestReviewForPrompt } from '../services/reviewRunner.js';
+import { shipStateFor } from '../services/gitJobs.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -55,6 +57,9 @@ export function queueRoutes() {
 
   router.get('/prompts', (req, res) => {
     const space = req.query.space || 'fmcns';
+    // Asked once per request, not per prompt: whether a runner is attached decides
+    // between "going live" and "waiting for your Mac" for every finished task.
+    const runnerConnected = runnerStatus().connected;
     const prompts = queue.listPrompts({ space }).map((p) => {
       // Surface the RUNNING task's process state (run_state + heartbeat) so the UI
       // can tell a wedged agent from a busy one — plan Part 3. Null for prompts
@@ -79,6 +84,13 @@ export function queueRoutes() {
         // 90s / silence 5min / attempt cap 30min) — reporting a per-task budget
         // here drew a progress bar against a deadline nothing enforced.
         timeout_minutes: running && !isLocalExecution() ? getExecTimeoutMinutes() : null,
+        // What happened to this task's work after it finished: is it live in the
+        // app, on its way, refused, or waiting for the Mac. Before this the answer
+        // existed nowhere in the UI, so a finished task looked identical whether it
+        // had been published or silently thrown away.
+        ship: p.status === 'done' || p.status === 'blocked'
+          ? shipStateFor(latestReviewForPrompt(p.id), { runnerConnected })
+          : null,
       };
     });
     res.json({

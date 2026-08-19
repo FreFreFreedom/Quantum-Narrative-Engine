@@ -1,26 +1,26 @@
-// services/reviewRunner.js — the review + merge gate (plan Part 4, step 5).
+// services/reviewRunner.js — the gate that decides whether a finished task goes
+// live, and the record of what did.
 //
-// When a dev/design task finishes `done`, a review row is created. The five
-// deterministic checks run FIRST, in the author's worktree, before any model
-// token is spent (the Reviewer agent is step 9 scope — for now verdict derives
-// from the checks alone). Only if every check passes is the work mergeable, and
-// the merge itself re-runs the checks on main before it pushes.
+// It used to do the inspecting AND the git. Both were in the wrong place: it runs
+// inside the Railway container, which has no git repository and cannot see the
+// worktree the work lives in, so every check failed identically for every task ever
+// finished, and every merge returned `no_git`. Nothing this module attempted had
+// ever once succeeded in production.
 //
-// The one file that touches git here is gitOps.js (worktrees/branch refs) —
-// every other git call in this module goes through the helpers at the bottom,
-// which shell out to git exactly as gitOps does. Nothing else in the codebase
-// may run git.
+// The work is now split by what each machine can actually see:
+//   · the Mac's runner    — runs the cheap checks where the files are, and commits
+//                           (services/shipChecks.js, scripts/queue-runner.js)
+//   · this module         — judges the facts it is told, and keeps the record
+//   · services/gitJobs.js — carries the merge/undo over to the Mac to execute
+//
+// So there is no git in this file at all any more. That is the whole point of it.
 
 import { randomUUID } from 'node:crypto';
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync, copyFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, dirname } from 'node:path';
-import { mainRepo, removeWorktree } from './gitOps.js';
 import { getAgent } from './agents.js';
 import { getPrompt } from './promptQueue.js';
-import { regenerateBriefing } from './briefing.js';
 import { autoShipEnabled } from './ai/text.js';
+import { shipCheckMessage } from './shipChecks.js';
+import { enqueueShipJob, enqueueUndoJob, setGitJobHandler } from './gitJobs.js';
 import { broadcastAll } from '../realtime.js';
 
 let db = null;
@@ -54,6 +54,15 @@ export function listReviews({ status = null } = {}) {
   });
 }
 
+// The newest review for a prompt, whatever state it is in — what the Flow list
+// reads to show whether a finished task actually went live.
+export function latestReviewForPrompt(promptId) {
+  if (!db || !promptId) return null;
+  return reviewFromRow(db.prepare(
+    `SELECT * FROM reviews WHERE prompt_id=? ORDER BY created_at DESC LIMIT 1`
+  ).get(promptId));
+}
+
 export function getReview(id) {
   if (!db) return null;
   return reviewFromRow(db.prepare(`SELECT * FROM reviews WHERE id=?`).get(id));
@@ -81,268 +90,157 @@ function broadcastReview(id) {
   if (review) broadcastAll('agent:review:updated', { review });
 }
 
-// ─── Review creation + the five checks ────────────────────────────────────────
+
+// ─── Review creation ──────────────────────────────────────────────────────────
 
 // Called from promptQueue's onAgentTaskFinalized when an implement task finishes
-// `done` with a branch. Question tasks and branchless runs (worktrees disabled)
-// get no review — there is nothing to merge.
+// `done`. Question tasks and branchless runs get no review — there is nothing to
+// publish.
+//
+// This used to run six checks itself, here, inside the Railway container — against
+// a worktree path that only ever existed on Antoine's Mac. It therefore failed
+// instantly and identically for every task ever finished ("The agent working
+// folder no longer exists", six ✗, zero files), so no task in the history of this
+// app was ever eligible to ship. The checks now run on the Mac, at commit time,
+// where the files actually are (services/shipChecks.js, called by the runner), and
+// arrive here as plain facts on the task row. This function's job is to judge, not
+// to inspect.
 export function createReviewForTask(task) {
   if (!db) return null;
   if (!task || task.status !== 'done' || task.mode === 'question' || !task.branch) return null;
+
   // Continuations of the same prompt finish too — reuse the open review for that
   // prompt instead of stacking duplicates (the branch is the same one).
   const existing = db.prepare(`
     SELECT * FROM reviews WHERE prompt_id=? AND status IN ('pending','approved','changes_requested') ORDER BY created_at DESC LIMIT 1
   `).get(task.work_prompt_id);
-  if (existing) {
-    runChecksAndFinalize(existing.id, task);
-    return getReview(existing.id);
+
+  const verdict = judgeTask(task);
+
+  let id = existing?.id;
+  if (!id) {
+    id = randomUUID();
+    db.prepare(`
+      INSERT INTO reviews (id, prompt_id, task_id, agent_key, branch, base_sha, head_sha, status)
+      VALUES (?,?,?,?,?,?,?, 'pending')
+    `).run(id, task.work_prompt_id, task.id, task.agent_key || 'dev1', task.branch, task.base_sha || null, task.head_sha || null);
   }
-  const id = randomUUID();
-  db.prepare(`
-    INSERT INTO reviews (id, prompt_id, task_id, agent_key, branch, base_sha, head_sha, status)
-    VALUES (?,?,?,?,?,?,?, 'pending')
-  `).run(id, task.work_prompt_id, task.id, task.agent_key || 'dev1', task.branch, task.base_sha || null, null);
+
+  updateReview(id, {
+    task_id: task.id,
+    branch: task.branch,
+    head_sha: task.head_sha || null,
+    checks: verdict.checks,
+    concerns: verdict.concerns.length ? JSON.stringify(verdict.concerns) : null,
+    files_changed: JSON.stringify(verdict.filesChanged),
+    insertions: verdict.insertions,
+    deletions: verdict.deletions,
+    status: verdict.ok ? 'approved' : 'changes_requested',
+    verdict: verdict.ok ? 'safe' : 'risky',
+    plain_summary: verdict.plainSummary,
+  });
   broadcastReview(id);
-  runChecksAndFinalize(id, task);
+
+  if (verdict.ok) scheduleAutoShip(id);
   return getReview(id);
 }
 
-function runChecksAndFinalize(reviewId, task) {
-  setImmediate(() => {
-    runChecks({ task, reviewId }).then((result) => {
-      const ok = result.ok;
-      updateReview(reviewId, {
-        checks: result.checks,
-        concerns: ok ? null : result.concerns,
-        files_changed: JSON.stringify(result.filesChanged),
-        insertions: result.insertions,
-        deletions: result.deletions,
-        conflicts_with: JSON.stringify(result.conflictsWith),
-        status: ok ? 'approved' : 'changes_requested',
-        verdict: result.conflictsWith.length ? 'unsafe' : (ok ? 'safe' : 'risky'),
-        plain_summary: result.plainSummary,
-      });
-      console.log(`[reviews] ${reviewId} — ${ok ? 'approved' : 'changes_requested'} (${result.checks.syntax.ok?'✓':'✗'}${result.checks.boot?.ok?'✓':'✗'}${result.checks.endpoints?.ok?'✓':'✗'}${result.checks.html?.ok?'✓':'✗'}${result.checks.scope?.ok?'✓':'✗'})`);
-      // Plan "auto-ship" item 2: every check passed → the task ships itself.
-      // Only a fully safe verdict auto-merges; a failed check or a same-file
-      // conflict already landed the review in changes_requested, where it stops
-      // and asks for attention instead of shipping.
-      if (ok) scheduleAutoShip(reviewId);
-    }).catch((e) => {
-      console.error(`[reviews] ${reviewId} check run failed:`, e.message);
-      updateReview(reviewId, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['The checks could not run: ' + e.message]) });
-    });
-  });
-}
-
-// ─── Auto-ship (plan "auto-ship" item 2) ──────────────────────────────────────
-// When the review gate approves a finished task and auto-ship is on (the Queue
-// panel switch, default on), the merge runs itself — no human click. The merges
-// are serialized on one promise chain: the queue's git calls run against the SAME
-// local repo, and two overlapping merge/push sequences would race each other's
-// working tree. Failures never loop: the merge runs at most once per approval,
-// and the review stays visible with the "Undo this merge" safety net if it did
-// ship (or with a note telling Antoine to merge by hand if it could not).
-let _autoShipChain = Promise.resolve();
-function scheduleAutoShip(reviewId) {
-  _autoShipChain = _autoShipChain
-    .then(async () => {
-      if (!autoShipEnabled()) return; // switched off after the checks passed
-      const out = await mergeReview(reviewId);
-      if (out.error) {
-        console.log(`[reviews] auto-ship ${reviewId} did not publish: ${out.error}${out.detail ? ' — ' + out.detail : ''}`);
-        // mergeReview already flips conflicts/changes to changes_requested. For
-        // the failures that leave the review approved (dirty repo, no network,
-        // push denied), tell Antoine why it stayed in the gate — he can still
-        // click Merge himself.
-        const review = getReview(reviewId);
-        if (review && review.status === 'approved') {
-          updateReview(reviewId, {
-            concerns: JSON.stringify([...(review.concerns || []), `Auto-ship did not publish: ${out.detail || out.error}. The work is ready — you can merge it yourself below.`]),
-          });
-        }
-      }
-    })
-    .catch((e) => console.error(`[reviews] auto-ship ${reviewId} crashed:`, e.message));
-}
-
-// The five deterministic checks, run in the author's worktree. No API credits
-// are ever spent here: the boot check spawns the server with WARMUP_DISABLED=1
-// and a throwaway DB.
-export async function runChecks({ task, reviewId }) {
-  const wt = task?.worktree_path;
-  const branch = task?.branch;
-  if (!wt || !existsSync(wt)) {
-    return { ok: false, checks: { syntax: { ok: false }, boot: { ok: false }, endpoints: { ok: false }, html: { ok: false }, scope: { ok: false }, conflict: { ok: false } }, concerns: ['The agent working folder no longer exists.'], filesChanged: [], insertions: 0, deletions: 0, conflictsWith: [], plainSummary: '' };
-  }
-
-  const diffFiles = git(['diff', '--name-only', 'origin/main...HEAD'], { cwd: wt, lines: true });
-  const diffNumstat = git(['diff', '--numstat', 'origin/main...HEAD'], { cwd: wt, lines: true });
-  let insertions = 0, deletions = 0;
-  for (const line of diffNumstat) {
-    const m = line.split('\t');
-    insertions += parseInt(m[0], 10) || 0;
-    deletions += parseInt(m[1], 10) || 0;
-  }
-
-  const checks = {};
+// Turn what the runner reported into a verdict. Pure: no git, no filesystem, no
+// child processes — so it behaves identically in the Railway container and on the
+// Mac, which is exactly what the old version did not.
+//
+// The runner supplies: head_sha (the commit to publish, or null), ship_checks (the
+// two cheap checks it already ran on the files), ship_files, ship_insertions,
+// ship_deletions, ship_skip_reason. Scope is judged here because it needs the
+// agent's allow/deny rules out of the database, and needs nothing else.
+function judgeTask(task) {
+  const files = parseJsonOr(task.ship_files, []);
+  const runnerChecks = parseJsonOr(task.ship_checks, null);
+  const insertions = Number(task.ship_insertions) || 0;
+  const deletions = Number(task.ship_deletions) || 0;
   const concerns = [];
 
-  checks.syntax = checkSyntax(wt, diffFiles);
-  const booted = await checkBoot(wt); // server left RUNNING on booted.port
-  checks.boot = booted.ok ? { ok: true, port: booted.port } : booted;
-  checks.endpoints = booted.ok ? await checkEndpoints(booted.port) : { ok: false, detail: 'skip — boot failed' };
-  killChild(booted.child);
-  checks.html = checkHtml(wt, diffFiles);
-  checks.scope = checkScope(wt, diffFiles, task?.agent_key || 'dev1');
-  checks.conflict = checkConflict(branch);
+  // No commit means there is nothing to publish. Say which of the reasons it was,
+  // in words Antoine can act on.
+  if (!task.head_sha) {
+    const why = {
+      nothing_changed: 'Nothing changed — the task finished without editing any files.',
+      commit_failed: 'The work could not be saved to the project history, so it cannot go live. Run the task again.',
+      no_branch: 'This task ran outside a working folder, so there is nothing to publish.',
+      blocked: 'The task did not finish, so there is nothing to publish yet.',
+      question_mode: 'This was a question, not a change.',
+    }[task.ship_skip_reason] || 'There is no saved change to publish.';
+    return {
+      ok: false, checks: { saved: { ok: false, detail: task.ship_skip_reason || 'no commit' } },
+      concerns: [why], filesChanged: files, insertions, deletions, plainSummary: why,
+    };
+  }
 
-  const allOk = ['syntax', 'boot', 'endpoints', 'html', 'scope'].every((k) => checks[k]?.ok);
-  if (!checks.syntax?.ok) concerns.push('Syntax error in the changed files.');
-  if (!checks.boot?.ok) concerns.push('The server does not start with these changes.');
-  if (!checks.endpoints?.ok) concerns.push('Some server pages do not respond.');
-  if (!checks.html?.ok) concerns.push('The main page is broken (HTML file).');
-  if (!checks.scope?.ok) concerns.push('The work touches files outside its allowed scope.');
-  if (checks.conflict?.conflictsWith?.length) concerns.push('This work conflicts with another branch.');
+  const checks = {
+    saved: { ok: true, detail: task.head_sha.slice(0, 8) },
+    syntax: runnerChecks?.syntax || { ok: true, detail: 'not reported' },
+    html: runnerChecks?.html || { ok: true, detail: 'not reported' },
+    scope: checkScope(files, task.agent_key || 'dev1'),
+  };
 
-  const conflictsWith = checks.conflict?.conflictsWith || [];
-  const summary = buildPlainSummary({ allOk, diffFiles, insertions, deletions, conflictsWith, concerns });
+  const failed = shipCheckMessage({ syntax: checks.syntax, html: checks.html });
+  if (failed) concerns.push(failed);
+  if (!checks.scope.ok) {
+    concerns.push(`Not live — this changed files it is not allowed to touch: ${checks.scope.detail}.`);
+  }
 
+  const ok = checks.syntax.ok && checks.html.ok && checks.scope.ok;
   return {
-    ok: allOk && conflictsWith.length === 0,
-    checks, concerns, filesChanged: diffFiles, insertions, deletions, conflictsWith, plainSummary: summary,
+    ok, checks, concerns, filesChanged: files, insertions, deletions,
+    plainSummary: buildPlainSummary({ ok, files, insertions, deletions, concerns }),
   };
 }
 
-// 1. syntax — node --check on every changed *.js
-function checkSyntax(wt, diffFiles) {
-  const js = diffFiles.filter((f) => f.endsWith('.js') && !/node_modules/.test(f));
-  if (!js.length) return { ok: true, detail: 'no js changed' };
-  for (const f of js) {
-    const full = resolve(wt, f);
-    if (!existsSync(full)) { try { rmSync(full, { force: true }); } catch {} continue; }
-    try {
-      execFileSync('node', ['--check', f], { cwd: wt, stdio: 'pipe' });
-    } catch (e) {
-      const msg = e.stderr ? String(e.stderr).split('\n').filter(Boolean).slice(-2).join(' ') : e.message;
-      return { ok: false, detail: `${f}: ${msg}` };
-    }
+function runChecksAndFinalize() {
+  // Kept as a no-op stub only so an older caller cannot crash the queue; the work
+  // it used to do now happens in createReviewForTask/judgeTask above.
+}
+
+// ─── Auto-ship ────────────────────────────────────────────────────────────────
+// When a review is approved and auto-ship is on (the Queue panel switch, default
+// on), publishing runs itself. The git work does NOT happen here — it happens on
+// the Mac, because that is the only machine with a checkout. See gitJobs.js.
+function scheduleAutoShip(reviewId) {
+  if (!autoShipEnabled()) return;              // switched off — it waits for a click
+  const review = getReview(reviewId);
+  if (!review) return;
+  const out = enqueueShipJob(review);
+  if (out?.error) {
+    console.log(`[reviews] auto-ship ${reviewId} not queued: ${out.error}`);
+    return;
   }
-  return { ok: true, detail: `${js.length} file(s) checked` };
+  updateReview(reviewId, { status: 'shipping' });
+  broadcastReview(reviewId);
 }
 
-// 2. boot — start the server from the worktree on a throwaway port and DB.
-//    The child stays RUNNING on success (caller probes it, then kills it):
-//    killing on "listening" would leave the endpoints probe hitting a dead port.
-async function checkBoot(wt) {
-  const port = 39000 + Math.floor(Math.random() * 2000);
-  const tmp = mkdtempSync(join(tmpdir(), 'fmcns-review-'));
-  const cwd = existsSync(join(wt, 'queue-server')) ? join(wt, 'queue-server') : wt;
-  return new Promise((resolvePromise) => {
-    const child = spawn('node', ['server/src/index.js'], {
-      cwd,
-      env: {
-        ...process.env,
-        PORT: String(port),
-        JWT_SECRET: 'review-check',
-        ADMIN_PASSWORD: 'review-check',
-        DB_PATH: join(tmp, 'queue.db'),
-        DATA_DIR: tmp,
-        WORKTREE_ROOT: join(tmp, 'worktrees'),
-        GIT_OPS_DISABLED: '1',
-        WARMUP_DISABLED: '1',
-        RUN_QUEUE_SELFTEST: undefined,
-        NOTIFY_WEBHOOK_URL: undefined,
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    let out = '';
-    const timer = setTimeout(() => {
-      killChild(child);
-      resolvePromise({ ok: false, detail: 'timeout — server did not report listening in 30s', port });
-    }, 30000);
-    const finish = (ok) => {
-      clearTimeout(timer);
-      resolvePromise(ok
-        ? { ok: true, port, tmp, child }
-        : { ok: false, detail: (out.split('\n').filter(Boolean).slice(-3).join(' ') || 'server exited'), port });
-    };
-    child.stdout.on('data', (d) => { out += String(d); if (out.includes('listening on :')) finish(true); });
-    child.stderr.on('data', (d) => { out += String(d); if (out.includes('listening on :')) finish(true); });
-    child.on('exit', () => { clearTimeout(timer); if (!out.includes('listening on :')) finish(false); });
-  });
-}
 
-function killChild(child) {
-  if (!child || child.exitCode !== null || child.signalCode) return;
-  try { child.kill('SIGKILL'); } catch {}
-}
-
-// 3. endpoints — hit the ephemeral server's core endpoints.
-async function checkEndpoints(port) {
-  const base = `http://127.0.0.1:${port}`;
-  try {
-    const login = await fetch(`${base}/api/auth/login`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: 'review-check' }),
-    });
-    if (!login.ok) return { ok: false, detail: `login ${login.status}` };
-    const { token } = await login.json();
-    const auth = { Authorization: `Bearer ${token}` };
-    const probes = [
-      ['/api/ontology/facets', auth],
-      ['/api/travaux/prompts', auth],
-      ['/api/architecture/components', auth],
-    ];
-    for (const [path, headers] of probes) {
-      const r = await fetch(base + path, { headers });
-      if (!r.ok) return { ok: false, detail: `${path} → ${r.status}` };
-    }
-    return { ok: true, detail: 'login + 3 endpoints OK' };
-  } catch (e) {
-    return { ok: false, detail: e.message };
-  }
-}
-
-// 4. html — if the app file changed, extract inline <script> blocks and node
-//    --check them, and assert the structural anchors still exist.
-function checkHtml(wt, diffFiles) {
-  if (!diffFiles.some((f) => f === 'fmcns_navigator.html' || f.endsWith('/fmcns_navigator.html'))) {
-    return { ok: true, detail: 'app file unchanged' };
-  }
-  const htmlPath = resolve(wt, 'fmcns_navigator.html');
-  if (!existsSync(htmlPath)) return { ok: false, detail: 'fmcns_navigator.html missing' };
-  try {
-    const html = readFileSync(htmlPath, 'utf8');
-    const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-    if (scripts.length) {
-      const tmp = mkdtempSync(join(tmpdir(), 'fmcns-html-'));
-      const jsFile = join(tmp, 'inline.js');
-      writeFileSync(jsFile, scripts.join('\n;\n'));
-      try {
-        execFileSync('node', ['--check', jsFile], { stdio: 'pipe' });
-      } catch (e) {
-        const msg = e.stderr ? String(e.stderr).split('\n').filter(Boolean).slice(-2).join(' ') : e.message;
-        return { ok: false, detail: 'inline script syntax: ' + msg };
-      }
-    }
-    for (const anchor of ['id="qList"', 'id="qRight"', 'API_BASE']) {
-      if (!html.includes(anchor)) return { ok: false, detail: `missing anchor: ${anchor}` };
-    }
-    return { ok: true, detail: `${scripts.length} inline script(s) + anchors OK` };
-  } catch (e) {
-    return { ok: false, detail: e.message };
-  }
-}
-
-// 5. scope — changed files must stay inside the agent's path_allow and outside
-//    path_deny; hard-fail on data/.env/.github/package-lock deletions.
-function checkScope(wt, diffFiles, agentKey) {
+// ─── The one check that stays on the server ───────────────────────────────────
+// Scope: the changed files must stay inside this agent's allowed paths and out of
+// its denied ones, and must never include the live database, a secrets file, or CI
+// config. It lives here rather than on the Mac because it needs the agent's rules
+// out of the database and nothing else — no worktree, no git, no filesystem.
+//
+// Deleted with the move (recorded so nobody restores them by accident):
+//   · boot / endpoints — booted the whole server and called four routes. Needed
+//     node_modules inside the worktree (the runner's worktrees have none), took
+//     30+ seconds, and were the single biggest source of false failures. They also
+//     contradict AGENTS.md's ship-directly rule.
+//   · syntax / html — moved to services/shipChecks.js so the runner can run them
+//     where the files actually are, and so the ship step can re-run them on the
+//     merged result before pushing.
+//   · conflict — scanned `refs/heads/agent/*` only, so the runner's `queue/*`
+//     branches were invisible to it, and it needed the repo anyway. The dry-run
+//     merge on the Mac answers the same question for free, and accurately.
+function checkScope(diffFiles, agentKey) {
   const agent = getAgent(agentKey) || {};
   const allow = parseJsonOr(agent.path_allow, ['**']);
   const deny = parseJsonOr(agent.path_deny, []);
-  const bad = diffFiles.filter((f) => {
+  const bad = (diffFiles || []).filter((f) => {
     if (!matchesAny(f, allow)) return true;
     if (matchesAny(f, deny)) return true;
     if (/^queue-server\/data\//.test(f)) return true;
@@ -355,178 +253,80 @@ function checkScope(wt, diffFiles, agentKey) {
 }
 function matchesAny(path, patterns) {
   return (patterns || []).some((p) => {
-    const re = String(p).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '.*');
+    // '**' is parked on a NUL placeholder while '*' expands, then restored — NUL
+    // cannot occur in a real path, unlike any printable stand-in would.
+    const re = String(p)
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*\*/g, '\u0000')
+      .replace(/\*/g, '[^/]*')
+      .replace(/\u0000/g, '.*');
     return new RegExp(`^${re}$`).test(path);
   });
 }
 
-// 6. conflict — merge-tree against origin/main and any other open agent branch.
-function checkConflict(branch) {
-  const main = mainRepo();
-  if (!main || !branch) return { ok: true, conflictsWith: [] };
-  const conflictsWith = [];
-  const candidates = git(['for-each-ref', '--format=%(refname:short)', 'refs/heads/agent/*'], { cwd: main, quiet: true, lines: true });
-  const refs = [...new Set(['origin/main', ...candidates])];
-  for (const ref of refs) {
-    if (ref === branch) continue;
-    if (!git(['show-ref', '--verify', '--quiet', ref], { cwd: main, quiet: true })) continue;
-    const out = git(['merge-tree', '--write-tree', ref, branch], { cwd: main, quiet: true });
-    if (out === null || /conflict/i.test(out)) conflictsWith.push(ref);
-  }
-  return { ok: conflictsWith.length === 0, conflictsWith };
+// One line, plain English, no jargon — shown to Antoine verbatim.
+function buildPlainSummary({ ok, files, insertions, deletions, concerns }) {
+  const n = (files || []).length;
+  const scale = `${n} file${n === 1 ? '' : 's'} changed, +${insertions} / −${deletions}`;
+  if (!ok) return `${concerns[0] || 'Not live.'} (${scale})`;
+  return `Ready to go live. ${scale}.`;
 }
 
-function buildPlainSummary({ allOk, diffFiles, insertions, deletions, conflictsWith, concerns }) {
-  const files = `${diffFiles.length} file(s) changed, +${insertions} / −${deletions}`;
-  if (!allOk) return `To fix. ${files}. ${concerns.join(' ')}`;
-  if (conflictsWith.length) return `In conflict with: ${conflictsWith.join(', ')}. ${files}. Needs an update before merging.`;
-  return `Safe to merge. ${files}. The server starts, the pages respond, nothing touches your data.`;
-}
 
-// ─── Human actions: merge / revert / request-changes / reject ────────────────
+// ─── What Antoine can ask for ─────────────────────────────────────────────────
+// These used to be ~200 lines of git run on this server. They are now three-line
+// decisions that hand the git to the Mac. Same endpoints, same buttons, same
+// meaning — the work simply happens where a checkout exists.
 
-// The merge gate. Push is the LAST step, only after the merged result re-passes
-// checks 1–4 on main. --no-ff makes every merge a single commit, which is what
-// makes revert trivial.
-export async function mergeReview(id) {
+// "Send it live." Also the path auto-ship takes.
+export function mergeReview(id) {
   const review = getReview(id);
-  const main = mainRepo();
   if (!review) return { error: 'not_found' };
   if (review.status === 'merged') return { error: 'already_merged' };
-  if (review.status !== 'approved') return { error: 'not_approved', detail: 'The work is not approved — the checks fail or it is waiting for your changes.' };
-  if (!main) return { error: 'no_git', detail: 'No git repository on this server — merging is only possible where the code lives (your Mac).' };
-
-  const steps = [];
-  const step = (s) => { steps.push(s); console.log(`[reviews] merge ${id}: ${s}`); };
-
-  step('fetch origin main');
-  if (git(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { cwd: main, quiet: true }) === null && !git(['show-ref', '--verify', '--quiet', 'refs/remotes/origin/main'], { cwd: main, quiet: true })) {
-    return { error: 'fetch_failed' };
-  }
-
-  // Boot regeneration drifts the generated briefing file; drop that drift so the
-  // merge starts from a truly clean tree (the fresh copy is folded in later).
-  git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
-
-  step('working tree must be clean');
-  const status = git(['-C', main, 'status', '--porcelain', '--untracked-files=no'], { cwd: main, quiet: true });
-  // .agents/current-state.md is a generated file (regenerated at boot and folded
-  // into every merge commit) — its working-tree drift must not block a merge.
-  const dirty = (status || '').split('\n').filter((l) => l && !l.includes('.agents/current-state.md'));
-  if (dirty.length) return { error: 'dirty', detail: 'The local repository has unpublished changes. Finish or stash them before merging.', steps };
-
-  step('checkout main + ff-only origin/main');
-  if (git(['-C', main, 'checkout', 'main'], { cwd: main, quiet: true }) === null) return { error: 'checkout_failed', steps };
-  if (git(['-C', main, 'merge', '--ff-only', 'origin/main'], { cwd: main, quiet: true }) === null) {
-    return { error: 'ff_failed', detail: 'main could not follow origin/main — check the repository state.', steps };
-  }
-
-  step('dry-land the merge (--no-ff --no-commit)');
-  if (git(['-C', main, 'merge', '--no-ff', '--no-commit', review.branch], { cwd: main, quiet: true }) === null) {
-    git(['-C', main, 'merge', '--abort'], { cwd: main, quiet: true });
-    const conflicts = git(['-C', main, 'diff', '--name-only', '--diff-filter=U'], { cwd: main, quiet: true }) || [];
-    updateReview(id, { status: 'changes_requested', verdict: 'unsafe', conflicts_with: JSON.stringify(conflicts) });
-    broadcastReview(id);
-    return { error: 'conflict', detail: 'This work touches the same lines as another published change. The agent must update it first.', conflicts, steps };
+  if (!review.head_sha) {
+    return { error: 'nothing_to_publish', detail: 'There is no saved change on this task to publish.' };
   }
 
   const prompt = getPrompt(review.prompt_id);
-  const commitMsg = `merge: ${(prompt?.title || review.branch).slice(0, 120)} (${review.agent_key || 'dev'})`;
-  step('commit the merge');
-  if (git(['-C', main, 'commit', '-m', commitMsg], { cwd: main, quiet: true }) === null) {
-    git(['-C', main, 'merge', '--abort'], { cwd: main, quiet: true });
-    return { error: 'commit_failed', steps };
-  }
-  const mergeCommit = git(['-C', main, 'rev-parse', 'HEAD'], { cwd: main, quiet: true });
+  const subject = String(prompt?.title || review.branch).replace(/\s+/g, ' ').trim().slice(0, 72);
 
-  step('re-run checks 1–4 on main post-merge');
-  const postMerge = await runPostMergeChecks(main);
-  if (!postMerge.ok) {
-    git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
-    updateReview(id, { status: 'changes_requested', verdict: 'unsafe', concerns: JSON.stringify(['The merge breaks the checks: ' + postMerge.detail]) });
-    broadcastReview(id);
-    return { error: 'post_merge_failed', detail: postMerge.detail, steps };
-  }
+  const out = enqueueShipJob(review, { subject });
+  if (out.error === 'already_queued') return { ok: true, queued: true, id: out.id };
+  if (out.error) return { error: out.error };
 
-  // Refresh the shared-knowledge briefing and fold it into the push (plan Part 6:
-  // "The merge step commits it" — agents branching from origin/main always get a
-  // fresh copy). Only if it actually changed, to avoid empty commits.
-  step('refresh .agents/current-state.md');
-  try { regenerateBriefing(); } catch (e) { console.error('[reviews] briefing refresh failed:', e.message); }
-  // `git diff --quiet` exits 0 (no diff) or 1 (diff) — null on exit 1.
-  const briefingChanged = git(['-C', main, 'diff', '--quiet', 'HEAD', '--', '.agents/current-state.md'], { cwd: main, quiet: true }) === null;
-  if (briefingChanged) {
-    git(['-C', main, 'add', '.agents/current-state.md'], { cwd: main, quiet: true });
-    git(['-C', main, 'commit', '-m', 'chore: refresh .agents/current-state.md'], { cwd: main, quiet: true });
-  } else {
-    git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
-  }
-
-  // Plan "auto-ship" item 3: the site serves the app page from
-  // queue-server/public/index.html (Railway only deploys queue-server/), so a
-  // merge that touched the master app file would otherwise leave the deployed
-  // page stale until a hand copy. Refresh the served copy from the freshly
-  // merged master and fold it into the same push — the site always serves the
-  // version that was just merged. Only commits when the two differ, and any
-  // failure just leaves the copy stale (the merge itself is not at risk).
-  step('refresh served app page');
-  try {
-    const masterApp = join(main, 'fmcns_navigator.html');
-    const servedApp = join(main, 'queue-server', 'public', 'index.html');
-    if (existsSync(masterApp) && existsSync(servedApp) && readFileSync(masterApp).toString('hex') !== readFileSync(servedApp).toString('hex')) {
-      copyFileSync(masterApp, servedApp);
-      git(['-C', main, 'add', 'queue-server/public/index.html'], { cwd: main, quiet: true });
-      if (git(['-C', main, 'commit', '-m', 'deploy: refresh served app page from merged master'], { cwd: main, quiet: true }) === null) {
-        git(['-C', main, 'checkout', '--', 'queue-server/public/index.html'], { cwd: main, quiet: true });
-        console.error('[reviews] app-page refresh commit failed — served copy left stale');
-      }
-    }
-  } catch (e) { console.error('[reviews] app-page refresh failed:', e.message); }
-
-  step('push to main');
-  if (git(['-C', main, 'push', 'origin', 'main'], { cwd: main, quiet: true }) === null) {
-    git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
-    return { error: 'push_failed', detail: 'The merge is done locally but publishing failed — nothing was released. Fix repository access and try again (the work is not lost).', steps };
-  }
-
-  step('cleanup worktree');
-  removeWorktree(taskWorktreeFor(review));
-  git(['-C', main, 'branch', '-d', review.branch], { cwd: main, quiet: true });
-
-  updateReview(id, { status: 'merged', merge_commit: mergeCommit, merged_at: new Date().toISOString() });
+  updateReview(id, { status: 'shipping' });
   broadcastReview(id);
-  return { ok: true, merge_commit: mergeCommit, steps };
+  return { ok: true, queued: true, id: out.id };
 }
 
-// Revert: git revert -m 1 <merge_commit> && push — the online safety net.
+// "Put it back." Reverses the published change and republishes, so the app returns
+// to how it was. Uses a reverse-commit rather than rewinding history, so anything
+// published after this stays published — see git-ship.js.
 export function revertReview(id) {
   const review = getReview(id);
-  const main = mainRepo();
   if (!review) return { error: 'not_found' };
-  if (review.status !== 'merged' || !review.merge_commit) return { error: 'not_merged' };
-  if (!main) return { error: 'no_git' };
-  if (git(['-C', main, 'fetch', 'origin', 'main', '--quiet'], { cwd: main, quiet: true }) === null) return { error: 'fetch_failed' };
-  git(['-C', main, 'checkout', '--', '.agents/current-state.md'], { cwd: main, quiet: true });
-  const status = git(['-C', main, 'status', '--porcelain', '--untracked-files=no'], { cwd: main, quiet: true });
-  const dirty = (status || '').split('\n').filter((l) => l && !l.includes('.agents/current-state.md'));
-  if (dirty.length) return { error: 'dirty', detail: 'The local repository has unpublished changes.' };
-  if (git(['-C', main, 'checkout', 'main'], { cwd: main, quiet: true }) === null) return { error: 'checkout_failed' };
-  if (git(['-C', main, 'merge', '--ff-only', 'origin/main'], { cwd: main, quiet: true }) === null) return { error: 'ff_failed' };
-  const reverted = git(['-C', main, 'revert', '-m', '1', review.merge_commit, '--no-edit'], { cwd: main, quiet: true });
-  if (reverted === null) {
-    git(['-C', main, 'revert', '--abort'], { cwd: main, quiet: true });
-    return { error: 'revert_conflict', detail: 'The revert conflicts — the site stays as it is. Check the repository manually.' };
+
+  const out = enqueueUndoJob(review);
+  if (out.error === 'already_queued') return { ok: true, queued: true, id: out.id };
+  if (out.error === 'not_published') {
+    return { error: 'not_merged', detail: 'This never went live, so there is nothing to put back.' };
   }
-  if (git(['-C', main, 'push', 'origin', 'main'], { cwd: main, quiet: true }) === null) {
-    git(['-C', main, 'reset', '--hard', 'ORIG_HEAD'], { cwd: main, quiet: true });
-    return { error: 'push_failed', detail: 'The revert is ready locally but publishing failed — the online site has not changed.' };
+  if (out.error) return { error: out.error };
+
+  // A ship that had not started yet was cancelled instead — nothing was published,
+  // so there is nothing to reverse.
+  if (out.cancelled) {
+    updateReview(id, { status: 'approved' });
+    broadcastReview(id);
+    return { ok: true, cancelled: true };
   }
-  updateReview(id, { status: 'reverted', reverted_at: new Date().toISOString() });
+
+  updateReview(id, { status: 'reverting' });
   broadcastReview(id);
-  return { ok: true };
+  return { ok: true, queued: true, id: out.id };
 }
 
-// "Demander des corrections" — the work is not mergeable as-is.
+// "Not like this." Keeps the work, refuses to publish it.
 export function requestChanges(id, { reason = null } = {}) {
   const review = getReview(id);
   if (!review) return { error: 'not_found' };
@@ -539,51 +339,71 @@ export function requestChanges(id, { reason = null } = {}) {
   return { ok: true, review: getReview(id) };
 }
 
-// "Jeter" — reject: mark rejected and remove the worktree (branch ref is kept
-// as the record of the work, per plan 2a).
+// "Bin it." The branch is left alone — the work stays recoverable in git, which is
+// the entire reason the runner commits in the first place.
 export function rejectReview(id) {
   const review = getReview(id);
   if (!review) return { error: 'not_found' };
-  if (review.status === 'merged' || review.status === 'reverted') return { error: 'locked' };
-  removeWorktree(taskWorktreeFor(review));
+  if (review.status === 'merged') return { error: 'already_merged' };
   updateReview(id, { status: 'rejected' });
   broadcastReview(id);
-  return { ok: true, review: getReview(id) };
-}
-
-function taskWorktreeFor(review) {
-  if (!db || !review?.task_id) return null;
-  const row = db.prepare(`SELECT worktree_path FROM agent_tasks WHERE id=?`).get(review.task_id);
-  return row?.worktree_path || null;
-}
-
-// Post-merge re-check on main: syntax + boot + endpoints (+ html if the app
-// file was part of the merge).
-async function runPostMergeChecks(main) {
-  const cwd = existsSync(join(main, 'queue-server')) ? join(main, 'queue-server') : main;
-  const mergedFiles = git(['-C', main, 'diff', '--name-only', 'HEAD~1...HEAD'], { cwd: main, quiet: true, lines: true });
-  const syntax = checkSyntax(main, mergedFiles);
-  if (!syntax.ok) return { ok: false, detail: syntax.detail };
-  const booted = await checkBoot(main);
-  if (!booted.ok) return { ok: false, detail: booted.detail };
-  const endpoints = await checkEndpoints(booted.port);
-  killChild(booted.child);
-  if (!endpoints.ok) return { ok: false, detail: endpoints.detail };
-  if (mergedFiles.some((f) => f === 'fmcns_navigator.html')) {
-    const html = checkHtml(main, mergedFiles);
-    if (!html.ok) return { ok: false, detail: html.detail };
-  }
   return { ok: true };
 }
 
-// ─── git helpers (same shape as gitOps.js — no other module runs git) ─────────
-function git(args, { cwd = null, quiet = false, lines = false } = {}) {
-  try {
-    const out = execFileSync('git', args, { cwd: cwd || undefined, encoding: 'utf8' });
-    const t = out.trim();
-    return lines ? (t ? t.split('\n').map((l) => l.trim()).filter(Boolean) : []) : t;
-  } catch (e) {
-    if (!quiet) console.warn(`[reviews] git ${args.join(' ')} failed: ${e.stderr ? String(e.stderr).trim().split('\n')[0] : e.message}`);
-    return lines ? [] : null;
+// ─── Applying what the Mac reports back ───────────────────────────────────────
+// Registered as a callback rather than imported by gitJobs.js, which would make the
+// two modules import each other.
+setGitJobHandler((job, payload) => {
+  const review = getReview(job.review_id);
+  if (!review) return;
+
+  if (job.kind === 'ship') {
+    if (payload.ok) {
+      updateReview(job.review_id, {
+        status: 'merged',
+        merge_commit: payload.merge_commit || null,
+        merged_at: new Date().toISOString(),
+        concerns: null,
+      });
+      console.log(`[reviews] ${job.review_id} is live (${payload.merge_commit?.slice(0, 8) || 'no sha'})${payload.already ? ' — was already published' : ''}`);
+    } else {
+      // Words Antoine can act on, per failure. The generic fallback still says what
+      // to do rather than naming a git error he cannot use.
+      const message = {
+        conflict: 'Not live — the app changed underneath this work. Run the task again and it will fit.',
+        post_merge_failed: 'Not live — on its own it was fine, but combined with what is already live it breaks. Run the task again.',
+        push_rejected: 'Not live yet — something else was published at the same moment. Press "Send it live" to try again.',
+        network: 'Not live yet — your Mac could not reach the internet. Press "Send it live" to try again.',
+        dry_run: 'Not published: the publishing brake is on (GIT_SHIP_DRY_RUN). Everything else worked.',
+      }[payload.error] || `Not live — ${payload.detail || payload.error || 'publishing did not work'}.`;
+      updateReview(job.review_id, {
+        status: 'changes_requested',
+        concerns: JSON.stringify([message]),
+        conflicts_with: payload.conflicts ? JSON.stringify(payload.conflicts) : null,
+      });
+      console.log(`[reviews] ${job.review_id} did not publish: ${payload.error || 'unknown'}`);
+    }
+    broadcastReview(job.review_id);
+    return;
   }
-}
+
+  if (job.kind === 'undo') {
+    if (payload.ok) {
+      updateReview(job.review_id, { status: 'reverted', reverted_at: new Date().toISOString(), concerns: null });
+      console.log(`[reviews] ${job.review_id} put back`);
+    } else {
+      // The change stays live — that is the honest outcome, and safer than trying
+      // to resolve someone else's conflict automatically.
+      updateReview(job.review_id, {
+        status: 'merged',
+        concerns: JSON.stringify([
+          payload.error === 'revert_conflict'
+            ? 'Could not put this back on its own — a later change touched the same lines. The app is unchanged. Ask for a task to remove it instead.'
+            : `Could not put this back — ${payload.detail || payload.error || 'it did not work'}. The app is unchanged.`,
+        ]),
+      });
+      console.log(`[reviews] ${job.review_id} undo failed: ${payload.error || 'unknown'}`);
+    }
+    broadcastReview(job.review_id);
+  }
+});
