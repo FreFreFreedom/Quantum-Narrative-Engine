@@ -23,6 +23,9 @@
 // the app (services/providers/index.js) so there is exactly one place to
 // reorder them.
 
+import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
+loadEnvFile(new URL('../.env', import.meta.url));
+
 import { spawn } from 'node:child_process';
 import { mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-15T04:07:57.166Z
+Generated: 2026-08-19T01:25:52.049Z
 
 ## Components
 
@@ -47,5 +47,8 @@ Generated: 2026-08-15T04:07:57.166Z
 - dispatch-queue-free-model-fallback — DONE
 - github-code-discovery — DONE (MVP)
 - plan-first-queue-and-idea-composition — Part A DONE, Part B SUPERSEDED
-- core-workspace-unified-flow — IN PROGRESS
+- idea-studio-conversational-task-creation — IN PROGRESS
+- core-workspace-unified-flow — DONE
+- design-system-pass — IN PROGRESS
+- travaux-quick-panel — DONE
 - self-aware-platform — Parts 1–2 DONE (2026-08-14) · Parts 3–6 PLANNED

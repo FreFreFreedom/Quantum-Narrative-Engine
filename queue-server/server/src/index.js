@@ -1,3 +1,8 @@
+// Local .env first, before any module reads process.env at import time. No-op on
+// Railway (variables come from the project there, no .env file exists).
+import { loadEnvFile } from './lib/loadEnvFile.js';
+loadEnvFile(new URL('../../.env', import.meta.url));
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

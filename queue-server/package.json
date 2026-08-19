@@ -5,9 +5,9 @@
   "type": "module",
   "description": "Claude-driven work queue, ported from the Orisha 'Travaux' spec for FMCNS. Step 1-2 of the suggested port order: DB + auth + WebSocket foundation, then a trimmed task runner.",
   "scripts": {
-    "start": "node --env-file-if-exists=.env server/src/index.js",
-    "dev": "node --env-file-if-exists=.env server/src/index.js",
-    "runner": "node --env-file-if-exists=.env scripts/queue-runner.js"
+    "start": "node server/src/index.js",
+    "dev": "node server/src/index.js",
+    "runner": "node scripts/queue-runner.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",
