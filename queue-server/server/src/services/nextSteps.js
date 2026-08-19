@@ -101,6 +101,10 @@ const TERRITORY_NAME = {
   reasoning: 'the reasoning engines',
   experience: 'how it feels to use',
   interface: 'the look and feel',
+  // The sixth area. Without a plain name here, every reason sentence about a piece
+  // of the app's own build system silently drops its territory clause — the rows
+  // would rank correctly and then read as if they belonged nowhere.
+  self: "the app's own build system",
 };
 
 // One plain-English sentence per row, built from the numbers above. AGENTS.md:

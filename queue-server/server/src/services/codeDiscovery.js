@@ -21,6 +21,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { generateText as generateTextByFeature } from './ai/text.js';
 import { createNode } from './architectureNodes.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { APP_BLURB, TERRITORY_LINES, TERRITORY_IDS, onSubjectRule } from './ai/appModel.js';
 import { conciseQuestionPayload } from '../lib/concise.js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -152,10 +153,25 @@ export function recordFeedback(db, { repo_full_name, verdict }) {
   return { ok: true };
 }
 
+// ─── World-look generation ────────────────────────────────────────────────────
+// Bumped whenever the world-look prompts change in a way that makes older reports
+// worth redoing. Generation 2 is the first that carries the asking task's own words
+// and its subject all the way to the point where the ideas are chosen — before it,
+// the picks pass only ever saw a 20-word part description, so the ideas drifted to
+// whatever part of the app the model found most interesting.
+//
+// Reports are stamped with the generation that wrote them, and rewriteWorldLooks()
+// redoes anything older. Bump this again next time the prompts change materially.
+export const WORLD_LOOK_GEN = 2;
+
 // ─── Idea box: decompose -> per-part search/pick AI pipeline ────────────────────
 
 const MAX_PARTS = 4;
-const FMCNS_BLURB = 'FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool: single-file vanilla-JS frontend, Node/Express + SQLite backend, a knowledge graph of "characters" (universal ontological units — people, films, countries all share one schema), agent-orchestration task queue, fractal navigation UI, and recommender-system ambitions';
+// Was a hand-written description of the app that listed the knowledge graph first and
+// never said the app also builds itself. Every world-look read it, so every "how would
+// FMCNS use this" answer leaned back toward the material even when the task was about
+// the app's own build system. Now shared with every other engine — see ai/appModel.js.
+const FMCNS_BLURB = APP_BLURB;
 
 function buildDecomposePrompt(ideaText) {
   return `You are helping plan building blocks for ${FMCNS_BLURB}.
@@ -168,7 +184,7 @@ Decide whether this idea is a single atomic building block, or whether it names 
 - If it combines distinct capabilities: return 2-4 parts, one per distinct capability, each independently searchable on GitHub.
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"project_name":"short name for the overall idea (only meaningful if more than one part)","project_territory":"one of perception|knowledge|reasoning|experience|interface","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do, specific enough to search GitHub for"}]}`;
+{"project_name":"short name for the overall idea (only meaningful if more than one part)","project_territory":"one of ${TERRITORY_IDS.join('|')} — 'self' for anything about the app's own build system (the queue, the worker that codes, shipping, the app watching itself, what to build next, proposing work, the idea studio, the look at the world)","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do, specific enough to search GitHub for"}]}`;
 }
 
 function buildQueryPrompt(partDescription) {
@@ -236,7 +252,10 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
   const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, MAX_PARTS);
   const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: ideaText }];
   const projectName = parsed0?.project_name || ideaText.slice(0, 60);
-  const projectTerritory = parsed0?.project_territory || null;
+  // Validated against the real list: plantProject() writes this straight onto a tree
+  // node's territory, so an invented value would create a node in an area that does
+  // not exist and never show up in any section.
+  const projectTerritory = TERRITORY_IDS.includes(parsed0?.project_territory) ? parsed0.project_territory : null;
 
   const builtParts = [];
   for (const part of parts) {
@@ -274,6 +293,7 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
     INSERT INTO discovery_reports (id, idea_text, source, source_id, queries_json, picks_json, project_name, project_territory, parts_json)
     VALUES (?,?,?,?,?,?,?,?,?)
   `).run(id, ideaText, source, source_id, JSON.stringify(builtParts[0].queries), JSON.stringify(builtParts[0].picks), projectName, projectTerritory, JSON.stringify(builtParts));
+  try { db.prepare(`UPDATE discovery_reports SET rewrite_gen=? WHERE id=?`).run(WORLD_LOOK_GEN, id); } catch { /* older database without the column */ }
 
   // Same quick check the queue/section world-looks get, so alternative picks are
   // grouped and marked here too — the idea box gets the same substitute-vs-
@@ -308,30 +328,49 @@ export async function runIdeaSearch(db, { idea_text, source = 'idea_box', source
 
 const INSPIRE_MAX_PARTS = 3;
 
+// Now does THREE jobs, not two. The third — naming which part of the app the idea
+// touches — is the one that matters: everything downstream only ever saw a 20-word
+// part description, so by the time the ideas were chosen, "in the section flow UI" had
+// already been thrown away and the only thing left saying what the app is was the
+// general blurb. That is how a task about the Core Architecture section came back with
+// Content-navigator recommendations.
 function buildInspireDecomposePrompt(ideaText) {
   return `You are helping plan an idea for ${FMCNS_BLURB}.
 
 The idea: "${String(ideaText).trim()}"
 
-Two jobs in one pass:
-1. Split the idea into 1-3 independently searchable parts IF it combines distinct capabilities (an atomic idea stays exactly ONE part).
-2. For each part, propose 1-2 GitHub repo-search query strings (the kind you would type into GitHub's search box) that would surface real, already-built open-source work relevant to that part. Be realistic about what a query would return.
+Three jobs in one pass:
+1. Say which area of the app this idea belongs to, as one of these ids:
+${TERRITORY_LINES}
+   Read the idea's own words for this — if it names the queue, the flow, the architecture view, the app's own thinking, the ideas or suggestions, its area is "self". Do not guess "knowledge" as a default.
+2. Split the idea into 1-3 independently searchable parts IF it combines distinct capabilities (an atomic idea stays exactly ONE part). Each part's description must keep the idea's own subject visible — do not generalise it into something broader that would be easier to search for.
+3. For each part, propose 1-2 GitHub repo-search query strings (the kind you would type into GitHub's search box) that would surface real, already-built open-source work relevant to that part. Be realistic about what a query would return.
 
 The description is read by the app's owner, who is not a programmer — plain everyday words, no jargon, no internal component ids.
 
 ${USER_FACING_STYLE}
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
+{"subject":"one of ${TERRITORY_IDS.join('|')}","subject_note":"one short sentence: what exactly in the app this idea is about","project_name":"short name for the overall idea","parts":[{"name":"short label","description":"one short sentence (max 20 words): what this part must do","queries":[{"q":"github search string","why":"one sentence on what this search is trying to find"}]}]}`;
 }
 
-function buildInspirePicksPrompt(partDescription, resultsByQuery) {
+// `taskText` and `subject` were added because this function used to receive ONLY
+// `partDescription` — one sentence, max 20 words, produced by the decompose pass. The
+// task's own words never reached the point where the ideas were actually chosen, so the
+// model filled the gap with the app's general description and answered about the part of
+// the app it found most interesting. Both new arguments are the fix.
+function buildInspirePicksPrompt(partDescription, resultsByQuery, { taskText = '', subject = '', subjectNote = '' } = {}) {
   const hasLive = resultsByQuery.length > 0;
   const resultsBlock = resultsByQuery.map(({ q, why, results }) => {
     const lines = results.slice(0, 5).map(r => `  - ${r.repo_full_name} (${r.stars}★): ${r.description || '(no description)'}`).join('\n') || '  - (no results)';
     return `Query "${q.q}" (${q.why}):\n${lines}`;
   }).join('\n\n');
+  const subjectLabel = [subject, subjectNote].filter(Boolean).join(' — ');
   return `You are the inspiration engine for ${FMCNS_BLURB}. A task is about to be planned into a real feature, and the plan will be written from your answer. Look at the world and produce inspiration on three shelves — with the BOLD shelf as the HEART of your answer.
+
+${taskText ? `THE TASK, IN THE OWNER'S OWN WORDS (this is the subject; everything you answer must serve it):\n"${String(taskText).trim().slice(0, 600)}"\n` : ''}
+${subjectLabel ? `The part of the app it is about: ${subjectLabel}\n` : ''}
+${onSubjectRule(subjectLabel)}
 
 The part of the idea you are inspiring for: "${String(partDescription).trim()}"
 
@@ -342,6 +381,8 @@ SHELF 2 — "hidden": things that exist in the world but whose code is not publi
 SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (1-2 punchy short sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how FMCNS could be the first to build it).
 
 Produce 2-3 open picks, 1-2 hidden picks, and 2-3 bold picks. Set recommended_index to the single pick that gives the best mix of boldness and feasibility — prefer a bold pick when it is strong.
+
+Bold does NOT mean off-subject. A visionary idea about a different part of the app is useless here: the plan for THIS task gets written from your answer, so an idea it cannot act on is a wasted shelf. Be bold about the subject you were given.
 
 Every text field must be ONE short sentence, maximum 20 words. Never write paragraphs.
 
@@ -371,6 +412,11 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
   const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, INSPIRE_MAX_PARTS);
   const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: ideaText, queries: [] }];
   const projectName = parsed0?.project_name || ideaText.slice(0, 60);
+  // Which part of the app this look is FOR. Only accepted if it is a real area id, so a
+  // hallucinated value degrades to "no subject named" rather than to a wrong subject —
+  // and the picks pass still gets the task's own words either way.
+  const subject = TERRITORY_IDS.includes(parsed0?.subject) ? parsed0.subject : '';
+  const subjectNote = String(parsed0?.subject_note || '').trim().slice(0, 200);
 
   const builtParts = [];
   for (const part of parts) {
@@ -382,7 +428,7 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
       const out = await getResults(db, qId, q.q, { forceRefresh });
       if (!out.error) resultsByQuery.push({ q, why: q.why, results: out.results || [] });
     }
-    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
+    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery, { taskText: ideaText, subject, subjectNote }), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
     const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
     const picks = (parsed2?.picks || []).filter(p => p && ['open', 'hidden', 'bold'].includes(p.kind));
     const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;
@@ -400,10 +446,15 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
   }
 
   const id = randomUUID();
+  // project_territory is the same column the idea box already fills with an idea's area;
+  // the inspiration path used to write null into it. It now carries the task's subject, so
+  // the quick-check editor and any later rewrite know what this report was about without
+  // re-deriving it. No migration needed.
   db.prepare(`
     INSERT INTO discovery_reports (id, idea_text, source, source_id, queries_json, picks_json, project_name, project_territory, parts_json)
     VALUES (?,?,?,?,?,?,?,?,?)
-  `).run(id, ideaText, source, source_id, JSON.stringify(builtParts[0].queries || []), JSON.stringify(builtParts[0].picks || []), projectName, null, JSON.stringify(builtParts));
+  `).run(id, ideaText, source, source_id, JSON.stringify(builtParts[0].queries || []), JSON.stringify(builtParts[0].picks || []), projectName, subject || null, JSON.stringify(builtParts));
+  try { db.prepare(`UPDATE discovery_reports SET rewrite_gen=? WHERE id=?`).run(WORLD_LOOK_GEN, id); } catch { /* older database without the column */ }
 
   return getReport(db, id);
 }
@@ -527,7 +578,10 @@ function compactReportForReview(report) {
   }));
 }
 
-function buildReviewPrompt(ideaText, reportJson, answer, allowQuestion) {
+function buildReviewPrompt(ideaText, reportJson, answer, allowQuestion, subject = '') {
+  const subjectBlock = subject
+    ? ` The world-look recorded this task's subject as: ${subject}.`
+    : '';
   const answerBlock = answer
     ? `THE OWNER ALREADY ANSWERED A QUESTION ABOUT THESE IDEAS: "${String(answer).trim()}". Take it as their decision — incorporate it into your removals/recommendations, and do NOT ask any new question.`
     : '';
@@ -545,6 +599,7 @@ ${answerBlock}
 
 Do:
 1. REMOVE picks that do not serve THIS task: off-topic, duplicates of another pick, or ideas that would blow the task up beyond one job. One short reason each (max 20 words), plain everyday words.
+1b. OFF-SUBJECT IS OFF-TOPIC, and it is the most common failure here. A pick that improves a different part of the app than the task names must be removed even when it is a genuinely good idea — the plan for THIS task is written from what survives, so a good idea about the wrong part of the app just makes the plan wrong. Read the task's own words for what part of the app it is about, and hold every pick to it.${subjectBlock}
 2. GROUP picks that are alternatives of each other — they would build the same thing, the owner only needs one. Do NOT group picks just because they are related or would work well together: if two picks could both be built and used at the same time without conflict, they are complementary, not alternatives — leave them ungrouped. Only group when picking one makes the other redundant. Give each group a short id ("A", "B"...) and a one-sentence note on why they are the same thing in different wrapping. A group of one is not a group.
 3. RECOMMEND, for each group, the single best pick, with one short sentence why.
 ${questionRule}
@@ -629,7 +684,7 @@ export async function reviewInspiration({ report, prompt, answer = null, allowQu
   const ideaText = String(prompt || report.idea_text || '').trim() || 'the task';
   try {
     const out = await generateTextByFeature({
-      prompt: buildReviewPrompt(ideaText, JSON.stringify(compact), answer, allowQuestion),
+      prompt: buildReviewPrompt(ideaText, JSON.stringify(compact), answer, allowQuestion, report.project_territory || ''),
       feature: 'inspire',
       maxTokens: 800,
       label: 'inspire-review',
@@ -774,6 +829,159 @@ export async function autoWorldLookSuggestions(db) {
     else ran++;
   }
   return { ran, skipped };
+}
+
+// ─── Rewriting the world-looks that already exist ─────────────────────────────
+// The prompt fixes above only change looks taken FROM NOW ON. Every report already
+// in the database was written by the old prompts — the ones that never saw the asking
+// task's own words at the point the ideas were chosen — so the shelves Antoine reads
+// today on existing tasks, suggestions, components and seeds are still the drifting
+// ones. This redoes them in place.
+//
+// Four rules, each one there for a reason:
+//   · It only redoes the LATEST report per item, because that is the only one any
+//     screen shows.
+//   · It skips owners where the ideas can no longer be acted on (a finished or deleted
+//     task, a dismissed suggestion, a piece already built) — those cost model calls and
+//     change nothing anyone will read.
+//   · It stamps each redone report with WORLD_LOOK_GEN, so a run that is interrupted
+//     resumes instead of starting over, and running it twice is free.
+//   · It clears the owner's applied picks, because picks are stored as positions in the
+//     report (part 0, pick 2) and the rewritten report has different ideas in those
+//     positions. Keeping them would silently point Antoine's own choices at ideas he
+//     never chose.
+//
+// Sequential on purpose: one item at a time keeps GitHub and the model lane gentle,
+// and this walks the whole backlog.
+
+// What each source's owner row is, and whether its ideas are still worth money.
+const REWRITE_SOURCES = {
+  prompt: {
+    label: 'tasks',
+    live: (db, id) => db.prepare(`
+      SELECT id, title, prompt FROM work_prompts
+      WHERE id=? AND deleted_at IS NULL AND status NOT IN ('done','cancelled')
+    `).get(id),
+    ideaText: (r) => [r.title, r.prompt].filter(Boolean).join('\n'),
+    // A task points at its report by id, so the pointer has to move with the rewrite.
+    reattach: (db, id, reportId) => db.prepare(`
+      UPDATE work_prompts SET inspire_report_id=?, inspire_state='ready', inspire_picks_json=NULL
+      WHERE id=?
+    `).run(reportId, id),
+  },
+  suggestion: {
+    label: 'suggestions',
+    live: (db, id) => db.prepare(`
+      SELECT id, title, prompt FROM work_suggestions
+      WHERE id=? AND deleted_at IS NULL AND status='new'
+    `).get(id),
+    ideaText: (r) => [r.title, r.prompt].filter(Boolean).join('\n'),
+  },
+  component: {
+    label: 'pieces of the architecture',
+    live: (db, id) => db.prepare(`
+      SELECT id, name, what, next FROM architecture_nodes
+      WHERE id=? AND deleted_at IS NULL AND status NOT IN ('Working','Validated','Advanced')
+    `).get(id),
+    ideaText: (r) => [r.name, r.what, r.next].filter(Boolean).join('\n'),
+  },
+  idea: {
+    label: 'seeds',
+    live: (db, id) => db.prepare(`
+      SELECT id, title, notes FROM work_ideas WHERE id=? AND deleted_at IS NULL
+    `).get(id),
+    ideaText: (r) => [r.title, r.notes].filter(Boolean).join('\n'),
+  },
+};
+
+// The latest report per item, for every item whose latest report predates the current
+// generation. Newest first so the things most recently looked at are fixed first.
+export function staleWorldLooks(db, { sources = null } = {}) {
+  let rows;
+  try {
+    rows = db.prepare(`
+      SELECT r.id, r.source, r.source_id, r.idea_text, COALESCE(r.rewrite_gen, 0) AS gen, r.created_at
+      FROM discovery_reports r
+      WHERE r.source_id IS NOT NULL
+        AND r.created_at = (
+          SELECT MAX(r2.created_at) FROM discovery_reports r2
+          WHERE r2.source = r.source AND r2.source_id = r.source_id
+        )
+      ORDER BY r.created_at DESC
+    `).all();
+  } catch { return []; }
+  const wanted = Array.isArray(sources) && sources.length ? new Set(sources) : null;
+  return rows
+    .filter((r) => r.gen < WORLD_LOOK_GEN)
+    .filter((r) => REWRITE_SOURCES[r.source])
+    .filter((r) => !wanted || wanted.has(r.source));
+}
+
+/**
+ * Redo the world-look for everything whose ideas were written by an older generation
+ * of the prompts. Never throws — a single failure is recorded and the sweep moves on,
+ * because a run over a hundred items must not be lost to one bad row.
+ *
+ * @param {object} opts
+ * @param {number} opts.limit       most items to redo in this run (resume for the rest)
+ * @param {string[]} opts.sources   restrict to 'prompt' | 'suggestion' | 'component' | 'idea'
+ * @param {boolean} opts.dryRun     count and list only — no model calls, no writes
+ * @param {Function} opts.onProgress called with each item's outcome, for CLI output
+ */
+export async function rewriteWorldLooks(db, { limit = 25, sources = null, dryRun = false, onProgress = null } = {}) {
+  const stale = staleWorldLooks(db, { sources });
+  const byLabel = {};
+  for (const r of stale) {
+    const label = REWRITE_SOURCES[r.source].label;
+    byLabel[label] = (byLabel[label] || 0) + 1;
+  }
+
+  if (dryRun) {
+    return {
+      dry_run: true, generation: WORLD_LOOK_GEN, stale: stale.length, by_kind: byLabel,
+      would_do: stale.slice(0, limit).map((r) => ({ source: r.source, source_id: r.source_id, idea: String(r.idea_text || '').slice(0, 80) })),
+    };
+  }
+
+  const done = [], skipped = [], failed = [];
+  for (const r of stale) {
+    if (done.length >= limit) break;
+    const spec = REWRITE_SOURCES[r.source];
+    const owner = (() => { try { return spec.live(db, r.source_id); } catch { return null; } })();
+    if (!owner) {
+      // Gone, finished, turned down or already built. Stamp the old report so the
+      // next run does not keep re-examining it forever.
+      try { db.prepare(`UPDATE discovery_reports SET rewrite_gen=? WHERE id=?`).run(WORLD_LOOK_GEN, r.id); } catch {}
+      skipped.push({ source: r.source, source_id: r.source_id, why: 'nothing left to act on' });
+      if (onProgress) onProgress({ state: 'skipped', source: r.source, source_id: r.source_id });
+      continue;
+    }
+    const ideaText = spec.ideaText(owner) || r.idea_text;
+    if (onProgress) onProgress({ state: 'running', source: r.source, source_id: r.source_id, idea: String(ideaText).slice(0, 80) });
+    let out;
+    try {
+      out = await runWorldLookGuarded(db, { idea_text: ideaText, source: r.source, source_id: r.source_id, forceRefresh: false });
+    } catch (e) {
+      out = { error: 'threw', message: e.message };
+    }
+    if (!out || out.error || out.running || !out.id) {
+      failed.push({ source: r.source, source_id: r.source_id, why: out?.message || out?.error || 'no report came back' });
+      if (onProgress) onProgress({ state: 'failed', source: r.source, source_id: r.source_id, why: out?.message || out?.error });
+      continue;
+    }
+    // The new report is now the latest for this item, so findReportBySource finds it
+    // everywhere. Tasks are the exception — they hold the id — hence reattach.
+    if (spec.reattach) { try { spec.reattach(db, r.source_id, out.id); } catch { /* the report still stands */ } }
+    done.push({ source: r.source, source_id: r.source_id, report_id: out.id, subject: out.project_territory || null });
+    if (onProgress) onProgress({ state: 'done', source: r.source, source_id: r.source_id, subject: out.project_territory || null });
+  }
+
+  return {
+    generation: WORLD_LOOK_GEN,
+    rewritten: done.length, skipped: skipped.length, failed: failed.length,
+    remaining: Math.max(0, stale.length - done.length - skipped.length),
+    done, skipped_items: skipped, failed_items: failed,
+  };
 }
 
 // Same sweep for the Not built list: every unbuilt tech-tree component gets its

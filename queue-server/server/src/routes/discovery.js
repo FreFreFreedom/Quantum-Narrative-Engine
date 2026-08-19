@@ -4,7 +4,7 @@ import { Router } from 'express';
 import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
-  addCustomBoldPick,
+  addCustomBoldPick, rewriteWorldLooks, staleWorldLooks, WORLD_LOOK_GEN,
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -95,6 +95,32 @@ export function discoveryRoutes(db) {
       report: findReportBySource(db, key.source, key.source_id),
       running: isWorldLookRunning(key.source, key.source_id),
     });
+  });
+
+  // ── Rewriting the looks that already exist ─────────────────────────────────
+  // GET says how many reports were written by an older generation of the prompts and
+  // are therefore still the drifting ones. Free — a count, no model calls.
+  router.get('/world-look/rewrite', asyncHandler(async (req, res) => {
+    const out = await rewriteWorldLooks(db, {
+      dryRun: true,
+      limit: Number(req.query.limit) || 25,
+      sources: req.query.sources ? String(req.query.sources).split(',').filter(Boolean) : null,
+    });
+    res.json(out);
+  }));
+
+  // POST actually redoes them. Returns immediately and works through the backlog in
+  // the background: this is a long sweep (a few model calls per item, one item at a
+  // time), it is resumable, and running it again after it finishes costs nothing
+  // because every report it redid is stamped with the current generation.
+  router.post('/world-look/rewrite', (req, res) => {
+    const limit = Math.max(1, Math.min(500, Number(req.body?.limit) || 25));
+    const sources = Array.isArray(req.body?.sources) && req.body.sources.length ? req.body.sources : null;
+    const pending = staleWorldLooks(db, { sources }).length;
+    res.status(202).json({ started: true, generation: WORLD_LOOK_GEN, pending, limit });
+    rewriteWorldLooks(db, { limit, sources })
+      .then((out) => console.log(`[discovery] world-look rewrite: ${out.rewritten} redone, ${out.skipped} skipped, ${out.failed} failed, ${out.remaining} left.`))
+      .catch((e) => console.error('[discovery] world-look rewrite failed:', e.message));
   });
 
   // Add a custom bold idea to a task's world-look report

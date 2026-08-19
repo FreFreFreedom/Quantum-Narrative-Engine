@@ -13,6 +13,7 @@
 import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { APP_BLURB, onSubjectRule } from './ai/appModel.js';
 
 // ─── Static content: what doesn't change with live data ────────────────────────
 // WHAT/WHY/INPUT-OUTPUT/depends live in the frontend (fmcns_navigator.html) since
@@ -120,7 +121,69 @@ export const EVOLUTION = {
     ['v1', 'Content graph brought up to the same bar as Architecture Navigator (cluster-zone layout, spotlight/fade — shipped this round; clutter/label-legibility fixes remain open)'],
     ['v2', 'Map mode polish pass — currently reuses Content mode\'s detail panel but hasn\'t had its own dedicated review'],
   ],
+
+  // ─── Core architecture: the app's own build system ───────────────────────────
+  // These nine mirror the 'self' territory added to ARCH_DATA in the frontend.
+  // getComponents() iterates Object.keys(EVOLUTION), so a component only exists on
+  // the server once it has a ladder here — which is why they had to be added in both
+  // places, not one.
+  'self-model': [
+    ['v0', 'Hand-written list in the app\'s own code, sent up with every request (current)'],
+    ['v1', 'Stored in the database, editable from inside the app'],
+    ['v2', 'Pieces discovered from the code itself instead of described by hand'],
+  ],
+  'dispatch-queue': [
+    ['v0', 'One task at a time, no plan drafted first, no conversation'],
+    ['v1', 'Plan drafted before every run, a conversation per task, park and resume (current)'],
+    ['v2', 'Several tasks running side by side on isolated copies of the code'],
+    ['v3', 'A team of specialists working the same task from different angles'],
+  ],
+  'agent-runner': [
+    ['v0', 'Claude started in the container, work lost on restart'],
+    ['v1', 'Runs on the Mac against the real code, logs survive a restart, real cost read back, model steps down on quota (current)'],
+    ['v2', 'A separate copy of the code per running task, so two runs can never collide'],
+  ],
+  'shipping-line': [
+    ['v0', 'Shipping by hand, no undo'],
+    ['v1', 'One step from the Mac, live and undoable afterwards (current)'],
+    ['v2', 'The app is checked to still load before anything is pushed'],
+  ],
+  'self-observation': [
+    ['v0', 'Weak spots on the structure only, drawn on the graph'],
+    ['v1', 'Health scores recorded daily, thoughts kept as a feed (current)'],
+    ['v2', 'Weak spots found by reading the code, not only the map'],
+    ['v3', 'Looks back at finished work and learns from how it went'],
+  ],
+  'next-steps-ranking': [
+    ['v0', 'About fifteen competing orders, none of them in charge'],
+    ['v1', 'One free order from counting alone, Claude an optional second opinion (current)'],
+    ['v2', 'The order you last asked for survives a reload'],
+  ],
+  'suggestion-engine': [
+    ['v0', 'Proposals read the state of the material only'],
+    ['v1', 'Both halves of the app read, with a balance rule so neither is starved (current)'],
+    ['v2', 'Learns from what gets accepted versus turned down, not only from exact repeats'],
+  ],
+  'idea-studio': [
+    ['v0', 'Ideas typed straight into the queue, unquestioned'],
+    ['v1', 'A conversation on any thing in the app that comes out as a parked task (current)'],
+    ['v2', 'Compares an idea against the ones already waiting before adding it'],
+  ],
+  'world-look': [
+    ['v0', 'A search of open-source projects only'],
+    ['v1', 'Three shelves with the bold one at the heart, checked over before use (current)'],
+    ['v2', 'Every shelf held to the subject of the task that asked for it'],
+    ['v3', 'Remembers which shelves actually led to shipped work'],
+  ],
 };
+
+// The 'self' territory's ids, in build order. Used to filter the computed gap list
+// (see gapsFor) and to say honestly, in the self-model's own NOW text, how much of
+// the app's map is the app itself.
+export const SELF_COMPONENT_IDS = [
+  'self-model', 'dispatch-queue', 'agent-runner', 'shipping-line', 'self-observation',
+  'next-steps-ranking', 'suggestion-engine', 'idea-studio', 'world-look',
+];
 
 // ─── Live NOW computation ────────────────────────────────────────────────────
 // Each function returns { text, status }. Falls back to a static description when
@@ -233,7 +296,96 @@ const NOW_COMPUTERS = {
     text: 'Uneven across views. Architecture Navigator got a dedicated design pass; the Content graph did too this round (cluster-zone layout, spotlight/fade, reduced default edge/label density) but was flagged as too cluttered before that fix shipped, and further legibility work is still open. Map mode has not had its own dedicated polish pass — it inherits Content mode\'s detail panel but its own layout hasn\'t been reviewed.',
     status: 'Prototype',
   }),
+
+  // ─── Core architecture: the app's own build system ───────────────────────────
+  // Same contract as the content ones: read live rows, say what is true today in
+  // plain English. Every count goes through num() so one missing table on an older
+  // database degrades to 0 instead of throwing the whole sentence away.
+  'self-model': (db) => {
+    const pieces = Object.keys(EVOLUTION).length;
+    const stored = num(db, `SELECT COUNT(*) n FROM architecture_nodes WHERE deleted_at IS NULL`);
+    return {
+      text: `Prototype. ${pieces} pieces are described across six areas — ${SELF_COMPONENT_IDS.length} of them the app's own build system, added so that half of the app stops being invisible to its own ranking and suggestions. ${stored} more pieces have been added from inside the app. The list still lives in the app's own code, so the browser has to send it up with every request that needs it.`,
+      status: 'Prototype',
+    };
+  },
+  'dispatch-queue': (db) => {
+    const total = num(db, `SELECT COUNT(*) n FROM work_prompts WHERE deleted_at IS NULL`);
+    const done = num(db, `SELECT COUNT(*) n FROM work_prompts WHERE deleted_at IS NULL AND status='done'`);
+    const waiting = num(db, `SELECT COUNT(*) n FROM work_prompts WHERE deleted_at IS NULL AND status IN ('queued','paused')`);
+    return {
+      text: `Working and in daily use. ${total} tasks have been through the queue, ${done} finished, ${waiting} waiting or parked. Every task is drafted into a plan before it runs, keeps its own conversation, and can be replied to mid-run. Still strictly one at a time.`,
+      status: 'Working',
+    };
+  },
+  'agent-runner': (db) => {
+    const runs = num(db, `SELECT COUNT(*) n FROM work_prompts WHERE deleted_at IS NULL AND run_model IS NOT NULL`);
+    const spent = num(db, `SELECT ROUND(COALESCE(SUM(cost_usd),0), 2) n FROM work_prompts WHERE deleted_at IS NULL`);
+    return {
+      text: `Working. ${runs} runs measured so far, for ${spent === 0 ? 'nothing yet' : '$' + spent}, read from Claude's own output rather than estimated. Claude runs as a separate program on the Mac against the real code, so a restart mid-task does not lose the work, and it steps down to another model rather than giving up when quota runs out.`,
+      status: 'Working',
+    };
+  },
+  'shipping-line': (db) => {
+    const shipped = num(db, `SELECT COUNT(*) n FROM git_jobs WHERE status='done'`);
+    const failed = num(db, `SELECT COUNT(*) n FROM git_jobs WHERE status='failed'`);
+    return {
+      text: `Working. ${shipped} pieces of finished work have gone live from the Mac in one step${failed ? `, ${failed} failed on the way` : ''}, each still undoable afterwards with "Put it back". Nothing checks that the app still loads before the push.`,
+      status: 'Working',
+    };
+  },
+  'self-observation': (db) => {
+    const thoughts = num(db, `SELECT COUNT(*) n FROM intel_thoughts WHERE deleted_at IS NULL`);
+    const open = num(db, `SELECT COUNT(*) n FROM intel_thoughts WHERE deleted_at IS NULL AND status='new'`);
+    const snaps = num(db, `SELECT COUNT(*) n FROM intel_health_snapshots`);
+    const lessons = num(db, `SELECT COUNT(*) n FROM intel_task_lessons`);
+    return {
+      text: `Prototype. ${thoughts} thoughts written about the app's own state, ${open} still unread, from ${snaps} daily health readings${lessons ? ` and ${lessons} lessons taken from finished work` : ''}. Eleven kinds of weak spot are detected — six on the structure, five on the material. It still only reads the map and the database, never the code itself.`,
+      status: 'Prototype',
+    };
+  },
+  'next-steps-ranking': (db) => {
+    const moving = num(db, `SELECT COUNT(DISTINCT component_id) n FROM work_prompts WHERE component_id IS NOT NULL AND deleted_at IS NULL AND status IN ('queued','running','paused')`);
+    return {
+      text: `Working. One order, worked out from counting and arithmetic alone — no Claude, nothing to pay, and the same answer twice. Ready-to-start beats blocked, then how much a piece unlocks, then finishing beats starting${moving ? `; ${moving} pieces already being worked on are held out of the list` : ''}. Claude is an optional second opinion you have to ask for. The order you ask for is lost on reload.`,
+      status: 'Working',
+    };
+  },
+  'suggestion-engine': (db) => {
+    const open = num(db, `SELECT COUNT(*) n FROM work_suggestions WHERE deleted_at IS NULL AND status='new'`);
+    const taken = num(db, `SELECT COUNT(*) n FROM work_suggestions WHERE deleted_at IS NULL AND status='accepted'`);
+    const turned = num(db, `SELECT COUNT(*) n FROM work_suggestions WHERE deleted_at IS NULL AND status='dismissed'`);
+    return {
+      text: `Prototype. ${open} proposals waiting, ${taken} taken into the queue, ${turned} turned down and remembered so they are never proposed again. It now reads both halves of the app — the material and the build system — and has to propose work on each, which it did not before.`,
+      status: 'Prototype',
+    };
+  },
+  'idea-studio': (db) => {
+    const convos = num(db, `SELECT COUNT(*) n FROM convos`);
+    const seeds = num(db, `SELECT COUNT(*) n FROM work_ideas WHERE deleted_at IS NULL`);
+    const planted = num(db, `SELECT COUNT(*) n FROM work_ideas WHERE deleted_at IS NULL AND work_prompt_id IS NOT NULL`);
+    return {
+      text: `Prototype. ${convos} conversations held about things in the app, and ${seeds} notes saved to think about later, ${planted} of them turned into tasks. It opens on any piece, note, proposal or task and already knows what that thing is. What it hands over is always parked — nothing starts without you.`,
+      status: 'Prototype',
+    };
+  },
+  'world-look': (db) => {
+    const reports = num(db, `SELECT COUNT(*) n FROM discovery_reports`);
+    const forTasks = num(db, `SELECT COUNT(*) n FROM discovery_reports WHERE source='prompt'`);
+    const plants = num(db, `SELECT COUNT(*) n FROM discovery_pick_plants`);
+    return {
+      text: `Prototype. ${reports} looks at the world so far, ${forTasks} of them run for a task before its plan was drafted, and ${plants} ideas planted into the map as pieces to build. Three shelves each time — real projects, products that keep their code private, and bold ideas nobody has built — with a quick editor stripping out what does not earn its place.`,
+      status: 'Prototype',
+    };
+  },
 };
+
+// One count, or 0 if the table is not there yet. The nine computers above read
+// nine different tables; without this, one missing table on an older database
+// would take out the whole NOW sentence via computeLiveNow's catch.
+function num(db, sql) {
+  try { const r = db.prepare(sql).get(); return r ? Number(r.n) || 0 : 0; } catch { return 0; }
+}
 
 function computeLiveNow(db, id) {
   const fn = NOW_COMPUTERS[id];
@@ -295,14 +447,44 @@ export function getComponentHistory(db, id) {
 }
 
 // ─── Suggestion generation (manual trigger only — real API cost) ───────────────
-const KNOWN_GAPS = `
-- Task queue has no queue UI yet (API-only).
-- 76% of the film corpus is still reasoned, not grounded.
-- GraphRAG and a formal Pattern Engine don't exist.
-- Fractal Zoom isn't truly recursive outside the Architecture Navigator itself.
-- Map mode only has 10 hand-scored countries.
-- The entanglement/bridge computation is duplicated client-side across modes.
-`.trim();
+// This used to be a hardcoded KNOWN_GAPS string injected into EVERY component's
+// suggestion call. Two things were wrong with it. It had gone stale — its first
+// line said "Task queue has no queue UI yet (API-only)", years after the queue UI
+// shipped, so every call was told something false. And five of its six lines were
+// about the material, so even a suggestion for an interface piece got nudged toward
+// corpus grounding. That is a large part of why suggestions for the Core Architecture
+// section came back about the Content navigator.
+//
+// It is now computed, free, from the same rows the ranking reads, and narrowed to
+// the component being asked about. A composed sentence about a counted number is
+// true; a hand-written list about last year's state is not.
+function gapsFor(db, id) {
+  const lines = [];
+  const isSelf = SELF_COMPONENT_IDS.includes(id);
+  try {
+    const rows = db.prepare(`SELECT id, status FROM architecture_components`).all();
+    const unbuilt = rows.filter((r) => !['Working', 'Validated', 'Advanced'].includes(r.status || ''));
+    const mine = unbuilt.filter((r) => SELF_COMPONENT_IDS.includes(r.id) === isSelf);
+    if (mine.length) {
+      lines.push(`- Not finished yet in this same part of the app: ${mine.map((r) => r.id).join(', ')}.`);
+    }
+    const other = unbuilt.length - mine.length;
+    if (other > 0) {
+      lines.push(`- ${other} pieces elsewhere in the app are unfinished too — mention them ONLY if this piece genuinely depends on one of them.`);
+    }
+  } catch { /* an older database without the table yields no gap lines */ }
+  if (!isSelf) {
+    try {
+      const ungrounded = db.prepare(`SELECT code FROM clusters WHERE COALESCE(grounding_status,'') <> 'grounded'`).all().map((c) => c.code);
+      if (ungrounded.length) lines.push(`- Groups of material not yet checked against sources: ${ungrounded.join(', ')}.`);
+      const untagged = db.prepare(`
+        SELECT COUNT(*) n FROM entities e WHERE NOT EXISTS (SELECT 1 FROM entity_tags t WHERE t.entity_id = e.id)
+      `).get()?.n || 0;
+      if (untagged) lines.push(`- ${untagged} things in the material carry no archetypal tags at all.`);
+    } catch { /* same */ }
+  }
+  return lines.join('\n') || '- (nothing counted as a gap right now)';
+}
 
 export async function generateSuggestions(db, id) {
   const rows = getComponents(db);
@@ -314,12 +496,13 @@ export async function generateSuggestions(db, id) {
   });
 
   const prompt = [
-    `You are suggesting concrete next steps for one component of FMCNS, a personal research platform mapping archetypal patterns across scales.\n\n`,
-    `Component: ${id}\n`,
+    `You are suggesting concrete next steps for ONE piece of ${APP_BLURB}\n\n`,
+    `The piece you are suggesting for: ${id}${SELF_COMPONENT_IDS.includes(id) ? ' — this one belongs to the app\'s own build system, not to the material it studies' : ''}\n`,
     `Current state (NOW): ${c.now_text || '(no live data)'}\n`,
     `Status: ${c.status || 'unknown'}\n`,
     `Next version on its evolution path: ${nextVersion ? nextVersion[0] + ' — ' + nextVersion[1] : '(none defined)'}\n\n`,
-    `Known project-wide gaps (only use ones relevant to this component):\n${KNOWN_GAPS}\n\n`,
+    `Gaps counted right now, narrowed to this piece's side of the app:\n${gapsFor(db, id)}\n\n`,
+    `${onSubjectRule(id)}\n\n`,
     `Produce exactly 2 or 3 concrete, actionable suggestions for this specific component. `,
     `Each suggestion must already be phrased as a ready-to-execute task-queue prompt — an instruction an autonomous coding agent could act on directly, `,
     `not a vague description. Be specific: name the file/mechanism where you can infer it.\n\n`,

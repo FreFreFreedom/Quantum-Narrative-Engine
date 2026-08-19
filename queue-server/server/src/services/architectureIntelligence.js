@@ -18,6 +18,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { APP_BLURB, onSubjectRule } from './ai/appModel.js';
 import * as queue from './promptQueue.js';
 
 const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface'];
@@ -539,12 +540,90 @@ function stateHashOf(node) {
   ].join('|')).digest('hex');
 }
 
+// ─── The architecture side of the state digest, for free ──────────────────────
+// Why this lives here. The suggestion engine's own digest (workSuggestions.js
+// buildContextDigest) read entity counts, ungrounded clusters, recent queue titles
+// and its own past proposals — five lines, four of them about the material. The
+// model was handed a corpus status report and asked "what should I build next?", so
+// it proposed corpus work. It was not choosing the material over the build system;
+// it was never shown the build system at all.
+//
+// This function supplies the missing half from the same rows the ranking already
+// reads. SQL and arithmetic only — no model call, safe to run on every generation.
+export function architectureDigest(db, catalog = []) {
+  const lines = [];
+  try {
+    const { byId, all } = unifiedNodes(db, catalog);
+    if (!all.length) return '';
+    const built = (n) => ['Working', 'Validated', 'Advanced'].includes(n?.status || '');
+
+    const byTerr = new Map();
+    for (const n of all) {
+      if (!byTerr.has(n.territory)) byTerr.set(n.territory, { total: 0, built: 0 });
+      const t = byTerr.get(n.territory);
+      t.total++;
+      if (built(n)) t.built++;
+    }
+    lines.push(`The app's own map of itself: ${[...byTerr.entries()]
+      .map(([t, v]) => `${t} ${v.built}/${v.total} finished`)
+      .join(', ')}.`);
+
+    // Ready-to-start is the single most actionable fact here: it is what the free
+    // ranking sorts on first, so naming it keeps proposals and ranking in agreement.
+    const ready = all.filter((n) => !built(n) && (n.depends || []).every((d) => built(byId.get(d))));
+    if (ready.length) {
+      lines.push(`Unfinished and nothing blocking them, ready to start now: ${ready
+        .slice(0, 12).map((n) => `${n.name} (${n.territory})`).join(' · ')}.`);
+    }
+    const blocked = all.filter((n) => !built(n) && !ready.includes(n));
+    if (blocked.length) lines.push(`${blocked.length} more unfinished pieces are waiting on something else first.`);
+
+    const signalsResult = computeSignals(db, catalog);
+    const worst = [...(signalsResult.signals || [])]
+      .sort((a, b) => (b.severity || 0) - (a.severity || 0)).slice(0, 6);
+    if (worst.length) {
+      lines.push(`Weak spots counted right now: ${worst.map((sg) => `${sg.type}${sg.target_id ? ` on ${sg.target_id}` : ''}`).join(' · ')}.`);
+    }
+    const health = healthFor(signalsResult, loadIntelConfig(db));
+    if (health && typeof health.graph === 'number') lines.push(`Overall health of the app's own build: ${health.graph}/100.`);
+  } catch { /* an older database, or no catalog posted — the digest degrades to fewer lines */ }
+  try {
+    const open = db.prepare(`SELECT COUNT(*) n FROM intel_thoughts WHERE deleted_at IS NULL AND status='new'`).get()?.n || 0;
+    if (open) lines.push(`${open} thoughts the app has already had about itself are still unread.`);
+  } catch { /* same */ }
+  return lines.join('\n');
+}
+
 // ─── Deliberation (Part 4 + 6.3/6.4) ──────────────────────────────────────────
 // Node context builder shared by Deepen — mirrors speculate()'s philosophy: the
 // trunk lives in the frontend, so the caller passes the node's own text.
-function digestLines(byId, all, signalsResult) {
+// Was `all.slice(0, 40)`, and `all` comes out of unifiedNodes ordered by
+// architecture_nodes.created_at — so the oldest rows survived the cut and anything
+// added later fell off the end. Every piece of the app's own build system is newer
+// than the material pieces, so the whole 'self' area could vanish from the digest
+// while the prompt still asked "what should I build next?". Round-robin by area
+// instead: the cap now costs each area a little breadth rather than costing the
+// newest area everything.
+function digestLines(byId, all, signalsResult, limit = 48) {
+  const byTerritory = new Map();
+  for (const n of all) {
+    if (!byTerritory.has(n.territory)) byTerritory.set(n.territory, []);
+    byTerritory.get(n.territory).push(n);
+  }
+  const queues = [...byTerritory.values()];
+  const picked = [];
+  let drained = false;
+  while (picked.length < limit && !drained) {
+    drained = true;
+    for (const q of queues) {
+      if (!q.length) continue;
+      drained = false;
+      picked.push(q.shift());
+      if (picked.length >= limit) break;
+    }
+  }
   const lines = [];
-  for (const n of all.slice(0, 40)) {
+  for (const n of picked) {
     const sigs = (signalsResult.byTarget[n.id] || []).map((s) => s.type).join(',');
     lines.push(`- ${n.id} — ${n.name} (${n.territory}, ${n.status})${n.depends.length ? `, depends: ${n.depends.join(',')}` : ''}${sigs ? ` — signals: ${sigs}` : ''}: ${String(n.what || '').slice(0, 120)}`);
   }
@@ -627,7 +706,10 @@ export async function deepenNode(db, { catalog, targetId } = {}) {
   if (!n) return { error: 'not_found' };
   const signalsResult = computeSignals(db, catalog);
   const mine = (signalsResult.byTarget[targetId] || []).map((s) => `${s.type}: ${s.detail}`).join('\n');
-  const prompt = `You are the mind of FMCNS (Fractal Mythic Consciousness Navigation System) — the platform thinking about its own development. A personal research tool mapping characters, films and countries as one ontology of "characters" (universal ontological units), navigated fractally across five territories: perception, knowledge, reasoning, experience, interface.
+  const prompt = `You are the mind of ${APP_BLURB}
+You are the platform thinking about its own development.
+
+${onSubjectRule(`${n.name} (${n.territory})`)}
 
 Think deeply about ONE component of the platform:
 
@@ -687,7 +769,8 @@ export async function pulseGraph(db, { catalog, focus = 'pulse', force = false }
   })();
   const growthFocus = focus === 'growth';
 
-  const prompt = `You are the mind of FMCNS (Fractal Mythic Consciousness Navigation System) — the platform thinking about its own development. A personal research tool mapping characters, films and countries as one ontology of "characters" (universal ontological units), navigated fractally.
+  const prompt = `You are the mind of ${APP_BLURB}
+You are the platform thinking about its own development.
 
 Here is the whole platform right now:
 
@@ -702,6 +785,8 @@ Task queue: ${queueState || 'quiet'}${recent ? `\nRecent tasks: ${recent}` : ''}
 ${growthFocus
   ? 'Focus: GROWTH. Examine usage patterns and quiet zones (never-worked components, isolated territories, accepted speculations that produced value). Propose up to 3 next-logical-features: new capabilities that tie the platform together or fill obvious blind spots. Each must be specific to FMCNS, not generic.'
   : 'Focus: the platform\'s own development health. Propose up to 3 thoughts about what to do next — blind spots, integration opportunities between components, features that make logical sense. Each must be specific to FMCNS, not generic.'}
+
+BALANCE. The list above holds both halves of the app: the material it studies, and the app's own build system (the 'self' area — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world). If you produce 3 thoughts, at least ONE must be about the build system and at least ONE about the material. Both halves are real development areas; a set of thoughts entirely about one of them is an incomplete answer, not a focused one.
 
 ${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
 The title and body must NEVER mention internal component ids or slugs (like "observation-layer") — say what the change would do for the person using the app, in everyday words.
@@ -763,7 +848,8 @@ export async function contentPulse(db, { focus = 'themes', force = false } = {})
     ? 'Focus: BRIDGE PITCHES. Look at the axes and their scored entities. Propose up to 3 specific cross-scale bridges: name the concrete pair of entities (or two entity archetypes) across different scales — e.g. a character and a country, a film and a country — that share a telling archetypal position and are worth an explicit scale-echo link. Point to the axis and approximate scores.'
     : 'Focus: UNDER-EXPLORED THEMES. Look at the corpus: cluster grounding, axis coverage and band gaps, sparse or missing tags, thin entities (no books, no lens). Propose up to 3 thoughts about what the corpus is missing or what theme deserves exploration next. Each must be specific to this corpus, not generic advice.';
 
-  const prompt = `You are the mind of FMCNS (Fractal Mythic Consciousness Navigation System) — a personal research tool mapping characters, films and countries as one ontology of "characters" (universal ontological units), navigated fractally. You are thinking about the CONTENT itself — the material corpus — not the software.
+  const prompt = `You are the mind of ${APP_BLURB}
+You are thinking about the MATERIAL itself — the corpus — not the software, and not the app's own build system.
 
 Here is the corpus right now:
 ${contentDigest}

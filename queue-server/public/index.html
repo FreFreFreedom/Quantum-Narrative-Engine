@@ -4679,6 +4679,7 @@ function renderFlow() {
         <div class="flow-genrow">
           <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
           <button class="ctrlbtn" id="flowGenBtn">✨ Generate now</button>
+          <button class="ctrlbtn" id="flowRewriteBtn" title="Redo the world-look ideas attached to tasks, suggestions, pieces and seeds that were written before the ideas were held to their subject">↻ Redo the old world ideas</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
         </div>` + sg.map(s => `
         <div class="flow-row flow-sgrow${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? ' sel' : ''}" data-sid="${s.id}">
@@ -4876,6 +4877,8 @@ function renderFlow() {
   if (doneToggle) doneToggle.onclick = () => { flowDoneOpen = !flowDoneOpen; renderFlow(); };
   const genBtn = document.getElementById('flowGenBtn');
   if (genBtn) genBtn.onclick = () => flowGenerateNow();
+  const rewriteBtn = document.getElementById('flowRewriteBtn');
+  if (rewriteBtn) rewriteBtn.onclick = () => flowRewriteWorldLooks();
   const seedToggle = document.getElementById('flowSeedToggle');
   if (seedToggle) seedToggle.onclick = () => {
     const box = document.getElementById('flowSeedAdd');
@@ -4904,6 +4907,33 @@ function renderFlow() {
   }
 }
 
+// Redo the world-look ideas that already exist. The prompts now keep every shelf on
+// the subject of the thing that asked for it; everything looked at before that change
+// still carries the old, drifting ideas — on tasks, suggestions, pieces of the
+// architecture and seeds alike. This walks that backlog. It is resumable: it redoes a
+// batch, says how many are left, and running it again continues.
+async function flowRewriteWorldLooks() {
+  const btn = document.getElementById('flowRewriteBtn');
+  const status = document.getElementById('flowGenStatus');
+  if (!btn) return;
+  try {
+    const pre = await api('/api/discovery/world-look/rewrite');
+    if (!pre.stale) {
+      if (status) status.textContent = 'Nothing to redo — every world-look already keeps to its subject.';
+      return;
+    }
+    const kinds = Object.entries(pre.by_kind || {}).map(([k, n]) => `${n} ${k}`).join(', ');
+    if (!confirm(`${pre.stale} things still carry world ideas written before the ideas were held to their subject (${kinds}).\n\nRedo up to 25 of them now? Each one takes a couple of minutes and runs on the free models. You can run this again for the rest.`)) return;
+    btn.disabled = true; btn.textContent = '↻ Redoing…';
+    const out = await apiWrite('/api/discovery/world-look/rewrite', 'POST', { limit: 25 });
+    if (status) status.textContent = `Redoing ${Math.min(25, out.pending)} of ${out.pending} — this runs in the background, reopen a task to see its new ideas.`;
+  } catch (e) {
+    if (status) status.textContent = 'Could not start: ' + (e.message || e);
+  } finally {
+    setTimeout(() => { btn.disabled = false; btn.textContent = '↻ Redo the old world ideas'; }, 5000);
+  }
+}
+
 async function flowGenerateNow() {
   const btn = document.getElementById('flowGenBtn');
   const status = document.getElementById('flowGenStatus');
@@ -4911,7 +4941,11 @@ async function flowGenerateNow() {
   btn.disabled = true; btn.textContent = '✨ Generating…';
   if (status) status.textContent = 'Claude is thinking about what to work on next — this takes a minute or two.';
   try {
-    await apiWrite('/api/travaux/suggestions/generate', 'POST', {});
+    // Ship the app's own map of itself with the request. It lives in this file, not
+    // in the database, so without it the suggestion engine cannot see the app's build
+    // system and proposes work on the material only — which is the whole reason
+    // suggestions used to come back about the Content navigator whatever you asked.
+    await apiWrite('/api/travaux/suggestions/generate', 'POST', { catalog: archCatalog() });
     setTimeout(async () => {
       await loadSuggestions();
       if (status) status.textContent = '';
@@ -6627,7 +6661,7 @@ function renderMind() {
 // (per explicit instruction: accurate now, not guessed, not live-introspected).
 const STATUS_LEVELS = ['Concept','Designed','Prototype','Working','Validated','Advanced'];
 const STATUS_COLORS = { Concept:'#8a8378', Designed:'#7a6a4a', Prototype:'#c08a3e', Working:'#4f9d7a', Validated:'#2f7d63', Advanced:'#1f5c48' };
-const TERRITORY_COLORS = { perception:'#3f6b85', knowledge:'#8b3f85', reasoning:'#7a3f3f', experience:'#5f7a3f', interface:'#a3672f' };
+const TERRITORY_COLORS = { perception:'#3f6b85', knowledge:'#8b3f85', reasoning:'#7a3f3f', experience:'#5f7a3f', interface:'#a3672f', self:'#4a5f8b' };
 
 const ARCH_DATA = [
   { id:'observation-layer', territory:'perception', name:'Observation Layer',
@@ -6764,6 +6798,99 @@ const ARCH_DATA = [
       { id:'content-graph', label:'Content graph', rating:'Known gap logged, partially fixed', note:'Flagged as too cluttered to read (node overlap, label/edge noise). Cluster-zone layout + spotlight/fade shipped in response; further legibility and navigation work (trackpad gestures, stronger pattern-focus fade) still open.' },
       { id:'architecture-nav', label:'CORE ARCHITECTURE → Architecture', rating:'Reviewed', note:'Got a dedicated design pass this round: live NOW data, versioned evolution, build history, generated suggestions. Since merged with Queue and Travaux into one CORE ARCHITECTURE tab (Architecture / Seeds / Suggestion Engine / Dispatch Queue sub-tabs).' },
     ] },
+
+  // ─── Core architecture: the app's own build system ───────────────────────────
+  // The other five territories describe the material FMCNS studies. These nine
+  // describe the machine that builds FMCNS. They exist as first-class components
+  // for the same reason the content ones do: nothing the app cannot see in this
+  // list can be ranked, watched, or proposed as work. Their NOW text is computed
+  // live on the server (architecture.js NOW_COMPUTERS), like the content ones.
+
+  { id:'self-model', territory:'self', name:'The map of itself',
+    what:'This very list — every piece of the app, which area it belongs to, what state it is in, and what it waits on.',
+    why:'Everything that answers "what should I build next?" reads this map. Anything missing from it is invisible to the app: it cannot be ranked, watched, or proposed as work.',
+    input:'Hand-written descriptions of each piece, plus live counts from the database',
+    output:'The one list every ranking, health check and suggestion reads',
+    now:'Prototype. The list lives in the app\'s own code (not the database), so the browser has to send it along with every request that needs it. Live state per piece is computed on the server; the descriptions are hand-written.',
+    next:'Move the list into the database so it can be edited from inside the app instead of by editing code.',
+    status:'Prototype', depends:[],
+    versions:[['v0','Hand-written list in the app\'s code, sent up with every request (current)'],['v1','Stored in the database, editable from the app'],['v2','Pieces discovered from the code itself instead of described by hand']] },
+
+  { id:'dispatch-queue', territory:'self', name:'Handing work to Claude',
+    what:'The queue where a piece of work is written down, planned, run by Claude, and followed to the end.',
+    why:'This is how anything gets built at all now — it is the door every other idea in the app eventually walks through.',
+    input:'A task, from anywhere: typed by hand, accepted from a suggestion, sent by the idea studio',
+    output:'A task that moves through waiting → running → done, blocked, or parked, with a conversation attached',
+    now:'Working and in daily use. Every task is drafted into a plan before it runs. You can reply mid-run, park and resume, and each task keeps its own conversation. When Claude runs out of quota the task steps down to another model or waits.',
+    next:'Let several tasks run side by side on separate copies of the code instead of strictly one at a time.',
+    status:'Working', depends:[],
+    versions:[['v0','One task at a time, no plan, no conversation'],['v1','Plan drafted first, conversation per task, park/resume (current)'],['v2','Several tasks in parallel on isolated copies of the code'],['v3','A team of specialists working the same task from different angles']] },
+
+  { id:'agent-runner', territory:'self', name:'The worker that does the coding',
+    what:'The part that actually starts Claude on your Mac, watches it work, and reads back what it did and what it cost.',
+    why:'Without it the queue is only a list. It is also where the cost of everything is measured, so it is the one place that can keep spending honest.',
+    input:'A planned task and a real copy of the code to work in',
+    output:'Edited code, a log that survives a restart, and the real cost and model used',
+    now:'Working. Claude runs as a separate program on the Mac against the real code, so a server restart mid-task does not lose the work. If quota runs out it walks down a chain of models rather than giving up, and the true cost of each run is read from Claude\'s own output — not estimated.',
+    next:'Give each running task its own copy of the code so two can never edit the same file at once.',
+    status:'Working', depends:['dispatch-queue'] },
+
+  { id:'shipping-line', territory:'self', name:'Putting finished work live',
+    what:'The step that takes finished work and makes it real on the live site, with a way to take it back.',
+    why:'Work that is finished but not live is not finished. And a one-button undo is what makes shipping fast enough to be worth doing every time.',
+    input:'A finished task\'s changes to the code',
+    output:'The live site updated, and an undo button that still works afterwards',
+    now:'Working. Finished work is committed and pushed from the Mac in one step, and the "Put it back" button can undo it afterwards.',
+    next:'Check the app still loads before pushing, so a broken change cannot reach the live site at all.',
+    status:'Working', depends:['agent-runner'] },
+
+  { id:'self-observation', territory:'self', name:'Noticing its own weak spots',
+    what:'The app watching itself: which pieces are stuck, waited on, forgotten, or never touched — and turning that into thoughts worth reading.',
+    why:'This is the difference between a map and an opinion. Without it the app can show you its own structure but has nothing to say about it.',
+    input:'The map of itself, plus the state of the corpus and the queue',
+    output:'Named weak spots with a severity, a health score per piece and per area, and a feed of thoughts',
+    now:'Prototype. Six kinds of weak spot are detected on the structure side and five on the material side, each piece gets a health score that is recorded daily, and the app can be asked to think about one piece or the whole map. It never looks at the code itself — only at the map and the database.',
+    next:'Add a weak-spot detector for a piece that is thin in reality, not just thin on the map — read the code, not only the description.',
+    status:'Prototype', depends:['self-model'],
+    versions:[['v0','Structure-only weak spots, drawn on the graph'],['v1','Health scores recorded daily, thoughts kept as a feed (current)'],['v2','Weak spots found by reading the code, not only the map'],['v3','Looks back at finished work and learns from how it went']] },
+
+  { id:'next-steps-ranking', territory:'self', name:'Knowing what to build next',
+    what:'One ordered answer to "what do I build next, and in what order?", with a plain reason for each place in the order.',
+    why:'It replaced about fifteen competing answers, none of which was in charge. And it costs nothing to run, so it can be right on every screen at once.',
+    input:'The map of itself, the weak spots, and what is already moving in the queue',
+    output:'An ordered shortlist, each row carrying the fact that put it there',
+    now:'Working. The order is worked out from counting and arithmetic alone — no Claude, no cost — so it is always available and always the same answer twice. Ready-to-start beats blocked, then how much a piece unlocks, then finishing beats starting. Claude is an optional second opinion you have to ask for.',
+    next:'Remember the order you last asked for so it survives a reload instead of being lost.',
+    status:'Working', depends:['self-model','self-observation'] },
+
+  { id:'suggestion-engine', territory:'self', name:'Proposing new work',
+    what:'The part that reads the state of the whole app and proposes work you had not thought of yet.',
+    why:'Ranking only orders what you already know about. This is the only piece whose job is to add something new to the list.',
+    input:'The state of the material, the state of the app\'s own build system, and everything already proposed or turned down',
+    output:'Proposed work items, each already written as an instruction Claude could act on',
+    now:'Prototype. Two engines run — one proposes work, one proposes outside services to plug in — on a timer and on demand. It never proposes the same thing twice, and remembers what you turned down. Every proposal can be accepted straight into the queue as a parked task.',
+    next:'Learn from what you accept and what you turn down, instead of only avoiding exact repeats.',
+    status:'Prototype', depends:['self-model','self-observation'],
+    versions:[['v0','Proposals from the material\'s state only'],['v1','Both sides of the app read, with a balance rule (current)'],['v2','Learns from what gets accepted versus turned down']] },
+
+  { id:'idea-studio', territory:'self', name:'Talking an idea into a task',
+    what:'A conversation you can open on anything in the app — a piece, a note, a proposal, a running task — that questions the idea and comes out with a task worth running.',
+    why:'A vague task wastes a whole run. This is where a half-formed thought becomes something Claude can actually do.',
+    input:'Any thing in the app, plus your own words about it',
+    output:'A parked task in the queue, written clearly enough to run',
+    now:'Prototype. It opens on any piece, note, proposal or task and knows what that thing is before you say anything. What it hands over is a parked task, never a running one — nothing starts without you.',
+    next:'Let it compare an idea against the ones already waiting, so it can say "you already have this" instead of adding a near-duplicate.',
+    status:'Prototype', depends:['dispatch-queue'] },
+
+  { id:'world-look', territory:'self', name:'Looking at the world for ideas',
+    what:'Before a task is planned, a look outward on three shelves: real projects already built, products that exist but keep their code private, and bold ideas nobody has built yet.',
+    why:'It is the app\'s only way of learning from outside itself. The bold shelf is the point — the rest is evidence that the bold idea is reachable.',
+    input:'A task\'s own words, plus a live search of open-source projects',
+    output:'Three shelves of ideas, checked over, that the task\'s plan is then written from',
+    now:'Prototype. It runs once per task before the plan is drafted, then a quick editor strips out what does not earn its place. Anything on the bold shelf can be planted into the map as a new piece to build.',
+    next:'Keep every shelf on the subject of the task that asked for it, instead of drifting into other parts of the app.',
+    status:'Prototype', depends:['idea-studio'],
+    versions:[['v0','Open-source search only'],['v1','Three shelves with the bold one at the heart, checked over (current)'],['v2','Every shelf held to the asking task\'s subject'],['v3','Remembers which shelves actually led to shipped work']] },
 ];
 const ARCH_BY_ID = {}; ARCH_DATA.forEach(c => ARCH_BY_ID[c.id] = c);
 
@@ -7197,6 +7324,7 @@ const TERRITORIES = [
   { id:'reasoning', label:'Reasoning', sub:'Pattern Engine, GraphRAG, Scale Echo, Integration Continuum.' },
   { id:'experience', label:'Experience', sub:'Thread Click, Fractal Zoom, Maps, Exploration.' },
   { id:'interface', label:'Interface', sub:'Layout & spacing, Typography & color, Interaction patterns, Per-view polish.' },
+  { id:'self', label:'Core architecture', sub:'The app\'s own build system \u2014 the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world.' },
 ];
 let archLayout = 'list', archLayer = 'status', archSelected = null;
 const archViewport = { x: 0, y: 0, k: 1 };

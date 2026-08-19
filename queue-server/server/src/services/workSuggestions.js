@@ -14,6 +14,8 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { APP_BLURB } from './ai/appModel.js';
+import { architectureDigest } from './architectureIntelligence.js';
 import { autoWorldLookSuggestions } from './codeDiscovery.js';
 import * as queue from './promptQueue.js';
 
@@ -154,7 +156,7 @@ function parseSuggestionsJson(text) {
 }
 
 // ─── Chantier engine: "what should I work on next" ──────────────────────────────
-export function buildContextDigest() {
+export function buildContextDigest(catalog = []) {
   const lines = [];
   try {
     const total = db.prepare(`SELECT COUNT(*) n FROM entities`).get().n;
@@ -192,28 +194,44 @@ export function buildContextDigest() {
       if (parts.length) lines.push(parts.join('. ') + '.');
     }
   } catch {}
+  // The half that was missing. Everything above this line is about the material
+  // (entity counts, ungrounded clusters) or about the engine's own past output. The
+  // build system — the queue, the worker, shipping, self-observation, ranking, the
+  // idea studio, the look at the world — appeared nowhere, so proposals about it were
+  // effectively impossible. Free: SQL and arithmetic, no extra model call.
+  try {
+    const arch = architectureDigest(db, catalog);
+    if (arch) lines.push('', 'THE APP\'S OWN BUILD SYSTEM (the other half — propose work here too):', arch);
+  } catch { /* keep the material-side digest even if the architecture side fails */ }
   return lines.join('\n');
 }
 
-const SUGGESTION_PROMPT = (digest) => `You are a product copilot for FMCNS (Fractal Mythic Consciousness Navigation System), a personal research platform that maps archetypal patterns across film characters, countries, and soon other sources (Reddit). Here's a summary of the current state:
+const SUGGESTION_PROMPT = (digest) => `You are a product copilot for ${APP_BLURB}
+
+Here's a summary of the current state:
 
 ${digest}
 
 Propose up to ${MAX_NEW_PER_RUN} concrete work items ("chantiers") that would move the app forward — features, fixes, data cleanup, etc. Each item must be a real, actionable prompt, not just a vague idea. The title and rationale are read by the app's owner, who is not a programmer: never use internal ids, technical component names or jargon — say what it changes for him, in simple words.
 
+BALANCE — this is a hard requirement, not a preference. The app has two halves and both are active development areas. Of your ${MAX_NEW_PER_RUN} items, AT LEAST 2 must be about the app's own build system (the queue, the worker that codes, shipping, the app watching itself, knowing what to build next, proposing work, the idea studio, the look at the world) and AT LEAST 2 must be about the material it studies (the characters, films and countries, their tags, the spectrum axes, the graph). A list that is entirely about one half is a wrong answer even if every item in it is good: the half you left out is the half that then never improves.
+
 ${USER_FACING_STYLE}
 
 Reply with ONLY a JSON array, no surrounding text:
-[{"title": "short title (< 80 characters)", "rationale": "one short sentence (max 15 words): why it's useful now", "prompt": "the full prompt to hand the agent to implement it", "area": "affected area (e.g. exploration, graph, queue, data)"}]`;
+[{"title": "short title (< 80 characters)", "rationale": "one short sentence (max 15 words): why it's useful now", "prompt": "the full prompt to hand the agent to implement it", "area": "plain words for the part it touches (e.g. the queue, the worker that codes, shipping, the app watching itself, what to build next, proposing work, the idea studio, the look at the world, exploring the material, the graph, the map, the look and feel)", "territory": "one of perception|knowledge|reasoning|experience|interface|self — 'self' for anything about the app's own build system"}]`;
 
-export async function generateSuggestions() {
-  const digest = buildContextDigest();
+export async function generateSuggestions({ catalog = [] } = {}) {
+  const digest = buildContextDigest(catalog);
   const out = await generateText({ prompt: SUGGESTION_PROMPT(digest), feature: 'build', maxTokens: 1800, label: 'workSuggestions' });
   if (out.error) return { error: out.error, message: out.message, added: [] };
   const items = parseSuggestionsJson(out.text).slice(0, MAX_NEW_PER_RUN);
   const added = [];
   for (const it of items) {
-    const r = addSuggestion({ title: it.title, rationale: it.rationale, prompt: it.prompt, area: it.area, kind: 'chantier' });
+    // `area` is the plain-words label Antoine reads; `territory` is the machine-side
+    // id, kept in the same column behind a separator so no migration is needed.
+    const area = [it.area, it.territory].filter(Boolean).join(' · ');
+    const r = addSuggestion({ title: it.title, rationale: it.rationale, prompt: it.prompt, area, kind: 'chantier' });
     if (r && !r.duplicate) added.push(r);
   }
   return { added, skipped: items.length - added.length };
@@ -235,7 +253,9 @@ function buildIntegrationDigest() {
   const missing = ENV_VENDORS.filter((v) => !process.env[v.envVar]).map((v) => v.name);
   lines.push(`Already wired up: ${wired.join(', ') || 'none'}.`);
   if (missing.length) lines.push(`Not yet wired up: ${missing.join(', ')}.`);
-  lines.push(`Current pages in the app: entity graph/exploration, architecture navigator, task queue, knowledge-base chat.`);
+  // Was a hardcoded page list that had drifted out of date. The shared blurb in the
+  // prompt already says what the app is, on both halves, and it cannot go stale in
+  // four places at once.
   try {
     const known = db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL AND kind='integration' ORDER BY created_at DESC LIMIT 20`).all();
     if (known.length) lines.push(`Integrations already suggested (don't repeat): ${known.map((r) => r.title).join(' · ')}.`);
@@ -243,7 +263,9 @@ function buildIntegrationDigest() {
   return lines.join('\n');
 }
 
-const INTEGRATION_PROMPT = (digest) => `You are a product copilot for FMCNS, a personal research platform on archetypal patterns (films, countries, soon: Reddit). Here's the state of external integrations:
+const INTEGRATION_PROMPT = (digest) => `You are a product copilot for ${APP_BLURB}
+
+Here's the state of external integrations:
 
 ${digest}
 
@@ -267,9 +289,9 @@ export async function generateIntegrationSuggestions() {
   return { added, skipped: items.length - added.length };
 }
 
-export async function runSuggestionEngines({ kind = null } = {}) {
+export async function runSuggestionEngines({ kind = null, catalog = [] } = {}) {
   const results = {};
-  if (!kind || kind === 'chantier') results.chantier = await generateSuggestions();
+  if (!kind || kind === 'chantier') results.chantier = await generateSuggestions({ catalog });
   if (!kind || kind === 'integration') results.integration = await generateIntegrationSuggestions();
   // New suggestions get their world-look right away (background, one at a time)
   // so the three shelves are already ready when Antoine opens them. Reports

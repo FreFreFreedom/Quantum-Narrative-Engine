@@ -147,11 +147,29 @@ function shortName(s) {
   return n || s.slice(0, 55);
 }
 
-// Territory is left for the placement editor in the app: guessing it from prose
-// would put things in the wrong place confidently, and a wrong dependency edge
-// distorts the very ranking this import exists to feed. 'reasoning' is the
-// server's own default for an unplaced node.
+// Territory is otherwise left for the placement editor in the app: guessing it from
+// prose would put things in the wrong place confidently, and a wrong dependency edge
+// distorts the very ranking this import exists to feed. 'reasoning' stays the default
+// for an unplaced node.
+//
+// The one guess worth making is 'self' — the app's own build system. Everything in
+// plans/ and BUILD_STATUS.md about the queue, the agents, the flow, the mind or the
+// architecture view was landing in 'reasoning' next to the pattern engines, which put
+// it in the wrong section AND gave it no dependencies, so it sank to the bottom of the
+// ranking. These words are specific enough that a match is not a coin flip.
 const TERRITORY = 'reasoning';
+const SELF_WORDS = [
+  'queue', 'dispatch', 'travaux', 'agent', 'agents', 'runner', 'worker', 'flow',
+  'mind', 'thought', 'thoughts', 'idea box', 'idea studio', 'seed', 'seeds',
+  'suggestion', 'suggestions', 'architecture', 'tech tree', 'world-look', 'world look',
+  'self-aware', 'self aware', 'ship', 'shipping', 'deploy', 'model policy', 'quota',
+  'next steps', 'roadmap',
+];
+
+function territoryFor(item) {
+  const hay = ` ${String(item?.name || '')} ${String(item?.what || '')} `.toLowerCase();
+  return SELF_WORDS.some((w) => hay.includes(w)) ? 'self' : TERRITORY;
+}
 
 // ─── Not importing what is already in the tree ────────────────────────────────
 // This script runs on the Mac, which means it can read the frontend file where the
@@ -167,7 +185,12 @@ function existingNames() {
   const re = /\bname:\s*'([^']+)'/g;
   const start = html.indexOf('const ARCH_DATA = [');
   if (start === -1) return [];
-  const region = html.slice(start, start + 40000);
+  // Ends at the real end of the list, not at a guessed 40,000 characters: the list has
+  // grown (the app's own build system was added to it), and a fixed window either cuts
+  // the newest names off — so they get imported again as duplicates — or runs past the
+  // list and picks up unrelated names.
+  const end = html.indexOf('const ARCH_BY_ID', start);
+  const region = html.slice(start, end === -1 ? start + 60000 : end);
   let m;
   while ((m = re.exec(region))) names.push(m[1]);
   return names;
@@ -258,7 +281,7 @@ async function main() {
   let added = 0, already = 0, failed = 0;
   for (const it of fresh) {
     const { status, json } = await post('/api/architecture/nodes', {
-      territory: TERRITORY,
+      territory: territoryFor(it),
       name: it.name,
       what: it.what,
       why: it.why,

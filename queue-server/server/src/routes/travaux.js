@@ -20,7 +20,15 @@ export function travauxRoutes() {
     // client reloads the list on a 'travaux:suggestions:updated'-style poll rather
     // than blocking the request.
     res.status(202).json({ started: true });
-    suggestions.runSuggestionEngines({ kind: req.body?.kind || null })
+    // `catalog` is the browser's own component list. The app's map of itself lives in
+    // fmcns_navigator.html, not the database, so the client has to ship it — exactly as
+    // it already does for POST /api/architecture/next and /intel/signals. Without it the
+    // engine can still read the stored pieces, so the timed background run in preGen.js
+    // (which has no browser to ask) degrades to a shorter digest rather than breaking.
+    suggestions.runSuggestionEngines({
+      kind: req.body?.kind || null,
+      catalog: Array.isArray(req.body?.catalog) ? req.body.catalog : [],
+    })
       .catch((e) => console.error('[travaux] suggestion engine run failed:', e.message));
   });
 

@@ -1013,6 +1013,14 @@ export function initDiscoverySchema(db) {
   // follows the report wherever it is shown or reused (task panel, sections,
   // promote/accept handoff). JSON: { removed:[], groups:[], recommended:[] }.
   try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN review_json TEXT`); } catch {}
+  // Which generation of the world-look prompts wrote this report. 0 = written before
+  // the prompts were taught to stay on the asking task's subject (those reports drift
+  // toward whatever part of the app the model found most interesting, which is what
+  // made a task about the Core Architecture section come back with Content-navigator
+  // ideas). rewriteWorldLooks() in codeDiscovery.js uses this to find the reports that
+  // still need rewriting, and to be resumable: a run that dies halfway leaves the
+  // already-rewritten reports marked, so the next run picks up where it stopped.
+  try { db.exec(`ALTER TABLE discovery_reports ADD COLUMN rewrite_gen INTEGER DEFAULT 0`); } catch {}
 
   // Written when a discovery pick (proven kind only) is planted into the tech tree —
   // links the new architecture_node back to the repo evidence that justified it.

@@ -15,8 +15,9 @@
 import crypto from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { APP_BLURB } from './ai/appModel.js';
 
-const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface'];
+const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface', 'self'];
 const STATUS_LEVELS = ['Concept', 'Designed', 'Prototype', 'Working', 'Validated', 'Advanced'];
 
 // Note the unique index is (parent_node_id, fingerprint), and SQLite treats NULLs as
@@ -134,7 +135,7 @@ function buildPrompt(ctx) {
   const built = (ctx.built || []).map(p => `- ${p.name}`).join('\n') || '- (none yet)';
   return `You are extending the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
 
-The tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch).
+The tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world).
 
 We are speculating about what could grow directly out of ONE node:
 
@@ -154,7 +155,7 @@ Propose 3 distinct capabilities that could be built ON TOP of this node — thin
 ${USER_FACING_STYLE}
 
 Respond with ONLY a JSON array, no prose, no markdown fence:
-[{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence on what it is","why":"one sentence on why it matters","next":"the concrete first step to build it"}]`;
+[{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence on what it is","why":"one sentence on why it matters","next":"the concrete first step to build it"}]`;
 }
 
 function parseProposals(text) {
@@ -217,7 +218,7 @@ function catalogLines(catalog) {
 function buildAutoPrompt(concept, catalog) {
   return `You are extending the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
 
-The tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch). A new node belongs to exactly one of those territory ids.
+The tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world). A new node belongs to exactly one of those territory ids.
 
 Existing components in the graph (id — name (territory, status), depends on: ids: description):
 ${catalogLines(catalog)}
@@ -230,7 +231,7 @@ Decide where it fits. Give it a short name (as written in the idea, trimmed), pl
 ${USER_FACING_STYLE}
 
 Respond with ONLY JSON, no prose, no markdown fence:
-{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}`;
+{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}`;
 }
 
 function parseAuto(text) {
@@ -274,7 +275,7 @@ export async function autoPlaceNode(db, conceptInput, ctx = {}) {
 function buildAskPrompt(question, catalog) {
   return `You are looking at the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System) — the owner's own research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
 
-The tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch). Statuses: Concept, Designed, Prototype, Working, Validated, Advanced. A node depends on the components listed after "depends on:".
+The tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system). Statuses: Concept, Designed, Prototype, Working, Validated, Advanced. A node depends on the components listed after "depends on:".
 
 Existing components (id — name (territory, status): description):
 ${catalogLines(catalog)}
@@ -323,7 +324,7 @@ import { createIdea } from './workIdeas.js';
 function buildRoutePrompt(concept, catalog) {
   return `You are the idea router of FMCNS (Fractal Mythic Consciousness Navigation System) — the owner's research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
 
-The architecture tree has five territories: perception (how anything gets in), knowledge (ontological/semantic/analogical layers), reasoning (inference over the graph), experience (how it feels to explore), interface (what you touch).
+The architecture tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world).
 
 Two kinds of ideas exist:
 - ARCHITECTURE ideas: about extending or improving FMCNS itself — a new capability, a change to how a part works, a fix, a new component. These become speculative nodes in the architecture tree.
@@ -340,7 +341,7 @@ Decide the kind. If it is an architecture idea, return isArchitecture true with 
 ${USER_FACING_STYLE}
 
 Respond with ONLY JSON, no prose, no markdown fence.
-Architecture idea: {"isArchitecture":true,"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}
+Architecture idea: {"isArchitecture":true,"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}
 Seed: {"isArchitecture":false,"title":"Short title","notes":"one line"}`;
 }
 
@@ -396,7 +397,7 @@ export async function rankUnbuilt(itemsInput = []) {
   const catalog = items.map(it =>
     `${it.id} — ${it.name} (${it.territory || '?'}, ${it.status || '?'})${it.buildable ? ', READY TO BUILD' : ', waiting on prerequisites'}: ${String(it.what || '').slice(0, 160)} ${it.next ? 'Next: ' + String(it.next).slice(0, 120) : ''}`).join('\n');
   const out = await generateText({
-    prompt: `You are the tech-tree advisor of FMCNS — the owner's personal research system (characters, films, countries as one ontology, navigated fractally).
+    prompt: `You are the tech-tree advisor of ${APP_BLURB}
 
 These components of the architecture are NOT built yet. The owner wants to know the best order to build them in — the smartest next moves for the project, balancing impact on the research system, readiness (READY TO BUILD beats waiting on prerequisites), and how much each one unlocks.
 
@@ -429,7 +430,7 @@ export async function shortlistUnbuilt(itemsInput = []) {
   const catalog = items.map(it =>
     `${it.id} — ${it.name} (${it.territory || '?'}, ${it.status || '?'})${it.buildable ? ', READY TO BUILD' : ', waiting on prerequisites'}: ${String(it.what || '').slice(0, 160)}`).join('\n');
   const out = await generateText({
-    prompt: `You are the tech-tree advisor of FMCNS — the owner's personal research system (characters, films, countries as one ontology, navigated fractally).
+    prompt: `You are the tech-tree advisor of ${APP_BLURB}
 
 These components are NOT built yet. Pick the THREE best next moves for the project — balancing impact, readiness (READY TO BUILD beats waiting on prerequisites), and how much each one unlocks. The owner is not a programmer: every reason must be plain everyday language, no jargon, no internal ids.
 
