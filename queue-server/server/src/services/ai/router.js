@@ -77,11 +77,27 @@ export function clearExpired() {
 }
 
 // Earliest known-or-inferred reset across everything currently exhausted — the
-// "defer with a known reset time" outcome's timestamp.
+// "defer with a known reset time" outcome's timestamp. This is a ledger-wide
+// view (every provider/model that has ever recorded an exhaustion and hasn't
+// cleared yet) — right for the admin quota-state panel, but NOT a proxy for
+// "the queue can't run anything right now": one free model cooling down while
+// its siblings (or Claude itself) are still live doesn't mean the queue is
+// stuck. Use queueDeferUntil() for that question.
 export function earliestResetAt() {
   if (!db) return null;
   const row = db.prepare(`SELECT MIN(resets_at) AS t FROM provider_quota_state WHERE exhausted=1 AND resets_at IS NOT NULL`).get();
   return row?.t || null;
+}
+
+// The genuine "queue is paused and will resume automatically" moment: taskRunner
+// only defers a task (see taskRunner.js's "every OpenCode model is unavailable"
+// path) once the whole free-model fallback chain is exhausted, not on a single
+// provider/model hit. Mirror that same condition here instead of reporting on
+// any one row in the ledger, so the usage banner only fires when there is
+// actually nothing left to route work to.
+export function queueDeferUntil() {
+  const { chain, deferUntil } = pickChain();
+  return chain.length ? null : deferUntil;
 }
 
 export function getQuotaState() {
