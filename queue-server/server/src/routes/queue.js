@@ -224,6 +224,14 @@ export function queueRoutes() {
     res.json(row);
   }));
 
+  // Plan-first drafting stage ("Drafting plan…" on the card): lets Antoine
+  // drop the wait and run the task on its raw submitted text right away.
+  router.post('/prompts/:id/skip-plan', asyncHandler(async (req, res) => {
+    const row = await queue.skipPlanDraft(req.params.id);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  }));
+
   router.post('/prompts/:id/inspiration/apply', asyncHandler(async (req, res) => {
     const row = await queue.applyInspiration(req.params.id, req.body || {});
     if (!row) return res.status(404).json({ error: 'not_found' });
