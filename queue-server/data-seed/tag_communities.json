@@ -1,0 +1,2035 @@
+{
+  "method": "louvain-single-level-greedy-modularity",
+  "generatedFrom": "queue-server/data-seed/fmcns_ontology.json",
+  "generatedAt": "2026-08-20T08:09:44.480Z",
+  "totalTags": 641,
+  "totalCommunities": 106,
+  "communities": [
+    {
+      "id": "C1",
+      "name": "desire as exposure / erotic power inversion / ritualized power exchange / psychic conspiracy of marriage",
+      "size": 64,
+      "tags": [
+        "desire-as-exposure",
+        "erotic-power-inversion",
+        "ritualized-power-exchange",
+        "psychic-conspiracy-of-marriage",
+        "erotic-initiation",
+        "marital-shadow-descent",
+        "shattering-of-possessive-illusion",
+        "submission-as-self-discovery",
+        "agency-after-violation",
+        "artist-muse-unveiling",
+        "betrayal-as-game",
+        "body-horror-rebellion",
+        "cinema-as-erotic-language",
+        "coming-of-age-humiliation",
+        "compulsion-as-control",
+        "confession-as-exposure",
+        "confession-as-structure",
+        "cruelty-as-intimacy",
+        "danger-as-desire",
+        "desire-as-fate",
+        "destructive-freedom",
+        "destructive-obsession",
+        "erotic-ambivalence",
+        "erotic-obsession-as-waiting",
+        "erotic-power-and-religious-ecstasy",
+        "eroticized-danger",
+        "exposure-and-manipulation",
+        "extremes-of-consent",
+        "femme-fatale-destruction",
+        "grooming-as-manipulation",
+        "grotesque-autonomy",
+        "hunger-to-be-consumed",
+        "jealousy-and-defilement",
+        "jealousy-as-violence",
+        "loving-what-cannot-be-fixed",
+        "narcissism-as-intimacy",
+        "obsession-spiraling-to-death",
+        "obsessive-witnessing",
+        "paranoia-lust-violence-swirl",
+        "performance-and-cost-of-surrender",
+        "performer-role-collapse",
+        "power-and-exploitation",
+        "power-play-as-sacred-theater",
+        "reclaiming-autonomy",
+        "refusal-of-catharsis",
+        "repression-and-sanctity-of-liberty",
+        "ritual-and-death",
+        "ritualizing-absence",
+        "ruin-as-consequence",
+        "sacred-theater-of-taboo",
+        "sanctity-as-theater",
+        "self-annihilation-through-excess",
+        "sex-as-weapon",
+        "sex-work-and-unmasking",
+        "sisterhood-and-envy",
+        "the-gaze-as-erotic-torture",
+        "the-unbearable-mirror",
+        "total-submission-as-erasure",
+        "urban-nihilism-and-abyss",
+        "watching-as-ritual",
+        "witness-as-desire",
+        "passionate-collapse",
+        "role-fatigue",
+        "sovereign-otherness"
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "domestic power inversion / gothic household control / apartment as battleground / arranged marriage as sentence",
+      "size": 58,
+      "tags": [
+        "domestic-power-inversion",
+        "gothic-household-control",
+        "apartment-as-battleground",
+        "arranged-marriage-as-sentence",
+        "bedroom-as-nursery-cage",
+        "body-as-contested-territory",
+        "bride-as-property",
+        "colonial-marriage-contract",
+        "coming-of-age-under-watch",
+        "court-as-household",
+        "craft-as-cage",
+        "custody-as-leverage",
+        "dead-predecessor-as-standard",
+        "doubling-as-liberation",
+        "estate-as-memory-palace",
+        "estate-as-prize",
+        "fabricated-death-as-escape",
+        "favor-as-currency",
+        "gaze-as-contract",
+        "ghosts-as-permission",
+        "guilt-and-tenderness-loop",
+        "hotel-as-inherited-throne",
+        "house-as-evidence",
+        "housekeeper-as-gatekeeper",
+        "impersonation-as-household-rule",
+        "infirmity-as-throne",
+        "instrument-as-body",
+        "instruments-as-severance",
+        "isolation-as-pressure-chamber",
+        "key-by-key-barter",
+        "maternal-ghost-as-law",
+        "maternal-surveillance",
+        "morality-clause-as-cage",
+        "mother-as-broker",
+        "mother-as-warden",
+        "murder-as-emancipation",
+        "partner-as-gatekeeper",
+        "paternal-blessing-as-license",
+        "patriarch-as-executioner",
+        "perfection-as-mandate",
+        "poison-as-recalibration",
+        "portrait-as-dowry",
+        "possessive-love-as-leash",
+        "pregnancy-as-hostage",
+        "rabbits-as-substitute-children",
+        "respectability-performance",
+        "ritual-as-tyranny",
+        "seduction-as-leverage",
+        "servant-as-usurper",
+        "servant-sacrificed-for-status",
+        "shared-identity-as-cage",
+        "shrine-as-weapon",
+        "silence-as-agency",
+        "staircase-as-battleground",
+        "summer-guest-hierarchy",
+        "transition-as-household-rupture",
+        "twin-as-mirror-authority",
+        "villa-as-permissive-enclosure"
+      ]
+    },
+    {
+      "id": "C3",
+      "name": "self vs nature / wilderness ordeal / nature as judge / provisions as morality",
+      "size": 34,
+      "tags": [
+        "self-vs-nature",
+        "wilderness-ordeal",
+        "nature-as-judge",
+        "provisions-as-morality",
+        "brotherhood-as-cage",
+        "competence-unrecognized",
+        "cowardice-fantasized-away",
+        "death-wish-reversed",
+        "desert-as-mirror",
+        "desert-as-uncertainty",
+        "domestic-longing-surfacing",
+        "enemy-as-shelter-mate",
+        "expedition-as-trap",
+        "grief-as-mileage",
+        "grief-displaced-into-skill",
+        "guide-as-false-prophet",
+        "honor-as-trial",
+        "jurisdiction-as-void",
+        "predator-as-mirror",
+        "revenge-as-fate",
+        "sidekick-reclaimed",
+        "silence-as-menace",
+        "slaughter-as-disillusionment",
+        "solitary-vengeance",
+        "solitude-as-self-authorship",
+        "solitude-as-self-forgiveness",
+        "spectacle-resisted",
+        "trail-as-penance",
+        "transcendence-as-delusion",
+        "violence-as-liturgy",
+        "volcanic-terrain-as-destiny",
+        "vow-as-identity",
+        "voyage-as-damnation",
+        "war-suspended-by-cold"
+      ]
+    },
+    {
+      "id": "C4",
+      "name": "ascetic purification / silence of god / pornography of negation / terror of desire",
+      "size": 32,
+      "tags": [
+        "ascetic-purification",
+        "silence-of-god",
+        "pornography-of-negation",
+        "terror-of-desire",
+        "sacrifice-as-transaction",
+        "eco-guilt",
+        "masochistic-ritual",
+        "body-as-protest",
+        "control-as-fortress",
+        "denial-as-shield",
+        "failed-baptism-of-violence",
+        "impossibility-of-fusion",
+        "urban-alienation",
+        "vigilante-purification",
+        "wild-man-myth",
+        "world-rejection",
+        "doubt-wracked-clergy",
+        "humiliation-as-power",
+        "institutional-collapse",
+        "mythic-americana",
+        "political-martyrdom",
+        "repressed-desire",
+        "communal-sin-absorption",
+        "creation-as-consumption",
+        "domestic-apocalypse",
+        "faith-under-siege",
+        "grief-turned-monstrous",
+        "nature-as-shadow",
+        "paranoia-as-coping",
+        "prophecy-or-madness",
+        "suffering-as-purification",
+        "historical-erasure"
+      ]
+    },
+    {
+      "id": "C5",
+      "name": "identity concealment / watched watcher / institutional rot / surveillance paranoia",
+      "size": 28,
+      "tags": [
+        "identity-concealment",
+        "watched-watcher",
+        "institutional-rot",
+        "surveillance-paranoia",
+        "truth-as-liability",
+        "self-annihilation-as-offering",
+        "accidental-target",
+        "loyalty-as-performance",
+        "moral-arithmetic",
+        "betrayal-as-premeditation",
+        "betrayal-as-strategy",
+        "collateral-as-abstraction",
+        "command-at-a-distance",
+        "deep-cover-as-erasure",
+        "emotional-armor",
+        "erasure-of-identity",
+        "identity-as-costume",
+        "manipulation-as-craft",
+        "mentor-guilt",
+        "misheard-evidence",
+        "mistaken-identity-as-trap",
+        "obsession-as-possession",
+        "performance-as-survival",
+        "ritual-as-armor",
+        "self-investigation-as-trap",
+        "self-isolation-as-defense",
+        "solitude-as-code",
+        "used-as-legitimacy"
+      ]
+    },
+    {
+      "id": "C6",
+      "name": "counterculture disillusion / idealism and its shadow / backlash as verdict / co optation as death",
+      "size": 23,
+      "tags": [
+        "counterculture-disillusion",
+        "idealism-and-its-shadow",
+        "backlash-as-verdict",
+        "co-optation-as-death",
+        "escape-without-destination",
+        "freedom-as-mirage",
+        "generational-mirror",
+        "grief-forces-compromise",
+        "ideology-as-cage",
+        "institution-as-adversary",
+        "liberation-becomes-cult",
+        "lucidity-deferred",
+        "movement-as-mirror",
+        "philosophy-as-loop",
+        "purity-as-liability",
+        "rebellion-as-inertia",
+        "rescue-without-redemption",
+        "spectacle-as-strategy",
+        "split-self-as-warning",
+        "talk-as-substitute-for-action",
+        "vigilante-justice-as-loop",
+        "violence-mirrors-its-target",
+        "we-blew-it"
+      ]
+    },
+    {
+      "id": "C7",
+      "name": "domestic rupture / intimacy erosion / confession as catalyst / emotional x ray",
+      "size": 22,
+      "tags": [
+        "domestic-rupture",
+        "intimacy-erosion",
+        "confession-as-catalyst",
+        "emotional-x-ray",
+        "escape-plan-as-last-intimacy",
+        "facade-of-agreeable-marriage",
+        "mutual-destruction",
+        "post-divorce-attachment",
+        "self-annihilation-as-refusal",
+        "suburban-dream-as-cage",
+        "affair-as-scheduled-rebellion",
+        "fertility-treatment-as-marital-strain",
+        "identity-displaced-by-procedure",
+        "in-between-things",
+        "novelty-mistaken-for-fulfillment",
+        "passion-versus-comfort",
+        "quiet-desperation",
+        "restlessness-as-condition",
+        "self-annihilation-as-longing",
+        "stalled-ambition",
+        "suburban-complacency-exposed",
+        "unreliable-memory-as-structure"
+      ]
+    },
+    {
+      "id": "C8",
+      "name": "war trauma / violence as inheritance / atrocity as normalcy / prophecy as permission",
+      "size": 22,
+      "tags": [
+        "war-trauma",
+        "violence-as-inheritance",
+        "atrocity-as-normalcy",
+        "prophecy-as-permission",
+        "survivor-guilt",
+        "ambition-as-contagion",
+        "brotherhood-fractured",
+        "coming-of-age-through-atrocity",
+        "command-as-mask",
+        "descent-into-madness",
+        "endurance-as-resistance",
+        "fatherhood-and-complicity",
+        "grief-suppressed-by-duty",
+        "guilt-of-instilled-duty",
+        "hallucination-as-guilt",
+        "identity-under-erasure",
+        "mission-as-mirror",
+        "moral-split-fatherhood",
+        "outpost-siege-mentality",
+        "ptsd-as-tyranny",
+        "regicide-as-self-erasure",
+        "ritual-of-control"
+      ]
+    },
+    {
+      "id": "C9",
+      "name": "historical reckoning / sovereign ambition / betrayal as origin / collapse of old order",
+      "size": 18,
+      "tags": [
+        "historical-reckoning",
+        "sovereign-ambition",
+        "betrayal-as-origin",
+        "collapse-of-old-order",
+        "inherited-duty",
+        "inherited-guilt",
+        "justice-as-theater",
+        "land-as-identity",
+        "legacy-as-burden",
+        "public-self-as-performance",
+        "reinvention-as-weapon",
+        "reluctant-crown",
+        "self-interest-as-armor",
+        "shame-as-obstacle",
+        "survival-as-ruthlessness",
+        "vengeance-as-vocation",
+        "voice-as-legitimacy",
+        "war-as-inheritance"
+      ]
+    },
+    {
+      "id": "C10",
+      "name": "institutional shadow / surrender to doctrine / charisma as gravity / discipleship and terror of intimacy",
+      "size": 8,
+      "tags": [
+        "institutional-shadow",
+        "surrender-to-doctrine",
+        "charisma-as-gravity",
+        "discipleship-and-terror-of-intimacy",
+        "animal-instinct-vs-control",
+        "father-hunger",
+        "processing-as-exorcism",
+        "surrender-vs-control"
+      ]
+    },
+    {
+      "id": "C11",
+      "name": "posthuman estrangement / guilt as engine / civilizational collapse / fertility as miracle",
+      "size": 8,
+      "tags": [
+        "posthuman-estrangement",
+        "guilt-as-engine",
+        "civilizational-collapse",
+        "fertility-as-miracle",
+        "identity-across-lifetimes",
+        "karmic-causality",
+        "soul-as-recurring-pattern",
+        "species-extinction-anxiety"
+      ]
+    },
+    {
+      "id": "C12",
+      "name": "accountability as practice / integrated accountability / truth and reconciliation / communal justice",
+      "size": 6,
+      "tags": [
+        "accountability-as-practice",
+        "integrated-accountability",
+        "truth-and-reconciliation",
+        "communal-justice",
+        "institutional-apology",
+        "sustained-reckoning"
+      ]
+    },
+    {
+      "id": "C13",
+      "name": "mortality witness / abandonment / complicity through desperation / moral erosion",
+      "size": 5,
+      "tags": [
+        "mortality-witness",
+        "abandonment",
+        "complicity-through-desperation",
+        "moral-erosion",
+        "poverty-as-death-machine"
+      ]
+    },
+    {
+      "id": "C14",
+      "name": "technological sublime / body as obsolete / exile as origin / honor code inversion",
+      "size": 5,
+      "tags": [
+        "technological-sublime",
+        "body-as-obsolete",
+        "exile-as-origin",
+        "honor-code-inversion",
+        "kinship-across-species"
+      ]
+    },
+    {
+      "id": "C15",
+      "name": "grief metabolism / anticipatory mourning / addiction as slow death / helpless love",
+      "size": 5,
+      "tags": [
+        "grief-metabolism",
+        "anticipatory-mourning",
+        "addiction-as-slow-death",
+        "helpless-love",
+        "relapse-as-repeated-loss"
+      ]
+    },
+    {
+      "id": "C16",
+      "name": "body as replacement wife / captivity as revenge / house as laboratory prison / surgery as authorship",
+      "size": 4,
+      "tags": [
+        "body-as-replacement-wife",
+        "captivity-as-revenge",
+        "house-as-laboratory-prison",
+        "surgery-as-authorship"
+      ]
+    },
+    {
+      "id": "C17",
+      "name": "doctrine eating the self / bureaucracy of belief / confession as collateral / founder mythology",
+      "size": 4,
+      "tags": [
+        "doctrine-eating-the-self",
+        "bureaucracy-of-belief",
+        "confession-as-collateral",
+        "founder-mythology"
+      ]
+    },
+    {
+      "id": "C18",
+      "name": "affair with the best friend / confession as reckoning / guilt recounted not absolved / narrator as self prosecutor",
+      "size": 4,
+      "tags": [
+        "affair-with-the-best-friend",
+        "confession-as-reckoning",
+        "guilt-recounted-not-absolved",
+        "narrator-as-self-prosecutor"
+      ]
+    },
+    {
+      "id": "C19",
+      "name": "atonement through allegiance / conquest as self loathing / cultural defection / guilt as conversion",
+      "size": 4,
+      "tags": [
+        "atonement-through-allegiance",
+        "conquest-as-self-loathing",
+        "cultural-defection",
+        "guilt-as-conversion"
+      ]
+    },
+    {
+      "id": "C20",
+      "name": "bodily imprisonment / consciousness as last freedom / narration as survival / radical dependency",
+      "size": 4,
+      "tags": [
+        "bodily-imprisonment",
+        "consciousness-as-last-freedom",
+        "narration-as-survival",
+        "radical-dependency"
+      ]
+    },
+    {
+      "id": "C21",
+      "name": "body as rentable shell / consciousness as property / identity across sleeves / memory as artifact",
+      "size": 4,
+      "tags": [
+        "body-as-rentable-shell",
+        "consciousness-as-property",
+        "identity-across-sleeves",
+        "memory-as-artifact"
+      ]
+    },
+    {
+      "id": "C22",
+      "name": "borrowed stability / contentment as contrast / delusional attachment / loneliness performed as vivacity",
+      "size": 4,
+      "tags": [
+        "borrowed-stability",
+        "contentment-as-contrast",
+        "delusional-attachment",
+        "loneliness-performed-as-vivacity"
+      ]
+    },
+    {
+      "id": "C23",
+      "name": "arrested development / control as coping / orphaned siblings / unresolved reunion",
+      "size": 4,
+      "tags": [
+        "arrested-development",
+        "control-as-coping",
+        "orphaned-siblings",
+        "unresolved-reunion"
+      ]
+    },
+    {
+      "id": "C24",
+      "name": "concealed suffering / depression as invisible illness / parental denial / performed wellness",
+      "size": 4,
+      "tags": [
+        "concealed-suffering",
+        "depression-as-invisible-illness",
+        "parental-denial",
+        "performed-wellness"
+      ]
+    },
+    {
+      "id": "C25",
+      "name": "confession as currency / diary as surveillance / loyalty tax / manufactured dependency",
+      "size": 4,
+      "tags": [
+        "confession-as-currency",
+        "diary-as-surveillance",
+        "loyalty-tax",
+        "manufactured-dependency"
+      ]
+    },
+    {
+      "id": "C26",
+      "name": "authority by voice alone / diffusion of responsibility / obedience as relief / workplace hierarchy as cage",
+      "size": 4,
+      "tags": [
+        "authority-by-voice-alone",
+        "diffusion-of-responsibility",
+        "obedience-as-relief",
+        "workplace-hierarchy-as-cage"
+      ]
+    },
+    {
+      "id": "C27",
+      "name": "death as bureaucratic process / dignity erosion / institutional indifference / unwitnessed dying",
+      "size": 4,
+      "tags": [
+        "death-as-bureaucratic-process",
+        "dignity-erosion",
+        "institutional-indifference",
+        "unwitnessed-dying"
+      ]
+    },
+    {
+      "id": "C28",
+      "name": "childhood conscripted / divine mandate as abuse / family as cell / visions as command",
+      "size": 4,
+      "tags": [
+        "childhood-conscripted",
+        "divine-mandate-as-abuse",
+        "family-as-cell",
+        "visions-as-command"
+      ]
+    },
+    {
+      "id": "C29",
+      "name": "contempt replacing love / divorce as annihilation / escalating property warfare / house as battlefield",
+      "size": 4,
+      "tags": [
+        "contempt-replacing-love",
+        "divorce-as-annihilation",
+        "escalating-property-warfare",
+        "house-as-battlefield"
+      ]
+    },
+    {
+      "id": "C30",
+      "name": "affair as buried self / duty over desire / memory as life defining / renunciation as devotion",
+      "size": 4,
+      "tags": [
+        "affair-as-buried-self",
+        "duty-over-desire",
+        "memory-as-life-defining",
+        "renunciation-as-devotion"
+      ]
+    },
+    {
+      "id": "C31",
+      "name": "caregiving as battleground / duty versus departure / moral compromise cascade / separation as catalyst for class conflict",
+      "size": 4,
+      "tags": [
+        "caregiving-as-battleground",
+        "duty-versus-departure",
+        "moral-compromise-cascade",
+        "separation-as-catalyst-for-class-conflict"
+      ]
+    },
+    {
+      "id": "C32",
+      "name": "conscience over conquest / faith as liability / grief as origin / surrender as mercy",
+      "size": 4,
+      "tags": [
+        "conscience-over-conquest",
+        "faith-as-liability",
+        "grief-as-origin",
+        "surrender-as-mercy"
+      ]
+    },
+    {
+      "id": "C33",
+      "name": "affair mistaken for commitment / family as rival / obsessive retribution / possessive escalation",
+      "size": 4,
+      "tags": [
+        "affair-mistaken-for-commitment",
+        "family-as-rival",
+        "obsessive-retribution",
+        "possessive-escalation"
+      ]
+    },
+    {
+      "id": "C34",
+      "name": "engineered mortality / foreclosed future / memory as consolation / quiet acceptance",
+      "size": 4,
+      "tags": [
+        "engineered-mortality",
+        "foreclosed-future",
+        "memory-as-consolation",
+        "quiet-acceptance"
+      ]
+    },
+    {
+      "id": "C35",
+      "name": "betrayal as ascension / founding myth as litigation / legacy as liability / loneliness as engine",
+      "size": 4,
+      "tags": [
+        "betrayal-as-ascension",
+        "founding-myth-as-litigation",
+        "legacy-as-liability",
+        "loneliness-as-engine"
+      ]
+    },
+    {
+      "id": "C36",
+      "name": "ambition as erasure / founding myth as theft / franchise as conquest / ruthlessness as vision",
+      "size": 4,
+      "tags": [
+        "ambition-as-erasure",
+        "founding-myth-as-theft",
+        "franchise-as-conquest",
+        "ruthlessness-as-vision"
+      ]
+    },
+    {
+      "id": "C37",
+      "name": "cognition reprogrammed / grief as foreknowledge / language as technology / nonlinear consciousness",
+      "size": 4,
+      "tags": [
+        "cognition-reprogrammed",
+        "grief-as-foreknowledge",
+        "language-as-technology",
+        "nonlinear-consciousness"
+      ]
+    },
+    {
+      "id": "C38",
+      "name": "communal body discipline / grooming as belonging / paranoia as residue / renaming as erasure",
+      "size": 4,
+      "tags": [
+        "communal-body-discipline",
+        "grooming-as-belonging",
+        "paranoia-as-residue",
+        "renaming-as-erasure"
+      ]
+    },
+    {
+      "id": "C39",
+      "name": "22 years of silence / guru as mirror / isolation from family / surveillance as devotion",
+      "size": 4,
+      "tags": [
+        "22-years-of-silence",
+        "guru-as-mirror",
+        "isolation-from-family",
+        "surveillance-as-devotion"
+      ]
+    },
+    {
+      "id": "C40",
+      "name": "disillusionment arc / duty versus desire / home front complicity / witness as transformation",
+      "size": 4,
+      "tags": [
+        "disillusionment-arc",
+        "duty-versus-desire",
+        "home-front-complicity",
+        "witness-as-transformation"
+      ]
+    },
+    {
+      "id": "C41",
+      "name": "family bound by brand / hypocrisy as inheritance / ministry as empire / prosperity gospel armor",
+      "size": 4,
+      "tags": [
+        "family-bound-by-brand",
+        "hypocrisy-as-inheritance",
+        "ministry-as-empire",
+        "prosperity-gospel-armor"
+      ]
+    },
+    {
+      "id": "C42",
+      "name": "bodily trauma memory / illegible grief / refusal of consolation / relational fracture",
+      "size": 4,
+      "tags": [
+        "bodily-trauma-memory",
+        "illegible-grief",
+        "refusal-of-consolation",
+        "relational-fracture"
+      ]
+    },
+    {
+      "id": "C43",
+      "name": "eavesdropped confession as turning point / interlocking marriages / midlife affair / trust as slow rebuild",
+      "size": 4,
+      "tags": [
+        "eavesdropped-confession-as-turning-point",
+        "interlocking-marriages",
+        "midlife-affair",
+        "trust-as-slow-rebuild"
+      ]
+    },
+    {
+      "id": "C44",
+      "name": "colonial reckoning / knowledge as extraction / last of a people / memory as endangered",
+      "size": 4,
+      "tags": [
+        "colonial-reckoning",
+        "knowledge-as-extraction",
+        "last-of-a-people",
+        "memory-as-endangered"
+      ]
+    },
+    {
+      "id": "C45",
+      "name": "collaborative separation turned war / lawyers as proxy combatants / resentment deferred / vocation subordination",
+      "size": 4,
+      "tags": [
+        "collaborative-separation-turned-war",
+        "lawyers-as-proxy-combatants",
+        "resentment-deferred",
+        "vocation-subordination"
+      ]
+    },
+    {
+      "id": "C46",
+      "name": "guarded reattachment / platonic bond as repair / trauma as barrier to closeness / wariness as self protection",
+      "size": 4,
+      "tags": [
+        "guarded-reattachment",
+        "platonic-bond-as-repair",
+        "trauma-as-barrier-to-closeness",
+        "wariness-as-self-protection"
+      ]
+    },
+    {
+      "id": "C47",
+      "name": "buried abandonment / projection as confession / regretful motherhood / unnatural mother taboo",
+      "size": 4,
+      "tags": [
+        "buried-abandonment",
+        "projection-as-confession",
+        "regretful-motherhood",
+        "unnatural-mother-taboo"
+      ]
+    },
+    {
+      "id": "C48",
+      "name": "frozen affect / refused absolution / self punishment / unearned guardianship",
+      "size": 4,
+      "tags": [
+        "frozen-affect",
+        "refused-absolution",
+        "self-punishment",
+        "unearned-guardianship"
+      ]
+    },
+    {
+      "id": "C49",
+      "name": "ritualized mourning / sibling comparison / surviving child guilt / unspoken resentment",
+      "size": 4,
+      "tags": [
+        "ritualized-mourning",
+        "sibling-comparison",
+        "surviving-child-guilt",
+        "unspoken-resentment"
+      ]
+    },
+    {
+      "id": "C50",
+      "name": "addiction as armor / body as prison / existential emptiness of desire",
+      "size": 3,
+      "tags": [
+        "addiction-as-armor",
+        "body-as-prison",
+        "existential-emptiness-of-desire"
+      ]
+    },
+    {
+      "id": "C51",
+      "name": "animation as repression / bystander complicity / memory as defense",
+      "size": 3,
+      "tags": [
+        "animation-as-repression",
+        "bystander-complicity",
+        "memory-as-defense"
+      ]
+    },
+    {
+      "id": "C52",
+      "name": "ambition versus devotion / charm curdling into contempt / nonlinear courtship and collapse",
+      "size": 3,
+      "tags": [
+        "ambition-versus-devotion",
+        "charm-curdling-into-contempt",
+        "nonlinear-courtship-and-collapse"
+      ]
+    },
+    {
+      "id": "C53",
+      "name": "animist competence / civilization as fatal gift / friendship across worldviews",
+      "size": 3,
+      "tags": [
+        "animist-competence",
+        "civilization-as-fatal-gift",
+        "friendship-across-worldviews"
+      ]
+    },
+    {
+      "id": "C54",
+      "name": "benevolence as conquest / colonial contradiction / jungle as reckoning",
+      "size": 3,
+      "tags": [
+        "benevolence-as-conquest",
+        "colonial-contradiction",
+        "jungle-as-reckoning"
+      ]
+    },
+    {
+      "id": "C55",
+      "name": "class betrayal radicalized / desertion as conscience / insurgency as solidarity",
+      "size": 3,
+      "tags": [
+        "class-betrayal-radicalized",
+        "desertion-as-conscience",
+        "insurgency-as-solidarity"
+      ]
+    },
+    {
+      "id": "C56",
+      "name": "deception as intimacy / desire as deception / layered betrayal and liberation",
+      "size": 3,
+      "tags": [
+        "deception-as-intimacy",
+        "desire-as-deception",
+        "layered-betrayal-and-liberation"
+      ]
+    },
+    {
+      "id": "C57",
+      "name": "command against institutional racism / dignity through sacrifice / martyrdom as proof",
+      "size": 3,
+      "tags": [
+        "command-against-institutional-racism",
+        "dignity-through-sacrifice",
+        "martyrdom-as-proof"
+      ]
+    },
+    {
+      "id": "C58",
+      "name": "captivity reversed by terrain / distance as vindication / endurance as testimony",
+      "size": 3,
+      "tags": [
+        "captivity-reversed-by-terrain",
+        "distance-as-vindication",
+        "endurance-as-testimony"
+      ]
+    },
+    {
+      "id": "C59",
+      "name": "body as commodity / dystopian overpopulation / institutional cannibalism",
+      "size": 3,
+      "tags": [
+        "body-as-commodity",
+        "dystopian-overpopulation",
+        "institutional-cannibalism"
+      ]
+    },
+    {
+      "id": "C60",
+      "name": "compound as fortress / family as congregation / sermon as weapon",
+      "size": 3,
+      "tags": [
+        "compound-as-fortress",
+        "family-as-congregation",
+        "sermon-as-weapon"
+      ]
+    },
+    {
+      "id": "C61",
+      "name": "empire stripped bare / flight as survival / terrain as enemy",
+      "size": 3,
+      "tags": [
+        "empire-stripped-bare",
+        "flight-as-survival",
+        "terrain-as-enemy"
+      ]
+    },
+    {
+      "id": "C62",
+      "name": "belonging between worlds / frontier as battleground / protection as futile vow",
+      "size": 3,
+      "tags": [
+        "belonging-between-worlds",
+        "frontier-as-battleground",
+        "protection-as-futile-vow"
+      ]
+    },
+    {
+      "id": "C63",
+      "name": "escort as penance / frontier as moral terrain / hatred as institution",
+      "size": 3,
+      "tags": [
+        "escort-as-penance",
+        "frontier-as-moral-terrain",
+        "hatred-as-institution"
+      ]
+    },
+    {
+      "id": "C64",
+      "name": "assimilation as rebirth / frontier as threshold / solitude as invitation",
+      "size": 3,
+      "tags": [
+        "assimilation-as-rebirth",
+        "frontier-as-threshold",
+        "solitude-as-invitation"
+      ]
+    },
+    {
+      "id": "C65",
+      "name": "boomtown as built guilt / frontier fortune undone / trade as original sin",
+      "size": 3,
+      "tags": [
+        "boomtown-as-built-guilt",
+        "frontier-fortune-undone",
+        "trade-as-original-sin"
+      ]
+    },
+    {
+      "id": "C66",
+      "name": "complicity disguised as love / greed as atrocity engine / loyalty under erasure",
+      "size": 3,
+      "tags": [
+        "complicity-disguised-as-love",
+        "greed-as-atrocity-engine",
+        "loyalty-under-erasure"
+      ]
+    },
+    {
+      "id": "C67",
+      "name": "frontier justice as errand / grief as contract / resolve outpacing elders",
+      "size": 3,
+      "tags": [
+        "frontier-justice-as-errand",
+        "grief-as-contract",
+        "resolve-outpacing-elders"
+      ]
+    },
+    {
+      "id": "C68",
+      "name": "communal versus individual truth / grief as performance / protective deception",
+      "size": 3,
+      "tags": [
+        "communal-versus-individual-truth",
+        "grief-as-performance",
+        "protective-deception"
+      ]
+    },
+    {
+      "id": "C69",
+      "name": "denial as shared fiction / guilt of wished for release / myth as truth serum",
+      "size": 3,
+      "tags": [
+        "denial-as-shared-fiction",
+        "guilt-of-wished-for-release",
+        "myth-as-truth-serum"
+      ]
+    },
+    {
+      "id": "C70",
+      "name": "guerrilla survival / highland as crucible / kingship earned not granted",
+      "size": 3,
+      "tags": [
+        "guerrilla-survival",
+        "highland-as-crucible",
+        "kingship-earned-not-granted"
+      ]
+    },
+    {
+      "id": "C71",
+      "name": "desertion as clarity / homeward trek as penance / war left behind",
+      "size": 3,
+      "tags": [
+        "desertion-as-clarity",
+        "homeward-trek-as-penance",
+        "war-left-behind"
+      ]
+    },
+    {
+      "id": "C72",
+      "name": "escape as compulsion / hunger as history / jungle as crucible",
+      "size": 3,
+      "tags": [
+        "escape-as-compulsion",
+        "hunger-as-history",
+        "jungle-as-crucible"
+      ]
+    },
+    {
+      "id": "C73",
+      "name": "empathy as diagnostic / identity as unverifiable / manufactured memory",
+      "size": 3,
+      "tags": [
+        "empathy-as-diagnostic",
+        "identity-as-unverifiable",
+        "manufactured-memory"
+      ]
+    },
+    {
+      "id": "C74",
+      "name": "honor through combat / identity stripped and reforged / spectacle as vengeance",
+      "size": 3,
+      "tags": [
+        "honor-through-combat",
+        "identity-stripped-and-reforged",
+        "spectacle-as-vengeance"
+      ]
+    },
+    {
+      "id": "C75",
+      "name": "frontier as anthology / invincibility as genre joke / mortality as punchline",
+      "size": 3,
+      "tags": [
+        "frontier-as-anthology",
+        "invincibility-as-genre-joke",
+        "mortality-as-punchline"
+      ]
+    },
+    {
+      "id": "C76",
+      "name": "family sacrificed to quest / jungle as vindication / obsession as inheritance",
+      "size": 3,
+      "tags": [
+        "family-sacrificed-to-quest",
+        "jungle-as-vindication",
+        "obsession-as-inheritance"
+      ]
+    },
+    {
+      "id": "C77",
+      "name": "frontier as unpoliced / killer as force of nature / windfall as curse",
+      "size": 3,
+      "tags": [
+        "frontier-as-unpoliced",
+        "killer-as-force-of-nature",
+        "windfall-as-curse"
+      ]
+    },
+    {
+      "id": "C78",
+      "name": "craft as communion / labor as meaning / solitude as contentment",
+      "size": 3,
+      "tags": [
+        "craft-as-communion",
+        "labor-as-meaning",
+        "solitude-as-contentment"
+      ]
+    },
+    {
+      "id": "C79",
+      "name": "final season / labor as vanishing pact / mountain as witness",
+      "size": 3,
+      "tags": [
+        "final-season",
+        "labor-as-vanishing-pact",
+        "mountain-as-witness"
+      ]
+    },
+    {
+      "id": "C80",
+      "name": "kinship as bargaining chip / law as cruelty / outback as moral vise",
+      "size": 3,
+      "tags": [
+        "kinship-as-bargaining-chip",
+        "law-as-cruelty",
+        "outback-as-moral-vise"
+      ]
+    },
+    {
+      "id": "C81",
+      "name": "civility stripped bare / law meets the unspeakable / rescue as descent",
+      "size": 3,
+      "tags": [
+        "civility-stripped-bare",
+        "law-meets-the-unspeakable",
+        "rescue-as-descent"
+      ]
+    },
+    {
+      "id": "C82",
+      "name": "accidental recruitment / loyalty as conscience / outsider as asset",
+      "size": 3,
+      "tags": [
+        "accidental-recruitment",
+        "loyalty-as-conscience",
+        "outsider-as-asset"
+      ]
+    },
+    {
+      "id": "C83",
+      "name": "competence unrewarded / madness as frontier toll / plains as attrition",
+      "size": 3,
+      "tags": [
+        "competence-unrewarded",
+        "madness-as-frontier-toll",
+        "plains-as-attrition"
+      ]
+    },
+    {
+      "id": "C84",
+      "name": "honor as erasure / male violence as proxy / trial by combat",
+      "size": 3,
+      "tags": [
+        "honor-as-erasure",
+        "male-violence-as-proxy",
+        "trial-by-combat"
+      ]
+    },
+    {
+      "id": "C85",
+      "name": "infiltrator turned believer / manufactured intimacy / prophecy as leash",
+      "size": 3,
+      "tags": [
+        "infiltrator-turned-believer",
+        "manufactured-intimacy",
+        "prophecy-as-leash"
+      ]
+    },
+    {
+      "id": "C86",
+      "name": "hunter as mirror / maternal transmission of violence / warrior code obsolescence",
+      "size": 3,
+      "tags": [
+        "hunter-as-mirror",
+        "maternal-transmission-of-violence",
+        "warrior-code-obsolescence"
+      ]
+    },
+    {
+      "id": "C87",
+      "name": "farce of espionage / meaning as mirage / self reinvention as obsession",
+      "size": 3,
+      "tags": [
+        "farce-of-espionage",
+        "meaning-as-mirage",
+        "self-reinvention-as-obsession"
+      ]
+    },
+    {
+      "id": "C88",
+      "name": "hunter hunted mirror / mentor versus creation / violence as craft",
+      "size": 3,
+      "tags": [
+        "hunter-hunted-mirror",
+        "mentor-versus-creation",
+        "violence-as-craft"
+      ]
+    },
+    {
+      "id": "C89",
+      "name": "episodic accountability / guilt in tension / mythologized innocence",
+      "size": 3,
+      "tags": [
+        "episodic-accountability",
+        "guilt-in-tension",
+        "mythologized-innocence"
+      ]
+    },
+    {
+      "id": "C90",
+      "name": "body as wound / nature as indifferent witness / revenge as resurrection",
+      "size": 3,
+      "tags": [
+        "body-as-wound",
+        "nature-as-indifferent-witness",
+        "revenge-as-resurrection"
+      ]
+    },
+    {
+      "id": "C91",
+      "name": "mountain as indifferent arbiter / obligation over survival / summit as contract",
+      "size": 3,
+      "tags": [
+        "mountain-as-indifferent-arbiter",
+        "obligation-over-survival",
+        "summit-as-contract"
+      ]
+    },
+    {
+      "id": "C92",
+      "name": "loyalty to process / outsider as negotiator / principle as leverage",
+      "size": 3,
+      "tags": [
+        "loyalty-to-process",
+        "outsider-as-negotiator",
+        "principle-as-leverage"
+      ]
+    },
+    {
+      "id": "C93",
+      "name": "off grid as refuge / parent child divergence / ptsd as enclosure",
+      "size": 3,
+      "tags": [
+        "off-grid-as-refuge",
+        "parent-child-divergence",
+        "ptsd-as-enclosure"
+      ]
+    },
+    {
+      "id": "C94",
+      "name": "body as battlefield / patriotism as wound / voice reclaimed through protest",
+      "size": 3,
+      "tags": [
+        "body-as-battlefield",
+        "patriotism-as-wound",
+        "voice-reclaimed-through-protest"
+      ]
+    },
+    {
+      "id": "C95",
+      "name": "legacy through legislation / political compromise as moral weight / war weariness",
+      "size": 3,
+      "tags": [
+        "legacy-through-legislation",
+        "political-compromise-as-moral-weight",
+        "war-weariness"
+      ]
+    },
+    {
+      "id": "C96",
+      "name": "formal apology without integration / procedural guilt / ritual atonement",
+      "size": 3,
+      "tags": [
+        "formal-apology-without-integration",
+        "procedural-guilt",
+        "ritual-atonement"
+      ]
+    },
+    {
+      "id": "C97",
+      "name": "guilt outrun by revival / pulpit as refuge / self baptism as erasure",
+      "size": 3,
+      "tags": [
+        "guilt-outrun-by-revival",
+        "pulpit-as-refuge",
+        "self-baptism-as-erasure"
+      ]
+    },
+    {
+      "id": "C98",
+      "name": "freedom as obligation / repeated return to danger / visionary trauma",
+      "size": 3,
+      "tags": [
+        "freedom-as-obligation",
+        "repeated-return-to-danger",
+        "visionary-trauma"
+      ]
+    },
+    {
+      "id": "C99",
+      "name": "ice as indifference / rescue deferred / survival as logistics",
+      "size": 3,
+      "tags": [
+        "ice-as-indifference",
+        "rescue-deferred",
+        "survival-as-logistics"
+      ]
+    },
+    {
+      "id": "C100",
+      "name": "myth of the mountain man / retreat as transformation / unwitting trespass",
+      "size": 3,
+      "tags": [
+        "myth-of-the-mountain-man",
+        "retreat-as-transformation",
+        "unwitting-trespass"
+      ]
+    },
+    {
+      "id": "C101",
+      "name": "infiltration as loyalty erosion / revenge as inheritance / tribal violence as identity",
+      "size": 3,
+      "tags": [
+        "infiltration-as-loyalty-erosion",
+        "revenge-as-inheritance",
+        "tribal-violence-as-identity"
+      ]
+    },
+    {
+      "id": "C102",
+      "name": "exile through duty / state violence as identity / vengeance as erosion",
+      "size": 3,
+      "tags": [
+        "exile-through-duty",
+        "state-violence-as-identity",
+        "vengeance-as-erosion"
+      ]
+    },
+    {
+      "id": "C103",
+      "name": "colonial shadow / reckoning in progress",
+      "size": 2,
+      "tags": [
+        "colonial-shadow",
+        "reckoning-in-progress"
+      ]
+    },
+    {
+      "id": "C104",
+      "name": "ecological guardianship / robot as conscience surrogate",
+      "size": 2,
+      "tags": [
+        "ecological-guardianship",
+        "robot-as-conscience-surrogate"
+      ]
+    },
+    {
+      "id": "C105",
+      "name": "public memory work / truth telling",
+      "size": 2,
+      "tags": [
+        "public-memory-work",
+        "truth-telling"
+      ]
+    },
+    {
+      "id": "C106",
+      "name": "marriage as battleground / weaponized performance",
+      "size": 2,
+      "tags": [
+        "marriage-as-battleground",
+        "weaponized-performance"
+      ]
+    }
+  ],
+  "tagCommunity": {
+    "desire-as-exposure": "C1",
+    "erotic-power-inversion": "C1",
+    "ritualized-power-exchange": "C1",
+    "psychic-conspiracy-of-marriage": "C1",
+    "erotic-initiation": "C1",
+    "marital-shadow-descent": "C1",
+    "shattering-of-possessive-illusion": "C1",
+    "submission-as-self-discovery": "C1",
+    "agency-after-violation": "C1",
+    "artist-muse-unveiling": "C1",
+    "betrayal-as-game": "C1",
+    "body-horror-rebellion": "C1",
+    "cinema-as-erotic-language": "C1",
+    "coming-of-age-humiliation": "C1",
+    "compulsion-as-control": "C1",
+    "confession-as-exposure": "C1",
+    "confession-as-structure": "C1",
+    "cruelty-as-intimacy": "C1",
+    "danger-as-desire": "C1",
+    "desire-as-fate": "C1",
+    "destructive-freedom": "C1",
+    "destructive-obsession": "C1",
+    "erotic-ambivalence": "C1",
+    "erotic-obsession-as-waiting": "C1",
+    "erotic-power-and-religious-ecstasy": "C1",
+    "eroticized-danger": "C1",
+    "exposure-and-manipulation": "C1",
+    "extremes-of-consent": "C1",
+    "femme-fatale-destruction": "C1",
+    "grooming-as-manipulation": "C1",
+    "grotesque-autonomy": "C1",
+    "hunger-to-be-consumed": "C1",
+    "jealousy-and-defilement": "C1",
+    "jealousy-as-violence": "C1",
+    "loving-what-cannot-be-fixed": "C1",
+    "narcissism-as-intimacy": "C1",
+    "obsession-spiraling-to-death": "C1",
+    "obsessive-witnessing": "C1",
+    "paranoia-lust-violence-swirl": "C1",
+    "performance-and-cost-of-surrender": "C1",
+    "performer-role-collapse": "C1",
+    "power-and-exploitation": "C1",
+    "power-play-as-sacred-theater": "C1",
+    "reclaiming-autonomy": "C1",
+    "refusal-of-catharsis": "C1",
+    "repression-and-sanctity-of-liberty": "C1",
+    "ritual-and-death": "C1",
+    "ritualizing-absence": "C1",
+    "ruin-as-consequence": "C1",
+    "sacred-theater-of-taboo": "C1",
+    "sanctity-as-theater": "C1",
+    "self-annihilation-through-excess": "C1",
+    "sex-as-weapon": "C1",
+    "sex-work-and-unmasking": "C1",
+    "sisterhood-and-envy": "C1",
+    "the-gaze-as-erotic-torture": "C1",
+    "the-unbearable-mirror": "C1",
+    "total-submission-as-erasure": "C1",
+    "urban-nihilism-and-abyss": "C1",
+    "watching-as-ritual": "C1",
+    "witness-as-desire": "C1",
+    "passionate-collapse": "C1",
+    "role-fatigue": "C1",
+    "sovereign-otherness": "C1",
+    "domestic-power-inversion": "C2",
+    "gothic-household-control": "C2",
+    "apartment-as-battleground": "C2",
+    "arranged-marriage-as-sentence": "C2",
+    "bedroom-as-nursery-cage": "C2",
+    "body-as-contested-territory": "C2",
+    "bride-as-property": "C2",
+    "colonial-marriage-contract": "C2",
+    "coming-of-age-under-watch": "C2",
+    "court-as-household": "C2",
+    "craft-as-cage": "C2",
+    "custody-as-leverage": "C2",
+    "dead-predecessor-as-standard": "C2",
+    "doubling-as-liberation": "C2",
+    "estate-as-memory-palace": "C2",
+    "estate-as-prize": "C2",
+    "fabricated-death-as-escape": "C2",
+    "favor-as-currency": "C2",
+    "gaze-as-contract": "C2",
+    "ghosts-as-permission": "C2",
+    "guilt-and-tenderness-loop": "C2",
+    "hotel-as-inherited-throne": "C2",
+    "house-as-evidence": "C2",
+    "housekeeper-as-gatekeeper": "C2",
+    "impersonation-as-household-rule": "C2",
+    "infirmity-as-throne": "C2",
+    "instrument-as-body": "C2",
+    "instruments-as-severance": "C2",
+    "isolation-as-pressure-chamber": "C2",
+    "key-by-key-barter": "C2",
+    "maternal-ghost-as-law": "C2",
+    "maternal-surveillance": "C2",
+    "morality-clause-as-cage": "C2",
+    "mother-as-broker": "C2",
+    "mother-as-warden": "C2",
+    "murder-as-emancipation": "C2",
+    "partner-as-gatekeeper": "C2",
+    "paternal-blessing-as-license": "C2",
+    "patriarch-as-executioner": "C2",
+    "perfection-as-mandate": "C2",
+    "poison-as-recalibration": "C2",
+    "portrait-as-dowry": "C2",
+    "possessive-love-as-leash": "C2",
+    "pregnancy-as-hostage": "C2",
+    "rabbits-as-substitute-children": "C2",
+    "respectability-performance": "C2",
+    "ritual-as-tyranny": "C2",
+    "seduction-as-leverage": "C2",
+    "servant-as-usurper": "C2",
+    "servant-sacrificed-for-status": "C2",
+    "shared-identity-as-cage": "C2",
+    "shrine-as-weapon": "C2",
+    "silence-as-agency": "C2",
+    "staircase-as-battleground": "C2",
+    "summer-guest-hierarchy": "C2",
+    "transition-as-household-rupture": "C2",
+    "twin-as-mirror-authority": "C2",
+    "villa-as-permissive-enclosure": "C2",
+    "self-vs-nature": "C3",
+    "wilderness-ordeal": "C3",
+    "nature-as-judge": "C3",
+    "provisions-as-morality": "C3",
+    "brotherhood-as-cage": "C3",
+    "competence-unrecognized": "C3",
+    "cowardice-fantasized-away": "C3",
+    "death-wish-reversed": "C3",
+    "desert-as-mirror": "C3",
+    "desert-as-uncertainty": "C3",
+    "domestic-longing-surfacing": "C3",
+    "enemy-as-shelter-mate": "C3",
+    "expedition-as-trap": "C3",
+    "grief-as-mileage": "C3",
+    "grief-displaced-into-skill": "C3",
+    "guide-as-false-prophet": "C3",
+    "honor-as-trial": "C3",
+    "jurisdiction-as-void": "C3",
+    "predator-as-mirror": "C3",
+    "revenge-as-fate": "C3",
+    "sidekick-reclaimed": "C3",
+    "silence-as-menace": "C3",
+    "slaughter-as-disillusionment": "C3",
+    "solitary-vengeance": "C3",
+    "solitude-as-self-authorship": "C3",
+    "solitude-as-self-forgiveness": "C3",
+    "spectacle-resisted": "C3",
+    "trail-as-penance": "C3",
+    "transcendence-as-delusion": "C3",
+    "violence-as-liturgy": "C3",
+    "volcanic-terrain-as-destiny": "C3",
+    "vow-as-identity": "C3",
+    "voyage-as-damnation": "C3",
+    "war-suspended-by-cold": "C3",
+    "ascetic-purification": "C4",
+    "silence-of-god": "C4",
+    "pornography-of-negation": "C4",
+    "terror-of-desire": "C4",
+    "sacrifice-as-transaction": "C4",
+    "eco-guilt": "C4",
+    "masochistic-ritual": "C4",
+    "body-as-protest": "C4",
+    "control-as-fortress": "C4",
+    "denial-as-shield": "C4",
+    "failed-baptism-of-violence": "C4",
+    "impossibility-of-fusion": "C4",
+    "urban-alienation": "C4",
+    "vigilante-purification": "C4",
+    "wild-man-myth": "C4",
+    "world-rejection": "C4",
+    "doubt-wracked-clergy": "C4",
+    "humiliation-as-power": "C4",
+    "institutional-collapse": "C4",
+    "mythic-americana": "C4",
+    "political-martyrdom": "C4",
+    "repressed-desire": "C4",
+    "communal-sin-absorption": "C4",
+    "creation-as-consumption": "C4",
+    "domestic-apocalypse": "C4",
+    "faith-under-siege": "C4",
+    "grief-turned-monstrous": "C4",
+    "nature-as-shadow": "C4",
+    "paranoia-as-coping": "C4",
+    "prophecy-or-madness": "C4",
+    "suffering-as-purification": "C4",
+    "historical-erasure": "C4",
+    "identity-concealment": "C5",
+    "watched-watcher": "C5",
+    "institutional-rot": "C5",
+    "surveillance-paranoia": "C5",
+    "truth-as-liability": "C5",
+    "self-annihilation-as-offering": "C5",
+    "accidental-target": "C5",
+    "loyalty-as-performance": "C5",
+    "moral-arithmetic": "C5",
+    "betrayal-as-premeditation": "C5",
+    "betrayal-as-strategy": "C5",
+    "collateral-as-abstraction": "C5",
+    "command-at-a-distance": "C5",
+    "deep-cover-as-erasure": "C5",
+    "emotional-armor": "C5",
+    "erasure-of-identity": "C5",
+    "identity-as-costume": "C5",
+    "manipulation-as-craft": "C5",
+    "mentor-guilt": "C5",
+    "misheard-evidence": "C5",
+    "mistaken-identity-as-trap": "C5",
+    "obsession-as-possession": "C5",
+    "performance-as-survival": "C5",
+    "ritual-as-armor": "C5",
+    "self-investigation-as-trap": "C5",
+    "self-isolation-as-defense": "C5",
+    "solitude-as-code": "C5",
+    "used-as-legitimacy": "C5",
+    "counterculture-disillusion": "C6",
+    "idealism-and-its-shadow": "C6",
+    "backlash-as-verdict": "C6",
+    "co-optation-as-death": "C6",
+    "escape-without-destination": "C6",
+    "freedom-as-mirage": "C6",
+    "generational-mirror": "C6",
+    "grief-forces-compromise": "C6",
+    "ideology-as-cage": "C6",
+    "institution-as-adversary": "C6",
+    "liberation-becomes-cult": "C6",
+    "lucidity-deferred": "C6",
+    "movement-as-mirror": "C6",
+    "philosophy-as-loop": "C6",
+    "purity-as-liability": "C6",
+    "rebellion-as-inertia": "C6",
+    "rescue-without-redemption": "C6",
+    "spectacle-as-strategy": "C6",
+    "split-self-as-warning": "C6",
+    "talk-as-substitute-for-action": "C6",
+    "vigilante-justice-as-loop": "C6",
+    "violence-mirrors-its-target": "C6",
+    "we-blew-it": "C6",
+    "domestic-rupture": "C7",
+    "intimacy-erosion": "C7",
+    "confession-as-catalyst": "C7",
+    "emotional-x-ray": "C7",
+    "escape-plan-as-last-intimacy": "C7",
+    "facade-of-agreeable-marriage": "C7",
+    "mutual-destruction": "C7",
+    "post-divorce-attachment": "C7",
+    "self-annihilation-as-refusal": "C7",
+    "suburban-dream-as-cage": "C7",
+    "affair-as-scheduled-rebellion": "C7",
+    "fertility-treatment-as-marital-strain": "C7",
+    "identity-displaced-by-procedure": "C7",
+    "in-between-things": "C7",
+    "novelty-mistaken-for-fulfillment": "C7",
+    "passion-versus-comfort": "C7",
+    "quiet-desperation": "C7",
+    "restlessness-as-condition": "C7",
+    "self-annihilation-as-longing": "C7",
+    "stalled-ambition": "C7",
+    "suburban-complacency-exposed": "C7",
+    "unreliable-memory-as-structure": "C7",
+    "war-trauma": "C8",
+    "violence-as-inheritance": "C8",
+    "atrocity-as-normalcy": "C8",
+    "prophecy-as-permission": "C8",
+    "survivor-guilt": "C8",
+    "ambition-as-contagion": "C8",
+    "brotherhood-fractured": "C8",
+    "coming-of-age-through-atrocity": "C8",
+    "command-as-mask": "C8",
+    "descent-into-madness": "C8",
+    "endurance-as-resistance": "C8",
+    "fatherhood-and-complicity": "C8",
+    "grief-suppressed-by-duty": "C8",
+    "guilt-of-instilled-duty": "C8",
+    "hallucination-as-guilt": "C8",
+    "identity-under-erasure": "C8",
+    "mission-as-mirror": "C8",
+    "moral-split-fatherhood": "C8",
+    "outpost-siege-mentality": "C8",
+    "ptsd-as-tyranny": "C8",
+    "regicide-as-self-erasure": "C8",
+    "ritual-of-control": "C8",
+    "historical-reckoning": "C9",
+    "sovereign-ambition": "C9",
+    "betrayal-as-origin": "C9",
+    "collapse-of-old-order": "C9",
+    "inherited-duty": "C9",
+    "inherited-guilt": "C9",
+    "justice-as-theater": "C9",
+    "land-as-identity": "C9",
+    "legacy-as-burden": "C9",
+    "public-self-as-performance": "C9",
+    "reinvention-as-weapon": "C9",
+    "reluctant-crown": "C9",
+    "self-interest-as-armor": "C9",
+    "shame-as-obstacle": "C9",
+    "survival-as-ruthlessness": "C9",
+    "vengeance-as-vocation": "C9",
+    "voice-as-legitimacy": "C9",
+    "war-as-inheritance": "C9",
+    "institutional-shadow": "C10",
+    "surrender-to-doctrine": "C10",
+    "charisma-as-gravity": "C10",
+    "discipleship-and-terror-of-intimacy": "C10",
+    "animal-instinct-vs-control": "C10",
+    "father-hunger": "C10",
+    "processing-as-exorcism": "C10",
+    "surrender-vs-control": "C10",
+    "posthuman-estrangement": "C11",
+    "guilt-as-engine": "C11",
+    "civilizational-collapse": "C11",
+    "fertility-as-miracle": "C11",
+    "identity-across-lifetimes": "C11",
+    "karmic-causality": "C11",
+    "soul-as-recurring-pattern": "C11",
+    "species-extinction-anxiety": "C11",
+    "accountability-as-practice": "C12",
+    "integrated-accountability": "C12",
+    "truth-and-reconciliation": "C12",
+    "communal-justice": "C12",
+    "institutional-apology": "C12",
+    "sustained-reckoning": "C12",
+    "mortality-witness": "C13",
+    "abandonment": "C13",
+    "complicity-through-desperation": "C13",
+    "moral-erosion": "C13",
+    "poverty-as-death-machine": "C13",
+    "technological-sublime": "C14",
+    "body-as-obsolete": "C14",
+    "exile-as-origin": "C14",
+    "honor-code-inversion": "C14",
+    "kinship-across-species": "C14",
+    "grief-metabolism": "C15",
+    "anticipatory-mourning": "C15",
+    "addiction-as-slow-death": "C15",
+    "helpless-love": "C15",
+    "relapse-as-repeated-loss": "C15",
+    "body-as-replacement-wife": "C16",
+    "captivity-as-revenge": "C16",
+    "house-as-laboratory-prison": "C16",
+    "surgery-as-authorship": "C16",
+    "doctrine-eating-the-self": "C17",
+    "bureaucracy-of-belief": "C17",
+    "confession-as-collateral": "C17",
+    "founder-mythology": "C17",
+    "affair-with-the-best-friend": "C18",
+    "confession-as-reckoning": "C18",
+    "guilt-recounted-not-absolved": "C18",
+    "narrator-as-self-prosecutor": "C18",
+    "atonement-through-allegiance": "C19",
+    "conquest-as-self-loathing": "C19",
+    "cultural-defection": "C19",
+    "guilt-as-conversion": "C19",
+    "bodily-imprisonment": "C20",
+    "consciousness-as-last-freedom": "C20",
+    "narration-as-survival": "C20",
+    "radical-dependency": "C20",
+    "body-as-rentable-shell": "C21",
+    "consciousness-as-property": "C21",
+    "identity-across-sleeves": "C21",
+    "memory-as-artifact": "C21",
+    "borrowed-stability": "C22",
+    "contentment-as-contrast": "C22",
+    "delusional-attachment": "C22",
+    "loneliness-performed-as-vivacity": "C22",
+    "arrested-development": "C23",
+    "control-as-coping": "C23",
+    "orphaned-siblings": "C23",
+    "unresolved-reunion": "C23",
+    "concealed-suffering": "C24",
+    "depression-as-invisible-illness": "C24",
+    "parental-denial": "C24",
+    "performed-wellness": "C24",
+    "confession-as-currency": "C25",
+    "diary-as-surveillance": "C25",
+    "loyalty-tax": "C25",
+    "manufactured-dependency": "C25",
+    "authority-by-voice-alone": "C26",
+    "diffusion-of-responsibility": "C26",
+    "obedience-as-relief": "C26",
+    "workplace-hierarchy-as-cage": "C26",
+    "death-as-bureaucratic-process": "C27",
+    "dignity-erosion": "C27",
+    "institutional-indifference": "C27",
+    "unwitnessed-dying": "C27",
+    "childhood-conscripted": "C28",
+    "divine-mandate-as-abuse": "C28",
+    "family-as-cell": "C28",
+    "visions-as-command": "C28",
+    "contempt-replacing-love": "C29",
+    "divorce-as-annihilation": "C29",
+    "escalating-property-warfare": "C29",
+    "house-as-battlefield": "C29",
+    "affair-as-buried-self": "C30",
+    "duty-over-desire": "C30",
+    "memory-as-life-defining": "C30",
+    "renunciation-as-devotion": "C30",
+    "caregiving-as-battleground": "C31",
+    "duty-versus-departure": "C31",
+    "moral-compromise-cascade": "C31",
+    "separation-as-catalyst-for-class-conflict": "C31",
+    "conscience-over-conquest": "C32",
+    "faith-as-liability": "C32",
+    "grief-as-origin": "C32",
+    "surrender-as-mercy": "C32",
+    "affair-mistaken-for-commitment": "C33",
+    "family-as-rival": "C33",
+    "obsessive-retribution": "C33",
+    "possessive-escalation": "C33",
+    "engineered-mortality": "C34",
+    "foreclosed-future": "C34",
+    "memory-as-consolation": "C34",
+    "quiet-acceptance": "C34",
+    "betrayal-as-ascension": "C35",
+    "founding-myth-as-litigation": "C35",
+    "legacy-as-liability": "C35",
+    "loneliness-as-engine": "C35",
+    "ambition-as-erasure": "C36",
+    "founding-myth-as-theft": "C36",
+    "franchise-as-conquest": "C36",
+    "ruthlessness-as-vision": "C36",
+    "cognition-reprogrammed": "C37",
+    "grief-as-foreknowledge": "C37",
+    "language-as-technology": "C37",
+    "nonlinear-consciousness": "C37",
+    "communal-body-discipline": "C38",
+    "grooming-as-belonging": "C38",
+    "paranoia-as-residue": "C38",
+    "renaming-as-erasure": "C38",
+    "22-years-of-silence": "C39",
+    "guru-as-mirror": "C39",
+    "isolation-from-family": "C39",
+    "surveillance-as-devotion": "C39",
+    "disillusionment-arc": "C40",
+    "duty-versus-desire": "C40",
+    "home-front-complicity": "C40",
+    "witness-as-transformation": "C40",
+    "family-bound-by-brand": "C41",
+    "hypocrisy-as-inheritance": "C41",
+    "ministry-as-empire": "C41",
+    "prosperity-gospel-armor": "C41",
+    "bodily-trauma-memory": "C42",
+    "illegible-grief": "C42",
+    "refusal-of-consolation": "C42",
+    "relational-fracture": "C42",
+    "eavesdropped-confession-as-turning-point": "C43",
+    "interlocking-marriages": "C43",
+    "midlife-affair": "C43",
+    "trust-as-slow-rebuild": "C43",
+    "colonial-reckoning": "C44",
+    "knowledge-as-extraction": "C44",
+    "last-of-a-people": "C44",
+    "memory-as-endangered": "C44",
+    "collaborative-separation-turned-war": "C45",
+    "lawyers-as-proxy-combatants": "C45",
+    "resentment-deferred": "C45",
+    "vocation-subordination": "C45",
+    "guarded-reattachment": "C46",
+    "platonic-bond-as-repair": "C46",
+    "trauma-as-barrier-to-closeness": "C46",
+    "wariness-as-self-protection": "C46",
+    "buried-abandonment": "C47",
+    "projection-as-confession": "C47",
+    "regretful-motherhood": "C47",
+    "unnatural-mother-taboo": "C47",
+    "frozen-affect": "C48",
+    "refused-absolution": "C48",
+    "self-punishment": "C48",
+    "unearned-guardianship": "C48",
+    "ritualized-mourning": "C49",
+    "sibling-comparison": "C49",
+    "surviving-child-guilt": "C49",
+    "unspoken-resentment": "C49",
+    "addiction-as-armor": "C50",
+    "body-as-prison": "C50",
+    "existential-emptiness-of-desire": "C50",
+    "animation-as-repression": "C51",
+    "bystander-complicity": "C51",
+    "memory-as-defense": "C51",
+    "ambition-versus-devotion": "C52",
+    "charm-curdling-into-contempt": "C52",
+    "nonlinear-courtship-and-collapse": "C52",
+    "animist-competence": "C53",
+    "civilization-as-fatal-gift": "C53",
+    "friendship-across-worldviews": "C53",
+    "benevolence-as-conquest": "C54",
+    "colonial-contradiction": "C54",
+    "jungle-as-reckoning": "C54",
+    "class-betrayal-radicalized": "C55",
+    "desertion-as-conscience": "C55",
+    "insurgency-as-solidarity": "C55",
+    "deception-as-intimacy": "C56",
+    "desire-as-deception": "C56",
+    "layered-betrayal-and-liberation": "C56",
+    "command-against-institutional-racism": "C57",
+    "dignity-through-sacrifice": "C57",
+    "martyrdom-as-proof": "C57",
+    "captivity-reversed-by-terrain": "C58",
+    "distance-as-vindication": "C58",
+    "endurance-as-testimony": "C58",
+    "body-as-commodity": "C59",
+    "dystopian-overpopulation": "C59",
+    "institutional-cannibalism": "C59",
+    "compound-as-fortress": "C60",
+    "family-as-congregation": "C60",
+    "sermon-as-weapon": "C60",
+    "empire-stripped-bare": "C61",
+    "flight-as-survival": "C61",
+    "terrain-as-enemy": "C61",
+    "belonging-between-worlds": "C62",
+    "frontier-as-battleground": "C62",
+    "protection-as-futile-vow": "C62",
+    "escort-as-penance": "C63",
+    "frontier-as-moral-terrain": "C63",
+    "hatred-as-institution": "C63",
+    "assimilation-as-rebirth": "C64",
+    "frontier-as-threshold": "C64",
+    "solitude-as-invitation": "C64",
+    "boomtown-as-built-guilt": "C65",
+    "frontier-fortune-undone": "C65",
+    "trade-as-original-sin": "C65",
+    "complicity-disguised-as-love": "C66",
+    "greed-as-atrocity-engine": "C66",
+    "loyalty-under-erasure": "C66",
+    "frontier-justice-as-errand": "C67",
+    "grief-as-contract": "C67",
+    "resolve-outpacing-elders": "C67",
+    "communal-versus-individual-truth": "C68",
+    "grief-as-performance": "C68",
+    "protective-deception": "C68",
+    "denial-as-shared-fiction": "C69",
+    "guilt-of-wished-for-release": "C69",
+    "myth-as-truth-serum": "C69",
+    "guerrilla-survival": "C70",
+    "highland-as-crucible": "C70",
+    "kingship-earned-not-granted": "C70",
+    "desertion-as-clarity": "C71",
+    "homeward-trek-as-penance": "C71",
+    "war-left-behind": "C71",
+    "escape-as-compulsion": "C72",
+    "hunger-as-history": "C72",
+    "jungle-as-crucible": "C72",
+    "empathy-as-diagnostic": "C73",
+    "identity-as-unverifiable": "C73",
+    "manufactured-memory": "C73",
+    "honor-through-combat": "C74",
+    "identity-stripped-and-reforged": "C74",
+    "spectacle-as-vengeance": "C74",
+    "frontier-as-anthology": "C75",
+    "invincibility-as-genre-joke": "C75",
+    "mortality-as-punchline": "C75",
+    "family-sacrificed-to-quest": "C76",
+    "jungle-as-vindication": "C76",
+    "obsession-as-inheritance": "C76",
+    "frontier-as-unpoliced": "C77",
+    "killer-as-force-of-nature": "C77",
+    "windfall-as-curse": "C77",
+    "craft-as-communion": "C78",
+    "labor-as-meaning": "C78",
+    "solitude-as-contentment": "C78",
+    "final-season": "C79",
+    "labor-as-vanishing-pact": "C79",
+    "mountain-as-witness": "C79",
+    "kinship-as-bargaining-chip": "C80",
+    "law-as-cruelty": "C80",
+    "outback-as-moral-vise": "C80",
+    "civility-stripped-bare": "C81",
+    "law-meets-the-unspeakable": "C81",
+    "rescue-as-descent": "C81",
+    "accidental-recruitment": "C82",
+    "loyalty-as-conscience": "C82",
+    "outsider-as-asset": "C82",
+    "competence-unrewarded": "C83",
+    "madness-as-frontier-toll": "C83",
+    "plains-as-attrition": "C83",
+    "honor-as-erasure": "C84",
+    "male-violence-as-proxy": "C84",
+    "trial-by-combat": "C84",
+    "infiltrator-turned-believer": "C85",
+    "manufactured-intimacy": "C85",
+    "prophecy-as-leash": "C85",
+    "hunter-as-mirror": "C86",
+    "maternal-transmission-of-violence": "C86",
+    "warrior-code-obsolescence": "C86",
+    "farce-of-espionage": "C87",
+    "meaning-as-mirage": "C87",
+    "self-reinvention-as-obsession": "C87",
+    "hunter-hunted-mirror": "C88",
+    "mentor-versus-creation": "C88",
+    "violence-as-craft": "C88",
+    "episodic-accountability": "C89",
+    "guilt-in-tension": "C89",
+    "mythologized-innocence": "C89",
+    "body-as-wound": "C90",
+    "nature-as-indifferent-witness": "C90",
+    "revenge-as-resurrection": "C90",
+    "mountain-as-indifferent-arbiter": "C91",
+    "obligation-over-survival": "C91",
+    "summit-as-contract": "C91",
+    "loyalty-to-process": "C92",
+    "outsider-as-negotiator": "C92",
+    "principle-as-leverage": "C92",
+    "off-grid-as-refuge": "C93",
+    "parent-child-divergence": "C93",
+    "ptsd-as-enclosure": "C93",
+    "body-as-battlefield": "C94",
+    "patriotism-as-wound": "C94",
+    "voice-reclaimed-through-protest": "C94",
+    "legacy-through-legislation": "C95",
+    "political-compromise-as-moral-weight": "C95",
+    "war-weariness": "C95",
+    "formal-apology-without-integration": "C96",
+    "procedural-guilt": "C96",
+    "ritual-atonement": "C96",
+    "guilt-outrun-by-revival": "C97",
+    "pulpit-as-refuge": "C97",
+    "self-baptism-as-erasure": "C97",
+    "freedom-as-obligation": "C98",
+    "repeated-return-to-danger": "C98",
+    "visionary-trauma": "C98",
+    "ice-as-indifference": "C99",
+    "rescue-deferred": "C99",
+    "survival-as-logistics": "C99",
+    "myth-of-the-mountain-man": "C100",
+    "retreat-as-transformation": "C100",
+    "unwitting-trespass": "C100",
+    "infiltration-as-loyalty-erosion": "C101",
+    "revenge-as-inheritance": "C101",
+    "tribal-violence-as-identity": "C101",
+    "exile-through-duty": "C102",
+    "state-violence-as-identity": "C102",
+    "vengeance-as-erosion": "C102",
+    "colonial-shadow": "C103",
+    "reckoning-in-progress": "C103",
+    "ecological-guardianship": "C104",
+    "robot-as-conscience-surrogate": "C104",
+    "public-memory-work": "C105",
+    "truth-telling": "C105",
+    "marriage-as-battleground": "C106",
+    "weaponized-performance": "C106"
+  }
+}

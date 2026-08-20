@@ -165,11 +165,56 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 
 **All 199 films in the twelve numbered clusters (100%) are now grounded** — up from 47 (24%). Clusters III-XII (152 films) were mined this round: each film individually researched (not pattern-matched from memory alone) and given its own character entity with tags/continuum grounded in that research, same rigor as I/II but via web research instead of archive PDFs (no new source PDFs were available for these clusters). One honest outlier flagged during mining: *Causeway* (cluster III) turned out on research to not actually be a marriage/infidelity story — it's grounded around its real subject (intimacy-avoidance after trauma) rather than forced into the cluster's frame; worth a second look if the cluster taxonomy gets audited. Character count: 51 → 204. The ~90 ungrounded "Additional Notable Titles" (cluster XIII, no cluster tag) remain out of scope — same unsorted grab-bag as before, not part of the twelve-cluster taxonomy this tracker covers.
 
+## GraphRAG v1 — static tag community detection (2026-08-20)
+
+First version of the "graph" half of GraphRAG: a one-shot (not live, not dynamic)
+grouping of the app's own archetypal tags into named clusters, run once against the
+current data and saved as a file — no traversal, no chat-assistant wiring, no UI. Those
+are explicitly later phases (see "Known gaps" below and the removed items list above).
+
+- **Input graph**: there is no separate "tag/continuum" graph file in this repo —
+  tags live as plain arrays on each character/country entry in
+  `queue-server/data-seed/fmcns_ontology.json` (the same seed file
+  `bootstrapData.js` loads into the `entity_tags` table on every boot). The script
+  builds its graph straight from that file: **nodes = the 641 unique tags across
+  204 characters + 10 countries; edges = tag pairs that co-occur on the same
+  entity, weighted by how many entities carry both.** Continuum axis scores were
+  not used — they're per-entity numeric positions, not a tag relationship, so
+  there was nothing there to build a tag graph from.
+- **Method**: `queue-server/scripts/detect-tag-communities.js` — a single-level
+  greedy modularity pass (Louvain's "phase 1" move rule, no multi-level
+  aggregation), studied from graphology-communities / jLouvain but implemented
+  from scratch with no new dependency, matching the project's no-build-step,
+  dependency-light frontend/scripts convention. Deterministic: node order is
+  sorted, so re-running produces byte-identical output (checked — two runs
+  differ only in the `generatedAt` timestamp).
+- **Result**: 106 communities over all 641 tags (no tag left unclustered), written
+  to `queue-server/data-seed/tag_communities.json`. Sizes range from 2 tags up to
+  64; the ten largest communities are named from their highest-weight tags
+  (a deliberate "Netflix micro-genre" naming — concrete tag combinations, not a
+  single abstract label), e.g. *"desire as exposure / erotic power inversion /
+  ritualized power exchange / psychic conspiracy of marriage"* (64 tags) or
+  *"self vs nature / wilderness ordeal / nature as judge / provisions as
+  morality"* (34 tags). Encouragingly, the largest communities line up loosely
+  with the existing hand-curated film clusters above (eros/power, domestic
+  rupture, wilderness/survival, ascetic self-destruction, surveillance/paranoia,
+  counterculture) — a rough cross-check that the tag vocabulary and the
+  human-authored cluster taxonomy agree, even though this pass never looked at
+  cluster labels.
+- **Run it**: `node queue-server/scripts/detect-tag-communities.js` from
+  `queue-server/` — reads the seed file, writes the communities file, prints a
+  top-10 summary to stdout.
+- **Explicitly not built** (later phases, out of scope for this pass): living/dynamic
+  re-clustering as new entities are added ("Living Weather of Tags"), fuzzy/overlapping
+  membership ("Gradient Bridges"), gap detection between communities ("Curious Gaps"), and
+  any use of this by the chat assistant's retrieval or the navigator's rendering — the
+  output today is a standalone file, read by nothing else yet.
+
 ## Known gaps / honest caveats
 
 - ~~No queue UI yet.~~ Fixed — see the new Queue page above.
 - **76% of the film corpus is still reasoned, not grounded** — same as before, no archive-mining done this round.
-- **GraphRAG and a formal Pattern Engine don't exist** — the "Architecture Navigator" audit (see below) made this explicit for the first time rather than leaving it implied.
+- ~~**GraphRAG and a formal Pattern Engine don't exist**~~ — GraphRAG now has a first (static, offline) version; see above. A formal Pattern Engine still doesn't exist.
 - **Fractal Zoom isn't actually recursive yet** — camera zoom/pan only, no per-node internal graph revealed on zoom-in, except as a first proof-of-concept in the Architecture Navigator's own territory→component drill-down.
 - **Maps app only has 10 hand-scored countries**, static data, no drill-down.
 - **Film metadata (director/year) is knowledge-based, not verified** against TMDB/Wikidata — sandbox can't reach those domains.
@@ -180,7 +225,7 @@ The embedded chat assistant widget is attached to this app (bottom-right). It al
 - ~~Build a queue UI~~ / ~~Archive-mine the remaining 10 clusters~~ — both done this round
 - Extract the entanglement/diagonal/bridge computation out of client-side JS into one shared backend service (still duplicated between Content mode's graph and Map mode, even within the now-unified app)
 - Formalize a first named Pattern (beyond tag-overlap) as a Pattern Engine proof of concept
-- First version of GraphRAG (static community detection over existing tag/continuum data)
+- ~~First version of GraphRAG (static community detection over existing tag/continuum data)~~ — done this round, see below
 - Scale Echo v1 — make continuum-proximity bridges scale-aware, not just axis-proximity
 - True recursive Fractal Zoom (per-node internal graph, not just camera zoom)
 - Extend country scoring on the map beyond the current 10
