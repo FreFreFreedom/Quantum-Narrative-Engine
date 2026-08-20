@@ -232,6 +232,15 @@ export function queueRoutes() {
     res.json(row);
   }));
 
+  // Persist the panel's current ticks without applying them, so leaving the
+  // task and coming back later (even after a page reload) restores the
+  // selection instead of losing it.
+  router.post('/prompts/:id/inspiration/select', (req, res) => {
+    const row = queue.setInspireSelection(req.params.id, req.body?.picks || []);
+    if (!row) return res.status(404).json({ error: 'not_found' });
+    res.json(row);
+  });
+
   router.post('/prompts/:id/inspiration/apply', asyncHandler(async (req, res) => {
     const row = await queue.applyInspiration(req.params.id, req.body || {});
     if (!row) return res.status(404).json({ error: 'not_found' });
