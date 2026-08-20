@@ -135,6 +135,15 @@ async function main() {
     TERRITORIES: [{ id: 'knowledge', label: 'Knowledge' }, { id: 'interface', label: 'Interface' }],
     flowWorldPickSuffix: () => '',
     nextUp: null, nextUpOpen: false, nextUpBusy: false, nextUpErr: '',
+    // Module-level app state the lifted render functions read. Each one needs a
+    // stub here or the whole section crashes rather than failing one check — which
+    // is how "Make .nb-shortlist elements clickable" (668db5e) silently took this
+    // section out: it added a nbWorldOpen read inside nuRowHtml.
+    nbWorldOpen: null,
+    qEscAttr: (v) => String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
+    flowWorldPanelHtml: () => '',
+    flowWorldEntry: () => ({ state: 'none' }),
   };
   // eslint-disable-next-line no-new-func
   const api = new Function('ctx', `with (ctx) { ${src} return { nuRowHtml, flowNextUpHtml }; }`)(ctx);
