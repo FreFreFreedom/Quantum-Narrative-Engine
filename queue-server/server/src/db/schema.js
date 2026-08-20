@@ -212,6 +212,22 @@ function initSchema(db) {
   `);
   try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_work_suggestions_fp ON work_suggestions(fingerprint)`); } catch {}
 
+  // Which of the app's six territories a suggestion belongs to. It was always
+  // there — the engine asks Claude for it — but it used to get jammed onto the end
+  // of `area` behind a " · " separator because there was no column to put it in.
+  try { db.exec(`ALTER TABLE work_suggestions ADD COLUMN territory TEXT`); } catch {}
+  // Move it out of that tail into its own field, so the Flow can group on something
+  // reliable instead of splitting a string. `area` is deliberately left as it is:
+  // nothing displays it, rewriting it would be fiddly, and leaving it means this
+  // whole change is reversible without touching a single stored value. Only ever
+  // fills rows that have no territory yet, so re-running on every boot does nothing.
+  for (const t of ['perception', 'knowledge', 'reasoning', 'experience', 'interface', 'self']) {
+    try {
+      db.prepare(`UPDATE work_suggestions SET territory = ? WHERE territory IS NULL AND area LIKE ?`)
+        .run(t, '% · ' + t);
+    } catch {}
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_ideas (
       id TEXT PRIMARY KEY,

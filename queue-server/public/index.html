@@ -700,6 +700,19 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-actions button.primary { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .sg-actions button:hover { background:var(--c-surface-2); }
 .sg-actions button.primary:hover { background:var(--c-ink-solid-2); }
+/* Territory groups and chips in "Suggested by Claude". The head borrows
+   .nu-grouphead so folding a group looks and works the same everywhere in the Flow.
+   The chip sits on every row, not only under a head, because the "All" tab and any
+   search show this list flat — there the chip is the only thing saying where a
+   suggestion belongs. Its pill shape copies .sg-kind-badge so it lines up with the
+   badges beside it; the six colours come from TERRITORY_COLORS in the script. The
+   dashed variants are for rows with no territory, so an absent value reads as absent
+   rather than as one more territory. */
+.sg-grouphead { display:flex; align-items:center; gap:6px; }
+.sg-groupcount { font-family:monospace; color:var(--c-ink-4); font-weight:600; }
+.sg-terr-chip { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; text-transform:none; letter-spacing:0; }
+.sg-terr-chip.outside { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
+.sg-terr-chip.none { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); font-style:italic; }
 /* Inspired-by panel (task detail): the three shelves */
 .q-inspire-toolbar { display:flex; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
@@ -3187,6 +3200,13 @@ let nextUpOpen = false;     // is the full ranked list expanded?
 let nextUpBusy = false;     // a fetch (or a second opinion) is in flight
 let nextUpErr = '';         // last failure, shown plainly rather than as an empty box
 let nuGroupCollapsed = {};  // group key ("ready"/"blocked") -> true if its rows are hidden
+// Which territory groups in "Suggested by Claude" the reader has folded shut.
+// Deliberately its own object and not nuGroupCollapsed above: that one belongs to the
+// what-to-do-next list, and a key like "ready" meaning two different things in two
+// lists is the kind of bug you only find six months later. It lives out here because
+// renderFlow() rebuilds the whole list on every poll — state kept inside it would
+// unfold every group a few seconds after you folded it.
+let sgGroupCollapsed = {};
 let qDragQId = null;             // prompt id being drag-reordered
 
 // Voice dictation for the task composer textarea, via the browser's built-in
@@ -4766,6 +4786,119 @@ function flowSection(icon, title, count, rowsHtml) {
   return `<div class="flow-section"><div class="flow-sec-head"><span class="flow-sec-title">${icon} ${title}</span><span class="flow-sec-count">${count}</span></div>${rowsHtml}</div>`;
 }
 
+// ---------- Suggestions, sorted by the part of the app they touch ----------
+// The engine has always asked Claude which of the six territories a suggestion
+// belongs to (see workSuggestions.js) — the list just never showed the answer, so a
+// dozen pending suggestions read as one undifferentiated pile. These four helpers
+// draw it: one to read the territory, one for the little coloured chip, one for a
+// row, one for a fold-away group head.
+
+// Which territory a suggestion belongs to, or null if we genuinely don't know.
+// Reads the column the server now sends. The `area` fallback below is only for the
+// gap between deploying the two halves of this change (and for a browser holding an
+// older response): territory used to be glued onto the end of `area` behind a " · ".
+// Either way the answer is checked against the real six, so a value Claude invented
+// lands in the "not placed yet" group instead of being drawn as a territory.
+function sgTerritoryOf(s) {
+  const known = (t) => (TERRITORIES.some(x => x.id === t) ? t : null);
+  if (s.territory) return known(String(s.territory));
+  const parts = String(s.area || '').split(' · ');
+  return parts.length > 1 ? known(parts[parts.length - 1].trim()) : null;
+}
+
+// The chip. It rides on every row, not just under a group head, because the "All"
+// tab shows this list flat and ungrouped — there the chip is the only thing saying
+// where a suggestion belongs. "Core architecture" is too wide for a row that already
+// carries a kind and a status, so that one territory gets a short name.
+const SG_CHIP_SHORT = { self: 'Core' };
+const SG_CHIP_OUTSIDE = '<span class="sg-terr-chip outside" title="About bringing in something from outside the app — a new data source or service. Not one of the six parts inside it.">outside</span>';
+const SG_CHIP_NONE = '<span class="sg-terr-chip none" title="Claude did not say which part of the app this touches — or this suggestion predates the question being asked.">not placed</span>';
+function sgTerritoryChip(tid) {
+  const t = TERRITORIES.find(x => x.id === tid);
+  if (!t) return SG_CHIP_NONE;
+  return `<span class="sg-terr-chip" style="background:${TERRITORY_COLORS[tid]}" title="${qEsc(t.label + ' — ' + t.sub)}">${qEsc(SG_CHIP_SHORT[tid] || t.label)}</span>`;
+}
+
+// The chip for one suggestion. Kind is checked before territory, so an integration
+// reads as "outside" rather than "not placed" — we know exactly what it is, it just
+// isn't one of the six. Without this, the flat "All" view would label every
+// integration as unplaced while the grouped view filed it correctly.
+function sgChipFor(s) {
+  return s.kind === 'integration' ? SG_CHIP_OUTSIDE : sgTerritoryChip(sgTerritoryOf(s));
+}
+
+// One suggestion row, plus the empty detail card when it is the selected one. Lifted
+// out of renderFlow() unchanged apart from the chip, so grouped and flat views can
+// share it and there is only one copy to keep right.
+function flowSgRow(s) {
+  const open = flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id;
+  return `
+        <div class="flow-row flow-sgrow${open ? ' sel' : ''}" data-sid="${s.id}">
+          <div class="q-item-top">
+            <span class="q-item-title">${qEsc(s.title)}</span>
+            ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
+            ${sgChipFor(s)}
+            <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
+            <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
+            ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
+            <span class="flow-chev">${open ? '▾' : '▸'}</span>
+          </div>
+          ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
+          ${cardActions([
+            s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
+            iconBtn('chat', 'Talk it over before deciding', 'sg-discuss', s.id),
+            s.status === 'new' ? iconBtn('x', 'Dismiss this suggestion', 'sg-dismiss', s.id, 'danger') : '',
+          ])}
+        </div>
+        ${open ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
+}
+
+// The rows under "Suggested by Claude", grouped or flat.
+//
+// Grouped only on the Suggestions tab, and only when nothing is typed in the search
+// box. Two reasons for those limits. On the "All" tab this list is one strand among
+// Questions/Running/Ready/Parked/Done/Seeds, and a second level of headings in there
+// turns a list into an outline. And while searching, a folded group could hide the
+// very thing you are looking for — the Done section already opens itself mid-search
+// for the same reason. In both flat cases the chip still says where each row belongs.
+//
+// Territories keep their declared order rather than being sorted by size: the list
+// re-renders on every poll, so ordering by count would slide a group head out from
+// under the cursor mid-click. Empty groups are left out — a heading with nothing
+// under it, and a chevron that opens onto nothing, is just noise.
+function sgRowsHtml(sg) {
+  if (!(flowType === 'suggestions' && !flowSearch)) return sg.map(flowSgRow).join('');
+  let out = '';
+  // Integrations first out of the pile, by their own column and not by guesswork.
+  // They propose outside data sources, which honestly isn't one of the six inside
+  // parts of the app — and since every "Generate now" makes more of them, leaving
+  // them in the not-placed group would mean that group never empties.
+  const outside = sg.filter(s => s.kind === 'integration');
+  const inside = sg.filter(s => s.kind !== 'integration');
+  TERRITORIES.forEach(t => {
+    const rows = inside.filter(s => sgTerritoryOf(s) === t.id);
+    if (rows.length) out += sgGroupHtml(t.id, t.label, sgTerritoryChip(t.id), rows);
+  });
+  if (outside.length) out += sgGroupHtml('outside', 'Outside connections', SG_CHIP_OUTSIDE, outside);
+  // Anything left has no territory we recognise: written before the engine stored
+  // one, or a value Claude made up. Shown, never hidden and never filed under a real
+  // territory — a wrong home is worse than an honest unknown. Should stay empty for
+  // anything generated from now on, and drains as old ones are accepted or dismissed.
+  const unplaced = inside.filter(s => !sgTerritoryOf(s));
+  if (unplaced.length) out += sgGroupHtml('none', 'Not placed in a territory yet', sgTerritoryChip(null), unplaced);
+  return out;
+}
+
+// A fold-away group head. Same gesture and same look as the what-to-do-next groups
+// (nuGroupHtml above) so there is one thing to learn, but a different attribute name
+// so neither list's click handler ever claims the other's heads.
+function sgGroupHtml(key, label, chipHtml, rows) {
+  const collapsed = !!sgGroupCollapsed[key];
+  return `<div class="nu-grouphead sg-grouphead" data-sgterr="${key}" role="button" tabindex="0" aria-expanded="${!collapsed}" title="Tap to ${collapsed ? 'show' : 'hide'} this group">
+    <span class="nb-chev">${collapsed ? '▸' : '▾'}</span> ${chipHtml} ${qEsc(label)} <span class="sg-groupcount">${rows.length}</span>
+  </div>${collapsed ? '' : rows.map(flowSgRow).join('')}`;
+}
+
 function qDragMove(id, overId) {
   const ord = qReorderableIds();
   if (!ord.includes(id) || !ord.includes(overId)) return;
@@ -4851,24 +4984,7 @@ function renderFlow() {
           <button class="ctrlbtn" id="flowGenBtn">✨ Generate now</button>
           <button class="ctrlbtn" id="flowRewriteBtn" title="Redo the world-look ideas attached to tasks, suggestions, pieces and seeds that were written before the ideas were held to their subject">↻ Redo the old world ideas</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
-        </div>` + sg.map(s => `
-        <div class="flow-row flow-sgrow${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? ' sel' : ''}" data-sid="${s.id}">
-          <div class="q-item-top">
-            <span class="q-item-title">${qEsc(s.title)}</span>
-            ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
-            <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
-            <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
-            ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
-            <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? '▾' : '▸'}</span>
-          </div>
-          ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
-          ${cardActions([
-            s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
-            iconBtn('chat', 'Talk it over before deciding', 'sg-discuss', s.id),
-            s.status === 'new' ? iconBtn('x', 'Dismiss this suggestion', 'sg-dismiss', s.id, 'danger') : '',
-          ])}
-        </div>
-        ${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`).join(''));
+        </div>` + sgRowsHtml(sg));
     }
   }
 
@@ -5017,6 +5133,19 @@ function renderFlow() {
         await qLoad();
       } catch (err) { b.disabled = false; alert('Error: ' + err.message); }
     };
+  });
+  // Fold-away territory groups in the suggestions list. Same click-or-Enter gesture as
+  // the what-to-do-next groups. Note this leaves flowSideSel alone: folding a group with
+  // an open suggestion in it takes the detail card out of the page, and unfolding puts it
+  // straight back, which is friendlier than losing your place.
+  host.querySelectorAll('[data-sgterr]').forEach(head => {
+    const toggle = () => {
+      const key = head.getAttribute('data-sgterr');
+      sgGroupCollapsed[key] = !sgGroupCollapsed[key];
+      renderFlow();
+    };
+    head.onclick = toggle;
+    head.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } };
   });
   host.querySelectorAll('.flow-sgrow').forEach(el => {
     el.onclick = () => {

@@ -25,6 +25,9 @@ export function bindWorkSuggestionsDb(database) { db = database; }
 
 const MAX_NEW_PER_RUN = 5;
 const MAX_NEW_INTEGRATIONS_PER_RUN = 3;
+// The app's six territories, as the Flow groups suggestions by them. Kept here so a
+// territory Claude invented (or forgot) can be rejected rather than stored and drawn.
+const TERRITORY_IDS = ['perception', 'knowledge', 'reasoning', 'experience', 'interface', 'self'];
 
 function fingerprintOf(title) {
   const norm = String(title || '')
@@ -66,7 +69,7 @@ export function listSuggestions({ status = null, kind = null, flagShipped = true
   }
 }
 
-export function addSuggestion({ title, rationale = '', prompt, area = null, kind = 'chantier' }) {
+export function addSuggestion({ title, rationale = '', prompt, area = null, territory = null, kind = 'chantier' }) {
   const text = String(prompt || '').trim();
   const t = String(title || '').trim();
   if (!t || !text) return null;
@@ -76,9 +79,9 @@ export function addSuggestion({ title, rationale = '', prompt, area = null, kind
   const id = randomUUID();
   try {
     db.prepare(`
-      INSERT INTO work_suggestions (id, title, rationale, prompt, area, kind, status, fingerprint)
-      VALUES (?,?,?,?,?,?,'new',?)
-    `).run(id, t, rationale, text, area, kind, fingerprint);
+      INSERT INTO work_suggestions (id, title, rationale, prompt, area, territory, kind, status, fingerprint)
+      VALUES (?,?,?,?,?,?,?,'new',?)
+    `).run(id, t, rationale, text, area, territory, kind, fingerprint);
   } catch (e) {
     // Fingerprint unique-constraint race (two engine runs overlapping) — treat as dup.
     const dup = db.prepare(`SELECT * FROM work_suggestions WHERE fingerprint = ? AND deleted_at IS NULL`).get(fingerprint);
@@ -248,10 +251,14 @@ export async function generateSuggestions({ catalog = [] } = {}) {
   const items = parseSuggestionsJson(out.text).slice(0, MAX_NEW_PER_RUN);
   const added = [];
   for (const it of items) {
-    // `area` is the plain-words label Antoine reads; `territory` is the machine-side
-    // id, kept in the same column behind a separator so no migration is needed.
-    const area = [it.area, it.territory].filter(Boolean).join(' · ');
-    const r = addSuggestion({ title: it.title, rationale: it.rationale, prompt: it.prompt, area, kind: 'chantier' });
+    // Two separate things in two separate columns now: `area` is the plain-words label
+    // Antoine reads, `territory` is which of the six the Flow groups it under. They used
+    // to share one column behind a " · " separator, which meant the grouping had to
+    // split a string Claude wrote freely — one stray separator and a row was misfiled.
+    // A territory that isn't one of the six is stored as nothing rather than guessed at;
+    // the Flow shows those in their own "not placed yet" group.
+    const territory = TERRITORY_IDS.includes(it.territory) ? it.territory : null;
+    const r = addSuggestion({ title: it.title, rationale: it.rationale, prompt: it.prompt, area: it.area || null, territory, kind: 'chantier' });
     if (r && !r.duplicate) added.push(r);
   }
   return { added, skipped: items.length - added.length };
