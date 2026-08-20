@@ -5628,13 +5628,16 @@ function worldPickTitle(pick) {
 // What an idea said before a conversation developed it. Kept collapsed: the
 // current version is what matters, but nothing is ever quietly overwritten.
 function worldOriginalHtml(pick) {
-  if (!pick.original) return '';
+  const born = pick.from_convo
+    ? `<div class="wl-line wl-reason" style="margin-left:0;">Added out of a conversation — it was not in the original look at the world.</div>`
+    : '';
+  if (!pick.original) return born;
   const lines = Object.entries(pick.original)
     .filter(([, v]) => v && String(v).trim())
     .map(([, v]) => qEsc(String(v)))
     .join(' ');
-  if (!lines) return '';
-  return `<details class="wl-before"><summary>Before this conversation</summary><div>${lines}</div></details>`;
+  if (!lines) return born;
+  return born + `<details class="wl-before"><summary>Before this conversation</summary><div>${lines}</div></details>`;
 }
 
 function worldDetailHtml(pick) {
@@ -5734,8 +5737,9 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
   const chat = subjectId
     ? `<button class="wl-chat${talked ? ' on' : ''}" data-worldchat="${qEscAttr(subjectId)}" data-worldchattitle="${qEscAttr(title)}" title="${talked ? 'Carry on the conversation about this idea.' : 'Talk this idea through — push it, argue with it, develop it into a vision.'}">💬</button>`
     : '';
-  const chips = (pick.developed_at ? `<span class="wl-chip" title="This idea was rewritten from a conversation. The version before it is kept under the idea.">developed</span>` : '')
-    + (pick.from_convo ? `<span class="wl-chip alt" title="This idea came out of a conversation, not the original look at the world.">from a chat</span>` : '');
+  const chips = pick.developed_at
+    ? `<span class="wl-chip" title="This idea's own text was rewritten from a conversation. What it said before is kept under it.">developed</span>`
+    : '';
   return `
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
       <div class="wl-head">

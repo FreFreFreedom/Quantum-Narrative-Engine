@@ -488,13 +488,17 @@ Respond with ONLY this JSON object and nothing else:
   const made = [];
   for (const idea of ideas) {
     try {
-      createIdea({ title: String(idea.title).trim().slice(0, 200), notes: String(idea.notes || '').trim().slice(0, 4000), tag: 'from a chat' });
+      const notes = String(idea.notes || '').trim().slice(0, 4000);
+      createIdea({
+        title: String(idea.title).trim().slice(0, 200),
+        notes: notes + (notes ? '\n\n' : '') + `(Came out of a conversation about "${convo.title || 'something else'}".)`,
+      });
       made.push(String(idea.title).trim());
     } catch { /* one bad idea must not lose the others */ }
   }
   if (!made.length) return { text: 'Could not save those ideas.' };
 
-  const text = `Saved ${made.length} new idea${made.length === 1 ? '' : 's'} to your notebook, tagged "from a chat": ${made.join(', ')}. They are seeds — nothing runs until you queue one.`;
+  const text = `Saved ${made.length} new idea${made.length === 1 ? '' : 's'} to your notebook: ${made.join(', ')}. Each one says where it came from. They are seeds — nothing runs until you queue one.`;
   saveAssistantTurn(convoId, text, { act: 'more', made });
   broadcastAll('ideas:updated', {});
   broadcastAll('convos:updated', { convoId });

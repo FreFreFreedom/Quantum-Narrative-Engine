@@ -5,7 +5,7 @@ import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
   addCustomBoldPick, rewriteWorldLooks, staleWorldLooks, WORLD_LOOK_GEN,
-  updatePickInPlace, appendPicks, updatePartFraming,
+  updatePickInPlace, appendPicks, updatePartFraming, removeConvoPicks,
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -176,6 +176,19 @@ export function discoveryRoutes(db) {
     });
     if (out?.error) return res.status(out.error === 'empty' ? 400 : 404).json(out);
     res.json({ report: out });
+  });
+
+  // Take back the ideas a conversation added. Only ever removes them from the end
+  // of a part, so no surviving idea changes position.
+  router.delete('/world-look/report/:reportId/convo-picks', (req, res) => {
+    const pi = req.query.part_index;
+    const out = removeConvoPicks(db, {
+      reportId: req.params.reportId,
+      partIndex: pi === undefined || pi === '' ? null : Number(pi),
+      convoId: req.query.convo_id || null,
+    });
+    if (out?.error) return res.status(out.error === 'no_report' ? 404 : 400).json(out);
+    res.json(out);
   });
 
   // Rewrite the question above a part's ideas. No idea is touched.

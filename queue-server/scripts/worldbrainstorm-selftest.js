@@ -17,7 +17,7 @@ import { join } from 'node:path';
 
 import {
   getReport, appendPicks, updatePickInPlace, updatePartFraming,
-  reportIsBrainstormed, staleWorldLooks, WORLD_LOOK_GEN,
+  reportIsBrainstormed, staleWorldLooks, removeConvoPicks, WORLD_LOOK_GEN,
 } from '../server/src/services/codeDiscovery.js';
 import { parseWorldPickId, worldPickId } from '../server/src/services/subjectContext.js';
 import { applySubjectWrite, subjectEdits, writeActsFor } from '../server/src/services/subjectWrite.js';
@@ -175,7 +175,27 @@ section('8. The message table can record what a turn did');
   ok('what it did is recorded beside it', JSON.parse(row.meta).act === 'fold');
 }
 
-section('9. The same three gestures on everything else the studio can talk to');
+section('9. Taking back the ideas a conversation added');
+{
+  const snapshot = titlesOf(getReport(db, reportId), 0);
+  const before = snapshot.length;
+  const out = removeConvoPicks(db, { reportId, partIndex: 0 });
+  ok('the conversation-born ideas came out', out.removed === 2 || out.removed === 3, JSON.stringify(out.removed));
+  const after = titlesOf(out.report, 0);
+  ok('nothing conversation-born is left', !(out.report.parts[0].picks || []).some((p) => p.from_convo));
+  ok('every original idea is still at its original position', snapshot.slice(0, after.length).join() === after.join(), `${snapshot} vs ${after}`);
+  ok('and there is nothing left to take back', removeConvoPicks(db, { reportId, partIndex: 0 }).error === 'none');
+
+  // The refusal that matters: if a conversation-born idea has an ordinary idea
+  // after it, removing it would renumber the list — so nothing is touched.
+  appendPicks(db, { reportId, partIndex: 1, picks: [{ kind: 'bold', name: 'From a chat', vision: 'x' }], from: 'c9' });
+  appendPicks(db, { reportId, partIndex: 1, picks: [{ kind: 'bold', name: 'Added by hand after it', vision: 'y' }] });
+  const refused = removeConvoPicks(db, { reportId, partIndex: 1 });
+  ok('it refuses rather than renumber the list', refused.error === 'would_shift', JSON.stringify(refused));
+  ok('and the part is untouched', (getReport(db, reportId).parts[1].picks || []).length === 3);
+}
+
+section('10. The same three gestures on everything else the studio can talk to');
 {
   db.exec(`CREATE TABLE IF NOT EXISTS work_ideas (id TEXT PRIMARY KEY, title TEXT NOT NULL, notes TEXT, tag TEXT, updated_at TEXT, deleted_at TEXT)`);
   db.exec(`CREATE TABLE IF NOT EXISTS work_prompts (id TEXT PRIMARY KEY, title TEXT, prompt TEXT, summary TEXT, status TEXT, updated_at TEXT)`);

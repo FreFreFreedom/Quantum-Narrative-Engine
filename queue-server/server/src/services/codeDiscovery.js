@@ -871,6 +871,42 @@ export function updatePartFraming(db, { reportId, partIndex, name = null, descri
   return getReport(db, reportId);
 }
 
+/**
+ * Take back the ideas a conversation added — the undo for "more ideas from here".
+ *
+ * Removing a pick normally shifts every position after it, which would re-point
+ * stored references (inspire_picks_json, review_json, discovery_pick_plants) at
+ * the wrong idea. So this only removes conversation-born picks sitting at the END
+ * of a part, and refuses outright if any of them has an ordinary idea after it.
+ * That keeps every surviving position exactly where it was.
+ */
+export function removeConvoPicks(db, { reportId, partIndex = null, convoId = null } = {}) {
+  const report = getReport(db, reportId);
+  if (!report) return { error: 'no_report', message: 'That world-look report no longer exists.' };
+  const targets = Number.isInteger(partIndex) ? [partIndex] : report.parts.map((_, i) => i);
+  let removed = 0;
+  for (const pi of targets) {
+    const part = report.parts[pi];
+    if (!part || !Array.isArray(part.picks)) continue;
+    const isConvoBorn = (p) => !!p.from_convo && (!convoId || p.from_convo === convoId);
+    // Walk back from the end; stop at the first idea that did not come from a
+    // conversation, so nothing in front of it can move.
+    let cut = part.picks.length;
+    while (cut > 0 && isConvoBorn(part.picks[cut - 1])) cut--;
+    const strandedInside = part.picks.slice(0, cut).some(isConvoBorn);
+    if (strandedInside) {
+      return { error: 'would_shift', message: 'Some of those ideas have ordinary ideas after them — removing them would renumber the list, so nothing was touched.' };
+    }
+    if (cut < part.picks.length) {
+      removed += part.picks.length - cut;
+      part.picks = part.picks.slice(0, cut);
+    }
+  }
+  if (!removed) return { error: 'none', message: 'There are no conversation-born ideas to take back here.' };
+  saveParts(db, reportId, report.parts);
+  return { report: getReport(db, reportId), removed };
+}
+
 // Has anyone brainstormed this report — a conversation about one of its ideas, a
 // pick folded from a conversation, a reframed part? The rewrite sweep replaces a
 // report wholesale, and a conversation is the most expensive thing in it, so a
