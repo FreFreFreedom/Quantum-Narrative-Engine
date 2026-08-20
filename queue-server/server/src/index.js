@@ -40,7 +40,7 @@ import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture } from './services/billingGuard.js';
 import { bindAiTextDb, migrateFreeFirstDefaults } from './services/ai/text.js';
-import { bindRouterDb, earliestResetAt } from './services/ai/router.js';
+import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
@@ -220,7 +220,7 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
     const usage = (!local.subscriptionAvailable && fromRunner?.subscriptionAvailable)
       ? { ...fromRunner, source: 'runner' }
       : { ...local, source: 'server' };
-    res.json({ ...usage, schedulerLimitResetAt: earliestResetAt() });
+    res.json({ ...usage, schedulerLimitResetAt: queueDeferUntil() });
   } catch (err) {
     res.status(500).json({ error: 'usage_failed', message: err.message });
   }
