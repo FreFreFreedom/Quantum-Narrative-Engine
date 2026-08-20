@@ -13,8 +13,11 @@ import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
 import { runToolLoop } from './anthropicLoop.js';
 import {
-  registerSubject, subjectSpec, buildSubjectContext,
+  registerSubject, subjectSpec, buildSubjectContext, parseWorldPickId,
 } from './subjectContext.js';
+import {
+  getReport, updatePickInPlace, appendPicks, updatePartFraming,
+} from './codeDiscovery.js';
 import { generateText } from './ai/text.js';
 import { getComponents } from './architecture.js';
 import { listSuggestions } from './workSuggestions.js';
@@ -160,6 +163,12 @@ function dispatchByName(name, input) {
       if (type === 'suggestion') return listSuggestions({}).find((s) => s.id === id) || { error: 'not_found' };
       if (type === 'arch_component') return (getComponents(db).find((c) => c.id === id) || { error: 'not_found' });
       if (type === 'arch_node') return db?.prepare(`SELECT * FROM architecture_nodes WHERE id=?`).get(id) || { error: 'not_found' };
+      if (type === 'task') return db?.prepare(`SELECT id, title, status, mode, summary FROM work_prompts WHERE id=?`).get(id) || { error: 'not_found' };
+      if (type === 'world_pick') {
+        const ref = parseWorldPickId(id);
+        const pick = ref ? getReport(db, ref.reportId)?.parts?.[ref.partIndex]?.picks?.[ref.pickIndex] : null;
+        return pick || { error: 'not_found' };
+      }
       return { error: 'unknown_type' };
     }
     case 'project_stats': {
@@ -172,6 +181,12 @@ function dispatchByName(name, input) {
     default: return { error: `unknown tool: ${name}` };
   }
 }
+
+// NOTE: toolSpecs/dispatchByName/buildMessages below feed runToolLoop, which is
+// the metered Messages-API path. Turns now go through generateText (the routed,
+// subscription/free lane) instead, which is one prompt in and one answer out —
+// the lookups those tools did are pre-answered by projectDigestBlock(). Kept so
+// the tool path still works if ALLOW_METERED_API is ever turned on.
 
 // ─── System prompt builders ──────────────────────────────────────────────────
 
@@ -223,34 +238,64 @@ function buildMessages(convo, msgs, windowSize) {
 
 // ─── Turn machinery ───────────────────────────────────────────────────────────
 
+// Flatten a conversation into one prompt. The lane that reaches the Claude
+// subscription (the Mac helper) is one-prompt-in, one-answer-out — there is no
+// mid-turn tool round trip — so the lookups the tool loop used to make are
+// pre-answered here instead, from the DB, for free.
+function projectDigestBlock() {
+  try {
+    const comps = getComponents(db) || [];
+    const built = comps.filter((c) => c.status === 'built' || c.status === 'live');
+    const lines = comps.slice(0, 40).map((c) => `- ${c.id}: ${String(c.now_text || '').slice(0, 90)} [${c.status || '?'}]`);
+    const queued = db.prepare(`SELECT title, status FROM work_prompts WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 15`).all();
+    return `\n=== WHAT ALREADY EXISTS IN THE PROJECT (so you never propose rebuilding it) ===\n`
+      + `${comps.length} pieces, ${built.length} already built.\n${lines.join('\n')}\n`
+      + `Recent work in the queue:\n${queued.map((q) => `- [${q.status}] ${q.title}`).join('\n')}`;
+  } catch { return ''; }
+}
+
+function transcriptOf(convo, msgs, windowSize) {
+  const visible = msgs.slice(-windowSize).filter((m) => m.kind === 'chat');
+  const lines = [];
+  if (convo.recap) lines.push(`(folded earlier context)\n${convo.recap}`);
+  for (const m of visible) lines.push(`${m.role === 'user' ? 'OWNER' : 'YOU'}: ${m.text}`);
+  return lines.join('\n\n');
+}
+
+// One turn against the routed lane (AI Settings decides which; the Claude
+// subscription when 'studio' points there). Returns { text, via } | { error }.
+async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeDigest = true }) {
+  const msgs = listMessages(convo.id);
+  const prompt = [
+    subjectSystemPrompt(ctx.contextText),
+    includeDigest ? projectDigestBlock() : '',
+    `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
+    instruction ? `\n=== WHAT TO DO NOW ===\n${instruction}` : `\n=== WHAT TO DO NOW ===\nReply to the owner's last message. Nothing else.`,
+  ].filter(Boolean).join('\n');
+  return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000 });
+}
+
+function saveAssistantTurn(convoId, text, meta = null) {
+  const mid = randomUUID();
+  db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
+    .run(mid, convoId, 'assistant', 'chat', text || '', meta ? JSON.stringify(meta) : null);
+  db.prepare(`UPDATE convos SET turns=turns+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convoId);
+  broadcastAll('convos:updated', { convoId });
+  return mid;
+}
+
 async function runChatTurn(convoId, userId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
   if (ctx.error) return { error: ctx.error };
 
-  const msgs = listMessages(convo.id);
-  const system = subjectSystemPrompt(ctx.contextText);
-  const messages = buildMessages(convo, msgs, CONVO_HISTORY_WINDOW);
-  const tools = toolSpecs();
-
-  const result = await runToolLoop({
-    model: CONVO_CHAT_MODEL,
-    system,
-    messages,
-    tools,
-    dispatch: (name, input) => dispatchByName(name, input),
-    maxTokens: 1200,
-    maxRounds: 4,
-    toolResultCap: 6000,
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 1400,
+    feature: 'studio', label: 'conversations:chat',
   });
   if (result.error) return result;
-
-  const mid = randomUUID();
-  db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
-    .run(mid, convoId, 'assistant', 'chat', result.text || '');
-  db.prepare(`UPDATE convos SET turns=turns+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convoId);
-  broadcastAll('convos:updated', { convoId });
+  saveAssistantTurn(convoId, result.text);
   return { text: result.text, via: result.via };
 }
 
@@ -320,6 +365,153 @@ Give a short comparison verdict: for each idea, one line on what it offers; then
   return { text: result.text, via: result.via };
 }
 
+// ─── Writing the conversation back into a world idea ─────────────────────────
+// Three explicit commands, one model call each, only on a 'world_pick' subject.
+// They are what turns "the suggestions are conversation starters" into something
+// the app actually remembers: the idea itself changes, or new ideas appear beside
+// it, or the question above them is rewritten. Nothing here ever moves or deletes
+// an idea — positions are load-bearing (see codeDiscovery's write-back notes).
+
+const PICK_SHAPES = {
+  open: '{"kind":"open","repo":"owner/name","why_fits":"...","use":"..."}',
+  hidden: '{"kind":"hidden","name":"...","what":"...","lesson":"...","use":"..."}',
+  bold: '{"kind":"bold","name":"...","vision":"...","why_possible":"...","how_fmcns":"..."}',
+};
+
+// Model replies arrive as JSON, sometimes fenced, sometimes with a sentence in
+// front. Take the first balanced object and parse that.
+function firstJson(text) {
+  const t = String(text || '').replace(/```(?:json)?/gi, '');
+  const start = t.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start; i < t.length; i++) {
+    if (t[i] === '{') depth++;
+    else if (t[i] === '}') { depth--; if (!depth) { try { return JSON.parse(t.slice(start, i + 1)); } catch { return null; } } }
+  }
+  return null;
+}
+
+function worldPickRef(convo) {
+  if (convo.subject_type !== 'world_pick') return null;
+  const ref = parseWorldPickId(convo.subject_id);
+  if (!ref) return null;
+  const report = getReport(db, ref.reportId);
+  const part = report?.parts?.[ref.partIndex];
+  const pick = part?.picks?.[ref.pickIndex];
+  if (!pick) return null;
+  return { ...ref, report, part, pick };
+}
+
+const NOT_A_WORLD_IDEA = {
+  text: 'That one only works on a world idea — open it from the ✨ ideas under a task, a suggestion, a seed or a piece of the architecture, and we can develop it there.',
+};
+
+// /fold — rewrite THIS idea with what the conversation arrived at.
+async function runFoldTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ref = worldPickRef(convo);
+  if (!ref) return NOT_A_WORLD_IDEA;
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+
+  const kind = ref.pick.kind || 'bold';
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1600,
+    feature: 'plan_draft', label: 'conversations:fold', includeDigest: false,
+    instruction: `Rewrite THIS idea so it carries everything the conversation arrived at — the sharper version of it, not a summary of the chat. Keep what still holds, fold in what we added, drop what we rejected. Write it for someone reading the idea cold, with no knowledge of this conversation. Plain English, no jargon, no file names.
+Respond with ONLY this JSON object and nothing else — same shape, same kind:
+${PICK_SHAPES[kind]}`,
+  });
+  if (result.error) return result;
+
+  const fields = firstJson(result.text);
+  if (!fields) return { text: 'I could not turn that into a clean rewrite of the idea — try saying in one line what the developed version should say, then ask me to fold it in again.' };
+  const out = updatePickInPlace(db, {
+    reportId: ref.reportId, partIndex: ref.partIndex, pickIndex: ref.pickIndex,
+    fields, convoId,
+  });
+  if (out?.error) return { text: out.message || 'Could not write that back into the idea.' };
+
+  const title = fields.repo || fields.name || 'the idea';
+  const text = `Folded into **${title}**. The idea now carries what we worked out here — the version before this conversation is kept underneath it, so you can compare.`;
+  saveAssistantTurn(convoId, text, { act: 'fold', report_id: ref.reportId, part_index: ref.partIndex, pick_index: ref.pickIndex });
+  broadcastAll('worldlook:updated', { reportId: ref.reportId });
+  return { text, via: result.via, act: 'fold', report: out };
+}
+
+// /more — new ideas shaped by where the conversation went, appended beside this one.
+async function runMoreIdeasTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ref = worldPickRef(convo);
+  if (!ref) return NOT_A_WORLD_IDEA;
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+
+  const existing = (ref.part?.picks || [])
+    .map((p) => p.repo || p.name).filter(Boolean).join(', ');
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1800,
+    feature: 'plan_draft', label: 'conversations:more-ideas',
+    instruction: `Propose between one and three NEW ideas that this conversation opened up — not variations on what is already listed, and not a rehash of the chat. Each must be something that could actually be built, and each must be an answer to the same question these ideas answer.
+Already on the table, do not repeat: ${existing || '(nothing)'}.
+An idea can be any of the three kinds: a real open-source project we could use, an existing product worth learning from, or a bold idea nobody has built.
+Respond with ONLY this JSON object and nothing else:
+{"picks":[ ${PICK_SHAPES.bold} ]}
+Each entry may instead use ${PICK_SHAPES.open} or ${PICK_SHAPES.hidden}. Only name a real repository or a real product if you are sure it exists — otherwise use the bold shape.`,
+  });
+  if (result.error) return result;
+
+  const parsed = firstJson(result.text);
+  const picks = Array.isArray(parsed?.picks) ? parsed.picks : (parsed?.kind ? [parsed] : []);
+  if (!picks.length) return { text: 'Nothing usable came back that time — say which direction you want more of and ask again.' };
+
+  const out = appendPicks(db, {
+    reportId: ref.reportId, partIndex: ref.partIndex, picks: picks.slice(0, 3), from: convoId,
+  });
+  if (out?.error) return { text: out.message || 'Could not add those ideas.' };
+
+  const added = picks.slice(0, 3).map((p) => p.repo || p.name).filter(Boolean);
+  const text = `Added ${added.length} idea${added.length === 1 ? '' : 's'} beside this one: ${added.join(', ')}. They are in the list now, marked as coming from this conversation — tick the ones you want.`;
+  saveAssistantTurn(convoId, text, { act: 'more', report_id: ref.reportId, part_index: ref.partIndex, added });
+  broadcastAll('worldlook:updated', { reportId: ref.reportId });
+  return { text, via: result.via, act: 'more', report: out };
+}
+
+// /reframe — rewrite the question above the ideas. No idea is touched.
+async function runReframeTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ref = worldPickRef(convo);
+  if (!ref) return NOT_A_WORLD_IDEA;
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 900,
+    feature: 'plan_draft', label: 'conversations:reframe', includeDigest: false,
+    instruction: `The conversation suggests we were answering the wrong question. Rewrite the QUESTION these ideas are answers to — the heading above them — so it states what we are actually trying to do now. Do not touch the ideas themselves. Plain English, no jargon.
+Respond with ONLY this JSON object and nothing else:
+{"name":"<a short heading, a few words>","description":"<one or two sentences saying what we are really solving>"}`,
+  });
+  if (result.error) return result;
+
+  const parsed = firstJson(result.text);
+  if (!parsed?.description && !parsed?.name) return { text: 'I could not get a clean new framing out of that — say in one line what you think we are really solving, and ask again.' };
+  const out = updatePartFraming(db, {
+    reportId: ref.reportId, partIndex: ref.partIndex,
+    name: parsed.name || null, description: parsed.description || null, convoId,
+  });
+  if (out?.error) return { text: out.message || 'Could not change the question.' };
+
+  const text = `Changed the question above these ideas to: **${parsed.name || ''}** — ${parsed.description || ''}\n\nNone of the ideas moved. The original wording is kept.`;
+  saveAssistantTurn(convoId, text, { act: 'reframe', report_id: ref.reportId, part_index: ref.partIndex });
+  broadcastAll('worldlook:updated', { reportId: ref.reportId });
+  return { text, via: result.via, act: 'reframe', report: out };
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function sendMessage(convoId, { text, userId = 'antoine' } = {}) {
@@ -337,32 +529,24 @@ export async function sendMessage(convoId, { text, userId = 'antoine' } = {}) {
     if (slash === 'handoff') return handoffToQueue(convoId);
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject (world-look picks, generated next steps, or sibling suggestions).\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data.',
+        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data.',
       };
     }
     if (slash === 'compare') return runCompareTurn(convoId);
+    if (slash === 'fold') return runFoldTurn(convoId);
+    if (slash === 'more') return runMoreIdeasTurn(convoId);
+    if (slash === 'reframe') return runReframeTurn(convoId);
     if (slash === 'grill-me') {
       // interrogation mode: a single turn where the model asks questions only
       const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
       if (ctx.error) return { error: ctx.error };
-      const msgs = listMessages(convo.id);
-      const system = `${subjectSystemPrompt(ctx.contextText)}\n\nYou are now in GRILL MODE. Ask the user the sharpest clarifying questions you can, ONE at a time, in order of importance. Do not propose solutions yet. End with a question mark. Keep the first question short.`;
-      const result = await runToolLoop({
-        model: CONVO_CHAT_MODEL,
-        system,
-        messages: buildMessages(convo, msgs, CONVO_HISTORY_WINDOW),
-        tools: toolSpecs(),
-        dispatch: (name, input) => dispatchByName(name, input),
-        maxTokens: 600,
-        maxRounds: 3,
-        toolResultCap: 6000,
+      const result = await runRoutedTurn({
+        convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 700,
+        feature: 'studio', label: 'conversations:grill', includeDigest: false,
+        instruction: 'GRILL MODE. Ask the owner the sharpest clarifying questions you can, ONE at a time, in order of importance. Do not propose solutions yet. End with a question mark. Keep it short.',
       });
       if (result.error) return result;
-      const mid = randomUUID();
-      db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
-        .run(mid, convoId, 'assistant', 'chat', result.text || '');
-      db.prepare(`UPDATE convos SET turns=turns+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convoId);
-      broadcastAll('convos:updated', { convoId });
+      saveAssistantTurn(convoId, result.text);
       return { text: result.text, via: result.via };
     }
   }

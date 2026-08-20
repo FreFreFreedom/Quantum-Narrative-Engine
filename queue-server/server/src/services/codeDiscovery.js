@@ -739,38 +739,167 @@ export function storeReportReview(db, reportId, review) {
   db.prepare(`UPDATE discovery_reports SET review_json=? WHERE id=?`).run(JSON.stringify(structural), reportId);
 }
 
-// Add a custom bold pick to an existing world-look report for a task.
+// ─── Writing back into a report ────────────────────────────────────────
+// A pick has NO id: it is addressed by its position — (part_index, pick_index) —
+// and those positions are referenced from work_prompts.inspire_picks_json, the
+// report's own review_json (removed / groups / recommended) and the
+// discovery_pick_plants table. So everything below only ever EDITS A PICK IN
+// PLACE or APPENDS to the end of a part. Nothing here reorders or deletes: that
+// would silently re-point every stored reference at a different idea.
+
+// The text fields that belong to each kind of pick — the same contract the
+// generator's prompt states (buildInspirePicksPrompt). Anything outside this
+// list is ignored on the way in, so a model reply can't smuggle fields in.
+const PICK_FIELDS = {
+  open: ['repo', 'why_fits', 'use'],
+  hidden: ['name', 'what', 'lesson', 'use'],
+  bold: ['name', 'vision', 'why_possible', 'how_fmcns'],
+};
+
+function saveParts(db, reportId, parts) {
+  db.prepare(`UPDATE discovery_reports SET parts_json=? WHERE id=?`).run(JSON.stringify(parts), reportId);
+}
+
+function pickTitleField(kind) {
+  return kind === 'open' ? 'repo' : 'name';
+}
+
+// One incoming pick -> a stored pick, with only the fields its kind allows.
+// Returns null when it has no title, which is the one field a row cannot render
+// without.
+function sanitizePick(raw, from = null) {
+  if (!raw || typeof raw !== 'object') return null;
+  const kind = ['open', 'hidden', 'bold'].includes(raw.kind) ? raw.kind : 'bold';
+  const out = { kind };
+  for (const f of PICK_FIELDS[kind]) {
+    const v = raw[f];
+    if (v !== undefined && v !== null && String(v).trim()) out[f] = String(v).trim().slice(0, 2000);
+  }
+  if (!out[pickTitleField(kind)]) return null;
+  if (kind === 'open' && Number.isFinite(Number(raw.stars))) out.stars = Number(raw.stars);
+  if (from) out.from_convo = from;
+  return out;
+}
+
+/**
+ * Append picks to a report. Append-only, therefore index-safe: every existing
+ * (part_index, pick_index) still points at the same idea afterwards.
+ *
+ * Give either `partIndex` (append into that part) or `partName` (find it, or
+ * create it at the end). New picks land as loose rows, because review_json does
+ * not mention them — the same behaviour a hand-added idea already has.
+ */
+export function appendPicks(db, { reportId, partIndex = null, partName = null, partDescription = '', picks = [], from = null } = {}) {
+  const report = getReport(db, reportId);
+  if (!report) return { error: 'no_report', message: 'That world-look report no longer exists.' };
+  const clean = (Array.isArray(picks) ? picks : []).map((p) => sanitizePick(p, from)).filter(Boolean);
+  if (!clean.length) return { error: 'empty', message: 'No usable idea in that reply.' };
+
+  let part = Number.isInteger(partIndex) ? report.parts[partIndex] : null;
+  if (!part && partName) {
+    part = report.parts.find((p) => p.name === partName);
+    if (!part) {
+      part = { name: partName, description: partDescription, queries: [], picks: [], recommended_index: 0 };
+      report.parts.push(part);
+    }
+  }
+  if (!part) return { error: 'no_part', message: 'That part of the world-look no longer exists.' };
+
+  part.picks = Array.isArray(part.picks) ? part.picks : [];
+  part.picks.push(...clean);
+  saveParts(db, reportId, report.parts);
+  return getReport(db, reportId);
+}
+
+/**
+ * Rewrite one pick's text where it stands — the "fold the conversation into this
+ * idea" write. The pick keeps its kind and its position; `original` is stamped
+ * ONCE so a second fold still shows what the idea looked like before any
+ * conversation touched it. review_json is deliberately left alone.
+ */
+export function updatePickInPlace(db, { reportId, partIndex, pickIndex, fields = {}, convoId = null } = {}) {
+  const report = getReport(db, reportId);
+  if (!report) return { error: 'no_report', message: 'That world-look report no longer exists.' };
+  const part = report.parts?.[Number(partIndex)];
+  const pick = part?.picks?.[Number(pickIndex)];
+  if (!pick) return { error: 'no_pick', message: 'That idea is no longer in the report.' };
+
+  const allowed = PICK_FIELDS[pick.kind] || PICK_FIELDS.bold;
+  const next = {};
+  for (const f of allowed) {
+    const v = fields[f];
+    if (v !== undefined && v !== null && String(v).trim()) next[f] = String(v).trim().slice(0, 2000);
+  }
+  if (!Object.keys(next).length) return { error: 'empty', message: 'Nothing to fold in — the reply had no usable text.' };
+
+  if (!pick.original) {
+    const snap = {};
+    for (const f of allowed) if (pick[f] !== undefined) snap[f] = pick[f];
+    pick.original = snap;
+  }
+  Object.assign(pick, next);
+  pick.developed_at = new Date().toISOString();
+  if (convoId) pick.developed_by_convo = convoId;
+
+  saveParts(db, reportId, report.parts);
+  return getReport(db, reportId);
+}
+
+/**
+ * Rewrite the question above the ideas — a part's name and description — when a
+ * conversation shows we were answering the wrong one. No pick is touched, so
+ * nothing moves. The first framing is kept as `original_description`.
+ */
+export function updatePartFraming(db, { reportId, partIndex, name = null, description = null, convoId = null } = {}) {
+  const report = getReport(db, reportId);
+  if (!report) return { error: 'no_report', message: 'That world-look report no longer exists.' };
+  const part = report.parts?.[Number(partIndex)];
+  if (!part) return { error: 'no_part', message: 'That part of the world-look no longer exists.' };
+  if (!String(name || '').trim() && !String(description || '').trim()) {
+    return { error: 'empty', message: 'Nothing to change — the reply had no usable text.' };
+  }
+  if (part.original_description === undefined) {
+    part.original_name = part.name || '';
+    part.original_description = part.description || '';
+  }
+  if (String(name || '').trim()) part.name = String(name).trim().slice(0, 200);
+  if (String(description || '').trim()) part.description = String(description).trim().slice(0, 2000);
+  part.reframed_at = new Date().toISOString();
+  if (convoId) part.reframed_by_convo = convoId;
+
+  saveParts(db, reportId, report.parts);
+  return getReport(db, reportId);
+}
+
+// Has anyone brainstormed this report — a conversation about one of its ideas, a
+// pick folded from a conversation, a reframed part? The rewrite sweep replaces a
+// report wholesale, and a conversation is the most expensive thing in it, so a
+// brainstormed report is protected from the sweep (see staleWorldLooks).
+export function reportIsBrainstormed(db, reportId) {
+  try {
+    const c = db.prepare(
+      `SELECT 1 FROM convos WHERE subject_type='world_pick' AND deleted_at IS NULL AND subject_id LIKE ? LIMIT 1`
+    ).get(`${reportId}~%`);
+    if (c) return true;
+  } catch { /* convos table missing on an older DB — fall through */ }
+  try {
+    const row = db.prepare(`SELECT parts_json FROM discovery_reports WHERE id=?`).get(reportId);
+    if (row?.parts_json && /"(developed_at|from_convo|reframed_at)":/.test(row.parts_json)) return true;
+  } catch { /* unreadable — treat as not brainstormed */ }
+  return false;
+}
+
+// Add a custom bold pick to an existing world-look report for a task. Thin
+// wrapper over appendPicks now, so there is one append path and not two.
 export function addCustomBoldPick(db, { source, source_id, pick } = {}) {
   const report = findReportBySource(db, source, source_id);
   if (!report) return { error: 'no_report', message: 'No world-look report exists for this task yet. Run a world-look first.' };
-
-  const customPartName = 'Custom ideas';
-  let customPart = report.parts.find(p => p.name === customPartName);
-
-  const newPick = {
-    kind: 'bold',
-    name: pick.name,
-    vision: pick.vision || '',
-    why_possible: pick.why_possible || '',
-    how_fmcns: pick.how_fmcns || '',
-  };
-
-  if (!customPart) {
-    customPart = {
-      name: customPartName,
-      description: 'Manually added bold ideas',
-      queries: [],
-      picks: [newPick],
-      recommended_index: 0,
-    };
-    report.parts.push(customPart);
-  } else {
-    customPart.picks.push(newPick);
-  }
-
-  db.prepare(`UPDATE discovery_reports SET parts_json=? WHERE id=?`).run(JSON.stringify(report.parts), report.id);
-
-  return getReport(db, report.id);
+  return appendPicks(db, {
+    reportId: report.id,
+    partName: 'Custom ideas',
+    partDescription: 'Manually added bold ideas',
+    picks: [{ kind: 'bold', ...pick }],
+  });
 }
 
 // Latest world-look report attached to any item (suggestion, seed, component —
@@ -911,10 +1040,17 @@ export function staleWorldLooks(db, { sources = null } = {}) {
     `).all();
   } catch { return []; }
   const wanted = Array.isArray(sources) && sources.length ? new Set(sources) : null;
-  return rows
+  const candidates = rows
     .filter((r) => r.gen < WORLD_LOOK_GEN)
     .filter((r) => REWRITE_SOURCES[r.source])
     .filter((r) => !wanted || wanted.has(r.source));
+  // A rewrite replaces the report wholesale, which would throw away a
+  // conversation and every idea folded out of it. Brainstormed reports are left
+  // exactly as they are, and the skip is logged rather than silent.
+  const keep = candidates.filter((r) => !reportIsBrainstormed(db, r.id));
+  const skipped = candidates.length - keep.length;
+  if (skipped) console.log(`world-look rewrite: skipping ${skipped} brainstormed report(s) — a conversation or a folded idea lives in them`);
+  return keep;
 }
 
 /**

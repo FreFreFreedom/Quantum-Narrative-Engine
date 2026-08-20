@@ -5,6 +5,7 @@ import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
   addCustomBoldPick, rewriteWorldLooks, staleWorldLooks, WORLD_LOOK_GEN,
+  updatePickInPlace, appendPicks, updatePartFraming,
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -144,6 +145,49 @@ export function discoveryRoutes(db) {
     });
 
     if (out?.error) return res.status(404).json(out);
+    res.json({ report: out });
+  });
+
+  // ── Report writes addressed by report id ──────────────────────────────────
+  // Used by the Idea Studio's world-idea commands (/fold, /more, /reframe) and
+  // available on its own. Edits happen IN PLACE and additions APPEND, so every
+  // stored (part_index, pick_index) keeps pointing at the same idea.
+
+  // Rewrite one idea where it stands.
+  router.patch('/world-look/report/:reportId/pick/:partIndex/:pickIndex', (req, res) => {
+    const out = updatePickInPlace(db, {
+      reportId: req.params.reportId,
+      partIndex: Number(req.params.partIndex),
+      pickIndex: Number(req.params.pickIndex),
+      fields: req.body?.fields || req.body || {},
+      convoId: req.body?.convo_id || null,
+    });
+    if (out?.error) return res.status(out.error === 'empty' ? 400 : 404).json(out);
+    res.json({ report: out });
+  });
+
+  // Append ideas to a part.
+  router.post('/world-look/report/:reportId/part/:partIndex/picks', (req, res) => {
+    const out = appendPicks(db, {
+      reportId: req.params.reportId,
+      partIndex: Number(req.params.partIndex),
+      picks: req.body?.picks || [],
+      from: req.body?.convo_id || null,
+    });
+    if (out?.error) return res.status(out.error === 'empty' ? 400 : 404).json(out);
+    res.json({ report: out });
+  });
+
+  // Rewrite the question above a part's ideas. No idea is touched.
+  router.patch('/world-look/report/:reportId/part/:partIndex', (req, res) => {
+    const out = updatePartFraming(db, {
+      reportId: req.params.reportId,
+      partIndex: Number(req.params.partIndex),
+      name: req.body?.name || null,
+      description: req.body?.description || null,
+      convoId: req.body?.convo_id || null,
+    });
+    if (out?.error) return res.status(out.error === 'empty' ? 400 : 404).json(out);
     res.json({ report: out });
   });
 

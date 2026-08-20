@@ -1073,6 +1073,11 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
+  // What a turn DID, when it was more than talking: {"act":"fold"|"more"|"reframe", ...}.
+  // A column rather than a new `kind` value on purpose — `kind` carries a CHECK
+  // constraint and SQLite cannot alter one, and these rows must stay kind='chat'
+  // so the conversation keeps remembering them in its turn window.
+  try { db.exec(`ALTER TABLE convo_messages ADD COLUMN meta TEXT`); } catch {}
 }
 
 // ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────

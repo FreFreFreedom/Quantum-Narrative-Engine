@@ -14,6 +14,7 @@ import * as ideas from './workIdeas.js';
 import * as suggestions from './workSuggestions.js';
 import { getComponents, getComponentHistory } from './architecture.js';
 import * as archNodes from './architectureNodes.js';
+import { getReport } from './codeDiscovery.js';
 
 // Lazy import: promptQueue pulls in the whole queue machinery; loading it at
 // module init would make conversations import-heavy. Only needed for tasks.
@@ -59,6 +60,12 @@ export function subjectSpec(type) {
 export async function buildSubjectContext(db, type, subjectId, hint) {
   const spec = registry.get(type);
   if (!spec) return { error: 'unknown_subject_type' };
+  // The client sends the hint as JSON and the route stores/forwards the raw
+  // string, so every describe() that read h.what / h.why off it was reading
+  // properties of a string and getting undefined.
+  if (typeof hint === 'string' && hint.trim().startsWith('{')) {
+    try { hint = JSON.parse(hint); } catch { /* not JSON after all — pass it through */ }
+  }
   const subject = spec.load(db, subjectId, hint);
   if (!subject) return { error: 'not_found' };
 
@@ -165,9 +172,10 @@ registerSubject('arch_component', {
     return c;
   },
   title: (db, id) => {
-    // ARCH_DATA is frontend-only; the hint carries the name, or we look it up from the DB row
+    // ARCH_DATA is frontend-only, so the DB's own one-liner is the best name the
+    // server has. (It used to run this query and return the raw id anyway.)
     const row = db?.prepare(`SELECT now_text FROM architecture_components WHERE id=?`).get(id);
-    return id;
+    return row?.now_text ? String(row.now_text).slice(0, 80) : id;
   },
   describe: (subject, hint) => {
     const h = hint || subject._hint || {};
@@ -255,7 +263,13 @@ registerSubject('task', {
       + `Mode: ${subject.mode || 'implement'}. Status: ${subject.status || 'unknown'}. `;
     const purpose = subject.summary || subject.prompt || '';
     if (purpose) s += `Purpose: ${String(purpose).slice(0, 300)}. `;
-    if (subject.pending_question) s += `It is waiting for the owner's answer to: "${subject.pending_question.question}". `;
+    if (subject.pending_question) {
+      // Raw SQLite column: a JSON string, not an object. Reading .question off the
+      // string rendered "waiting for the owner's answer to: undefined".
+      let q = null;
+      try { q = JSON.parse(subject.pending_question)?.question; } catch { q = null; }
+      if (q) s += `It is waiting for the owner's answer to: "${q}". `;
+    }
     if (subject.inspire_state && subject.inspire_state !== 'off') s += `Its world-look is '${subject.inspire_state}'. `;
     try {
       const queue = await pq();
@@ -298,6 +312,169 @@ registerSubject('task', {
   },
   handoff: (db, convoId, subjectId, promptId) => {
     // A task is already a task — no handoff back-reference needed.
+    return;
+  },
+});
+
+// ─── A single world idea as a conversation subject ──────────────────────────
+// The one thing Antoine could not do before: talk about ONE proposed idea, push
+// it, and develop it into a vision. The subject id is `reportId#partIdx:pickIdx`
+// — keyed on the report rather than on source+source_id, because a rewrite writes
+// a NEW report row and newest-wins, so keying on the report keeps a conversation
+// attached to the idea it was actually about.
+
+// world-look's `source` values vs. the conversation registry's type names.
+const WORLD_SOURCE_TO_SUBJECT = {
+  prompt: 'task',
+  suggestion: 'suggestion',
+  idea: 'seed',
+  component: 'arch_component',
+};
+
+export function parseWorldPickId(subjectId) {
+  const m = /^(.+)~(\d+):(\d+)$/.exec(String(subjectId || ''));
+  if (!m) return null;
+  return { reportId: m[1], partIndex: Number(m[2]), pickIndex: Number(m[3]) };
+}
+
+export function worldPickId(reportId, partIndex, pickIndex) {
+  return `${reportId}~${partIndex}:${pickIndex}`;
+}
+
+export function worldPickTitle(pick) {
+  if (!pick) return 'World idea';
+  if (pick.kind === 'open') return pick.repo || 'Open project';
+  return pick.name || (pick.kind === 'hidden' ? 'Hidden product' : 'Bold idea');
+}
+
+// The pick's own text, laid out with the labels its kind uses.
+function worldPickBody(pick) {
+  if (pick.kind === 'open') {
+    return [
+      pick.repo ? `Open-source project: ${pick.repo}${pick.stars ? ` (${pick.stars} stars)` : ''}` : null,
+      pick.why_fits ? `Why it fits: ${pick.why_fits}` : null,
+      pick.use ? `How we'd use it: ${pick.use}` : null,
+    ].filter(Boolean).join('\n');
+  }
+  if (pick.kind === 'hidden') {
+    return [
+      pick.name ? `Hidden product: ${pick.name}` : null,
+      pick.what ? `What it is: ${pick.what}` : null,
+      pick.lesson ? `What we can learn: ${pick.lesson}` : null,
+      pick.use ? `What we could do even better: ${pick.use}` : null,
+    ].filter(Boolean).join('\n');
+  }
+  return [
+    pick.name ? `Bold idea: ${pick.name}` : null,
+    pick.vision ? `The big idea: ${pick.vision}` : null,
+    pick.why_possible ? `Why it's doable: ${pick.why_possible}` : null,
+    pick.how_fmcns ? `How we'd get there first: ${pick.how_fmcns}` : null,
+  ].filter(Boolean).join('\n');
+}
+
+function worldPickOneLine(pick) {
+  const src = pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? (pick.what || pick.lesson) : pick.vision;
+  return `${worldPickTitle(pick)} — ${String(src || '').replace(/\s+/g, ' ').slice(0, 160)}`;
+}
+
+// What the quick check thought of this one pick, if anything.
+function worldPickVerdict(review, pi, i) {
+  if (!review) return null;
+  const at = (arr) => (arr || []).find((r) => r.part_index === pi && r.pick_index === i);
+  const removed = at(review.removed);
+  if (removed) return `The quick check doubted this one: ${removed.reason || 'no reason given'}. The owner can still pick it — the doubt is an opinion, not a decision.`;
+  const rec = at(review.recommended);
+  if (rec) return `The quick check marked this the best of its group${rec.why ? `: ${rec.why}` : '.'}`;
+  const group = (review.groups || []).find((g) => (g.picks || []).some((x) => x.part_index === pi && x.pick_index === i));
+  if (group) return `The quick check groups this with other ideas that do the same job${group.note ? ` (${group.note})` : ''} — only one of them is needed.`;
+  return null;
+}
+
+const BRAINSTORM_PREAMBLE = `
+This idea is a CONVERSATION STARTER, not a verdict. The owner's own words: the
+suggestions can be pushed a lot. So: think with him, not for him. Argue for and
+against it, say what it makes possible that he has not asked for, compare it with
+the other options above, and be willing to say it is the wrong idea. Ask one
+sharp question at a time rather than a list. Do not restate the idea back to him
+— he can read it.
+When the conversation has arrived somewhere, three things can be done with it and
+he can ask for them by name: "fold it into this idea" (rewrite this one idea with
+what we agreed), "more ideas from here" (propose new ones shaped by where we
+went), "change the question" (rewrite the problem above the ideas). Mention them
+only when the conversation has actually earned one.`.trim();
+
+registerSubject('world_pick', {
+  label: 'World idea',
+  load: (db, id) => {
+    const ref = parseWorldPickId(id);
+    if (!ref) return null;
+    const report = getReport(db, ref.reportId);
+    if (!report) return null;
+    const part = report.parts?.[ref.partIndex];
+    const pick = part?.picks?.[ref.pickIndex];
+    if (!pick) return null;
+    // `describe` gets no db, and describing the parent means asking the parent's
+    // own registered spec — so the handle travels on the subject, the way
+    // arch_component already carries its hint.
+    return { ...ref, report, part, pick, _db: db };
+  },
+  title: (db, id) => {
+    const ref = parseWorldPickId(id);
+    if (!ref) return id;
+    const pick = getReport(db, ref.reportId)?.parts?.[ref.partIndex]?.picks?.[ref.pickIndex];
+    return pick ? worldPickTitle(pick) : id;
+  },
+  describe: async (subject) => {
+    const { report, part, pick, partIndex, pickIndex } = subject;
+    const out = [];
+    out.push(`This is ONE idea out of a world-look — a pass where Claude went looking at what already exists in the world (real open-source projects, products doing something similar, and bold ideas nobody has built) before any code gets written.`);
+    out.push(`\n=== THE IDEA ===\n${worldPickBody(pick)}`);
+    if (pick.original) {
+      out.push(`This idea has already been developed in an earlier conversation. Before that it read: ${Object.values(pick.original).filter(Boolean).join(' / ').slice(0, 400)}`);
+    }
+    if (part) {
+      out.push(`\n=== THE QUESTION IT ANSWERS ===\n${part.name || 'Part'}: ${String(part.description || '').slice(0, 600)}`);
+    }
+    const siblings = (part?.picks || [])
+      .map((p, i) => (i === pickIndex ? null : `- ${worldPickOneLine(p)}`))
+      .filter(Boolean);
+    if (siblings.length) {
+      out.push(`\n=== THE OTHER OPTIONS FOR THE SAME QUESTION ===\n${siblings.slice(0, 8).join('\n')}`);
+    }
+    const verdict = worldPickVerdict(report.review, partIndex, pickIndex);
+    if (verdict) out.push(`\n=== THE QUICK CHECK'S OPINION ===\n${verdict}`);
+
+    // The parent — the task / suggestion / seed / component this look was run for
+    // — described by its own spec, so the conversation knows what is being built
+    // and not just which idea is on the table.
+    const parentType = WORLD_SOURCE_TO_SUBJECT[report.source];
+    if (parentType && report.source_id) {
+      try {
+        const parent = await buildSubjectContext(subject._db, parentType, report.source_id, null);
+        if (parent && !parent.error && parent.contextText) {
+          out.push(`\n=== WHERE THIS IDEA CAME FROM (${parent.title || parentType}) ===\n${parent.contextText}`);
+        }
+      } catch { /* parent unavailable — the idea still stands on its own */ }
+    } else if (report.idea_text) {
+      out.push(`\n=== WHERE THIS IDEA CAME FROM ===\n${String(report.idea_text).slice(0, 400)}`);
+    }
+    out.push(`\n=== HOW TO TALK ABOUT IT ===\n${BRAINSTORM_PREAMBLE}`);
+    return out.join('\n');
+  },
+  compareItems: (db, id, subject) => {
+    const items = (subject?.part?.picks || [])
+      .map((p, i) => (i === subject.pickIndex ? null : { label: worldPickTitle(p), text: worldPickBody(p).slice(0, 400) }))
+      .filter(Boolean);
+    return {
+      note: items.length
+        ? 'The other ideas proposed for the same question:'
+        : 'This is the only idea proposed for this question — nothing to compare it against yet.',
+      items,
+    };
+  },
+  handoff: () => {
+    // A world idea has no owner row of its own; the link lives on the convo row
+    // (and on the task that the handoff creates).
     return;
   },
 });

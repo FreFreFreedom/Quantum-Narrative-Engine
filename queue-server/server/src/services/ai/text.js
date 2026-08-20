@@ -249,12 +249,15 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
   // opencode lane separately and do not pass through here.
-  if (maxTokens && maxTokens > 800) maxTokens = 800;
+  // allowLongOutput is the deliberate opt-out, used only by the Idea Studio's
+  // conversation turns: a brainstorm answer and a coder brief are both longer
+  // than 800 tokens by nature, and were being silently truncated here.
+  if (!allowLongOutput && maxTokens && maxTokens > 800) maxTokens = 800;
   if (p === 'claude-code') {
     return legacyGenerateText({ prompt, maxTokens, label, cliModel: m });
   }
@@ -319,7 +322,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -376,7 +379,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput });
 
     if (result?.text) {
       // The daily ledger exists to restrain the shared lanes — the free models and
