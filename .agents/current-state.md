@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-20T08:10:20.053Z
+Generated: 2026-08-20T08:32:54.454Z
 
 ## Components
 
@@ -43,6 +43,7 @@ Generated: 2026-08-20T08:10:20.053Z
 - self-aware-platform — **Parts 1–6 DONE · 2 loose ends**
 - suggestions-that-keep-up-with-the-code — **DONE** — all four parts; `npm run ship:facts` proves the saving. Two checks (live probe transport, runner-offline) were left to the deploy
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
+- brainstorm-world-ideas — DONE 2026-08-20
 - ranked-next-steps — DONE 2026-08-19
 - always-on-models — DONE (step 6 replaced by `dispatch-queue-free-model-fallback.md`). **Note:** the daily spend guard `queue_go_budget_usd` ships as `0`, which the code treats as *disabled*
 - dispatch-queue-free-model-fallback — DONE. **Its prose is stale** — the Claude-tier walk it describes was later replaced by `self-aware-platform.md` Parts 1–2 (all Claude tiers share one quota bank, so the code now goes straight to the OpenCode chain)

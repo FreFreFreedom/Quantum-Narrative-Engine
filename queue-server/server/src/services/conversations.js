@@ -18,6 +18,8 @@ import {
 import {
   getReport, updatePickInPlace, appendPicks, updatePartFraming,
 } from './codeDiscovery.js';
+import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
+import { createIdea } from './workIdeas.js';
 import { generateText } from './ai/text.js';
 import { getComponents } from './architecture.js';
 import { listSuggestions } from './workSuggestions.js';
@@ -403,16 +405,126 @@ function worldPickRef(convo) {
   return { ...ref, report, part, pick };
 }
 
-const NOT_A_WORLD_IDEA = {
-  text: 'That one only works on a world idea — open it from the ✨ ideas under a task, a suggestion, a seed or a piece of the architecture, and we can develop it there.',
-};
+// ── The same three gestures, for everything else the studio can talk to ──────
+// On a world idea they act on the idea inside its report. On a seed, suggestion,
+// task, component or tech-tree node they act on the thing's own row: fold
+// rewrites what it IS, reframe rewrites why it exists, and more turns the
+// conversation's leftovers into fresh seeds in the notebook. Which of these a
+// subject offers comes from subjectWrite.js, so nothing has to be special-cased
+// twice.
+
+// One rewrite turn against a subject's own row.
+async function runSubjectWriteTurn(convoId, act) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const target = writeTarget(convo.subject_type, act);
+  if (!target) {
+    return { text: act === 'reframe'
+      ? 'There is no separate purpose to rewrite on this one — "fold it in" already rewrites what it is.'
+      : 'There is nothing on this one I can rewrite from here.' };
+  }
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+
+  const asks = Object.entries(target.fields)
+    .filter(([, ask]) => ask)
+    .map(([k, ask]) => `  "${k}": "${ask}"`)
+    .join(',\n');
+  const instruction = act === 'fold'
+    ? `Rewrite ${target.label} so it carries everything this conversation arrived at — the sharper version of the thing itself, not a summary of the chat. Keep what still holds, fold in what we added, drop what we rejected. Write it for someone reading it cold, with no knowledge of this conversation.
+Respond with ONLY this JSON object and nothing else:
+{
+${asks}
+}`
+    : `The conversation suggests ${target.label} is aimed at the wrong thing. Rewrite why it exists — not what it does. Plain English, no jargon.
+Respond with ONLY this JSON object and nothing else:
+{
+${asks}
+}`;
+
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1600,
+    feature: 'studio', label: `conversations:${act}`, includeDigest: false,
+    instruction,
+  });
+  if (result.error) return result;
+
+  const fields = firstJson(result.text);
+  if (!fields) return { text: 'I could not get a clean rewrite out of that — say in one line what it should say, then ask again.' };
+  const out = applySubjectWrite(db, { subjectType: convo.subject_type, subjectId: convo.subject_id, act, fields, convoId });
+  if (out.error) return { text: out.message || 'Could not write that back.' };
+
+  const what = out.changed.map((c) => c.field).join(' and ');
+  const text = act === 'fold'
+    ? `Folded into ${target.label} — its ${what} now carries what we worked out here. What it said before is kept, so nothing is lost.`
+    : `Rewrote why ${target.label} exists (${what}). What it said before is kept.`;
+  saveAssistantTurn(convoId, text, { act, subject_type: convo.subject_type, subject_id: convo.subject_id, fields: out.changed.map((c) => c.field) });
+  broadcastAll('queue:updated', {});
+  broadcastAll('convos:updated', { convoId });
+  return { text, via: result.via, act, wrote: out.changed.map((c) => c.field) };
+}
+
+// New ideas from a conversation that has no report to append to: they land as
+// seeds in the notebook, which is where a loose idea belongs in this app.
+async function runSeedIdeasTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1600,
+    feature: 'studio', label: 'conversations:more-seeds',
+    instruction: `Propose between one and three NEW ideas that this conversation opened up — things worth building that are not what we are already discussing, and not a rehash of the chat. Each must stand on its own, readable by someone who was not here.
+Respond with ONLY this JSON object and nothing else:
+{"ideas":[{"title":"a short title","notes":"what it is and what it would do, in a few sentences"}]}`,
+  });
+  if (result.error) return result;
+
+  const parsed = firstJson(result.text);
+  const ideas = (Array.isArray(parsed?.ideas) ? parsed.ideas : []).filter((i) => String(i?.title || '').trim()).slice(0, 3);
+  if (!ideas.length) return { text: 'Nothing usable came back that time — say which direction you want more of and ask again.' };
+
+  const made = [];
+  for (const idea of ideas) {
+    try {
+      createIdea({ title: String(idea.title).trim().slice(0, 200), notes: String(idea.notes || '').trim().slice(0, 4000), tag: 'from a chat' });
+      made.push(String(idea.title).trim());
+    } catch { /* one bad idea must not lose the others */ }
+  }
+  if (!made.length) return { text: 'Could not save those ideas.' };
+
+  const text = `Saved ${made.length} new idea${made.length === 1 ? '' : 's'} to your notebook, tagged "from a chat": ${made.join(', ')}. They are seeds — nothing runs until you queue one.`;
+  saveAssistantTurn(convoId, text, { act: 'more', made });
+  broadcastAll('ideas:updated', {});
+  broadcastAll('convos:updated', { convoId });
+  return { text, via: result.via, act: 'more', made };
+}
+
+// Everything a conversation has already rewritten on its subject, so the studio
+// can show what the thing said before. World ideas keep their own `original`
+// inside the report and are not listed here.
+export function convoSubjectEdits(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo || convo.subject_type === 'world_pick') return [];
+  return subjectEdits(db, convo.subject_type, convo.subject_id, 12);
+}
+
+// Which of the three buttons this subject can offer — read by the studio so it
+// never shows one that would only apologise.
+export function writeActsForConvo(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return [];
+  if (convo.subject_type === 'world_pick') return ['fold', 'more', 'reframe'];
+  return [...writeActsFor(convo.subject_type), 'more'];
+}
 
 // /fold — rewrite THIS idea with what the conversation arrived at.
 async function runFoldTurn(convoId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ref = worldPickRef(convo);
-  if (!ref) return NOT_A_WORLD_IDEA;
+  if (!ref) return runSubjectWriteTurn(convoId, 'fold');
   const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
   if (ctx.error) return { error: ctx.error };
 
@@ -446,7 +558,7 @@ async function runMoreIdeasTurn(convoId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ref = worldPickRef(convo);
-  if (!ref) return NOT_A_WORLD_IDEA;
+  if (!ref) return runSeedIdeasTurn(convoId);
   const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
   if (ctx.error) return { error: ctx.error };
 
@@ -485,7 +597,7 @@ async function runReframeTurn(convoId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ref = worldPickRef(convo);
-  if (!ref) return NOT_A_WORLD_IDEA;
+  if (!ref) return runSubjectWriteTurn(convoId, 'reframe');
   const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
   if (ctx.error) return { error: ctx.error };
 

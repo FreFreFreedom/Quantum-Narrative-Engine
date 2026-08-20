@@ -7624,7 +7624,10 @@ async function loadNbConvos() {
 function openArchDiscuss(c, onDone) {
   const terr = TERRITORIES.find(t => t.id === c.territory);
   openStudio({
-    type: 'arch_component',
+    // Tech-tree pieces (`_stored`) are real rows in the DB, so the server can
+    // describe them properly — and rewrite them. The hand-written trunk lives in
+    // this file only, which is why it travels as a hint instead.
+    type: c._stored ? 'arch_node' : 'arch_component',
     subjectId: c.id,
     title: (c.provenance === 'speculative' ? '✦ ' : '') + c.name + (terr ? ' · ' + terr.label : ''),
     hint: { name: c.name, territory: terr ? terr.label : c.territory, status: c.status, what: c.what, why: c.why, input: c.input, output: c.output, next: c.next },
@@ -9601,7 +9604,7 @@ document.addEventListener('keydown', (e) => {
   // Opens on any subject (seed / suggestion / arch component / new idea), with
   // commands /grill-me, /plan, /handoff, /help handled by the backend before any
   // model cost. Everything here is global-window glue over /api/convos.
-  var S = { convoId:null, type:null, subjectId:null, title:'Idea studio', msgs:[], busy:false, promptId:null, onDone:null, via:null };
+  var S = { convoId:null, type:null, subjectId:null, title:'Idea studio', msgs:[], busy:false, promptId:null, onDone:null, via:null, acts:[], edits:[] };
 
   function fmtBody(text){
     var t = qEsc(text);
@@ -9650,6 +9653,7 @@ document.addEventListener('keydown', (e) => {
   function startStudioOf(opts){
     S.convoId = null; S.type = opts.type; S.subjectId = opts.subjectId;
     S.title = opts.title || 'Idea studio'; S.msgs = []; S.promptId = null; S.busy = false; S.via = null;
+    S.acts = opts.type === 'world_pick' ? ['fold','more','reframe'] : []; S.edits = [];
     S.onDone = opts.onDone || null;
     studioEl('studioTitle').textContent = S.title;
     openModal(`<div class="studio-body">
@@ -9677,23 +9681,48 @@ document.addEventListener('keydown', (e) => {
       if(!S.convoId) return;
       apiWrite('/api/convos/'+S.convoId+'/reset','POST',{}).then(studioFetch).catch(function(){});
     };
+    renderStudioChips();
+  }
+
+  // The three brainstorm gestures. What each one rewrites depends on what we are
+  // talking about — on a world idea it is the idea itself, on anything else it is
+  // that thing's own words — and the server says which ones apply (S.acts), so a
+  // button is never shown just to explain that it does nothing.
+  var ACT_CHIPS = {
+    world_pick: {
+      fold:    ['✍️ Fold into this idea', 'Rewrite this one idea with everything we worked out here. What it said before is kept.'],
+      more:    ['✨ More ideas from here', 'New ideas shaped by where this conversation went. They land beside this one.'],
+      reframe: ['🔄 Change the question', 'Rewrite the question these ideas answer, when the brainstorm shows we were solving the wrong thing.'],
+    },
+    other: {
+      fold:    ['✍️ Fold this in', 'Rewrite this thing itself with everything we worked out here. What it said before is kept.'],
+      more:    ['✨ More ideas from here', 'New ideas from this conversation, saved to your notebook as seeds.'],
+      reframe: ['🔄 Rewrite why it exists', 'Rewrite what this is for — its purpose, not what it does.'],
+    },
+  };
+
+  function renderStudioChips(){
     var world = S.type === 'world_pick';
+    var set = world ? ACT_CHIPS.world_pick : ACT_CHIPS.other;
     var hint = studioEl('studioHint');
-    hint.innerHTML = world
-      ? 'Push this idea as hard as you like. When we get somewhere: <b>fold it in</b>, ask for <b>more ideas</b>, or <b>change the question</b> it answers.'
-      : 'Commands: <b>/grill-me</b> · <b>/plan</b> (coder brief) · <b>/handoff</b> (queue, paused) · <b>/compare</b> (ideas attached) · <b>/help</b>';
+    if(hint){
+      hint.innerHTML = world
+        ? 'Push this idea as hard as you like. When we get somewhere: <b>fold it in</b>, ask for <b>more ideas</b>, or <b>change the question</b> it answers.'
+        : 'Push back, argue, brainstorm. When we get somewhere you can <b>fold it in</b>, ask for <b>more ideas</b>, or turn it into a task.';
+    }
     var chips = studioEl('studioChips');
-    var list = world
-      ? [['/fold','✍️ Fold into this idea','Rewrite this one idea with everything we worked out here. The version before the conversation is kept.'],
-         ['/more','✨ More ideas from here','Propose new ideas shaped by where this conversation went. They land beside this one.'],
-         ['/reframe','🔄 Change the question','Rewrite the question these ideas answer, when the brainstorm shows we were solving the wrong thing.'],
-         ['/compare','Compare the other options','The other ideas proposed for the same question.'],
-         ['/plan','Write the brief','Turn this into a brief for the coding agent.']]
-      : [['/grill-me','Me interrogate you',''],['/plan','Write the brief',''],['/compare','Compare the attached ideas',''],['/handoff','Queue it (paused)','']];
+    if(!chips) return;
+    chips.innerHTML = '';
+    var list = [];
+    (S.acts || []).forEach(function(act){ if(set[act]) list.push([('/' + act), set[act][0], set[act][1]]); });
+    list.push(['/grill-me','Me interrogate you','Sharp questions, one at a time.']);
+    list.push(['/compare', world ? 'Compare the other options' : 'Compare the attached ideas','']);
+    list.push(['/plan','Write the brief','Turn this into a brief for the coding agent.']);
+    if(!world) list.push(['/handoff','Queue it (paused)','']);
     list.forEach(function(row){
       var b = document.createElement('button');
       b.className = 'studio-chip';
-      b.textContent = world ? row[1] : row[0];
+      b.textContent = row[1];
       b.title = row[2] || row[1];
       b.onclick = function(){ studioSend(row[0]); };
       chips.appendChild(b);
@@ -9724,7 +9753,10 @@ document.addEventListener('keydown', (e) => {
         S.title = data.convo.title || S.title;
         S.promptId = data.convo.work_prompt_id || null;
         S.msgs = data.messages || [];
+        S.acts = data.acts || [];
+        S.edits = data.edits || [];
         studioEl('studioTitle').textContent = S.title;
+        renderStudioChips();
         renderLog();
       })
       .catch(function(e){ log.innerHTML = '<div class="studio-status err">Could not open this conversation: ' + qEsc(e.message||e) + '</div>'; });
@@ -9745,6 +9777,14 @@ document.addEventListener('keydown', (e) => {
               : '<div class="studio-bubble">' + fmtBody(m.text) + '</div>')
            + '</div>';
     });
+    if(S.edits && S.edits.length){
+      var byField = {};
+      S.edits.forEach(function(e){ if(!byField[e.field]) byField[e.field] = e; });
+      var rows = Object.keys(byField).map(function(f){
+        return '<div style="margin-top:4px;"><b>' + qEsc(f) + '</b> — ' + qEsc(String(byField[f].before_text || '(was empty)').slice(0, 400)) + '</div>';
+      }).join('');
+      html += '<div class="studio-msg agent"><div class="studio-bubble"><details><summary style="cursor:pointer;font-size:10.5px;color:var(--c-ink-4);">What this said before a conversation rewrote it</summary>' + rows + '</details></div></div>';
+    }
     if(!S.msgs.length && !S.promptId){
       html += '<div class="studio-status">No messages yet. Tell the studio what you are thinking about this subject, or start with /grill-me for interrogation.</div>';
     }

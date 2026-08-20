@@ -129,7 +129,7 @@ async function main() {
   // ── 3. the panel ───────────────────────────────────────────────────────────
   console.log('\n3. the panel renders, and cannot be injected into');
   const html = readFileSync(APP, 'utf8');
-  const src = ['nuTerrLabel', 'nuRowHtml', 'flowNextUpHtml'].map(n => appFn(html, n)).join('\n');
+  const src = ['nuTerrLabel', 'nuRowHtml', 'nuGroupHtml', 'flowNextUpHtml'].map(n => appFn(html, n)).join('\n');
   const ctx = {
     qEsc: (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
     TERRITORIES: [{ id: 'knowledge', label: 'Knowledge' }, { id: 'interface', label: 'Interface' }],
@@ -144,6 +144,9 @@ async function main() {
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
     flowWorldPanelHtml: () => '',
     flowWorldEntry: () => ({ state: 'none' }),
+    // Added by "Make the .nu-grouphead section collapsible" (0ddddfb), which read
+    // this map inside nuGroupHtml — same failure mode as 668db5e above.
+    nuGroupCollapsed: {},
   };
   // eslint-disable-next-line no-new-func
   const api = new Function('ctx', `with (ctx) { ${src} return { nuRowHtml, flowNextUpHtml }; }`)(ctx);

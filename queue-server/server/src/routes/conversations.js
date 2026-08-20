@@ -29,7 +29,15 @@ export function conversationsRoutes() {
       createdBy: req.user?.id || 'antoine',
     });
     if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
-    res.json({ convo: out.convo, messages: convos.listMessages(out.convo.id), created: out.created });
+    // `acts` tells the studio which of fold / more / reframe this subject can
+    // actually do, so it never offers a button that would only apologise.
+    res.json({
+      convo: out.convo,
+      messages: convos.listMessages(out.convo.id),
+      created: out.created,
+      acts: convos.writeActsForConvo(out.convo.id),
+      edits: convos.convoSubjectEdits(out.convo.id),
+    });
   });
 
   // GET /api/convos/for?type=arch_component&ids=a,b,c — which of these subjects
@@ -46,7 +54,7 @@ export function conversationsRoutes() {
   router.get('/:id', (req, res) => {
     const convo = convos.getConvo(req.params.id);
     if (!convo) return res.status(404).json({ error: 'not_found' });
-    res.json({ convo, messages: convos.listMessages(convo.id) });
+    res.json({ convo, messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id) });
   });
 
   // POST /api/convos/:id/message — one user turn (or a command like /plan, /handoff).

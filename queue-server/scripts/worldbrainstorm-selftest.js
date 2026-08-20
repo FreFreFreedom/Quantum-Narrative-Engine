@@ -20,6 +20,7 @@ import {
   reportIsBrainstormed, staleWorldLooks, WORLD_LOOK_GEN,
 } from '../server/src/services/codeDiscovery.js';
 import { parseWorldPickId, worldPickId } from '../server/src/services/subjectContext.js';
+import { applySubjectWrite, subjectEdits, writeActsFor } from '../server/src/services/subjectWrite.js';
 import { initDiscoverySchema, initConversationsSchema } from '../server/src/db/schema.js';
 
 let pass = 0; let fail = 0;
@@ -172,6 +173,33 @@ section('8. The message table can record what a turn did');
   const row = db.prepare(`SELECT kind, meta FROM convo_messages WHERE convo_id=?`).get(cid);
   ok('the row stays kind=chat, so the conversation still remembers it', row.kind === 'chat');
   ok('what it did is recorded beside it', JSON.parse(row.meta).act === 'fold');
+}
+
+section('9. The same three gestures on everything else the studio can talk to');
+{
+  db.exec(`CREATE TABLE IF NOT EXISTS work_ideas (id TEXT PRIMARY KEY, title TEXT NOT NULL, notes TEXT, tag TEXT, updated_at TEXT, deleted_at TEXT)`);
+  db.exec(`CREATE TABLE IF NOT EXISTS work_prompts (id TEXT PRIMARY KEY, title TEXT, prompt TEXT, summary TEXT, status TEXT, updated_at TEXT)`);
+  db.prepare(`INSERT INTO work_ideas (id,title,notes) VALUES (?,?,?)`).run('s1', 'Rough seed', 'A vague thought.');
+  db.prepare(`INSERT INTO work_prompts (id,title,prompt,status) VALUES (?,?,?,?)`).run('t1', 'T', 'do it', 'done');
+
+  ok('a seed can be folded and reframed', writeActsFor('seed').join() === 'fold,reframe');
+  ok('a component can only be folded (its what/why live in the HTML)', writeActsFor('arch_component').join() === 'fold');
+  ok('an unknown subject offers nothing', writeActsFor('nonsense').length === 0);
+
+  const w = applySubjectWrite(db, { subjectType: 'seed', subjectId: 's1', act: 'fold', fields: { notes: 'A sharp, developed thought.' }, convoId: 'c1' });
+  ok('folding a seed rewrites it', w.changed?.[0]?.field === 'notes');
+  ok('what it said before is recorded', subjectEdits(db, 'seed', 's1')[0]?.before_text === 'A vague thought.');
+  ok('re-folding the same text changes nothing', applySubjectWrite(db, { subjectType: 'seed', subjectId: 's1', act: 'fold', fields: { notes: 'A sharp, developed thought.' } }).error === 'empty');
+
+  const smuggled = applySubjectWrite(db, { subjectType: 'seed', subjectId: 's1', act: 'fold', fields: { deleted_at: 'now', notes: 'newer' } });
+  ok('a field the subject does not declare cannot be written', smuggled.changed.map((c) => c.field).join() === 'notes');
+  ok('and the seed was not deleted', !db.prepare(`SELECT deleted_at FROM work_ideas WHERE id=?`).get('s1').deleted_at);
+
+  ok('a finished task refuses to have its instructions rewritten', applySubjectWrite(db, { subjectType: 'task', subjectId: 't1', act: 'fold', fields: { prompt: 'x' } }).error === 'guarded');
+  db.prepare(`UPDATE work_prompts SET status='paused' WHERE id='t1'`).run();
+  ok('a paused task accepts it', applySubjectWrite(db, { subjectType: 'task', subjectId: 't1', act: 'fold', fields: { prompt: 'a better brief' } }).changed?.[0]?.field === 'prompt');
+  ok('a missing row is refused', applySubjectWrite(db, { subjectType: 'seed', subjectId: 'nope', act: 'fold', fields: { notes: 'x' } }).error === 'not_found');
+  ok('an act the subject has no target for is refused', applySubjectWrite(db, { subjectType: 'arch_component', subjectId: 'x', act: 'reframe', fields: { why: 'x' } }).error === 'not_writable');
 }
 
 console.log(`\nworld-look generation stamp: ${WORLD_LOOK_GEN}`);

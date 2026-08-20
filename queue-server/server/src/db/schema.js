@@ -1073,6 +1073,26 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
+  // Every rewrite a conversation made to the thing it was about — one row per
+  // field, before and after. A single table rather than an "original" column on
+  // each of the five subject tables: it keeps the whole history, needs no
+  // per-table migration, and gives every subject the same "before this
+  // conversation" view that a world idea already has.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS subject_edits (
+      id TEXT PRIMARY KEY,
+      subject_type TEXT NOT NULL,
+      subject_id TEXT NOT NULL,
+      field TEXT NOT NULL,
+      before_text TEXT,
+      after_text TEXT,
+      act TEXT,
+      convo_id TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_subject_edits ON subject_edits(subject_type, subject_id, created_at)`); } catch {}
+
   // What a turn DID, when it was more than talking: {"act":"fold"|"more"|"reframe", ...}.
   // A column rather than a new `kind` value on purpose — `kind` carries a CHECK
   // constraint and SQLite cannot alter one, and these rows must stay kind='chat'
