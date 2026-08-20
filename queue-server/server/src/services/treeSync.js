@@ -56,6 +56,15 @@ Respond with ONLY a JSON object, no prose, no markdown fence:
 
 // Create the proposal node (speculative → the tree draws it dashed) and stamp it
 // with the sync metadata. Duplicate fingerprints (same parent+name) are a no-op.
+//
+// Status is 'Working', not 'Concept': this only fires for code that already
+// landed (a finished queue task's diff, or commits already on trunk) and was
+// classified as a significant feature — it is real, built work, not an idea
+// awaiting construction. 'Concept' here used to make freshly-shipped features
+// show up in "On the Horizon" (isBuilt() in fmcns_navigator.html gates on
+// status, not on provenance/proposed) as if they still needed to be built.
+// `provenance: 'speculative'` + `proposed: 1` still stand — that's what keeps
+// the node awaiting your accept/reject review; only the built-ness was wrong.
 function createProposal(db, proposal, { source, promptId = null, sha = null }) {
   const out = createNode(db, {
     name: proposal.name,
@@ -63,7 +72,7 @@ function createProposal(db, proposal, { source, promptId = null, sha = null }) {
     what: proposal.what || '',
     why: proposal.why || '',
     depends: [],
-    status: 'Concept',
+    status: 'Working',
     provenance: 'speculative',
     parent_node_id: null,
   });
