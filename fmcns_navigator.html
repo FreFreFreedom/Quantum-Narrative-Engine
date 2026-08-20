@@ -708,17 +708,13 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
    badges beside it; the six colours come from TERRITORY_COLORS in the script. The
    dashed variants are for rows with no territory, so an absent value reads as absent
    rather than as one more territory. */
-/* The bar down the left carries the territory's own colour — that is what makes one
-   section read as a different section at a glance, before you read a word of it. The
-   heading also gets a rule under it and real weight, because it borrowed
-   .nu-grouphead's quiet inline style and disappeared between rows this tall. */
-.sg-grouphead { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--c-ink-2);
-  margin:18px 0 8px; padding:0 0 6px 9px; border-bottom:1px solid var(--c-border-2);
-  border-left:3px solid var(--sg-terr, var(--c-border-2)); }
-.sg-grouphead:hover { color:var(--c-ink); }
-.sg-groupcount { font-family:monospace; font-size:11px; color:var(--c-ink-3); background:var(--c-surface-2);
-  border-radius:9px; padding:1px 8px; margin-left:auto; }
-.sg-grouphead .nb-chev { color:var(--c-ink-4); }
+/* The filter chip row. Borrows .nb-chip from "On the Horizon" so the two lists are
+   filtered by visibly the same control; these only add the count bubble and the
+   dimmed state for a bucket with nothing in it. */
+.sg-chiprow { margin:2px 0 12px; }
+.sg-chipn { font-family:monospace; font-size:10px; opacity:.65; margin-left:3px; }
+.sg-terrchip.dead { color:var(--c-ink-4); opacity:.5; cursor:default; }
+.sg-terrchip.dead:hover { background:var(--c-surface); }
 .sg-terr-chip { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; text-transform:none; letter-spacing:0; }
 .sg-terr-chip.outside { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
 .sg-terr-chip.none { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); font-style:italic; }
@@ -3209,13 +3205,11 @@ let nextUpOpen = false;     // is the full ranked list expanded?
 let nextUpBusy = false;     // a fetch (or a second opinion) is in flight
 let nextUpErr = '';         // last failure, shown plainly rather than as an empty box
 let nuGroupCollapsed = {};  // group key ("ready"/"blocked") -> true if its rows are hidden
-// Which territory groups in "Suggested by Claude" the reader has folded shut.
-// Deliberately its own object and not nuGroupCollapsed above: that one belongs to the
-// what-to-do-next list, and a key like "ready" meaning two different things in two
-// lists is the kind of bug you only find six months later. It lives out here because
-// renderFlow() rebuilds the whole list on every poll — state kept inside it would
-// unfold every group a few seconds after you folded it.
-let sgGroupCollapsed = {};
+// Which part of the app the suggestions list is narrowed to: '' for all of it, a
+// territory id, 'outside' for integrations, or 'none' for the ones we could not place.
+// Mirrors nbFilterTerr in "On the Horizon" on purpose — same gesture, same rules — and
+// lives out here because renderFlow() rebuilds the list on every poll.
+let sgFilterTerr = '';
 let qDragQId = null;             // prompt id being drag-reordered
 
 // Voice dictation for the task composer textarea, via the browser's built-in
@@ -4865,48 +4859,48 @@ function flowSgRow(s) {
 // The rows under "Suggested by Claude", grouped or flat.
 //
 // Grouped only on the Suggestions tab, and only when nothing is typed in the search
-// box. Two reasons for those limits. On the "All" tab this list is one strand among
-// Questions/Running/Ready/Parked/Done/Seeds, and a second level of headings in there
-// turns a list into an outline. And while searching, a folded group could hide the
-// very thing you are looking for — the Done section already opens itself mid-search
-// for the same reason. In both flat cases the chip still says where each row belongs.
-//
-// Territories keep their declared order rather than being sorted by size: the list
-// re-renders on every poll, so ordering by count would slide a group head out from
-// under the cursor mid-click. Empty groups are left out — a heading with nothing
-// under it, and a chevron that opens onto nothing, is just noise.
-function sgRowsHtml(sg) {
-  if (!(flowType === 'suggestions' && !flowSearch)) return sg.map(flowSgRow).join('');
-  let out = '';
-  // Integrations first out of the pile, by their own column and not by guesswork.
-  // They propose outside data sources, which honestly isn't one of the six inside
-  // parts of the app — and since every "Generate now" makes more of them, leaving
-  // them in the not-placed group would mean that group never empties.
-  const outside = sg.filter(s => s.kind === 'integration');
-  const inside = sg.filter(s => s.kind !== 'integration');
-  TERRITORIES.forEach(t => {
-    const rows = inside.filter(s => sgTerritoryOf(s) === t.id);
-    if (rows.length) out += sgGroupHtml(t.id, t.label, sgTerritoryChip(t.id), rows);
-  });
-  if (outside.length) out += sgGroupHtml('outside', 'Outside connections', SG_CHIP_OUTSIDE, outside);
-  // Anything left has no territory we recognise: written before the engine stored
-  // one, or a value Claude made up. Shown, never hidden and never filed under a real
-  // territory — a wrong home is worse than an honest unknown. Should stay empty for
-  // anything generated from now on, and drains as old ones are accepted or dismissed.
-  const unplaced = inside.filter(s => !sgTerritoryOf(s));
-  if (unplaced.length) out += sgGroupHtml('none', 'Not placed in a territory yet', sgTerritoryChip(null), unplaced);
-  return out;
+// Which bucket a suggestion falls in — the key the filter chips select on. Kind is
+// read before territory, matching sgChipFor above, so the chip on a row and the chip
+// that selects it can never disagree.
+function sgBucketOf(s) {
+  if (s.kind === 'integration') return 'outside';
+  return sgTerritoryOf(s) || 'none';
 }
 
-// A fold-away group head. Same gesture and same look as the what-to-do-next groups
-// (nuGroupHtml above) so there is one thing to learn, but a different attribute name
-// so neither list's click handler ever claims the other's heads.
-function sgGroupHtml(key, label, chipHtml, rows) {
-  const collapsed = !!sgGroupCollapsed[key];
-  const colour = TERRITORY_COLORS[key] || 'var(--c-border-2)';
-  return `<div class="nu-grouphead sg-grouphead" style="--sg-terr:${colour}" data-sgterr="${key}" role="button" tabindex="0" aria-expanded="${!collapsed}" title="Tap to ${collapsed ? 'show' : 'hide'} this group">
-    <span class="nb-chev">${collapsed ? '▸' : '▾'}</span> ${chipHtml} ${qEsc(label)} <span class="sg-groupcount">${rows.length}</span>
-  </div>${collapsed ? '' : rows.map(flowSgRow).join('')}`;
+// The filter chip row: All, the six territories, outside connections, and (only while
+// it has anything in it) the ones we could not place. Same gesture as the chips in
+// "On the Horizon" — rebuilt from state every render, so the lit chip is always the
+// one actually filtering and cannot drift; single-select by assignment, with '' as a
+// falsy "no filter" rather than a special case.
+//
+// The counts are the one thing On the Horizon does not do. They are here because the
+// question this list gets asked is "where is the work piling up", and answering it by
+// clicking nine chips in turn is not answering it. Counted from `all` (everything the
+// status buttons and the search box left), never from the filtered rows, so a count
+// always equals the number of rows clicking it gives you.
+function sgChipRowHtml(all) {
+  const count = (key) => all.filter(s => sgBucketOf(s) === key).length;
+  const buckets = [
+    ['', 'All', all.length],
+    ...TERRITORIES.map(t => [t.id, SG_CHIP_SHORT[t.id] || t.label, count(t.id)]),
+    ['outside', 'Outside connections', count('outside')],
+  ];
+  // Hidden once empty: after the one-off sort at boot this is the normal state, and a
+  // permanent "0" chip is clutter. It reappears by itself if anything lands unplaced.
+  if (count('none')) buckets.push(['none', 'Not placed', count('none')]);
+  const chips = buckets.map(([key, label, n]) => {
+    // An empty bucket stays visible so the shape of the list reads at a glance, but
+    // is not clickable — nothing is worse than a filter that empties the screen.
+    const dead = n === 0 && key !== '';
+    return `<button class="ctrlbtn nb-chip sg-terrchip${sgFilterTerr === key ? ' on' : ''}${dead ? ' dead' : ''}"${dead ? ' disabled' : ''} data-sgterr="${key}"`
+      + `${key && !dead ? ` title="${qEsc('Show only what touches ' + label)}"` : ''}>`
+      + `${qEsc(label)} <span class="sg-chipn">${n}</span></button>`;
+  }).join('');
+  return `<div class="nb-chips sg-chiprow">${chips}</div>`;
+}
+
+function sgRowsHtml(sg) {
+  return sg.map(flowSgRow).join('');
 }
 
 function qDragMove(id, overId) {
@@ -4986,8 +4980,20 @@ function renderFlow() {
   }
 
   if (showSg && tvSuggestions.length) {
-    const sg = tvSuggestions.filter(s => flowMatches([s.title, s.rationale, s.prompt]));
-    if (sg.length) {
+    // Two arrays on purpose. `sgAll` is everything the status buttons and the search
+    // box left — the chips count from it, so a chip's number is what you get when you
+    // press it. `sg` is that narrowed to the pressed chip, and is what gets drawn.
+    const sgAll = tvSuggestions.filter(s => flowMatches([s.title, s.rationale, s.prompt]));
+    const sg = sgFilterTerr ? sgAll.filter(s => sgBucketOf(s) === sgFilterTerr) : sgAll;
+    if (sgAll.length) {
+      // The chip row belongs to the Suggestions tab. On "All" this list is one strand
+      // among several and a filter bar buried in the middle of it reads as clutter —
+      // there each row's own chip still says which part it touches. A chip pressed
+      // earlier keeps applying either way, so the two views never disagree.
+      const chipRow = flowType === 'suggestions' ? sgChipRowHtml(sgAll) : '';
+      const emptied = !sg.length
+        ? `<div class="empty">Nothing here touches that part of the app. <a href="#" id="sgClearFilter">Show all ${sgAll.length}</a>.</div>`
+        : '';
       html += flowSection('✨', 'Suggested by Claude', sg.length, `
         <div class="flow-genrow">
           <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
@@ -4995,7 +5001,7 @@ function renderFlow() {
           <button class="ctrlbtn" id="flowRewriteBtn" title="Redo the world-look ideas attached to tasks, suggestions, pieces and seeds that were written before the ideas were held to their subject">↻ Redo the old world ideas</button>
           <button class="ctrlbtn" id="flowSortOldBtn" title="Suggestions made before the app started recording which part they touch sit under &quot;not placed yet&quot;. This reads them once and files them into their territories.">⇅ Sort the old ones</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
-        </div>` + sgRowsHtml(sg));
+        </div>` + chipRow + emptied + sgRowsHtml(sg));
     }
   }
 
@@ -5145,19 +5151,15 @@ function renderFlow() {
       } catch (err) { b.disabled = false; alert('Error: ' + err.message); }
     };
   });
-  // Fold-away territory groups in the suggestions list. Same click-or-Enter gesture as
-  // the what-to-do-next groups. Note this leaves flowSideSel alone: folding a group with
-  // an open suggestion in it takes the detail card out of the page, and unfolding puts it
-  // straight back, which is friendlier than losing your place.
-  host.querySelectorAll('[data-sgterr]').forEach(head => {
-    const toggle = () => {
-      const key = head.getAttribute('data-sgterr');
-      sgGroupCollapsed[key] = !sgGroupCollapsed[key];
-      renderFlow();
-    };
-    head.onclick = toggle;
-    head.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } };
+  // The suggestion filter chips. Assigns rather than toggles, so clicking one is
+  // always "show me this" and never leaves the list in a state no chip is lit for;
+  // clearing is the All chip. Same shape as the [data-nbterr] handler in
+  // renderNotbuiltFlow().
+  host.querySelectorAll('[data-sgterr]').forEach(b => {
+    b.onclick = () => { sgFilterTerr = b.getAttribute('data-sgterr'); renderFlow(); };
   });
+  const sgClear = document.getElementById('sgClearFilter');
+  if (sgClear) sgClear.onclick = (e) => { e.preventDefault(); sgFilterTerr = ''; renderFlow(); };
   host.querySelectorAll('.flow-sgrow').forEach(el => {
     el.onclick = () => {
       const id = el.getAttribute('data-sid');

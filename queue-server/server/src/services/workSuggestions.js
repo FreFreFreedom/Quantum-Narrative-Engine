@@ -348,7 +348,11 @@ ${list}
 Reply with ONLY a JSON array, one entry per numbered item above, no prose:
 [{"n": 1, "territory": "self"}]`;
 
-  const out = await generateText({ prompt, feature: 'build', maxTokens: 900, label: 'workSuggestions:classify', cliModel: 'haiku' });
+  // 'quick' is the short-answer lane (see FEATURES in ai/text.js) — naming which part
+  // of the app a title is about is easy work and does not want the build lane's model.
+  // Note there is no `cliModel` option on this generateText; an earlier version passed
+  // one and it was silently ignored.
+  const out = await generateText({ prompt, feature: 'quick', maxTokens: 900, label: 'workSuggestions:classify' });
   if (out.error) return { error: out.error, message: out.message, updated: 0 };
 
   let items = [];

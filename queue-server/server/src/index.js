@@ -32,7 +32,7 @@ import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
 import { workerRoutes } from './routes/worker.js';
 import { reviewsRoutes } from './routes/reviews.js';
-import { bindWorkSuggestionsDb } from './services/workSuggestions.js';
+import { bindWorkSuggestionsDb, classifyUnplacedSuggestions } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
@@ -131,6 +131,23 @@ if (process.env.PREGEN_ENABLED === '1' && process.env.WARMUP_DISABLED !== '1') {
   // tabs open instantly from the DB instead of waiting on a live generation.
   // Same WARMUP_DISABLED gate: the review runner's ephemeral boot must not spend.
   startPreGen(db);
+}
+
+// Sort any suggestions that predate the territory field into their territories, so the
+// Flow's filter chips have something to filter on. Deliberately OUTSIDE the
+// PREGEN_ENABLED gate above: that gate exists because those sweeps fired hundreds of
+// calls on every single deploy. This is one call, made only when unplaced rows
+// actually exist — once they are placed the query finds nothing and later boots spend
+// nothing at all. WARMUP_DISABLED is still honoured: the review runner's throwaway
+// boot must never spend. A failure here (Railway reaches Claude through the Mac
+// runner's helper lane, which may be offline) is logged and retried next boot; nothing
+// is left half-written, and the "Sort the old ones" button is the manual path.
+if (process.env.WARMUP_DISABLED !== '1') {
+  classifyUnplacedSuggestions()
+    .then((r) => {
+      if (r && r.updated) console.log(`[suggestions] placed ${r.updated} of ${r.considered} into territories`);
+    })
+    .catch((e) => console.error('[suggestions] one-off classify failed:', e.message));
 }
 
 const app = express();
