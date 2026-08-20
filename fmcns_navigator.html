@@ -3880,6 +3880,10 @@ async function qAction(action, id, btn) {
         await apiWrite(`/api/travaux/prompts/${id}/clear-context`, 'POST');
         await qLoad();
         break;
+      case 'skip-plan':
+        await apiWrite(`/api/travaux/prompts/${id}/skip-plan`, 'POST');
+        await qLoad();
+        break;
       case 'start':
       case 'rerun':
         await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
@@ -4160,6 +4164,8 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const activeSession = p.provider === 'opencode' ? p.opencode_session_id : p.session_id;
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
   const actions = cardActions([
+    p.plan_pending
+      ? iconBtn('bolt', 'Skip drafting the plan and start this task now, on the raw text you submitted', 'skip-plan', p.id) : '',
     ['running', 'queued'].includes(p.status)
       ? iconBtn('pause', p.status === 'running'
           ? 'Stop it now — it goes back to parked, not queued, so it won’t restart on its own'
@@ -5280,11 +5286,20 @@ function qRenderDetail(p) {
       <span>This task stopped part-way through getting ready — the server restarted while it was working, so nothing is on it any more. It clears itself within 10 minutes, or reset it now.</span>
       <button class="ctrlbtn" data-action="unstick-detail">Reset and continue</button>
     </div>` : '';
+  // Drafting a plan can take up to a minute or two (world-look plus a model call)
+  // before the task is even allowed to start — this lets Antoine drop the wait
+  // and run it right away on the raw text, with no plan rewrite.
+  const planPendingBanner = (p.plan_pending && !qStageStuck(p)) ? `
+    <div class="q-detail-row" style="background:rgba(122,117,104,0.10);border-left:3px solid #7a7568;padding:8px 10px;margin:6px 0;">
+      <span>This task is drafting its plan before it starts.</span>
+      <button class="ctrlbtn" data-action="skip-plan-detail" title="Run this task now on the raw text you submitted, without waiting for the drafted plan.">Skip plan / Start now</button>
+    </div>` : '';
   // Nothing in this panel repeats the card it opens under. The card already carries
   // the title, the status pill, the mode, the agent, the provider and the memory
   // badge, so the panel starts straight at what the card cannot show.
   host.innerHTML = `
     ${stuckBanner}
+    ${planPendingBanner}
     ${primaryHint ? `
     <div class="q-primary-action">
       <div class="q-primary-hint" id="qPrimaryHint">${primaryHint}</div>
@@ -5413,6 +5428,14 @@ function qRenderDetail(p) {
       qInspireCache[p.id] = null;
       await qLoad();
     } catch (err) { b.disabled = false; b.textContent = 'Reset and continue'; alert('Error: ' + err.message); }
+  });
+  host.querySelector('[data-action="skip-plan-detail"]')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget;
+    b.disabled = true; b.textContent = 'Starting…';
+    try {
+      await apiWrite(`/api/travaux/prompts/${p.id}/skip-plan`, 'POST', {});
+      await qLoad();
+    } catch (err) { b.disabled = false; b.textContent = 'Skip plan / Start now'; alert('Error: ' + err.message); }
   });
   if (!p.summary) qSummarize(p);
   qWireInspire(p);

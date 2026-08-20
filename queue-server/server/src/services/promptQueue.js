@@ -329,6 +329,9 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
 
   // The task may have been deleted while the draft (or the question wait) ran.
   if (!getPrompt(id)) return;
+  // Antoine already skipped the draft and the task is running raw — discard
+  // this late result instead of rewriting a task that's already in flight.
+  if (_planSkipped.has(id)) { _planSkipped.delete(id); return; }
 
   db.prepare(`
     UPDATE work_prompts SET title=?, prompt=?, resolved_preset=COALESCE(?, resolved_preset),
@@ -394,6 +397,13 @@ function settleInspireWaiter(id) {
   if (entry) entry.resolve();
   _inspireWaiters.delete(id);
 }
+
+// Ids for which Antoine chose "Skip plan / Start now" while runPlanDraft was
+// still in flight. The in-flight draft keeps running in the background (it
+// may already be mid-call to a model) but must not overwrite the task's
+// title/prompt/preset once it finally lands — the task has already started
+// running on the raw text, so a late rewrite would pull the rug from under it.
+const _planSkipped = new Set();
 
 function startInspiration(id, { title, prompt }, { force = false } = {}) {
   const run = (async () => {
@@ -480,6 +490,24 @@ export async function skipInspiration(id) {
   db.prepare(`
     UPDATE work_prompts SET inspire_state='skipped', inspire_error=NULL, pending_question=NULL,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+  `).run(id);
+  settleInspireWaiter(id);
+  broadcast();
+  if (row.status === 'queued') advanceQueue();
+  return getPrompt(id);
+}
+
+// Antoine chose "Skip plan / Start now" — the plan-drafting stage (the
+// world-look wait plus the drafting model call) is dropped entirely and the
+// task runs on the raw text it was submitted with, right away. A no-op once
+// the draft has already landed (plan_pending is already 0 by then).
+export async function skipPlanDraft(id) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  if (!row.plan_pending) return row;
+  _planSkipped.add(id);
+  db.prepare(`
+    UPDATE work_prompts SET plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(id);
   settleInspireWaiter(id);
   broadcast();
