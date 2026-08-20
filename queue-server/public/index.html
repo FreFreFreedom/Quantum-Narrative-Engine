@@ -364,6 +364,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .nb-shortlist-head { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; margin-bottom:4px; }
 .nb-short-row { display:flex; gap:10px; align-items:center; padding:6px 0; border-top:1px solid var(--c-border); }
 .nb-short-row:first-of-type { border-top:none; }
+.nb-short-row.nb-short-clickable { cursor:pointer; border-radius:8px; margin:0 -6px; padding:6px; transition:background-color var(--t-fast) var(--ease); }
+.nb-short-row.nb-short-clickable:first-of-type { border-top:none; }
+.nb-short-row.nb-short-clickable:hover { background:var(--c-surface); }
+.nb-short-row.nb-short-clickable:active { transform:translateY(1px); }
+.nb-short-row.nb-short-clickable.nb-open { background:var(--c-surface); }
+.nb-short-row.nb-short-clickable:focus-visible { outline:2px solid var(--c-ink-4); outline-offset:1px; }
 .nu-reason { font-size:11.5px; color:var(--c-ink-2); margin:2px 0; line-height:1.45; }
 .nu-next { font-size:11px; color:var(--c-ink-3); line-height:1.4; }
 .nu-next b { color:var(--c-ink-4); font-weight:600; }
@@ -1020,7 +1026,7 @@ button:active { transform: translateY(1px) scale(.99); }
   box-shadow: var(--sh-xs);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), opacity var(--t-med) var(--ease);
 }
-.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover, .nb-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover, .nb-row:hover, .nb-short-row.nb-short-clickable:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
 .legend { box-shadow: var(--sh-sm); }
 @keyframes fmcnsRise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @keyframes fmcnsSlideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
@@ -4557,15 +4563,20 @@ function nuRowHtml(p, n) {
   const build = p.ready
     ? `<button class="nb-build" data-nubuild="${p.id}">⚡ Build${flowWorldPickSuffix('component', p.id)}</button>`
     : `<button class="ctrlbtn" data-nubuild="${p.id}" title="Queues it anyway — it waits until the things it needs are done">Queue anyway</button>`;
-  return `<div class="nb-short-row">
+  // Clickable like the queue/task cards below: tap anywhere on the row (except
+  // its own button) to open the world-look ideas for this component in place.
+  const isOpen = nbWorldOpen === p.id;
+  return `<div class="nb-short-row nb-short-clickable${isOpen ? ' nb-open' : ''}" data-nbshortid="${p.id}" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${qEscAttr(p.name)} — tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">
     ${numCell}
     <div style="flex:1;min-width:0;">
       <div class="nb-name">${qEsc(p.name)} <span class="nb-terr">${qEsc(nuTerrLabel(p.territory))}</span></div>
       <div class="nu-reason">${qEsc(p.reason || '')}</div>
       ${p.next ? `<div class="nu-next"><b>Next:</b> ${qEsc(p.next)}</div>` : ''}
     </div>
+    <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
     ${build}
-  </div>`;
+  </div>
+  ${isOpen ? `<div class="nb-world" data-nbworldpanel="${p.id}">${flowWorldPanelHtml('component', p.id)}</div>` : ''}`;
 }
 
 // The whole section, pinned at the top of the Flow. Deliberately three rows: the
@@ -4633,6 +4644,44 @@ function wireNextUp(host) {
         else { b.disabled = false; b.textContent = '⚡ Build'; }
       });
     };
+  });
+  // Tap anywhere on a "what to do next" row (except its own button) to open the
+  // world-look ideas for that component — same click-anywhere-to-expand pattern
+  // used by the queue/task cards and the Not-built rows.
+  host.querySelectorAll('.nb-shortlist [data-nbshortid]').forEach(row => {
+    const toggle = () => {
+      const id = row.getAttribute('data-nbshortid');
+      nbWorldOpen = nbWorldOpen === id ? null : id;
+      renderFlow();
+    };
+    row.onclick = (e) => { if (e.target.closest('button, a')) return; toggle(); };
+    row.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    };
+  });
+  host.querySelectorAll('.nb-shortlist [data-nbworldpanel]').forEach(panel => {
+    const cid = panel.getAttribute('data-nbworldpanel');
+    const c = ARCH_BY_ID[cid];
+    if (!c) return;
+    const { title, prompt } = nbQueuePromptOf(c);
+    const text = [title, prompt].join('\n');
+    const e = flowWorldEntry('component', cid);
+    panel.querySelectorAll('[data-action="flowworld-start"], [data-action="flowworld-rerun"]').forEach(b => {
+      b.onclick = async () => {
+        b.disabled = true;
+        await flowWorldStart('component', cid, text);
+        renderFlow();
+      };
+    });
+    panel.querySelectorAll('[data-action="flowworld-pick"]').forEach(b => {
+      b.onclick = () => {
+        const card = b.closest('.q-inspire-card');
+        const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
+        const facts = qInspireReviewFacts(e.report?.review);
+        applyInspireToggle(e.sel, key, facts);
+        renderFlow();
+      };
+    });
   });
 }
 
@@ -7264,14 +7313,19 @@ function renderNotbuilt() {
         const c = ARCH_BY_ID[p.id];
         if (!c) return '';
         const terr = TERRITORIES.find(t => t.id === c.territory);
-        return `<div class="nb-short-row">
+        // Clickable like the queue/task cards and the rows below: tap anywhere
+        // on the row (except its own button) to open the world-look ideas.
+        const isOpen = nbWorldOpen === c.id;
+        return `<div class="nb-short-row nb-short-clickable${isOpen ? ' nb-open' : ''}" data-nbshortid="${c.id}" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${qEscAttr(c.name)} — tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">
           <span class="nb-short-num">${i + 1}</span>
           <div style="flex:1;min-width:0;">
             <div class="nb-name">${qEsc(c.name)} <span class="nb-terr">${terr ? terr.label : c.territory}</span></div>
             ${p.reason ? `<div class="nb-what" style="margin:2px 0;">${qEsc(p.reason)}</div>` : ''}
           </div>
+          <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
           <button class="nb-build" data-nbbuild="${p.id}">⚡ Build${flowWorldPickSuffix('component', p.id)}</button>
-        </div>`;
+        </div>
+        ${isOpen ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}</div>` : ''}`;
       }).join('')}
     </div>`;
   }
@@ -7322,6 +7376,19 @@ function renderNotbuilt() {
       const id = row.getAttribute('data-nbid');
       nbWorldOpen = nbWorldOpen === id ? null : id;
       renderNotbuilt();
+    };
+  });
+  // Same click-anywhere-to-expand behavior for the "next 3" shortlist rows
+  // pinned above the list.
+  host.querySelectorAll('.nb-shortlist [data-nbshortid]').forEach(row => {
+    const toggle = () => {
+      const id = row.getAttribute('data-nbshortid');
+      nbWorldOpen = nbWorldOpen === id ? null : id;
+      renderNotbuilt();
+    };
+    row.onclick = (e) => { if (e.target.closest('button, a')) return; toggle(); };
+    row.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
     };
   });
   host.querySelectorAll('[data-nbbuild]').forEach(b => {
