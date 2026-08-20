@@ -709,9 +709,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-inspire-wrap { margin:4px 0 8px; }
 .nb-world { margin:2px 0 6px 14px; padding:8px 10px; border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); animation:fmcnsRise .24s var(--ease); }
 .q-inspire-tag { font-size:9.5px; border:1px solid var(--c-border-2); border-radius:8px; padding:1px 7px; color:var(--c-ink-4); flex-shrink:0; }
-.q-inspire-part { font-size:12.5px; line-height:1.55; margin:14px 0 6px; }
+.q-inspire-part { font-size:11.5px; margin:8px 0 4px; }
 .q-inspire-part span { color:var(--c-ink-4); }
-.q-inspire-desc { display:block; margin-top:3px; font-size:11.5px; line-height:1.6; color:var(--c-ink-3); max-width:70ch; }
+.q-inspire-desc { display:block; margin-top:2px; }
 .q-inspire-desc.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .q-inspire-card.sel, .q-inspire-card.q-inspire-sel { border-color:var(--c-accent); background:color-mix(in srgb, var(--c-accent) 7%, var(--c-surface)); }
 .q-inspire-card.q-inspire-applied { border-color:#4f9d7a; }
@@ -729,30 +729,26 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 /* World-look rows: one line per idea, grouped by the decision to be made.
    Substitutes live inside a .wl-group box (radio marks), everything else is a
    plain checklist, and the full text only appears once a row is opened. */
-.wl-group { border:1px solid var(--c-border-2); border-radius:9px; padding:8px 10px 6px; margin:10px 0; background:var(--c-surface); }
-.wl-group-head { font-size:10.5px; line-height:1.5; color:var(--c-ink-3); margin:0 0 6px; display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; }
+.wl-group { border:1px solid var(--c-border-2); border-radius:9px; padding:6px 8px 4px; margin:8px 0; background:var(--c-surface); }
+.wl-group-head { font-size:10.5px; color:var(--c-ink-3); margin:0 0 4px; display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; }
 .wl-group-head b { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-2); }
-.wl-rows-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:14px 0 5px; }
-.wl-row { border:none; background:none; padding:8px 7px; margin:0; border-radius:8px; }
-.wl-row + .wl-row { border-top:1px solid var(--c-border); }
-.wl-row.q-inspire-sel + .wl-row, .wl-row + .wl-row.q-inspire-sel { border-top-color:transparent; }
+.wl-rows-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:10px 0 3px; }
+.wl-row { border:none; background:none; padding:3px 2px; margin:0; border-radius:6px; }
 .wl-row:hover { background:var(--c-surface-2); }
 .wl-row.q-inspire-sel { background:color-mix(in srgb, var(--c-accent) 9%, transparent); }
-.wl-head { display:flex; align-items:flex-start; gap:7px; min-height:20px; }
-.wl-mark { width:20px; height:20px; margin-top:-1px; flex-shrink:0; padding:0; line-height:1; border:none; background:none; cursor:pointer; font-size:13px; color:var(--c-ink-3); border-radius:5px; font-family:inherit; }
+.wl-head { display:flex; align-items:center; gap:6px; min-height:20px; }
+.wl-mark { width:20px; height:20px; flex-shrink:0; padding:0; line-height:1; border:none; background:none; cursor:pointer; font-size:13px; color:var(--c-ink-3); border-radius:5px; font-family:inherit; }
 .wl-mark:hover:not(:disabled) { background:var(--c-surface); color:var(--c-ink); }
 .wl-mark:disabled { cursor:default; color:#4f9d7a; }
 .wl-row.q-inspire-sel .wl-mark { color:var(--c-accent); }
-.wl-title { flex:1; min-width:0; font-size:13px; font-weight:600; line-height:1.35; color:var(--c-ink); cursor:pointer; }
+.wl-title { font-size:12px; font-weight:600; color:var(--c-ink); cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .wl-title:hover { text-decoration:underline; }
-.wl-star { font-size:10px; flex-shrink:0; margin-top:3px; }
-.wl-caret { font-size:10px; margin-top:3px; color:var(--c-ink-4); cursor:pointer; padding:0 2px; flex-shrink:0; }
-.wl-line { font-size:11.5px; line-height:1.6; color:var(--c-ink-2); margin:4px 0 1px 27px; max-width:66ch; cursor:pointer; }
+.wl-star { font-size:10px; flex-shrink:0; }
+.wl-caret { margin-left:auto; font-size:10px; color:var(--c-ink-4); cursor:pointer; padding:0 2px; flex-shrink:0; }
+.wl-line { font-size:11px; color:var(--c-ink-3); margin:0 0 1px 26px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .wl-reason { font-style:italic; cursor:default; }
-.wl-detail { margin:7px 0 4px 27px; max-width:70ch; }
-.wl-detail .sg-rationale { font-size:11.5px; line-height:1.65; margin:0 0 9px; }
-.wl-detail .sg-rationale:last-child { margin-bottom:2px; }
-.wl-detail .sg-rationale b { display:block; font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin-bottom:2px; }
+.wl-detail { margin:3px 0 5px 26px; }
+.wl-detail .sg-rationale { margin-bottom:3px; }
 .wl-leftout { margin:8px 0 2px; }
 .wl-leftout summary { font-size:10.5px; color:var(--c-ink-4); cursor:pointer; }
 .wl-row.q-inspire-removed { opacity:.6; }
@@ -5581,21 +5577,15 @@ const WORLD_KIND_ORDER = ['open', 'hidden', 'bold'];
 const worldOpen = new Set();
 const worldRowKey = (scope, pi, i) => `${scope}|${pi}:${i}`;
 
-// The summary a closed row shows: the pick's leading field, kept whole up to
-// SUMMARY_MAX and otherwise cut at the last sentence (or word) that fits. It
-// wraps over a few lines rather than being chopped to one — a one-line ellipsis
-// left too little of the idea to judge it by.
-const SUMMARY_MAX = 220;
+// The single line a closed row shows: the pick's leading field, cut to its first
+// sentence, or ~90 characters on a word boundary. Same idea as qPurposePreview.
 function worldOneLine(pick) {
   const src = pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? pick.what : pick.vision;
   const text = String(src || '').replace(/\s+/g, ' ').trim();
   if (!text) return '';
-  if (text.length <= SUMMARY_MAX) return text;
-  // Prefer the last sentence that fits whole; fall back to a word boundary.
-  const head = text.slice(0, SUMMARY_MAX);
-  const whole = head.match(/^[\s\S]*[.!?](?=\s|$)/);
-  if (whole && whole[0].length > 90) return whole[0];
-  return head.replace(/\s\S*$/, '') + '…';
+  const stop = text.search(/[.!?](\s|$)/);
+  const first = stop > 24 ? text.slice(0, stop + 1) : text;
+  return first.length > 90 ? first.slice(0, 90).replace(/\s\S*$/, '') + '…' : first;
 }
 
 function worldPickTitle(pick) {
