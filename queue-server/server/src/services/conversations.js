@@ -419,7 +419,7 @@ async function runFoldTurn(convoId) {
   const kind = ref.pick.kind || 'bold';
   const result = await runRoutedTurn({
     convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1600,
-    feature: 'plan_draft', label: 'conversations:fold', includeDigest: false,
+    feature: 'studio', label: 'conversations:fold', includeDigest: false,
     instruction: `Rewrite THIS idea so it carries everything the conversation arrived at — the sharper version of it, not a summary of the chat. Keep what still holds, fold in what we added, drop what we rejected. Write it for someone reading the idea cold, with no knowledge of this conversation. Plain English, no jargon, no file names.
 Respond with ONLY this JSON object and nothing else — same shape, same kind:
 ${PICK_SHAPES[kind]}`,
@@ -454,7 +454,7 @@ async function runMoreIdeasTurn(convoId) {
     .map((p) => p.repo || p.name).filter(Boolean).join(', ');
   const result = await runRoutedTurn({
     convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1800,
-    feature: 'plan_draft', label: 'conversations:more-ideas',
+    feature: 'studio', label: 'conversations:more-ideas',
     instruction: `Propose between one and three NEW ideas that this conversation opened up — not variations on what is already listed, and not a rehash of the chat. Each must be something that could actually be built, and each must be an answer to the same question these ideas answer.
 Already on the table, do not repeat: ${existing || '(nothing)'}.
 An idea can be any of the three kinds: a real open-source project we could use, an existing product worth learning from, or a bold idea nobody has built.
@@ -491,7 +491,7 @@ async function runReframeTurn(convoId) {
 
   const result = await runRoutedTurn({
     convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 900,
-    feature: 'plan_draft', label: 'conversations:reframe', includeDigest: false,
+    feature: 'studio', label: 'conversations:reframe', includeDigest: false,
     instruction: `The conversation suggests we were answering the wrong question. Rewrite the QUESTION these ideas are answers to — the heading above them — so it states what we are actually trying to do now. Do not touch the ideas themselves. Plain English, no jargon.
 Respond with ONLY this JSON object and nothing else:
 {"name":"<a short heading, a few words>","description":"<one or two sentences saying what we are really solving>"}`,
