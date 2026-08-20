@@ -393,6 +393,12 @@ function parseInspirePicks(row) {
   try { return JSON.parse(row?.inspire_picks_json || '[]'); } catch { return []; }
 }
 
+// Ideas ticked in the panel but not yet applied to the plan — see the schema
+// comment on inspire_sel_json for why this is separate from inspire_picks_json.
+function parseInspireSel(row) {
+  try { return JSON.parse(row?.inspire_sel_json || '[]'); } catch { return []; }
+}
+
 // The quick check's verdict on the report (see codeDiscovery.reviewInspiration):
 // removed picks with reasons, alternative groups with a best-per-group, an
 // optional owner question, and — after the owner answered — their note.
@@ -621,7 +627,7 @@ export async function refreshInspiration(id, { force = true } = {}) {
   }
   settleInspireWaiter(id);
   db.prepare(`
-    UPDATE work_prompts SET inspire_state='pending', inspire_error=NULL,
+    UPDATE work_prompts SET inspire_state='pending', inspire_error=NULL, inspire_sel_json='[]',
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(id);
   broadcast();
@@ -671,6 +677,7 @@ export async function applyInspiration(id, { picks = [] } = {}) {
       return { ...row, error: 'steer_failed' };
     }
     addMessage(id, { role: 'user', text: steerText });
+    db.prepare(`UPDATE work_prompts SET inspire_sel_json='[]' WHERE id=?`).run(id);
     broadcast();
     return { ...getPrompt(id), steered: true };
   }
@@ -689,12 +696,13 @@ export async function applyInspiration(id, { picks = [] } = {}) {
       space: row.space,
       inspiration: { report_id: report.id, picks: applied.map((a) => ({ part_index: a.part_index, pick_index: a.pick_index })) },
     });
+    db.prepare(`UPDATE work_prompts SET inspire_sel_json='[]' WHERE id=?`).run(id);
     broadcast();
     return { ...created, followup: true };
   }
 
   db.prepare(`
-    UPDATE work_prompts SET inspire_picks_json=?, inspire_state='applied',
+    UPDATE work_prompts SET inspire_picks_json=?, inspire_state='applied', inspire_sel_json='[]',
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(JSON.stringify(applied), id);
   const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt || row.prompt, mode: row.mode, inspiration: digest });
@@ -929,9 +937,30 @@ export function inspirationPayload(id) {
     state: row.inspire_state,
     error: row.inspire_error || null,
     picks: parseInspirePicks(row),
+    sel: parseInspireSel(row),
     review: parseInspireReview(row) || report?.review || null,
     report,
   };
+}
+
+// Persist the panel's current ticks (not yet applied) so they survive a page
+// reload or coming back to the task later — see inspire_sel_json in schema.js.
+// Validated against the live report so a stale/out-of-range index can't be
+// stored (the report may have moved on since the tick was made client-side).
+export function setInspireSelection(id, picks) {
+  const row = getPrompt(id);
+  if (!row) return null;
+  const report = row.inspire_report_id ? getReport(db, row.inspire_report_id) : null;
+  const clean = [];
+  for (const sel of picks || []) {
+    const pi = Number(sel?.part_index);
+    const ii = Number(sel?.pick_index);
+    if (!Number.isInteger(pi) || !Number.isInteger(ii)) continue;
+    if (report && !report.parts?.[pi]?.picks?.[ii]) continue;
+    clean.push({ part_index: pi, pick_index: ii });
+  }
+  db.prepare(`UPDATE work_prompts SET inspire_sel_json=? WHERE id=?`).run(JSON.stringify(clean), id);
+  return getPrompt(id);
 }
 
 // Retroactive plan-first drafting for a task created before that feature existed

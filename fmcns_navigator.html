@@ -5962,6 +5962,9 @@ function qWireInspireButtons(p) {
       qInspireReRender(p);
       const hint = document.getElementById('qPrimaryHint');
       if (hint) { hint.innerHTML = qPrimaryHintHtml(p); qWirePrimaryHint(hint); }
+      // Fire-and-forget: so the tick survives a reload or coming back later
+      // even if the "Apply" button never gets pressed.
+      apiWrite(`/api/travaux/prompts/${p.id}/inspiration/select`, 'POST', { picks: list }).catch(() => {});
     };
   });
   const applyBtn = host.querySelector('[data-action="inspire-apply"]');
@@ -5993,6 +5996,9 @@ async function qFetchInspire(p) {
   qInspireBusy.add(p.id);
   try {
     const data = await api(`/api/travaux/prompts/${p.id}/inspiration`);
+    // The server remembers ticks made before "Apply" (inspire_sel_json), so a
+    // reload or coming back later restores the same selection.
+    qInspireSel[p.id] = data.sel || [];
     const html = qInspireFullHtml(p, data);
     qInspireCache[p.id] = {
       state: data.state,

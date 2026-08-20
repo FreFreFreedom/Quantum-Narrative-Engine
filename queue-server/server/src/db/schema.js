@@ -153,6 +153,10 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_report_id TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_picks_json TEXT NOT NULL DEFAULT '[]'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_error TEXT`); } catch {}
+  // Ticks not yet applied to the plan — kept separate from inspire_picks_json
+  // (which only holds picks that were actually applied) so a selection made
+  // before pressing "Apply" survives a page reload or coming back later.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN inspire_sel_json TEXT NOT NULL DEFAULT '[]'`); } catch {}
   // Quick check between world-look and plan draft: one cheap pass that filters
   // the report's picks (removed + one-line reasons), clusters substitutes into
   // groups with an automatic best-per-group recommendation, and — rarely —
