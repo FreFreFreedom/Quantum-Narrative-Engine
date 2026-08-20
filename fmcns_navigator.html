@@ -708,8 +708,17 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
    badges beside it; the six colours come from TERRITORY_COLORS in the script. The
    dashed variants are for rows with no territory, so an absent value reads as absent
    rather than as one more territory. */
-.sg-grouphead { display:flex; align-items:center; gap:6px; }
-.sg-groupcount { font-family:monospace; color:var(--c-ink-4); font-weight:600; }
+/* The bar down the left carries the territory's own colour — that is what makes one
+   section read as a different section at a glance, before you read a word of it. The
+   heading also gets a rule under it and real weight, because it borrowed
+   .nu-grouphead's quiet inline style and disappeared between rows this tall. */
+.sg-grouphead { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--c-ink-2);
+  margin:18px 0 8px; padding:0 0 6px 9px; border-bottom:1px solid var(--c-border-2);
+  border-left:3px solid var(--sg-terr, var(--c-border-2)); }
+.sg-grouphead:hover { color:var(--c-ink); }
+.sg-groupcount { font-family:monospace; font-size:11px; color:var(--c-ink-3); background:var(--c-surface-2);
+  border-radius:9px; padding:1px 8px; margin-left:auto; }
+.sg-grouphead .nb-chev { color:var(--c-ink-4); }
 .sg-terr-chip { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; text-transform:none; letter-spacing:0; }
 .sg-terr-chip.outside { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
 .sg-terr-chip.none { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); font-style:italic; }
@@ -4894,7 +4903,8 @@ function sgRowsHtml(sg) {
 // so neither list's click handler ever claims the other's heads.
 function sgGroupHtml(key, label, chipHtml, rows) {
   const collapsed = !!sgGroupCollapsed[key];
-  return `<div class="nu-grouphead sg-grouphead" data-sgterr="${key}" role="button" tabindex="0" aria-expanded="${!collapsed}" title="Tap to ${collapsed ? 'show' : 'hide'} this group">
+  const colour = TERRITORY_COLORS[key] || 'var(--c-border-2)';
+  return `<div class="nu-grouphead sg-grouphead" style="--sg-terr:${colour}" data-sgterr="${key}" role="button" tabindex="0" aria-expanded="${!collapsed}" title="Tap to ${collapsed ? 'show' : 'hide'} this group">
     <span class="nb-chev">${collapsed ? '▸' : '▾'}</span> ${chipHtml} ${qEsc(label)} <span class="sg-groupcount">${rows.length}</span>
   </div>${collapsed ? '' : rows.map(flowSgRow).join('')}`;
 }
@@ -4983,6 +4993,7 @@ function renderFlow() {
           <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
           <button class="ctrlbtn" id="flowGenBtn">✨ Generate now</button>
           <button class="ctrlbtn" id="flowRewriteBtn" title="Redo the world-look ideas attached to tasks, suggestions, pieces and seeds that were written before the ideas were held to their subject">↻ Redo the old world ideas</button>
+          <button class="ctrlbtn" id="flowSortOldBtn" title="Suggestions made before the app started recording which part they touch sit under &quot;not placed yet&quot;. This reads them once and files them into their territories.">⇅ Sort the old ones</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
         </div>` + sgRowsHtml(sg));
     }
@@ -5175,6 +5186,8 @@ function renderFlow() {
   if (genBtn) genBtn.onclick = () => flowGenerateNow();
   const rewriteBtn = document.getElementById('flowRewriteBtn');
   if (rewriteBtn) rewriteBtn.onclick = () => flowRewriteWorldLooks();
+  const sortOldBtn = document.getElementById('flowSortOldBtn');
+  if (sortOldBtn) sortOldBtn.onclick = () => flowSortOldSuggestions();
   const seedToggle = document.getElementById('flowSeedToggle');
   if (seedToggle) seedToggle.onclick = () => {
     const box = document.getElementById('flowSeedAdd');
@@ -5227,6 +5240,33 @@ async function flowRewriteWorldLooks() {
     if (status) status.textContent = 'Could not start: ' + (e.message || e);
   } finally {
     setTimeout(() => { btn.disabled = false; btn.textContent = '↻ Redo the old world ideas'; }, 5000);
+  }
+}
+
+// File the suggestions that predate the territory field. They sit under "not placed
+// yet" because the app only started recording which part of itself a suggestion
+// touches recently — the older ones never had the question asked of them. One cheap
+// call reads the backlog and sorts it. Manual on purpose, like every other generated
+// thing here: nothing spends credit because a page loaded.
+async function flowSortOldSuggestions() {
+  const btn = document.getElementById('flowSortOldBtn');
+  const status = document.getElementById('flowGenStatus');
+  if (!btn) return;
+  btn.disabled = true; btn.textContent = '⇅ Sorting…';
+  try {
+    const out = await apiWrite('/api/travaux/suggestions/classify', 'POST', {});
+    if (out.nothingToDo) {
+      if (status) status.textContent = 'Nothing to sort — every suggestion already sits in a territory.';
+    } else {
+      if (status) status.textContent = `Sorted ${out.updated} of ${out.considered}.` + (out.updated < out.considered ? ' The rest stay unplaced — Claude was not sure enough about them.' : '');
+      await loadSuggestions();
+      renderFlow();
+    }
+  } catch (e) {
+    if (status) status.textContent = 'Could not sort them: ' + (e.message || e);
+  } finally {
+    btn.disabled = false; btn.textContent = '⇅ Sort the old ones';
+    setTimeout(() => { if (status) status.textContent = ''; }, 8000);
   }
 }
 

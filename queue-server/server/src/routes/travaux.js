@@ -32,6 +32,16 @@ export function travauxRoutes() {
       .catch((e) => console.error('[travaux] suggestion engine run failed:', e.message));
   });
 
+  // Sorts the suggestions that predate the territory field into their territories.
+  // Waits for the answer rather than returning 202 like /generate does: it is one
+  // cheap call, the button that fires it wants to report how many it placed, and
+  // there is nothing to poll for.
+  router.post('/suggestions/classify', asyncHandler(async (req, res) => {
+    const out = await suggestions.classifyUnplacedSuggestions();
+    if (out.error) return res.status(502).json(out);
+    res.json(out);
+  }));
+
   router.post('/suggestions/:id/accept', asyncHandler(async (req, res) => {
     const out = await suggestions.acceptSuggestion(req.params.id, {
       editedPrompt: req.body?.prompt || null,

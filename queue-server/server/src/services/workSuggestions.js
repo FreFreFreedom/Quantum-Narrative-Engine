@@ -316,6 +316,59 @@ export async function generateIntegrationSuggestions() {
   return { added, skipped: items.length - added.length };
 }
 
+// One-off tidy-up for suggestions written before the engine stored a territory.
+// Their `area` text can't always be read back (the separator trick it used was never
+// reliable), so rather than guess from keywords this asks Claude once — a single call
+// for the whole backlog, on the cheap model, since naming which part of the app a
+// title is about is easy work. Deliberately manual: it runs when Antoine presses the
+// button, never on a page load or a boot, same as every other generated thing here.
+export async function classifyUnplacedSuggestions() {
+  // Integrations are left out on purpose: they aren't one of the six, and they already
+  // have their own group. Only rows we genuinely couldn't place are worth paying for.
+  const rows = db.prepare(`
+    SELECT id, title, rationale FROM work_suggestions
+    WHERE deleted_at IS NULL AND territory IS NULL AND kind != 'integration'
+    ORDER BY created_at DESC LIMIT 60
+  `).all();
+  if (!rows.length) return { updated: 0, nothingToDo: true };
+
+  const list = rows.map((r, i) => `${i + 1}. ${r.title}${r.rationale ? ' — ' + r.rationale : ''}`).join('\n');
+  const prompt = `You are sorting existing work suggestions for ${APP_BLURB}
+
+Each one below belongs to exactly one of the app's six territories:
+- perception: how new material gets into the app at all
+- knowledge: the characters, films, countries, their tags and axes
+- reasoning: finding patterns, links and echoes across that material
+- experience: moving around and exploring it — the graph, the map, zooming
+- interface: layout, spacing, typography, colour, how things look and feel
+- self: the app's own build system — the queue, the worker that codes, shipping, watching itself, ranking what to build next, proposing work, the idea studio, the look at the world
+
+${list}
+
+Reply with ONLY a JSON array, one entry per numbered item above, no prose:
+[{"n": 1, "territory": "self"}]`;
+
+  const out = await generateText({ prompt, feature: 'build', maxTokens: 900, label: 'workSuggestions:classify', cliModel: 'haiku' });
+  if (out.error) return { error: out.error, message: out.message, updated: 0 };
+
+  let items = [];
+  try {
+    const m = String(out.text || '').match(/\[[\s\S]*\]/);
+    items = m ? JSON.parse(m[0]) : [];
+  } catch { return { error: 'parse_error', updated: 0 }; }
+
+  const upd = db.prepare(`UPDATE work_suggestions SET territory = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND territory IS NULL`);
+  let updated = 0;
+  for (const it of items) {
+    const row = rows[Number(it && it.n) - 1];
+    // A territory that isn't one of the six is dropped rather than stored — the row
+    // stays honestly unplaced, which is the whole point of having that group.
+    if (!row || !TERRITORY_IDS.includes(it.territory)) continue;
+    try { upd.run(it.territory, row.id); updated += 1; } catch {}
+  }
+  return { updated, considered: rows.length };
+}
+
 export async function runSuggestionEngines({ kind = null, catalog = [] } = {}) {
   const results = {};
   if (!kind || kind === 'chantier') results.chantier = await generateSuggestions({ catalog });
