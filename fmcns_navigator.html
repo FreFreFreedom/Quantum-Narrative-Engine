@@ -749,9 +749,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .wl-reason { font-style:italic; cursor:default; }
 .wl-detail { margin:3px 0 5px 26px; }
 .wl-detail .sg-rationale { margin-bottom:3px; }
-.wl-leftout { margin:8px 0 2px; }
-.wl-leftout summary { font-size:10.5px; color:var(--c-ink-4); cursor:pointer; }
-.wl-row.q-inspire-removed { opacity:.6; }
+.wl-row.q-inspire-removed { opacity:1; }
 /* Self-updating tree: pending proposals bar (Architecture tab) */
 .arch-proposals { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:9px; margin:0 14px 10px; flex-shrink:0; }
 .arch-proposals:not(.open) { padding:0; }
@@ -5640,7 +5638,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, inG
         <span class="wl-caret" data-worldexpand="${ek}" title="The full idea">${isOpen ? '▾' : '▸'}</span>
       </div>
       ${line ? `<div class="wl-line" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
-      ${removed ? `<div class="wl-line wl-reason">Left out: ${qEsc(removed)}</div>` : ''}
+      ${removed ? `<div class="wl-line wl-reason" title="Only the quick check's opinion — the idea stays in the list and you can pick it.">The quick check wasn't sure: ${qEsc(removed)}</div>` : ''}
       <div class="wl-detail" ${isOpen ? '' : 'hidden'}>${worldDetailHtml(pick)}</div>
     </div>`;
 }
@@ -5661,10 +5659,8 @@ function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = 
     const opts = { applied, sel, facts, pickAction, scope };
     const groups = new Map();
     const loose = [];
-    const leftOut = [];
     (part.picks || []).forEach((pick, i) => {
       const k = pi + ':' + i;
-      if (facts?.removed.has(k)) { leftOut.push({ pick, i }); return; }
       const g = facts?.groupOf.get(k);
       if (!g) { loose.push({ pick, i }); return; }
       if (!groups.has(g.id)) groups.set(g.id, { note: g.note, bestKey: g.bestKey, items: [] });
@@ -5687,11 +5683,7 @@ function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = 
       ? `<div class="wl-rows-label">${groups.size ? 'Add if you want' : 'Ideas'}</div>` +
         loose.map(({ pick, i }) => worldRowHtml(pick, pi, i, opts)).join('')
       : '';
-    const leftOutHtml = leftOut.length
-      ? `<details class="wl-leftout"><summary>${leftOut.length} idea${leftOut.length === 1 ? '' : 's'} left out — pick any of them if you disagree</summary>
-          ${leftOut.map(({ pick, i }) => worldRowHtml(pick, pi, i, opts)).join('')}</details>`
-      : '';
-    return header + groupsHtml + looseHtml + leftOutHtml;
+    return header + groupsHtml + looseHtml;
   }).join('');
 }
 
