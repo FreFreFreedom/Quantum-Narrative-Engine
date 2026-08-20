@@ -46,13 +46,19 @@ const INSTRUCTION = `You are drafting an execution brief for a coding agent that
 
 Respond in exactly this format, nothing else:
 TITLE: <one short line>
+STILL NEEDED: <yes|changed|no> — <one short reason>
 BRIEF:
 <the brief>
+
+STILL NEEDED answers one question: judging by the facts you were given, is this task still worth doing?
+- yes — nothing suggests it is done; this is the normal answer.
+- changed — partly done or the ground has moved, so the brief below reflects what is left.
+- no — the REPO FACTS or the shipped work show it is ALREADY DONE. Only say no when the evidence in front of you says so; never on a hunch, and never because the request sounds vague.
 
 The brief must:
 - Restate the goal in one line.
 - List concrete steps to do it.
-- Name the specific files or areas of the codebase likely involved, if you can infer them from the request — do not invent files you are not reasonably sure exist.
+- Name the specific files or areas of the codebase likely involved. If a REPO FACTS section is present it was read from the checkout seconds ago: name only files it confirms exist, and treat anything it does not list as non-existent. With no REPO FACTS section, infer carefully from the request and do not invent files you are not reasonably sure exist.
 - State a clear, checkable definition of done.
 - Note anything the request implies is explicitly out of scope.
 
@@ -71,7 +77,19 @@ function parseDraft(text) {
   const title = titleMatch ? titleMatch[1].trim() : '';
   const brief = briefMatch ? briefMatch[1].trim() : raw.trim();
   if (!brief) return null;
-  return { title, brief };
+
+  // "Is this still worth doing?" — a wider answer from a call that was happening
+  // anyway, so it costs nothing. Absent or unparseable means 'yes': a missing line
+  // must never be read as "already done", since that would park a task nobody
+  // asked to park.
+  const stillMatch = raw.match(/^STILL NEEDED:\s*(yes|changed|no)\b[\s—:-]*(.*)$/im);
+  const stillNeeded = stillMatch ? stillMatch[1].toLowerCase() : 'yes';
+  const stillWhy = stillMatch ? (stillMatch[2] || '').trim() : '';
+
+  // The STILL NEEDED line sits above BRIEF, so it is not inside the brief text —
+  // but a model that repeats it inside the brief should not leak it to the agent.
+  const cleanBrief = brief.replace(/^STILL NEEDED:.*$/im, '').trim() || brief;
+  return { title, brief: cleanBrief, stillNeeded, stillWhy };
 }
 
 // → { title, brief } | null. Never throws — a failure here must fall back to the
@@ -81,12 +99,17 @@ function parseDraft(text) {
 // owner's answer to a rare quick-check question about the world-look ideas.
 // `fast` (free-only plan): mini-tier drafts skip the world-look and use the
 // short draft — one quick call, for tiny tasks whose plan cannot need nuance.
-export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null, fast = false }) {
+export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null, fast = false, repoFacts = null }) {
   const text = String(prompt || '').trim();
   if (!text) return null;
   const input = [
     title ? `SUBMITTED TITLE: ${title}` : null,
     `MODE: ${mode}`,
+    // Facts read from the checkout seconds ago (repoProbe.js). Placed BEFORE the
+    // request so the model has them in hand while reading it. Empty when the runner
+    // is offline or the request named nothing checkable — in which case this is
+    // exactly the old prompt.
+    repoFacts ? repoFacts : null,
     fast ? null : inspiration ? `INSPIRATION FROM THE WORLD:\n${inspiration}` : null,
     fast ? null : ownerNote ? `OWNER'S NOTE ON THE IDEAS (their answer to a question about the world-look — follow it):\n${String(ownerNote).trim()}` : null,
     `RAW REQUEST:\n${text}`,

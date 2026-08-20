@@ -37,7 +37,8 @@ import {
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
-import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
+import { getClaudeUsage, getSideSubscriptionUsage } from '../server/src/services/claudeUsage.js';
+import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { shipJob, undoJob } from './git-ship.js';
 
@@ -95,6 +96,14 @@ const CLAUDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_WEEK_RESERVE_PCT || 90
 // Deep (opus) work is the expensive kind — hold it to a stricter weekly reserve so a
 // single big task can't be what finally exhausts the week.
 const CLAUDE_DEEP_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_DEEP_WEEK_RESERVE_PCT || 70);
+// The SECOND (smaller) subscription gets its own, much later reserve. Its whole job
+// is to be spent — holding it back at 85% would waste the plan we bought it for. But
+// running it to 100% means the call that discovers the ceiling is a FAILED call: the
+// question gets asked, times out or errors, and only then is re-asked on the main
+// account. Handing over a few percent early costs one unused sliver of the small
+// plan and buys a clean answer every time.
+const CLAUDE_SIDE_RESERVE_PCT = Number(process.env.CLAUDE_SIDE_RESERVE_PCT || 93);
+const CLAUDE_SIDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_SIDE_WEEK_RESERVE_PCT || 97);
 // Set CLAUDE_QUEUE=0 to switch the priority lane off entirely (everything free).
 const CLAUDE_LANE_ENABLED = process.env.CLAUDE_QUEUE !== '0';
 
@@ -368,6 +377,29 @@ async function claudeGate({ tier, preset }) {
   return null;
 }
 
+// Rule 2 for the second account: hand this job to the MAIN account before the small
+// plan is spent, rather than after it fails. The reactive fallback in ai/text.js stays
+// as the safety net (it catches a limit we did not see coming); this is the part that
+// avoids the wasted, failed call in the first place.
+//
+// Returns null when the second account should answer, or a plain-English reason to
+// hand over. An unreadable percentage never hands over — an unknown reading is not
+// evidence of a full window, and the net below still catches a real ceiling.
+async function sideHandoverReason() {
+  let u = null;
+  try { u = await getSideSubscriptionUsage(SIDE_TOKEN); } catch { /* unknown — use it */ }
+  if (!u) return null;
+  const sess = u.session?.utilizationPct;
+  if (Number.isFinite(sess) && sess >= CLAUDE_SIDE_RESERVE_PCT) {
+    return `its 5h window is ${Math.round(sess)}% used (hand-over at ${CLAUDE_SIDE_RESERVE_PCT}%)`;
+  }
+  const week = u.week?.utilizationPct;
+  if (Number.isFinite(week) && week >= CLAUDE_SIDE_WEEK_RESERVE_PCT) {
+    return `its weekly limit is ${Math.round(week)}% used (hand-over at ${CLAUDE_SIDE_WEEK_RESERVE_PCT}%)`;
+  }
+  return null;
+}
+
 // The app's usage bar is fed by whatever this runner last reported, and the only
 // place that used to happen was the idle claim poll — so the bar went blank for
 // the entire duration of every task, which is exactly when it matters. The
@@ -401,6 +433,25 @@ function warnSideTokenMissingOnce() {
 //   • the same window reserve as real tasks (claudeGate), so a nearly-spent
 //     week declines the job and the caller just sees its normal free-lane failure;
 //   • only ever reached after every free backend already failed.
+// A 'repo_probe' job: answer it from the checkout, with NO model call. This is the
+// whole point of the kind column — the server cannot do this itself (Railway has no
+// repo; gitOps.mainRepo() returns null there), and a coding brief written without it
+// is guessing which files exist. Everything here is read-only git.
+function answerRepoProbe(job) {
+  let req = {};
+  try { req = JSON.parse(job.prompt || '{}'); } catch { /* a malformed probe gets empty facts */ }
+  const paths = Array.isArray(req.paths) ? req.paths : [];
+  const terms = Array.isArray(req.identifiers) ? req.identifiers : [];
+
+  const files = gitPathFacts(RUNNER_REPO, paths);
+  const grep = gitGrepHits(RUNNER_REPO, terms);
+  // Recent history is only interesting for paths that turned out to be real.
+  const existing = files.filter((f) => f.exists).map((f) => f.path);
+  const recent = existing.length ? gitRecentTouching(RUNNER_REPO, existing) : [];
+
+  return JSON.stringify({ head: gitHeadSha(RUNNER_REPO), files, grep, recent });
+}
+
 async function runHelperJobs() {
   let r;
   try { r = await api('/worker/helper/claim', {}); } catch { return; }
@@ -409,12 +460,32 @@ async function runHelperJobs() {
   if (body.none || !body.job) return;
   const job = body.job;
 
+  // No model, no account, no window gate — a probe costs nothing and cannot be
+  // declined for quota. Answered inline and returned before any of that applies.
+  if (job.kind === 'repo_probe') {
+    let out = null, err = null;
+    try { out = answerRepoProbe(job); } catch (e) { err = e.message; }
+    try {
+      await api(`/worker/helper/${job.id}/result`, out ? { text: out } : { error: err || 'probe failed' });
+    } catch { /* the caller's own deadline covers this */ }
+    console.log(`  probe ${job.label || job.feature} ${out ? 'answered from the checkout (no model)' : `failed — ${err}`}`);
+    return;
+  }
+
   // Which subscription answers this one. 'side' is the second, smaller account,
   // reached ONLY by handing its token to this single spawn as an extra — never by
   // writing it into this process's environment, which would silently move every
   // queue coding task onto it as well.
-  const side = job.account === 'side' && !!SIDE_TOKEN;
+  let side = job.account === 'side' && !!SIDE_TOKEN;
+  let handedOver = null;
   if (job.account === 'side' && !SIDE_TOKEN) warnSideTokenMissingOnce();
+  if (side) {
+    handedOver = await sideHandoverReason();
+    if (handedOver) {
+      side = false;
+      console.log(`  helper ${job.label || job.feature}: second account handing over to the main one — ${handedOver}`);
+    }
+  }
 
   // The window reserve protects the MAIN account's week. A second-account job has
   // nothing to do with that bank, so gating it on this would decline work the main
@@ -422,8 +493,12 @@ async function runHelperJobs() {
   if (!side) {
     const gate = await claudeGate({ tier: 'standard', preset: 'fast' });
     if (gate) {
-      console.log(`  helper ${job.label || job.feature}: declined — ${gate}`);
-      try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${gate}` }); } catch {}
+      // Say both halves when this arrived here by hand-over: "the small plan is
+      // spent AND the big one is low" is a different situation from either alone,
+      // and the message is what the person actually sees.
+      const why = handedOver ? `${handedOver}, and on the main account ${gate}` : gate;
+      console.log(`  helper ${job.label || job.feature}: declined — ${why}`);
+      try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${why}` }); } catch {}
       return;
     }
   }
@@ -440,8 +515,14 @@ async function runHelperJobs() {
   // those features now, including the same question re-asked on the main account
   // when the small one runs out), and any job with a tool grant, which is reading
   // code before it answers. Both stay under the caller's own deadline.
-  const timeoutMs = (side || tools) ? 120_000 : 60_000;
-  console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
+  // 60s was the old floor, set when a helper job was a cheap rescue answered from
+  // its prompt alone. It is now the ordinary path, and the SAME heavy question comes
+  // back here on the main account when the second one runs out — observed failing at
+  // exactly 60s ("helper inspire-review failed — no response after 60s") while the
+  // sweep sat still. 100s gives it room and still lands inside the server's own 120s
+  // wait, so the runner never answers into a caller that has already given up.
+  const timeoutMs = (job.account === 'side' || tools) ? 120_000 : 100_000;
+  console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${handedOver ? ' (main account, handed over)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {
     out = await claudeCli.runToolless({
@@ -1242,6 +1323,7 @@ async function main() {
   console.log(dim(`  models: Claude (queue's priority lane) → OpenCode Go → free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
   console.log(dim(`  money : nothing bills per token — subscriptions only (ALLOW_METERED_API=1 would permit real spending). Paid OpenCode Go lane: ${GO_LANE_ENABLED ? 'on (OPENCODE_GO=0 turns it off)' : 'off'}.`));
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
+  console.log(dim(`  second account: ${SIDE_TOKEN ? `on — hands work back to the main account at ${CLAUDE_SIDE_RESERVE_PCT}% of its 5h window / ${CLAUDE_SIDE_WEEK_RESERVE_PCT}% of its week` : 'no token (CLAUDE_SIDE_OAUTH_TOKEN unset) — everything runs on the main account'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   try { tidyWorktrees(); } catch (e) { console.log(dim(`  (could not tidy old task folders — ${e.message})`)); }

@@ -4,10 +4,18 @@
 //
 //   1. The Suggestion Engine (chantier + integration) — results are stored in
 //      work_suggestions, so opening the tab is an instant DB read if the engines
-//      have run recently. Stale = no rows or the newest row older than 12h.
+//      have run recently.
 //   2. Architecture "what's next" suggestions — stored per component in
-//      architecture_components.suggestions_json; regenerated when missing or
-//      older than 24h.
+//      architecture_components.suggestions_json.
+//
+// Both used to refresh on a CLOCK (12h / 24h). That spent a model call on every
+// component every day whether or not anything had changed, while a component we
+// shipped against an hour ago kept its stale suggestions until the clock said
+// otherwise — wrong in both directions at once. They now refresh on CHANGE: a
+// component is stale when work has actually shipped against it since its last
+// refresh (shipFacts.js, all free SQL — no model call is ever spent to detect
+// staleness). The old TTLs survive only as a long floor, so a component nobody
+// ever ships against still gets looked at occasionally.
 //
 // Runs once shortly after boot (so it never competes with warmup's opening
 // burst) and then every 6 hours. Same discipline as warmup.js: small concurrency
@@ -19,9 +27,13 @@ import { generateSuggestions as generateArchSuggestions } from './architecture.j
 import { syncFromGit } from './treeSync.js';
 import { autoWorldLookSuggestions, autoWorldLookComponents, autoWorldLookIdeas } from './codeDiscovery.js';
 import { backfillInspirationReviews, autoWorldLookTasks } from './promptQueue.js';
+import { lastShipByComponent, completedExamplesSince } from './shipFacts.js';
 
-const SUGGESTIONS_TTL_MS = 12 * 3600_000;
-const ARCH_TTL_MS = 24 * 3600_000;
+// The floors: refresh even with no change at all, this long after the last one.
+// Deliberately long (Antoine's choice: a week) — the whole point is that time alone
+// is a bad reason to spend a call, so it takes a week of silence to justify one.
+const SUGGESTIONS_FLOOR_MS = 7 * 24 * 3600_000;
+const ARCH_FLOOR_MS = 7 * 24 * 3600_000;
 const INTERVAL_MS = 6 * 3600_000;
 const BOOT_DELAY_MS = 2 * 60_000;
 const CONCURRENCY = 2;
@@ -50,18 +62,30 @@ async function runWithLimit(items, limit, worker) {
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, next));
 }
 
-function suggestionStale(db) {
+// Stale = something has actually FINISHED since the newest suggestion was written,
+// or nothing has been refreshed in a week. The suggestion engines read
+// work_completed_examples for their "what did we just finish" context, so new rows
+// there are exactly the change that would make them answer differently; without new
+// rows, re-running them re-derives the same shelves from the same facts.
+// Returns a reason string (or null) rather than a bare boolean, so a skip can say
+// why — a quiet day should read as a quiet day, not as a broken pre-generator.
+function suggestionStaleReason(db) {
   const row = db.prepare(`SELECT MAX(created_at) AS t FROM work_suggestions WHERE deleted_at IS NULL`).get();
-  if (!row || !row.t) return true;
-  return Date.now() - new Date(row.t).getTime() > SUGGESTIONS_TTL_MS;
+  if (!row || !row.t) return 'no suggestions on the shelves yet';
+  const finished = completedExamplesSince(db, row.t);
+  if (finished > 0) return `${finished} task(s) finished since the newest suggestion`;
+  const age = Date.now() - new Date(row.t).getTime();
+  if (age > SUGGESTIONS_FLOOR_MS) return `nothing has finished, but the shelves are ${Math.round(age / 86_400_000)} days old`;
+  return null;
 }
 
 async function pregenSuggestions(db) {
-  if (!suggestionStale(db)) {
-    console.log('Pre-gen: suggestions fresh — skipping.');
+  const why = suggestionStaleReason(db);
+  if (!why) {
+    console.log('Pre-gen: suggestions skipped — nothing has finished since they were written.');
     return;
   }
-  console.log('Pre-gen: running suggestion engines (background).');
+  console.log(`Pre-gen: running suggestion engines (background) — ${why}.`);
   const start = Date.now();
   const results = await runSuggestionEngines();
   for (const [kind, out] of Object.entries(results)) {
@@ -71,23 +95,55 @@ async function pregenSuggestions(db) {
   console.log(`Pre-gen: suggestion engines done in ${Math.round((Date.now() - start) / 1000)}s.`);
 }
 
+// Which components deserve a fresh set of suggestions. Three reasons, in order of
+// how much they justify a model call:
+//   • never generated — there is nothing to serve, so this is not optional;
+//   • shipped against since the last refresh — the exact signal, from
+//     work_prompts.component_id (recorded when the task is created, not guessed);
+//   • the floor — untouched for a week, look anyway.
+// Everything else is skipped, which is the saving: the old version selected every
+// component every day regardless.
+//
+// Returns rows carrying the reason so pregenArchitecture can log a truthful count
+// instead of "regenerating N components" with no way to tell why.
 function archJobs(db) {
-  const cutoff = new Date(Date.now() - ARCH_TTL_MS).toISOString();
-  return db.prepare(`
-    SELECT id FROM architecture_components
-    WHERE suggestions_json IS NULL
-       OR suggestions_generated_at IS NULL
-       OR suggestions_generated_at < ?
-  `).all(cutoff);
+  const floor = new Date(Date.now() - ARCH_FLOOR_MS).toISOString();
+  const rows = db.prepare(`
+    SELECT id, suggestions_json, suggestions_generated_at FROM architecture_components
+  `).all();
+  const lastShip = lastShipByComponent(db);
+
+  const out = [];
+  for (const r of rows) {
+    if (!r.suggestions_json || !r.suggestions_generated_at) {
+      out.push({ id: r.id, why: 'never generated' });
+      continue;
+    }
+    const shipped = lastShip.get(r.id);
+    if (shipped && shipped > r.suggestions_generated_at) {
+      out.push({ id: r.id, why: 'shipped against since the last refresh' });
+      continue;
+    }
+    if (r.suggestions_generated_at < floor) {
+      out.push({ id: r.id, why: 'untouched for a week (floor)' });
+    }
+  }
+  return out;
 }
 
 async function pregenArchitecture(db) {
   const jobs = archJobs(db);
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM architecture_components`).get()?.n ?? 0;
   if (!jobs.length) {
-    console.log('Pre-gen: architecture suggestions fresh — skipping.');
+    console.log(`Pre-gen: architecture suggestions — nothing shipped against any of the ${total} component(s), skipping all of them.`);
     return;
   }
-  console.log(`Pre-gen: regenerating architecture suggestions for ${jobs.length} component(s).`);
+  // Say the ratio out loud. The saving this change exists for is exactly
+  // "jobs.length instead of total", and it should be visible in the log rather
+  // than taken on trust.
+  const byReason = jobs.reduce((m, j) => { m[j.why] = (m[j.why] || 0) + 1; return m; }, {});
+  const reasons = Object.entries(byReason).map(([w, n]) => `${n} ${w}`).join(', ');
+  console.log(`Pre-gen: regenerating architecture suggestions for ${jobs.length} of ${total} component(s) — ${reasons}.`);
   const start = Date.now();
   let done = 0;
   let failed = 0;

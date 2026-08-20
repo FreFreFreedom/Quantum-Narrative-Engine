@@ -12,6 +12,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
+import { shippedSince } from './shipFacts.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { APP_BLURB, onSubjectRule } from './ai/appModel.js';
 
@@ -486,10 +487,41 @@ function gapsFor(db, id) {
   return lines.join('\n') || '- (nothing counted as a gap right now)';
 }
 
+// Two blocks of context that cost nothing to assemble and change what this call is
+// able to say: what has SHIPPED against this component since the last time we asked,
+// and the suggestions we gave last time. Without them, regeneration re-derives from
+// the same static facts and hands back the same three ideas — including ones the
+// work has already satisfied, which is the "already done" complaint in its most
+// visible form. Free: both are DB reads (shipFacts.js).
+function shippedBlock(db, id, since) {
+  if (!since) return '';
+  const shipped = shippedSince(db, since, { componentId: id, limit: 8 });
+  if (!shipped.length) return '';
+  const lines = shipped.map((t) => {
+    const files = (t.files || []).slice(0, 6).join(', ');
+    return `- ${t.title}${files ? ` — changed: ${files}` : ''}`;
+  });
+  return `WHAT JUST SHIPPED HERE since your last suggestions:\n${lines.join('\n')}\n\n`;
+}
+
+function previousBlock(c) {
+  let prev = [];
+  try { prev = JSON.parse(c.suggestions_json || '[]'); } catch { prev = []; }
+  if (!Array.isArray(prev) || !prev.length) return '';
+  const lines = prev.slice(0, 3).map((p, i) => `${i + 1}. ${p.title || ''} — ${String(p.prompt || '').slice(0, 200)}`);
+  return `THE SUGGESTIONS YOU GAVE LAST TIME:\n${lines.join('\n')}\n\n`;
+}
+
 export async function generateSuggestions(db, id) {
   const rows = getComponents(db);
   const c = rows.find((r) => r.id === id);
   if (!c) return { error: 'not_found' };
+
+  // Read straight from the table: getComponents() shapes rows for the UI and does
+  // not carry the raw suggestions_json / generated_at this needs.
+  const stored = db.prepare(`SELECT suggestions_json, suggestions_generated_at FROM architecture_components WHERE id=?`).get(id) || {};
+  const shipped = shippedBlock(db, id, stored.suggestions_generated_at);
+  const previous = previousBlock(stored);
   const nextVersion = (c.evolution || []).find(([tag]) => {
     const currentTag = (c.evolution[0] || [])[0];
     return tag !== currentTag;
@@ -502,7 +534,15 @@ export async function generateSuggestions(db, id) {
     `Status: ${c.status || 'unknown'}\n`,
     `Next version on its evolution path: ${nextVersion ? nextVersion[0] + ' — ' + nextVersion[1] : '(none defined)'}\n\n`,
     `Gaps counted right now, narrowed to this piece's side of the app:\n${gapsFor(db, id)}\n\n`,
+    shipped,
+    previous,
     `${onSubjectRule(id)}\n\n`,
+    // The accounting instruction only makes sense when there IS a last time to
+    // account for — asking a first-ever call to review suggestions it never made
+    // invites it to invent some.
+    previous
+      ? `Before proposing anything, account for each suggestion you gave last time: is it still open, already done (say so if what shipped above satisfies it), or now different? Then propose the NEXT rung — do not repeat a suggestion the shipped work has already satisfied.\n\n`
+      : '',
     `Produce exactly 2 or 3 concrete, actionable suggestions for this specific component. `,
     `Each suggestion must already be phrased as a ready-to-execute task-queue prompt — an instruction an autonomous coding agent could act on directly, `,
     `not a vague description. Be specific: name the file/mechanism where you can infer it.\n\n`,

@@ -33,6 +33,7 @@ import { resolveParent } from './contextPolicy.js';
 import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pickTaskModel, pickFastFreeModel } from './providers/index.js';
 import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan, tierForTask } from './taskPlanner.js';
+import { gatherRepoFacts } from './repoProbe.js';
 import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
@@ -309,8 +310,15 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   const inspDigest = inspiration ? (typeof inspiration === 'string' ? inspiration : inspiration.digest) : null;
   const inspNote = inspiration && typeof inspiration === 'object' ? inspiration.note : null;
 
+  // Repo facts, gathered in parallel with nothing else because the draft needs them
+  // in hand. Free (local git on the Mac, no model), bounded well under the 10-minute
+  // sweepStuckStages() patience, and empty whenever the runner is offline or the
+  // request named nothing checkable — in which case the draft is exactly as before.
+  // Mini tasks skip it: their whole point is one quick call with no waiting.
+  const repoFacts = fast ? '' : await gatherRepoFacts({ title, prompt, waitMs: 20_000 });
+
   const [draft, presetOut, parentOut] = await Promise.all([
-    draftPlan({ title, prompt, mode, inspiration: inspDigest, ownerNote: inspNote, fast }),
+    draftPlan({ title, prompt, mode, inspiration: inspDigest, ownerNote: inspNote, fast, repoFacts }),
     needPreset ? resolvePreset({ mode, prompt }).catch(() => 'standard') : Promise.resolve(null),
     needParent
       ? (async () => {
@@ -323,6 +331,12 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
 
   const finalTitle = draft?.title || title;
   const finalPrompt = draft?.brief || prompt;
+  // "Already done" caught at the one moment it is cheapest to catch — before a
+  // coding agent is paid to rediscover it. Only ever a note plus a status: the task
+  // stays in the list and keeps its "Run again" button, because this check CAN be
+  // wrong and being wrong must cost a click, not the work.
+  const alreadyDone = draft?.stillNeeded === 'no';
+  const changedNote = draft?.stillNeeded === 'changed' ? (draft.stillWhy || 'the ground has moved since this was written') : null;
   const resolved = needPreset ? presetOut : null;
   const parentId = parentOut ? parentOut.id : null;
   const contextNote = parentOut ? `Auto-continuing the session of "${parentOut.title}".` : null;
@@ -339,6 +353,28 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
       plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(finalTitle, finalPrompt, resolved, ...(parentId ? [parentId] : []), id);
   if (contextNote) addMessage(id, { role: 'agent', text: contextNote });
+  if (changedNote) addMessage(id, { role: 'agent', text: `Part of this looks already done — ${changedNote}. The brief covers what is left.` });
+
+  if (alreadyDone) {
+    // Blocked, not cancelled (Antoine's choice): it is already in the list, and
+    // blocked is the status whose "Run again" path exists for exactly this — a
+    // check that was wrong.
+    //
+    // Written straight to the row rather than through the finalize path on purpose.
+    // onAgentTaskFinalized() bumps resolved_preset a tier whenever an auto-resolved
+    // task ends blocked, which is right for a task that ran out of depth and wrong
+    // here: a false "already done" would make the retry MORE expensive than the
+    // original, which is the opposite of the point.
+    db.prepare(`UPDATE work_prompts SET status='blocked', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+    addMessage(id, {
+      role: 'agent',
+      text: `Parked without running: this looks already done — ${draft.stillWhy || 'the code already covers it'}. Nothing was changed. If that is wrong, press Run again.`,
+    });
+    _inspireWaiters.delete(id);
+    broadcast();
+    return;
+  }
+
   _inspireWaiters.delete(id);
   broadcast();
   if (targetStatus === 'queued') advanceQueue();

@@ -128,6 +128,72 @@ export function gitChangedFiles(cwd, from, to = 'HEAD') {
   return out.split('\n').filter(Boolean);
 }
 
+// ─── Read-only repo probe (plan "suggestions that keep up with the code", Part 4) ─
+// Facts for a drafting brief, so it stops guessing which files exist. All read-only,
+// all quiet, all bounded in size because the answers go into a prompt. They live
+// here because gitOps is the one module allowed to shell out.
+
+// Does this path exist in the trunk, and how big is it? Asked against git rather
+// than the filesystem on purpose: a stray untracked file on the runner's disk is
+// not a fact about the codebase.
+export function gitPathFacts(cwd, paths, { ref = TRUNK, max = 12 } = {}) {
+  const out = [];
+  for (const p of (paths || []).slice(0, max)) {
+    const clean = String(p || '').replace(/^\.?\//, '').trim();
+    if (!clean || clean.includes('..')) continue;
+    // ls-tree, not cat-file: a missing path is an ordinary empty answer here,
+    // whereas cat-file exits non-zero and prints "fatal: path ... does not exist"
+    // straight to the server log. A probe asks about paths that do NOT exist by
+    // design — that is half its output — so the normal case must not be an error.
+    const listed = git(['-C', cwd, 'ls-tree', '-r', '--name-only', ref, '--', clean], { quiet: true });
+    if (!listed) { out.push({ path: clean, exists: false }); continue; }
+    const exact = listed.split('\n').includes(clean);
+    if (!exact) {
+      // A directory, or a prefix match. Say so rather than claiming the file exists.
+      out.push({ path: clean, exists: false, note: `not a file; ${listed.split('\n').length} path(s) live under it` });
+      continue;
+    }
+    const show = git(['-C', cwd, 'show', `${ref}:${clean}`], { quiet: true });
+    out.push({ path: clean, exists: true, lines: show ? show.split('\n').length : null });
+  }
+  return out;
+}
+
+// Where is this identifier actually defined or used? `git grep` keeps it inside the
+// tracked tree and out of node_modules for free. Fixed-string search (-F): these
+// terms come from a person's request text, and a stray '(' would otherwise be a
+// broken regex rather than a search.
+export function gitGrepHits(cwd, terms, { ref = TRUNK, perTerm = 4, max = 8 } = {}) {
+  const out = [];
+  for (const t of (terms || []).slice(0, max)) {
+    const term = String(t || '').trim();
+    if (term.length < 3) continue;
+    const res = git(['-C', cwd, 'grep', '-n', '-F', '-I', '--max-count', String(perTerm), term, ref], { quiet: true });
+    if (!res) { out.push({ term, hits: [] }); continue; }
+    const hits = res.split('\n').filter(Boolean).slice(0, perTerm).map((line) => {
+      // "<ref>:<path>:<lineno>:<text>"
+      const rest = line.startsWith(`${ref}:`) ? line.slice(ref.length + 1) : line;
+      const m = rest.match(/^([^:]+):(\d+):(.*)$/);
+      return m ? { file: m[1], line: Number(m[2]), text: m[3].trim().slice(0, 160) } : null;
+    }).filter(Boolean);
+    out.push({ term, hits });
+  }
+  return out;
+}
+
+// Recent commit subjects touching these paths — "who last worked here", which is
+// often the fastest way for a brief to point at the right neighbourhood.
+export function gitRecentTouching(cwd, paths, { ref = TRUNK, max = 6 } = {}) {
+  const clean = (paths || []).map((p) => String(p || '').replace(/^\.?\//, '').trim()).filter(Boolean).slice(0, 8);
+  if (!clean.length) return [];
+  const out = git(['-C', cwd, 'log', '--format=%h|%s', '-n', String(max), ref, '--', ...clean], { quiet: true });
+  if (!out) return [];
+  return out.split('\n').filter(Boolean).map((l) => {
+    const i = l.indexOf('|');
+    return { sha: l.slice(0, i), subject: l.slice(i + 1).slice(0, 120) };
+  });
+}
+
 export function gitHeadSha(cwd, ref = TRUNK) {
   return git(['-C', cwd, 'rev-parse', '--verify', '--quiet', ref], { quiet: true }) || null;
 }

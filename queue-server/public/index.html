@@ -684,6 +684,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-kind-badge.chantier { background:#5c7a9d; }
 .sg-kind-badge.integration { background:#8a5a1e; }
 .sg-status-badge { font-size:9px; padding:2px 8px; border-radius:20px; flex-shrink:0; background:var(--c-surface-3); color:var(--c-ink-3); }
+/* "may already be done": the free overlap flag from shipFacts.js. Deliberately a
+   quiet note, not a warning colour — it is a guess about wording, and the
+   suggestion is untouched either way. */
+.sg-maybe-done { font-size:9px; padding:2px 8px; border-radius:20px; flex-shrink:0; cursor:help;
+  border:1px dashed var(--c-border-2); color:var(--c-ink-3); background:transparent; }
+
 .sg-rationale { font-size:11px; color:var(--c-ink-3); margin:5px 0 8px; line-height:1.4; }
 .sg-rationale.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:4px; }
 .sg-more { font-size:10px; color:var(--c-brand); cursor:pointer; }
@@ -4822,6 +4828,7 @@ function renderFlow() {
             ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
             <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
+            ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
             <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id ? '▾' : '▸'}</span>
           </div>
           ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}

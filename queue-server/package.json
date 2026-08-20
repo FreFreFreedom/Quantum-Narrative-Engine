@@ -10,7 +10,8 @@
     "runner": "node scripts/queue-runner.js",
     "ship:selftest": "node scripts/ship-selftest.js",
     "next:selftest": "node scripts/nextsteps-selftest.js",
-    "tidy:selftest": "node scripts/tidy-selftest.js"
+    "tidy:selftest": "node scripts/tidy-selftest.js",
+    "ship:facts": "node scripts/shipfacts-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",

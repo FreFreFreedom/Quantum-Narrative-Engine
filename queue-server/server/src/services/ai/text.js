@@ -279,12 +279,20 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
       const r = await ask('side');
       if (r?.text) return { text: r.text, via: 'claude-side' };
       sideWhy = r?.message || r?.error || 'no answer';
-      if (!detectQuotaLimit('claude-side', sideWhy)) {
+      const spent = detectQuotaLimit('claude-side', sideWhy);
+      // A small plan close to its ceiling does not always SAY so — it goes quiet and
+      // the wait runs out. Observed on the world-look sweep: minutes of
+      // "no response after 120s" from a near-full window, none of which read as a
+      // limit, so nothing was ever re-asked and the answer was simply lost. Treat a
+      // silence like a spent window for the purpose of asking the main account,
+      // but do NOT bench the second account for it — a hiccup is not a ceiling.
+      const wentQuiet = /no response|timed out|timeout/i.test(sideWhy);
+      if (!spent && !wentQuiet) {
         // An ordinary failure, not a spent window. Let the chain decide what is
         // next rather than spending the big account on a hiccup.
         return { error: r?.error || 'claude_side_failed', message: sideWhy };
       }
-      router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
+      if (spent) router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
     }
     const main = await ask('main');
     if (main?.text) return { text: main.text, via: 'claude-main' };
@@ -416,7 +424,7 @@ export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -451,7 +459,7 @@ const HELPER_POLL_MS = 1_500;
 
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
-async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main' }) {
+async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main', kind = 'text' }) {
   if (!db) return { error: 'no_db' };
   try {
     // Only worth parking if a runner is actually attached — otherwise this is a
@@ -464,9 +472,9 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     // helper job silently ran on the runner's own default — invisible while haiku
     // was the only answer anyone wanted, and wrong the moment one feature (the
     // task-card chat) needs a stronger model than the rest.
-    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account) VALUES (?,?,?,?,?,?,?,?)`)
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind) VALUES (?,?,?,?,?,?,?,?,?)`)
       .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
-        model || 'haiku', account === 'side' ? 'side' : 'main');
+        model || 'haiku', account === 'side' ? 'side' : 'main', kind === 'repo_probe' ? 'repo_probe' : 'text');
 
     // A caller with a person waiting on the other end (the task-card chat) sets
     // its own, much shorter deadline: 120s is right for rescuing a background
@@ -488,6 +496,28 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
   } catch (e) {
     return { error: 'helper_error', message: e.message };
   }
+}
+
+// Park a job that is NOT a model call: the runner answers it with local git/grep
+// and no Claude involvement at all. Exposed separately from generateText because it
+// shares nothing with text generation except the delivery channel — no provider, no
+// model, no fallback chain, and nothing to charge against any account.
+//
+// Returns the parsed facts, or null. Null must always be survivable by the caller:
+// with no runner attached (the ordinary state of the Railway container when the Mac
+// is asleep) this returns immediately rather than waiting, so a probe can never be
+// the reason a task sits in "drafting a plan".
+export async function runRepoProbe({ request, waitMs = 20_000, label = 'repo-probe' }) {
+  const r = await runHelperJob({
+    prompt: JSON.stringify(request || {}),
+    feature: 'probe',
+    maxTokens: 1,
+    label,
+    waitMs,
+    kind: 'repo_probe',
+  });
+  if (!r?.text) return null;
+  try { return JSON.parse(r.text); } catch { return null; }
 }
 
 // Low-level: call a specific provider/model directly (for the judge/summary which

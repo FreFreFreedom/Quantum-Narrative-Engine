@@ -12,6 +12,7 @@
 //     fallback) instead of a separate llm.js seam — this app already centralized
 //     that decision for every other short-text feature.
 import { randomUUID, createHash } from 'node:crypto';
+import { shippedSince, overlapsShipped } from './shipFacts.js';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { APP_BLURB } from './ai/appModel.js';
@@ -37,13 +38,32 @@ function row(r) {
   return { ...r, deleted_at: undefined };
 }
 
-export function listSuggestions({ status = null, kind = null } = {}) {
+export function listSuggestions({ status = null, kind = null, flagShipped = true } = {}) {
   let sql = `SELECT * FROM work_suggestions WHERE deleted_at IS NULL`;
   const args = [];
   if (status) { sql += ` AND status = ?`; args.push(status); }
   if (kind) { sql += ` AND kind = ?`; args.push(kind); }
   sql += ` ORDER BY created_at DESC`;
-  return db.prepare(sql).all(...args).map(row);
+  const rows = db.prepare(sql).all(...args).map(row);
+
+  // "This may already be done" — a free flag, computed by comparing the
+  // suggestion's own words against what has actually shipped in the last month
+  // (shipFacts.js). These suggestions carry no component_id, so there is no exact
+  // link available; token overlap is a GUESS and is treated as one — it only ever
+  // adds a note for Antoine to look at. It never hides, deletes or regenerates a
+  // suggestion, and nothing downstream branches on it.
+  if (!flagShipped || !rows.length) return rows;
+  try {
+    const since = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
+    const shipped = shippedSince(db, since, { limit: 40 });
+    if (!shipped.length) return rows;
+    return rows.map((r) => {
+      const o = overlapsShipped(`${r.title} ${r.prompt || ''}`, shipped);
+      return o.hit ? { ...r, maybe_shipped: o.why } : r;
+    });
+  } catch {
+    return rows; // the flag is a nicety — never let it break the list
+  }
 }
 
 export function addSuggestion({ title, rationale = '', prompt, area = null, kind = 'chantier' }) {

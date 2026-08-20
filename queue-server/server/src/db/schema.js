@@ -1167,6 +1167,12 @@ export function initFilmEnrichmentSchema(db) {
   // spawn — never by writing it into the runner's own environment, which would
   // silently move the queue's coding work onto it too.
   try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN account TEXT NOT NULL DEFAULT 'main'`); } catch {}
+  // What KIND of work this job is. 'text' is a Claude call, which is what every
+  // helper job was until now. 'repo_probe' is local git/grep on the Mac and calls
+  // NO model at all — the drafting pass uses it to learn which files actually
+  // exist before writing a brief, instead of instructing the model to guess. Same
+  // claim/result/deadline plumbing, different work at the far end.
+  try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'`); } catch {}
 
   // Git work the SERVER wants doing but cannot do: it runs in a Railway container
   // with no git repository, so publishing a finished task (merge the branch onto the

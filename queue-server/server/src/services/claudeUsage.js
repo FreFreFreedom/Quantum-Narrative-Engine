@@ -24,8 +24,13 @@ const USAGE_ENDPOINT = 'https://api.anthropic.com/api/oauth/usage';
 
 const SESSION_WINDOW_MS = 5 * 60 * 60 * 1000;
 const WEEK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 3 * 60 * 1000;
 const FAILED_CACHE_TTL_MS = 15 * 1000;
+// A 429 from this endpoint is not a hiccup to retry through — it is the endpoint
+// telling us to stop asking, and retrying every 15s (240 reads an hour) is what
+// kept us throttled indefinitely: the reading went permanently stale, which is how
+// the app's usage bar ended up living on cached numbers. Back off properly instead.
+const THROTTLED_CACHE_TTL_MS = 10 * 60 * 1000;
 const TZ = process.env.USAGE_TZ || 'America/Montreal';
 
 function startOfLocalDay(now) {
@@ -117,10 +122,15 @@ function keychainToken() {
   });
 }
 
+// Set by the most recent MAIN-account read only — the side account's own read
+// carries its answer back directly, so the two can never mislabel each other's
+// retry delay when they happen at the same time.
+let _mainThrottled = false;
+
 let _lastSub = null;
 const SUB_STALE_MAX_MS = 30 * 60 * 1000;
 
-async function fetchSubscription() {
+async function mainAccountToken() {
   // Two ways this container can hold a usable OAuth token: the interactive
   // `claude /login` flow writes ~/.claude/.credentials.json, but this deployment
   // was instead set up non-interactively via the CLAUDE_CODE_OAUTH_TOKEN env var
@@ -138,7 +148,15 @@ async function fetchSubscription() {
   // back to the app), this is the source that actually has the token.
   if (!token) token = await keychainToken();
   if (!token) token = process.env.CLAUDE_CODE_OAUTH_TOKEN || null;
-  if (!token) return null;
+  return token || null;
+}
+
+// The read itself, for whichever account's token is handed in. Split out from the
+// main-account path so the SECOND subscription can be read the same way — its own
+// percentage, from the same endpoint, with no token ever leaking into the other's
+// reading. Returns null on any failure, which every caller treats as "unknown".
+async function fetchUsageForToken(token) {
+  if (!token) return { data: null, throttled: false };
 
   let data;
   try {
@@ -152,9 +170,10 @@ async function fetchSubscription() {
         signal: controller.signal,
       });
     } finally { clearTimeout(timer); }
-    if (!res.ok) return null;
+    if (res.status === 429) return { data: null, throttled: true };
+    if (!res.ok) return { data: null, throttled: false };
     data = await res.json();
-  } catch { return null; }
+  } catch { return { data: null, throttled: false }; }
 
   const limits = Array.isArray(data.limits) ? data.limits : [];
   const byKind = (kind) => limits.find((l) => l?.kind === kind) || null;
@@ -184,8 +203,42 @@ async function fetchSubscription() {
     } : null,
     extraUsageEnabled: !!data.extra_usage?.is_enabled,
   };
-  _lastSub = { at: Date.now(), data: parsed };
+  return { data: parsed, throttled: false };
+}
+
+async function fetchSubscription() {
+  const { data: parsed, throttled } = await fetchUsageForToken(await mainAccountToken());
+  _mainThrottled = throttled;
+  if (parsed) _lastSub = { at: Date.now(), data: parsed };
   return parsed;
+}
+
+// The second (smaller) subscription's own reading. Separate cache, keyed by the
+// token, so it can never be confused with the main account's numbers — that mix-up
+// would be worse than no reading at all, since it decides which account pays.
+let _sideCache = null;
+let _lastSideGood = null;
+export async function getSideSubscriptionUsage(token) {
+  if (!token) return null;
+  const now = Date.now();
+  if (_sideCache && _sideCache.token === token && now - _sideCache.at < _sideCache.ttl) return _sideCache.data;
+
+  const { data: fresh, throttled } = await fetchUsageForToken(token);
+  if (fresh) _lastSideGood = { at: now, token, data: fresh };
+
+  // Fall back to the last good reading, exactly as the main account's does. This is
+  // not politeness: the endpoint rate-limits a busy machine, and a 429 is not
+  // evidence of an empty window. Without this, every throttled read would look like
+  // "no reading" and the hand-over threshold would quietly stop being enforced —
+  // which is the one failure mode this whole gate exists to prevent. A reading older
+  // than SUB_STALE_MAX_MS is dropped instead, since a 5h window moves.
+  const recovered = !fresh && _lastSideGood && _lastSideGood.token === token
+    && (now - _lastSideGood.at) < SUB_STALE_MAX_MS
+    ? _lastSideGood.data : null;
+
+  const data = fresh || recovered;
+  _sideCache = { token, at: now, data, ttl: fresh ? CACHE_TTL_MS : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS) };
+  return data;
 }
 
 let _cache = null;
@@ -220,7 +273,9 @@ async function compute() {
 export async function getClaudeUsage() {
   if (_cache && Date.now() - _cache.at < _cache.ttl) return _cache.data;
   const data = await compute();
-  const ttl = data.subscriptionAvailable && !data.subscriptionStale ? CACHE_TTL_MS : FAILED_CACHE_TTL_MS;
+  const ttl = data.subscriptionAvailable && !data.subscriptionStale
+    ? CACHE_TTL_MS
+    : (_mainThrottled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS);
   _cache = { at: Date.now(), data, ttl };
   return data;
 }
