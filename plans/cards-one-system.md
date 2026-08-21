@@ -150,7 +150,8 @@ radius or padding anywhere in it.
 .upill.is-done  { background:var(--c-success-tint);color:var(--c-ink-2); }
 .upill.is-block { background:var(--c-danger-tint); color:var(--c-danger); }
 
-/* four buttons, that is all */
+/* four buttons, that is all. NOTE: these replace the app's ~14 button
+   treatments, not only the card ones — see "Widening the buttons" below. */
 .ubtn { height:24px; padding:0 var(--sp-2); border:1px solid var(--c-border-2);
         border-radius:var(--r-sm); background:var(--c-surface); color:var(--c-ink-2);
         font-size:var(--fs-xs); font-weight:var(--fw-medium); cursor:pointer;
@@ -235,6 +236,46 @@ already `<details>`-heavy. Only the collapsed cards change.
 - The unconverted 18 card types keep their current classes — no visual change,
   no risk. A follow-up plan converts them.
 
+## Widening the buttons beyond cards (folded in from `design-system-pass.md`)
+
+`design-system-pass.md` has sat at ~40% for months for one reason: its headline
+deliverable, a shared button base replacing the 10+ one-off classes, was never
+built. Building `.ubtn` for cards alone would make that **eleven** one-offs plus a
+new twelfth — the exact problem the plan exists to solve. So while the shared
+button block is being written, re-express the app's other button classes as
+variants of it rather than leaving them standing:
+
+| Existing class | Becomes |
+|---|---|
+| `.ctrlbtn` | `.ubtn` (it already IS the bordered-secondary archetype) |
+| `.core-hbtn` | `.ubtn` |
+| `.echo-btn` | `.ubtn` + a pill-radius modifier |
+| `.id-addbtn`, `.q-addbtn` | `.ubtn.is-primary` |
+| `.arch-buildbtn` | `.ubtn.is-primary` + a full-width modifier (`.ubtn--block`) |
+| `.arch-specbtn` | `.ubtn--block` + a dashed-violet modifier |
+| `.arch-linkbtn`, `.arch-regenbtn`, `.sg-genbtn` | `.ubtn` |
+| the five bare `<button>`s styled by descendant selectors (`.nb-actions button`, `.sg-actions button`, `.mind-actions button`, `.bk-*-row button`, `.arch-actionrow button`) | give them `.ubtn` and delete the descendant rules |
+
+**Method — keep it safe with no test suite.** Do NOT hunt down every call site
+first. Define `.ubtn` and its modifiers, then make each old selector an alias in
+one line (`.ctrlbtn, .core-hbtn, .arch-linkbtn { /* same as .ubtn */ }`) so
+nothing visually changes until a renderer is actually converted. Convert markup
+opportunistically, and delete an old class only once nothing emits it. That way a
+missed call site is a no-op instead of an unstyled button.
+
+**Also fold in** (two lines, the data is already there): give the book-cover
+`<img>` in the `.book` card an `alt="Cover: <title>"` — the whole file has 2 `alt`
+attributes, and this is the one image that carries real information.
+
+**Explicitly NOT in scope** — leave for its own plan: keyboard access on the
+three graph views (`tabindex` on nodes, Enter/Space wired to the existing click
+handler). It is real work, unrelated to cards, and would bloat an already-large
+task.
+
+**On finishing, update `plans/design-system-pass.md`**: mark its Phase 2 (button
+consolidation) DONE and point it here, and note that its Phase 5 accessibility
+work is still outstanding apart from the `alt` text above.
+
 ## Verification
 
 Per `AGENTS.md` "Ship directly — no local test phase": zero-cost syntax checks
@@ -257,3 +298,6 @@ only, then commit and push. No local boot, no curl checks.
    - Clicking a card still expands it, and the conversation box is still there.
    - The other tabs (Architecture checklist, Building blocks, Mind, Content
      navigator, Queue slide-over) look exactly as before — untouched this pass.
+     This matters more now that the old button classes are aliases of `.ubtn`:
+     walk those tabs and check no button lost its border, fill or size.
+   - A book card's cover image has alt text (inspect it, or turn images off).
