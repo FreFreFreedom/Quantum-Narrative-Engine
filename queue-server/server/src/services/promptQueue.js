@@ -36,6 +36,7 @@ import { draftPlan, tierForTask } from './taskPlanner.js';
 import { gatherRepoFacts } from './repoProbe.js';
 import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { eagerCardLine, clearCardLine } from './cardLines.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
 import { conciseQuestionPayload, conciseResult } from '../lib/concise.js';
 import { syncFromTask } from './treeSync.js';
@@ -1458,6 +1459,11 @@ function finishPrompt(id, task) {
   `).run(status, task.session_id || null, q, task.cost_usd ?? null, task.tokens_in ?? null, task.tokens_out ?? null, task.run_model || null, id);
   broadcast();
   eagerSummarize(id); // purpose bullets ready by the time the finished task is opened
+  // The card's one line meant "what this will do" while the task was waiting; now
+  // that it has run it should say what it changed, so it is rewritten from the
+  // result rather than left describing an intention.
+  clearCardLine('task', id);
+  eagerCardLine('task', id);
   const done = getPrompt(id);
   // Self-updating tree: a finished implement task may have built something
   // significant — classify its worktree diff in the background (fire-and-forget,

@@ -4,8 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import * as queue from './promptQueue.js';
 import { createNode } from './architectureNodes.js';
-import { generateText } from './ai/text.js';
-import { USER_FACING_STYLE } from './ai/style.js';
+import { cardLine, eagerCardLine } from './cardLines.js';
 
 let db = null;
 export function bindWorkIdeasDb(database) { db = database; }
@@ -57,49 +56,13 @@ export function updateIdea(id, patch = {}) {
   return getIdea(id);
 }
 
-// ─── The row's one line ────────────────────────────────────────────────────────
-// A seed row used to print its whole notes field, which the opened panel then
-// showed again in the edit box — the same sentence twice, the second time
-// mid-thought. Instead: one cheap free-lane call writes a summary of the whole
-// idea, cached on the row so revisits and list polls never pay again. Same shape
-// as summarizePrompt() in promptQueue.js — in-flight dedup so the route, the
-// eager hooks and rapid re-renders share one generation, and silent failure so
-// the frontend keeps its instant first-sentence preview.
-const _summarizing = new Map();
+// The row's one line now comes from the shared card-line service, so a seed's
+// line is written the same way (and rescued the same way) as a task's, a
+// suggestion's or a component's. Kept as a named export because the old
+// /ideas/:id/summarize route still points here.
+export function summarizeIdea(id) { return cardLine('seed', id); }
 
-export async function summarizeIdea(id) {
-  const idea = getIdea(id);
-  if (!idea) return null;
-  if (idea.summary) return { summary: idea.summary };
-  if (_summarizing.has(id)) return { summary: await _summarizing.get(id) };
-  const attempt = (async () => {
-    const text = [idea.title, idea.notes || ''].filter(Boolean).join('\n\n');
-    const out = await generateText({
-      prompt: [
-        'Below is an idea someone jotted down for their own app.',
-        'Write ONE short line that says what the idea IS — the whole of it, in a phrase.',
-        'It sits next to the title in a list, above the full text, so it must NOT start with the opening words of the idea and must NOT be a sentence cut short. Sum the idea up; do not begin quoting it.',
-        'Under 100 characters. One line, no bullet, no quotes, no preamble, no full stop needed.',
-        USER_FACING_STYLE,
-        '\nThe idea:\n' + text.slice(0, 8000),
-      ].join('\n'),
-      feature: 'summary',
-      maxTokens: 120,
-      label: 'idea:summarize',
-    });
-    const summary = (out.text || '').replace(/\s+/g, ' ').trim();
-    if (!summary) throw new Error('empty summary');
-    db.prepare(`UPDATE work_ideas SET summary=? WHERE id=?`).run(summary, id);
-    return summary;
-  })();
-  _summarizing.set(id, attempt);
-  try { return { summary: await attempt }; }
-  finally { _summarizing.delete(id); }
-}
-
-function eagerSummarize(id) {
-  setImmediate(() => { summarizeIdea(id).catch(() => {}); });
-}
+function eagerSummarize(id) { eagerCardLine('seed', id); }
 
 export function deleteIdea(id) {
   const info = db.prepare(`UPDATE work_ideas SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND deleted_at IS NULL`).run(id);

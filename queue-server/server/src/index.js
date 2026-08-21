@@ -30,10 +30,12 @@ import { startPreGen } from './services/preGen.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
 import { travauxRoutes } from './routes/travaux.js';
+import { cardLinesRoutes } from './routes/cardLines.js';
 import { workerRoutes } from './routes/worker.js';
 import { reviewsRoutes } from './routes/reviews.js';
 import { bindWorkSuggestionsDb, classifyUnplacedSuggestions } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
+import { bindCardLinesDb } from './services/cardLines.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
@@ -81,6 +83,7 @@ bindTaskDb(db);
 bindAgentsDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
+bindCardLinesDb(db);
 bindReviewsDb(db);
 bindGitJobsDb(db);
 bindBriefingDb(db);
@@ -222,6 +225,7 @@ app.use('/api/travaux', requireAuth, workerRoutes());
 app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());
 app.use('/api/travaux', requireAuth, travauxRoutes());
+app.use('/api/cards', requireAuth, cardLinesRoutes());
 app.use('/api/travaux', requireAuth, reviewsRoutes());
 
 // Say plainly at boot whether anything here can spend real money (billingGuard.js).

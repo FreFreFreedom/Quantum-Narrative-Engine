@@ -43,6 +43,7 @@ function rowToNode(r) {
     what: r.what || '',
     why: r.why || '',
     next: r.next || '',
+    summary: r.summary || '',   // the one line the card shows (services/cardLines.js)
     depends: JSON.parse(r.depends_json || '[]'),
     status: r.status,
     provenance: r.provenance,

@@ -4395,6 +4395,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       ${qInspireBadge(p)}
       ${qStopAfterBadge(p)}
     </div>
+    ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt)}
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) : ''}
     ${p.pending_question ? qQuestionBlockHtml(p) : ''}
@@ -5267,7 +5268,7 @@ function flowSgRow(s) {
             ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
             <span class="flow-chev">${open ? '▾' : '▸'}</span>
           </div>
-          ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
+          ${cardLineHtml('suggestion', s.id, s.summary, s.rationale)}
           ${stageStripHtml(cardStage('suggestion', s))}
           ${cardActions([
             s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
@@ -5489,7 +5490,7 @@ function renderFlow() {
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
             <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '▾' : '▸'}</span>
           </div>
-          ${seedLineHtml(i)}
+          ${cardLineHtml('seed', i.id, i.summary, i.notes)}
           ${stageStripHtml(cardStage('seed', i))}
           ${cardActions([
             iconBtn('queue', 'Send it to the queue as a task', 'seed-queue', i.id, 'primary'),
@@ -5631,7 +5632,7 @@ function renderFlow() {
       renderFlow();
     };
   });
-  if (host.querySelector('.flow-idrow')) seedSummarizeVisible();
+  cardLineFill();
   host.querySelectorAll('.flow-idrow').forEach(el => {
     el.onclick = () => {
       const id = el.getAttribute('data-iid');
@@ -5769,44 +5770,78 @@ async function flowGenerateNow() {
 // Shared inline detail for Flow items: seeds and suggestions get their own light
 // renderers with the same actions the old list cards had — moved, not changed.
 // Each writes into the expanded card that sits under the selected row.
-// ─── The one line under a seed's title ────────────────────────────────────────
-// It used to be the notes themselves, printed in full — and then the opened panel
-// showed the same text again in its edit box, so you read the sentence twice and
-// had to find your place in it the second time. Now the row carries a written
-// summary of the whole idea (backend: summarizeIdea), and the panel below is the
-// only place the full notes appear. Until the summary lands, a first-sentence cut
-// stands in — the row is never blank and never sprawls.
-function seedLineHtml(i) {
-  const line = i.summary ? String(i.summary) : seedOneLine(i);
+// ─── The one line on a card ───────────────────────────────────────────────────
+// Every card in the app — seed, task, suggestion, component, next step — carries
+// a line under its title. Each of those lines used to be a stored field printed
+// raw: the seed's notes, the component's "what", the next step's "reason". Open
+// the card and the same text was there again, so you read the sentence twice and
+// had to find your place in it the second time.
+//
+// Now one written line per card, saying what that card IS, with the raw field
+// left inside the opened card where it belongs. The line is written per card type
+// (a suggestion says why it is worth doing, a finished task says what it changed
+// — see services/cardLines.js) and cached on the row, so a list costs nothing to
+// redraw.
+//
+// One helper, one filler, one endpoint: adding a new kind of card means calling
+// cardLineHtml() and nothing else.
+
+// Lines that arrived this session. The list polls replace their data wholesale
+// (qLoad/loadIdeas rebuild the arrays), so without this a line would appear once
+// and vanish on the next poll until the server round-trip happened again.
+const cardLineStore = new Map();
+const cardLineBusy = new Set();
+
+// `cls` keeps each card's existing spacing class, so the line drops into the
+// layout the card already had instead of every card needing new CSS.
+function cardLineHtml(kind, id, stored, fallbackText, cls = 'sg-rationale') {
+  const key = `${kind}:${id}`;
+  const known = stored || cardLineStore.get(key) || '';
+  const line = known || cardOneLine(fallbackText);
   if (!line) return '';
-  return `<div class="sg-rationale${line.length > 160 ? ' clamped' : ''}" data-seedsum="${i.id}">${qEsc(line)}</div>`;
+  const src = known ? '' : ` data-cardsrc="${qEscAttr(String(fallbackText || '').slice(0, 4000))}"`;
+  return `<div class="${cls}${line.length > 160 ? ' clamped' : ''}" data-cardline="${key}"${known ? '' : ' data-cardpending="1"' + src}>${qEsc(line)}</div>`;
 }
 
-function seedOneLine(i) {
-  const text = String(i.notes || '').replace(/\s+/g, ' ').trim();
-  if (!text) return '';
-  const stop = text.search(/[.!?](\s|$)/);
-  const first = stop > 24 ? text.slice(0, stop + 1) : text;
+// The stand-in shown until the written line lands: first sentence, or ~90
+// characters on a word boundary. Never the whole field — that is the repetition
+// this is here to end.
+function cardOneLine(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  const stop = t.search(/[.!?](\s|$)/);
+  const first = stop > 24 ? t.slice(0, stop + 1) : t;
   return first.length > 90 ? first.slice(0, 90).replace(/\s\S*$/, '') + '…' : first;
 }
 
-// Lazy backfill for seeds kept before summaries existed. New seeds are summarized
-// server-side the moment they are saved, so this normally has nothing to do. A few
-// per paint, deduped, silent on failure — the stand-in line simply stays.
-const seedSumBusy = new Set();
-function seedSummarizeVisible() {
+// Fill in the lines for cards that are on screen and don't have one yet. A few
+// per paint so scrolling a long list never fans out into dozens of calls, deduped
+// so repaints don't re-ask, and silent on failure — the stand-in simply stays.
+function cardLineFill() {
   let budget = 3;
-  for (const i of tvIdeas) {
+  for (const el of document.querySelectorAll('[data-cardline][data-cardpending="1"]')) {
     if (budget <= 0) break;
-    if (i.summary || !i.notes || seedSumBusy.has(i.id)) continue;
+    const key = el.getAttribute('data-cardline');
+    if (cardLineBusy.has(key)) continue;
+    const sep = key.indexOf(':');
+    const kind = key.slice(0, sep);
+    const id = key.slice(sep + 1);
+    if (!kind || !id) continue;
     budget--;
-    seedSumBusy.add(i.id);
-    apiWrite(`/api/travaux/ideas/${i.id}/summarize`, 'POST', {}).then(r => {
-      if (!r || !r.summary) return;
-      i.summary = r.summary;
-      const live = document.querySelector(`[data-seedsum="${i.id}"]`);
-      if (live) { live.textContent = r.summary; live.classList.toggle('clamped', r.summary.length > 160); }
-    }).catch(() => {}).finally(() => seedSumBusy.delete(i.id));
+    cardLineBusy.add(key);
+    // The card sends the text its stand-in line was cut from. For anything with a
+    // row in the database the server ignores this and reads the row; it is there
+    // for the architecture trunk, which lives in this file and nowhere else.
+    const src = el.getAttribute('data-cardsrc') || '';
+    apiWrite(`/api/cards/${kind}/${encodeURIComponent(id)}/line`, 'POST', { text: src }).then(r => {
+      if (!r || !r.line) return;
+      cardLineStore.set(key, r.line);
+      document.querySelectorAll(`[data-cardline="${key}"]`).forEach(n => {
+        n.textContent = r.line;
+        n.removeAttribute('data-cardpending');
+        n.classList.toggle('clamped', r.line.length > 160);
+      });
+    }).catch(() => {}).finally(() => cardLineBusy.delete(key));
   }
 }
 
@@ -5863,9 +5898,11 @@ function renderSuggestionDetail(s) {
   const host = document.getElementById('flowExpanded');
   if (!host) return;
   const snap = qSnapInputs(host);
-  // The card above already shows the title, the kind and status badges and the
-  // "why" line — the panel opens straight onto the editable prompt and the ideas.
+  // The card above shows the title, the badges and a written one-line summary.
+  // The full "why" is here, because that line is no longer the rationale itself —
+  // so this is the only place the whole reasoning can be read.
   host.innerHTML = `
+    ${s.rationale ? `<div class="arch-field"><div class="arch-field-label">Why it is worth doing</div><div class="arch-field-body">${qEsc(s.rationale)}</div></div>` : ''}
     ${s.status === 'new' ? `
       <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
@@ -6317,12 +6354,7 @@ const worldSwapKey = (reportId, pi, i) => `${reportId}|${pi}|${i}`;
 // The single line a closed row shows: the pick's leading field, cut to its first
 // sentence, or ~90 characters on a word boundary. Same idea as qPurposePreview.
 function worldOneLine(pick) {
-  const src = pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? pick.what : pick.vision;
-  const text = String(src || '').replace(/\s+/g, ' ').trim();
-  if (!text) return '';
-  const stop = text.search(/[.!?](\s|$)/);
-  const first = stop > 24 ? text.slice(0, stop + 1) : text;
-  return first.length > 90 ? first.slice(0, 90).replace(/\s\S*$/, '') + '…' : first;
+  return cardOneLine(pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? pick.what : pick.vision);
 }
 
 function worldPickTitle(pick) {
@@ -8391,7 +8423,6 @@ function renderNotbuilt() {
     if (studioHasConvo('arch_component', c.id)) markers.push('<span title="A conversation is open about this">💬</span>');
     const spec = c.provenance === 'speculative' ? '✦ ' : '';
     const whatText = String(c.what || '');
-    const trunc = whatText.length > 140;
     const isOpen = nbWorldOpen === c.id;
     html += `<div class="nb-row${state === 'buildable' ? ' nb-buildable' : ''}${isOpen ? ' nb-open' : ''}" data-nbid="${c.id}">
       <div class="nb-top">
@@ -8400,13 +8431,13 @@ function renderNotbuilt() {
         <span class="nb-markers">${markers.join(' ')}</span>
         <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
       </div>
-      ${whatText ? `<div class="nb-what clamped" data-nbwhat="${c.id}">${qEsc(whatText.slice(0, 140))}${trunc ? ` <span class="nb-more" data-nbmore="${c.id}">more ▾</span>` : ''}</div>` : ''}
+      ${cardLineHtml('component', c.id, c.summary, whatText, 'nb-what')}
       ${stageStripHtml(cardStage('component', c))}
       <div class="nb-actions">
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
       </div>
     </div>
-    ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}<div data-nbstudio="${c.id}"></div></div>` : ''}`;
+    ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${whatText ? `<div class="arch-field"><div class="arch-field-label">What it is</div><div class="arch-field-body">${qEsc(whatText)}</div></div>` : ''}${flowWorldPanelHtml('component', c.id)}<div data-nbstudio="${c.id}"></div></div>` : ''}`;
   });
   html += nbUnreachableSectionHtml();
   html += nbUnplantedSectionHtml();
@@ -8492,12 +8523,7 @@ function renderNotbuilt() {
     };
   });
   wireStudioSlots(host, () => { loadNbConvos(); renderNotbuilt(); });
-  host.querySelectorAll('[data-nbmore]').forEach(m => {
-    m.onclick = () => {
-      const d = host.querySelector(`[data-nbwhat="${m.getAttribute('data-nbmore')}"]`);
-      if (d) { d.classList.remove('clamped'); const more = d.querySelector('.nb-more'); if (more) more.remove(); }
-    };
-  });
+  cardLineFill();
   host.querySelectorAll('[data-nbjump]').forEach(a => {
     a.onclick = () => { setArchTab('graph'); renderArchStage(); selectArchNode(a.getAttribute('data-nbjump')); };
   });
@@ -8617,7 +8643,7 @@ async function loadArchNodes() {
     if (existing) { Object.assign(existing, n); return; }
     const node = {
       id:n.id, territory:n.territory, name:n.name,
-      what:n.what || '', why:n.why || '',
+      what:n.what || '', why:n.why || '', summary:n.summary || '',
       input:'—', output:'—',
       now:n.proposed
         ? 'Proposed automatically from real work — pending your acceptance in the bar above.'
@@ -8680,7 +8706,7 @@ function renderArchProposals() {
           <span class="arch-proposal-name">${qEsc(n.name)}</span>
           <span class="q-badge" style="background:#7a5ea8;">${archProposalSource(n)}</span>
           ${n.sync_sha ? `<span class="q-badge" style="background:var(--c-ink-4);" title="${qEsc(n.sync_sha)}">${qEsc(n.sync_sha.slice(0, 8))}</span>` : ''}
-          <div class="arch-proposal-what">${qEsc(n.what || '')}</div>
+          ${cardLineHtml('component', n.id, n.summary, n.what, 'arch-proposal-what')}
         </div>
         <div class="arch-proposal-actions">
           <button class="ctrlbtn" data-act="accept">✓ Accept</button>
@@ -8688,6 +8714,7 @@ function renderArchProposals() {
         </div>
       </div>`).join('')}`;
   document.getElementById('archProposalsCollapseBtn').onclick = () => { archProposalsOpen = false; renderArchProposals(); };
+  cardLineFill();
   host.querySelectorAll('.arch-proposal-row').forEach(row => {
     const id = row.getAttribute('data-pid');
     row.querySelector('[data-act="accept"]').onclick = async () => {
@@ -9868,7 +9895,7 @@ function renderArchSuggestions(c) {
       // The whole card has always been clickable to queue it, with nothing on
       // screen saying so. The symbol makes that action visible; the card click
       // still works for anyone used to it.
-      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(s.prompt)}</div>${cardActions([iconBtn('queue', 'Send this suggestion to the queue', 'as-queue', s.id, 'primary')])}</div>`;
+      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(cardOneLine(s.prompt))}</div>${cardActions([iconBtn('queue', 'Send this suggestion to the queue', 'as-queue', s.id, 'primary')])}</div>`;
     });
     const genAt = fmtVerified(c.suggestions_generated_at);
     if (genAt) html += `<div class="arch-verified" style="margin-top:2px;">Generated ${genAt}</div>`;

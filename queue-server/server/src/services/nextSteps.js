@@ -187,6 +187,7 @@ export function nextSteps(db, catalog = [], { limit = 3 } = {}) {
       territory: n.territory,
       status: n.status,
       next: n.next || '',
+      summary: n.summary || '',   // the one line the card shows (services/cardLines.js)
       ready: blockers.length === 0,
       blocked_by: blockers.map((b) => ({ id: b.id, name: b.name || b.id, status: b.status })),
       unlocks: leverage.get(n.id) || 0,

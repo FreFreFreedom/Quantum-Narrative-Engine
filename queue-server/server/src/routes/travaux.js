@@ -116,7 +116,9 @@ export function travauxRoutes() {
     try {
       const out = await ideas.summarizeIdea(req.params.id);
       if (!out) return res.status(404).json({ error: 'not_found' });
-      res.json(out);
+      // Kept for anything still calling the per-card route; the shared service
+      // speaks in `line`, this endpoint has always answered with `summary`.
+      res.json({ summary: out.line });
     } catch (e) {
       res.status(502).json({ error: 'summary_failed', message: e.message });
     }

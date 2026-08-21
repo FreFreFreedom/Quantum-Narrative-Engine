@@ -141,6 +141,10 @@ function initSchema(db) {
   // task is FOR. Generated lazily on first open (one free-model call), then
   // cached here so revisits cost nothing (see routes/queue.js summarize).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN summary TEXT`); } catch {}
+  // Separate from `summary` above: that one is the detail panel's 3-5 bullets, far
+  // too long for a row. This is the single line the closed card shows — what the
+  // task will do, or once it is finished, what it changed.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN summary_line TEXT`); } catch {}
   // Inspiration step: every implement-mode task gets a background pass that looks
   // at the world before its plan is written (open projects, closed products, bold
   // ideas — see codeDiscovery.js runInspiration). State machine: 'off' (question
@@ -216,6 +220,10 @@ function initSchema(db) {
   // there — the engine asks Claude for it — but it used to get jammed onto the end
   // of `area` behind a " · " separator because there was no column to put it in.
   try { db.exec(`ALTER TABLE work_suggestions ADD COLUMN territory TEXT`); } catch {}
+  // The one line the closed card shows — see services/cardLines.js. `rationale` is
+  // the raw "why", which the opened card can show in full; this is the written
+  // one-liner so the row is never the first half of a sentence continued below.
+  try { db.exec(`ALTER TABLE work_suggestions ADD COLUMN summary TEXT`); } catch {}
   // Move it out of that tail into its own field, so the Flow can group on something
   // reliable instead of splitting a string. `area` is deliberately left as it is:
   // nothing displays it, rewriting it would be fiddly, and leaving it means this
@@ -938,6 +946,10 @@ export function initArchitectureSchema(db) {
   try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_prompt_id TEXT`); } catch {}
   try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN sync_sha TEXT`); } catch {}
   try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN proposed INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Card line (services/cardLines.js): `what` is a full paragraph by contract, so
+  // every surface that listed a node used to slice it mid-sentence. This is the
+  // written one-liner those rows show instead.
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN summary TEXT`); } catch {}
   db.exec(`
     CREATE TABLE IF NOT EXISTS tree_sync_state (
       id INTEGER PRIMARY KEY CHECK(id=1),
@@ -954,6 +966,22 @@ export function initArchitectureSchema(db) {
   // The one line a closed seed row shows: a written summary of the whole idea,
   // so the row is not just the opening words of the notes repeated below it.
   try { db.exec(`ALTER TABLE work_ideas ADD COLUMN summary TEXT`); } catch {}
+
+  // Card lines for cards that have no row of their own to hold one. Most of the
+  // architecture trunk is hard-coded in the frontend, not in architecture_nodes,
+  // so those cards have nowhere to store their line — this is that somewhere.
+  // source_hash means a rewritten trunk description regenerates instead of
+  // keeping a line that describes the old text.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS card_lines (
+      kind TEXT NOT NULL,
+      card_id TEXT NOT NULL,
+      line TEXT NOT NULL,
+      source_hash TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      PRIMARY KEY (kind, card_id)
+    )
+  `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_node ON work_ideas(arch_node_id)`); } catch {}
 }
 

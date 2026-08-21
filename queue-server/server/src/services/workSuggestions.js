@@ -12,6 +12,7 @@
 //     fallback) instead of a separate llm.js seam — this app already centralized
 //     that decision for every other short-text feature.
 import { randomUUID, createHash } from 'node:crypto';
+import { eagerCardLine } from './cardLines.js';
 import { shippedSince, overlapsShipped } from './shipFacts.js';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
@@ -95,6 +96,7 @@ export function addSuggestion({ title, rationale = '', prompt, area = null, terr
     if (dup) return { ...row(dup), duplicate: true };
     throw e;
   }
+  eagerCardLine('suggestion', id); // the card's one line, ready before it is read
   return row(db.prepare(`SELECT * FROM work_suggestions WHERE id = ?`).get(id));
 }
 
