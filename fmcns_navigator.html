@@ -4151,12 +4151,12 @@ function renderAiSettings() {
     </table>
     <div class="ai-fp-sub" style="margin-top:6px;">&ldquo;Second account&rdquo; means your smaller Claude subscription. Those jobs run on your Mac, so the runner has to be on. When that account runs out for the next few hours, the same question is asked again on your main account rather than dropping to a free model &mdash; and the same happens if its token isn&rsquo;t set. Coding tasks always stay on the main account.</div>
     <details class="ai-voice">
-      <summary>How Idea Studio thinks &mdash; the voice it answers in</summary>
+      <summary>How Idea Studio thinks</summary>
       <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" placeholder="Leave empty to use the built-in voice.">${qEsc(aiSettings.studioPersona || '')}</textarea>
       <div class="ai-voice-note">This is the lens your brainstorming conversations think through &mdash; the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest (use the real project data, invent nothing, say when something already exists), so you can rewrite it freely without breaking anything. Empty means the built-in voice. Only affects Idea Studio conversations, not the shorter system answers.</div>
     </details>
     <details class="ai-adv">
-      <summary>Advanced — queue budget &amp; intel (JSON)</summary>
+      <summary>Advanced (JSON)</summary>
       <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
     </details>
     <button class="ai-savebtn" id="aiSaveBtn">Save</button>
@@ -4777,7 +4777,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       ${taskPillHtml(p, st)}
       ${cardActs(primary, menu)}
     </div>
-    ${resultHtml || cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
+    ${resultHtml ? '' : cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
     ${p.pending_question ? qQuestionBlockHtml(p) : ''}
     ${resultHtml}
     ${stageStripHtml(st)}
@@ -6587,28 +6587,15 @@ function qRenderDetail(p) {
   const isOpen = provVal === 'opencode';
   const isAiRouter = provVal === 'ai-router';
   const usesModelPicker = isOpen || isAiRouter;
-  const autoParent = p.parent_prompt_id ? qPrompts.find(x => x.id === p.parent_prompt_id) : null;
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
   const switchable = p.status !== 'running';
   const providerOpts = `
     <option value="claude-code"${provVal === 'claude-code' ? ' selected' : ''}>Claude Code</option>
     <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode (free models supported)</option>
     <option value="ai-router"${isAiRouter ? ' selected' : ''}>AI Router (free — questions only)</option>`;
-  // The card's own cost line already names the model and the dollar figure once a
-  // task is finished, so there the panel adds only the token counts. While a task is
-  // still active the card prints no cost line at all — then the panel carries it all.
-  const cardHasCost = !Q_ACTIVE_STATUSES.includes(p.status);
-  const costParts = [];
-  if (p.run_model && !cardHasCost) costParts.push(p.run_model);
-  if (p.tokens_in != null || p.tokens_out != null) costParts.push(`${p.tokens_in||0} in / ${p.tokens_out||0} out tok`);
-  if (p.cost_usd != null && !cardHasCost) costParts.push('~$' + p.cost_usd.toFixed(3));
-  // Timing and an auto-chosen parent task are the only run facts the card has no
-  // room for; agent, provider and the memory count are all on it already.
-  const runFacts = [
-    p.started_at ? `<span><b>Started:</b> ${new Date(p.started_at).toLocaleString()}</span>` : '',
-    p.completed_at ? `<span><b>Finished:</b> ${new Date(p.completed_at).toLocaleString()}</span>` : '',
-    autoParent ? `<span title="Chosen automatically at creation time — the AI judged this task a direct continuation of that one."><b>Carries on from:</b> "${qEsc(autoParent.title)}" (auto)</span>` : '',
-  ].filter(Boolean);
+  // Start and finish timestamps, token counts, the dollar figure and the auto-chosen
+  // parent task all used to open this panel. None of them changes what you would do
+  // next, which is the only test a line on this card has to pass.
   // Only worth its tinted box when it actually says something — with the repeated
   // status row gone this would otherwise open the panel with an empty box.
   const primaryHint = p.status === 'paused' ? qPrimaryHintHtml(p) : '';
@@ -6640,24 +6627,20 @@ function qRenderDetail(p) {
     <div class="q-primary-action">
       <div class="q-primary-hint" id="qPrimaryHint">${primaryHint}</div>
     </div>` : ''}
+${switchable ? `
     <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
-      <summary>Run details — timing, cost, which provider it runs on</summary>
-      ${runFacts.length ? `<div class="q-detail-row">${runFacts.join('')}</div>` : ''}
-      ${qTriedModelsLine(p)}
-      ${costParts.length ? `<div class="q-detail-row"><span title="What this run actually cost, read from the CLI's own usage report."><b>Cost:</b> ${costParts.join(' · ')}</span></div>` : ''}
-      ${switchable ? `
-        <div class="q-detail-row" style="gap:8px;align-items:center;">
-          <span><b>Provider:</b>
-            <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
-          </span>
-          <span><b>Model:</b>
-            <select id="qDetailModel" class="q-input" style="width:auto;" ${usesModelPicker ? '' : 'disabled'}>
-              <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
-            </select>
-          </span>
-
-        </div>` : ''}
-    </details>
+      <summary>Engine</summary>
+      <div class="q-detail-row" style="gap:8px;align-items:center;">
+        <span><b>Provider:</b>
+          <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
+        </span>
+        <span><b>Model:</b>
+          <select id="qDetailModel" class="q-input" style="width:auto;" ${usesModelPicker ? '' : 'disabled'}>
+            <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
+          </select>
+        </span>
+      </div>
+    </details>` : ''}
     <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
@@ -6787,7 +6770,7 @@ function qPurposeHtml(summary) {
     .map(l => l.replace(/^[-•*]\s*/, '').trim())
     .filter(Boolean);
   const li = l => `<li>${qEsc(l)}</li>`;
-  const head = lines.slice(0, 3), rest = lines.slice(3);
+  const head = lines.slice(0, 2), rest = lines.slice(2);
   return '<ul class="q-purpose">' + head.map(li).join('') + '</ul>' +
     (rest.length ? `<span class="nb-more" data-purposemore>${rest.length} more ▾</span><ul class="q-purpose" data-purposerest hidden>${rest.map(li).join('')}</ul>` : '');
 }
@@ -11754,7 +11737,7 @@ document.addEventListener('keydown', (e) => {
       var rows = Object.keys(byField).map(function(f){
         return '<div><b>' + qEsc(f) + '</b> — ' + qEsc(String(byField[f].before_text || '(was empty)').slice(0, 400)) + '</div>';
       }).join('');
-      html += '<details class="se-before"><summary>What this said before a conversation rewrote it</summary>' + rows + '</details>';
+      html += '<details class="se-before"><summary>What it said before</summary>' + rows + '</details>';
     }
     if(!e.msgs.length && !e.promptId && !e.busy && !e.stream){
       html += '<div class="se-note">Nothing said yet. Push this, argue with it, or ask to be interrogated — nothing is queued or run from here.</div>';

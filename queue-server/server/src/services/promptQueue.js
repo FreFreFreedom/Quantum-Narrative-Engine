@@ -1102,8 +1102,10 @@ export async function summarizePrompt(id) {
     const text = [row.title, row.raw_prompt || '', row.prompt].filter(Boolean).join('\n\n');
     const out = await generateText({
       prompt: [
-        'Summarize the PURPOSE of this task for its owner: what it is for, what it produces, what it touches — NOT the mechanics.',
-        'Answer as 3-5 short bullet points, one line each, plain language, no preamble, no markdown headers.',
+        'Summarize the PURPOSE of this task for its owner: what it is for and what it produces — NOT the mechanics.',
+        // Antoine, 2026-08-21: these bullets were paragraphs. A purpose you have to
+        // read is not a purpose you can glance at, so the limit is the sentence.
+        'Answer as AT MOST 3 bullet points. Each one MUST be a single short sentence of 14 words or fewer — never two sentences, never a clause list. Plain language, no preamble, no markdown headers.',
         'If the task is a question, say what the owner wanted to know.',
         USER_FACING_STYLE,
         '\nTask:\n' + text.slice(-16000),
