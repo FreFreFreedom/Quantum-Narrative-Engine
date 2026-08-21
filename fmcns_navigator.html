@@ -1481,10 +1481,10 @@ button:active { transform: translateY(1px) scale(.99); }
                 </label>
                 <label>Speed / depth
                   <select id="qPreset">
-                    <option value="auto" selected>Auto (sized from the task, free — recommended)</option>
-                    <option value="fast">Fast (haiku)</option>
-                    <option value="standard">Standard (sonnet)</option>
-                    <option value="deep">Deep (strongest model)</option>
+                    <option value="auto" selected>Auto — medium, unless the task is unusually big (free, recommended)</option>
+                    <option value="fast">Fast — for a quick question</option>
+                    <option value="standard">Medium — the normal choice</option>
+                    <option value="deep">Deep — the strongest model, rarely needed and much dearer</option>
                   </select>
                 </label>
               </div>
@@ -4003,6 +4003,13 @@ async function qAction(action, id, btn) {
         await apiWrite(`/api/travaux/prompts/${id}/pause`, 'POST');
         await qLoad();
         break;
+      // Releases a task the queue will otherwise never dispatch: a failed world-look
+      // holds it out of advanceQueue()'s reach, and this lets it run on a plain plan.
+      case 'inspire-skip':
+        await apiWrite(`/api/travaux/prompts/${id}/inspiration/skip`, 'POST', {});
+        qInspireCache[id] = null;
+        await qLoad();
+        break;
       case 'first':
         await apiWrite(`/api/travaux/prompts/${id}/first`, 'POST');
         await qLoad();
@@ -4444,13 +4451,6 @@ function stageStripHtml(st) {
   </div>`;
 }
 
-// A symbol-row action, borrowed as the strip's labelled button: same `data-act`
-// the delegated handler on each list already dispatches on, so the strip adds no
-// plumbing of its own — it only makes the one action that matters legible.
-function stageAct(label, act, id, title) {
-  return { label, title, attrs: `class="cardbtn stage-go" data-act="${act}" data-id="${qEscAttr(id)}"` };
-}
-
 // Where a card sits on its own ladder, and what moves it on. One function so no
 // list can invent a different answer for the same thing.
 function cardStage(kind, o) {
@@ -4476,12 +4476,11 @@ function taskStage(p) {
       next: 'Answer the question on this card' };
   }
   if (p.plan_pending) {
+    // No button: the bolt in this card's own symbol row already does exactly this.
     return { step: 1, total: TASK_STAGE_TOTAL,
       label: qStageStuck(p) ? 'Getting ready — stuck' : 'Drafting the plan',
       tone: qStageStuck(p) ? 'stop' : 'go',
-      next: 'Start it now on the text you wrote, without waiting for the draft',
-      btn: stageAct('Start it now', 'skip-plan', p.id,
-        'Skip drafting the plan and start this task now, on the raw text you submitted') };
+      next: 'Start it now on the text you wrote, without waiting for the draft' };
   }
   if (p.status === 'paused') {
     return { step: 2, total: TASK_STAGE_TOTAL, label: 'Parked', tone: 'ask',
@@ -4490,6 +4489,22 @@ function taskStage(p) {
         title: 'Marks this task ready — your local runner picks it up when it is running. This does not run anything in the app.' } };
   }
   if (p.status === 'queued') {
+    // "Waiting its turn" was said to every queued task alike, including ones the queue
+    // will never actually dispatch — a task whose look at the world failed is excluded
+    // from dispatch, so "the runner starts it when the ones ahead finish" was a plain
+    // untruth and the task sat there unexplained. Say what is really holding it, and
+    // hand over the way out.
+    const insp = p.inspire_state || 'off';
+    if (['off', 'failed'].includes(insp)) {
+      return { step: 3, total: TASK_STAGE_TOTAL, label: 'Held — its look at the world did not finish', tone: 'stop',
+        next: 'Start it without the ideas, on a plain plan',
+        btn: { label: 'Start it without that', attrs: `class="cardbtn stage-go" data-act="inspire-skip" data-id="${qEscAttr(p.id)}"`,
+          title: 'Lets this task run on a plain plan, without waiting for the world-look' } };
+    }
+    if (insp === 'pending' || insp === 'reviewing') {
+      return { step: 3, total: TASK_STAGE_TOTAL, label: 'Looking at the world before it starts', tone: 'go',
+        next: 'Nothing — it starts by itself once that finishes' };
+    }
     return { step: 3, total: TASK_STAGE_TOTAL, label: 'Waiting its turn', tone: 'idle',
       next: 'Nothing — the runner starts it when the ones ahead finish' };
   }
@@ -4498,10 +4513,10 @@ function taskStage(p) {
       next: 'Nothing — wait for it to finish' };
   }
   if (p.status === 'blocked' || p.status === 'cancelled') {
+    // No button: the redo symbol in this card's own row already does exactly this.
     return { step: 5, total: TASK_STAGE_TOTAL,
       label: p.status === 'blocked' ? 'Stopped part-way' : 'Cancelled', tone: 'stop',
-      next: 'Run it again, carrying on from where it left off',
-      btn: stageAct('Run it again', 'rerun', p.id, 'Run it again, carrying on from where it left off') };
+      next: 'Run it again, carrying on from where it left off' };
   }
   // Finished. What is left depends on whether the work reached the app.
   if (['shipping', 'putting_back'].includes(ship.state)) {
@@ -4512,8 +4527,9 @@ function taskStage(p) {
       next: 'Nothing here — start the runner on your Mac and it goes live' };
   }
   if (['ready', 'needs_fix', 'put_back'].includes(ship.state) && ship.review_id) {
+    // No button: the play symbol in this card's own row already sends it live.
     return { step: 5, total: TASK_STAGE_TOTAL, label: 'Done, not live yet', tone: 'ask',
-      next: 'Send this work live', btn: stageAct('Send it live', 'ship-now', p.id, 'Send this live now') };
+      next: 'Send this work live' };
   }
   if (ship.state === 'nothing_changed') {
     return { step: 5, total: TASK_STAGE_TOTAL, label: 'Done — it changed nothing', next: '', tone: 'done' };
@@ -4528,9 +4544,10 @@ function sgStage(s) {
     return { step: 2, total: 3, label: 'Accepted — parked in the queue', tone: 'ask',
       next: 'Open it in the Queue and mark it ready' };
   }
+  // No button: the green check in this card's own row is the accept, and two of them
+  // side by side is one too many.
   return { step: 1, total: 3, label: 'Suggested, not decided', tone: 'ask',
-    next: 'Accept it — it lands in the queue, parked',
-    btn: stageAct('Accept it', 'sg-accept', s.id, 'Accept it — adds it to the queue, parked') };
+    next: 'Accept it with the green check — it lands in the queue, parked' };
 }
 
 // Two rungs only, because that is the truth: a seed is either still just a note,
@@ -4540,12 +4557,11 @@ function seedStage(i) {
     .filter(Boolean).join(' and ');
   if (where) {
     return { step: 2, total: 2, label: `Taken up — ${where}`, tone: 'done',
-      next: i.work_prompt_id ? 'Open the task and mark it ready' : 'Send it to the queue when you want it built',
-      btn: i.work_prompt_id ? null : stageAct('Send it to the queue', 'seed-queue', i.id, 'Send it to the queue as a task') };
+      next: i.work_prompt_id ? 'Open the task and mark it ready' : 'Send it to the queue when you want it built' };
   }
+  // No button: the queue symbol in this card's own row already sends it.
   return { step: 1, total: 2, label: 'Kept as a note — nothing runs from it', tone: 'idle',
-    next: 'Send it to the queue as a task',
-    btn: stageAct('Send it to the queue', 'seed-queue', i.id, 'Send it to the queue as a task') };
+    next: 'Send it to the queue as a task' };
 }
 
 // A tech-tree component climbs the same six rungs the rest of the app already
@@ -5343,8 +5359,14 @@ function renderFlow() {
   // In-flight world-looks (server-side auto-looks included) tick forward here,
   // so ✨ markers appear on rows the moment a look lands — no need to open the
   // item first. Poll is a no-op unless the item is pending.
-  if (showSg) tvSuggestions.forEach(s => flowWorldPoll('suggestion', s.id));
-  if (showSeeds) tvIdeas.forEach(i => flowWorldPoll('idea', i.id));
+  if (showSg) {
+    flowWorldPrefetch('suggestion', tvSuggestions.map(s => s.id));
+    tvSuggestions.forEach(s => flowWorldPoll('suggestion', s.id));
+  }
+  if (showSeeds) {
+    flowWorldPrefetch('idea', tvIdeas.map(i => i.id));
+    tvIdeas.forEach(i => flowWorldPoll('idea', i.id));
+  }
 
   if (showQueue) {
     const questions = qPrompts.filter(p => rel(p) && p.pending_question && flowMatches([p.title, p.prompt]));
@@ -6642,6 +6664,39 @@ function flowWorldEntry(source, id) {
   if (!e) { e = { state: 'idle', synced: false, startedAt: 0, report: null, error: '', sel: [], autoAttempted: false, fetching: false }; flowWorld[key] = e; }
   return e;
 }
+// One ask for a whole list, instead of one ask per card at the moment you open it.
+//
+// The looks are kept for good on the server, and background sweeps fill them in for
+// every suggestion, seed and unbuilt piece. But the app only ever fetched a card's
+// report when that card was opened, so a freshly drawn list showed no ✨ on anything
+// and each untouched card offered to go and look — which, after a redeploy, reads as
+// "the ideas are gone, earn them again". They were never gone. This asks for the lot
+// up front, so the markers are right on the first paint and opening a card is instant.
+//
+// Once per set of ids, not per render: renderFlow() runs on a poll.
+const flowWorldFetched = {};
+async function flowWorldPrefetch(source, ids) {
+  const list = (ids || []).filter(Boolean);
+  if (!list.length) return;
+  const key = source + '|' + list.slice().sort().join(',');
+  if (flowWorldFetched[key]) return;
+  flowWorldFetched[key] = true;
+  try {
+    const data = await api(`/api/discovery/world-look/for?source=${encodeURIComponent(source)}&ids=${encodeURIComponent(list.join(','))}`);
+    let changed = false;
+    for (const [id, v] of Object.entries(data.items || {})) {
+      const e = flowWorldEntry(source, id);
+      // Never overwrite a live entry — a look this session may be further along than
+      // the snapshot this reply was built from.
+      if (e.state !== 'idle' || e.synced) continue;
+      e.synced = true;
+      if (v.report) { e.report = v.report; e.state = 'ready'; changed = true; }
+      else if (v.running) { e.state = 'pending'; e.startedAt = Date.now(); changed = true; }
+    }
+    if (changed) scheduleFlowRender();
+  } catch (err) { delete flowWorldFetched[key]; /* leave it to the per-card fetch */ }
+}
+
 // renderFlow() rebuilds the whole Flow list from scratch and replays every row's
 // enter-animation — fine for a single user click, but flowWorldSync/flowWorldPoll
 // can each independently land a state change (report ready, look settled, timed

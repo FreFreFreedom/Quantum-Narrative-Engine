@@ -98,6 +98,30 @@ export function discoveryRoutes(db) {
     });
   });
 
+  // The same question for a whole list at once. The app used to ask per card, and only
+  // when you opened one — so a list of suggestions drew with no ✨ on any of them and
+  // every untouched card offered to "look at the world" as though nothing had ever been
+  // found. The reports were there the whole time (they are rows in discovery_reports,
+  // written by the background sweeps and kept for good); the app simply had not asked.
+  // After a redeploy that reads exactly like the ideas were thrown away.
+  //
+  // Free — a lookup per id, no model calls. Capped so one call cannot walk the table.
+  const MAX_BATCH_IDS = 200;
+  router.get('/world-look/for', (req, res) => {
+    const source = String(req.query.source || '');
+    if (!source) return res.status(400).json({ error: 'source is required' });
+    const ids = String(req.query.ids || '').split(',').map(x => x.trim()).filter(Boolean).slice(0, MAX_BATCH_IDS);
+    const out = {};
+    for (const id of ids) {
+      const report = findReportBySource(db, source, id);
+      const running = isWorldLookRunning(source, id);
+      // Only the ids that have something to say are returned, so a list of a hundred
+      // suggestions with three reports answers with three entries.
+      if (report || running) out[id] = { report, running };
+    }
+    res.json({ items: out });
+  });
+
   // ── Rewriting the looks that already exist ─────────────────────────────────
   // GET says how many reports were written by an older generation of the prompts and
   // are therefore still the drifting ones. Free — a count, no model calls.
