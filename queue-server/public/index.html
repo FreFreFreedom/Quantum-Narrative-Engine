@@ -6328,16 +6328,32 @@ async function flowSortOldSuggestions() {
   }
 }
 
+// Asking Claude for suggestions is fire-and-forget on the server (it answers 202 and
+// runs in the background), so this has to watch for the answer. It used to wait a flat
+// 20 seconds and reload once — a real run takes longer than that, so the usual outcome
+// was a button that finished, said nothing, and left the list unchanged. It now polls
+// until new suggestions actually land, and says so when none do.
+const SG_GEN_POLL_MS = 5000;
+const SG_GEN_WAIT_MS = 240000;
+
+// The button is redrawn by every renderFlow (the queue polls on its own timer), so the
+// busy state is re-stamped on the live element each tick rather than held in a stale
+// reference.
+function sgGenBusy(label, note) {
+  const btn = document.getElementById('flowGenBtn');
+  if (btn) { btn.disabled = !!label; if (label) btn.textContent = label; }
+  const status = document.getElementById('flowGenStatus');
+  if (status) status.textContent = note || '';
+}
+
 async function flowGenerateNow() {
   const btn = document.getElementById('flowGenBtn');
-  const status = document.getElementById('flowGenStatus');
   if (!btn) return;
   // Same object that labelled the button decides what gets asked for.
   const gen = sgGenIntent();
   if (gen.disabled) return;
-  const restore = () => { btn.disabled = false; btn.textContent = gen.label; };
-  btn.disabled = true; btn.textContent = gen.busy;
-  if (status) status.textContent = gen.note;
+  const known = new Set(tvSuggestions.map(sg => sg.id));
+  sgGenBusy(gen.busy, gen.note);
   try {
     // Ship the app's own map of itself with the request. It lives in this file, not
     // in the database, so without it the suggestion engine cannot see the app's build
@@ -6349,16 +6365,28 @@ async function flowGenerateNow() {
       ? archCatalog().filter(c => c.territory === gen.body.territory)
       : archCatalog();
     await apiWrite('/api/travaux/suggestions/generate', 'POST', { ...gen.body, catalog });
-    setTimeout(async () => {
-      await loadSuggestions();
-      if (status) status.textContent = '';
-      restore();
-      renderFlow();
-    }, 20000);
   } catch (e) {
-    if (status) status.textContent = 'Error: ' + e.message;
-    restore();
+    sgGenBusy(null, 'Could not ask: ' + e.message);
+    const b = document.getElementById('flowGenBtn');
+    if (b) b.textContent = gen.label;
+    return;
   }
+  const deadline = Date.now() + SG_GEN_WAIT_MS;
+  let fresh = [];
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, SG_GEN_POLL_MS));
+    await loadSuggestions();
+    fresh = tvSuggestions.filter(sg => !known.has(sg.id));
+    if (fresh.length) break;
+    const left = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+    sgGenBusy(gen.busy, `${gen.note} (still waiting — ${left}s)`);
+  }
+  renderFlow();
+  sgGenBusy(null, fresh.length
+    ? `${fresh.length} new.`
+    : 'Nothing came back this time — press it again, or ask for the whole app instead of one part.');
+  const b = document.getElementById('flowGenBtn');
+  if (b) b.textContent = gen.label;
 }
 
 // Shared inline detail for Flow items: seeds and suggestions get their own light
