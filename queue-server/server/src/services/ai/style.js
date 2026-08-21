@@ -16,7 +16,17 @@ export const USER_FACING_STYLE =
   'Style: plain English, direct. No jargon, no file names, no internal/technical terms — ' +
   'if a technical word is unavoidable, explain it in the same breath. ' +
   'Never use internal component ids, codes or slugs (like "observation-layer" or "knowledge-graph") — ' +
-  'say what the thing DOES for the person using the app, in everyday words.';
+  'say what the thing DOES for the person using the app, in everyday words. ' +
+  // The counterweight. Read on its own, "no jargon" gets obeyed by draining the idea:
+  // a card that could have said "finds the same pattern repeating from one person to a
+  // whole country" ends up saying "improves connections". That is not plain English,
+  // it is empty English — and it costs him the one thing the card exists to give him,
+  // which is a reason to care about this and not the next thing on the list.
+  'Plain does NOT mean vague. Keep the full force of the idea: the specific thing it does, ' +
+  'and what becomes possible that was not possible before. Say it in everyday words, ' +
+  'but say the real thing — never soften a precise claim into a general one ' +
+  '("improves things", "enhances the experience", "makes it better" are failures, not successes). ' +
+  'If the idea is genuinely powerful, he must be able to feel that from the card.';
 
 // Length discipline for the text Antoine reads INSIDE the queue: a task's result
 // and a task's question. Both are decision surfaces — he reads them to answer or
