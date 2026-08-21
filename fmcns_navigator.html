@@ -826,7 +826,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-terr-chip.outside { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
 .sg-terr-chip.none { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); font-style:italic; }
 /* Inspired-by panel (task detail): the three shelves */
-.q-inspire-toolbar { display:flex; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
+.q-inspire-toolbar { display:flex; align-items:center; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
 .q-inspire-shelf.q-inspire-bold { color:#8a5a1e; }
 .q-inspire-note { font-size:10px; color:var(--c-ink-4); margin-bottom:6px; }
@@ -871,6 +871,15 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .wl-title:hover { text-decoration:underline; }
 .wl-star { font-size:10px; flex-shrink:0; }
 .wl-caret { margin-left:auto; font-size:10px; color:var(--c-ink-4); cursor:pointer; padding:0 2px; flex-shrink:0; }
+/* Swap just this one idea. Sits beside the shelf tag, quiet until the row is
+   hovered — a per-row alternative to redoing the whole box. */
+.wl-swap { flex-shrink:0; width:17px; height:17px; padding:0; line-height:1; display:inline-flex; align-items:center; justify-content:center; border:1px solid transparent; border-radius:50%; background:none; color:var(--c-ink-4); font-size:9.5px; font-family:inherit; cursor:pointer; opacity:.45; transition:opacity .12s, color .12s, border-color .12s; }
+.wl-row:hover .wl-swap { opacity:1; }
+.wl-swap:hover:not(:disabled) { color:var(--c-accent); border-color:var(--c-border-2); background:var(--c-surface); }
+.wl-swap:disabled { cursor:default; opacity:.3; }
+.wl-swap.busy { opacity:1; color:var(--c-accent); animation:wl-swap-spin 1s linear infinite; }
+.wl-swap.failed { opacity:1; color:var(--c-warn); border-color:var(--c-warn); }
+@keyframes wl-swap-spin { to { transform:rotate(360deg); } }
 .wl-line { font-size:11px; color:var(--c-ink-3); margin:0 0 1px 26px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .wl-reason { font-style:italic; cursor:default; }
 .wl-detail { margin:3px 0 5px 26px; }
@@ -5111,7 +5120,7 @@ function wireNextUp(host) {
     const { title, prompt } = nbQueuePromptOf(c);
     const text = [title, prompt].join('\n');
     const e = flowWorldEntry('component', cid);
-    panel.querySelectorAll('[data-action="flowworld-start"], [data-action="flowworld-rerun"]').forEach(b => {
+    panel.querySelectorAll('[data-action="flowworld-start"]').forEach(b => {
       b.onclick = async () => {
         b.disabled = true;
         await flowWorldStart('component', cid, text);
@@ -6222,6 +6231,14 @@ const WORLD_KIND_ORDER = ['open', 'hidden', 'bold'];
 const worldOpen = new Set();
 const worldRowKey = (scope, pi, i) => `${scope}|${pi}:${i}`;
 
+// Rows with a swap in flight, keyed by report + position (not by panel scope: the
+// same idea can be on screen in two panels at once, and both should show it working).
+const worldSwapping = new Set();
+// Why a swap refused or failed, kept by the same key so the reason survives the
+// next re-render instead of vanishing with the button it was written on.
+const worldSwapError = new Map();
+const worldSwapKey = (reportId, pi, i) => `${reportId}|${pi}|${i}`;
+
 // The single line a closed row shows: the pick's leading field, cut to its first
 // sentence, or ~90 characters on a word boundary. Same idea as qPurposePreview.
 function worldOneLine(pick) {
@@ -6300,7 +6317,11 @@ window.refreshWorldPanels = function (report) {
     e.report = report;
     touchedFlow = true;
   });
-  if (touchedFlow) scheduleFlowRender();
+  // The Not-built tab draws the same panels from its own render pass, so a report
+  // that changed there has to be redrawn there too — scheduleFlowRender only
+  // rebuilds the Flow list. Both guard on a missing host, so this is free when the
+  // tab is not on screen.
+  if (touchedFlow) { scheduleFlowRender(); renderNotbuilt(); }
 };
 
 // One idea, one row. Keeps the .q-inspire-card class and the data-partidx /
@@ -6321,8 +6342,23 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
       : isSel ? 'Picked. Click to drop it.' : 'Include this idea.';
   const line = worldOneLine(pick);
   const title = worldPickTitle(pick);
-  const chips = pick.developed_at
+  const chips = (pick.developed_at
     ? `<span class="wl-chip" title="This idea's own text was rewritten from a conversation. What it said before is kept under it.">developed</span>`
+    : '')
+    + (pick.swapped_at
+      ? `<span class="wl-chip alt" title="This row was swapped for a fresh idea. The rest of the list was left alone.">swapped</span>`
+      : '');
+  // Swapping one idea rewrites it where it stands, so it is offered only where a
+  // rewrite is still safe: a row already folded into a plan keeps its text (the
+  // plan was written from it) and shows no button.
+  const swapKey = reportId ? worldSwapKey(reportId, pi, i) : '';
+  const swapping = !!swapKey && worldSwapping.has(swapKey);
+  const swapFailed = swapKey ? worldSwapError.get(swapKey) : '';
+  const swapTitle = swapping ? 'Looking for a fresh idea for this row…'
+    : swapFailed ? swapFailed + ' This idea is unchanged — click to try again.'
+      : 'Swap just this idea for a fresh one — every other idea in the list stays as it is.';
+  const swapBtn = swapKey && !isApplied && !pick.developed_at
+    ? `<button class="wl-swap${swapping ? ' busy' : swapFailed ? ' failed' : ''}" data-worldswap="${qEscAttr(swapKey)}" aria-label="Swap this idea for a fresh one" title="${qEscAttr(swapTitle)}"${swapping ? ' disabled' : ''}>↻</button>`
     : '';
   return `
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
@@ -6331,6 +6367,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
         <span class="wl-title" data-worldexpand="${ek}">${qEsc(title)}</span>
         ${pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
         <span class="q-inspire-tag" title="${qEsc(meta.title)}">${meta.tag}</span>
+        ${swapBtn}
         ${chips}
         ${bestWhy !== undefined ? `<span class="wl-star" title="${qEsc(bestWhy ? 'Our pick — ' + bestWhy : 'Our pick.')}">⭐</span>` : ''}
         <span class="wl-caret" data-worldexpand="${ek}" title="The full idea">${isOpen ? '▾' : '▸'}</span>
@@ -6405,6 +6442,82 @@ document.addEventListener('click', (ev) => {
   if (caret) caret.textContent = wasOpen ? '▸' : '▾';
 });
 
+// ── Swapping one idea ───────────────────────────────────────────────────────
+// "New ideas" throws away every idea in the box. This throws away exactly one,
+// in place: same shelf, same position, everything around it untouched. One
+// document-level handler serves every panel that draws a world-look row (task,
+// suggestion, seed, component), so no panel has to wire it.
+
+// A tick belongs to the idea that was ticked. Once that idea is replaced the tick
+// would silently be pointing at something else, so it goes.
+async function worldDropSwappedTick(reportId, pi, ii) {
+  Object.keys(flowWorld).forEach((k) => {
+    const e = flowWorld[k];
+    if (e?.report?.id !== reportId) return;
+    e.sel = (e.sel || []).filter(x => !(x.part_index === pi && x.pick_index === ii));
+  });
+  for (const k of Object.keys(qInspireCache)) {
+    if (qInspireCache[k]?.report?.id !== reportId) continue;
+    const cur = qInspireSel[k] || [];
+    if (!cur.some(x => x.part_index === pi && x.pick_index === ii)) continue;
+    qInspireSel[k] = cur.filter(x => !(x.part_index === pi && x.pick_index === ii));
+    // The server remembers ticks between visits, so the drop has to reach it too.
+    try { await apiWrite(`/api/travaux/prompts/${k}/inspiration/select`, 'POST', { picks: qInspireSel[k] }); } catch (e) { /* the panel is already right */ }
+  }
+}
+
+async function worldSwapRequest(reportId, pi, ii) {
+  const resp = await fetch(`${API_BASE}/api/discovery/world-look/report/${encodeURIComponent(reportId)}/pick/${pi}/${ii}/swap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+    body: '{}',
+  });
+  let data = {};
+  try { data = await resp.json(); } catch (e) { /* an empty body says nothing */ }
+  if (!resp.ok || !data?.report) throw new Error(data?.message || data?.error || `HTTP ${resp.status}`);
+  return data.report;
+}
+
+document.addEventListener('click', async (ev) => {
+  const btn = ev.target.closest ? ev.target.closest('[data-worldswap]') : null;
+  if (!btn || btn.disabled) return;
+  const [reportId, rawPi, rawIi] = String(btn.getAttribute('data-worldswap')).split('|');
+  const pi = Number(rawPi);
+  const ii = Number(rawIi);
+  const key = worldSwapKey(reportId, pi, ii);
+  if (worldSwapping.has(key)) return;
+  worldSwapping.add(key);
+  worldSwapError.delete(key);
+  btn.disabled = true;
+  btn.classList.remove('failed');
+  btn.classList.add('busy');
+  btn.title = 'Looking for a fresh idea for this row…';
+  try {
+    const report = await worldSwapRequest(reportId, pi, ii);
+    worldSwapping.delete(key);
+    // Which task panels hold this report — read before the re-render, then refetched
+    // so the quick check's verdict on the old idea does not linger on the new one.
+    const tasks = Object.keys(qInspireCache).filter(k => qInspireCache[k]?.report?.id === report.id);
+    await worldDropSwappedTick(report.id, pi, ii);
+    window.refreshWorldPanels(report);
+    tasks.forEach((k) => {
+      const prompt = qPrompts.find(x => x.id === k);
+      qInspireCache[k] = null;
+      if (prompt) qFetchInspire(prompt);
+    });
+  } catch (e) {
+    worldSwapping.delete(key);
+    // The row is still the row it was — say so on the button rather than in a
+    // dialog, so nothing else on screen moves.
+    btn.classList.remove('busy');
+    btn.classList.add('failed');
+    btn.disabled = false;
+    const why = /[.!?]$/.test(e.message) ? e.message : e.message + '.';
+    worldSwapError.set(key, why);
+    btn.title = why + ' This idea is unchanged — click to try again.';
+  }
+});
+
 // What "applying" a pick does depends on where the task is: not started yet
 // (rewrite the plan), running (steer it live — the plan already shaped what's
 // executing), or done/cancelled (the plan is history, so the idea starts a
@@ -6436,7 +6549,7 @@ function qInspireFullHtml(p, data) {
   return `
     <div class="q-inspire-toolbar">
       <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="${qEsc(applyMeta.title)}">${applyMeta.label}</button>
-      <button class="ctrlbtn" data-action="inspire-start" title="Fresh search — GitHub lookups are cached for a day, the bold ideas are brand new every time.">↻ New ideas</button>
+      <span class="q-inspire-note">Not convinced by one of them? Use the ↻ next to its tag — it swaps that one idea and leaves the rest alone.</span>
     </div>
     ${legend}
     ${worldPartsHtml(report, { applied, sel, facts, scope: 'task:' + p.id })}`;
@@ -6526,16 +6639,6 @@ function qWireInspireButtons(p) {
     m.onclick = () => {
       const full = host.querySelector('[data-inspire-desc-full]');
       if (full) { full.hidden = false; m.closest('[data-inspire-desc]').hidden = true; }
-    };
-  });
-  host.querySelectorAll('[data-action="inspire-start"]').forEach(b => {
-    b.onclick = async () => {
-      b.disabled = true; b.textContent = 'Looking…';
-      try {
-        await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/refresh`, 'POST', {});
-        qInspireCache[p.id] = null; qInspireSel[p.id] = [];
-        await qLoad();
-      } catch (e) { b.disabled = false; b.textContent = '↻ New ideas'; alert('Error: ' + e.message); }
     };
   });
   host.querySelectorAll('[data-action="inspire-pick"]').forEach(b => {
@@ -6785,8 +6888,8 @@ function flowWorldPanelHtml(source, id) {
         ? `<div class="q-inspire-legend">Ideas the quick check doubted stay in the list, with its reason under them — pick any of them anyway.</div>`
         : '');
     return `<div class="q-inspire-toolbar">
-      <button class="ctrlbtn" data-action="flowworld-rerun" title="Fresh search — the bold ideas are brand new every time.">↻ New ideas</button>
       ${sel.size ? `<span class="q-inspire-note q-inspire-note-active">✓ ${sel.size} picked — included automatically when you press the button below to queue or build this.</span>` : `<span class="q-inspire-note">Pick ideas here — they'll be included automatically when you press the button below to queue or build this.</span>`}
+      <span class="q-inspire-note">Not convinced by one of them? The ↻ next to its tag swaps that one idea and leaves the rest alone.</span>
     </div>${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id })}`;
   }
   return `<div class="tv-empty">
@@ -6823,7 +6926,7 @@ function flowWorldRender(source, id, host, ideaText, onChange) {
   if (!host) return;
   host.innerHTML = flowWorldPanelHtml(source, id);
   const e = flowWorldEntry(source, id);
-  host.querySelectorAll('[data-action="flowworld-start"], [data-action="flowworld-rerun"]').forEach(b => {
+  host.querySelectorAll('[data-action="flowworld-start"]').forEach(b => {
     b.onclick = async () => {
       b.disabled = true;
       await flowWorldStart(source, id, ideaText);
@@ -8276,7 +8379,7 @@ function renderNotbuilt() {
     const { title, prompt } = nbQueuePromptOf(c);
     const text = [title, prompt].join('\n');
     const e = flowWorldEntry('component', cid);
-    panel.querySelectorAll('[data-action="flowworld-start"], [data-action="flowworld-rerun"]').forEach(b => {
+    panel.querySelectorAll('[data-action="flowworld-start"]').forEach(b => {
       b.onclick = async () => {
         b.disabled = true;
         await flowWorldStart('component', cid, text);

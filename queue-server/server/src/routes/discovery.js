@@ -5,7 +5,7 @@ import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
   addCustomBoldPick, rewriteWorldLooks, staleWorldLooks, WORLD_LOOK_GEN,
-  updatePickInPlace, appendPicks, updatePartFraming, removeConvoPicks,
+  updatePickInPlace, appendPicks, updatePartFraming, removeConvoPicks, swapOnePick,
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -189,6 +189,32 @@ export function discoveryRoutes(db) {
     if (out?.error) return res.status(out.error === 'empty' ? 400 : 404).json(out);
     res.json({ report: out });
   });
+
+  // Swap ONE idea for a fresh one, in place — the per-row alternative to redoing the
+  // whole report. Awaited (not backgrounded like the whole-report rerun) because it is
+  // a single short call and the row is waiting on screen for its answer. One swap per
+  // row at a time, so a double click cannot spend twice.
+  const swapsInFlight = new Set();
+  router.post('/world-look/report/:reportId/pick/:partIndex/:pickIndex/swap', asyncHandler(async (req, res) => {
+    const key = `${req.params.reportId}~${req.params.partIndex}:${req.params.pickIndex}`;
+    if (swapsInFlight.has(key)) return res.status(409).json({ error: 'busy', message: 'That idea is already being swapped.' });
+    swapsInFlight.add(key);
+    try {
+      const out = await swapOnePick(db, {
+        reportId: req.params.reportId,
+        partIndex: Number(req.params.partIndex),
+        pickIndex: Number(req.params.pickIndex),
+      });
+      if (out?.error) {
+        const notFound = ['no_report', 'no_pick', 'bad_index'].includes(out.error);
+        const refused = ['planted', 'in_conversation', 'applied'].includes(out.error);
+        return res.status(notFound ? 404 : refused ? 409 : 502).json(out);
+      }
+      res.json({ report: out });
+    } finally {
+      swapsInFlight.delete(key);
+    }
+  }));
 
   // Append ideas to a part.
   router.post('/world-look/report/:reportId/part/:partIndex/picks', (req, res) => {
