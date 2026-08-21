@@ -768,9 +768,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ubtn.is-primary { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
 .ubtn.is-primary:hover { background:var(--c-accent); border-color:var(--c-accent); color:#fff; opacity:.88; }
 .ubtn.is-danger:hover { color:var(--c-danger); border-color:var(--c-danger); }
-/* Armed = first click on a destructive action; a second within 3s commits. A word
-   button also says so in words (see cardBtnConfirm). */
-.ubtn.armed, .ubtn.armed:hover { background:var(--c-danger); border-color:var(--c-danger); color:#fff; }
 .ubtn--block { display:block; width:100%; height:auto; padding:var(--sp-2) var(--sp-3); font-size:var(--fs-base); }
 .ubtn--pill { border-radius:999px; }
 .uicon { width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center;
@@ -855,9 +852,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .cardbtn.primary { background:var(--c-brand); color:#fff; }
 .cardbtn.primary:hover { background:var(--c-brand); color:#fff; opacity:.88; }
 .cardbtn.danger:hover { color:var(--c-danger); background:var(--c-danger-tint, var(--c-surface-2)); }
-/* Armed = first click on a destructive icon; a second click within 3s commits. */
-.cardbtn.armed { color:#fff; background:var(--c-danger); }
-.cardbtn.armed:hover { color:#fff; background:var(--c-danger); }
 .cardbtn .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 /* The checklist stays one line per component, so its symbols sit inline at the
    end of the row rather than under it — no rule, no margin. */
@@ -4474,8 +4468,10 @@ async function qAction(action, id, btn) {
         }, 0);
         break;
       case 'ship-undo':
-        // Publishes a reversing change and redeploys, so anything published after
-        // this one stays published. The button is armed twice before it fires.
+        // Publishes a reversing change and redeploys, so anything published after this
+        // one stays published. The only card action that still asks first: deleting a
+        // card is soft and one click, but this one goes out to the live app.
+        if (!confirm('Put this back? It publishes a change that undoes this one and redeploys the app.')) break;
         await apiWrite(`/api/travaux/reviews/${p.ship.review_id}/revert`, 'POST');
         await qLoad();
         break;
@@ -5232,30 +5228,10 @@ function componentStage(c) {
   };
 }
 
-// Destructive icons ask twice: the first click arms the button (turns it red,
-// swaps the hover label), a second within 3s commits. A 26px trash icon is a
-// mis-click away from losing a task, and there is no undo behind it.
-const CARDBTN_ARM_MS = 3000;
-function cardBtnConfirm(btn, doIt) {
-  if (btn.dataset.armed === '1') { delete btn.dataset.armed; doIt(); return; }
-  const label = btn.getAttribute('aria-label');
-  // A word item in the "⋯" menu says it out loud; a symbol button can only turn
-  // red and change its hover label, which is why this needed both paths.
-  const word = btn.querySelector('svg') ? null : btn.textContent;
-  btn.dataset.armed = '1';
-  btn.classList.add('armed');
-  btn.title = 'Click again to confirm';
-  btn.setAttribute('aria-label', 'Click again to confirm');
-  if (word !== null) btn.textContent = 'Really? Click again';
-  setTimeout(() => {
-    if (!btn.isConnected || btn.dataset.armed !== '1') return;
-    delete btn.dataset.armed;
-    btn.classList.remove('armed');
-    btn.title = label;
-    btn.setAttribute('aria-label', label);
-    if (word !== null) btn.textContent = word;
-  }, CARDBTN_ARM_MS);
-}
+// (Deleted here: cardBtnConfirm, which armed a destructive button red on the first
+// click and only fired on a second within 3s. One click deletes now, everywhere —
+// asking twice on every card was the friction, and nothing is actually destroyed:
+// a delete sets deleted_at and the row stays in the database.)
 
 // ---------- Shared queue-row bricks — used by the Flow tab AND the Queue panel ----------
 // One place for the question/options block and the reply box, so the two surfaces stay
@@ -6211,7 +6187,6 @@ function renderFlow() {
       e.preventDefault();
       e.stopPropagation();
       const act = b.dataset.act, id = b.dataset.id;
-      if (b.classList.contains('danger') || b.classList.contains('is-danger')) { cardBtnConfirm(b, () => qCardDispatch(act, id, b)); return; }
       qCardDispatch(act, id, b);
     };
   });
