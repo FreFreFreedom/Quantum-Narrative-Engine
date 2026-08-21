@@ -719,6 +719,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uc-num { flex:none; min-width:16px; font-size:var(--fs-md); font-weight:800; color:var(--c-warn); }
 .uc-sum { font-size:var(--fs-sm); color:var(--c-ink-3); line-height:1.45; margin:var(--sp-1) 0 0; }
 .uc-sum.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+/* A cut-off line is its own "show it all" control — it lightens under the pointer
+   instead of carrying a word telling you to click it. */
+.uc-sum.clamped:hover, .q-result.clamped:hover, .q-item-q.clamped:hover { color:var(--c-ink); }
 
 /* One status pill per card, colour by modifier. Nothing else on a card is allowed
    to say where it stands — see cardPill() in the script. */
@@ -4762,6 +4765,10 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     { label: 'Delete', act: 'delete', id: p.id, danger: true },
   ];
 
+  // A finished task carries two summaries: the line about what it was for, and the
+  // line about what it did. They said the same thing twice, so the result wins —
+  // once the work exists, what happened is the more useful of the two.
+  const resultHtml = finished ? qResultLineHtml(p) : '';
   return `
   <div class="uc uc--row${sel ? ' is-sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="uc-head">
@@ -4770,9 +4777,9 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       ${taskPillHtml(p, st)}
       ${cardActs(primary, menu)}
     </div>
-    ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
+    ${resultHtml || cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
     ${p.pending_question ? qQuestionBlockHtml(p) : ''}
-    ${finished ? qResultLineHtml(p) : ''}
+    ${resultHtml}
     ${stageStripHtml(st)}
     ${qDetailsHtml(p, busy, ahead)}
   </div>
@@ -4888,6 +4895,27 @@ function cardActs(primary, menuItems) {
   return html ? `<span class="uc-acts">${html}</span>` : '';
 }
 
+
+// A clamped line opens in place. Two cut-off lines used to mean opening the whole
+// card and hunting for the full text further down — now the line itself is the
+// control, and a second click folds it back. Capture phase, so expanding a line
+// does not also toggle the card underneath it.
+//
+// A line that is not actually cut off ignores the click entirely and lets it
+// through, so a short summary still opens the card like the rest of it does.
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest ? ev.target.closest('[data-cardline], .q-result, .q-item-q') : null;
+  if (!el) return;
+  if (el.classList.contains('clamped')) {
+    if (el.scrollHeight <= el.clientHeight + 2) return;
+    el.classList.remove('clamped');
+    el.classList.add('was-clamped');
+  } else if (el.classList.contains('was-clamped')) {
+    el.classList.add('clamped');
+  } else return;
+  ev.preventDefault();
+  ev.stopPropagation();
+}, true);
 
 // ---------- One status pill ----------
 // A card shows ONE. This absorbs the six ways the app used to say where something
