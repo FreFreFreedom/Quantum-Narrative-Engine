@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-21 |
+| **DONE** | 2026-08-21 |
 
 Steps 1, 3 and 4 of [one-conversation-system.md](one-conversation-system.md), split out
 because they are the backend half and are shippable without touching a frontend file.

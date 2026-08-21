@@ -17,6 +17,20 @@ import { randomUUID } from 'node:crypto';
 let db = null;
 export function bindAiTextDb(database) { db = database; }
 
+// Tool-loop ceilings, matching the ones services/chat.js has run on since day one
+// (maxRounds 6, toolResultCap 8000). They are cost controls first: each round is a
+// whole extra API call that re-sends every earlier round's tool results, so an
+// uncapped loop is an uncapped bill.
+const TOOL_MAX_ROUNDS = 6;
+const TOOL_RESULT_CAP = 8000;
+
+// What a toolless backend gets told when the caller DID ask for tools. Same
+// wording shape as anthropicLoop.js's OpenCode fallback: the prompt claims the
+// model can look things up, and a lane that cannot must be told so rather than
+// left to invent a lookup it never made. Appended at the END of the prompt, never
+// the front — the project map has to stay the literal first block for caching.
+const NO_TOOLS_NOTE = '\n\nNote: the lookup tools are unavailable on this backend for this answer — work from the context above, and say plainly when you do not know something rather than implying you checked.';
+
 const SETTINGS_CACHE_TTL = 30_000;
 let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30 }, intel: {} };
 
@@ -263,7 +277,7 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -272,8 +286,14 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // conversation turns: a brainstorm answer and a coder brief are both longer
   // than 800 tokens by nature, and were being silently truncated here.
   if (!allowLongOutput && maxTokens && maxTokens > 800) maxTokens = 800;
+  // Only the OpenAI-compatible catalogue lanes can actually run a tool loop. The
+  // CLI-driven ones (claude-code, claude-side, opencode) take a single prompt and
+  // hand back a single answer, so they are told the tools are not there instead of
+  // being left to pretend they used them.
+  const wantsTools = !!(tools?.length && dispatchTool);
+  const toollessPrompt = wantsTools ? `${prompt}${NO_TOOLS_NOTE}` : prompt;
   if (p === 'claude-code') {
-    return legacyGenerateText({ prompt, maxTokens, label, cliModel: m });
+    return legacyGenerateText({ prompt: toollessPrompt, maxTokens, label, cliModel: m });
   }
   // The second subscription. The server cannot call it — the token is on the Mac —
   // so the request is parked for the runner, which spawns the CLI with that token
@@ -286,7 +306,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // door that is shut) and the same question is asked again on the main account.
   if (p === 'claude-side') {
     const ask = (account) => runHelperJob({
-      prompt, feature, maxTokens, label, model: m,
+      prompt: helperTools ? prompt : toollessPrompt, feature, maxTokens, label, model: m,
       tools: helperTools, waitMs: helperWaitMs, account,
     });
     let sideWhy = null;
@@ -317,16 +337,52 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   }
   if (p === 'opencode') {
     const mod = getProviderModule('opencode');
-    const r = await mod.runToolless({ prompt, model: m, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv(), timeoutMs });
+    const r = await mod.runToolless({ prompt: toollessPrompt, model: m, cwd: process.env.AGENT_CWD || process.cwd(), env: mod.spawnEnv(), timeoutMs });
     if (r.code === 0 && r.text) return { text: r.text, via: 'opencode' };
     return { error: 'opencode_failed', message: r.text || `exit ${r.code}` };
   }
   // Any catalogue (free OpenAI-compatible) provider
   const mod = getProviderModule(p);
   if (!mod) return { error: 'unknown_provider', message: p };
-  const r = await mod.runToolless({ prompt, model: m, providerId: p, maxTokens, timeoutMs });
+  if (wantsTools && mod.chatCompletion) {
+    return runCatalogueToolLoop({ mod, providerId: p, model: m, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label });
+  }
+  const r = await mod.runToolless({ prompt: toollessPrompt, model: m, providerId: p, maxTokens, timeoutMs });
   if (r.code === 0 && r.text) return { text: r.text, via: p };
   return { error: `${p}_failed`, message: r.text || `exit ${r.code}` };
+}
+
+// The non-streaming half of "the engine has tools". Drives an OpenAI-compatible
+// catalogue provider through the same rounds the streaming lane does, reusing
+// openaiCompat.chatCompletion's Anthropic<->OpenAI translation rather than a
+// second copy of it. Messages stay Anthropic-shaped here because that is what
+// chatCompletion takes.
+async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label }) {
+  const messages = [{ role: 'user', content: prompt }];
+  for (let round = 0; round < Math.max(1, maxRounds); round++) {
+    const out = await mod.chatCompletion({ providerId, model, messages, tools, maxTokens, timeoutMs });
+    if (out.error) return { error: out.error, message: out.message, limit: out.limit || null };
+    const toolUses = (out.content || []).filter((b) => b.type === 'tool_use');
+    if (!toolUses.length) {
+      const text = out.text || (out.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+      if (text?.trim()) return { text: text.trim(), via: providerId };
+      return { error: `${providerId}_failed`, message: 'empty_response' };
+    }
+    if (round === Math.max(1, maxRounds) - 1) {
+      console.warn(`[${label}] ${providerId} hit the ${maxRounds}-round tool ceiling`);
+      return { error: `${providerId}_failed`, message: 'too_many_tool_rounds' };
+    }
+    messages.push({ role: 'assistant', content: out.content });
+    messages.push({
+      role: 'user',
+      content: await Promise.all(toolUses.map(async (tu) => {
+        let result;
+        try { result = await dispatchTool(tu.name, tu.input); } catch (e) { result = { error: e.message }; }
+        return { type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify(result ?? null).slice(0, toolResultCap) };
+      })),
+    });
+  }
+  return { error: `${providerId}_failed`, message: 'too_many_tool_rounds' };
 }
 
 // Model-lane policy: unconfigured features run on the OpenCode lane FIRST (the
@@ -336,7 +392,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -410,7 +466,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
     attempted += 1;
 
     if (result?.text) {
@@ -643,6 +699,7 @@ function explicitModelUsableBy(providerId, model) {
 export async function generateTextStream({
   prompt, feature, maxTokens = 800, label = 'ai-text-stream', model: explicitModel = null,
   timeoutMs = 90_000, allowLongOutput = false, onToken = null,
+  tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP,
 }) {
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
@@ -654,7 +711,7 @@ export async function generateTextStream({
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: explicitModel, timeoutMs, allowLongOutput });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: explicitModel, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }
@@ -663,7 +720,7 @@ export async function generateTextStream({
   // something Antoine needs told.
   const fallback = async (notice) => {
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
-    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput });
+    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
     if (r?.text && onToken) onToken(r.text);
     return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
   };
@@ -685,41 +742,99 @@ export async function generateTextStream({
   const mod = getProviderModule(providerId);
   if (!mod?.postChatCompletionsStream) return fallback(`${providerId} cannot stream`);
 
-  const stream = await mod.postChatCompletionsStream({
-    providerId, model, maxTokens, timeoutMs,
-    messages: [{ role: 'user', content: prompt }],
-  });
-  if (stream?.error) {
-    if (detectQuotaLimit(providerId, stream.message || '')) {
-      router.recordExhaustion({ providerId, model, detectedBy: 'text-stream', errText: stream.message || '' });
-    }
-    return fallback(`the paid model could not be reached (${stream.message || stream.error}), so this answer came from the free lane instead`);
-  }
+  const useTools = !!(tools?.length && dispatchTool && mod.anthropicToolsToOpenAI);
+  const oaTools = useTools ? mod.anthropicToolsToOpenAI(tools) : null;
+
+  // OpenAI-shaped messages, because this lane talks to the endpoint directly —
+  // no Anthropic round trip to translate. The array GROWS across tool rounds:
+  // assistant(tool_calls) then one role:'tool' message per call, which is what
+  // lets round N+1 see what round N looked up.
+  const messages = [{ role: 'user', content: prompt }];
 
   let text = '';
-  let usage = null;
-  try {
-    for await (const ev of stream) {
-      if (ev.type === 'content' && ev.text) {
-        text += ev.text;
-        if (onToken) onToken(ev.text);
-      } else if (ev.type === 'usage') {
-        usage = ev.usage;
-      }
-    }
-  } catch (e) {
-    // Tokens already delivered are real; only give up entirely if nothing came.
-    if (!text) return fallback(`the paid model's answer was cut off (${e.message}), so this answer came from the free lane instead`);
-    console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
-  }
+  let toolCallsMade = 0;
+  const rounds = useTools ? Math.max(1, maxRounds) : 1;
 
-  // Bill it. A missing usage block means the cap has nothing to count, which is
-  // worth a loud line rather than a silent free ride.
-  if (usage) recordSpend({ model, usage, providerId });
-  else console.warn(`[${label}] ${providerId}/${model} returned no usage block — this call is NOT counted against the monthly cap`);
+  for (let round = 0; round < rounds; round++) {
+    const stream = await mod.postChatCompletionsStream({
+      providerId, model, maxTokens, timeoutMs, messages,
+      ...(oaTools ? { tools: oaTools } : {}),
+    });
+    if (stream?.error) {
+      if (detectQuotaLimit(providerId, stream.message || '')) {
+        router.recordExhaustion({ providerId, model, detectedBy: 'text-stream', errText: stream.message || '' });
+      }
+      // A failure mid-loop has already streamed real words to the reader. Starting
+      // the whole answer again on the free lane would repeat them, so keep what
+      // arrived and stop.
+      if (text.trim()) {
+        console.warn(`[${label}] tool round ${round} failed after ${text.length} chars — ${stream.message || stream.error}`);
+        break;
+      }
+      return fallback(`the paid model could not be reached (${stream.message || stream.error}), so this answer came from the free lane instead`);
+    }
+
+    let roundText = '';
+    let usage = null;
+    const calls = [];
+    try {
+      for await (const ev of stream) {
+        if (ev.type === 'content' && ev.text) {
+          roundText += ev.text;
+          if (onToken) onToken(ev.text);
+        } else if (ev.type === 'usage') {
+          usage = ev.usage;
+        } else if (ev.type === 'tool_use' && ev.tool?.name) {
+          calls.push(ev.tool);
+        }
+      }
+    } catch (e) {
+      text += roundText;
+      // Tokens already delivered are real; only give up entirely if nothing came.
+      if (!text) return fallback(`the paid model's answer was cut off (${e.message}), so this answer came from the free lane instead`);
+      console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
+      if (usage) recordSpend({ model, usage, providerId });
+      break;
+    }
+
+    // Bill EVERY round. Each one is its own API call with its own usage block, so
+    // pricing only the last would bill a six-round answer as one — the monthly cap
+    // would then be counting a fraction of what was actually spent.
+    if (usage) recordSpend({ model, usage, providerId });
+    else console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
+
+    text += roundText;
+
+    if (!calls.length) break;
+
+    if (round === rounds - 1) {
+      console.warn(`[${label}] hit the ${rounds}-round tool ceiling with ${calls.length} call(s) still pending`);
+      break;
+    }
+
+    messages.push({
+      role: 'assistant',
+      content: roundText || null,
+      tool_calls: calls.map((c, i) => ({
+        id: c.id || `call_${round}_${i}`,
+        type: 'function',
+        function: { name: c.name, arguments: JSON.stringify(c.input || {}) },
+      })),
+    });
+    for (const [i, c] of calls.entries()) {
+      let result;
+      try { result = await dispatchTool(c.name, c.input); } catch (e) { result = { error: e.message }; }
+      toolCallsMade += 1;
+      messages.push({
+        role: 'tool',
+        tool_call_id: c.id || `call_${round}_${i}`,
+        content: JSON.stringify(result ?? null).slice(0, toolResultCap),
+      });
+    }
+  }
 
   if (!text.trim()) return fallback('the paid model returned an empty answer, so this answer came from the free lane instead');
 
   recordSideCall();
-  return { text: text.trim(), via: providerId, usage };
+  return { text: text.trim(), via: providerId, toolCalls: toolCallsMade };
 }

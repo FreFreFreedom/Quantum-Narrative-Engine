@@ -98,7 +98,7 @@ export async function runToolless({ prompt, model, providerId, timeoutMs = 60_00
 // Translates Anthropic-style `tools`/`tool_use`/`tool_result` to OpenAI's
 // `tools`/`tool_calls`/role:"tool" shape and back, so chat.js's tool loop can
 // drive a free provider with the same dispatch table it already has.
-function anthropicToolsToOpenAI(tools) {
+export function anthropicToolsToOpenAI(tools) {
   return (tools || []).map((t) => ({
     type: 'function',
     function: { name: t.name, description: t.description, parameters: t.input_schema },
@@ -242,6 +242,30 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
   // was dropped every time, so no call could ever be priced.
   const pending = [];
 
+  // Tool-call fragments, keyed by the delta's `index`.
+  //
+  // A streamed tool call does NOT arrive whole: OpenAI sends the id and function
+  // name in the first delta and the JSON arguments in fragments across many
+  // more, so the previous version — which required `function.name` on every
+  // delta and JSON.parse'd whatever arguments string that delta happened to
+  // carry — could only ever have emitted a call with EMPTY arguments, and only
+  // for the first fragment. Nothing consumed tool events yet, so it never showed.
+  // They are accumulated here and emitted complete, once, at finish_reason (or
+  // at end of stream, whichever comes first).
+  const toolAcc = new Map();
+  let toolsFlushed = false;
+  function flushToolCalls(sessionId) {
+    if (toolsFlushed || !toolAcc.size) return;
+    toolsFlushed = true;
+    for (const [, acc] of [...toolAcc.entries()].sort((a, b) => a[0] - b[0])) {
+      if (!acc.name) continue;
+      let input = {};
+      try { input = JSON.parse(acc.args || '{}'); } catch { input = {}; }
+      pending.push({ type: 'tool_use', tool: { id: acc.id, name: acc.name, input }, sessionId });
+    }
+    toolAcc.clear();
+  }
+
   function parseLine(trimmed) {
     if (!trimmed || trimmed === 'data: [DONE]' || !trimmed.startsWith('data: ')) return;
     let parsed;
@@ -271,20 +295,24 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
     const choice = parsed.choices?.[0];
     if (!choice) return;
     const delta = choice.delta || {};
-    if (delta.content) {
-      pending.push({ type: 'content', text: delta.content, sessionId: parsed.id });
-      return;
-    }
     if (delta.tool_calls) {
       for (const tc of delta.tool_calls) {
-        if (!tc.function?.name) continue;
-        let input = {};
-        try { input = JSON.parse(tc.function.arguments || '{}'); } catch {}
-        pending.push({ type: 'tool_use', tool: { name: tc.function.name, input }, sessionId: parsed.id });
+        const idx = tc.index ?? 0;
+        let acc = toolAcc.get(idx);
+        if (!acc) { acc = { id: tc.id || null, name: '', args: '' }; toolAcc.set(idx, acc); }
+        if (tc.id) acc.id = tc.id;
+        if (tc.function?.name) acc.name += tc.function.name;
+        if (tc.function?.arguments) acc.args += tc.function.arguments;
       }
-      return;
     }
-    if (parsed.id) pending.push({ type: 'session', sessionId: parsed.id });
+    if (delta.content) {
+      pending.push({ type: 'content', text: delta.content, sessionId: parsed.id });
+    }
+    // finish_reason closes the turn — that is when a tool call is known complete.
+    if (choice.finish_reason) { flushToolCalls(parsed.id); return; }
+    if (!delta.content && !delta.tool_calls && parsed.id) {
+      pending.push({ type: 'session', sessionId: parsed.id });
+    }
   }
 
   return {
@@ -297,6 +325,9 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
             if (done) {
               // Flush a trailing line with no newline after it.
               if (buffer.trim()) { parseLine(buffer.trim()); buffer = ''; }
+              // Belt to finish_reason's braces: a provider that ends the stream
+              // without one must not swallow the tool call it already sent.
+              flushToolCalls(null);
               if (pending.length) return { done: false, value: pending.shift() };
               return { done: true, value: undefined };
             }
