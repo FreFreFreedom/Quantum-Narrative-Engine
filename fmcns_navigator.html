@@ -260,31 +260,54 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    deliberately stay visible — a nearly-spent quota must still be noticeable. */
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .core-banner,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .q-pausebadge { display:none; }
-/* The quota strip was written for a 46px-tall bar across the top: three items
-   side by side, each with a 56px bar plus label, percentage and reset time. None
-   of that fits a 232px-wide column, so in the rail it stacks — one row per
-   limit, label above, bar and figure below. */
+/* The quota summary in the rail: one line per lane — building, thinking, paid —
+   each the tightest limit in that lane. The name and the figure share a row, the
+   bar spans underneath and widens with the panel, because the original strip was
+   built for a 46px bar the full width of the window and simply cannot fit a
+   232px column. The full breakdown lives in AI Settings (.uq-panel below). */
 .rail-foot #usageStripHost { padding:4px 7px 2px; }
-.rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:5px; }
+.rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:6px; }
 .rail-foot .usage-item { display:grid; grid-template-columns:1fr auto; grid-template-areas:'label pct' 'bar bar'; align-items:center; gap:2px 6px; }
 .rail-foot .usage-item .ui-label { grid-area:label; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rail-foot .usage-item .usage-pct { grid-area:pct; white-space:nowrap; }
+.rail-foot .usage-item .usage-pct, .rail-foot .usage-item .usage-money { grid-area:pct; white-space:nowrap; }
 .rail-foot .usage-bar { grid-area:bar; width:auto; }
 /* the reset time has nowhere to go in a column — it is already in the tooltip */
-.rail-foot .usage-reset { display:none; }
+.rail-foot .usage-reset, .rail-foot .usage-stale { display:none; }
 .rail-foot .usage-none { white-space:normal; line-height:1.35; }
-/* the "accounts" fold is absolutely positioned, and .rail-inner clips overflow,
-   so in the rail it opens in place instead of as a popover */
-.rail-foot .usage-more { margin-top:2px; }
-.rail-foot .usage-more-panel { position:static; min-width:0; right:auto; top:auto; margin-top:4px; }
+.rail-foot .usage-alert { white-space:normal; line-height:1.35; }
+.usage-seeall { align-self:flex-start; padding:0; border:none; background:none; color:var(--c-ink-4); font-size:var(--fs-xs); cursor:pointer; }
+.usage-seeall:hover { color:var(--c-ink); text-decoration:underline; }
 /* collapsed: the bars alone. A nearly-spent quota still has to be noticeable,
    so they stay — only the words go. */
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .ui-label,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-pct,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-money,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-none,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-more { display:none; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-alert,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .usage-seeall { display:none; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-strip { gap:3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-bar { height:4px; }
+
+/* ---------- The full quota breakdown (AI Settings) ---------- */
+/* All three lanes, named for what they do rather than which account they are. */
+.ai-quota { margin-bottom:var(--sp-4); }
+/* same weight as the feature table's column headings, so the sheet reads as one */
+.ai-section-head { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); padding-bottom:6px; margin-bottom:var(--sp-3); border-bottom:1px solid var(--c-border); }
+.uq-panel { display:flex; flex-direction:column; gap:var(--sp-3); }
+.uq-lane { display:flex; flex-direction:column; gap:5px; }
+.uq-lane-head { display:flex; align-items:baseline; gap:var(--sp-2); flex-wrap:wrap; }
+.uq-lane-name { font-size:var(--fs-sm); font-weight:var(--fw-medium); color:var(--c-ink); letter-spacing:.03em; text-transform:uppercase; }
+.uq-lane-note { font-size:var(--fs-xs); color:var(--c-ink-4); }
+.uq-row { display:grid; grid-template-columns:1fr auto minmax(90px,140px) auto; align-items:center; gap:var(--sp-2); font-size:var(--fs-xs); }
+.uq-name { color:var(--c-ink-2); }
+.uq-row .usage-bar { width:100%; height:6px; }
+.uq-reset { color:var(--c-ink-4); text-align:right; min-width:82px; }
+.uq-note { font-size:var(--fs-xs); color:var(--c-ink-4); line-height:1.45; }
+.uq-lane .usage-item { display:grid; grid-template-columns:1fr auto minmax(90px,140px); align-items:center; gap:var(--sp-2); font-size:var(--fs-xs); }
+.uq-lane .usage-item .ui-label { color:var(--c-ink-2); }
+.uq-lane .usage-item .usage-bar { width:100%; height:6px; order:3; }
+.uq-lane .usage-item .usage-money { order:2; }
+@media (max-width: 600px) { .uq-row { grid-template-columns:1fr auto; } .uq-row .usage-bar, .uq-reset { grid-column:1 / -1; } }
 /* the Queue count: a pill beside the label when open, a dot on the symbol when not */
 .mode-pill-count { display:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; flex:none; margin-left:auto; }
 .mode-pill-count.on { display:inline-flex; }
@@ -370,17 +393,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    because they are what bites during a working session; the second account and
    the one paid lane live one click away.
    summary needs display:inline — the default list-item marker breaks the row. */
-.usage-more { position:relative; font-size:10px; }
-.usage-more > summary { display:inline; list-style:none; cursor:pointer; color:var(--c-ink-4); border-bottom:1px dotted var(--c-border); }
-.usage-more > summary::-webkit-details-marker { display:none; }
-.usage-more > summary:hover { color:var(--c-ink); }
-.usage-more[open] > summary { color:var(--c-ink); }
-.usage-more-panel { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:250px;
-  display:flex; flex-direction:column; gap:7px; padding:10px 12px; border:1px solid var(--c-border);
-  border-radius:8px; background:var(--c-bg-raised, var(--c-bg)); box-shadow:0 6px 20px rgba(0,0,0,.18); }
-.usage-more-panel .usage-item { justify-content:space-between; gap:8px; }
-.usage-more-head { color:var(--c-ink-4); font-weight:600; letter-spacing:.04em; text-transform:uppercase; font-size:9px; }
-.usage-more-note { color:var(--c-ink-4); line-height:1.4; }
 /* A spend bar is not a quota bar: it fills toward a ceiling you set, and the
    number beside it is dollars, not "% left". Same three tones so the header
    reads consistently. */
@@ -3479,10 +3491,19 @@ function initRailControls() {
   const pause = document.getElementById('queuePauseBtn');
   if (pause) pause.onclick = qTogglePause;
   const ai = document.getElementById('aiSheetBtn');
-  if (ai) ai.onclick = () => {
-    document.getElementById('aiSheetRoot').style.display = 'flex';
-    loadAiSettings();
-  };
+  const aiRoot = document.getElementById('aiSheetRoot');
+  if (ai) ai.onclick = () => { aiRoot.style.display = 'flex'; loadAiSettings(); };
+  // The closer has to be wired next to the opener. It used to live in initCore(),
+  // which meant opening AI Settings from the rail without having visited Core
+  // first gave you a sheet with a dead ✕ and no way out.
+  const aiClose = document.getElementById('aiSheetCloseBtn');
+  if (aiClose) aiClose.onclick = () => { aiRoot.style.display = 'none'; };
+  // Escape and a click on the backdrop close it too — a modal with one exit is
+  // one bad wire away from trapping you.
+  if (aiRoot) aiRoot.addEventListener('click', (e) => { if (e.target === aiRoot) aiRoot.style.display = 'none'; });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && aiRoot && aiRoot.style.display === 'flex') aiRoot.style.display = 'none';
+  });
   // "Server: local / production" — writes the shared key both constants read,
   // then reloads so every fetch lands on the new backend. Initial value mirrors
   // what the constants resolved to before this element existed.
@@ -3652,7 +3673,6 @@ function initCore() {
       b.onclick = () => { document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x === b)); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
-    document.getElementById('aiSheetCloseBtn').onclick = () => { document.getElementById('aiSheetRoot').style.display = 'none'; };
   }
   switchCoreView(coreView); // lays out the shell and lazy-inits the arch view (default)
   loadProviders(); // model picker + provider liveness for the New-prompt form
@@ -3979,6 +3999,12 @@ function renderFreeProvidersSection() {
 function renderAiSettings() {
   const host = document.getElementById('aiBody');
   if (!aiSettings) { host.innerHTML = 'Loading…'; return; }
+  // What is left to spend, before the choices about what spends it. Filled from
+  // the last reading immediately and refreshed by loadUsage() while open.
+  const quotaBlock = `<div class="ai-quota">
+    <div class="ai-section-head">What is left to spend</div>
+    <div id="usageFullHost">${usageFullHtml(lastUsage)}</div>
+  </div>`;
   const claudeUp = !!qProviders.claude?.available;
   const opencodeUp = (qProviders.opencode?.models || []).length > 0;
   const cd = aiSettings.cooldown || {};
@@ -4004,7 +4030,7 @@ function renderAiSettings() {
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
     .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
-  host.innerHTML = `
+  host.innerHTML = quotaBlock + `
     <div class="ai-health">
       <span class="ai-health-item"><span class="ai-dot${claudeUp ? ' up' : ''}"></span>Claude Code ${claudeUp ? 'reachable' : 'unreachable'} ${cooldownNote('claude-code')}</span>
       <span class="ai-health-item"><span class="ai-dot${opencodeUp ? ' up' : ''}"></span>OpenCode ${opencodeUp ? 'reachable' : 'unreachable'} ${cooldownNote('opencode')}</span>
@@ -7403,22 +7429,8 @@ function fmtTokens(n) {
   if (n >= 1000) return (n/1000).toFixed(n >= 100000 ? 0 : 1) + ' k';
   return String(Math.round(n));
 }
-function usageBarHtml(label, bucket, hint) {
-  const b = bucket || {};
-  const pct = typeof b.utilizationPct === 'number' ? Math.max(0, Math.min(100, Math.round(b.utilizationPct))) : null;
-  if (pct == null) return '';
-  const tone = usageTone(pct, b.severity);
-  const resetIn = fmtResetIn(b.resetsAt);
-  const tip = `${hint}${resetIn ? ` Resets in ${resetIn}.` : ''}`.replace(/"/g, '&quot;');
-  return `<div class="usage-item" title="${tip}">
-    <span class="ui-label">${label}</span>
-    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
-    <span class="usage-pct ${tone}">${100 - pct}% left</span>
-    ${resetIn ? `<span class="usage-reset">· ${resetIn}</span>` : ''}
-  </div>`;
-}
 // A dollars-against-a-ceiling bar for the one paid lane (gpt-4o, Idea Studio).
-// Deliberately NOT usageBarHtml with a faked utilizationPct: the question here is
+// Deliberately not a percentage bar with a faked utilization figure: the question here is
 // "how much money have I spent", so the label is money and the tooltip says where
 // the figure came from — a spend figure that might be stale must admit it.
 function spendBarHtml(label, cap, hint) {
@@ -7437,52 +7449,113 @@ function spendBarHtml(label, cap, hint) {
   </div>`;
 }
 
+// The three lanes this app spends on, named for what they DO rather than which
+// account they are: the one that writes code, the one that thinks out loud, and
+// the one that costs real money. Both readings for Claude come from the local
+// runner (only the Mac holds those tokens), so an absent lane is normal and is
+// said plainly rather than drawn as an empty bar.
+//
+// Two audiences, one fetch. The rail gets a summary — the tightest limit in each
+// lane, so one glance answers "is anything nearly out?" — and AI Settings gets
+// the full labelled breakdown, since that sheet is already about which model
+// does what and what happens when the paid one runs out.
+let lastUsage = null;
+
+// The bar closest to running out in a lane, so the rail can show one line for it.
+function usageTightest(buckets) {
+  const live = buckets.filter(b => b && typeof b.utilizationPct === 'number');
+  if (!live.length) return null;
+  return live.reduce((worst, b) => (b.utilizationPct > worst.utilizationPct ? b : worst));
+}
+// A rail row: name of the lane, how much is left, and the bar underneath.
+function usageLaneHtml(label, bucket, hint) {
+  if (!bucket || typeof bucket.utilizationPct !== 'number') return '';
+  const pct = Math.max(0, Math.min(100, Math.round(bucket.utilizationPct)));
+  const tone = usageTone(pct, bucket.severity);
+  const resetIn = fmtResetIn(bucket.resetsAt);
+  const tip = `${hint}${resetIn ? ` Resets in ${resetIn}.` : ''}`.replace(/"/g, '&quot;');
+  return `<div class="usage-item" title="${tip}">
+    <span class="ui-label">${label}</span>
+    <span class="usage-pct ${tone}">${100 - pct}% left</span>
+    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
+  </div>`;
+}
+// A row in the full breakdown: label, figure, bar, and when it resets.
+function usageFullRow(label, bucket) {
+  if (!bucket || typeof bucket.utilizationPct !== 'number') return '';
+  const pct = Math.max(0, Math.min(100, Math.round(bucket.utilizationPct)));
+  const tone = usageTone(pct, bucket.severity);
+  const resetIn = fmtResetIn(bucket.resetsAt);
+  return `<div class="uq-row">
+    <span class="uq-name">${label}</span>
+    <span class="usage-pct ${tone}">${100 - pct}% left</span>
+    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
+    <span class="uq-reset">${resetIn ? `resets in ${resetIn}` : ''}</span>
+  </div>`;
+}
+
+// The full three-lane breakdown, rendered into AI Settings.
+function usageFullHtml(u) {
+  if (!u) return '<div class="uq-note">No reading yet.</div>';
+  const build = [
+    usageFullRow('Next 5 hours', u.session),
+    usageFullRow('This week', u.week),
+    u.weekScoped ? usageFullRow(`${u.weekScoped.label || 'Strongest model'} this week`, u.weekScoped) : '',
+  ].filter(Boolean).join('');
+  const think = u.side ? [
+    usageFullRow('Next 5 hours', u.side.session),
+    usageFullRow('This week', u.side.week),
+  ].filter(Boolean).join('') : '';
+  const paid = spendBarHtml('This month', u.openai, 'Real money spent on gpt-4o for Idea Studio conversations this month, against your monthly ceiling.');
+
+  const lane = (title, note, rows, empty) => `<div class="uq-lane">
+    <div class="uq-lane-head"><span class="uq-lane-name">${title}</span><span class="uq-lane-note">${note}</span></div>
+    ${rows || `<div class="uq-note">${empty}</div>`}
+  </div>`;
+
+  return `<div class="uq-panel">
+    ${lane('Building account', 'runs your tasks — the one that writes code', build,
+           'No reading. Start the runner on your Mac (npm run runner) and these appear.')}
+    ${lane('Thinking account', 'brainstorming, ideas, summaries — kept separate so it never eats the build quota', think,
+           'No reading — the local runner reports it, so start it to see these.')}
+    ${lane('Paid lane', 'real money, gpt-4o', paid,
+           'Off. Idea Studio runs on the free/subscription lane.')}
+  </div>`;
+}
+
 async function loadUsage() {
   const host = document.getElementById('usageStripHost');
-  if (!host) return;
   let u;
-  try { u = await api('/api/agent/usage'); } catch (e) { host.innerHTML = ''; return; }
-  const bars = [
-    usageBarHtml('Claude 5h', u.session, 'The rolling 5-hour window — the limit that bites first during a working session. Main account, the one the Dispatch Queue builds on.'),
-    usageBarHtml('week', u.week, 'The weekly limit across all models, main account.'),
-    u.weekScoped ? usageBarHtml((u.weekScoped.label || 'model').toLowerCase(), u.weekScoped, 'The weekly limit for the strongest model, which runs out sooner than the overall one.') : '',
+  try { u = await api('/api/agent/usage'); } catch (e) { if (host) host.innerHTML = ''; return; }
+  lastUsage = u;
+  // If AI Settings is open, its breakdown refreshes with the same reading.
+  const full = document.getElementById('usageFullHost');
+  if (full) full.innerHTML = usageFullHtml(u);
+  if (!host) return;
+
+  // The rail summary: one line per lane, the tightest limit in each.
+  const buildTight = usageTightest([u.session, u.week, u.weekScoped]);
+  const thinkTight = u.side ? usageTightest([u.side.session, u.side.week]) : null;
+  const rows = [
+    usageLaneHtml('Building', buildTight, 'The tightest limit on the account that runs your tasks. Open AI Settings for all of them.'),
+    usageLaneHtml('Thinking', thinkTight, "The tightest limit on the second account — the app's own brainstorming. Open AI Settings for all of them."),
+    spendBarHtml('Paid', u.openai, 'Real money spent on gpt-4o this month, against your monthly ceiling.'),
   ].filter(Boolean).join('');
 
-  // The folded panel: the second Claude account (the one the app's own AI features
-  // run on, reported by the local runner since only the Mac holds that token) and
-  // the paid gpt-4o lane. Built here so an absent reading simply omits its bar
-  // rather than showing an empty one.
-  const sideBars = u.side ? [
-    usageBarHtml('5h', u.side.session, 'The second Claude account\'s rolling 5-hour window. This is the account the app\'s own AI features run on, kept separate so brainstorming never eats the build quota.'),
-    usageBarHtml('week', u.side.week, 'The second Claude account\'s weekly limit.'),
-  ].filter(Boolean).join('') : '';
-  const openaiBar = spendBarHtml('gpt-4o', u.openai, 'Real money spent on gpt-4o for Idea Studio conversations this month, against your monthly ceiling. Past the ceiling, conversations fall back to the free lane and say so.');
-
-  let more = '';
-  if (sideBars || openaiBar) {
-    const sideBlock = sideBars
-      ? `<span class="usage-more-head">Second Claude account</span>${sideBars}`
-      : (u.openai ? '<span class="usage-more-note">Second Claude account: no reading — the local runner reports it, so start it (npm run runner) to see these.</span>' : '');
-    const paidBlock = openaiBar
-      ? `<span class="usage-more-head">Paid lane</span>${openaiBar}`
-      : '<span class="usage-more-note">Paid gpt-4o lane: off. Idea Studio runs on the free/subscription lane.</span>';
-    more = `<details class="usage-more"><summary>accounts</summary>
-      <div class="usage-more-panel">${sideBlock}${paidBlock}</div>
-    </details>`;
-  }
-  // No reading available: say so plainly rather than showing empty bars. This is
-  // normal when no local runner is attached (Claude runs on the Mac, so the runner
-  // is what reports the account's real numbers — see noteRunnerUsage server-side).
-  if (!bars) {
+  if (!rows) {
     const today = fmtTokens(u.today && u.today.totalTokens);
-    host.innerHTML = `<div class="usage-strip"><span class="usage-none" title="Attach the local runner (npm run runner) and the 5h + weekly limits appear here.">Claude limits unavailable${today !== '0' ? ` · ${today} tokens today` : ''}</span>${more}</div>`;
+    host.innerHTML = `<div class="usage-strip"><span class="usage-none" title="Attach the local runner (npm run runner) and the limits appear here.">Limits unavailable${today !== '0' ? ` · ${today} tokens today` : ''}</span></div>`;
     return;
   }
-  const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
+  const hot = [u.session, u.week, u.weekScoped, u.side?.session, u.side?.week].filter(b => b && b.severity && b.severity !== 'normal');
   const alert = u.schedulerLimitResetAt
     ? 'Limit reached — the queue is paused and resumes automatically at reset.'
-    : (hot.length ? 'Claude is close to a limit — the queue will hand new work to the free models.' : '');
-  host.innerHTML = `<div class="usage-strip">${bars}${more}${alert ? `<span class="usage-alert">${alert}</span>` : ''}</div>`;
+    : (hot.length ? 'Close to a limit — the queue will hand new work to the free models.' : '');
+  host.innerHTML = `<div class="usage-strip">${rows}
+    <button type="button" class="usage-seeall" id="usageSeeAll">See all &rarr;</button>
+    ${alert ? `<span class="usage-alert">${alert}</span>` : ''}</div>`;
+  const seeAll = document.getElementById('usageSeeAll');
+  if (seeAll) seeAll.onclick = () => { document.getElementById('aiSheetBtn')?.click(); };
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
