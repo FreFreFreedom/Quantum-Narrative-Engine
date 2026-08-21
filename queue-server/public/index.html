@@ -842,9 +842,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .wl-row.q-inspire-removed { opacity:1; }
 /* Talking to one idea: the 💬 that opens the studio on it, the chips that say a
    conversation has already changed it, and the kept original underneath. */
-.wl-chat { flex-shrink:0; border:none; background:none; cursor:pointer; font-size:11px; padding:1px 4px; border-radius:5px; opacity:.45; filter:grayscale(1); font-family:inherit; }
-.wl-chat:hover { opacity:1; filter:none; background:var(--c-surface); }
-.wl-chat.on { opacity:1; filter:none; }
 .wl-chip { flex-shrink:0; font-size:9px; text-transform:uppercase; letter-spacing:.04em; border-radius:8px; padding:1px 6px; background:var(--c-success-tint); color:var(--c-brand); }
 .wl-chip.alt { background:var(--c-warn-tint); color:var(--c-warn); }
 .wl-before { margin:4px 0 2px; }
@@ -4012,7 +4009,22 @@ async function qAction(action, id, btn) {
         await qLoad();
         break;
       case 'discuss':
-        openStudio({ type: 'task', subjectId: id, title: (p && p.title) || 'Task', onDone: () => { qLoad(); } });
+        // A task card already carries a conversation — the one where you answer the
+        // agent. So this opens the card and lands the cursor in that box instead of
+        // stacking a second one beside it.
+        if (!qSelected || qSelected.id !== id) {
+          flowSideSel = null;
+          qSelected = qPrompts.find(x => x.id === id) || null;
+          if (qSelected && !qSelected.seen_at) {
+            qSelected.seen_at = '1';
+            apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
+          }
+        }
+        renderFlow();
+        setTimeout(() => {
+          const box = document.querySelector('#flowExpanded #qReplyText');
+          if (box) { box.scrollIntoView({ block: 'nearest' }); box.focus(); }
+        }, 0);
         break;
       case 'ship-undo':
         // Publishes a reversing change and redeploys, so anything published after
@@ -5959,30 +5971,14 @@ function worldDetailHtml(pick) {
     (pick.how_fmcns ? r("How we'd get there first:", pick.how_fmcns) : '');
 }
 
-// ── Talking to a single idea ─────────────────────────────────────────────────
-// Every world-look panel — task, suggestion, seed, component — renders its rows
-// through worldRowHtml, so the 💬 button below appears everywhere ideas are
-// proposed, from one place. A conversation is addressed by the idea's position:
-// `reportId~partIndex:pickIndex`, matching the server's world_pick subject id.
-const worldConvos = {};          // subject id -> convo row (for the filled-in 💬)
-const worldConvoSynced = new Set();
+// ── Ideas from a world-look ──────────────────────────────────────────────────
+// These used to carry a 💬 of their own, which opened a window on that one idea.
+// The rule now is one box per card, and the card's box is the place to talk — an
+// idea is discussed there, alongside the thing that proposed it, rather than in a
+// conversation of its own with no surroundings. The position-based subject id is
+// kept because the server still addresses ideas that way when a conversation
+// rewrites one.
 function worldPickSubjectId(reportId, pi, i) { return `${reportId}~${pi}:${i}`; }
-
-// One request per report per session tells us which ideas have been talked about.
-async function worldConvoSync(report) {
-  if (!report?.id || worldConvoSynced.has(report.id)) return;
-  worldConvoSynced.add(report.id);
-  const ids = [];
-  (report.parts || []).forEach((part, pi) => (part.picks || []).forEach((_, i) => ids.push(worldPickSubjectId(report.id, pi, i))));
-  if (!ids.length || ids.length > 100) return;
-  try {
-    const data = await api(`/api/convos/for?type=world_pick&ids=${encodeURIComponent(ids.join(','))}`);
-    const found = data?.convos || {};
-    if (!Object.keys(found).length) return;
-    Object.assign(worldConvos, found);
-    window.refreshWorldPanels(report);
-  } catch { /* badges are decoration — never block the panel on them */ }
-}
 
 // A world-look write (fold / more ideas / new framing) hands back the fresh
 // report, so every panel holding that report is updated from the answer itself
@@ -6006,16 +6002,6 @@ window.refreshWorldPanels = function (report) {
   if (touchedFlow) scheduleFlowRender();
 };
 
-// Opening the studio on one idea. Delegated, so it works in every panel and
-// survives the re-renders that picking causes.
-document.addEventListener('click', (ev) => {
-  const t = ev.target.closest ? ev.target.closest('[data-worldchat]') : null;
-  if (!t) return;
-  ev.stopPropagation();
-  const id = t.getAttribute('data-worldchat');
-  if (window.openStudio) window.openStudio({ type: 'world_pick', subjectId: id, title: t.getAttribute('data-worldchattitle') || 'World idea' });
-});
-
 // One idea, one row. Keeps the .q-inspire-card class and the data-partidx /
 // data-pickidx attributes the existing pick handlers look for with closest(),
 // so nothing downstream needs rewiring.
@@ -6034,11 +6020,6 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
       : isSel ? 'Picked. Click to drop it.' : 'Include this idea.';
   const line = worldOneLine(pick);
   const title = worldPickTitle(pick);
-  const subjectId = reportId ? worldPickSubjectId(reportId, pi, i) : '';
-  const talked = subjectId && worldConvos[subjectId];
-  const chat = subjectId
-    ? `<button class="wl-chat${talked ? ' on' : ''}" data-worldchat="${qEscAttr(subjectId)}" data-worldchattitle="${qEscAttr(title)}" title="${talked ? 'Carry on the conversation about this idea.' : 'Talk this idea through — push it, argue with it, develop it into a vision.'}">💬</button>`
-    : '';
   const chips = pick.developed_at
     ? `<span class="wl-chip" title="This idea's own text was rewritten from a conversation. What it said before is kept under it.">developed</span>`
     : '';
@@ -6051,7 +6032,6 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
         <span class="q-inspire-tag" title="${qEsc(meta.title)}">${meta.tag}</span>
         ${chips}
         ${bestWhy !== undefined ? `<span class="wl-star" title="${qEsc(bestWhy ? 'Our pick — ' + bestWhy : 'Our pick.')}">⭐</span>` : ''}
-        ${chat}
         <span class="wl-caret" data-worldexpand="${ek}" title="The full idea">${isOpen ? '▾' : '▸'}</span>
       </div>
       ${line ? `<div class="wl-line" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
@@ -6065,7 +6045,6 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
 // facts = the review lookup (removed / substitute groups / our pick);
 // scope = which panel this is, so open rows don't leak between panels.
 function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = null, pickAction = 'inspire-pick', scope = '' } = {}) {
-  worldConvoSync(report);   // fire-and-forget: fills in the 💬 that already have a conversation
   return report.parts.map((part, pi) => {
     const desc = String(part.description || '');
     const descHtml = desc.length > 220
@@ -6733,6 +6712,18 @@ async function loadIdeas() {
     if (fresh) { if (!qTypingGuard()) renderSeedDetail(fresh); } else flowSideSel = null;
   }
   if (coreView === 'flow') renderFlow();
+}
+
+// Put an idea on screen with its conversation open: the Seeds list, that card
+// selected, its box unfolded. This is where "Shape it in conversation first"
+// goes now that there is no window to open.
+async function openSeedInFlow(id) {
+  flowType = 'seeds';
+  qSelected = null;
+  flowSideSel = { kind: 'seed', id };
+  studioEmbedOpen('seed', id);
+  setMode('core');
+  switchCoreView('flow');   // loads the ideas and renders the Flow itself
 }
 
 async function addIdea() {
@@ -7814,7 +7805,7 @@ function renderNotbuilt() {
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
       </div>
     </div>
-    ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}</div>` : ''}`;
+    ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}<div data-nbstudio="${c.id}"></div></div>` : ''}`;
   });
   html += nbUnplantedSectionHtml();
   host.innerHTML = html;
@@ -7886,11 +7877,22 @@ function renderNotbuilt() {
     });
   });
   host.querySelectorAll('[data-nbdiscuss]').forEach(b => {
-    b.onclick = () => {
-      const c = ARCH_BY_ID[b.getAttribute('data-nbdiscuss')];
+    b.onclick = (ev) => {
+      ev.stopPropagation();
+      const id = b.getAttribute('data-nbdiscuss');
+      const c = ARCH_BY_ID[id];
       if (!c) return;
-      openArchDiscuss(c, () => { loadNbConvos(); renderNotbuilt(); });
+      // Opens the row, with the conversation already showing inside it.
+      nbWorldOpen = id;
+      studioEmbedOpen(c._stored ? 'arch_node' : 'arch_component', id);
+      renderNotbuilt();
     };
+  });
+  // The box on an expanded row — the same one the component panel shows, because
+  // it is the same conversation about the same piece.
+  host.querySelectorAll('[data-nbstudio]').forEach(slot => {
+    const c = ARCH_BY_ID[slot.getAttribute('data-nbstudio')];
+    if (c) studioEmbed(slot, archStudioOpts(c, () => { loadNbConvos(); renderNotbuilt(); }));
   });
   host.querySelectorAll('[data-nbmore]').forEach(m => {
     m.onclick = () => {
@@ -7952,8 +7954,6 @@ function archStudioOpts(c, onDone) {
   };
 }
 
-// The "Not built" rows have no card to sit inside, so they still open the window.
-function openArchDiscuss(c, onDone) { openStudio(archStudioOpts(c, onDone)); }
 
 const TERRITORIES = [
   { id:'perception', label:'Perception', sub:'Observation Layer — how anything gets in.' },
@@ -9573,28 +9573,6 @@ document.addEventListener('keydown', (e) => {
 .studio-head button { background:none; border:none; cursor:pointer; color:var(--c-ink-4); font-size:14px; padding:4px 7px; border-radius:6px; }
 .studio-head button:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .studio-head .studio-actions { margin-left:auto; display:flex; gap:4px; }
-.studio-body { flex:1; display:flex; flex-direction:column; min-height:0; }
-.studio-log { flex:1; overflow-y:auto; padding:14px 16px; }
-.studio-msg { max-width:88%; margin-bottom:10px; font-size:12.5px; line-height:1.55; }
-.studio-msg .studio-bubble { border-radius:10px; padding:8px 12px; white-space:pre-wrap; word-break:break-word; background:var(--c-surface); border:1px solid var(--c-border); }
-.studio-msg.user { margin-left:auto; }
-.studio-msg.user .studio-bubble { background:var(--c-brand); border-color:var(--c-brand); color:var(--c-on-solid); }
-.studio-msg.agent .studio-bubble { background:var(--c-surface); border:1px solid var(--c-border); }
-.studio-msg.plan .studio-bubble { background:#fdf8ec; border:1px solid #e0d0a4; }
-.studio-msg.pin .studio-bubble { background:#eef4f6; border:1px solid #cfe0e6; }
-.studio-msg .studio-meta { font-size:10px; color:var(--c-ink-4); margin-bottom:2px; text-transform:uppercase; letter-spacing:.04em; }
-.studio-msg.user .studio-meta { text-align:right; }
-.studio-plan-pre { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; margin:0; white-space:pre-wrap; }
-.studio-chips { display:flex; gap:6px; padding:0 16px 10px; flex-wrap:wrap; }
-.studio-chip { font-size:11px; border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:20px; padding:4px 10px; cursor:pointer; color:var(--c-ink-3); }
-.studio-chip:hover { border-color:var(--c-ink); color:var(--c-ink); }
-.studio-input-row { border-top:1px solid var(--c-border); padding:10px 12px; display:flex; gap:8px; align-items:flex-end; background:var(--c-bg); }
-.studio-input { flex:1; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; font-size:12.5px; resize:none; font-family:inherit; line-height:1.4; max-height:120px; }
-.studio-send { border:none; background:var(--c-ink-solid); color:var(--c-on-solid); border-radius:8px; padding:8px 16px; font-size:12.5px; cursor:pointer; }
-.studio-send:disabled { opacity:.5; cursor:default; }
-.studio-status { font-size:11.5px; color:var(--c-ink-4); padding:0 16px 4px; }
-.studio-status.err { color:var(--c-danger); }
-.studio-hint { font-size:10.5px; color:var(--c-ink-4); padding:0 16px 4px; }
 .studio-actions { display:flex; gap:6px; padding:0 16px 4px; flex-wrap:wrap; }
 .studio-actions button { border-radius:8px; padding:7px 14px; font-size:12px; cursor:pointer; }
 .studio-actions .primary { background:var(--c-ink-solid); color:var(--c-on-solid); border:none; }
@@ -9602,13 +9580,6 @@ document.addEventListener('keydown', (e) => {
 .studio-actions .ghost { background:var(--c-surface); border:1px solid var(--c-border-2); color:var(--c-ink); }
 .studio-actions .ghost:hover { border-color:var(--c-ink); color:var(--c-ink); }
 .studio-actions button:disabled { opacity:.5; cursor:default; }
-.studio-draft { padding:20px; display:flex; flex-direction:column; gap:10px; flex:1; }
-.studio-draft input, .studio-draft textarea { border:1px solid var(--c-border-2); border-radius:8px; padding:9px 11px; font-size:13px; font-family:inherit; }
-.studio-draft textarea { flex:1; resize:none; }
-.studio-draft .studio-dr { display:flex; gap:8px; justify-content:flex-end; }
-.studio-draft button { border-radius:8px; padding:8px 16px; font-size:12.5px; cursor:pointer; }
-.studio-draft .primary { background:var(--c-ink-solid); color:var(--c-on-solid); border:none; }
-.studio-draft .ghost { background:var(--c-surface); border:1px solid var(--c-border-2); color:var(--c-ink); }
 </style>
 <button id="fmcns-chat-btn" title="FMCNS Assistant (⌘/Ctrl+`)">✦</button>
 <div id="fmcns-chat-panel">
@@ -9904,27 +9875,6 @@ document.addEventListener('keydown', (e) => {
 })();
 </script>
 
-<style>
-  #studioRoot[hidden] { display:none; }
-  .studio-cost { display:block; width:100%; font-size:10px; color:var(--c-ink-4); margin-top:4px; }
-</style>
-<div id="studioRoot" hidden>
-  <div class="studio-overlay" id="studioOverlay">
-    <div class="studio-modal" role="dialog" aria-label="Idea Studio">
-      <div class="studio-head">
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <span class="studio-eyebrow">Idea Studio</span>
-          <span class="studio-title" id="studioTitle">New idea</span>
-        </div>
-        <div class="studio-actions">
-          <button id="studioResetBtn" title="Reset conversation (fold into recap)">⟳</button>
-          <button id="studioCloseBtn" title="Close">✕</button>
-        </div>
-      </div>
-      <div id="studioBody"></div>
-    </div>
-  </div>
-</div>
 <script>
 (function(){
   // ── Idea Studio — the conversation about one thing ──────────────────────────
@@ -9932,17 +9882,12 @@ document.addEventListener('keydown', (e) => {
   // one live thread per pair, over /api/convos. The commands (/grill-me, /plan,
   // /handoff, /help) are answered by the backend before any model cost.
   //
-  // There are two ways to show the same conversation, and they share everything
-  // except the paint:
-  //   • folded into the card it is about — studioEmbed(). This is the normal way
-  //     in now, so talking something over no longer takes the thing itself off
-  //     the screen.
-  //   • the full-screen window — openStudio(). Still the right answer where there
-  //     is no card to sit inside (a task, a world idea, a "Not built" row, an idea
-  //     that does not exist yet), and behind the ⤢ button when an embedded
-  //     conversation outgrows the card holding it.
-  // Both read one cache and send through one set of functions below. Two copies of
-  // the long-answer poll would have drifted apart inside a month.
+  // There is exactly one way to show a conversation: folded into the card it is
+  // about, via studioEmbed(). One box per card, and no way to detach it into a
+  // window — a window is how you end up looking at a conversation instead of at
+  // the thing it is about. Subjects that have no card of their own are given one
+  // (the "Not built" rows) or sent to the card they belong to (a brand-new idea
+  // goes to its seed card in the Flow).
 
   // ---------- What we know, per conversation ----------
   // The load-bearing piece of the embedded chat. Both hosts that draw it rebuild
@@ -10396,167 +10341,22 @@ document.addEventListener('keydown', (e) => {
     return html;
   }
 
-  /* ─────────────────────────── The full window ─────────────────────────── */
+  // The full-screen window is gone. It used to be the only way to talk about
+  // anything; then it was the fallback for subjects with no card; then it was one
+  // button away from every card. Every one of those was a way to end up looking at
+  // a conversation instead of at the thing it was about. Now there is one box, in
+  // the card, and no way to detach it.
 
-  var cur = null, curOpts = {};
-  function el(id){ return document.getElementById(id); }
-  function openModal(html){ el('studioBody').innerHTML = html; el('studioRoot').hidden = false; }
-  function closeStudio(){ el('studioRoot').hidden = true; }
-
-  function renderDraft(){
-    openModal('<div class="studio-draft">'
-      + '<div style="font-size:12.5px;color:var(--c-ink-3);">Nothing is queued or executed from here — you just shape an idea until it is ready. Start with a one-line idea, then talk it into a plan.</div>'
-      + '<input id="studioDraftTitle" placeholder="The idea in one line…">'
-      + '<textarea id="studioDraftNotes" placeholder="Expand (optional) — why, angles, what it would change…"></textarea>'
-      + '<div class="studio-dr"><button class="ghost" id="studioDraftCancel">Cancel</button>'
-      + '<button class="primary" id="studioDraftStart">Open the studio →</button></div></div>');
-    el('studioTitle').textContent = 'New idea';
-    el('studioDraftCancel').onclick = closeStudio;
-    var startBtn = el('studioDraftStart');
-    var start = function(){
-      var title = (el('studioDraftTitle').value || '').trim();
-      if(!title){ el('studioDraftTitle').focus(); return; }
-      startBtn.disabled = true; startBtn.textContent = 'Creating…';
-      apiWrite('/api/travaux/ideas', 'POST', { title: title, notes: (el('studioDraftNotes').value || '').trim() })
-        .then(function(idea){
-          startModal({ type:'seed', subjectId: idea.id, title: title, onDone: function(){ loadIdeas(); qLoad(); } });
-        })
-        .catch(function(err){ startBtn.disabled = false; startBtn.textContent = 'Open the studio →'; alert('Could not create the idea: ' + err.message); });
-    };
-    startBtn.onclick = start;
-    el('studioDraftTitle').onkeydown = function(ev){ if(ev.key === 'Enter') start(); };
-  }
-
-  function startModal(opts){
-    cur = entryOf(opts.type, opts.subjectId);
-    curOpts = opts;
-    if(opts.title && !cur.title) cur.title = opts.title;
-    if(opts.hint) cur.hint = opts.hint;
-    // Optimistic for a world idea: the server always allows all three there, and
-    // waiting for the fetch to say so makes the buttons flicker in.
-    if(opts.type === 'world_pick' && !cur.acts.length) cur.acts = ['fold', 'more', 'reframe'];
-    el('studioTitle').textContent = cur.title || 'Idea studio';
-    openModal('<div class="studio-body">'
-      + '<div class="studio-log" id="studioLog"><div class="studio-status">Loading…</div></div>'
-      + '<div class="studio-hint" id="studioHint"></div>'
-      + '<div class="studio-actions" id="studioActions"></div>'
-      + '<div class="studio-chips" id="studioChips"></div>'
-      + '<div class="studio-input-row">'
-      +   '<textarea class="studio-input" id="studioInput" rows="1" placeholder="Type to discuss — or use a command below…"></textarea>'
-      +   '<button class="studio-send" id="studioSend">Send</button>'
-      + '</div></div>');
-    wireModal();
-    paintModal();
-    // The window and the card share the draft, so pressing ⤢ mid-sentence carries
-    // the sentence across.
-    el('studioInput').value = cur.draft || '';
-    if(cur.loaded) paintModal(); else fetchConvo(cur, paintModal);
-  }
-
-  function wireModal(){
-    var input = el('studioInput'), sendBtn = el('studioSend');
-    var say = function(){ if(!cur.busy) sendTurn(cur, input.value, paintModal, curOpts.onDone); };
-    sendBtn.onclick = say;
-    input.onkeydown = function(ev){ if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); say(); } };
-    input.oninput = function(){ cur.draft = input.value; grow(input); };
-    el('studioCloseBtn').onclick = closeStudio;
-    el('studioOverlay').onclick = function(ev){ if(ev.target === this) closeStudio(); };
-    el('studioResetBtn').onclick = function(){ resetConvo(cur, paintModal); };
-  }
-
-  // One repaint for the window: the log, the hint, the primary action and the
-  // chips. The input row is left alone so it keeps whatever is being typed.
-  function paintModal(){
-    if(!cur || !el('studioLog')) return;
-    el('studioTitle').textContent = cur.title || 'Idea studio';
-    var input = el('studioInput');
-    if(input && !cur.busy) input.value = cur.draft || '';
-    if(input && cur.busy) input.value = '';
-
-    var log = el('studioLog');
-    if(cur.err){ log.innerHTML = '<div class="studio-status err">' + qEsc(cur.err) + '</div>'; }
-    else if(cur.loading && !cur.loaded){ log.innerHTML = '<div class="studio-status">Loading…</div>'; }
-    else {
-      var html = '';
-      if(cur.promptId){
-        html += '<div class="studio-msg pin"><div class="studio-bubble"><b>✓ Handed off to the Dispatch Queue</b> (set aside) — '
-             +  '<a href="#" class="core-handoff-link" data-studio-jump="' + qEsc(cur.promptId) + '" style="color:var(--c-brand);">view task</a></div></div>';
-      }
-      cur.msgs.forEach(function(m){
-        var plan = m.kind === 'plan';
-        html += '<div class="studio-msg ' + (m.role === 'user' ? 'user' : 'agent') + (plan ? ' plan' : '') + '">'
-             +  '<div class="studio-meta">' + (m.role === 'user' ? 'You' : plan ? 'Plan' : 'Assistant') + '</div>'
-             +  (plan ? '<div class="studio-bubble"><pre class="studio-plan-pre">' + qEsc(m.text) + '</pre></div>'
-                      : '<div class="studio-bubble">' + fmtBody(m.text) + '</div>')
-             +  '</div>';
-      });
-      if(cur.edits && cur.edits.length){
-        var byField = {};
-        cur.edits.forEach(function(x){ if(!byField[x.field]) byField[x.field] = x; });
-        var rows = Object.keys(byField).map(function(f){
-          return '<div style="margin-top:4px;"><b>' + qEsc(f) + '</b> — ' + qEsc(String(byField[f].before_text || '(was empty)').slice(0, 400)) + '</div>';
-        }).join('');
-        html += '<div class="studio-msg agent"><div class="studio-bubble"><details><summary style="cursor:pointer;font-size:10.5px;color:var(--c-ink-4);">What this said before a conversation rewrote it</summary>' + rows + '</details></div></div>';
-      }
-      if(!cur.msgs.length && !cur.promptId){
-        html += '<div class="studio-status">No messages yet. Tell the studio what you are thinking about this subject, or ask to be interrogated.</div>';
-      }
-      log.innerHTML = html;
-      log.querySelectorAll('[data-studio-jump]').forEach(function(a){
-        a.onclick = function(ev){ ev.preventDefault(); closeStudio(); jumpToQueueItem(a.getAttribute('data-studio-jump')); };
-      });
-    }
-
-    var world = cur.type === 'world_pick';
-    el('studioHint').innerHTML = world
-      ? 'Push this idea as hard as you like. When we get somewhere: <b>fold it in</b>, ask for <b>more ideas</b>, or <b>change the question</b> it answers.'
-      : 'Push back, argue, brainstorm. When we get somewhere you can <b>fold it in</b>, ask for <b>more ideas</b>, or turn it into a task.';
-
-    var cta = ctaOf(cur), acts = el('studioActions'), actHtml = '';
-    if(cta === 'view') actHtml += '<button class="ghost" id="studioViewTaskBtn">✓ Already sent — view in Dispatch Queue</button>';
-    else if(cta === 'handoff') actHtml += '<button class="primary" id="studioHandoffBtn">→ Send to Dispatch Queue</button>';
-    else if(cta === 'plan') actHtml += '<button class="ghost" id="studioPlanBtn">✍️ Draft the plan</button>';
-    var cost = costLine(cur);
-    if(cost) actHtml += '<span class="studio-cost">' + cost + '</span>';
-    acts.innerHTML = actHtml;
-    if(el('studioPlanBtn')) el('studioPlanBtn').onclick = function(){ sendTurn(cur, '/plan', paintModal, curOpts.onDone); };
-    if(el('studioHandoffBtn')) el('studioHandoffBtn').onclick = function(){ sendTurn(cur, '/handoff', paintModal, curOpts.onDone); };
-    if(el('studioViewTaskBtn')) el('studioViewTaskBtn').onclick = function(){ closeStudio(); jumpToQueueItem(cur.promptId); };
-    if(cur.busy) acts.querySelectorAll('button').forEach(function(b){ b.disabled = true; });
-
-    var chips = el('studioChips');
-    chips.innerHTML = '';
-    if(cur.convoId) commandRows(cur).forEach(function(row){
-      var b = document.createElement('button');
-      b.className = 'studio-chip';
-      b.textContent = row[1];
-      b.title = row[2] || row[1];
-      b.disabled = !!cur.busy;
-      b.onclick = function(){ sendTurn(cur, row[0], paintModal, curOpts.onDone); };
-      chips.appendChild(b);
-    });
-
-    var sendBtn = el('studioSend');
-    if(sendBtn){ sendBtn.disabled = !!cur.busy || !cur.convoId; sendBtn.textContent = cur.busy ? '…' : 'Send'; }
-    log.scrollTop = log.scrollHeight;
-  }
-
-  window.openStudio = function(opts){
-    if(!opts || !opts.type || !opts.subjectId){ renderDraft(); return; }
-    startModal(opts);
-  };
-  window.openNewIdeaStudio = function(){ renderDraft(); };
 
   document.addEventListener('DOMContentLoaded', function(){
     var sf = document.getElementById('shapeFirstBtn');
     if(sf) sf.onclick = function(){
-      // Seed a real idea from the form text, then open its studio.
+      // Make the idea real, then go and stand in front of it: the Seeds list, that
+      // card open, its box open. Where a window used to appear.
       var title = (document.getElementById('qPromptTitle').value || '').trim() || 'Idea to shape';
       var notes = (document.getElementById('qPromptText').value || '').trim();
       apiWrite('/api/travaux/ideas', 'POST', { title: title, notes: notes })
-        .then(function(idea){
-          openStudio({ type:'seed', subjectId: idea.id, title: title, onDone: function(){ loadIdeas(); qLoad(); } });
-        })
+        .then(function(idea){ openSeedInFlow(idea.id); })
         .catch(function(err){ alert('Could not create the idea: ' + err.message); });
     };
   });
