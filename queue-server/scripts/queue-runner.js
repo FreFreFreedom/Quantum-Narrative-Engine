@@ -66,8 +66,52 @@ const FIRST_OUTPUT_MS = Number(process.env.FIRST_OUTPUT_MS || 90_000);
 // Silence allowed AFTER the model has proven itself. Generous, because a real
 // tool call (a build, a big grep) legitimately goes quiet for a while.
 const SILENCE_MS = Number(process.env.SILENCE_MS || 5 * 60_000);
-// Absolute ceiling for one attempt on one model.
-const ATTEMPT_CAP_MS = Number(process.env.ATTEMPT_CAP_MS || 30 * 60_000);
+// Silence allowed while a TOOL CALL is in flight. A build, a full test run or a
+// big grep prints nothing at all until it returns, so a quiet stretch there is
+// the model working, not the model hanging — the old flat 5 minutes killed those
+// runs AND quarantined a perfectly good model for the tasks after them. Silence
+// while the model should be writing text still uses SILENCE_MS above.
+// Keep taskRunner.js's CLAIM_STALE_MS above this (see the invariant there).
+const TOOL_SILENCE_MS = Number(process.env.TOOL_SILENCE_MS || 20 * 60_000);
+// Absolute ceiling for one attempt on one model. The real value is per task —
+// the server sends it in the claim payload from the task's size tier (see
+// attemptCapMsFor in services/taskRunner.js), so a deep task gets hours and a
+// mini one gets 20 minutes. This is only the floor for a task claimed before
+// that field existed; ATTEMPT_CAP_MS stays a manual override for debugging.
+const ATTEMPT_CAP_FALLBACK_MS = 30 * 60_000;
+function attemptCapFor(task) {
+  return Number(process.env.ATTEMPT_CAP_MS) || Number(task?.attempt_cap_ms) || ATTEMPT_CAP_FALLBACK_MS;
+}
+
+// The three time limits, in one place, so the two lanes below cannot drift apart.
+// Returns null while the attempt is healthy, or the outcome that ends it.
+//   'model-bad' → this model looks broken: quarantine it and rotate to the next.
+//   'gave-up'   → it ran fine but ran out of time: save the work, report blocked.
+function watchdogVerdict({ now, startedAt, sawRealOutput, lastRealOutputAt, toolInFlight, capMs }) {
+  if (!sawRealOutput && now - startedAt > FIRST_OUTPUT_MS) {
+    return { outcome: 'model-bad', why: `no output in ${Math.round(FIRST_OUTPUT_MS / 1000)}s` };
+  }
+  const quietAllowed = toolInFlight ? TOOL_SILENCE_MS : SILENCE_MS;
+  if (sawRealOutput && now - lastRealOutputAt > quietAllowed) {
+    return { outcome: 'model-bad', why: `went silent for ${Math.round(quietAllowed / 60_000)} min${toolInFlight ? ' mid-tool-call' : ''}` };
+  }
+  if (now - startedAt > capMs) {
+    return { outcome: 'gave-up', why: `hit the ${Math.round(capMs / 60_000)} min limit` };
+  }
+  return null;
+}
+
+// The periodic "still alive" line. Names the real limit so a long run reads as
+// healthy in the terminal instead of looking like a hang.
+function progressLine({ now, startedAt, sawRealOutput, lastRealOutputAt, capMs }) {
+  const mins = Math.round((now - startedAt) / 60_000);
+  if (!sawRealOutput) {
+    return `  … ${Math.round((now - startedAt) / 1000)}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`;
+  }
+  const quiet = Math.round((now - lastRealOutputAt) / 1000);
+  const quietTxt = quiet >= 120 ? `${Math.round(quiet / 60)} min` : `${quiet}s`;
+  return `  … quiet for ${quietTxt} (running ${mins} min of ${Math.round(capMs / 60_000)})`;
+}
 const POLL_IDLE_MS = 5_000;
 
 // ─── Claude lane: credit discipline ───────────────────────────────────────────
@@ -87,7 +131,7 @@ const POLL_IDLE_MS = 5_000;
 //   4. No dollar cap — subscription runs are already paid for, so their notional
 //      cost is NOT streamed against the per-task cost cap (that cap exists to protect
 //      metered spend, and a $0.10 cap would kill every real Claude task in a minute).
-//      They are bounded by time (ATTEMPT_CAP_MS) and by the window gate instead.
+//      They are bounded by time (the per-task attempt cap) and by the window gate instead.
 //
 // Reserve levels: stop starting new Claude runs once the 5h window is this full, or
 // the week is. Tunable by env for a crunch week.
@@ -608,6 +652,11 @@ function runOnce({ task, model, cwd }) {
     let cost = 0;
     let sawRealOutput = false;      // a PARSED model event — never raw stderr
     let lastRealOutputAt = Date.now();
+    // True while the last thing we saw was a tool call starting rather than text:
+    // a long command legitimately prints nothing until it returns, so the silence
+    // it produces gets TOOL_SILENCE_MS instead of SILENCE_MS.
+    let toolInFlight = false;
+    const capMs = attemptCapFor(task);
     let stderrTail = '';
     let pending = [];
     let settled = false;
@@ -659,23 +708,10 @@ function runOnce({ task, model, cwd }) {
       if (now - lastPrintAt > PROGRESS_MS) {
         lastPrintAt = now;
         if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
-        const elapsed = Math.round((now - startedAt) / 1000);
-        if (!sawRealOutput) {
-          console.log(dim(`  … ${elapsed}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`));
-        } else {
-          const sinceOutput = Math.round((now - lastRealOutputAt) / 1000);
-          console.log(dim(`  … quiet for ${sinceOutput}s (${elapsed}s into this attempt)`));
-        }
+        console.log(dim(progressLine({ now, startedAt, sawRealOutput, lastRealOutputAt, capMs })));
       }
-      if (!sawRealOutput && now - startedAt > FIRST_OUTPUT_MS) {
-        return finish('model-bad', { why: `no output in ${Math.round(FIRST_OUTPUT_MS / 1000)}s` });
-      }
-      if (sawRealOutput && now - lastRealOutputAt > SILENCE_MS) {
-        return finish('model-bad', { why: `went silent for ${Math.round(SILENCE_MS / 60_000)} min` });
-      }
-      if (now - startedAt > ATTEMPT_CAP_MS) {
-        return finish('gave-up', { why: `hit the ${Math.round(ATTEMPT_CAP_MS / 60_000)} min limit` });
-      }
+      const verdict = watchdogVerdict({ now, startedAt, sawRealOutput, lastRealOutputAt, toolInFlight, capMs });
+      if (verdict) return finish(verdict.outcome, { why: verdict.why });
     }, 1_000);
 
     let buf = '';
@@ -712,9 +748,14 @@ function runOnce({ task, model, cwd }) {
           pending.push(chunk);
           lastPrintAt = Date.now();
           if (chunk.kind === 'text') {
+            // Text means the model is talking, so any silence after this is real.
+            toolInFlight = false;
             process.stdout.write(chunk.text);
             atLineStart = chunk.text.endsWith('\n');
           } else if (chunk.kind === 'tool') {
+            // A tool call just started: the quiet that follows is the command
+            // running, so allow TOOL_SILENCE_MS instead of SILENCE_MS.
+            toolInFlight = true;
             if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
             const detail = chunk.input ? dim(` — ${truncate(chunk.input, 80)}`) : '';
             console.log(`  ${magenta('⚙')} ${chunk.name || 'tool'}${detail}`);
@@ -780,6 +821,11 @@ function runClaudeOnce({ task, model, effort, cwd }) {
     let usage = null, cost = 0;
     let sawRealOutput = false;
     let lastRealOutputAt = Date.now();
+    // True while the last thing we saw was a tool call starting rather than text:
+    // a long command legitimately prints nothing until it returns, so the silence
+    // it produces gets TOOL_SILENCE_MS instead of SILENCE_MS.
+    let toolInFlight = false;
+    const capMs = attemptCapFor(task);
     let stderrTail = '';
     let pending = [];
     let settled = false;
@@ -814,20 +860,10 @@ function runClaudeOnce({ task, model, effort, cwd }) {
       if (now - lastPrintAt > PROGRESS_MS) {
         lastPrintAt = now;
         if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
-        const elapsed = Math.round((now - startedAt) / 1000);
-        console.log(dim(sawRealOutput
-          ? `  … quiet for ${Math.round((now - lastRealOutputAt) / 1000)}s (${elapsed}s into this attempt)`
-          : `  … ${elapsed}s elapsed, no output yet (giving it up to ${Math.round(FIRST_OUTPUT_MS / 1000)}s)`));
+        console.log(dim(progressLine({ now, startedAt, sawRealOutput, lastRealOutputAt, capMs })));
       }
-      if (!sawRealOutput && now - startedAt > FIRST_OUTPUT_MS) {
-        return finish('model-bad', { why: `no output in ${Math.round(FIRST_OUTPUT_MS / 1000)}s` });
-      }
-      if (sawRealOutput && now - lastRealOutputAt > SILENCE_MS) {
-        return finish('model-bad', { why: `went silent for ${Math.round(SILENCE_MS / 60_000)} min` });
-      }
-      if (now - startedAt > ATTEMPT_CAP_MS) {
-        return finish('gave-up', { why: `hit the ${Math.round(ATTEMPT_CAP_MS / 60_000)} min limit` });
-      }
+      const verdict = watchdogVerdict({ now, startedAt, sawRealOutput, lastRealOutputAt, toolInFlight, capMs });
+      if (verdict) return finish(verdict.outcome, { why: verdict.why });
     }, 1_000);
 
     let buf = '';
@@ -859,9 +895,14 @@ function runClaudeOnce({ task, model, effort, cwd }) {
           pending.push(chunk);
           lastPrintAt = Date.now();
           if (chunk.kind === 'text') {
+            // Text means the model is talking, so any silence after this is real.
+            toolInFlight = false;
             process.stdout.write(chunk.text);
             atLineStart = chunk.text.endsWith('\n');
           } else {
+            // A tool call just started: the quiet that follows is the command
+            // running, so allow TOOL_SILENCE_MS instead of SILENCE_MS.
+            toolInFlight = true;
             if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
             const detail = chunk.input ? dim(` — ${truncate(chunk.input, 80)}`) : '';
             console.log(`  ${magenta('⚙')} ${chunk.name || 'tool'}${detail}`);

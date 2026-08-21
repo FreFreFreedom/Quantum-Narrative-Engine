@@ -1394,7 +1394,23 @@ export function claimNextTask({ runnerId = 'local' } = {}) {
     // Size tier, from the queue row (work_prompts.task_tier). The runner's Claude
     // credit gate uses it to keep tiny work off the subscription entirely.
     task_tier: taskTier(task),
+    // How long the runner lets this one attempt run before it saves the work and
+    // reports blocked. Resolved here rather than in the runner so the kill and the
+    // UI's "N of M min" line can never disagree (routes/queue.js reads the same
+    // table). See ATTEMPT_CAP_BY_TIER.
+    attempt_cap_ms: attemptCapMsFor(taskTier(task)),
   };
+}
+
+// How long one attempt gets, by the queue row's size tier (work_prompts.task_tier).
+// Antoine, 2026-08-21: a deep task legitimately runs for hours, so a flat 30-minute
+// cap was stopping healthy work; a mini task still not done in 20 minutes is stuck
+// rather than slow, and failing it fast is the point.
+const ATTEMPT_CAP_BY_TIER = { mini: 20 * 60_000, standard: 60 * 60_000, deep: 120 * 60_000 };
+const DEFAULT_ATTEMPT_CAP_MS = ATTEMPT_CAP_BY_TIER.standard;   // unknown/absent tier
+
+export function attemptCapMsFor(tier) {
+  return ATTEMPT_CAP_BY_TIER[tier] || DEFAULT_ATTEMPT_CAP_MS;
 }
 
 // The queue row's size tier for an agent task ('mini' | 'standard' | 'deep'), or
@@ -1564,7 +1580,13 @@ export function runnerStatus() {
 // dropped — the claim is dead and the task goes back to 'approved' so the next
 // runner picks it up. Deliberately generous: a model can legitimately think for
 // a while, and re-running a task that was actually fine costs real credit.
-const CLAIM_STALE_MS = 10 * 60_000;
+//
+// INVARIANT: this must stay comfortably above the longest silence the runner
+// itself tolerates (TOOL_SILENCE_MS, 20 min in scripts/queue-runner.js). Below
+// that, a task sitting in one long tool call — a build, a full test run, which
+// emit nothing until they return — gets un-claimed and handed to a second runner
+// while the Mac is still working on it. Raise them together, never separately.
+const CLAIM_STALE_MS = 30 * 60_000;
 
 export function releaseStaleClaims() {
   const cutoff = new Date(Date.now() - CLAIM_STALE_MS).toISOString();

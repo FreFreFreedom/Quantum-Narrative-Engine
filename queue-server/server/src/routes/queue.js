@@ -3,7 +3,7 @@ import { Router } from 'express';
 import * as queue from '../services/promptQueue.js';
 import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '../services/providers/index.js';
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
-import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution, runnerStatus } from '../services/taskRunner.js';
+import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution, runnerStatus, attemptCapMsFor } from '../services/taskRunner.js';
 import { latestReviewForPrompt } from '../services/reviewRunner.js';
 import { shipStateFor } from '../services/gitJobs.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
@@ -84,11 +84,15 @@ export function queueRoutes() {
         // Work-meter data for the UI's progress bar: real output volume so far,
         // plus the run's time budget (both only meaningful while running).
         output_bytes: running ? execOutputBytes(p.agent_task_id) : null,
-        // Only meaningful when the container itself runs the task. In local mode
-        // execution is the runner's, and its limits are per-ATTEMPT (first output
-        // 90s / silence 5min / attempt cap 30min) — reporting a per-task budget
-        // here drew a progress bar against a deadline nothing enforced.
-        timeout_minutes: running && !isLocalExecution() ? getExecTimeoutMinutes() : null,
+        // The attempt's real time limit, in minutes. In local mode this is the
+        // tier-based cap the runner is actually handed in its claim payload
+        // (taskRunner.attemptCapMsFor), so the number shown is the number
+        // enforced — it used to be null here because the runner's old limits were
+        // flat and per-attempt, and drawing a bar against a deadline nothing
+        // enforced was worse than showing nothing.
+        timeout_minutes: !running ? null
+          : isLocalExecution() ? Math.round(attemptCapMsFor(p.task_tier) / 60_000)
+          : getExecTimeoutMinutes(),
         // What happened to this task's work after it finished: is it live in the
         // app, on its way, refused, or waiting for the Mac. Before this the answer
         // existed nowhere in the UI, so a finished task looked identical whether it

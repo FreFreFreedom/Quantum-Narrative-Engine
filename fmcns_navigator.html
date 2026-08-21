@@ -577,6 +577,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-item-meta { font-size:10px; color:var(--c-ink-4); margin-top:4px; display:flex; gap:8px; align-items:center; }
 .q-item-meta .q-runstate { color:#2a6d3b; font-weight:600; }
 .q-item-meta .q-heartbeat-warn { color:#b3541e; font-weight:600; }
+.q-item-meta .q-runclock { opacity:.7; }
 .q-item-q { font-size:10.5px; color:var(--c-warn); margin-top:5px; background:var(--c-warn-tint); border-radius:5px; padding:5px 7px; }
 /* Three lines, hard. Both the question a task is waiting on and the result a
    finished task reports are already trimmed by the server, but a clamp here is
@@ -3938,18 +3939,23 @@ async function qLoad() {
   const nextPrompts = data.prompts || [];
   // output_bytes/timeout_minutes/heartbeat_at all grow or tick on essentially every
   // single poll while a task is running (raw log byte count, and a ~2s server-side
-  // heartbeat write) but nothing in the UI renders their raw values — heartbeat_at
-  // is only ever surfaced once stale (qRunStateLine, mins > 5 below). Including them
-  // in the change signature forced a full renderFlow() rebuild (and its CSS
-  // enter-animation on every row) on nearly every poll tick for as long as anything
-  // was running, which is what read as constant flashing/refreshing in the Flow
-  // sub-tabs. heartbeat_at is bucketed to a stale/not-stale boolean rather than
-  // dropped outright, so a hung task still flips the signature once it crosses the
-  // same 5-minute threshold qRunStateLine warns on — otherwise a lone stalled task
-  // with nothing else changing would never trip a re-render at all.
+  // heartbeat write). Including their raw values in the change signature forced a
+  // full renderFlow() rebuild (and its CSS enter-animation on every row) on nearly
+  // every poll tick for as long as anything was running, which is what read as
+  // constant flashing/refreshing in the Flow sub-tabs. So each one that IS rendered
+  // gets bucketed to something that changes rarely:
+  //   · heartbeat_stale — a boolean flipping at the same Q_HEARTBEAT_WARN_MIN
+  //     threshold qRunStateLine warns on, so a hung task still trips one re-render
+  //     even when nothing else about it changes.
+  //   · elapsed_bucket — the running time in 5-minute steps, so the "N of M min"
+  //     line in qRunStateLine refreshes as the task runs without churning every
+  //     4 seconds. The number shown can lag by up to 5 minutes, which is fine for
+  //     a limit measured in hours.
   const sigPrompts = nextPrompts.map(({ output_bytes, timeout_minutes, heartbeat_at, ...rest }) => ({
     ...rest,
-    heartbeat_stale: heartbeat_at ? (Date.now() - new Date(heartbeat_at).getTime()) / 60000 > 5 : null,
+    heartbeat_stale: heartbeat_at ? (Date.now() - new Date(heartbeat_at).getTime()) / 60000 > Q_HEARTBEAT_WARN_MIN : null,
+    elapsed_bucket: rest.status === 'running' && rest.started_at
+      ? Math.floor((Date.now() - new Date(rest.started_at).getTime()) / 300000) : null,
   }));
   const sig = JSON.stringify({ paused: data.queue_paused, prompts: sigPrompts });
   const changed = sig !== qLastSig;
@@ -4187,15 +4193,30 @@ const Q_RUN_STATE_LABELS = {
   awaiting_input: 'waiting for your answer',
   stopped: 'stopped',
 };
+// How long a running task may go without a word before the row says so. Matches
+// the runner's own tolerance for a silent tool call (TOOL_SILENCE_MS, 20 min in
+// scripts/queue-runner.js) — at the old 5 minutes this warned during every long
+// build, i.e. exactly when the task was healthiest. Kept in one constant because
+// the re-render signature above buckets on the same number.
+const Q_HEARTBEAT_WARN_MIN = 20;
+
 function qRunStateLine(p) {
   if (p.status !== 'running') return '';
   const label = Q_RUN_STATE_LABELS[p.run_state] || p.run_state || '…';
   let warn = '';
   if ((p.run_state === 'working' || p.run_state === 'dispatched') && p.heartbeat_at) {
     const mins = (Date.now() - new Date(p.heartbeat_at).getTime()) / 60000;
-    if (mins > 5) warn = `<span class="q-heartbeat-warn" title="No agent output received in a while"> · no activity for ${Math.round(mins)} min</span>`;
+    if (mins > Q_HEARTBEAT_WARN_MIN) warn = `<span class="q-heartbeat-warn" title="No agent output received in a while"> · no activity for ${Math.round(mins)} min</span>`;
   }
-  return `<div class="q-item-meta"><span class="q-runstate">${label}</span>${warn}</div>`;
+  // How long it has been going, against the limit it will actually be stopped at
+  // (the server sends the task's own cap — 20/60/120 min by size). Without this a
+  // task that ran for an hour looked identical to one that started a minute ago.
+  let clock = '';
+  if (p.started_at && p.timeout_minutes) {
+    const mins = Math.round((Date.now() - new Date(p.started_at).getTime()) / 60000);
+    if (mins >= 1) clock = `<span class="q-runclock" title="Time used, and the limit for a task this size"> · ${mins} of ${p.timeout_minutes} min</span>`;
+  }
+  return `<div class="q-item-meta"><span class="q-runstate">${label}</span>${clock}${warn}</div>`;
 }
 
 function qCostLine(p) {
