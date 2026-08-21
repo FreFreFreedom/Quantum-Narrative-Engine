@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-21 |
+| **DONE** | 2026-08-21 |
 
 Two independent halves of the same unfinished job. **Part A** finishes the card
 conversion `cards-one-system.md` started: it built the `.uc` shell and converted the
