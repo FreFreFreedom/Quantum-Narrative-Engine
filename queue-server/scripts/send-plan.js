@@ -209,11 +209,18 @@ async function main() {
     } else if (worker && worker.mode === 'local' && !worker.connected) {
       console.log('  Note: your Mac runner is not attached, so nothing will run until it is.');
       console.log('  Start it with:  cd queue-server && npm run runner');
+    } else if (RAW) {
+      console.log('  It starts now — you can close this terminal.');
     } else {
-      console.log('  It will start on its own — you can close this terminal.');
+      console.log('  It starts once the look at the world finishes — usually a few minutes.');
+      console.log('  You can close this terminal; it does not need you.');
     }
     if (!RAW) {
-      console.log('  The look at the world is running now; its ideas appear on the task card.');
+      // Say the real cost of the default. The look is a chain of model calls and live
+      // searches run one after another, so it is minutes, not seconds — and it is the
+      // only thing standing between a queued plan and the work starting. Better said
+      // here than discovered by watching a task sit at 'queued'.
+      console.log('  (The look is a few model calls and searches in sequence. --raw skips it and starts immediately.)');
     }
   } catch {
     // Reporting is a courtesy, never a failure: the task is already created.
