@@ -550,10 +550,16 @@ function stateHashOf(node) {
 //
 // This function supplies the missing half from the same rows the ranking already
 // reads. SQL and arithmetic only — no model call, safe to run on every generation.
-export function architectureDigest(db, catalog = []) {
+// `territory` narrows the digest to one part of the app, for a focused suggestion run.
+// Note what is and isn't filtered: `scope` is what gets *reported on*, while `byId`
+// stays whole, because the ready-to-start test below resolves each piece's
+// dependencies through it and pieces depend on things in other territories. Filtering
+// the lookup map instead would silently mark blocked work as ready.
+export function architectureDigest(db, catalog = [], { territory = null } = {}) {
   const lines = [];
   try {
-    const { byId, all } = unifiedNodes(db, catalog);
+    const { byId, all: everything } = unifiedNodes(db, catalog);
+    const all = territory ? everything.filter((n) => n.territory === territory) : everything;
     if (!all.length) return '';
     const built = (n) => ['Working', 'Validated', 'Advanced'].includes(n?.status || '');
 
@@ -564,7 +570,7 @@ export function architectureDigest(db, catalog = []) {
       t.total++;
       if (built(n)) t.built++;
     }
-    lines.push(`The app's own map of itself: ${[...byTerr.entries()]
+    lines.push(`${territory ? 'This part of the app' : "The app's own map of itself"}: ${[...byTerr.entries()]
       .map(([t, v]) => `${t} ${v.built}/${v.total} finished`)
       .join(', ')}.`);
 
@@ -579,18 +585,32 @@ export function architectureDigest(db, catalog = []) {
     if (blocked.length) lines.push(`${blocked.length} more unfinished pieces are waiting on something else first.`);
 
     const signalsResult = computeSignals(db, catalog);
-    const worst = [...(signalsResult.signals || [])]
+    // Signals are computed across the whole app. When scoped, keep only the ones aimed
+    // at a piece in this territory or at the territory itself (territory_isolated uses
+    // the territory id as its target) — a weak spot somewhere else is not this part's
+    // problem and would just pull the proposals off subject.
+    const inScope = new Set(all.map((n) => n.id));
+    const relevant = (signalsResult.signals || []).filter(
+      (sg) => !territory || sg.target_id === territory || inScope.has(sg.target_id));
+    const worst = [...relevant]
       .sort((a, b) => (b.severity || 0) - (a.severity || 0)).slice(0, 6);
     if (worst.length) {
       lines.push(`Weak spots counted right now: ${worst.map((sg) => `${sg.type}${sg.target_id ? ` on ${sg.target_id}` : ''}`).join(' · ')}.`);
     }
-    const health = healthFor(signalsResult, loadIntelConfig(db));
-    if (health && typeof health.graph === 'number') lines.push(`Overall health of the app's own build: ${health.graph}/100.`);
+    // Health is a whole-app score. Reporting it under a territory heading would read as
+    // that territory's score, which it isn't, so a focused digest goes without it.
+    if (!territory) {
+      const health = healthFor(signalsResult, loadIntelConfig(db));
+      if (health && typeof health.graph === 'number') lines.push(`Overall health of the app's own build: ${health.graph}/100.`);
+    }
   } catch { /* an older database, or no catalog posted — the digest degrades to fewer lines */ }
-  try {
-    const open = db.prepare(`SELECT COUNT(*) n FROM intel_thoughts WHERE deleted_at IS NULL AND status='new'`).get()?.n || 0;
-    if (open) lines.push(`${open} thoughts the app has already had about itself are still unread.`);
-  } catch { /* same */ }
+  // Also a whole-app count, so left out of a focused digest for the same reason.
+  if (!territory) {
+    try {
+      const open = db.prepare(`SELECT COUNT(*) n FROM intel_thoughts WHERE deleted_at IS NULL AND status='new'`).get()?.n || 0;
+      if (open) lines.push(`${open} thoughts the app has already had about itself are still unread.`);
+    } catch { /* same */ }
+  }
   return lines.join('\n');
 }
 

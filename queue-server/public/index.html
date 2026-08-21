@@ -4976,6 +4976,36 @@ function sgChipRowHtml(all) {
   return `<div class="nb-chips sg-chiprow">${chips}</div>`;
 }
 
+// What "Generate now" means with the current chip selected. One function so the label
+// on the button and the request it sends can never drift apart: whatever it says it
+// will do is built from the same object that says what to ask for.
+function sgGenIntent() {
+  const key = sgFilterTerr;
+  if (!key) return { label: '✨ Generate now', busy: '✨ Generating…', body: {}, note: 'Claude is thinking about what to work on next — this takes a minute or two.' };
+  if (key === 'outside') {
+    return {
+      label: '✨ Generate outside connections', busy: '✨ Generating…',
+      body: { kind: 'integration' },
+      note: 'Claude is looking for new outside sources to plug in — this takes a minute or two.',
+    };
+  }
+  // The unplaced pile is not a part of the app, so there is nothing coherent to ask
+  // for. Disabled and saying why beats a button that quietly does something else.
+  if (key === 'none') {
+    return {
+      label: '✨ Generate now', busy: '✨ Generating…', body: {}, disabled: true,
+      why: 'These are older suggestions the app could not place. There is no such part of the app to generate for — press "Sort the old ones" to file them first.',
+    };
+  }
+  const t = TERRITORIES.find(x => x.id === key);
+  const name = t ? (SG_CHIP_SHORT[key] || t.label) : key;
+  return {
+    label: `✨ Generate for ${name}`, busy: `✨ Generating ${name}…`,
+    body: { territory: key },
+    note: `Claude is thinking about ${name} only — this takes a minute or two.`,
+  };
+}
+
 function sgRowsHtml(sg) {
   return sg.map(flowSgRow).join('');
 }
@@ -5068,13 +5098,14 @@ function renderFlow() {
       // there each row's own chip still says which part it touches. A chip pressed
       // earlier keeps applying either way, so the two views never disagree.
       const chipRow = flowType === 'suggestions' ? sgChipRowHtml(sgAll) : '';
+      const gen = sgGenIntent();
       const emptied = !sg.length
         ? `<div class="empty">Nothing here touches that part of the app. <a href="#" id="sgClearFilter">Show all ${sgAll.length}</a>.</div>`
         : '';
       html += flowSection('✨', 'Suggested by Claude', sg.length, `
         <div class="flow-genrow">
           <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
-          <button class="ctrlbtn" id="flowGenBtn">✨ Generate now</button>
+          <button class="ctrlbtn" id="flowGenBtn"${gen.disabled ? ' disabled' : ''} title="${qEsc(gen.disabled ? gen.why : (sgFilterTerr ? gen.note : 'Ask Claude for more work, spread across the whole app.'))}">${qEsc(gen.label)}</button>
           <button class="ctrlbtn" id="flowRewriteBtn" title="Redo the world-look ideas attached to tasks, suggestions, pieces and seeds that were written before the ideas were held to their subject">↻ Redo the old world ideas</button>
           <button class="ctrlbtn" id="flowSortOldBtn" title="Suggestions made before the app started recording which part they touch sit under &quot;not placed yet&quot;. This reads them once and files them into their territories.">⇅ Sort the old ones</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
@@ -5353,22 +5384,32 @@ async function flowGenerateNow() {
   const btn = document.getElementById('flowGenBtn');
   const status = document.getElementById('flowGenStatus');
   if (!btn) return;
-  btn.disabled = true; btn.textContent = '✨ Generating…';
-  if (status) status.textContent = 'Claude is thinking about what to work on next — this takes a minute or two.';
+  // Same object that labelled the button decides what gets asked for.
+  const gen = sgGenIntent();
+  if (gen.disabled) return;
+  const restore = () => { btn.disabled = false; btn.textContent = gen.label; };
+  btn.disabled = true; btn.textContent = gen.busy;
+  if (status) status.textContent = gen.note;
   try {
     // Ship the app's own map of itself with the request. It lives in this file, not
     // in the database, so without it the suggestion engine cannot see the app's build
     // system and proposes work on the material only — which is the whole reason
     // suggestions used to come back about the Content navigator whatever you asked.
-    await apiWrite('/api/travaux/suggestions/generate', 'POST', { catalog: archCatalog() });
+    // Narrowed to the chosen part when there is one: no point sending 25 components
+    // to be told about 4. The server narrows it again, this just keeps the ask honest.
+    const catalog = gen.body.territory
+      ? archCatalog().filter(c => c.territory === gen.body.territory)
+      : archCatalog();
+    await apiWrite('/api/travaux/suggestions/generate', 'POST', { ...gen.body, catalog });
     setTimeout(async () => {
       await loadSuggestions();
       if (status) status.textContent = '';
-      btn.disabled = false; btn.textContent = '✨ Generate now';
+      restore();
+      renderFlow();
     }, 20000);
   } catch (e) {
     if (status) status.textContent = 'Error: ' + e.message;
-    btn.disabled = false; btn.textContent = '✨ Generate now';
+    restore();
   }
 }
 

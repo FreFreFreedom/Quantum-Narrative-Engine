@@ -15,7 +15,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { shippedSince, overlapsShipped } from './shipFacts.js';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
-import { APP_BLURB } from './ai/appModel.js';
+import { APP_BLURB, TERRITORY_LIST, TERRITORY_IDS, TERRITORY_LINES, onSubjectRule } from './ai/appModel.js';
 import { architectureDigest } from './architectureIntelligence.js';
 import { autoWorldLookSuggestions } from './codeDiscovery.js';
 import * as queue from './promptQueue.js';
@@ -25,9 +25,9 @@ export function bindWorkSuggestionsDb(database) { db = database; }
 
 const MAX_NEW_PER_RUN = 5;
 const MAX_NEW_INTEGRATIONS_PER_RUN = 3;
-// The app's six territories, as the Flow groups suggestions by them. Kept here so a
-// territory Claude invented (or forgot) can be rejected rather than stored and drawn.
-const TERRITORY_IDS = ['perception', 'knowledge', 'reasoning', 'experience', 'interface', 'self'];
+// TERRITORY_IDS/_LIST/_LINES come from appModel.js on purpose — see the note there.
+// A second copy of the six drifts, and a drifted copy silently tells the model that a
+// part of the app does not exist, which is the exact bug that file was made to stop.
 
 function fingerprintOf(title) {
   const norm = String(title || '')
@@ -179,7 +179,10 @@ function parseSuggestionsJson(text) {
 }
 
 // ─── Chantier engine: "what should I work on next" ──────────────────────────────
-export function buildContextDigest(catalog = []) {
+// `territory` set = the caller asked for work on one part of the app only. Two things
+// change: the "already suggested" list is scoped to that part (see below), and the
+// architecture half of the digest is narrowed to it.
+export function buildContextDigest(catalog = [], { territory = null } = {}) {
   const lines = [];
   try {
     const total = db.prepare(`SELECT COUNT(*) n FROM entities`).get().n;
@@ -199,8 +202,15 @@ export function buildContextDigest(catalog = []) {
     if (recent.length) lines.push(`Latest queue items: ${recent.map((r) => `${r.title} [${r.status}]`).join(' · ')}.`);
   } catch {}
   try {
-    const known = db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 20`).all();
-    if (known.length) lines.push(`Suggestions already known (don't repeat): ${known.map((r) => r.title).join(' · ')}.`);
+    // Scoped to the requested part of the app when there is one. This is the only thing
+    // standing between repeated focused runs and a pile of near-duplicates:
+    // fingerprintOf() hashes the title alone, so it stops "Speed up the graph" twice
+    // but not "Speed up the graph" and "Make the graph faster". Unscoped, twenty titles
+    // from five other territories crowd out the ones the model actually needs to avoid.
+    const known = territory
+      ? db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL AND territory = ? ORDER BY created_at DESC LIMIT 20`).all(territory)
+      : db.prepare(`SELECT title FROM work_suggestions WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 20`).all();
+    if (known.length) lines.push(`Suggestions already ${territory ? 'made about this part' : 'known'} (don't repeat): ${known.map((r) => r.title).join(' · ')}.`);
   } catch {}
   try {
     // Hand to the Hive: finished work, surrendered via the "Clear done" button,
@@ -223,30 +233,60 @@ export function buildContextDigest(catalog = []) {
   // idea studio, the look at the world — appeared nowhere, so proposals about it were
   // effectively impossible. Free: SQL and arithmetic, no extra model call.
   try {
-    const arch = architectureDigest(db, catalog);
-    if (arch) lines.push('', 'THE APP\'S OWN BUILD SYSTEM (the other half — propose work here too):', arch);
+    const arch = architectureDigest(db, catalog, { territory });
+    // The "propose work here too" header is an invitation to spread out, which is right
+    // for a whole-app run and wrong for a focused one — on a focused run it would be
+    // arguing with the stay-on-subject rule below.
+    if (arch) lines.push('', territory ? "THE APP'S OWN MAP OF THIS PART:" : "THE APP'S OWN BUILD SYSTEM (the other half — propose work here too):", arch);
   } catch { /* keep the material-side digest even if the architecture side fails */ }
   return lines.join('\n');
 }
 
-const SUGGESTION_PROMPT = (digest) => `You are a product copilot for ${APP_BLURB}
+// Two shapes of this prompt, differing in one paragraph and one JSON field.
+//
+// Whole-app run: the BALANCE clause, because left to itself the model writes five items
+// about whichever half the digest talked about most, and the other half then never
+// improves.
+//
+// Focused run (Antoine picked a part of the app in the Flow's filter chips): BALANCE is
+// not merely unnecessary there, it is the enemy — it would mandate that 4 of 5 items
+// land outside the thing he asked about. It is replaced by onSubjectRule(), the same
+// stay-on-subject clause the world-look prompts use. The `territory` field also comes
+// out of the requested JSON: we already know the answer, so there is nothing for the
+// model to get wrong.
+const SUGGESTION_PROMPT = (digest, territory = null) => {
+  const t = territory ? TERRITORY_LIST.find((x) => x.id === territory) : null;
+  const focus = t
+    ? `${onSubjectRule(`${t.label} — ${t.sub}`)}\n\nEvery one of your items must be work on that part of the app and nothing else.`
+    : `BALANCE — this is a hard requirement, not a preference. The app has two halves and both are active development areas. Of your ${MAX_NEW_PER_RUN} items, AT LEAST 2 must be about the app's own build system (the queue, the worker that codes, shipping, the app watching itself, knowing what to build next, proposing work, the idea studio, the look at the world) and AT LEAST 2 must be about the material it studies (the characters, films and countries, their tags, the spectrum axes, the graph). A list that is entirely about one half is a wrong answer even if every item in it is good: the half you left out is the half that then never improves.`;
+  const shape = t
+    ? `[{"title": "short title (< 80 characters)", "rationale": "one short sentence (max 15 words): why it's useful now", "prompt": "the full prompt to hand the agent to implement it", "area": "plain words for the specific thing inside ${t.label} that it touches"}]`
+    : `[{"title": "short title (< 80 characters)", "rationale": "one short sentence (max 15 words): why it's useful now", "prompt": "the full prompt to hand the agent to implement it", "area": "plain words for the part it touches (e.g. the queue, the worker that codes, shipping, the app watching itself, what to build next, proposing work, the idea studio, the look at the world, exploring the material, the graph, the map, the look and feel)", "territory": "one of ${TERRITORY_IDS.join('|')} — 'self' for anything about the app's own build system"}]`;
+  return `You are a product copilot for ${APP_BLURB}
 
 Here's a summary of the current state:
 
 ${digest}
 
-Propose up to ${MAX_NEW_PER_RUN} concrete work items ("chantiers") that would move the app forward — features, fixes, data cleanup, etc. Each item must be a real, actionable prompt, not just a vague idea. The title and rationale are read by the app's owner, who is not a programmer: never use internal ids, technical component names or jargon — say what it changes for him, in simple words.
+Propose up to ${MAX_NEW_PER_RUN} concrete work items ("chantiers") that would move ${t ? `the ${t.label} part of the app` : 'the app'} forward — features, fixes, data cleanup, etc. Each item must be a real, actionable prompt, not just a vague idea. The title and rationale are read by the app's owner, who is not a programmer: never use internal ids, technical component names or jargon — say what it changes for him, in simple words.
 
-BALANCE — this is a hard requirement, not a preference. The app has two halves and both are active development areas. Of your ${MAX_NEW_PER_RUN} items, AT LEAST 2 must be about the app's own build system (the queue, the worker that codes, shipping, the app watching itself, knowing what to build next, proposing work, the idea studio, the look at the world) and AT LEAST 2 must be about the material it studies (the characters, films and countries, their tags, the spectrum axes, the graph). A list that is entirely about one half is a wrong answer even if every item in it is good: the half you left out is the half that then never improves.
+${focus}
 
 ${USER_FACING_STYLE}
 
 Reply with ONLY a JSON array, no surrounding text:
-[{"title": "short title (< 80 characters)", "rationale": "one short sentence (max 15 words): why it's useful now", "prompt": "the full prompt to hand the agent to implement it", "area": "plain words for the part it touches (e.g. the queue, the worker that codes, shipping, the app watching itself, what to build next, proposing work, the idea studio, the look at the world, exploring the material, the graph, the map, the look and feel)", "territory": "one of perception|knowledge|reasoning|experience|interface|self — 'self' for anything about the app's own build system"}]`;
+${shape}`;
+};
 
-export async function generateSuggestions({ catalog = [] } = {}) {
-  const digest = buildContextDigest(catalog);
-  const out = await generateText({ prompt: SUGGESTION_PROMPT(digest), feature: 'build', maxTokens: 1800, label: 'workSuggestions' });
+export async function generateSuggestions({ catalog = [], territory = null } = {}) {
+  // A territory that isn't one of the six is treated as no territory at all: a typo
+  // must not quietly produce a run focused on nothing.
+  const focus = TERRITORY_IDS.includes(territory) ? territory : null;
+  // Only that part's components reach the architecture digest, so a focused run isn't
+  // reading about 25 pieces to write about 4.
+  const scoped = focus ? catalog.filter((c) => c && c.territory === focus) : catalog;
+  const digest = buildContextDigest(scoped, { territory: focus });
+  const out = await generateText({ prompt: SUGGESTION_PROMPT(digest, focus), feature: 'build', maxTokens: 1800, label: focus ? `workSuggestions:${focus}` : 'workSuggestions' });
   if (out.error) return { error: out.error, message: out.message, added: [] };
   const items = parseSuggestionsJson(out.text).slice(0, MAX_NEW_PER_RUN);
   const added = [];
@@ -257,7 +297,10 @@ export async function generateSuggestions({ catalog = [] } = {}) {
     // split a string Claude wrote freely — one stray separator and a row was misfiled.
     // A territory that isn't one of the six is stored as nothing rather than guessed at;
     // the Flow shows those in their own "not placed yet" group.
-    const territory = TERRITORY_IDS.includes(it.territory) ? it.territory : null;
+    // On a focused run the territory is the one that was asked for, not the one the
+    // model names — it was not even asked for it. That is what guarantees a suggestion
+    // generated from a chip actually turns up under that chip.
+    const territory = focus || (TERRITORY_IDS.includes(it.territory) ? it.territory : null);
     const r = addSuggestion({ title: it.title, rationale: it.rationale, prompt: it.prompt, area: it.area || null, territory, kind: 'chantier' });
     if (r && !r.duplicate) added.push(r);
   }
@@ -336,12 +379,7 @@ export async function classifyUnplacedSuggestions() {
   const prompt = `You are sorting existing work suggestions for ${APP_BLURB}
 
 Each one below belongs to exactly one of the app's six territories:
-- perception: how new material gets into the app at all
-- knowledge: the characters, films, countries, their tags and axes
-- reasoning: finding patterns, links and echoes across that material
-- experience: moving around and exploring it — the graph, the map, zooming
-- interface: layout, spacing, typography, colour, how things look and feel
-- self: the app's own build system — the queue, the worker that codes, shipping, watching itself, ranking what to build next, proposing work, the idea studio, the look at the world
+${TERRITORY_LINES}
 
 ${list}
 
@@ -373,10 +411,14 @@ Reply with ONLY a JSON array, one entry per numbered item above, no prose:
   return { updated, considered: rows.length };
 }
 
-export async function runSuggestionEngines({ kind = null, catalog = [] } = {}) {
+export async function runSuggestionEngines({ kind = null, catalog = [], territory = null } = {}) {
   const results = {};
-  if (!kind || kind === 'chantier') results.chantier = await generateSuggestions({ catalog });
-  if (!kind || kind === 'integration') results.integration = await generateIntegrationSuggestions();
+  // Asking for one part of the app means the work engine only. Integrations are
+  // proposals to plug in something outside the app and carry no territory at all, so
+  // running them here would answer a question about Interface with a books API.
+  const only = territory ? 'chantier' : kind;
+  if (!only || only === 'chantier') results.chantier = await generateSuggestions({ catalog, territory });
+  if (!only || only === 'integration') results.integration = await generateIntegrationSuggestions();
   // New suggestions get their world-look right away (background, one at a time)
   // so the three shelves are already ready when Antoine opens them. Reports
   // persist; anything already looked is skipped — idempotent across runs.

@@ -3,6 +3,7 @@
 // /suggestions* and /ideas*, so both can share the same base path).
 import { Router } from 'express';
 import * as suggestions from '../services/workSuggestions.js';
+import { TERRITORY_IDS } from '../services/ai/appModel.js';
 import * as ideas from '../services/workIdeas.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -28,6 +29,11 @@ export function travauxRoutes() {
     suggestions.runSuggestionEngines({
       kind: req.body?.kind || null,
       catalog: Array.isArray(req.body?.catalog) ? req.body.catalog : [],
+      // Which part of the app to stay inside, from the Flow's filter chips. Anything
+      // unrecognised becomes null, i.e. the normal whole-app run: the 202 above has
+      // already gone out, so there is no way to report a bad value back, and quietly
+      // widening the scope is a better failure than generating nothing at all.
+      territory: TERRITORY_IDS.includes(req.body?.territory) ? req.body.territory : null,
     })
       .catch((e) => console.error('[travaux] suggestion engine run failed:', e.message));
   });
