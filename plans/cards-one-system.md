@@ -2,7 +2,33 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-21 |
+| **DONE** — foundation + the five Flow cards, and the app-wide button consolidation | 2026-08-21 |
+
+> **What shipped, and the three places it differs from the plan below.**
+>
+> 1. **`.q-item` / `.flow-row` were retired, not left to override `.uc`.** The plan
+>    said to put the `.uc` block *before* the `.q-item` rules so the old card rules
+>    could still win "during the transition". For the five converted cards that was
+>    backwards — `.q-item`'s own border would have beaten `.uc--row`'s hairline. The
+>    converted cards therefore carry no `.q-item`/`.flow-row` class at all, the row
+>    wiring selects on `.uc[data-qid]` / `[data-sid]` / `[data-iid]` / `[data-nbid]`
+>    instead of on those classes, and the now-dead box rules were deleted with them.
+>    The `.q-item-title` / `.q-item-meta` / `.q-item-q` / `.q-result` descendant
+>    classes stay — the detail panels and the Queue slide-over still use them.
+> 2. **The stage strip lost its button rather than gaining a `noBtn` flag.** Since
+>    the card's one obvious action now sits at the right of its title line, a strip
+>    button would have been the same press twice. `cardStage().btn` is still where a
+>    stage *names* its action; the head line renders it (`ubtnStage`). `.stage-go`,
+>    `.cardbtn.stage-go` and `.stage-go-block` are gone.
+> 3. **Two small calls against the plan's text.** "First in line" is offered only on
+>    a queued or parked task, not on a running one (a running task cannot be first);
+>    and the run pill uses `--c-warn-tint` rather than `--c-amber-tint`, which is a
+>    near-white wash in light mode and would have read as no pill at all.
+>
+> The `alt` text on the book cover was already in place before this pass; it now goes
+> through `qEscAttr()` like every other attribute instead of its own inline
+> quote-replace. `design-system-pass.md` Phase 5's graph keyboard access is still
+> outstanding, as scoped.
 
 > **Context for whoever implements this.** This was Part 2 of a two-part interface
 > cleanup deliberated with Antoine in a terminal session on 2026-08-21. **Part 1 (a

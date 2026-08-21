@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | IN PROGRESS ~40% — accurate, and stalled on its headline item. Audited against the code 2026-08-19. **Phase 2 has not been started at all:** `.btn`, `.btn-primary`, `.btn-ghost`, `.btn-danger`, `.btn-sm`, `.btn-accent` have zero occurrences in `fmcns_navigator.html`, so the 10+ one-off button classes this plan exists to consolidate are all still one-offs. Only the `.q-addbtn, .id-addbtn` merge landed. Done: Phase 1's spacing/type tokens (`--sp-*`, `--fs-*`, `--fw-*`), the viewport meta, `:focus-visible`, and aria-labels (7 → 26). Outstanding besides Phase 2: real per-view responsive behaviour (4 `@media` blocks exist; none collapses Content or Map, and there is no Architecture tab switcher), `alt` text (2 occurrences file-wide — the planned cover-image sweep did not land), and keyboard access on the graphs (`tabindex` appears once, on the Architecture SVG). Phase 4 is partly undone by drift: new code since has re-introduced hex escapes (e.g. the Idea Studio's `.studio-msg` rules). |
+| **Status** | IN PROGRESS — **Phase 2 (button consolidation) is DONE**, delivered by [cards-one-system.md](cards-one-system.md) on 2026-08-21. The shared base is `.ubtn` (not `.btn`), with `.is-primary` / `.is-danger` / `.ubtn--block` / `.ubtn--pill` modifiers and `.uicon` for the icon-ghost archetype; `.ctrlbtn`, `.core-hbtn`, `.echo-btn`, `.q-addbtn`, `.id-addbtn`, `.arch-buildbtn`, `.arch-specbtn`, `.arch-linkbtn`, `.arch-regenbtn`, `.sg-genbtn` and the five bare-`<button>` descendant rules (`.nb-actions`, `.sg-actions`, `.mind-actions`, `.bk-*-row`, `.arch-actionrow`) are all size-or-colour modifiers on it now instead of full declarations, with every old class name kept so no call site broke. Also done: Phase 1's spacing/type tokens (`--sp-*`, `--fs-*`, `--fw-*`), the viewport meta, `:focus-visible`, aria-labels, and the book-cover `alt` text. **Still outstanding:** real per-view responsive behaviour (Phase 3 — 4 `@media` blocks exist; none collapses Content or Map, and there is no Architecture tab switcher); Phase 5's keyboard access on the three graph views (`tabindex` on nodes, Enter/Space wired to the existing click handler) — that is now the only accessibility item left and needs its own plan; and Phase 4 drift (new code has re-introduced hex escapes, e.g. the Idea Studio's `.studio-msg` rules). |
 | **Scope** | Frontend only — `fmcns_navigator.html` (+ synced `queue-server/public/index.html`). No backend changes. |
 | **Related** | `plans/core-workspace-unified-flow.md` (IN PROGRESS) — see Coordination note below before starting Phase 2. |
 
@@ -141,7 +141,15 @@ point here instead of redoing it. No other phase of that plan overlaps.
   shared `padding:4px 9px`). Leave inline `style="..."` attributes and rarer
   values for later phases, since Phase 2/4 will touch them anyway.
 
-## Phase 2 — Button consolidation
+## Phase 2 — Button consolidation — **DONE 2026-08-21**
+
+Delivered by [cards-one-system.md](cards-one-system.md), which needed the same
+shared button and could not be built without it. Read that plan, not the checklist
+below, for what actually shipped: the base class is `.ubtn`, not `.btn`, and the
+migration followed this section's own "migrate, don't rename" rule — every old
+class name still exists and still matches, so a call site this pass missed simply
+gets a correctly drawn button. The checklist is kept below as the record of what
+was asked for.
 
 (Check coordination note above before starting.)
 

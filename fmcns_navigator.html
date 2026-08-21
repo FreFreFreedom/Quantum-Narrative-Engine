@@ -93,7 +93,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .mid { flex:1; display:flex; flex-direction:column; min-width:0; }
 .graph-controls { padding:7px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .ctrl-label { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.04em; }
-.ctrlbtn { padding:var(--sp-1) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
+.ctrlbtn { padding:var(--sp-1) var(--sp-3); font-size:11px; }
 .ctrlbtn.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .graph-stage { flex:1; position:relative; overflow:hidden; background:var(--c-stage); }
 #graphSvg { width:100%; height:100%; display:block; cursor:grab; }
@@ -191,8 +191,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .lcard-meta { display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
 .lcard-score { font-size:10px; color:var(--c-ink-2); background:var(--c-surface-2); border-radius:5px; padding:2px 7px; }
 .lcard-score b { font-variant-numeric:tabular-nums; }
-.echo-btn { font-size:10px; padding:3px 9px; border-radius:20px; border:1px solid var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink-3); cursor:pointer; font-family:inherit; }
-.echo-btn:hover { background:var(--c-surface-2); border-color:var(--c-border-3); }
+/* .ubtn in a pill, one shade quieter — see "Four buttons" below. */
+.echo-btn { font-size:10px; padding:3px 9px; border-radius:999px; border-color:var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink-3); }
 .echo-host { margin-top:7px; padding-top:7px; border-top:1px dashed var(--c-border); }
 .echo-line { font-size:10.5px; color:var(--c-ink-2); padding:3px 0; display:flex; gap:6px; align-items:baseline; cursor:pointer; }
 .echo-line:hover { color:#000; }
@@ -365,8 +365,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .core-banner { font-size:10px; color:var(--c-ink-4); white-space:nowrap; }
 .core-serverpick { display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--c-ink-4); }
 .core-serverpick select { font-size:10.5px; padding:1px 4px; }
-.core-hbtn { padding:var(--sp-1) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink-2); font-size:10.5px; cursor:pointer; }
-.core-hbtn:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.core-hbtn { padding:var(--sp-1) var(--sp-3); font-size:10.5px; }
 
 /* ---------- Claude usage strip (5h + weekly subscription limits) ----------
    Back by request (2026-08-18) now that the queue runs on the Claude Code
@@ -436,6 +435,11 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .nb-row.nb-open { border-color:var(--c-ink-4); }
 .nb-chev { margin-left:auto; font-size:11px; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), transform var(--t-med) var(--ease); user-select:none; }
 .nb-row.nb-open .nb-chev { color:var(--c-ink); }
+/* Inside the shared head line the title already takes the slack, so the chevron
+   must not claim it too — that would leave a gap between the button and the edge. */
+.uc-head .nb-chev, .uc-head .flow-chev, .uc-head .nb-markers { margin-left:0; flex:none; }
+.uc-head .nb-terr { flex:none; }
+.uc.is-sel .nb-chev { color:var(--c-ink); }
 .nb-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .nb-name { font-size:13px; font-weight:700; }
 .nb-terr { font-size:10.5px; color:var(--c-ink-4); }
@@ -443,24 +447,17 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .nb-what.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .nb-more { font-size:10.5px; color:var(--c-brand); cursor:pointer; }
 .nb-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
-.nb-actions button { font-size:11.5px; padding:4px 10px; border-radius:8px; cursor:pointer; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink); }
-.nb-actions button:hover { border-color:var(--c-ink); }
-.nb-actions .nb-build { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
+.nb-actions button { font-size:11.5px; padding:4px 10px; }
+.nb-actions .nb-build, .nb-actions .nb-build:hover { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
 .nb-markers { display:inline-flex; gap:5px; margin-left:auto; font-size:10.5px; }
 .nb-empty { font-size:12px; color:var(--c-ink-4); padding:12px 2px; }
 .nb-chips { display:flex; gap:4px; flex-wrap:wrap; }
 .nb-chip { font-size:11px; padding:3px 9px; border-radius:12px; }
-.nb-chip.on { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
+.nb-chip.on, .nb-chip.on:hover { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
 .nb-shortlist { border:1px solid #c08a3e; background:var(--c-warm-tint); border-radius:10px; padding:8px 12px; margin-bottom:10px; }
 .nb-shortlist-head { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; margin-bottom:4px; }
-.nb-short-row { display:flex; gap:10px; align-items:center; padding:6px 0; border-top:1px solid var(--c-border); }
-.nb-short-row:first-of-type { border-top:none; }
-.nb-short-row.nb-short-clickable { cursor:pointer; border-radius:8px; margin:0 -6px; padding:6px; transition:background-color var(--t-fast) var(--ease); }
-.nb-short-row.nb-short-clickable:first-of-type { border-top:none; }
-.nb-short-row.nb-short-clickable:hover { background:var(--c-surface); }
-.nb-short-row.nb-short-clickable:active { transform:translateY(1px); }
-.nb-short-row.nb-short-clickable.nb-open { background:var(--c-surface); }
-.nb-short-row.nb-short-clickable:focus-visible { outline:2px solid var(--c-ink-4); outline-offset:1px; }
+/* (Deleted here: the 8-rule .nb-short-row family — the shortlist rows are the
+   shared .uc.uc--row now, and .uc-num replaced .nb-short-num.) */
 .nu-reason { font-size:11.5px; color:var(--c-ink-2); margin:2px 0; line-height:1.45; }
 .nu-next { font-size:11px; color:var(--c-ink-3); line-height:1.4; }
 .nu-next b { color:var(--c-ink-4); font-weight:600; }
@@ -471,7 +468,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .nu-more { margin-top:6px; font-size:11px; }
 .nu-grouphead { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); font-weight:700; margin:8px 0 2px; cursor:pointer; user-select:none; }
 .nu-grouphead .nb-chev { margin-left:0; }
-.nb-short-num { font-weight:800; color:#8a5a1e; font-size:14px; min-width:16px; }
 
 /* ---------- Mind pane (architecture intel feed) ---------- */
 #archMindPane { flex:1; min-height:0; display:none; flex-direction:column; }
@@ -501,8 +497,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .mind-card-meta { font-size:9.5px; color:var(--c-ink-4); margin-top:1px; }
 .mind-card-body { font-size:11px; color:var(--c-ink-2); margin-top:4px; line-height:1.45; }
 .mind-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
-.mind-actions button { padding:3px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; color:var(--c-ink-2); }
-.mind-actions button:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.mind-actions button { padding:3px 9px; font-size:10.5px; }
 .mind-actions button.mind-accept { background:var(--c-brand); border-color:var(--c-brand); color:#fff; }
 .mind-actions button.mind-accept:hover { opacity:.9; color:#fff; }
 .mind-actions button.mind-ack { background:var(--c-ink-solid); border-color:var(--c-ink-solid); color:var(--c-on-solid); }
@@ -652,26 +647,151 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .q-mic-btn.recording { background:var(--c-danger, #d33); color:#fff; border-color:transparent; animation:qMicPulse 1.2s ease-in-out infinite; }
 @keyframes qMicPulse { 0%, 100% { opacity:1; } 50% { opacity:.55; } }
 .q-check { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--c-ink-2); flex:none !important; }
-/* Shared "primary" button base — .q-addbtn and .id-addbtn are the same solid-fill
-   control at two sizes; kept as separate selectors (not renamed) so no JS/markup
-   hook breaks, but the shared look lives here once instead of twice. */
-.q-addbtn, .id-addbtn { border-radius:var(--r-sm); border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-weight:var(--fw-medium); cursor:pointer; }
-.q-addbtn:hover, .id-addbtn:hover { background:var(--c-ink-solid-2); }
+/* .ubtn.is-primary at two sizes — one primary fill in the app, not two. */
+.q-addbtn, .id-addbtn { background:var(--c-accent); border-color:var(--c-accent); color:#fff; font-weight:var(--fw-medium); }
+.q-addbtn:hover, .id-addbtn:hover { background:var(--c-accent); border-color:var(--c-accent); color:#fff; opacity:.88; }
 .q-addbtn { width:100%; padding:var(--sp-2); font-size:var(--fs-md); }
-.q-addbtn:disabled { background:var(--c-border-3); cursor:default; }
+.q-addbtn:disabled, .id-addbtn:disabled { background:var(--c-border-3); border-color:var(--c-border-3); color:var(--c-ink-4); cursor:default; opacity:1; }
 .q-err { font-size:10.5px; color:var(--c-danger); margin-top:5px; }
-.q-item { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:7px; cursor:pointer; }
+/* ---------- Cards: one shell ----------
+   Every card in the Flow is this: one box, one head line, one status pill, and at
+   most two word buttons — everything else behind the "⋯" menu, the technical
+   detail folded into a "Details" line you open. It exists because the app had
+   grown 23 kinds of card, 14 button treatments and 4 corner radii for what is
+   really one object. Tokens only in here: no hard-coded radius, padding or size. */
+.uc { border:1px solid var(--c-border); border-radius:var(--r-md);
+      padding:var(--sp-2) var(--sp-3); background:var(--c-surface);
+      box-shadow:var(--sh-xs); margin-bottom:var(--sp-1); cursor:pointer;
+      transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), background-color var(--t-fast) var(--ease); }
+.uc:hover { border-color:var(--c-border-3); }
+.uc.is-sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
+/* A card waiting on you (violet) or moving (green) says so with its border — the
+   same two-word colour vocabulary the queue rows carried before this. */
+.uc.state-asking { border-color:var(--c-violet); box-shadow:0 0 0 1px var(--c-violet-tint); }
+.uc.state-running { border-color:var(--c-accent); box-shadow:0 0 0 1px var(--c-accent); }
+/* A piece of the tree that is ready to build keeps its amber wash. */
+.uc.is-warm { border-color:var(--c-amber); background:var(--c-warm-tint); }
+/* The denser list variant: a hairline, not a box. Long lists become rows. */
+.uc--row { border:none; border-radius:0; box-shadow:none; margin-bottom:0;
+           padding:var(--sp-2) var(--sp-1); border-bottom:1px solid var(--c-border);
+           background:transparent; }
+.uc--row:hover { background:var(--c-surface-2); border-color:var(--c-border); }
+.uc--row.is-sel { box-shadow:none; background:var(--c-surface-2); }
+/* Rows inside the amber "what to do next" panel keep that panel's warmth: the
+   grey hover would fight it. */
+.nb-shortlist .uc--row:hover, .nb-shortlist .uc--row.is-sel { background:var(--c-surface); }
+.nb-shortlist .uc--row:last-of-type { border-bottom:none; }
+.uc[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
+.uc.drag { opacity:.45; }
+.uc.drag-over { outline:1px dashed var(--c-accent); outline-offset:-1px; }
+
+/* the one head line — title left, state and actions right, always in that order */
+.uc-head { display:flex; align-items:center; gap:var(--sp-2); min-width:0; }
+.uc-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+            white-space:nowrap; font-size:var(--fs-base); font-weight:var(--fw-medium); }
+.uc-title.unread { font-weight:700; }
+.uc-acts { display:flex; align-items:center; gap:var(--sp-1); flex:none; }
+.uc-num { flex:none; min-width:16px; font-size:var(--fs-md); font-weight:800; color:var(--c-warn); }
+.uc-sum { font-size:var(--fs-sm); color:var(--c-ink-3); line-height:1.45; margin:var(--sp-1) 0 0; }
+.uc-sum.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* One status pill per card, colour by modifier. Nothing else on a card is allowed
+   to say where it stands — see cardPill() in the script. */
+.upill { display:inline-flex; align-items:center; gap:4px; flex:none;
+         padding:1px 7px; border-radius:10px; font-size:var(--fs-xs);
+         font-weight:var(--fw-medium); white-space:nowrap;
+         background:var(--c-surface-2); color:var(--c-ink-3); }
+.upill.is-run   { background:var(--c-warn-tint);    color:var(--c-warn); }
+.upill.is-ask   { background:var(--c-violet-tint);  color:var(--c-violet); }
+.upill.is-done  { background:var(--c-success-tint); color:var(--c-ink-2); }
+.upill.is-block { background:var(--c-danger-tint);  color:var(--c-danger); }
+/* ---------- One chip ----------
+   Which part of the app this touches, or what kind of thing it is. The app had
+   eight classes drawing this same small rounded label at four sizes; they are all
+   this one now, and only their fill still differs. Old names kept, same as the
+   buttons, so nothing had to be re-emitted to get the shared look. */
+.uchip, .sg-terr-chip, .sg-kind-badge, .q-badge, .id-tag-pill {
+  display:inline-flex; align-items:center; flex:none; padding:1px 7px;
+  border-radius:10px; font-size:var(--fs-xs); white-space:nowrap;
+  text-transform:none; letter-spacing:0; }
+.uchip, .sg-terr-chip, .sg-kind-badge, .q-badge { color:#fff; }
+/* No fill: a value the app could not place should read as absent, not as one more
+   territory. A seed's own tag is quiet but real, so it keeps a solid outline. */
+.uchip.is-quiet, .sg-terr-chip.connector, .sg-terr-chip.none {
+  background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); }
+.sg-terr-chip.none { font-style:italic; }
+.id-tag-pill { background:transparent; border:1px solid var(--c-border-2); color:var(--c-ink-4); }
+
+/* ---------- Four buttons, that is all ----------
+   .ubtn (bordered word button, with .is-primary / .is-danger / --block / --pill),
+   .uicon (icon-ghost), .uchip (chip), and a plain text link. Every other button
+   class in this file is now a size-or-colour modifier on this same base instead of
+   its own full declaration — that is the consolidation design-system-pass.md
+   promised and never made. Old class names are kept as aliases on purpose: a call
+   site this pass missed still gets a properly drawn button. */
+.ubtn, .ctrlbtn, .core-hbtn, .echo-btn, .arch-linkbtn, .arch-regenbtn, .sg-genbtn,
+.q-addbtn, .id-addbtn, .arch-buildbtn, .arch-specbtn,
+.nb-actions button, .sg-actions button, .mind-actions button,
+.bk-lib-row button, .bk-result-row button, .arch-actionrow button {
+  border:1px solid var(--c-border-2); border-radius:var(--r-sm);
+  background:var(--c-surface); color:var(--c-ink-2); font-family:inherit; cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease); }
+.ubtn:hover, .ctrlbtn:hover, .core-hbtn:hover, .echo-btn:hover, .arch-linkbtn:hover,
+.arch-regenbtn:hover, .sg-genbtn:hover, .nb-actions button:hover, .sg-actions button:hover,
+.mind-actions button:hover, .bk-lib-row button:hover, .bk-result-row button:hover,
+.arch-actionrow button:hover {
+  background:var(--c-surface-2); color:var(--c-ink); border-color:var(--c-border-3); }
+/* The lit state of a toggle chip has to survive a hover, or pressing one looks
+   like un-pressing it. */
+.ctrlbtn.active:hover { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
+.ubtn { height:24px; padding:0 var(--sp-2); font-size:var(--fs-xs); font-weight:var(--fw-medium); flex:none; }
+.ubtn:disabled, .ctrlbtn:disabled, .sg-genbtn:disabled, .core-hbtn:disabled { opacity:.55; cursor:default; }
+.ubtn.is-primary { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
+.ubtn.is-primary:hover { background:var(--c-accent); border-color:var(--c-accent); color:#fff; opacity:.88; }
+.ubtn.is-danger:hover { color:var(--c-danger); border-color:var(--c-danger); }
+/* Armed = first click on a destructive action; a second within 3s commits. A word
+   button also says so in words (see cardBtnConfirm). */
+.ubtn.armed, .ubtn.armed:hover { background:var(--c-danger); border-color:var(--c-danger); color:#fff; }
+.ubtn--block { display:block; width:100%; height:auto; padding:var(--sp-2) var(--sp-3); font-size:var(--fs-base); }
+.ubtn--pill { border-radius:999px; }
+.uicon { width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center;
+         padding:0; border:none; background:none; border-radius:var(--r-sm); flex:none;
+         color:var(--c-ink-4); cursor:pointer; font-family:inherit; font-size:var(--fs-md); line-height:1; }
+.uicon:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.ubtn:focus-visible, .uicon:focus-visible { outline:2px solid var(--c-accent); outline-offset:1px; }
+
+/* The technical detail, collapsed. Closed, a card is quiet. */
+.uc-details { margin-top:var(--sp-1); }
+.uc-details > summary { font-size:var(--fs-xs); color:var(--c-ink-4); cursor:pointer;
+                        list-style:none; padding:2px 0; }
+.uc-details > summary::-webkit-details-marker { display:none; }
+.uc-details > summary:hover, .uc-details[open] > summary { color:var(--c-ink-3); }
+.uc-details .q-item-meta, .uc-details .q-detail-row { margin-top:2px; margin-bottom:0; }
+
+/* ---------- The "⋯" menu — one instance for the whole page ----------
+   Word labels, not glyphs; destructive items last and in red. The items carry the
+   same data-act/data-id pairs the old symbol buttons did, so the action code
+   behind them is untouched. */
+/* Above the side rail (60) and the queue slide-over (9993), below the studio
+   overlay (10000) — a menu must never open behind the thing it belongs to. */
+.umenu { position:fixed; z-index:9994; min-width:170px; padding:var(--sp-1);
+         border:1px solid var(--c-border-2); border-radius:var(--r-md);
+         background:var(--c-surface); box-shadow:var(--sh-md); }
+.umenu-item { display:block; width:100%; text-align:left; padding:var(--sp-1) var(--sp-2);
+              border:none; border-radius:var(--r-sm); background:none; color:var(--c-ink-2);
+              font-family:inherit; font-size:var(--fs-sm); cursor:pointer; white-space:nowrap; }
+.umenu-item:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.umenu-item.is-danger { color:var(--c-danger); }
+.umenu-item.is-danger:hover { background:var(--c-danger-tint); color:var(--c-danger); }
+.umenu-item.armed { background:var(--c-danger); color:#fff; }
+
 /* (Deleted here: 15 rules for the old review card — .q-review*, .q-check-ok/bad,
    .q-mergebtn, .q-revertbtn. Nothing has emitted class="q-review" since the
    ship-state pills replaced that card, so none of it reached a screen. Worth noting
    because a dark-mode audit flagged .q-review-plain/.q-review-check for unreadable
    grey (#5c564c) text: real in the stylesheet, invisible in the app, and now gone
    either way. */
-.q-item:hover { border-color:var(--c-border-3); }
-.q-item.sel { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
-.q-item-top { display:flex; align-items:center; gap:7px; }
 .q-item-title { font-size:12px; font-weight:600; flex:1; }
-.q-badge { font-size:9px; padding:2px 7px; border-radius:20px; color:#fff; flex-shrink:0; }
 .q-item-meta { font-size:10px; color:var(--c-ink-4); margin-top:4px; display:flex; gap:8px; align-items:center; }
 .q-item-meta .q-runstate { color:#2a6d3b; font-weight:600; }
 .q-item-meta .q-heartbeat-warn { color:#b3541e; font-weight:600; }
@@ -685,9 +805,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .q-result { font-size:10.5px; color:var(--c-ink-3); margin-top:5px; background:var(--c-surface-2); border-radius:5px; padding:5px 7px; line-height:1.5; }
 .q-result.blocked { color:var(--c-danger); background:var(--c-danger-tint); }
 .q-drag-handle { cursor:grab; color:var(--c-ink-5); font-size:12px; flex-shrink:0; }
-.q-item[draggable="true"]:active .q-drag-handle { cursor:grabbing; }
-.q-item-arrows { display:flex; gap:5px; margin-top:6px; }
-.q-item-arrows .q-arrow { padding:1px 7px; font-size:9px; }
 /* ---------- Card action bar ----------
    Every box in the Queue and in Flow carries its own row of small symbol
    buttons, always on screen — no click-to-open required to act on a card.
@@ -720,23 +837,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .stage-next { color:var(--c-ink-3); min-width:0; flex:1 1 140px; }
 .stage-next b { font-weight:600; color:var(--c-ink-4); margin-right:3px; }
 .stage-next.stage-none { font-style:italic; opacity:.75; }
-.stage-go { flex:none; font-size:11px; font-family:inherit; padding:4px 10px; border-radius:8px; border:1px solid var(--c-accent); background:var(--c-accent); color:#fff; cursor:pointer; }
-.stage-go:hover { opacity:.88; }
-.stage-go:disabled { opacity:.5; cursor:default; }
-/* Width/height on .cardbtn is sized for a 26px symbol; the strip's button is words.
-   .cardbtn's own background/border/color reset (further down this sheet) would
-   otherwise win over .stage-go's green fill since both are single-class rules —
-   restate them here at the higher two-class specificity so the fill always shows. */
-.cardbtn.stage-go { width:auto; height:auto; border:1px solid var(--c-accent); background:var(--c-accent); color:#fff; }
-.cardbtn.stage-go:hover { background:var(--c-accent); color:#fff; opacity:.88; }
-/* This is the one stage-go button that shows up inside an otherwise alarming
-   (red, tone-stop) strip: "the world-look didn't finish, but you can still
-   start anyway." Giving it a full row of its own — instead of being crammed
-   to the right of the dots and label — keeps that reassuring, ready-to-press
-   action from reading as just more of the red warning around it. */
-.stage-go-block { flex:1 1 100%; margin-top:4px; padding:6px 12px; text-align:center; font-weight:600; }
 .card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
-.q-item:hover .card-actions, .flow-row:hover .card-actions, .arch-node:hover .card-actions, .card-actions:focus-within { opacity:1; }
+.arch-suggestion:hover .card-actions, .card-actions:focus-within { opacity:1; }
 .cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
 .cardbtn:hover { color:var(--c-ink); background:var(--c-surface-2); }
 .cardbtn:focus-visible { outline:2px solid var(--c-accent); outline-offset:1px; }
@@ -747,10 +849,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .cardbtn.armed { color:#fff; background:var(--c-danger); }
 .cardbtn.armed:hover { color:#fff; background:var(--c-danger); }
 .cardbtn .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
-/* On a graph node the row has to stay small — three symbols, tighter buttons. */
-.arch-node .card-actions { justify-content:flex-start; margin-top:6px; gap:0; }
-.arch-node .cardbtn { width:22px; height:22px; }
-.arch-node .cardbtn .ic { width:13px; height:13px; }
 /* The checklist stays one line per component, so its symbols sit inline at the
    end of the row rather than under it — no rule, no margin. */
 .arch-list-row .card-actions { margin:0; padding:0; border-top:none; flex:none; gap:0; }
@@ -788,11 +886,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .q-replybox { display:flex; gap:6px; margin-top:10px; }
 .q-replybox textarea { flex:1; border:1px solid var(--c-border-2); border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; resize:vertical; min-height:44px; }
 .q-replybox button { padding:0 14px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:11.5px; cursor:pointer; }
-/* Card state vocabulary shared by the Flow tab and the Queue panel: a card "asking" for
-   an answer or actively "running" gets a colored border + soft ring, everything else stays
-   plain — the same border+ring-only rule wherever a queue row appears. */
-.q-item.state-asking, .flow-row.state-asking { border-color:var(--c-violet); box-shadow:0 0 0 1px var(--c-violet-tint); }
-.q-item.state-running, .flow-row.state-running { border-color:var(--c-accent); box-shadow:0 0 0 1px var(--c-accent); }
 .q-opts-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 .q-opts-row .q-optbtn { display:inline-block; width:auto; margin-top:0; }
 .q-replybox2 { margin-top:10px; }
@@ -870,14 +963,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .flow-donehead { cursor:pointer; }
 .flow-donehead:hover .flow-sec-title { color:var(--c-ink); }
 .flow-done-chev { color:var(--c-ink-4); }
-.flow-row { border:1px solid var(--c-border); background:var(--c-surface); border-radius:8px; padding:9px 11px; margin-bottom:6px; cursor:pointer; }
-.flow-row:hover { border-color:var(--c-border-2); }
-.flow-row.sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
-.flow-row .q-item-top { gap:8px; }
-.flow-chev { margin-left:auto; font-size:11px; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), transform var(--t-med) var(--ease); user-select:none; }
-.flow-row.sel .flow-chev { color:var(--c-ink); }
-.flow-sgrow .q-item-title, .flow-idrow .q-item-title { font-size:12px; font-weight:600; }
-.id-tag-pill { font-size:9.5px; color:var(--c-ink-4); border:1px solid var(--c-border-2); border-radius:9px; padding:1px 8px; }
+.flow-chev { font-size:11px; color:var(--c-ink-4); flex:none; transition:color var(--t-fast) var(--ease); user-select:none; }
+.uc.is-sel .flow-chev { color:var(--c-ink); }
 .flow-genrow { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
 .flow-genhint { font-size:10.5px; color:var(--c-ink-4); }
 .flow-genstatus { font-size:10.5px; color:var(--c-ink-4); }
@@ -885,14 +972,11 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .flow-filterchip { display:flex; align-items:center; gap:8px; padding:6px 10px; margin-bottom:8px; border:1px solid var(--c-border-2); border-radius:8px; background:var(--c-surface-2); font-size:11px; color:var(--c-ink-2); }
 .flow-filterchip b { font-weight:600; }
 .flow-filterchip .ctrlbtn { margin-left:auto; }
-.q-item-title.unread { font-weight:700; }
 .q-unread-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--c-violet); margin-left:6px; vertical-align:middle; }
 .q-title-inline { flex:1; min-width:0; border:1px solid transparent; border-radius:4px; padding:2px 4px; font-size:12px; font-weight:600; font-family:inherit; color:var(--c-ink); background:transparent; }
 .q-title-inline:hover { border-color:var(--c-border-2); background:var(--c-surface); }
 .q-title-inline:focus { border-color:var(--c-accent); background:var(--c-surface); outline:none; }
 .q-ahead { color:var(--c-ink-4); font-size:10.5px; font-style:italic; }
-.flow-row.drag { opacity:.45; }
-.flow-row.drag-over { outline:1px dashed var(--c-accent); outline-offset:-1px; }
 .flow-seedadd input, .flow-seedadd textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:6px 8px; font-size:11.5px; font-family:inherit; margin-bottom:6px; background:var(--c-surface); color:var(--c-ink); box-sizing:border-box; }
 .tv-empty { font-size:11.5px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:18px; text-align:center; }
 /* suggestions */
@@ -909,25 +993,20 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .sg-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:11px 13px; margin-bottom:9px; }
 .sg-card-top { display:flex; align-items:flex-start; gap:8px; }
 .sg-card-title { font-size:12.5px; font-weight:600; flex:1; }
-.sg-kind-badge { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; }
 .sg-kind-badge.chantier { background:#5c7a9d; }
 .sg-kind-badge.integration { background:#8a5a1e; }
-.sg-status-badge { font-size:9px; padding:2px 8px; border-radius:20px; flex-shrink:0; background:var(--c-surface-3); color:var(--c-ink-3); }
-/* "may already be done": the free overlap flag from shipFacts.js. Deliberately a
-   quiet note, not a warning colour — it is a guess about wording, and the
-   suggestion is untouched either way. */
-.sg-maybe-done { font-size:9px; padding:2px 8px; border-radius:20px; flex-shrink:0; cursor:help;
-  border:1px dashed var(--c-border-2); color:var(--c-ink-3); background:transparent; }
+/* (Deleted here: .sg-status-badge and .sg-maybe-done. A suggestion row showed a
+   kind badge, a status badge AND a "may already be done" note next to its
+   territory chip; all three are the one .upill and its tooltip now.) */
 
 .sg-rationale { font-size:11px; color:var(--c-ink-3); margin:5px 0 8px; line-height:1.4; }
 .sg-rationale.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:4px; }
 .sg-more { font-size:10px; color:var(--c-brand); cursor:pointer; }
 .sg-prompt { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:7px 9px; font-size:11px; font-family:inherit; resize:vertical; min-height:52px; box-sizing:border-box; margin-bottom:8px; }
 .sg-actions { display:flex; gap:7px; }
-.sg-actions button { padding:6px 12px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
+.sg-actions button { padding:6px 12px; font-size:11px; }
 .sg-actions button.primary { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
-.sg-actions button:hover { background:var(--c-surface-2); }
-.sg-actions button.primary:hover { background:var(--c-ink-solid-2); }
+.sg-actions button.primary:hover { background:var(--c-ink-solid-2); color:var(--c-on-solid); border-color:var(--c-ink); }
 /* Territory groups and chips in "Suggested by Claude". The head borrows
    .nu-grouphead so folding a group looks and works the same everywhere in the Flow.
    The chip sits on every row, not only under a head, because the "All" tab and any
@@ -943,9 +1022,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .sg-chipn { font-family:monospace; font-size:10px; opacity:.65; margin-left:3px; }
 .sg-terrchip.dead { color:var(--c-ink-4); opacity:.5; cursor:default; }
 .sg-terrchip.dead:hover { background:var(--c-surface); }
-.sg-terr-chip { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; text-transform:none; letter-spacing:0; }
-.sg-terr-chip.connector { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
-.sg-terr-chip.none { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); font-style:italic; }
 /* Inspired-by panel (task detail): the three shelves */
 .q-inspire-toolbar { display:flex; align-items:center; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
@@ -1030,9 +1106,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-proposal-name { font-weight:600; font-size:11.5px; margin-right:6px; }
 .arch-proposal-what { font-size:10.5px; color:var(--c-ink-4); overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
 .arch-proposal-actions { display:flex; gap:6px; flex-shrink:0; }
-.sg-genbtn { padding:6px 14px; border-radius:6px; border:1px dashed var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; color:var(--c-ink-3); }
-.sg-genbtn:hover { background:var(--c-surface-2); }
-.sg-genbtn:disabled { opacity:.6; cursor:default; }
+.sg-genbtn { padding:6px 14px; border-style:dashed; font-size:11px; color:var(--c-ink-3); }
 /* idées */
 .id-form { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:12px 13px; margin-bottom:16px; }
 .id-form input, .id-form textarea { width:100%; border:1px solid var(--c-border-2); border-radius:6px; padding:7px 9px; font-size:11.5px; font-family:inherit; margin-bottom:7px; box-sizing:border-box; }
@@ -1040,21 +1114,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .id-form-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .id-form-hint { font-size:10.5px; color:var(--c-ink-4); }
 .id-addbtn { padding:var(--sp-2) var(--sp-4); font-size:var(--fs-sm); flex-shrink:0; }
-.id-addbtn:disabled { background:var(--c-border-3); cursor:default; }
-.id-card { border:1px solid var(--c-border); background:var(--c-surface); border-radius:9px; padding:10px 12px; margin-bottom:8px; display:flex; gap:10px; align-items:flex-start; }
-.id-card-main { flex:1; min-width:0; }
-.id-card input, .id-card textarea { width:100%; border:none; background:transparent; font-family:inherit; padding:2px 0; }
-.id-card input { font-size:12.5px; font-weight:600; margin-bottom:3px; }
-.id-card textarea { font-size:11px; color:var(--c-ink-3); resize:vertical; min-height:34px; }
-.id-card input:focus, .id-card textarea:focus { outline:1px solid var(--c-border-2); border-radius:4px; }
-.id-tag-input { font-size:10px !important; color:var(--c-warn) !important; font-weight:600 !important; width:auto !important; }
+/* (Deleted here: the 10-rule .id-card family and .id-tag-input. Nothing has
+   rendered class="id-card" since the seeds list became a Flow row, so none of it
+   reached a screen.) */
 .id-done-pill { display:inline-block; font-size:9.5px; padding:2px 8px; border-radius:20px; background:var(--c-success-tint); color:var(--c-brand); margin-top:4px; }
-.id-card-actions { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
-.id-card-actions button { padding:5px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; white-space:nowrap; }
-.id-card-actions button:hover { background:var(--c-surface-2); }
-.id-card-actions button.danger { color:var(--c-danger); }
-.id-move-row { display:flex; gap:3px; }
-.id-move-row button { padding:2px 7px; font-size:10px; }
 
 /* building blocks */
 #bkViewBtns { margin-top:6px; }
@@ -1062,16 +1125,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .bk-lib-row:first-of-type { border-top:none; }
 .bk-lib-text { flex:1; min-width:0; font-weight:600; color:var(--c-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bk-lib-meta { color:var(--c-ink-4); font-size:10px; flex-shrink:0; }
-.bk-lib-row button { padding:3px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10px; cursor:pointer; flex-shrink:0; }
-.bk-lib-row button:hover { background:var(--c-surface-2); }
+.bk-lib-row button { padding:3px 10px; font-size:10px; flex-shrink:0; }
 .bk-result-row { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--c-border); font-size:11px; flex-wrap:wrap; }
 .bk-result-row:first-child { border-top:none; }
 .bk-result-row a { font-weight:600; color:var(--c-ink); text-decoration:none; }
 .bk-result-row a:hover { text-decoration:underline; }
 .bk-stars { color:var(--c-warn); font-size:10.5px; flex-shrink:0; }
 .bk-desc { color:var(--c-ink-3); flex:1; min-width:160px; }
-.bk-result-row button { padding:3px 8px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10px; cursor:pointer; flex-shrink:0; }
-.bk-result-row button:hover { background:var(--c-surface-2); }
+.bk-result-row button { padding:3px 8px; font-size:10px; flex-shrink:0; }
 
 .arch-viewbtns { display:flex; gap:6px; margin-left:auto; align-items:center; }
 .arch-viewbtns button { padding:5px 11px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
@@ -1101,8 +1162,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    filter literally impossible to click — and since the filter was persisted
    across sessions, a filter set once and forgotten left most of the graph
    permanently dead with no visible explanation. */
-.arch-node.st-off { opacity:.16; }
-.arch-node.tt-spec.st-off { opacity:.12; }
 .arch-zoombtns { position:absolute; right:14px; bottom:14px; display:flex; gap:6px; z-index:6; }
 .arch-ask { position:absolute; left:14px; bottom:14px; z-index:6; width:min(440px, calc(100% - 160px)); }
 .arch-ask-inputrow { display:flex; gap:6px; }
@@ -1120,9 +1179,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-zoombtns button { width:30px; height:30px; border-radius:8px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:14px; line-height:1; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.14); color:var(--c-ink); }
 .arch-zoombtns button:hover { background:var(--c-surface-2); }
 .arch-zoombtns button.off { opacity:.45; }
-.arch-node { transition:opacity .15s ease; }
-.arch-node.arch-dim { opacity:.4; }
-/* Tech Tree view — same .arch-node markup, laid out by prereq depth instead of territory. */
+/* (Deleted here: the 14-rule .arch-node family. Every layout that emitted it was
+   replaced by .arch-tnode; the class name survives only in querySelectorAll calls,
+   so none of this drew anything.) */
 .arch-cols { display:flex; gap:18px; min-width:1180px; position:relative; }
 .arch-col { flex:1; min-width:0; }
 .arch-col-headrow { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
@@ -1133,28 +1192,20 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-col-sub { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; line-height:1.4; }
 .arch-col.collapsed .arch-col-sub { margin-bottom:0; }
 .arch-col-stats { font-size:10.5px; color:var(--c-ink-4); line-height:1.5; border:1px dashed var(--c-border-2); border-radius:9px; background:var(--c-surface-2); padding:9px 11px; }
-.arch-node { border:1px solid var(--c-border); background:var(--c-surface); border-radius:10px; padding:10px 12px; margin-bottom:10px; cursor:pointer; position:relative; }
-.arch-node .an-name { font-size:12.5px; font-weight:600; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.arch-node:hover { border-color:var(--c-border-3); }
-.arch-node.selected { border-color:var(--c-ink); box-shadow:0 0 0 1px var(--c-ink); }
-.arch-node .an-badge { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; color:var(--c-on-solid); }
-.arch-node .an-what { margin-top:6px; font-size:11px; line-height:1.45; color:var(--c-ink-3); }
 .arch-svg-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
 .arch-tiers { display:flex; flex-direction:column; gap:30px; min-width:1180px; position:relative; }
 .arch-tier { display:flex; gap:18px; align-items:flex-start; }
 .arch-tier-label { width:74px; flex-shrink:0; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); font-weight:600; padding-top:10px; }
 .arch-tier-nodes { flex:1; display:flex; flex-wrap:wrap; gap:12px; }
-.arch-tier-nodes .arch-node { width:200px; margin-bottom:0; }
-.arch-node.tt-buildable { border-color:#c08a3e; box-shadow:0 0 0 2px rgba(192,138,62,.22); background:var(--c-warm-tint); }
-.arch-node.tt-locked { opacity:.5; border-style:dashed; background:var(--c-surface-2); }
-.arch-node.tt-locked:hover { opacity:.78; }
 .arch-lockedreqs { font-size:11px; color:var(--c-ink-3); line-height:1.5; }
 .arch-lockedreqs a { color:var(--c-warn); cursor:pointer; text-decoration:underline; }
-.arch-buildbtn { width:100%; padding:9px 12px; border-radius:7px; border:none; background:var(--c-amber); color:#fff; font-size:12px; font-weight:600; cursor:pointer; margin-bottom:10px; }
-.arch-buildbtn:hover { background:#a9762f; }
+/* Keeps its amber rather than the shared green: amber is what "ready to build"
+   means everywhere else in the tech tree, and that link is worth more than a
+   uniform fill. */
+.arch-buildbtn { width:100%; padding:9px 12px; background:var(--c-amber); border-color:var(--c-amber); color:#fff; font-size:12px; font-weight:600; margin-bottom:10px; }
+.arch-buildbtn:hover { background:#a9762f; border-color:#a9762f; color:#fff; }
 /* Speculative nodes read as provisional — dashed and violet, distinct from the
    grey dashed "locked" look so proposal and unreachability aren't confusable. */
-.arch-node.tt-spec { border-style:dashed; border-color:var(--c-violet); background:var(--c-violet-tint-2); opacity:1; }
 .tt-addbtn { margin-left:12px; padding:4px 10px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
 .tt-addbtn:hover { background:var(--c-surface-2); }
 .tt-addlabel { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.05em; }
@@ -1215,8 +1266,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 
 .tt-specnote { border-left:3px solid var(--c-violet); padding-left:10px; font-size:11.5px; color:var(--c-ink-3); line-height:1.6; }
 .tt-specnote a { color:var(--c-violet); cursor:pointer; text-decoration:underline; }
-.arch-specbtn { width:100%; padding:8px 12px; border-radius:7px; border:1px dashed var(--c-violet); background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; cursor:pointer; margin-top:10px; }
-.arch-specbtn:hover { background:var(--c-violet-tint); }
+.arch-specbtn { width:100%; padding:8px 12px; border-style:dashed; border-color:var(--c-violet); background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; margin-top:10px; }
+.arch-specbtn:hover { background:var(--c-violet-tint); border-color:var(--c-violet); color:var(--c-violet); }
 .arch-specbtn:disabled { opacity:.55; cursor:default; }
 .arch-detail-name { font-size:16px; font-weight:700; margin-bottom:2px; }
 .arch-detail-territory { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; }
@@ -1230,9 +1281,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-vstep { font-size:10.5px; padding:5px 8px; border-radius:6px; background:var(--c-surface); border:1px solid var(--c-border); margin-bottom:4px; }
 .arch-vstep .vtag { font-weight:700; color:var(--c-warn); margin-right:5px; }
 .arch-actionrow { display:flex; gap:7px; margin-top:12px; }
-.arch-actionrow button { flex:1; padding:7px 6px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
-.arch-actionrow button:hover { background:var(--c-surface-2); }
-.arch-linkbtn { background:none; border:none; color:var(--c-ink-3); font-size:10.5px; cursor:pointer; padding:0; margin-top:6px; text-decoration:underline; }
+.arch-actionrow button { flex:1; padding:7px 6px; font-size:11px; }
+.arch-linkbtn { font-size:10.5px; padding:2px var(--sp-2); margin-top:6px; color:var(--c-ink-3); }
 .arch-place-static { font-size:11.5px; color:var(--c-ink-2); }
 .arch-placehint { font-size:9.5px; color:var(--c-ink-4); margin:8px 0 3px; }
 #archPlaceEdit select { width:100%; padding:6px; border:1px solid var(--c-border-2); border-radius:6px; font-size:11.5px; background:var(--c-surface); color:var(--c-ink); margin-top:6px; }
@@ -1253,8 +1303,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-suggestion:hover { background:var(--c-surface-2); }
 .arch-suggestion .as-title { font-size:11.5px; font-weight:600; margin-bottom:2px; }
 .arch-suggestion .as-prompt { font-size:10.5px; color:var(--c-ink-3); line-height:1.4; }
-.arch-regenbtn { width:100%; padding:6px; border-radius:6px; border:1px dashed var(--c-border-2); background:var(--c-surface); font-size:10.5px; color:var(--c-ink-3); cursor:pointer; margin-top:4px; }
-.arch-regenbtn:hover { background:var(--c-surface-2); }
+.arch-regenbtn { width:100%; padding:6px; border-style:dashed; font-size:10.5px; color:var(--c-ink-3); margin-top:4px; }
 .arch-history-item { font-size:10.5px; padding:5px 8px; border-radius:6px; background:var(--c-surface); border:1px solid var(--c-border); margin-bottom:4px; }
 .arch-history-item .ah-meta { color:var(--c-ink-4); font-size:9.5px; margin-top:2px; }
 .arch-history-sha { font-family:monospace; font-size:9px; color:var(--c-warn); }
@@ -1290,26 +1339,26 @@ button, .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .min
 button:active { transform: translateY(1px) scale(.99); }
 .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .arch-inner-tabs button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button { border-radius: var(--r-md); }
 .core-tabs button { border-radius: var(--r-md); font-size:11px; }
-.arch-node, .mind-card, .sg-card, .id-card, .lcard, .book, .q-item, .flow-row {
+.uc, .mind-card, .sg-card, .lcard, .book {
   box-shadow: var(--sh-xs);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), opacity var(--t-med) var(--ease);
 }
-.arch-node:hover, .mind-card:hover, .sg-card:hover, .id-card:hover, .lcard:hover, .book:hover, .q-item:hover, .flow-row:hover, .nb-row:hover, .nb-short-row.nb-short-clickable:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.uc:hover, .mind-card:hover, .sg-card:hover, .lcard:hover, .book:hover, .nb-row:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+/* A hairline row lifts nowhere — it has no shadow to raise. */
+.uc--row:hover { box-shadow:none; transform:none; }
 .legend { box-shadow: var(--sh-sm); }
 @keyframes fmcnsRise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @keyframes fmcnsSlideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
 @keyframes fmcnsFade { from { opacity:0; } to { opacity:1; } }
-.arch-node, .mind-card, .lcard, .book, .q-item, .flow-row, .sg-card, .id-card { animation: fmcnsRise .24s var(--ease) backwards; }
+.uc, .mind-card, .lcard, .book, .sg-card { animation: fmcnsRise .24s var(--ease) backwards; }
 .ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
 #mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
 .ctrlbtn { font-size:11.5px; padding:5px 11px; }
 .arch-viewbtns button { font-size:11.5px; padding:6px 12px; }
 .flow-typecips button { font-size:11px; padding:5px 11px; }
 .mind-toolbtns button { font-size:11.5px; padding:6px 12px; }
-.arch-node .an-name { font-size:13px; }
-.arch-tier-nodes .arch-node { width:212px; }
 .lcard-name, .sg-card-title { font-size:13px; }
-.q-item-title, .flow-sgrow .q-item-title, .flow-idrow .q-item-title { font-size:12.5px; }
+.q-item-title { font-size:12.5px; }
 .arch-ask-inputrow input { font-size:12.5px; padding:8px 11px; }
 .arch-ask-inputrow button { font-size:12.5px; padding:8px 13px; }
 .searchbox, .axisselect, .flow-search { font-size:12px; }
@@ -3262,7 +3311,7 @@ async function loadBooksFor(entityId) {
       currentBooks = data.books;
       host.innerHTML = data.books.map((b, i) => {
         const titleHtml = b.link ? `<a href="${b.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${qEsc(b.title)}</a>` : qEsc(b.title);
-        const cover = b.cover ? `<img class="bcover" src="${b.cover}" alt="Cover: ${qEsc(b.title).replace(/"/g, '&quot;')}" loading="lazy">` : `<div class="bcover-ph">📖</div>`;
+        const cover = b.cover ? `<img class="bcover" src="${b.cover}" alt="Cover: ${qEscAttr(b.title)}" loading="lazy">` : `<div class="bcover-ph">📖</div>`;
         return `<div class="book" data-book-idx="${i}"><div class="bwrap">${cover}<div><span class="btitle">${titleHtml}</span><span class="bkind">${qEsc(b.kind)}</span><div class="bauthor">${qEsc(b.author)}${b.year ? ` <span class="byear">(${b.year})</span>` : ''}</div><div class="bwhy">${qEsc(b.why)}</div></div></div><div class="bdetail" id="bdetail-${i}"></div></div>`;
       }).join('');
       host.querySelectorAll('.book').forEach(el => {
@@ -4451,6 +4500,41 @@ function qRunStateLine(p) {
   return `<div class="q-item-meta"><span class="q-runstate">${label}</span>${clock}${warn}</div>`;
 }
 
+// Token counts, in the plainest form there is: how much text went in, how much came
+// back. Detail-only — it never earned a line on the card itself.
+function qTokensLine(p) {
+  if (p.tokens_in == null && p.tokens_out == null) return '';
+  const n = (v) => v == null ? '?' : (v >= 1000 ? Math.round(v / 1000) + 'k' : String(v));
+  return `<div class="q-item-meta"><span title="How much text went into this run, and how much came back">${n(p.tokens_in)} in · ${n(p.tokens_out)} out</span></div>`;
+}
+// When it started and when it finished, in the same "how long ago" wording the ship
+// line uses, out of the same one formatter.
+function qWhenLine(p) {
+  const parts = [];
+  if (p.started_at) parts.push('started ' + qShipWhen(p.started_at));
+  if (p.completed_at) parts.push('finished ' + qShipWhen(p.completed_at));
+  if (!parts.length && p.created_at) parts.push('added ' + qShipWhen(p.created_at));
+  return parts.length ? `<div class="q-item-meta"><span>${qEsc(parts.join(' · '))}</span></div>` : '';
+}
+// Everything a task card used to shout and rarely needs to: the agent, the provider
+// and model, the memory count, the run clock, how many tasks are ahead, the tokens,
+// the cost, the models it fell back through, what it changed, and when. Eight lines
+// of card became one line you open — closed, a card is quiet.
+function qDetailsHtml(p, busy, ahead) {
+  const finished = !Q_ACTIVE_STATUSES.includes(p.status);
+  const rows = [
+    `<div class="q-item-meta"><span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}</span>${qMemoryBadge(p)}${qStopAfterBadge(p)}</div>`,
+    p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : '',
+    p.status === 'running' ? qRunStateLine(p) : '',
+    finished ? qCostLine(p) : '',
+    finished ? qTokensLine(p) : '',
+    finished ? qTriedModelsLine(p) : '',
+    finished ? qShipLine(p) : '',
+    qWhenLine(p),
+  ].filter(Boolean).join('');
+  return rows ? `<details class="uc-details"><summary>Details</summary>${rows}</details>` : '';
+}
+
 function qCostLine(p) {
   if (p.cost_usd == null && !p.run_model) return '';
   const parts = [];
@@ -4495,7 +4579,12 @@ function qShipLine(p) {
   return `<div class="q-item-meta"><span class="q-ship-pill" style="color:${style.color};border-color:${style.color}">${style.text}</span>${detail ? `<span>${qEsc(detail)}</span>` : ''}</div>${explain}`;
 }
 
+// The app's one date formatter. It used to be three — this, fmtVerified() in the
+// architecture pane and a local fmtD() inside renderMind() — all answering "when
+// was this?" in three different wordings. Returns '' for nothing, so a call site
+// can still fall back with `qShipWhen(x) || x`.
 function qShipWhen(iso) {
+  if (!iso) return '';
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return '';
   const mins = Math.round((Date.now() - t) / 60000);
@@ -4576,68 +4665,66 @@ function qRestoreInputs(host, snap) {
   });
 }
 
+// The task card. One shell, one status pill, ONE obvious button whose word changes
+// with the situation, and the "⋯" for the rest. It used to stack up to nine symbol
+// buttons and eight lines of text; both are now one line each.
 function flowQueueRow(p, reorderable, busy, ahead) {
-  const sel = qSelected && qSelected.id === p.id;
+  const sel = !!(qSelected && qSelected.id === p.id);
   const finished = !Q_ACTIVE_STATUSES.includes(p.status);
   const unread = finished && !p.seen_at;
+  const state = qCardState(p);
+  const st = cardStage('task', p);
+  const asking = !!(p.pending_question && p.pending_question.question);
+  const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
+  const shipReady = !!(p.ship && ['ready', 'needs_fix', 'put_back'].includes(p.ship.state) && p.ship.review_id);
+  const isLive = !!(p.ship && p.ship.state === 'live');
   const titleHtml = reorderable
     ? `<input class="q-title-inline" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
-    : `<span class="q-item-title${unread ? ' unread' : ''}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
-  // Paused ("Parked") tasks need a press to actually enter the run queue. That
-  // button used to live up here in the title line; it is now the stage strip's
-  // button at the foot of the card, so every card's one-thing-to-press is in the
-  // same place instead of each kind hiding it somewhere different.
-  const state = qCardState(p);
-  // Every action a task has, as symbols, right on the card — nothing here needs
-  // the card opened first. Conditions mirror the detail panel's exactly.
-  const activeSession = p.provider === 'opencode' ? p.opencode_session_id : p.session_id;
-  const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
-  const actions = cardActions([
-    p.plan_pending
-      ? iconBtn('bolt', 'Skip drafting the plan and start this task now, on the raw text you submitted', 'skip-plan', p.id) : '',
-    ['running', 'queued'].includes(p.status)
-      ? iconBtn('pause', p.status === 'running'
-          ? 'Stop it now — it goes back to parked, not queued, so it won’t restart on its own'
-          : 'Skip it for now — it won’t start until you resume it', 'pause', p.id)
-      : '',
-    ['queued', 'paused'].includes(p.status)
-      ? iconBtn('top', 'Move it to the front of the queue', 'first', p.id) : '',
-    reorderable ? iconBtn('up', 'Move it up one place', 'up', p.id) : '',
-    reorderable ? iconBtn('down', 'Move it down one place', 'down', p.id) : '',
-    activeSession && p.status !== 'running'
-      ? iconBtn('eraser', 'Forget the saved conversation and start fresh next time — saves credit', 'clear-context', p.id) : '',
-    canRerun ? iconBtn('again', 'Run it again, carrying on from where it left off', 'rerun', p.id) : '',
-    canRerun ? iconBtn('again-fresh', 'Run it again from scratch, with no memory of the last try', 'rerun-fresh', p.id) : '',
-    p.ship && p.ship.state === 'live'
-      ? iconBtn('again', 'Put it back — the app goes back to how it was before this task', 'ship-undo', p.id, 'danger') : '',
-    p.ship && ['ready', 'needs_fix', 'put_back'].includes(p.ship.state) && p.ship.review_id
-      ? iconBtn('play', 'Send this live now', 'ship-now', p.id) : '',
-    finished ? iconBtn('spark', 'Add a bold idea from this finished task', 'world-idea', p.id) : '',
-    iconBtn('chat', 'Talk about this task — it never touches the work itself', 'discuss', p.id),
-    iconBtn('trash', 'Remove this task', 'delete', p.id, 'danger'),
-  ]);
+    : `<span class="uc-title${unread ? ' unread' : ''}" title="${qEscAttr(p.title || '')}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
+
+  // The one thing to press, in the order the situation demands it: answer the
+  // question, stop the run, get a parked task moving (that is the stage's own
+  // action, which is why it is read off cardStage here rather than restated),
+  // publish finished work, try again. Everything else is a word in the menu.
+  let primary = '', primaryAct = '';
+  if (asking) { primary = ubtnHtml('Answer', 'discuss', p.id, 'is-primary', 'Answer the question this task is waiting on'); primaryAct = 'discuss'; }
+  else if (p.status === 'running') { primary = ubtnHtml('Pause', 'pause', p.id, '', 'Stop it now — it goes back to parked, not queued, so it won’t restart on its own'); primaryAct = 'pause'; }
+  else if (p.plan_pending) { primary = ubtnHtml('Start it now', 'skip-plan', p.id, 'is-primary', 'Skip drafting the plan and start this task now, on the raw text you submitted'); primaryAct = 'skip-plan'; }
+  else if (st && st.btn) { primary = ubtnStage(st.btn, 'is-primary', p.id); primaryAct = st.btn.act || 'stage'; }
+  else if (shipReady) { primary = ubtnHtml('Send it live', 'ship-now', p.id, 'is-primary', 'Send this work live now'); primaryAct = 'ship-now'; }
+  else if (canRerun) { primary = ubtnHtml('Run again', 'rerun', p.id, '', 'Run it again, carrying on from where it left off'); primaryAct = 'rerun'; }
+
+  // Gone from here entirely, not moved into the menu: the 💬 chat symbol (opening
+  // the card already shows the conversation), the ▲▼ arrows as symbols (they are
+  // words below, and the drag handle already reorders), "Clear the memory" (it
+  // duplicates Run again fresh) and "Add a world idea".
+  const menu = [
+    ['running', 'queued'].includes(p.status) && primaryAct !== 'pause'
+      ? { label: p.status === 'running' ? 'Pause it' : 'Skip it for now', act: 'pause', id: p.id } : null,
+    ['queued', 'paused'].includes(p.status) ? { label: 'First in line', act: 'first', id: p.id } : null,
+    reorderable ? { label: 'Move up', act: 'up', id: p.id } : null,
+    reorderable ? { label: 'Move down', act: 'down', id: p.id } : null,
+    canRerun && primaryAct !== 'rerun' ? { label: 'Run again', act: 'rerun', id: p.id } : null,
+    canRerun ? { label: 'Run again fresh', act: 'rerun-fresh', id: p.id } : null,
+    isLive ? { label: 'Put it back', act: 'ship-undo', id: p.id, danger: true } : null,
+    { label: 'Delete', act: 'delete', id: p.id, danger: true },
+  ];
+
   return `
-  <div class="flow-row q-item${sel ? ' sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
-    <div class="q-item-top">
-      ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder (or ▲▼ on hover)">⠿</span>' : ''}
+  <div class="uc uc--row${sel ? ' is-sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
+    <div class="uc-head">
+      ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
       ${titleHtml}
+      ${cardPillHtml('task', p)}
+      ${cardActs(primary, menu)}
     </div>
-    <div class="q-item-meta">
-      <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
-      ${qInspireBadge(p)}
-      ${qStopAfterBadge(p)}
-    </div>
-    ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'sg-rationale', !!(qSelected && qSelected.id === p.id))}
-    ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
-    ${p.status === 'running' ? qRunStateLine(p) : ''}
+    ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
     ${p.pending_question ? qQuestionBlockHtml(p) : ''}
     ${finished ? qResultLineHtml(p) : ''}
-    ${finished ? qCostLine(p) : ''}
-    ${finished ? qShipLine(p) : ''}
-    ${stageStripHtml(cardStage('task', p))}
-    ${actions}
+    ${stageStripHtml(st)}
+    ${qDetailsHtml(p, busy, ahead)}
   </div>
-  ${qSelected && qSelected.id === p.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
+  ${sel ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
 }
 
 function qEsc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
@@ -4688,9 +4775,168 @@ function iconBtn(icon, label, act, id, kind = '', extra = '') {
 }
 // Wraps a list of iconBtn()s; returns '' for an empty set so a card with no
 // available action does not grow an empty hairline rule.
+//
+// This is the OLD bar, kept for the card types that have not been converted yet
+// (the architecture checklist rows and the architecture suggestion cards). The
+// converted cards use cardActs() below instead: word buttons on the title line.
 function cardActions(btns) {
   const html = btns.filter(Boolean).join('');
   return html ? `<div class="card-actions">${html}</div>` : '';
+}
+
+// ---------- One button per card, and a "⋯" for the rest ----------
+// The rule this replaces nine stacked symbols with: ONE obvious button, its word
+// changing with the situation (Pause / Answer / Run again / Send it live / Accept).
+// A second only when the card asks you to judge something — the yes and the no
+// belong together. Never three. Everything else is a word in the "⋯" menu.
+//
+// `kind` is '' (bordered secondary), 'is-primary' (filled) or 'is-danger'.
+function ubtnHtml(label, act, id, kind = '', title = '') {
+  const t = title || label;
+  return `<button type="button" class="ubtn${kind ? ' ' + kind : ''}" data-act="${qEscAttr(act)}" data-id="${qEscAttr(id)}" title="${qEscAttr(t)}" aria-label="${qEscAttr(t)}">${qEsc(label)}</button>`;
+}
+// The same button wired by something other than qCardDispatch — a stage action
+// carries its own hook (data-qplay, data-nbbuild) that its list already wires.
+function ubtnRaw(label, attrs, kind = '', title = '') {
+  const t = title || label;
+  return `<button type="button" class="ubtn${kind ? ' ' + kind : ''}" ${attrs} title="${qEscAttr(t)}" aria-label="${qEscAttr(t)}">${qEsc(label)}</button>`;
+}
+// A stage's own action (cardStage().btn), drawn as the card's one obvious button.
+function ubtnStage(btn, kind = 'is-primary', id = '') {
+  if (!btn) return '';
+  return btn.act ? ubtnHtml(btn.label, btn.act, id, kind, btn.title)
+                 : ubtnRaw(btn.label, btn.attrs, kind, btn.title);
+}
+// The "⋯" trigger. `items` are [{label, act, id, danger}] — the SAME data-act /
+// data-id pairs the old symbol buttons carried, so qCardDispatch() fires unchanged
+// and no action code moved. Destructive items go last and are marked danger.
+function cardMenuBtn(items) {
+  const live = (items || []).filter(Boolean);
+  if (!live.length) return '';
+  return `<button type="button" class="uicon" data-umenu="${qEscAttr(JSON.stringify(live))}" title="More things you can do" aria-label="More things you can do" aria-haspopup="menu">⋯</button>`;
+}
+// The head line's action cluster. Returns '' when a card has nothing to offer, so
+// no card grows an empty gap.
+function cardActs(primary, menuItems) {
+  const html = [].concat(primary || []).filter(Boolean).join('') + cardMenuBtn(menuItems);
+  return html ? `<span class="uc-acts">${html}</span>` : '';
+}
+
+// ---------- The "⋯" menu itself: one instance for the whole page ----------
+// Built on open from the trigger's own JSON payload and positioned from its
+// rectangle, so a list of 40 cards costs 40 attributes and not 40 hidden menus.
+let ucMenuEl = null;
+function ucMenuClose() { if (ucMenuEl) { ucMenuEl.remove(); ucMenuEl = null; } }
+function ucMenuOpen(trigger) {
+  let items = [];
+  try { items = JSON.parse(trigger.getAttribute('data-umenu') || '[]'); } catch (e) { items = []; }
+  ucMenuClose();
+  if (!items.length) return;
+  const el = document.createElement('div');
+  el.className = 'umenu';
+  el.id = 'ucMenu';
+  el.setAttribute('role', 'menu');
+  el.innerHTML = items.map(it =>
+    `<button type="button" class="umenu-item${it.danger ? ' is-danger' : ''}" role="menuitem" data-act="${qEscAttr(it.act)}" data-id="${qEscAttr(it.id)}" aria-label="${qEscAttr(it.label)}">${qEsc(it.label)}</button>`).join('');
+  document.body.appendChild(el);
+  ucMenuEl = el;
+  const r = trigger.getBoundingClientRect();
+  const w = el.offsetWidth, h = el.offsetHeight;
+  el.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
+  el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+  el.querySelectorAll('.umenu-item').forEach(b => {
+    b.onclick = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const act = b.dataset.act, id = b.dataset.id;
+      const fire = () => { ucMenuClose(); qCardDispatch(act, id, null); };
+      // Delete still asks twice — the item arms to "Really delete?" on first click.
+      if (b.classList.contains('is-danger')) { cardBtnConfirm(b, fire); return; }
+      fire();
+    };
+  });
+}
+// Capture phase, so pressing "⋯" opens the menu without also toggling the card
+// open underneath it. Closes on an outside click, Escape, or any scroll.
+document.addEventListener('click', (ev) => {
+  const hit = ev.target.closest ? ev.target.closest('[data-umenu], .umenu') : null;
+  if (hit && hit.hasAttribute && hit.hasAttribute('data-umenu')) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const key = hit.getAttribute('data-umenu');
+    if (ucMenuEl && ucMenuEl.dataset.for === key) { ucMenuClose(); return; }
+    ucMenuOpen(hit);
+    if (ucMenuEl) ucMenuEl.dataset.for = key;
+    return;
+  }
+  if (!hit) ucMenuClose();
+}, true);
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') ucMenuClose(); });
+window.addEventListener('scroll', ucMenuClose, true);
+
+// ---------- One status pill ----------
+// A card shows ONE. This absorbs the six ways the app used to say where something
+// stood — the ship pill (Q_SHIP_STYLE), the suggestion status badge, the inspire
+// badge, the coloured .q-badge, the run-state label and the tree's readiness
+// colour — so a row can no longer carry four of them at once. Nothing new is
+// invented: every word below is wording one of those already used, and the
+// branches follow taskStage()/seedStage()/sgStage() rung for rung so the pill and
+// the stage strip on the same card can never disagree.
+function cardPill(kind, o) {
+  if (!o) return null;
+  if (kind === 'task') return taskPill(o);
+  if (kind === 'suggestion') {
+    if (o.status === 'accepted') return { text: 'Accepted', cls: 'is-done', title: 'Accepted — it is parked in the queue.' };
+    if (o.status === 'dismissed') return { text: 'Dismissed', cls: '' };
+    return { text: TV_STATUS_LABEL[o.status] || o.status || 'New', cls: 'is-ask',
+      title: o.maybe_shipped ? 'Words in this suggestion overlap work that already shipped: ' + o.maybe_shipped + '. This is a guess — nothing has been changed or hidden.' : '' };
+  }
+  if (kind === 'seed') {
+    if (o.work_prompt_id) return { text: 'Queued', cls: 'is-done', title: 'This seed became a task in the queue.' };
+    if (o.arch_node_id) return { text: 'Planted', cls: 'is-done', title: 'This seed is planted in the tech tree.' };
+    return { text: 'Just a note', cls: '', title: 'Nothing runs from a seed until you send it to the queue.' };
+  }
+  if (kind === 'component') {
+    const state = o.state || archNodeState(o);
+    if (state === 'built') return { text: 'Built', cls: 'is-done' };
+    if (state === 'buildable') return { text: 'Ready to build', cls: 'is-run' };
+    return { text: 'Waiting on others', cls: '' };
+  }
+  return null;
+}
+function taskPill(p) {
+  const ship = p.ship || {};
+  if (p.pending_question && p.pending_question.question) return { text: 'Needs you', cls: 'is-ask' };
+  if (p.status === 'running') return { text: Q_RUN_STATE_LABELS[p.run_state] || p.run_state || 'running', cls: 'is-run' };
+  if (p.plan_pending) return qStageStuck(p)
+    ? { text: 'Stuck getting ready', cls: 'is-block', title: 'This step stopped part-way (the server restarted while it was running). Open the task to reset it.' }
+    : { text: 'Drafting the plan', cls: 'is-run' };
+  if (p.status === 'paused') return { text: 'Parked', cls: '' };
+  if (p.status === 'queued') {
+    const insp = p.inspire_state || 'off';
+    if (['off', 'failed'].includes(insp)) return { text: 'Held', cls: 'is-block',
+      title: 'Its look at the world did not finish, so the queue will never start it. Press "Start it without that".' };
+    if (insp === 'ready') return { text: 'Ideas ready', cls: 'is-ask', title: 'Ideas from the world are ready — open the task to see them and pick.' };
+    if (insp === 'reviewing') return { text: 'Checking ideas', cls: 'is-run', title: 'A quick check is cleaning up the ideas before the plan is written.' };
+    if (insp === 'pending') return { text: 'Looking at the world', cls: 'is-run', title: 'Looking at the world before the plan is written.' };
+    return { text: 'Waiting its turn', cls: '' };
+  }
+  if (p.status === 'blocked') return { text: 'Stopped part-way', cls: 'is-block' };
+  if (p.status === 'cancelled') return { text: 'Cancelled', cls: 'is-block' };
+  const style = Q_SHIP_STYLE[ship.state];
+  if (style) {
+    const cls = ship.state === 'live' ? 'is-done'
+      : ['shipping', 'putting_back'].includes(ship.state) ? 'is-run'
+      : ['ready', 'waiting_runner'].includes(ship.state) ? 'is-ask'
+      : ship.state === 'needs_fix' ? 'is-block' : '';
+    return { text: style.text, cls, title: ship.message || '' };
+  }
+  return { text: 'Done', cls: 'is-done' };
+}
+function cardPillHtml(kind, o) {
+  const pill = cardPill(kind, o);
+  if (!pill) return '';
+  return `<span class="upill${pill.cls ? ' ' + pill.cls : ''}"${pill.title ? ` title="${qEscAttr(pill.title)}"` : ''}>${qEsc(pill.text)}</span>`;
 }
 // ---------- The stage strip ----------
 // One line, the same on every kind of card: how far along this thing is, and the
@@ -4703,15 +4949,16 @@ function cardActions(btns) {
 //     second "stage" field anywhere to fall out of sync with the first.
 //   • The "Next" line is never invented. It is either a real next action the card
 //     can already perform, or a component's own authored `next` text. When there
-//     is genuinely nothing to do next, it says so and shows no button.
+//     is genuinely nothing to do next, it says so.
+//
+// The strip no longer draws the button. `st.btn` is still where a stage names its
+// one action, but the card renders it at the right of the title line (see
+// ubtnStage / cardActs) so every card's one-thing-to-press is in the same place.
 function stageStripHtml(st) {
   if (!st) return '';
   const dots = Array.from({ length: st.total }, (_, i) =>
     `<span class="stage-dot${i < st.step ? ' on' : ''}"></span>`).join('');
   const where = `Step ${st.step} of ${st.total} — ${st.label}`;
-  const btn = st.btn
-    ? `<button type="button" ${st.btn.attrs} title="${qEscAttr(st.btn.title || st.next || st.btn.label)}" aria-label="${qEscAttr(st.btn.title || st.btn.label)}">${qEsc(st.btn.label)}</button>`
-    : '';
   // nextHtml is for the one case where the next step names other things you can jump
   // to (a locked piece waiting on its prerequisites); everything else goes through
   // `next` and is escaped. nextLabel is the bold word — "Next" reads wrong in front
@@ -4721,7 +4968,6 @@ function stageStripHtml(st) {
     <span class="stage-dots" role="img" aria-label="${qEscAttr(where)}" title="${qEscAttr(where)}">${dots}</span>
     <span class="stage-where">${qEsc(st.label)}</span>
     ${nextBody ? `<span class="stage-next"><b>${qEsc(st.nextLabel || 'Next')}</b> ${nextBody}</span>` : '<span class="stage-next stage-none">Nothing to do next</span>'}
-    ${btn}
   </div>`;
 }
 
@@ -4759,7 +5005,7 @@ function taskStage(p) {
   if (p.status === 'paused') {
     return { step: 2, total: TASK_STAGE_TOTAL, label: 'Parked', tone: 'ask',
       next: 'Mark it ready so your runner picks it up',
-      btn: { label: '✓ Mark it ready', attrs: `class="stage-go" data-qplay="${qEscAttr(p.id)}"`,
+      btn: { label: 'Mark it ready', attrs: `data-qplay="${qEscAttr(p.id)}"`,
         title: 'Marks this task ready — your local runner picks it up when it is running. This does not run anything in the app.' } };
   }
   if (p.status === 'queued') {
@@ -4772,7 +5018,7 @@ function taskStage(p) {
     if (['off', 'failed'].includes(insp)) {
       return { step: 3, total: TASK_STAGE_TOTAL, label: 'Held — its look at the world did not finish', tone: 'stop',
         next: 'Start it without the ideas, on a plain plan',
-        btn: { label: 'Start it without that', attrs: `class="cardbtn stage-go stage-go-block" data-act="inspire-skip" data-id="${qEscAttr(p.id)}"`,
+        btn: { label: 'Start it without that', act: 'inspire-skip',
           title: 'Lets this task run on a plain plan, without waiting for the world-look' } };
     }
     if (insp === 'pending' || insp === 'reviewing') {
@@ -4848,9 +5094,9 @@ function componentStage(c) {
   const suffix = flowWorldPickSuffix('component', c.id);
   const btn = state === 'built' ? null
     : state === 'buildable'
-      ? { label: '⚡ Build the next step', attrs: `class="stage-go" data-nbbuild="${qEscAttr(c.id)}"`,
+      ? { label: 'Build the next step', attrs: `data-nbbuild="${qEscAttr(c.id)}"`,
           title: (next || `Queue a task to build the next step of ${c.name}`) + suffix }
-      : { label: 'Queue it anyway', attrs: `class="stage-go" data-nbbuild="${qEscAttr(c.id)}"`,
+      : { label: 'Queue it anyway', attrs: `data-nbbuild="${qEscAttr(c.id)}"`,
           title: 'Queues it anyway — it waits until the pieces it needs are done' + suffix };
   // A locked piece used to say what it waits on in a line of its own, above the strip.
   // It is the same question the strip answers — what has to happen next — so it belongs
@@ -4877,16 +5123,21 @@ const CARDBTN_ARM_MS = 3000;
 function cardBtnConfirm(btn, doIt) {
   if (btn.dataset.armed === '1') { delete btn.dataset.armed; doIt(); return; }
   const label = btn.getAttribute('aria-label');
+  // A word item in the "⋯" menu says it out loud; a symbol button can only turn
+  // red and change its hover label, which is why this needed both paths.
+  const word = btn.querySelector('svg') ? null : btn.textContent;
   btn.dataset.armed = '1';
   btn.classList.add('armed');
   btn.title = 'Click again to confirm';
   btn.setAttribute('aria-label', 'Click again to confirm');
+  if (word !== null) btn.textContent = 'Really? Click again';
   setTimeout(() => {
     if (!btn.isConnected || btn.dataset.armed !== '1') return;
     delete btn.dataset.armed;
     btn.classList.remove('armed');
     btn.title = label;
     btn.setAttribute('aria-label', label);
+    if (word !== null) btn.textContent = word;
   }, CARDBTN_ARM_MS);
 }
 
@@ -5196,17 +5447,8 @@ function qFinishChatTyping() {
 
 // Small state marker on flow rows so Antoine can see at a glance which tasks
 // have inspiration ready — the panel itself lives in the task detail.
-function qInspireBadge(p) {
-  if (p.mode !== 'implement' || !p.inspire_state || p.inspire_state === 'off') return '';
-  if (qStageStuck(p) && ['pending', 'reviewing'].includes(p.inspire_state)) {
-    return '<span class="q-badge" style="background:#b23a2f;" title="This step stopped part-way (the server restarted while it was running). Open the task to reset it.">⚠ Stuck — open to reset</span>';
-  }
-  if (p.inspire_state === 'pending') return '<span class="q-badge" style="background:#6b7baa;" title="Looking at the world before the plan is written — real projects, hidden products, bold ideas.">🔭 Inspiring…</span>';
-  if (p.inspire_state === 'reviewing') return '<span class="q-badge" style="background:#8a7a5a;" title="A quick check is cleaning up the ideas — keeping what earns its place, marking the alternatives.">🔎 Checking ideas…</span>';
-  if (p.inspire_state === 'ready') return '<span class="q-badge" style="background:#8a5a1e;" title="Ideas from the world are ready — open the task to see them and pick.">✨ Ideas ready</span>';
-  if (p.inspire_state === 'applied') return '<span class="q-badge" style="background:#4f9d7a;" title="Picked ideas are baked into the plan.">✨ Inspired</span>';
-  return '';
-}
+// (Deleted here: qInspireBadge(). It was one of four badges a task row could carry
+// at once; what it said is now folded into the single status pill — see taskPill().)
 
 // Marks a task set to auto-pause the whole queue once it finishes, so that's
 // visible on the compact row without opening the task detail.
@@ -5258,22 +5500,22 @@ function nuTerrLabel(id) {
 // One row of the ranked list. `n` is the position shown to the reader; blocked
 // rows get no number because they are not something you can start.
 function nuRowHtml(p, n) {
-  const numCell = n ? `<span class="nb-short-num">${n}</span>` : '<span class="nb-short-num nu-blocked">·</span>';
-  const build = p.ready
-    ? `<button class="nb-build" data-nubuild="${p.id}">⚡ Build${flowWorldPickSuffix('component', p.id)}</button>`
-    : `<button class="ctrlbtn" data-nubuild="${p.id}" title="Queues it anyway — it waits until the things it needs are done">Queue anyway</button>`;
-  // Clickable like the queue/task cards below: tap anywhere on the row (except
-  // its own button) to open the world-look ideas for this component in place.
+  // Clickable like every other card: tap anywhere on the row (except its own
+  // button) to open the world-look ideas for this component in place.
   const isOpen = nbWorldOpen === p.id;
-  return `<div class="nb-short-row nb-short-clickable${isOpen ? ' nb-open' : ''}" data-nbshortid="${p.id}" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${qEscAttr(p.name)} — tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">
-    ${numCell}
-    <div style="flex:1;min-width:0;">
-      <div class="nb-name">${qEsc(p.name)} <span class="nb-terr">${qEsc(nuTerrLabel(p.territory))}</span></div>
-      <div class="nu-reason">${qEsc(p.reason || '')}</div>
-      ${p.next ? `<div class="nu-next"><b>Next:</b> ${qEsc(p.next)}</div>` : ''}
+  const primary = p.ready
+    ? ubtnRaw('Build', `data-nubuild="${qEscAttr(p.id)}"`, 'is-primary', 'Queue a task to build this' + flowWorldPickSuffix('component', p.id))
+    : ubtnRaw('Queue anyway', `data-nubuild="${qEscAttr(p.id)}"`, '', 'Queues it anyway — it waits until the things it needs are done');
+  return `<div class="uc uc--row${isOpen ? ' is-sel' : ''}" data-nbshortid="${p.id}" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${qEscAttr(p.name)} — tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">
+    <div class="uc-head">
+      ${n ? `<span class="uc-num">${n}</span>` : '<span class="uc-num nu-blocked">·</span>'}
+      <span class="uc-title" title="${qEscAttr(p.name)}">${qEsc(p.name)}</span>
+      <span class="nb-terr">${qEsc(nuTerrLabel(p.territory))}</span>
+      ${cardActs(primary, null)}
+      <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
     </div>
-    <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
-    ${build}
+    <div class="uc-sum">${qEsc(p.reason || '')}</div>
+    ${p.next ? `<div class="nu-next"><b>Next:</b> ${qEsc(p.next)}</div>` : ''}
   </div>
   ${isOpen ? `<div class="nb-world" data-nbworldpanel="${p.id}">${flowWorldPanelHtml('component', p.id)}<div data-nbstudio="${p.id}"></div></div>` : ''}`;
 }
@@ -5354,13 +5596,14 @@ function wireNextUp(host) {
       const c = ARCH_BY_ID[b.getAttribute('data-nubuild')];
       if (!c) return;
       const { title, prompt } = nbQueuePromptOf(c);
+      const was = b.textContent;
       b.disabled = true; b.textContent = 'Queuing…';
       const we = flowWorldEntry('component', c.id);
       const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
       queuePromptDirect(title, prompt, c.id, null, inspiration).then(p => {
         // Re-rank straight away: the thing just queued must leave the list.
         if (p) { qLoad(); loadNextUp(true); }
-        else { b.disabled = false; b.textContent = '⚡ Build'; }
+        else { b.disabled = false; b.textContent = was; }
       });
     };
   });
@@ -5491,25 +5734,56 @@ function sgChipFor(s) {
 // out of renderFlow() unchanged apart from the chip, so grouped and flat views can
 // share it and there is only one copy to keep right.
 function flowSgRow(s) {
-  const open = flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id;
+  const open = !!(flowSideSel && flowSideSel.kind === 'suggestion' && flowSideSel.id === s.id);
+  const isNew = s.status === 'new';
+  // The one case where two buttons are right: the card is asking you to judge
+  // something, and the yes and the no belong side by side. Never a third.
+  const primary = isNew
+    ? [ubtnHtml('Accept', 'sg-accept', s.id, 'is-primary', 'Accept it — adds it to the queue, parked'),
+       ubtnHtml('Dismiss', 'sg-dismiss', s.id, 'is-danger', 'Dismiss this suggestion')]
+    : '';
+  // A decided suggestion has nothing to press, so the one thing left is the ⋯.
+  const menu = isNew ? [] : [{ label: 'Talk it over', act: 'sg-discuss', id: s.id }];
+  // The kind badge, the status badge and "may already be done" used to be three
+  // more pills beside the territory chip. They are the one status pill and its
+  // tooltip now — the chip says where, the pill says how far.
   return `
-        <div class="flow-row flow-sgrow${open ? ' sel' : ''}" data-sid="${s.id}">
-          <div class="q-item-top">
-            <span class="q-item-title">${qEsc(s.title)}</span>
+        <div class="uc uc--row${open ? ' is-sel' : ''}" data-sid="${s.id}">
+          <div class="uc-head">
+            <span class="uc-title" title="${qEscAttr(s.title || '')}">${qEsc(s.title)}</span>
             ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             ${sgChipFor(s)}
-            ${s.kind === 'integration' ? '' : `<span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>`}
-            <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
-            ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
+            ${cardPillHtml('suggestion', s)}
+            ${cardActs(primary, menu)}
             <span class="flow-chev">${open ? '▾' : '▸'}</span>
           </div>
-          ${cardLineHtml('suggestion', s.id, s.summary, s.rationale, 'sg-rationale', open)}
+          ${cardLineHtml('suggestion', s.id, s.summary, s.rationale, 'uc-sum', open)}
           ${stageStripHtml(cardStage('suggestion', s))}
-          ${cardActions([
-            s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
-            iconBtn('chat', 'Talk it over before deciding', 'sg-discuss', s.id),
-            s.status === 'new' ? iconBtn('x', 'Dismiss this suggestion', 'sg-dismiss', s.id, 'danger') : '',
-          ])}
+        </div>
+        ${open ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
+}
+
+// One seed row — the only Flow row that never had a helper of its own; it was
+// written inline inside renderFlow(). Lifted out so the five Flow cards are five
+// functions side by side.
+function flowIdRow(i) {
+  const open = !!(flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id);
+  const menu = [
+    i.arch_node_id ? null : { label: 'Plant in the tech tree', act: 'seed-plant', id: i.id },
+    { label: 'Remove', act: 'seed-delete', id: i.id, danger: true },
+  ];
+  return `
+        <div class="uc uc--row${open ? ' is-sel' : ''}" data-iid="${i.id}">
+          <div class="uc-head">
+            <span class="uc-title" title="${qEscAttr(i.title || '')}">${qEsc(i.title || '(untitled)')}</span>
+            ${flowWorldEntry('idea', i.id).state === 'ready' ? '<span title="World-look ideas ready — open the seed">✨</span>' : ''}
+            ${i.tag ? `<span class="id-tag-pill">${qEsc(i.tag)}</span>` : ''}
+            ${cardPillHtml('seed', i)}
+            ${cardActs(ubtnHtml('Send to queue', 'seed-queue', i.id, 'is-primary', 'Send it to the queue as a task'), menu)}
+            <span class="flow-chev">${open ? '▾' : '▸'}</span>
+          </div>
+          ${cardLineHtml('seed', i.id, i.summary, i.notes, 'uc-sum', open)}
+          ${stageStripHtml(cardStage('seed', i))}
         </div>
         ${open ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
 }
@@ -5721,26 +5995,7 @@ function renderFlow() {
             <span class="id-form-hint">Nothing runs from an idea — they just sit here to be revisited.</span>
             <button class="id-addbtn" id="idAddBtn">+ Keep the idea</button>
           </div>
-        </div>` + (ideas.length ? ideas.map(i => `
-        <div class="flow-row flow-idrow${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? ' sel' : ''}" data-iid="${i.id}">
-          <div class="q-item-top">
-            <span class="q-item-title">${qEsc(i.title || '(untitled)')}</span>
-            ${flowWorldEntry('idea', i.id).state === 'ready' ? '<span title="World-look ideas ready — open the seed">✨</span>' : ''}
-            ${i.tag ? `<span class="id-tag-pill">${qEsc(i.tag)}</span>` : ''}
-            ${i.work_prompt_id ? '<span class="q-badge" style="background:#4f9d7a;">Queued</span>' : ''}
-            ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
-            <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '▾' : '▸'}</span>
-          </div>
-          ${cardLineHtml('seed', i.id, i.summary, i.notes, 'sg-rationale', !!(flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id))}
-          ${stageStripHtml(cardStage('seed', i))}
-          ${cardActions([
-            iconBtn('queue', 'Send it to the queue as a task', 'seed-queue', i.id, 'primary'),
-            iconBtn('chat', 'Talk this idea over', 'seed-discuss', i.id),
-            i.arch_node_id ? '' : iconBtn('seed', 'Plant it in the tech tree', 'seed-plant', i.id),
-            iconBtn('trash', 'Remove this idea', 'seed-delete', i.id, 'danger'),
-          ])}
-        </div>
-        ${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
+        </div>` + (ideas.length ? ideas.map(i => flowIdRow(i)).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
   }
 
   if (flowComponentFilter) {
@@ -5774,10 +6029,11 @@ function renderFlow() {
     try { await qReply(id, text, placement); }
     catch (e) { alert('Could not send: ' + e.message); }
   });
-  host.querySelectorAll('.q-item').forEach(el => {
+  host.querySelectorAll('.uc[data-qid]').forEach(el => {
     const id = el.getAttribute('data-qid');
     el.onclick = (e) => {
-      if (e.target.closest('.q-arrow')) return;
+      if (e.target.closest('.uc-acts')) return;
+      if (e.target.closest('.uc-details')) return;
       if (e.target.closest('.cardbtn')) return;
       if (e.target.closest('.q-optbtn')) return;
       if (e.target.closest('.nb-more')) return;
@@ -5814,31 +6070,33 @@ function renderFlow() {
     };
   });
   // Drag to reorder (reorderable rows only — same backend as the ▲▼ arrows).
-  host.querySelectorAll('.flow-row[draggable="true"]').forEach(el => {
+  host.querySelectorAll('.uc[data-qid][draggable="true"]').forEach(el => {
     el.addEventListener('dragstart', (e) => { qDragQId = el.getAttribute('data-qid'); el.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; });
     el.addEventListener('dragover', (e) => {
       e.preventDefault();
-      const over = e.target.closest('.flow-row[draggable="true"]');
-      if (over) host.querySelectorAll('.flow-row[draggable="true"]').forEach(x => x.classList.remove('drag-over'));
+      const over = e.target.closest('.uc[data-qid][draggable="true"]');
+      if (over) host.querySelectorAll('.uc[data-qid][draggable="true"]').forEach(x => x.classList.remove('drag-over'));
       if (over) over.classList.add('drag-over');
     });
     el.addEventListener('drop', (e) => {
       e.preventDefault();
-      const over = e.target.closest('.flow-row[draggable="true"]');
+      const over = e.target.closest('.uc[data-qid][draggable="true"]');
       if (over && qDragQId && over.getAttribute('data-qid') !== qDragQId) qDragMove(qDragQId, over.getAttribute('data-qid'));
       qDragQId = null;
-      host.querySelectorAll('.flow-row').forEach(x => x.classList.remove('drag-over', 'drag'));
+      host.querySelectorAll('.uc[data-qid]').forEach(x => x.classList.remove('drag-over', 'drag'));
     });
-    el.addEventListener('dragend', () => { qDragQId = null; host.querySelectorAll('.flow-row').forEach(x => x.classList.remove('drag-over', 'drag')); });
+    el.addEventListener('dragend', () => { qDragQId = null; host.querySelectorAll('.uc[data-qid]').forEach(x => x.classList.remove('drag-over', 'drag')); });
   });
-  // Every symbol button on every card in this list, in one delegated handler.
-  // stopPropagation is what keeps a button press from also toggling the card open.
-  host.querySelectorAll('.cardbtn').forEach(b => {
+  // Every button on every card in this list, in one delegated handler — the word
+  // buttons on the converted cards (.ubtn) and the symbol buttons still on the
+  // ones that have not been converted (.cardbtn). stopPropagation is what keeps a
+  // button press from also toggling the card open.
+  host.querySelectorAll('.cardbtn[data-act], .ubtn[data-act]').forEach(b => {
     b.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
       const act = b.dataset.act, id = b.dataset.id;
-      if (b.classList.contains('danger')) { cardBtnConfirm(b, () => qCardDispatch(act, id, b)); return; }
+      if (b.classList.contains('danger') || b.classList.contains('is-danger')) { cardBtnConfirm(b, () => qCardDispatch(act, id, b)); return; }
       qCardDispatch(act, id, b);
     };
   });
@@ -5862,8 +6120,9 @@ function renderFlow() {
   });
   const sgClear = document.getElementById('sgClearFilter');
   if (sgClear) sgClear.onclick = (e) => { e.preventDefault(); sgFilterTerr = ''; renderFlow(); };
-  host.querySelectorAll('.flow-sgrow').forEach(el => {
-    el.onclick = () => {
+  host.querySelectorAll('.uc[data-sid]').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.closest('.uc-acts')) return;
       const id = el.getAttribute('data-sid');
       const s = tvSuggestions.find(x => x.id === id);
       if (!s) return;
@@ -5874,8 +6133,9 @@ function renderFlow() {
     };
   });
   cardLineFill();
-  host.querySelectorAll('.flow-idrow').forEach(el => {
-    el.onclick = () => {
+  host.querySelectorAll('.uc[data-iid]').forEach(el => {
+    el.onclick = (e) => {
+      if (e.target.closest('.uc-acts')) return;
       const id = el.getAttribute('data-iid');
       const idea = tvIdeas.find(x => x.id === id);
       if (!idea) return;
@@ -7559,7 +7819,6 @@ async function loadUsage() {
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
-const TV_KIND_LABEL = { chantier: 'Work item', integration: 'Connector' };
 const TV_STATUS_LABEL = { new: 'New', accepted: 'Accepted', dismissed: 'Dismissed' };
 
 async function loadSuggestions() {
@@ -8059,7 +8318,6 @@ function renderMind() {
   const scNote = sc ? `<div class="mind-selfnote"><b>${qEsc(sc.title)}.</b> ${qEsc(sc.body)}</div>` : '';
   const hostOld = host.scrollTop || 0;
 
-  const fmtD = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch { return ''; } };
   // What a thought's target_id points at, in human terms — a component (node),
   // the whole platform graph, or part of the content corpus (cluster zone or axis).
   const contentTargetName = (tid) => {
@@ -8086,7 +8344,7 @@ function renderMind() {
         <span class="mind-dot" style="background:${t.status === 'accepted' ? '#4f9d7a' : t.status === 'dismissed' ? '#8a8378' : '#7a5ea8'}"></span>
         <div style="flex:1;min-width:0;">
           <div class="mind-card-title">${qEsc(t.title)}</div>
-          <div class="mind-card-meta">${qEsc(t.kind)} · ${qEsc(targetNameStr)} · ${fmtD(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
+          <div class="mind-card-meta">${qEsc(t.kind)} · ${qEsc(targetNameStr)} · ${qShipWhen(t.created_at)}${t.priority > 0 ? ' <span class="mind-pri">p' + t.priority + '</span>' : ''}</div>
           <div class="mind-card-body">${qEsc(t.body)}</div>
         </div>
       </div>
@@ -8505,7 +8763,7 @@ function nbUnreachableSectionHtml() {
           <span class="stage-dots" role="img" aria-label="Step 1 of 2 — the server half is done" title="Step 1 of 2 — the server half is done"><span class="stage-dot on"></span><span class="stage-dot"></span></span>
           <span class="stage-where">Server half done</span>
           <span class="stage-next"><b>Next</b> Add the way to use it from the app</span>
-          <button type="button" class="stage-go" data-unreach-build="${qEscAttr(it.path)}" title="${qEscAttr('Queues a task to build the interface for this. The server side is left alone.')}">Build the way to use it</button>
+          <button type="button" class="ubtn is-primary" data-unreach-build="${qEscAttr(it.path)}" title="${qEscAttr('Queues a task to build the interface for this. The server side is left alone.')}">Build the way to use it</button>
         </div>
       </div>
     `).join('')}`;
@@ -8739,14 +8997,15 @@ function renderNotbuilt() {
         // Clickable like the queue/task cards and the rows below: tap anywhere
         // on the row (except its own button) to open the world-look ideas.
         const isOpen = nbWorldOpen === c.id;
-        return `<div class="nb-short-row nb-short-clickable${isOpen ? ' nb-open' : ''}" data-nbshortid="${c.id}" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${qEscAttr(c.name)} — tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">
-          <span class="nb-short-num">${i + 1}</span>
-          <div style="flex:1;min-width:0;">
-            <div class="nb-name">${qEsc(c.name)} <span class="nb-terr">${terr ? terr.label : c.territory}</span></div>
-            ${p.reason ? `<div class="nb-what" style="margin:2px 0;">${qEsc(p.reason)}</div>` : ''}
+        return `<div class="uc uc--row${isOpen ? ' is-sel' : ''}" data-nbshortid="${c.id}" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${qEscAttr(c.name)} — tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">
+          <div class="uc-head">
+            <span class="uc-num">${i + 1}</span>
+            <span class="uc-title" title="${qEscAttr(c.name)}">${qEsc(c.name)}</span>
+            <span class="nb-terr">${qEsc(terr ? terr.label : c.territory)}</span>
+            ${cardActs(ubtnRaw('Build', `data-nbbuild="${qEscAttr(p.id)}"`, 'is-primary', 'Queue a task to build this' + flowWorldPickSuffix('component', p.id)), null)}
+            <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
           </div>
-          <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
-          <button class="nb-build" data-nbbuild="${p.id}">⚡ Build${flowWorldPickSuffix('component', p.id)}</button>
+          ${p.reason ? `<div class="uc-sum">${qEsc(p.reason)}</div>` : ''}
         </div>
         ${isOpen ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}</div>` : ''}`;
       }).join('')}
@@ -8765,18 +9024,22 @@ function renderNotbuilt() {
     const spec = c.provenance === 'speculative' ? '✦ ' : '';
     const whatText = String(c.what || '');
     const isOpen = nbWorldOpen === c.id;
-    html += `<div class="nb-row${state === 'buildable' ? ' nb-buildable' : ''}${isOpen ? ' nb-open' : ''}" data-nbid="${c.id}">
-      <div class="nb-top">
-        <span class="nb-name">${qEsc(spec + c.name)}</span>
-        <span class="nb-terr">${terr ? terr.label : c.territory}</span>
+    const st = cardStage('component', c);
+    // One button: build the next step of this piece, or queue it anyway when it is
+    // still waiting on others. The 💬 Discuss button is gone — opening the card
+    // shows the conversation, so it was a second door to the same room.
+    const primary = ubtnStage(st.btn, state === 'buildable' ? 'is-primary' : '');
+    html += `<div class="uc${state === 'buildable' ? ' is-warm' : ''}${isOpen ? ' is-sel' : ''}" data-nbid="${c.id}">
+      <div class="uc-head">
+        <span class="uc-title" title="${qEscAttr(c.name)}">${qEsc(spec + c.name)}</span>
+        <span class="nb-terr">${qEsc(terr ? terr.label : c.territory)}</span>
         <span class="nb-markers">${markers.join(' ')}</span>
+        ${cardPillHtml('component', { state })}
+        ${cardActs(primary, null)}
         <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
       </div>
-      ${cardLineHtml('component', c.id, c.summary, whatText, 'nb-what', isOpen)}
-      ${stageStripHtml(cardStage('component', c))}
-      <div class="nb-actions">
-        <button data-nbdiscuss="${c.id}">💬 Discuss</button>
-      </div>
+      ${cardLineHtml('component', c.id, c.summary, whatText, 'uc-sum', isOpen)}
+      ${stageStripHtml(st)}
     </div>
     ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${whatText ? `<div class="arch-field"><div class="arch-field-label">What it is</div><div class="arch-field-body">${qEsc(whatText)}</div></div>` : ''}${flowWorldPanelHtml('component', c.id)}<div data-nbstudio="${c.id}"></div></div>` : ''}`;
   });
@@ -8789,7 +9052,7 @@ function renderNotbuilt() {
   // world-look panel — same click-anywhere interaction the queue/task and
   // suggestion/seed cards already have. The old dedicated "world ideas" button
   // is gone; this replaces it.
-  host.querySelectorAll('.nb-row').forEach(row => {
+  host.querySelectorAll('.uc[data-nbid]').forEach(row => {
     row.onclick = (e) => {
       if (e.target.closest('a, button, .nb-more')) return;
       const id = row.getAttribute('data-nbid');
@@ -8815,15 +9078,13 @@ function renderNotbuilt() {
       const c = ARCH_BY_ID[b.getAttribute('data-nbbuild')];
       if (!c) return;
       const { title, prompt } = nbQueuePromptOf(c);
+      const was = b.textContent;
       b.disabled = true; b.textContent = 'Queuing…';
       const we = flowWorldEntry('component', c.id);
       const inspiration = we.state === 'ready' && we.report ? { report_id: we.report.id, picks: we.sel } : undefined;
       queuePromptDirect(title, prompt, c.id, null, inspiration).then(p => {
         if (p) { qLoad(); renderNotbuilt(); }
-        else {
-          b.disabled = false;
-          b.textContent = (archNodeState(c) === 'buildable' ? '⚡ Build — all prerequisites met' : 'Queue anyway') + flowWorldPickSuffix('component', c.id);
-        }
+        else { b.disabled = false; b.textContent = was; }
       });
     };
   });
@@ -8850,18 +9111,6 @@ function renderNotbuilt() {
         renderNotbuilt();
       };
     });
-  });
-  host.querySelectorAll('[data-nbdiscuss]').forEach(b => {
-    b.onclick = (ev) => {
-      ev.stopPropagation();
-      const id = b.getAttribute('data-nbdiscuss');
-      const c = ARCH_BY_ID[id];
-      if (!c) return;
-      // Opens the row, with the conversation already showing inside it.
-      nbWorldOpen = id;
-      studioEmbedOpen(c._stored ? 'arch_node' : 'arch_component', id);
-      renderNotbuilt();
-    };
   });
   wireStudioSlots(host, () => { loadNbConvos(); renderNotbuilt(); });
   cardLineFill();
@@ -10002,14 +10251,6 @@ function deselectArchNode() {
   archRedrawCurrent();
 }
 
-function fmtVerified(iso) {
-  if (!iso) return null;
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-  } catch (e) { return iso; }
-}
-
 async function queuePromptDirect(title, promptText, componentId, statusHost, inspiration = null) {
   if (statusHost) statusHost.textContent = 'Queuing...';
   try {
@@ -10034,7 +10275,7 @@ function renderArchDetail(id) {
   const c = ARCH_BY_ID[id];
   const host = document.getElementById('archRight');
   if (!c) { host.innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>'; return; }
-  const verified = fmtVerified(c.last_verified_at);
+  const verified = qShipWhen(c.last_verified_at);
   const terr = TERRITORIES.find(t=>t.id===c.territory);
   let html = `<h2 class="arch-detail-head">Component<button id="archDetailClose" class="arch-detail-close" title="Close this panel" aria-label="Close component panel">✕</button></h2>
     <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
@@ -10238,7 +10479,7 @@ function renderArchSuggestions(c) {
       // still works for anyone used to it.
       html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(cardOneLine(s.prompt))}</div>${cardActions([iconBtn('queue', 'Send this suggestion to the queue', 'as-queue', s.id, 'primary')])}</div>`;
     });
-    const genAt = fmtVerified(c.suggestions_generated_at);
+    const genAt = qShipWhen(c.suggestions_generated_at);
     if (genAt) html += `<div class="arch-verified" style="margin-top:2px;">Generated ${genAt}</div>`;
   } else {
     html += `<div class="empty">No suggestions generated yet.</div>`;
@@ -10283,10 +10524,10 @@ async function loadArchHistory(id) {
     const data = await api('/api/architecture/components/' + id + '/history');
     let html = '';
     (data.commits || []).forEach(c => {
-      html += `<div class="arch-history-item">📦 ${qEsc(c.message)}<div class="ah-meta"><span class="arch-history-sha">${c.sha.slice(0,7)}</span> · ${fmtVerified(c.committed_at)||c.committed_at}</div></div>`;
+      html += `<div class="arch-history-item">📦 ${qEsc(c.message)}<div class="ah-meta"><span class="arch-history-sha">${c.sha.slice(0,7)}</span> · ${qShipWhen(c.committed_at)||c.committed_at}</div></div>`;
     });
     (data.prompts || []).forEach(p => {
-      html += `<div class="arch-history-item">📋 ${qEsc(p.title)} <span style="color:${p.status==='done'?'#4f9d7a':'var(--c-ink-4)'}">(${p.status})</span><div class="ah-meta">${fmtVerified(p.created_at)||p.created_at}</div></div>`;
+      html += `<div class="arch-history-item">📋 ${qEsc(p.title)} <span style="color:${p.status==='done'?'#4f9d7a':'var(--c-ink-4)'}">(${p.status})</span><div class="ah-meta">${qShipWhen(p.created_at)||p.created_at}</div></div>`;
     });
     if (!html) html = '<div class="empty">No tracked history yet — commits and queued prompts touching this component going forward will appear here.</div>';
     el.innerHTML = html;
