@@ -282,18 +282,24 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    232px column. The full breakdown lives in AI Settings (.uq-panel below). */
 .rail-foot #usageStripHost { padding:4px 7px 2px; }
 .rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:6px; }
-.rail-foot .usage-item { display:grid; grid-template-columns:1fr auto; grid-template-areas:'label pct' 'bar bar'; align-items:center; gap:2px 6px; }
+.rail-foot .usage-group { display:flex; flex-direction:column; gap:4px; }
+.rail-foot .usage-groupname { font-size:var(--fs-xs); font-weight:var(--fw-medium); text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); }
+/* Two lines per window: the figure above, the bar and its reset time below. */
+.rail-foot .usage-item { display:grid; grid-template-columns:1fr auto; grid-template-areas:'label pct' 'bar reset'; align-items:center; gap:2px 6px; }
 .rail-foot .usage-item .ui-label { grid-area:label; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rail-foot .usage-item .usage-pct, .rail-foot .usage-item .usage-money { grid-area:pct; white-space:nowrap; }
 .rail-foot .usage-bar { grid-area:bar; width:auto; }
+.rail-foot .usage-item .usage-reset { display:block; grid-area:reset; white-space:nowrap; font-size:var(--fs-xs); }
 /* the reset time has nowhere to go in a column — it is already in the tooltip */
-.rail-foot .usage-reset, .rail-foot .usage-stale { display:none; }
+.rail-foot .usage-stale { display:none; }
 .rail-foot .usage-none { white-space:normal; line-height:1.35; }
 .rail-foot .usage-alert { white-space:normal; line-height:1.35; }
 .usage-seeall { align-self:flex-start; padding:0; border:none; background:none; color:var(--c-ink-4); font-size:var(--fs-xs); cursor:pointer; }
 .usage-seeall:hover { color:var(--c-ink); text-decoration:underline; }
 /* collapsed: the bars alone. A nearly-spent quota still has to be noticeable,
    so they stay — only the words go. */
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-groupname,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-reset,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .ui-label,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-pct,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-money,
@@ -301,6 +307,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-alert,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .usage-seeall { display:none; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-strip { gap:3px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-group { gap:3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-bar { height:4px; }
 
 /* ---------- The full quota breakdown (AI Settings) ---------- */
@@ -7770,28 +7777,31 @@ function spendBarHtml(label, cap, hint) {
 // said plainly rather than drawn as an empty bar.
 //
 // Two audiences, one fetch. The rail gets a summary — the tightest limit in each
-// lane, so one glance answers "is anything nearly out?" — and AI Settings gets
-// the full labelled breakdown, since that sheet is already about which model
-// does what and what happens when the paid one runs out.
+// window of each, with the time until it comes back — AI Settings adds the
+// model-scoped weekly limit on top, since that sheet is already the full picture.
 let lastUsage = null;
 
-// The bar closest to running out in a lane, so the rail can show one line for it.
-function usageTightest(buckets) {
-  const live = buckets.filter(b => b && typeof b.utilizationPct === 'number');
-  if (!live.length) return null;
-  return live.reduce((worst, b) => (b.utilizationPct > worst.utilizationPct ? b : worst));
-}
-// A rail row: name of the lane, how much is left, and the bar underneath.
-function usageLaneHtml(label, bucket, hint) {
+// A rail row: which window, how much is left, the bar, and when it comes back.
+function usageRailRow(label, bucket) {
   if (!bucket || typeof bucket.utilizationPct !== 'number') return '';
   const pct = Math.max(0, Math.min(100, Math.round(bucket.utilizationPct)));
   const tone = usageTone(pct, bucket.severity);
   const resetIn = fmtResetIn(bucket.resetsAt);
-  const tip = `${hint}${resetIn ? ` Resets in ${resetIn}.` : ''}`.replace(/"/g, '&quot;');
-  return `<div class="usage-item" title="${tip}">
+  return `<div class="usage-item">
     <span class="ui-label">${label}</span>
     <span class="usage-pct ${tone}">${100 - pct}% left</span>
     <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
+    <span class="usage-reset">${resetIn ? `resets in ${resetIn}` : ''}</span>
+  </div>`;
+}
+// One account: its name, then both windows. Nothing is folded into a "tightest
+// limit" any more — the 5-hour window and the week run out at different times and
+// for different reasons, so seeing one of them was seeing half the picture.
+function usageRailGroup(name, hint, session, week) {
+  const rows = usageRailRow('5 hours', session) + usageRailRow('This week', week);
+  if (!rows) return '';
+  return `<div class="usage-group">
+    <div class="usage-groupname" title="${hint.replace(/"/g, '&quot;')}">${name}</div>${rows}
   </div>`;
 }
 // A row in the full breakdown: label, figure, bar, and when it resets.
@@ -7846,12 +7856,11 @@ async function loadUsage() {
   if (full) full.innerHTML = usageFullHtml(u);
   if (!host) return;
 
-  // The rail summary: one line per lane, the tightest limit in each.
-  const buildTight = usageTightest([u.session, u.week, u.weekScoped]);
-  const thinkTight = u.side ? usageTightest([u.side.session, u.side.week]) : null;
+  // Both Claude accounts, both windows each, with the time until each one comes
+  // back. The paid lane has no window — it is a monthly ceiling.
   const rows = [
-    usageLaneHtml('Building', buildTight, 'The tightest limit on the account that runs your tasks. Open AI Settings for all of them.'),
-    usageLaneHtml('Thinking', thinkTight, "The tightest limit on the second account — the app's own brainstorming. Open AI Settings for all of them."),
+    usageRailGroup('Building', 'The account that runs your tasks.', u.session, u.week),
+    usageRailGroup('Thinking', "The second account — the app's own thinking.", u.side?.session, u.side?.week),
     spendBarHtml('Paid', u.openai, 'Real money spent on gpt-4o this month, against your monthly ceiling.'),
   ].filter(Boolean).join('');
 
