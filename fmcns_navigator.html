@@ -310,7 +310,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uq-lane { display:flex; flex-direction:column; gap:5px; }
 .uq-lane-head { display:flex; align-items:baseline; gap:var(--sp-2); flex-wrap:wrap; }
 .uq-lane-name { font-size:var(--fs-sm); font-weight:var(--fw-medium); color:var(--c-ink); letter-spacing:.03em; text-transform:uppercase; }
-.uq-lane-note { font-size:var(--fs-xs); color:var(--c-ink-4); }
 .uq-row { display:grid; grid-template-columns:1fr auto minmax(90px,140px) auto; align-items:center; gap:var(--sp-2); font-size:var(--fs-xs); }
 .uq-name { color:var(--c-ink-2); }
 .uq-row .usage-bar { width:100%; height:6px; }
@@ -1701,7 +1700,6 @@ button:active { transform: translateY(1px) scale(.99); }
                   <button data-pl="first">First</button>
                   <button class="active" data-pl="last">Last</button>
                 </span>
-                <span style="font-size:10px;color:var(--c-ink-4);align-self:center;">Placement in line — Last is the default.</span>
                 <button class="ctrlbtn" id="shapeFirstBtn" title="Open this text in the Idea Studio, discuss and shape it, then queue the result">💬 Shape it in conversation first</button>
               </div>
             </div>
@@ -1709,13 +1707,11 @@ button:active { transform: translateY(1px) scale(.99); }
             <div id="qConnLost" style="display:none;color:var(--c-danger);font-size:12px;margin-top:8px;">Connection lost — retrying…</div>
           </div>
         </div>
-        <div class="flow-runner-banner" style="font-size:12px;padding:2px 0 8px;color:var(--c-ink-4);">
-          Tasks run on your Mac, not in this app. "Mark ready" / "Ready" just lines a task up — start the runner from a terminal to actually work through them.
-          <!-- Tasks run on Antoine's Mac now (queue-server/scripts/queue-runner.js).
-               If the runner isn't started, nothing will run — say so plainly here,
-               always visible, instead of letting the queue look busy with no one
-               behind it (this used to be tucked inside the collapsed composer). -->
-          <div id="qRunnerState" style="display:none;margin-top:4px;"></div>
+        <!-- Only the failure speaks. A connected runner is the normal state and
+             saying so every second is clutter — #qRunnerState stays empty unless
+             nothing is there to run the queue. -->
+        <div class="flow-runner-banner" style="font-size:12px;color:var(--c-ink-4);">
+          <div id="qRunnerState" style="display:none;"></div>
         </div>
         <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
       </div>
@@ -4182,25 +4178,13 @@ async function qRefreshRunnerState() {
   if (!s || s.mode !== 'local') { el.style.display = 'none'; return; }
   el.style.display = '';
   if (s.connected) {
-    el.style.color = 'var(--c-ink-4)';
-    let status = '✓ Runner connected';
-    if (s.runner_id) {
-      const lastSeenMs = s.last_seen_at ? Date.now() - new Date(s.last_seen_at).getTime() : null;
-      let freshness = '';
-      if (lastSeenMs !== null) {
-        if (lastSeenMs < 60000) {
-          freshness = Math.round(lastSeenMs / 1000) + 's ago';
-        } else {
-          freshness = Math.round(lastSeenMs / 60000) + 'm ago';
-        }
-      }
-      status += ` — ${s.runner_id}${freshness ? `, last seen ${freshness}` : ''}`;
-    }
-    status += s.running_count ? ` — ${s.running_count} task${s.running_count === 1 ? '' : 's'} running` : ' — idle';
-    el.textContent = status;
+    // Working as expected — say nothing.
+    el.style.display = 'none';
+    return;
   } else {
     el.style.color = 'var(--c-warn, #b8860b)';
-    el.textContent = 'Runner not running — queued tasks will wait. Start it with: cd queue-server && npm run runner';
+    el.title = 'Start it with: cd queue-server && npm run runner';
+    el.textContent = 'Nothing is running the queue — tasks will wait.';
   }
 }
 
@@ -5772,7 +5756,6 @@ function renderFlow() {
           <input id="idTitleInput" placeholder="The idea in one line…">
           <textarea id="idNotesInput" rows="2" placeholder="Expand (optional) — why, angles, what it would change…"></textarea>
           <div class="id-form-row">
-            <span class="id-form-hint">Nothing runs from an idea — they just sit here to be revisited.</span>
             <button class="id-addbtn" id="idAddBtn">+ Keep the idea</button>
           </div>
         </div>` + (ideas.length ? ideas.map(i => `
@@ -6164,7 +6147,7 @@ function renderSeedDetail(idea) {
     <input class="q-input" data-role="tag" placeholder="tag" value="${tag}" style="max-width:140px;">
     ${idea.work_prompt_id ? `<div class="id-done-pill"><a href="#" class="core-handoff-link" data-jump="${idea.work_prompt_id}">Open the task it became</a></div>` : ''}
     ${idea.arch_node_id ? `<div class="id-done-pill"><a href="#" class="core-handoff-link" data-plantjump="${idea.arch_node_id}">Open where it is planted in the Tech Tree</a></div>` : ''}
-    <div class="id-form-hint">Queue it, plant it or remove it with the symbols on the card above.</div>
+
     <div class="q-inspire-wrap" id="seedWorldHost"></div>
     <div class="arch-qf-status" id="seedDetailStatus"></div>
     <div id="seedStudioHost"></div>`;
@@ -6208,7 +6191,7 @@ function renderSuggestionDetail(s) {
       <div class="arch-field"><div class="arch-field-label">Prompt (editable before accepting)</div>
       <div class="sg-more" id="sgPromptToggle" style="margin-bottom:6px;">Show full prompt ▸</div>
       <textarea class="q-input" data-role="prompt" rows="6" style="display:none;">${qEsc(s.prompt)}</textarea></div>
-      <div class="id-form-hint">Accept or dismiss it with the symbols on the card above — any edit you make here is what gets accepted.</div>` : s.status === 'accepted' && s.work_prompt_id ? `<div class="sg-rationale"><a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">Open the task it became</a></div>` : ''}
+` : s.status === 'accepted' && s.work_prompt_id ? `<div class="sg-rationale"><a href="#" class="core-handoff-link" data-jump="${s.work_prompt_id}">Open the task it became</a></div>` : ''}
     <div class="q-inspire-wrap" id="sgWorldHost"></div>
     <div class="arch-qf-status" id="sgDetailStatus"></div>
     <div id="sgStudioHost"></div>`;
@@ -6355,7 +6338,7 @@ function qRenderDetail(p) {
   // implement-mode tasks).
   const stuckBanner = qStageStuck(p) ? `
     <div class="q-detail-row" style="background:rgba(178,58,47,0.10);border-left:3px solid #b23a2f;padding:8px 10px;margin:6px 0;">
-      <span>This task stopped part-way through getting ready — the server restarted while it was working, so nothing is on it any more. It clears itself within 10 minutes, or reset it now.</span>
+      <span>Stalled while getting ready.</span>
       <button class="ctrlbtn" data-action="unstick-detail">Reset and continue</button>
     </div>` : '';
   // Drafting a plan can take up to a minute or two (world-look plus a model call)
@@ -6391,7 +6374,7 @@ function qRenderDetail(p) {
               <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
             </select>
           </span>
-          <span style="font-size:11px;color:var(--c-ink-4);">Switching provider drops the old session link and starts fresh.</span>
+
         </div>` : ''}
     </details>
     <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
@@ -6976,7 +6959,7 @@ function qWorldIdeaModal(taskId, onSaved) {
     <div class="q-modal-backdrop" id="qWorldIdeaBackdrop"></div>
     <div class="q-modal" id="qWorldIdeaModal" role="dialog" style="max-width:520px;">
       <h3>✨ Add World Idea</h3>
-      <p style="color:var(--c-ink-4);font-size:13px;margin-bottom:12px;">Add a bold idea to this task's world-look. It will appear in the "Bold" shelf and feed the On the Horizon recommender.</p>
+
       <div class="arch-field"><div class="arch-field-label">Name *</div><input class="arch-field-body" id="wiName" placeholder="Short name for the idea" autocomplete="off"></div>
       <div class="arch-field"><div class="arch-field-label">Vision</div><textarea class="arch-field-body" id="wiVision" rows="2" placeholder="1-2 punchy sentences: the big idea">${qEsc(prefillVision)}</textarea></div>
       <div class="arch-field"><div class="arch-field-label">Why possible</div><textarea class="arch-field-body" id="wiWhy" rows="2" placeholder="Why this is achievable with today's or near-future technology"></textarea></div>
@@ -7562,18 +7545,17 @@ function usageFullHtml(u) {
   ].filter(Boolean).join('') : '';
   const paid = spendBarHtml('This month', u.openai, 'Real money spent on gpt-4o for Idea Studio conversations this month, against your monthly ceiling.');
 
+  // The lane names say enough. What each lane is for lives in a tooltip, so it is
+  // there when wanted and takes no room when not.
   const lane = (title, note, rows, empty) => `<div class="uq-lane">
-    <div class="uq-lane-head"><span class="uq-lane-name">${title}</span><span class="uq-lane-note">${note}</span></div>
+    <div class="uq-lane-head" title="${note}"><span class="uq-lane-name">${title}</span></div>
     ${rows || `<div class="uq-note">${empty}</div>`}
   </div>`;
 
   return `<div class="uq-panel">
-    ${lane('Building account', 'runs your tasks — the one that writes code', build,
-           'No reading. Start the runner on your Mac (npm run runner) and these appear.')}
-    ${lane('Thinking account', 'brainstorming, ideas, summaries — kept separate so it never eats the build quota', think,
-           'No reading — the local runner reports it, so start it to see these.')}
-    ${lane('Paid lane', 'real money, gpt-4o', paid,
-           'Off. Idea Studio runs on the free/subscription lane.')}
+    ${lane('Building account', 'Runs your tasks — the account that writes code.', build, 'No reading.')}
+    ${lane('Thinking account', "The app's own brainstorming, ideas and summaries — kept separate so it never eats the build quota.", think, 'No reading.')}
+    ${lane('Paid lane', 'Real money, gpt-4o.', paid, 'Off.')}
   </div>`;
 }
 
@@ -7812,7 +7794,7 @@ function renderIdeaBox() {
     <div class="id-form">
       <textarea id="bkIdeaInput" placeholder="Describe an idea — simple or complex. FMCNS will break it into parts if it combines multiple capabilities, search GitHub for real building blocks per part, and propose its own if nothing fits…" rows="3"></textarea>
       <div class="id-form-row">
-        <span class="id-form-hint" id="bkIdeaStatus">Runs only when you click Search — nothing on page load. Multi-part ideas take longer (a few AI calls per part).</span>
+        <span class="id-form-hint" id="bkIdeaStatus"></span>
         <button class="id-addbtn" id="bkSearchBtn">Search</button>
       </div>
     </div>
@@ -8545,7 +8527,6 @@ function nbUnreachableSectionHtml() {
   if (q) items = items.filter(it => [it.path, it.does, it.gives, it.why].join(' ').toLowerCase().includes(q));
   if (!items.length) return '';
   return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">🔌 Built, but you can't use it yet</span></div>
-    <div class="id-form-hint" style="margin-bottom:6px;">The server can already do each of these. Nothing in the app calls it, so there is no button and no way to reach it. Building the missing half is a job on its own — the server half is finished and must not be redone.</div>
     ${items.map(it => `
       <div class="nb-row nb-unreach" data-unreach="${qEscAttr(it.path)}">
         <div class="nb-top">
@@ -8588,7 +8569,6 @@ function nbUnplantedSectionHtml() {
   if (q) items = items.filter(it => [it.name, it.summary, it.idea_text].join(' ').toLowerCase().includes(q));
   if (!items.length) return '';
   return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">🌱 Not yet in the tree</span></div>
-    <div class="id-form-hint" style="margin-bottom:6px;">Bold ideas from world-looks across the app — queue tasks, suggestions, seeds, components — that haven't been planted into the tech tree yet.</div>
     ${items.map(it => `
       <div class="nb-row" data-unplanted="${it.report_id}:${it.part_index}:${it.pick_index}">
         <div class="nb-top">
