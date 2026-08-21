@@ -704,6 +704,11 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
   if (ctx.error) return { error: ctx.error };
 
   const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
+  // Instrumentation for the prompt-caching plan (2026-08-21): the map's own
+  // length, so a short/empty map inside the container shows up as an obvious
+  // number instead of a guess. Cheap — projectMapBlock() just returns the
+  // string already held in memory.
+  const mapChars = projectMapBlock().length;
   const result = await generateTextStream({
     prompt, feature: 'studio', label: 'conversations:chat',
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
@@ -718,6 +723,14 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
     // for the times a question genuinely needs it, not a target.
     model: CONVO_CHAT_MODEL, maxTokens: 4000,
     allowLongOutput: true, timeoutMs: 150_000, onToken,
+    // Stable per conversation, not per turn, so every turn of one thread hits
+    // the same OpenAI prompt cache instead of scattering across machines (plan
+    // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
+    cacheKey: convoId,
+    onUsage: (usage) => {
+      const cached = usage?.prompt_tokens_details?.cached_tokens || 0;
+      console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
+    },
   });
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text, result.notice ? { notice: result.notice } : null);
@@ -739,6 +752,7 @@ async function runChatTurn(convoId, userId) {
     feature: 'studio', label: 'conversations:chat',
     allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000,
     tools: studioTools(), dispatchTool: studioDispatch,
+    cacheKey: convoId,
   });
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text);
