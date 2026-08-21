@@ -42,7 +42,11 @@ Workflow for any change:
    errors otherwise).
 3. Frontend sync (AGENTS.md hard rule): copy `fmcns_navigator.html` over
    `queue-server/public/index.html` and verify the checksums match.
-4. Commit and push to `develop` immediately — that is the deploy.
+4. Docs sync (AGENTS.md hard rule) — only if `CLAUDE.md` or `AGENTS.md` changed:
+   `cd queue-server && npm run docs:sync`, then commit `project-docs/`. The
+   deployed container cannot see the repo-root docs (its build root is
+   `queue-server/`), so without this the Idea Studio's project map ships stale.
+5. Commit and push to `develop` immediately — that is the deploy.
 
 **No local test phase.** Antoine's rule (AGENTS.md "Ship directly"): he reviews
 quality by using the app; anything broken after shipping gets reported and fixed

@@ -26,7 +26,7 @@
 // conversations.js, after the map, so a note saved five minutes ago is visible.
 
 import { readFileSync, existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mainRepo } from './gitOps.js';
 import { getComponents } from './architecture.js';
@@ -37,10 +37,25 @@ export function bindProjectMapDb(database) { db = database; }
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Where the repo's own documentation might be, best guess first. mainRepo() is
-// the right answer on the Mac (it honours MAIN_REPO / AGENT_CWD); the
-// module-relative root is the right answer in a container with no git. Each file
-// is looked up independently, so a partial checkout yields a partial map rather
+// the right answer on the Mac (it honours MAIN_REPO / AGENT_CWD). Each file is
+// looked up independently, so a partial checkout yields a partial map rather
 // than nothing — this must never be able to break a conversation.
+//
+// IN THE CONTAINER THERE IS NO REPO ROOT TO FIND. Railway's build root for this
+// service is `queue-server/`, so /app IS the queue-server directory and every
+// root below it resolves above the deployed tree, where nothing exists. That is
+// not a bug to fix by walking further up — the files are genuinely not in the
+// image. queue-server/project-docs/ holds committed mirrors of them instead,
+// refreshed by scripts/sync-docs.js (`npm run docs:sync`), and PROJECT_DOCS is
+// what actually makes the map whole in production.
+//
+// Diagnosed 2026-08-21 from a boot log reading "built 6256 bytes ... from
+// components": the map was carrying the component ladder alone, 2k tokens where
+// ~9k was designed, and the Idea Studio had no idea how the app is built or
+// worked on. The boot line names every part it found — read it after any change
+// here, since a silently thin map still answers, just worse.
+const PROJECT_DOCS = resolve(HERE, '../../..', 'project-docs');  // services -> src -> server -> queue-server
+
 function docRoots() {
   const out = [];
   const push = (p) => { if (p && !out.includes(p)) out.push(p); };
@@ -51,11 +66,17 @@ function docRoots() {
   return out;
 }
 
+// The repo copy wins when it exists (the Mac, where it is the live file); the
+// mirror is the fallback (the container, where it is the only copy). Looked up
+// by basename, so a nested path like .agents/current-state.md can be mirrored
+// flat without the caller caring.
 function readDoc(rel) {
   for (const root of docRoots()) {
     const p = join(root, rel);
     try { if (existsSync(p)) return readFileSync(p, 'utf8'); } catch {}
   }
+  const mirrored = join(PROJECT_DOCS, basename(rel));
+  try { if (existsSync(mirrored)) return readFileSync(mirrored, 'utf8'); } catch {}
   return null;
 }
 
