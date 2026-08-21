@@ -4,6 +4,8 @@
 import { randomUUID } from 'node:crypto';
 import * as queue from './promptQueue.js';
 import { createNode } from './architectureNodes.js';
+import { generateText } from './ai/text.js';
+import { USER_FACING_STYLE } from './ai/style.js';
 
 let db = null;
 export function bindWorkIdeasDb(database) { db = database; }
@@ -31,6 +33,7 @@ export function createIdea({ title, notes = '', tag = null, created_by = 'antoin
     INSERT INTO work_ideas (id, title, notes, tag, position, created_by)
     VALUES (?,?,?,?,?,?)
   `).run(id, t, notes, tag, nextPosition(), created_by);
+  eagerSummarize(id); // the row's one line is usually ready before it is first read
   return getIdea(id);
 }
 
@@ -42,11 +45,60 @@ export function updateIdea(id, patch = {}) {
   // autosaves on every keystroke, so a transient empty value must never persist.
   const title = String(next.title || '').trim();
   if (!title) return idea;
+  const notes = next.notes ?? '';
+  // Rewriting the notes invalidates the summary — blank it so the row regenerates
+  // its one line against the new text instead of describing the old idea.
+  const keepSummary = notes === (idea.notes ?? '');
   db.prepare(`
-    UPDATE work_ideas SET title=?, notes=?, tag=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    UPDATE work_ideas SET title=?, notes=?, tag=?, summary=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
     WHERE id=?
-  `).run(title, next.notes ?? '', next.tag ?? null, id);
+  `).run(title, notes, next.tag ?? null, keepSummary ? (idea.summary ?? null) : null, id);
+  if (!keepSummary) eagerSummarize(id);
   return getIdea(id);
+}
+
+// ─── The row's one line ────────────────────────────────────────────────────────
+// A seed row used to print its whole notes field, which the opened panel then
+// showed again in the edit box — the same sentence twice, the second time
+// mid-thought. Instead: one cheap free-lane call writes a summary of the whole
+// idea, cached on the row so revisits and list polls never pay again. Same shape
+// as summarizePrompt() in promptQueue.js — in-flight dedup so the route, the
+// eager hooks and rapid re-renders share one generation, and silent failure so
+// the frontend keeps its instant first-sentence preview.
+const _summarizing = new Map();
+
+export async function summarizeIdea(id) {
+  const idea = getIdea(id);
+  if (!idea) return null;
+  if (idea.summary) return { summary: idea.summary };
+  if (_summarizing.has(id)) return { summary: await _summarizing.get(id) };
+  const attempt = (async () => {
+    const text = [idea.title, idea.notes || ''].filter(Boolean).join('\n\n');
+    const out = await generateText({
+      prompt: [
+        'Below is an idea someone jotted down for their own app.',
+        'Write ONE short line that says what the idea IS — the whole of it, in a phrase.',
+        'It sits next to the title in a list, above the full text, so it must NOT start with the opening words of the idea and must NOT be a sentence cut short. Sum the idea up; do not begin quoting it.',
+        'Under 100 characters. One line, no bullet, no quotes, no preamble, no full stop needed.',
+        USER_FACING_STYLE,
+        '\nThe idea:\n' + text.slice(0, 8000),
+      ].join('\n'),
+      feature: 'summary',
+      maxTokens: 120,
+      label: 'idea:summarize',
+    });
+    const summary = (out.text || '').replace(/\s+/g, ' ').trim();
+    if (!summary) throw new Error('empty summary');
+    db.prepare(`UPDATE work_ideas SET summary=? WHERE id=?`).run(summary, id);
+    return summary;
+  })();
+  _summarizing.set(id, attempt);
+  try { return { summary: await attempt }; }
+  finally { _summarizing.delete(id); }
+}
+
+function eagerSummarize(id) {
+  setImmediate(() => { summarizeIdea(id).catch(() => {}); });
 }
 
 export function deleteIdea(id) {

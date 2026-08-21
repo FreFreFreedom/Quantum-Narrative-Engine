@@ -5489,7 +5489,7 @@ function renderFlow() {
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
             <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '▾' : '▸'}</span>
           </div>
-          ${i.notes ? `<div class="sg-rationale">${qEsc(i.notes)}</div>` : ''}
+          ${seedLineHtml(i)}
           ${stageStripHtml(cardStage('seed', i))}
           ${cardActions([
             iconBtn('queue', 'Send it to the queue as a task', 'seed-queue', i.id, 'primary'),
@@ -5631,6 +5631,7 @@ function renderFlow() {
       renderFlow();
     };
   });
+  if (host.querySelector('.flow-idrow')) seedSummarizeVisible();
   host.querySelectorAll('.flow-idrow').forEach(el => {
     el.onclick = () => {
       const id = el.getAttribute('data-iid');
@@ -5768,6 +5769,47 @@ async function flowGenerateNow() {
 // Shared inline detail for Flow items: seeds and suggestions get their own light
 // renderers with the same actions the old list cards had — moved, not changed.
 // Each writes into the expanded card that sits under the selected row.
+// ─── The one line under a seed's title ────────────────────────────────────────
+// It used to be the notes themselves, printed in full — and then the opened panel
+// showed the same text again in its edit box, so you read the sentence twice and
+// had to find your place in it the second time. Now the row carries a written
+// summary of the whole idea (backend: summarizeIdea), and the panel below is the
+// only place the full notes appear. Until the summary lands, a first-sentence cut
+// stands in — the row is never blank and never sprawls.
+function seedLineHtml(i) {
+  const line = i.summary ? String(i.summary) : seedOneLine(i);
+  if (!line) return '';
+  return `<div class="sg-rationale${line.length > 160 ? ' clamped' : ''}" data-seedsum="${i.id}">${qEsc(line)}</div>`;
+}
+
+function seedOneLine(i) {
+  const text = String(i.notes || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const stop = text.search(/[.!?](\s|$)/);
+  const first = stop > 24 ? text.slice(0, stop + 1) : text;
+  return first.length > 90 ? first.slice(0, 90).replace(/\s\S*$/, '') + '…' : first;
+}
+
+// Lazy backfill for seeds kept before summaries existed. New seeds are summarized
+// server-side the moment they are saved, so this normally has nothing to do. A few
+// per paint, deduped, silent on failure — the stand-in line simply stays.
+const seedSumBusy = new Set();
+function seedSummarizeVisible() {
+  let budget = 3;
+  for (const i of tvIdeas) {
+    if (budget <= 0) break;
+    if (i.summary || !i.notes || seedSumBusy.has(i.id)) continue;
+    budget--;
+    seedSumBusy.add(i.id);
+    apiWrite(`/api/travaux/ideas/${i.id}/summarize`, 'POST', {}).then(r => {
+      if (!r || !r.summary) return;
+      i.summary = r.summary;
+      const live = document.querySelector(`[data-seedsum="${i.id}"]`);
+      if (live) { live.textContent = r.summary; live.classList.toggle('clamped', r.summary.length > 160); }
+    }).catch(() => {}).finally(() => seedSumBusy.delete(i.id));
+  }
+}
+
 function renderSeedDetail(idea) {
   const host = document.getElementById('flowExpanded');
   if (!host) return;
@@ -5775,9 +5817,10 @@ function renderSeedDetail(idea) {
   const title = (idea.title || '').replace(/"/g, '&quot;');
   const notes = (idea.notes || '');
   const tag = (idea.tag || '').replace(/"/g, '&quot;');
-  // The card above already reads out the title, the notes, the tag and the
-  // Queued/Planted badges. What it cannot do is edit them or follow them, so the
-  // panel is exactly that: the boxes, and the links the badges have no room for.
+  // The card above reads out the title, a one-line summary of the idea, the tag and
+  // the Queued/Planted badges. The full notes live here and nowhere else, so this
+  // panel never repeats the line the row showed: the boxes, and the links the
+  // badges have no room for.
   host.innerHTML = `
     <div class="arch-field-label">Edit — each box saves when you leave it</div>
     <input class="q-input" data-role="title" value="${title}">

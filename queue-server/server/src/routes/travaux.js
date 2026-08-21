@@ -110,6 +110,18 @@ export function travauxRoutes() {
     res.json({ ok: true });
   });
 
+  // The one line the closed seed row shows. Lazy: the frontend fires this on first
+  // render and keeps its instant preview if it fails.
+  router.post('/ideas/:id/summarize', asyncHandler(async (req, res) => {
+    try {
+      const out = await ideas.summarizeIdea(req.params.id);
+      if (!out) return res.status(404).json({ error: 'not_found' });
+      res.json(out);
+    } catch (e) {
+      res.status(502).json({ error: 'summary_failed', message: e.message });
+    }
+  }));
+
   router.post('/ideas/reorder', (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
     res.json({ ideas: ideas.reorderIdeas(ids) });

@@ -951,6 +951,9 @@ export function initArchitectureSchema(db) {
   // rendering of the same objects the tree renders spatially. Additive ALTER in a
   // try/catch per this file's convention — it throws harmlessly once applied.
   try { db.exec(`ALTER TABLE work_ideas ADD COLUMN arch_node_id TEXT`); } catch {}
+  // The one line a closed seed row shows: a written summary of the whole idea,
+  // so the row is not just the opening words of the notes repeated below it.
+  try { db.exec(`ALTER TABLE work_ideas ADD COLUMN summary TEXT`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_ideas_node ON work_ideas(arch_node_id)`); } catch {}
 }
 
