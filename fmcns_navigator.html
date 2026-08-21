@@ -659,9 +659,18 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .stage-go { flex:none; font-size:11px; font-family:inherit; padding:4px 10px; border-radius:8px; border:1px solid var(--c-accent); background:var(--c-accent); color:#fff; cursor:pointer; }
 .stage-go:hover { opacity:.88; }
 .stage-go:disabled { opacity:.5; cursor:default; }
-/* Width/height on .cardbtn is sized for a 26px symbol; the strip's button is words. */
-.cardbtn.stage-go { width:auto; height:auto; }
+/* Width/height on .cardbtn is sized for a 26px symbol; the strip's button is words.
+   .cardbtn's own background/border/color reset (further down this sheet) would
+   otherwise win over .stage-go's green fill since both are single-class rules —
+   restate them here at the higher two-class specificity so the fill always shows. */
+.cardbtn.stage-go { width:auto; height:auto; border:1px solid var(--c-accent); background:var(--c-accent); color:#fff; }
 .cardbtn.stage-go:hover { background:var(--c-accent); color:#fff; opacity:.88; }
+/* This is the one stage-go button that shows up inside an otherwise alarming
+   (red, tone-stop) strip: "the world-look didn't finish, but you can still
+   start anyway." Giving it a full row of its own — instead of being crammed
+   to the right of the dots and label — keeps that reassuring, ready-to-press
+   action from reading as just more of the red warning around it. */
+.stage-go-block { flex:1 1 100%; margin-top:4px; padding:6px 12px; text-align:center; font-weight:600; }
 .card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
 .q-item:hover .card-actions, .flow-row:hover .card-actions, .arch-node:hover .card-actions, .card-actions:focus-within { opacity:1; }
 .cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
@@ -4574,7 +4583,7 @@ function taskStage(p) {
     if (['off', 'failed'].includes(insp)) {
       return { step: 3, total: TASK_STAGE_TOTAL, label: 'Held — its look at the world did not finish', tone: 'stop',
         next: 'Start it without the ideas, on a plain plan',
-        btn: { label: 'Start it without that', attrs: `class="cardbtn stage-go" data-act="inspire-skip" data-id="${qEscAttr(p.id)}"`,
+        btn: { label: 'Start it without that', attrs: `class="cardbtn stage-go stage-go-block" data-act="inspire-skip" data-id="${qEscAttr(p.id)}"`,
           title: 'Lets this task run on a plain plan, without waiting for the world-look' } };
     }
     if (insp === 'pending' || insp === 'reviewing') {
