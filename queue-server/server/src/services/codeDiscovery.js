@@ -907,6 +907,246 @@ export function removeConvoPicks(db, { reportId, partIndex = null, convoId = nul
   return { report: getReport(db, reportId), removed };
 }
 
+// ─── Swapping ONE idea for a fresh one ────────────────────────────────────────
+// "New ideas" redoes a whole report: every idea in the box is thrown away and
+// the box comes back different, which is a heavy hammer when only one row is
+// weak. This swaps a SINGLE idea where it stands — same part, same position,
+// same kind of idea (open source / private / bold) — and leaves every other row
+// exactly as it was.
+//
+// Position-safe by construction (it edits in place, like updatePickInPlace), but
+// a position is also referenced from outside the report: applied picks on a task,
+// planted tech-tree nodes, and conversations about that one idea. Replacing the
+// text under any of those would silently re-point them at a different idea, so
+// the guards below refuse the swap instead, with a reason a person can read.
+
+function pickKeyRefusal(db, reportId, partIndex, pickIndex) {
+  try {
+    const planted = db.prepare(
+      `SELECT 1 FROM discovery_pick_plants WHERE report_id=? AND part_index=? AND pick_index=? LIMIT 1`
+    ).get(reportId, partIndex, pickIndex);
+    if (planted) {
+      return { error: 'planted', message: 'This idea is already in the tech tree — swapping it would leave the tree pointing at something else.' };
+    }
+  } catch { /* table missing on an older database — nothing planted */ }
+  try {
+    const convo = db.prepare(
+      `SELECT 1 FROM convos WHERE subject_type='world_pick' AND deleted_at IS NULL AND subject_id=? LIMIT 1`
+    ).get(`${reportId}~${partIndex}:${pickIndex}`);
+    if (convo) {
+      return { error: 'in_conversation', message: 'You already talked about this idea — swapping it would leave that conversation about something else.' };
+    }
+  } catch { /* no convos table — nothing to protect */ }
+  try {
+    const rows = db.prepare(
+      `SELECT inspire_picks_json FROM work_prompts WHERE inspire_report_id=? AND inspire_picks_json IS NOT NULL`
+    ).all(reportId);
+    for (const r of rows) {
+      let applied = [];
+      try { applied = JSON.parse(r.inspire_picks_json || '[]'); } catch { applied = []; }
+      if ((applied || []).some(k => Number(k?.part_index) === partIndex && Number(k?.pick_index) === pickIndex)) {
+        return { error: 'applied', message: 'This idea is already baked into a plan — swapping it would change what that plan was built from.' };
+      }
+    }
+  } catch { /* no work_prompts column on an older database — nothing applied */ }
+  return null;
+}
+
+// The quick check's verdict is stored by position (removed / groups / recommended),
+// so after a swap its opinion belongs to an idea that is gone. Drop just that
+// position rather than leaving "the quick check wasn't sure" hanging on a brand-new
+// idea. A group that falls below two members stops being a choice, and a group whose
+// recommended member was the swapped one gets its recommendation moved to a survivor
+// — the same shape sanitizeReview guarantees.
+function reviewWithoutPick(review, partIndex, pickIndex) {
+  if (!review || typeof review !== 'object') return null;
+  const same = (k) => Number(k?.part_index) === partIndex && Number(k?.pick_index) === pickIndex;
+  const removed = (review.removed || []).filter(k => !same(k));
+  const groups = (review.groups || [])
+    .map(g => ({ ...g, picks: (g.picks || []).filter(k => !same(k)) }))
+    .filter(g => g.picks.length >= 2);
+  const recommended = groups.map(g => {
+    const kept = (review.recommended || []).find(r =>
+      String(r?.group_id) === String(g.id) && !same(r) &&
+      g.picks.some(p => Number(p.part_index) === Number(r.part_index) && Number(p.pick_index) === Number(r.pick_index)));
+    return kept || { group_id: g.id, part_index: g.picks[0].part_index, pick_index: g.picks[0].pick_index, why: '' };
+  });
+  return { ...review, removed, groups, recommended };
+}
+
+// Forget the quick check's opinion of one position, everywhere it is stored: on the
+// report itself, and on any task whose own copy of the review points at this report.
+function forgetReviewForPick(db, reportId, partIndex, pickIndex) {
+  try {
+    const row = db.prepare(`SELECT review_json FROM discovery_reports WHERE id=?`).get(reportId);
+    if (row?.review_json) {
+      const next = reviewWithoutPick(JSON.parse(row.review_json), partIndex, pickIndex);
+      db.prepare(`UPDATE discovery_reports SET review_json=? WHERE id=?`).run(JSON.stringify(next), reportId);
+    }
+  } catch (e) { console.error('forgetReviewForPick (report) —', e.message); }
+  try {
+    const rows = db.prepare(
+      `SELECT id, inspire_review_json FROM work_prompts WHERE inspire_report_id=? AND inspire_review_json IS NOT NULL`
+    ).all(reportId);
+    for (const r of rows) {
+      const next = reviewWithoutPick(JSON.parse(r.inspire_review_json), partIndex, pickIndex);
+      if (next) db.prepare(`UPDATE work_prompts SET inspire_review_json=? WHERE id=?`).run(JSON.stringify(next), r.id);
+    }
+  } catch (e) { console.error('forgetReviewForPick (task) —', e.message); }
+}
+
+const SWAP_SHELF = {
+  open: {
+    label: 'a real open-source project',
+    fields: 'repo (owner/name, copied exactly from the list below), stars, why_fits, use',
+    shape: '{"pick":{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how FMCNS would use it"}}',
+  },
+  hidden: {
+    label: 'something that exists in the world but whose code is not public — a product or a feature inside a company, from your general knowledge',
+    fields: 'name, what, lesson, use',
+    shape: '{"pick":{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what FMCNS could do even better, one short sentence"}}',
+  },
+  bold: {
+    label: 'a bold idea that may not exist anywhere yet — understand where these technologies are heading and imagine the boldest PLAUSIBLE version. Be visionary. Dare. Do not water it down',
+    fields: 'name, vision, why_possible, how_fmcns',
+    shape: '{"pick":{"kind":"bold","name":"short idea name","vision":"1-2 punchy short sentences","why_possible":"one short sentence","how_fmcns":"one short sentence"}}',
+  },
+};
+
+function buildSwapPickPrompt({ kind, ideaText, partDescription, subject, subjectNote, keepAway, replacing, repoBlock }) {
+  const shelf = SWAP_SHELF[kind] || SWAP_SHELF.bold;
+  const subjectLabel = [subject, subjectNote].filter(Boolean).join(' — ');
+  return `You are the inspiration engine for ${FMCNS_BLURB}. A list of ideas for one task already exists and the owner wants ONE of them replaced — the one below did not earn its place. Give exactly ONE fresh idea to stand in for it. Everything else in the list stays, so your idea must not repeat any of them.
+
+${ideaText ? `THE TASK, IN THE OWNER'S OWN WORDS (this is the subject; everything you answer must serve it):\n"${String(ideaText).trim().slice(0, 600)}"\n` : ''}
+${subjectLabel ? `The part of the app it is about: ${subjectLabel}\n` : ''}
+${onSubjectRule(subjectLabel)}
+
+The part of the idea you are inspiring for: "${String(partDescription).trim()}"
+
+THE IDEA BEING REPLACED (do not return it again, and do not return a rewording of it):
+${replacing}
+
+ALREADY IN THE LIST — every one of these is off limits, including close variations:
+${keepAway || '(nothing else yet)'}
+
+${repoBlock || ''}Your one idea must be ${shelf.label}. Fields: ${shelf.fields}.
+
+It must be genuinely different from what is already there — a different angle, not the same thought in new words. Bold does NOT mean off-subject: an idea about a different part of the app is useless here.
+
+Every text field must be ONE short sentence, maximum 20 words. Never write paragraphs.
+
+${USER_FACING_STYLE}
+
+Respond with ONLY a JSON object, no prose, no markdown fence:
+${shelf.shape}`;
+}
+
+// One line per pick, for the "already in the list" block — enough for the model to
+// recognise an idea and avoid it, without resending the whole report.
+function pickOneLine(pick) {
+  const title = pick.repo || pick.name || 'idea';
+  const gist = pick.why_fits || pick.what || pick.vision || pick.use || '';
+  return `- ${title}${gist ? ` — ${String(gist).slice(0, 140)}` : ''}`;
+}
+
+/**
+ * Replace ONE idea with a fresh one, in place. One model call (plus cached GitHub
+ * lookups for an open-source row), against the same part and the same shelf, told
+ * to avoid every idea already in the list.
+ *
+ * @returns the fresh report, or {error, message} — never throws.
+ */
+export async function swapOnePick(db, { reportId, partIndex, pickIndex } = {}) {
+  const pi = Number(partIndex);
+  const ii = Number(pickIndex);
+  if (!Number.isInteger(pi) || !Number.isInteger(ii)) return { error: 'bad_index', message: 'That idea could not be found.' };
+
+  const report = getReport(db, reportId);
+  if (!report) return { error: 'no_report', message: 'That world-look report no longer exists.' };
+  const part = report.parts?.[pi];
+  const pick = part?.picks?.[ii];
+  if (!pick) return { error: 'no_pick', message: 'That idea is no longer in the report.' };
+
+  const refusal = pickKeyRefusal(db, reportId, pi, ii);
+  if (refusal) return refusal;
+
+  const kind = ['open', 'hidden', 'bold'].includes(pick.kind) ? pick.kind : 'bold';
+  const partDescription = String(part.description || report.idea_text || '').trim();
+  const others = (part.picks || []).filter((_, i) => i !== ii);
+  const keepAway = others.map(pickOneLine).join('\n');
+
+  // Open-source rows are only ever as good as the live search behind them, so a
+  // swap picks a DIFFERENT real repo out of the same (day-cached, therefore free)
+  // results — never a repo the model invented.
+  let repoBlock = '';
+  let allowedRepos = null;
+  if (kind === 'open') {
+    const taken = new Set((part.picks || []).map(p => String(p.repo || '').toLowerCase()).filter(Boolean));
+    const seen = new Set();
+    const candidates = [];
+    for (const q of (part.queries || []).slice(0, 2)) {
+      if (!q?.q) continue;
+      const out = await getResults(db, queryHash(q.q), q.q);
+      if (out.error) continue;
+      for (const r of (out.results || [])) {
+        const name = String(r.repo_full_name || '');
+        const low = name.toLowerCase();
+        if (!name || taken.has(low) || seen.has(low)) continue;
+        seen.add(low);
+        candidates.push(`  - ${name} (${r.stars}★): ${r.description || '(no description)'}`);
+      }
+    }
+    if (!candidates.length) {
+      return { error: 'no_other_repo', message: 'The search found no other real project for this part — every one it returned is already in the list.' };
+    }
+    allowedRepos = seen;
+    repoBlock = `Real projects a live GitHub search returned for this part, with the ones already in the list taken out. Choose ONE of these and nothing else:\n${candidates.slice(0, 12).join('\n')}\n\n`;
+  }
+
+  const out = await generateTextByFeature({
+    prompt: buildSwapPickPrompt({
+      kind,
+      ideaText: report.idea_text,
+      partDescription,
+      subject: report.project_territory || '',
+      subjectNote: '',
+      keepAway,
+      replacing: pickOneLine(pick),
+      repoBlock,
+    }),
+    feature: 'inspire',
+    maxTokens: 500,
+    label: 'inspire-swap-pick',
+    maxAttempts: 3,
+    timeoutMs: 35_000,
+    claudeLastResort: true,
+  });
+  if (out.error) return { error: out.error, message: out.message || 'The swap did not come back with anything usable.' };
+
+  const parsed = parseJsonObject(out.text);
+  const fresh = sanitizePick({ ...(parsed?.pick || parsed || {}), kind });
+  if (!fresh) return { error: 'unparseable', message: 'The swap did not come back with a usable idea — try it again.' };
+  // An open-source row promises a link that works. If the model named a repo that
+  // was not in the live results, it made it up — refuse rather than ship a dead link.
+  if (allowedRepos && !allowedRepos.has(String(fresh.repo || '').toLowerCase())) {
+    return { error: 'invented_repo', message: 'The swap named a project the search never returned — try it again.' };
+  }
+
+  // Same position, same kind, brand-new text. Anything the old idea carried about
+  // its own history goes with it: `original` described text that is gone, and a
+  // swapped row was never developed out of a conversation.
+  const live = getReport(db, reportId);
+  const target = live?.parts?.[pi]?.picks?.[ii];
+  if (!target) return { error: 'no_pick', message: 'That idea is no longer in the report.' };
+  for (const f of ['repo', 'stars', ...PICK_FIELDS[kind], 'original', 'developed_at', 'developed_by_convo', 'from_convo']) delete target[f];
+  Object.assign(target, fresh);
+  target.swapped_at = new Date().toISOString();
+  saveParts(db, reportId, live.parts);
+  forgetReviewForPick(db, reportId, pi, ii);
+  return getReport(db, reportId);
+}
+
 // Has anyone brainstormed this report — a conversation about one of its ideas, a
 // pick folded from a conversation, a reframed part? The rewrite sweep replaces a
 // report wholesale, and a conversation is the most expensive thing in it, so a
