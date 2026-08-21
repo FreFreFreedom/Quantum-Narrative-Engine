@@ -1,7 +1,13 @@
 # Rotate the leaked credentials
 
-**Status: PLANNED — deliberately deferred.** Antoine's call, 2026-08-21: "mark this
-as a project we'll do eventually, but not now." Deferred, not forgotten.
+**Status: PARTLY DONE — rotation still deferred.** Antoine's call, 2026-08-21:
+"mark this as a project we'll do eventually, but not now."
+
+- **Variable cleanup: DONE** 2026-08-21 — 14 unused variables deleted, six of them
+  exposed secrets. See the section at the bottom.
+- **Revoking/rotating at source: still deferred.** Deleting a variable from Railway
+  stops the app carrying it; it does not invalidate the credential. Anyone holding
+  the old `RAILWAY_TOKEN` or `DATABASE_URL` string can still use it.
 
 ## Context
 
@@ -43,7 +49,17 @@ most of the fix.
 3. Rotate 5–7 when convenient. `JWT_SECRET` can be any new random string.
 4. Leave 8 and 9 unless the cleanup hasn't already removed them.
 
-## The variable cleanup this depends on
+## The variable cleanup this depends on — **DONE 2026-08-21**
+
+Antoine deleted all 14 on 2026-08-21 and added the three OpenAI variables. That
+removed six of the exposed secrets from the deployment outright, including the two
+highest-priority ones (`RAILWAY_TOKEN`, `DATABASE_URL`) — so items 1 and 2 in the
+table above are no longer *set anywhere*, which is most of their fix. They should
+still be revoked at source when the rotation is picked up, since a deleted
+variable is not a revoked credential.
+
+The audit that produced the list, kept for the next time this is needed:
+
 
 Audited 2026-08-21 by grepping every `process.env.*` read in `server/src` and
 `scripts`. Railway runs only the server; the runner runs on the Mac, so
