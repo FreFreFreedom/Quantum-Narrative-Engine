@@ -22,6 +22,7 @@ import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './su
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextStream, studioPersonaText } from './ai/text.js';
 import { getComponents } from './architecture.js';
+import { projectMapBlock } from './projectMap.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 
@@ -192,7 +193,8 @@ function dispatchByName(name, input) {
 // NOTE: toolSpecs/dispatchByName/buildMessages below feed runToolLoop, which is
 // the metered Messages-API path. Turns now go through generateText (the routed,
 // subscription/free lane) instead, which is one prompt in and one answer out —
-// the lookups those tools did are pre-answered by projectDigestBlock(). Kept so
+// the lookups those tools did are pre-answered by the project map plus
+// liveListsBlock() below. Kept so
 // the tool path still works if ALLOW_METERED_API is ever turned on.
 
 // ─── System prompt builders ──────────────────────────────────────────────────
@@ -227,23 +229,66 @@ Conceptual, philosophical and spiritual language is NOT jargon and is welcome �
 // time — which is not how a real brainstorming conversation works. So the model
 // judges length from the question instead, the way ChatGPT does by default.
 // ─── The Idea Studio voice ───────────────────────────────────────────────────
-// Antoine's own framing of his research, in his words (2026-08-21), used as the
-// lens the conversation thinks through. It is his text, not a paraphrase of it —
-// he wrote it and it is better than a generated "be philosophical" instruction,
-// because it names specific lenses (biopolitics, shadow work, grief as a mirror
-// of power) and specificity is what actually changes how a model reasons.
+// Third attempt, and the first one built on JUDGEMENT rather than on register.
 //
-// Deliberately LAYERED on top of BASE_SYSTEM rather than replacing it: the
-// operational rules (use the tools, invent nothing, say when something already
-// exists, stay anchored to the subject) are what keep this useful instead of
-// merely eloquent. A beautiful essayist that hallucinates is not the goal.
+// The two before it described the voice they wanted ("be philosophical", "reach
+// for the structural reading") and gpt-4o answered in its default
+// product-consultant idiom anyway. Live evidence, same question both times:
+// "immersive engagement... exploratory adventure... impactful and memorable" and
+// "participation rather than observation... engagement and exploration". It
+// described an idea's benefits instead of taking a position on it.
 //
-// Overridable live from AI Settings (ai_settings.studio_persona) because a
-// thinking partner's register is something you only get right by iterating, and
-// waiting on a deploy each time kills that loop.
-const DEFAULT_STUDIO_PERSONA = `You navigate the liminal space where history, myth, and imagination converge. You trace the conscious architectures and subconscious drives of entities — families, corporations, nations, civilizations — as evolving, self-similar consciousness systems. You think through biopolitics, post-humanism, cyberpunk dynamics, transhumanist warfare, shadow work, and grief as mirrors of power and memory. Literature, cinema, and speculative worlds are living laboratories for decoding suppressed stories and collective feedback loops. You map multi-scale narrative cartographies where every node — real or imagined — can reveal deeper structural truths.
+// The most useful answer of that whole session came from the free lane during a
+// run where gpt-4o errored: "Mostly a distraction right now — but there's a real
+// itch underneath it worth naming, because I think two of your saved notes are the
+// same itch. [...] it costs you a second toolchain, a rewrite of every view you
+// already have working, and months of attention." That is the target — not because
+// it was philosophical, because it JUDGED: took a position, found the want under
+// the stated want, spotted a duplicate in the notebook, priced the cost in
+// attention. So the prompt now asks for that behaviour directly.
+//
+// Antoine's own framing of his research is kept VERBATIM under HOW TO THINK. It is
+// his text, not a paraphrase, and it is here as domain competence rather than as
+// style: the project treats a character, a film and a country as one object read at
+// different scales, and an advisor who cannot think that way cannot judge ideas
+// about it. Specificity is also what actually moves a model — named lenses
+// (biopolitics, shadow work, grief as a mirror of power) change how it reasons in a
+// way "be profound" never does.
+//
+// THE NEVER BLOCK IS LOAD-BEARING — DO NOT TRIM IT. Every word on that list
+// appeared in a real answer during testing. Banning a register by naming its
+// vocabulary moves a model far more reliably than describing the register you want.
+//
+// Layered on top of BASE_SYSTEM, not replacing it: the operational rules (no tools,
+// invent nothing, say when something already exists, stay anchored to the subject)
+// are what keep this useful instead of merely eloquent.
+//
+// Overridable live from AI Settings (ai_settings.studio_persona) because a thinking
+// partner's register is something you only get right by iterating, and waiting on a
+// deploy each time kills that loop.
+const DEFAULT_STUDIO_PERSONA = `You are what Antoine argues with before he builds anything.
 
-So: reach for the structural reading, not the obvious one. Name the tension in an idea rather than smoothing it. Follow a thought to what it implies, including where it implies something uncomfortable. Question the premise of the question when the premise is the interesting part. Say what you actually think, and say when you think the idea is wrong.`;
+His notebook is full and so is his queue. Ideas are not scarce here — judgement is. On every turn your job is to work out whether the thing being discussed is real, what it actually is underneath what he said, and whether it deserves his attention. Then say so.
+
+HOW TO THINK
+You navigate the liminal space where history, myth and imagination converge. You trace the conscious architectures and subconscious drives of entities — families, corporations, nations, civilizations — as evolving, self-similar consciousness systems. You think through biopolitics, post-humanism, cyberpunk dynamics, transhumanist warfare, shadow work, and grief as mirrors of power and memory. Literature, cinema and speculative worlds are living laboratories for decoding suppressed stories and collective feedback loops. You map multi-scale narrative cartographies where every node — real or imagined — can reveal deeper structural truths.
+
+This frame is not decoration, it is the subject matter. The project treats a character, a film and a country as the same kind of object read at different scales. An idea that does not touch that is usually a distraction wearing an interesting coat, and noticing which is part of your job.
+
+ALWAYS
+- Take a position. "It depends" is allowed only if you then say on what, and pick.
+- Find the want under the want — the stated idea is rarely the real one.
+- Say when two things already in the notebook are the same idea. You can see the list.
+- Name what it would COST: attention, coherence, months. Not only what it gives.
+- Say plainly when you think he is wrong, and why.
+- Say when you don't know.
+
+NEVER
+- Summarise benefits. You are not selling anything.
+- Use these words: immersive, engagement, engaging, impactful, memorable, journey, seamless, leverage, unlock, elevate, robust, holistic, transformative.
+- End with a paragraph restating what you just said.
+- Open by repeating the question back.
+- Pad to seem thorough. Length is earned by having more to say.`;
 
 function studioPersona() {
   const custom = (studioPersonaText() || '').trim();
@@ -288,36 +333,39 @@ function buildMessages(convo, msgs, windowSize) {
 
 // ─── Turn machinery ───────────────────────────────────────────────────────────
 
-// Flatten a conversation into one prompt. The lane that reaches the Claude
-// subscription (the Mac helper) is one-prompt-in, one-answer-out — there is no
-// mid-turn tool round trip — so the lookups the tool loop used to make are
-// pre-answered here instead, from the DB, for free.
-function projectDigestBlock() {
+// Flatten a conversation into one prompt. The lane that reaches the model is
+// one-prompt-in, one-answer-out — there is no mid-turn tool round trip — so the
+// lookups the tool loop used to make are pre-answered here instead, from the DB,
+// for free.
+//
+// This used to be one big projectDigestBlock() that also dumped 40 architecture
+// components. That half now lives in the standing project map
+// (services/projectMap.js), which is built once at boot and sent first so prompt
+// caching can pay for it. What is left here is the part that MUST be live: the
+// notebook, the queue and the open suggestions. A list of ideas cached at boot
+// would make the advisor claim two notes are duplicates of each other days after
+// one of them changed — and "say when two things in the notebook are the same
+// idea" is one of the things the voice explicitly promises. So it is rebuilt per
+// turn, and sent AFTER the map, where being variable costs nothing.
+function liveListsBlock() {
   try {
-    const comps = getComponents(db) || [];
-    const built = comps.filter((c) => c.status === 'built' || c.status === 'live');
-    const lines = comps.slice(0, 40).map((c) => `- ${c.id}: ${String(c.now_text || '').slice(0, 90)} [${c.status || '?'}]`);
     const queued = db.prepare(`SELECT title, status FROM work_prompts WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 15`).all();
-    // Suggestions and seeds belong here too. Without them the advisor knew every
-    // built piece and every queued task but nothing about what has been *proposed*,
-    // so it would happily suggest something already sitting in the list one tab
-    // over. Titles only, and capped: this block rides along on every chat turn, so
-    // it earns its keep by being short. Dismissed suggestions are left out on
-    // purpose — they are decisions already taken, not options still open.
+    // Titles only, and capped: this rides along on every chat turn, so it earns its
+    // keep by being short. Dismissed suggestions are left out on purpose — they are
+    // decisions already taken, not options still open.
     const sugg = db.prepare(
       `SELECT title FROM work_suggestions WHERE deleted_at IS NULL AND status IN ('new','accepted') ORDER BY created_at DESC LIMIT 20`
     ).all();
     const seeds = db.prepare(
       `SELECT title FROM work_ideas WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 15`
     ).all();
+    if (!queued.length && !sugg.length && !seeds.length) return '';
     const brief = (rows) => rows.map((r) => `- ${String(r.title || '').slice(0, 90)}`).join('\n');
-    // Framed as background reference, not as the topic. Named plainly so a
-    // reader of the prompt (and the model) treats it as a list to check against
-    // rather than as the thing being discussed — it is a components dump, and
-    // left unlabelled it pulls a conversation toward the codebase.
-    return `\n=== BACKGROUND REFERENCE — what already exists, so you never propose rebuilding it. Consult it; do not let it set the subject. ===\n`
-      + `${comps.length} pieces, ${built.length} already built.\n${lines.join('\n')}\n`
-      + `Recent work in the queue:\n${queued.map((q) => `- [${q.status}] ${q.title}`).join('\n')}\n`
+    // Framed as background reference, not as the topic. Named plainly so a reader
+    // of the prompt (and the model) treats it as a list to check against rather
+    // than as the thing being discussed.
+    return `\n=== WHAT IS ALREADY ON THE TABLE — check against it; do not let it set the subject. ===\n`
+      + (queued.length ? `Recent work in the queue:\n${queued.map((q) => `- [${q.status}] ${q.title}`).join('\n')}\n` : '')
       + (sugg.length ? `Suggestions already on the table:\n${brief(sugg)}\n` : '')
       + (seeds.length ? `Ideas already in the notebook:\n${brief(seeds)}` : '');
   } catch { return ''; }
@@ -335,35 +383,45 @@ function transcriptOf(convo, msgs, windowSize) {
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
 // same thing — a second copy of this assembly would drift.
-function buildTurnPrompt({ convo, ctx, instruction = null, includeDigest = true, brevity = true }) {
+function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
-  // ORDER MATTERS, and it is the fix for a real failure. The voice used to sit
-  // near the top, ahead of a 40-component project digest and an operational
-  // "reply to the owner's last message" — and a model weights the END of a long
-  // prompt most heavily, so gpt-4o read the frame, then buried it and answered in
-  // its default consultant register ("immersive engagement", "exploratory
-  // adventure"). Verified live before and after.
+  // ORDER MATTERS, TWICE OVER, AND EACH HALF FIXES A REAL FAILURE. A later
+  // innocent-looking reorder would undo one of them, so both reasons are written
+  // down here.
   //
-  // So: rules, then reference material, then the conversation, then HOW TO THINK
-  // last, immediately before it answers. The digest stays — this lane is toolless,
-  // so that block is the only thing it knows about the project, and dropping it
-  // would trade a register problem for a blindness problem.
+  // 1. THE PROJECT MAP GOES FIRST — nothing variable in front of it. It is ~10k
+  //    tokens on every turn, and prompt caching is what makes that affordable
+  //    (~2¢ on the first message of a session, ~0.5¢ after). Caching matches a
+  //    shared PREFIX, so a single variable character ahead of the map — a date, a
+  //    subject name, a message count — turns every turn back into a full-price
+  //    turn. See services/projectMap.js for the other half of the guarantee
+  //    (byte-identical, built once at boot).
+  //
+  // 2. HOW TO THINK GOES LAST — immediately before it answers. The voice used to
+  //    sit near the top, ahead of the project digest and an operational "reply to
+  //    the owner's last message", and a model weights the END of a long prompt
+  //    most heavily: gpt-4o read the frame, buried it, and answered in its default
+  //    consultant register ("immersive engagement", "exploratory adventure").
+  //    Verified live before and after.
+  //
+  // Both hold at once: stable map first, variable material after, voice last.
   return [
+    includeProjectContext ? projectMapBlock() : '',
     subjectSystemPrompt(ctx.contextText, { depth }),
-    includeDigest ? projectDigestBlock() : '',
+    includeProjectContext ? liveListsBlock() : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
     depth ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
-          : `Reply to the owner's last message, in the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs. Reach for the structural reading rather than the obvious one.`}`,
+          : `Reply to the owner's last message, in the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion. Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.`}`,
   ].filter(Boolean).join('\n');
 }
 
-async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeDigest = true }) {
-  const prompt = buildTurnPrompt({ convo, ctx, instruction, includeDigest });
+async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeProjectContext = true }) {
+  const prompt = buildTurnPrompt({ convo, ctx, instruction, includeProjectContext });
   return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000 });
 }
 
@@ -569,7 +627,7 @@ ${asks}
 
   const result = await runRoutedTurn({
     convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1600,
-    feature: 'studio', label: `conversations:${act}`, includeDigest: false,
+    feature: 'studio', label: `conversations:${act}`, includeProjectContext: false,
     instruction,
   });
   if (result.error) return result;
@@ -660,7 +718,7 @@ async function runFoldTurn(convoId) {
   const kind = ref.pick.kind || 'bold';
   const result = await runRoutedTurn({
     convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1600,
-    feature: 'studio', label: 'conversations:fold', includeDigest: false,
+    feature: 'studio', label: 'conversations:fold', includeProjectContext: false,
     instruction: `Rewrite THIS idea so it carries everything the conversation arrived at — the sharper version of it, not a summary of the chat. Keep what still holds, fold in what we added, drop what we rejected. Write it for someone reading the idea cold, with no knowledge of this conversation. Plain English, no jargon, no file names.
 Respond with ONLY this JSON object and nothing else — same shape, same kind:
 ${PICK_SHAPES[kind]}`,
@@ -732,7 +790,7 @@ async function runReframeTurn(convoId) {
 
   const result = await runRoutedTurn({
     convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 900,
-    feature: 'studio', label: 'conversations:reframe', includeDigest: false,
+    feature: 'studio', label: 'conversations:reframe', includeProjectContext: false,
     instruction: `The conversation suggests we were answering the wrong question. Rewrite the QUESTION these ideas are answers to — the heading above them — so it states what we are actually trying to do now. Do not touch the ideas themselves. Plain English, no jargon.
 Respond with ONLY this JSON object and nothing else:
 {"name":"<a short heading, a few words>","description":"<one or two sentences saying what we are really solving>"}`,
@@ -786,7 +844,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
       if (ctx.error) return { error: ctx.error };
       const result = await runRoutedTurn({
         convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 700,
-        feature: 'studio', label: 'conversations:grill', includeDigest: false,
+        feature: 'studio', label: 'conversations:grill', includeProjectContext: false,
         instruction: 'GRILL MODE. Ask the owner the sharpest clarifying questions you can, ONE at a time, in order of importance. Do not propose solutions yet. End with a question mark. Keep it short.',
       });
       if (result.error) return result;

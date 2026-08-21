@@ -627,7 +627,7 @@ function explicitModelUsableBy(providerId, model) {
 
 // ─── Streaming text (Idea Studio conversations) ───────────────────────────────
 // A deliberately narrow sibling of generateText(): the ONLY lane it streams is an
-// explicitly-configured metered provider (today: openai/gpt-4o). Everything else
+// explicitly-configured metered provider (today: openai/gpt-4.1). Everything else
 // falls through to generateText() and is delivered as one chunk, so callers have
 // a single code path and nothing else in the app changes behaviour.
 //
@@ -669,7 +669,7 @@ export async function generateTextStream({
   };
 
   const why = openAiStudioBlockReason();
-  if (why || !openAiStudioEnabled()) return fallback(`the paid gpt-4o lane is switched off (${why || 'not enabled'}), so this answer came from the free lane instead`);
+  if (why || !openAiStudioEnabled()) return fallback(`the paid OpenAI lane is switched off (${why || 'not enabled'}), so this answer came from the free lane instead`);
 
   // The monthly ceiling. Synchronous on purpose — a conversation turn must not
   // wait on a network call to OpenAI's cost API before it can start, and
@@ -679,7 +679,7 @@ export async function generateTextStream({
     // A cap under a cent still has to print as a real number — "$0.00 budget is
     // used up" reads as a bug rather than a ceiling.
     const money = (n) => (n > 0 && n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`);
-    return fallback(`the ${money(cap.capUsd)} monthly gpt-4o budget is used up (${money(cap.spentUsd)} spent), so this answer came from the free lane instead`);
+    return fallback(`the ${money(cap.capUsd)} monthly paid-lane budget is used up (${money(cap.spentUsd)} spent), so this answer came from the free lane instead`);
   }
 
   const mod = getProviderModule(providerId);
@@ -693,7 +693,7 @@ export async function generateTextStream({
     if (detectQuotaLimit(providerId, stream.message || '')) {
       router.recordExhaustion({ providerId, model, detectedBy: 'text-stream', errText: stream.message || '' });
     }
-    return fallback(`gpt-4o could not be reached (${stream.message || stream.error}), so this answer came from the free lane instead`);
+    return fallback(`the paid model could not be reached (${stream.message || stream.error}), so this answer came from the free lane instead`);
   }
 
   let text = '';
@@ -709,7 +709,7 @@ export async function generateTextStream({
     }
   } catch (e) {
     // Tokens already delivered are real; only give up entirely if nothing came.
-    if (!text) return fallback(`the gpt-4o answer was cut off (${e.message}), so this answer came from the free lane instead`);
+    if (!text) return fallback(`the paid model's answer was cut off (${e.message}), so this answer came from the free lane instead`);
     console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
   }
 
@@ -718,7 +718,7 @@ export async function generateTextStream({
   if (usage) recordSpend({ model, usage, providerId });
   else console.warn(`[${label}] ${providerId}/${model} returned no usage block — this call is NOT counted against the monthly cap`);
 
-  if (!text.trim()) return fallback('gpt-4o returned an empty answer, so this answer came from the free lane instead');
+  if (!text.trim()) return fallback('the paid model returned an empty answer, so this answer came from the free lane instead');
 
   recordSideCall();
   return { text: text.trim(), via: providerId, usage };
