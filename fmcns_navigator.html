@@ -1017,8 +1017,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    dimmed state for a bucket with nothing in it. */
 .sg-chiprow { margin:2px 0 12px; }
 .sg-chipn { font-family:monospace; font-size:10px; opacity:.65; margin-left:3px; }
-.sg-terrchip.dead { color:var(--c-ink-4); opacity:.5; cursor:default; }
-.sg-terrchip.dead:hover { background:var(--c-surface); }
+.sg-terrchip.dead { color:var(--c-ink-4); opacity:.55; }
+.sg-terrchip.dead:hover { opacity:1; }
 /* Inspired-by panel (task detail): the three shelves */
 .q-inspire-toolbar { display:flex; align-items:center; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
@@ -5919,11 +5919,14 @@ function sgChipRowHtml(all) {
     none: 'Show only the ones the app could not place',
   }[key] || ('Show only what touches ' + label));
   const chips = buckets.map(([key, label, n]) => {
-    // An empty bucket stays visible so the shape of the list reads at a glance, but
-    // is not clickable — nothing is worse than a filter that empties the screen.
+    // An empty bucket used to be disabled, on the theory that a filter emptying the
+    // screen is worse than one you cannot press. It is the opposite: an empty part of
+    // the app is exactly the one you want to ask for ideas about, and pressing its chip
+    // is what points "Generate now" at it. So it stays clickable and only looks quiet;
+    // the list says it is empty and the button says it will generate for that part.
     const dead = n === 0 && key !== '';
-    return `<button class="ctrlbtn nb-chip sg-terrchip${sgFilterTerr === key ? ' on' : ''}${dead ? ' dead' : ''}"${dead ? ' disabled' : ''} data-sgterr="${key}"`
-      + `${key && !dead ? ` title="${qEsc(chipTitle(key, label))}"` : ''}>`
+    return `<button class="ctrlbtn nb-chip sg-terrchip${sgFilterTerr === key ? ' on' : ''}${dead ? ' dead' : ''}" data-sgterr="${key}"`
+      + `${key ? ` title="${qEsc(dead ? 'Nothing here yet — press this, then "Generate now" to ask for ideas about ' + label : chipTitle(key, label))}"` : ''}>`
       + `${qEsc(label)} <span class="sg-chipn">${n}</span></button>`;
   }).join('');
   return `<div class="nb-chips sg-chiprow">${chips}</div>`;
@@ -6059,7 +6062,7 @@ function renderFlow() {
       const chipRow = flowType === 'suggestions' ? sgChipRowHtml(sgAll) : '';
       const gen = sgGenIntent();
       const emptied = !sg.length
-        ? `<div class="empty">Nothing here touches that part of the app. <a href="#" id="sgClearFilter">Show all ${sgAll.length}</a>.</div>`
+        ? `<div class="empty">Nothing here yet — press ${qEsc(gen.label.replace(/^✨ /, ''))} above. <a href="#" id="sgClearFilter">Or show all ${sgAll.length}</a>.</div>`
         : '';
       html += flowSection('✨', 'Suggested by Claude', sg.length, `
         <div class="flow-genrow">
