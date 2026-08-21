@@ -250,9 +250,24 @@ function projectDigestBlock() {
     const built = comps.filter((c) => c.status === 'built' || c.status === 'live');
     const lines = comps.slice(0, 40).map((c) => `- ${c.id}: ${String(c.now_text || '').slice(0, 90)} [${c.status || '?'}]`);
     const queued = db.prepare(`SELECT title, status FROM work_prompts WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 15`).all();
+    // Suggestions and seeds belong here too. Without them the advisor knew every
+    // built piece and every queued task but nothing about what has been *proposed*,
+    // so it would happily suggest something already sitting in the list one tab
+    // over. Titles only, and capped: this block rides along on every chat turn, so
+    // it earns its keep by being short. Dismissed suggestions are left out on
+    // purpose — they are decisions already taken, not options still open.
+    const sugg = db.prepare(
+      `SELECT title FROM work_suggestions WHERE deleted_at IS NULL AND status IN ('new','accepted') ORDER BY created_at DESC LIMIT 20`
+    ).all();
+    const seeds = db.prepare(
+      `SELECT title FROM work_ideas WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 15`
+    ).all();
+    const brief = (rows) => rows.map((r) => `- ${String(r.title || '').slice(0, 90)}`).join('\n');
     return `\n=== WHAT ALREADY EXISTS IN THE PROJECT (so you never propose rebuilding it) ===\n`
       + `${comps.length} pieces, ${built.length} already built.\n${lines.join('\n')}\n`
-      + `Recent work in the queue:\n${queued.map((q) => `- [${q.status}] ${q.title}`).join('\n')}`;
+      + `Recent work in the queue:\n${queued.map((q) => `- [${q.status}] ${q.title}`).join('\n')}\n`
+      + (sugg.length ? `Suggestions already on the table:\n${brief(sugg)}\n` : '')
+      + (seeds.length ? `Ideas already in the notebook:\n${brief(seeds)}` : '');
   } catch { return ''; }
 }
 

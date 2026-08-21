@@ -10230,7 +10230,6 @@ document.addEventListener('keydown', (e) => {
         +     '<span class="se-head-title">Talk it over</span>'
         +     '<span class="se-count"></span>'
         +     '<span class="se-head-acts">'
-        +       '<button type="button" class="se-iconbtn" data-se-act="large" title="Open this conversation in a bigger window">⤢</button>'
         +       '<button type="button" class="se-iconbtn" data-se-act="reset" title="Start fresh — what you said so far is folded into a short recap">⟳</button>'
         +       '<button type="button" class="se-iconbtn" data-se-act="shut" title="Put the conversation away — nothing is lost">▾</button>'
         +     '</span>'
@@ -10290,7 +10289,6 @@ document.addEventListener('keydown', (e) => {
         var act = b.getAttribute('data-se-act');
         if(act === 'shut'){ e.open = false; paintEmbed(host, e, opts); }
         else if(act === 'reset'){ resetConvo(e, repaint); }
-        else if(act === 'large'){ window.openStudio({ type:e.type, subjectId:e.subjectId, title:e.title || opts.title, hint:opts.hint, onDone:opts.onDone }); }
       };
     });
     grow(input);
