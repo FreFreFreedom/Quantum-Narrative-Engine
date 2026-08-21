@@ -5,10 +5,12 @@
 // guard needs: "is there room left this month?"
 //
 // WHY THIS IS NOT JUST A LOCAL LEDGER
-// Railway's free tier wipes the SQLite file on every redeploy. A ledger-only
-// ceiling would therefore reset to zero several times a month, and real spending
-// could sail well past $10 while the UI stayed a confident green. So the number
-// that holds the cap comes from OpenAI:
+// Not because the database is wiped — production keeps it on a volume and it
+// survives redeploys (an earlier version of this comment claimed otherwise; see
+// CLAUDE.md). The reason is that our own books can be incomplete in ways we
+// cannot detect: spending on the same key from outside this app, a call whose
+// usage block never arrived, or a DB restored from an older state. OpenAI is the
+// only authority on what was actually charged, so that is what holds the cap:
 //
 //   month spend = OpenAI's reported daily buckets (before today)
 //               + max(OpenAI's today bucket, our local rows for today)

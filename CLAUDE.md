@@ -86,10 +86,30 @@ Entry point is `server/src/index.js`.
   (`node:sqlite` needs Node ≥22.5) instead of `better-sqlite3` — no native addon
   to compile, which matters for both sandboxed dev and Railway's build step.
   Schema init is additive and idempotent (`CREATE TABLE IF NOT EXISTS`,
-  `ALTER TABLE` wrapped in try/catch) and runs on every boot, because **Railway's
-  free tier resets the SQLite file on every redeploy** unless a volume is
-  attached — ontology/knowledge data is re-seeded from source docs on every boot
-  for the same reason (see `services/bootstrapData.js`).
+  `ALTER TABLE` wrapped in try/catch) and runs on every boot; ontology/knowledge
+  data is re-seeded from source docs on every boot too (see
+  `services/bootstrapData.js`). Both are cheap and safe to repeat, which is why
+  they run unconditionally.
+- **Production data IS durable — do not plan around it being wiped.** This file
+  used to say Railway's free tier resets the SQLite file on every redeploy. That
+  is true only of the container's own filesystem, with no volume attached, and it
+  is **not** how `qne-production` is configured: a volume is mounted at `/data`
+  and `DB_PATH=/data/queue.db` points into it. Read as a statement about
+  production, the old wording was wrong, and it cost real money — it led to a
+  recommendation to buy a volume that already existed. Corrected 2026-08-21.
+  - The app reports its own truth rather than relying on this doc:
+    `GET /api/architecture/queue-status` returns a `storage` block, and the UI
+    shows "Nothing you save right now will be kept" when the DB is off-volume on
+    Railway (commit `bbd3a2e`). Read that, or the boot log's storage line, before
+    concluding anything about persistence.
+  - The real hazard is the opposite one: `DB_PATH` pointing at the *wrong file*
+    that is still on the volume — a silently empty database that looks like data
+    loss. That has happened once (2026-08-18). `schema.js`'s default is
+    double-nested (`$RAILWAY_VOLUME_MOUNT_PATH/data/queue.db`) and differs from
+    the single-nested path production actually uses, so **`DB_PATH` is
+    load-bearing, not optional.**
+  - An audited list of which env vars this project actually reads lives in
+    `plans/rotate-leaked-credentials.md`.
 - **Auth**: `server/src/auth.js` — single-user JWT (`requireAuth` middleware,
   `issueToken`). One shared `ADMIN_PASSWORD`, no user table/password hashing;
   everything authenticates as the single user `antoine`.

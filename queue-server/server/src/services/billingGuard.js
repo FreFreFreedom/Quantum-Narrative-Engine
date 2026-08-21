@@ -45,9 +45,13 @@ export function meteredRefusal(what = 'this call') {
 //                                          OpenAI itself (see note below)
 //
 // The cap is checked against OPENAI'S OWN reported spend, not just a local
-// ledger: Railway's free tier wipes the SQLite file on every redeploy, so a
-// ledger-only ceiling would reset several times a month and let real spending
-// sail past it while the UI stayed green.
+// ledger. Note the reason is NOT that Railway wipes the database — production has
+// a volume and the DB survives redeploys (see CLAUDE.md; an earlier version of
+// this comment had that wrong). The reason is that OpenAI is the only authority on
+// what was actually charged: a local ledger misses anything spent outside this app
+// on the same key, misses calls whose usage block never arrived, and is lost with
+// the DB if it ever IS lost. A ceiling on real money should not depend on our own
+// bookkeeping being complete.
 //
 // This function does NOT read the cap itself — openaiSpend.js owns that, and
 // importing it here would be a cycle. Callers compose the two; see
