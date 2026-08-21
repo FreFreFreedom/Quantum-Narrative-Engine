@@ -9,7 +9,7 @@
 import { generateText as legacyGenerateText } from '../claudeText.js';
 import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, listFreeOpenCodeModels, isKnownProvider } from './providers.js';
 import * as router from './router.js';
-import { isMeteredProvider } from './catalog.js';
+import { isMeteredProvider, getModelCatalog, getProviderCatalog } from './catalog.js';
 import { openAiStudioEnabled, openAiStudioBlockReason } from '../billingGuard.js';
 import { capStateSync, recordSpend } from '../openaiSpend.js';
 import { randomUUID } from 'node:crypto';
@@ -343,6 +343,11 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     const cap = getProviderCapability(providerId);
     if (cap && !cap.cliModels.includes(explicitModel)) model = featureDefaults.model || null;
   }
+  // Same reasoning for a catalogue provider, which had no such guard: a Claude
+  // model id handed to Groq or OpenAI is a guaranteed model_not_found.
+  if (explicitModel && getProviderCatalog(providerId) && !explicitModelUsableBy(providerId, explicitModel)) {
+    model = featureDefaults.model || null;
+  }
 
   // Primary: the configured provider + its own tier chain (e.g. claude-code's
   // sonnet -> opus -> haiku, or opencode's default free model as an add-on).
@@ -590,6 +595,25 @@ export function recordSideCall() {
     ON CONFLICT(day) DO UPDATE SET calls = calls + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`).run(day);
 }
 
+// Drop a caller's explicit model when the target provider demonstrably cannot
+// serve it, so the configured model is used instead of a doomed request.
+//
+// Real failure this fixes: Idea Studio passes CONVO_CHAT_MODEL as a preference
+// (`claude-sonnet-4-5` on Railway). Pointed at the OpenAI lane, that preference
+// overrode the configured gpt-4o and OpenAI was asked for a Claude model — a hard
+// model_not_found, every time. The lane looked broken when it was only being asked
+// the wrong question.
+//
+// Only catalogue providers are checked: their model lists are static and known, so
+// "not in the list" is real evidence. opencode's models are discovered at runtime,
+// so an unknown id there proves nothing and is left alone.
+function explicitModelUsableBy(providerId, model) {
+  if (!model) return false;
+  const cat = getProviderCatalog(providerId);
+  if (!cat) return true;                       // not a catalogue provider — no opinion
+  return !!getModelCatalog(providerId, model);
+}
+
 // ─── Streaming text (Idea Studio conversations) ───────────────────────────────
 // A deliberately narrow sibling of generateText(): the ONLY lane it streams is an
 // explicitly-configured metered provider (today: openai/gpt-4o). Everything else
@@ -612,7 +636,9 @@ export async function generateTextStream({
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   const providerId = featureDefaults.provider || 'opencode';
-  const model = explicitModel || featureDefaults.model || null;
+  const model = (explicitModel && explicitModelUsableBy(providerId, explicitModel))
+    ? explicitModel
+    : (featureDefaults.model || null);
 
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
