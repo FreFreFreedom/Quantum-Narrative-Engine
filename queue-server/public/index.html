@@ -276,6 +276,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .ui-label,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-pct,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-money,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-cache-hint,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-none,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-alert,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .usage-seeall { display:none; }
@@ -396,6 +397,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .usage-money.warn { color:var(--c-warn); }
 .usage-money.hot { color:var(--c-danger); }
 .usage-stale { color:var(--c-ink-4); font-style:italic; }
+/* A full-width line under the spend bar, in whichever grid it lands in. */
+.usage-cache-hint { grid-column:1 / -1; font-size:var(--fs-xs); color:var(--c-ink-4); }
 
 /* ---------- Core workspace shell (three zones) ---------- */
 .ws-shell { flex:1; min-height:0; display:flex; }
@@ -7835,12 +7838,18 @@ function spendBarHtml(label, cap, hint) {
   const src = cap.source ? ` Figure from ${cap.source}.` : '';
   const stale = cap.stale ? ' This reading may be behind — treat it as a floor, not a total.' : '';
   const tip = `${hint}${src}${stale}`.replace(/"/g, '&quot;');
+  // Whether the assumed prompt-caching discount is actually landing, not just
+  // assumed — high is good, so say it plainly rather than as a bare number.
+  const cacheLine = typeof cap.cacheHitPct === 'number'
+    ? `<div class="usage-cache-hint">Reused from cache: ${Math.round(cap.cacheHitPct)}% of what we sent</div>`
+    : '';
   return `<div class="usage-item usage-spend" title="${tip}">
     <span class="ui-label">${label}</span>
     <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
     <span class="usage-money ${tone}">$${cap.spentUsd.toFixed(2)} / $${cap.capUsd.toFixed(2)}</span>
     ${cap.blocked ? '<span class="usage-pct hot">at cap</span>' : ''}
     ${cap.stale ? '<span class="usage-stale">·&nbsp;stale</span>' : ''}
+    ${cacheLine}
   </div>`;
 }
 
@@ -7904,7 +7913,7 @@ function usageFullHtml(u) {
     usageFullRow('Next 5 hours', u.side.session),
     usageFullRow('This week', u.side.week),
   ].filter(Boolean).join('') : '';
-  const paid = spendBarHtml('This month', u.openai, 'Real money spent on gpt-4o for Idea Studio conversations this month, against your monthly ceiling.');
+  const paid = spendBarHtml('This month', u.openai, 'Real money spent on Idea Studio conversations this month, against your monthly ceiling.');
 
   // The lane names say enough. What each lane is for lives in a tooltip, so it is
   // there when wanted and takes no room when not.
@@ -7916,7 +7925,7 @@ function usageFullHtml(u) {
   return `<div class="uq-panel">
     ${lane('Building account', 'Runs your tasks — the account that writes code.', build, 'No reading.')}
     ${lane('Thinking account', "The app's own brainstorming, ideas and summaries — kept separate so it never eats the build quota.", think, 'No reading.')}
-    ${lane('Paid lane', 'Real money, gpt-4o.', paid, 'Off.')}
+    ${lane('Paid lane', 'Real money, Idea Studio.', paid, 'Off.')}
   </div>`;
 }
 
@@ -7935,7 +7944,7 @@ async function loadUsage() {
   const rows = [
     usageRailGroup('Building', 'The account that runs your tasks.', u.session, u.week),
     usageRailGroup('Thinking', "The second account — the app's own thinking.", u.side?.session, u.side?.week),
-    spendBarHtml('Paid', u.openai, 'Real money spent on gpt-4o this month, against your monthly ceiling.'),
+    spendBarHtml('Paid', u.openai, 'Real money spent on Idea Studio this month, against your monthly ceiling.'),
   ].filter(Boolean).join('');
 
   if (!rows) {

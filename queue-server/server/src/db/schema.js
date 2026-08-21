@@ -540,6 +540,12 @@ function initSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
   `);
+  // tokens_cached: how many of tokens_in were served from OpenAI's prompt cache
+  // (a SUBSET of tokens_in, not an addition to it — cache hit rate is
+  // tokens_cached / tokens_in). Added to make the assumed 4x cache discount on
+  // the Idea Studio project-map prefix checkable instead of assumed; starts at
+  // zero and fills going forward, no backfill.
+  try { db.exec(`ALTER TABLE openai_spend_ledger ADD COLUMN tokens_cached INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   // ─── Quota-exhaustion ledger (plan "Always-On Models") ───────────────────────
   // provider_quota_ledger: append-only history of every exhaustion event, so the
