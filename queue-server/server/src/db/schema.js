@@ -1153,6 +1153,35 @@ export function initConversationsSchema(db) {
   `);
   try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_convos_subject ON convos(subject_type, subject_id) WHERE deleted_at IS NULL`); } catch {}
 
+  // Many subjects per conversation (plan "roaming-conversations-backend" §1).
+  //
+  // convos.subject_type/subject_id stay exactly as they are — NOT NULL, unique
+  // while alive — so nothing about an existing card conversation changes. This
+  // join table is purely additive: a conversation with NO rows here is read as
+  // having its own subject_type/subject_id as its single primary (see
+  // conversations.js#convoSubjectRows), which is what makes a data migration
+  // unnecessary.
+  //
+  // A roaming conversation satisfies the two NOT NULLs with a synthetic subject:
+  // subject_type='open', subject_id=<uuid>. It is unique by construction, so the
+  // index above holds for it too.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convo_subjects (
+      convo_id     TEXT NOT NULL REFERENCES convos(id),
+      subject_type TEXT NOT NULL,
+      subject_id   TEXT NOT NULL,
+      is_primary   INTEGER NOT NULL DEFAULT 0,
+      added_at     TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      PRIMARY KEY (convo_id, subject_type, subject_id)
+    )
+  `);
+  // The frontend-authored what/why/input/output an arch_component needs to be
+  // describable at all (ARCH_DATA lives in the HTML, not the DB). The primary
+  // subject keeps carrying it on convos.subject_hint; an attached one needs
+  // somewhere of its own to put it.
+  try { db.exec(`ALTER TABLE convo_subjects ADD COLUMN subject_hint TEXT`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_subjects ON convo_subjects(convo_id)`); } catch {}
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS convo_messages (
       id TEXT PRIMARY KEY,

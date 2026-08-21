@@ -10,8 +10,9 @@ function isConvoError(out) {
 }
 
 function statusFor(err) {
-  if (err === 'not_found' || err === 'not_exist' || err === 'no_plan') return 404;
-  if (err === 'unknown_subject_type' || err === 'empty') return 400;
+  if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
+  if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
+      || err === 'cannot_detach_primary' || err === 'cannot_attach_open') return 400;
   return 500;
 }
 
@@ -37,7 +38,27 @@ export function conversationsRoutes() {
       created: out.created,
       acts: convos.writeActsForConvo(out.convo.id),
       edits: convos.convoSubjectEdits(out.convo.id),
+      subjects: convos.listConvoSubjects(out.convo.id),
     });
+  });
+
+  // ─── Roaming conversations (plan "roaming-conversations-backend") ──────────
+  // Declared before /:id so "open" is not captured as an id.
+
+  // GET /api/convos/open — the roaming threads, newest activity first.
+  router.get('/open', (req, res) => {
+    res.json({ convos: convos.listOpenConvos(req.query.limit) });
+  });
+
+  // POST /api/convos/open — start one. No subject to pick: it gets a synthetic
+  // one, and cards are attached afterwards (or never).
+  router.post('/open', (req, res) => {
+    const out = convos.createOpenConvo({
+      title: req.body?.title || null,
+      createdBy: req.user?.id || 'antoine',
+    });
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json({ convo: out.convo, messages: [], created: true, acts: convos.writeActsForConvo(out.convo.id), edits: [], subjects: convos.listConvoSubjects(out.convo.id) });
   });
 
   // GET /api/convos/for?type=arch_component&ids=a,b,c — which of these subjects
@@ -54,7 +75,42 @@ export function conversationsRoutes() {
   router.get('/:id', (req, res) => {
     const convo = convos.getConvo(req.params.id);
     if (!convo) return res.status(404).json({ error: 'not_found' });
-    res.json({ convo, messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id) });
+    res.json({ convo, messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id) });
+  });
+
+  // GET /api/convos/:id/subjects — every card attached to this conversation,
+  // primary first.
+  router.get('/:id/subjects', (req, res) => {
+    const convo = convos.getConvo(req.params.id);
+    if (!convo) return res.status(404).json({ error: 'not_found' });
+    res.json({ subjects: convos.listConvoSubjects(convo.id), max: convos.MAX_ATTACHED_SUBJECTS });
+  });
+
+  // POST /api/convos/:id/subjects — attach a card. Capped; every attached card
+  // is re-sent on every turn, so the cap is a cost control, not tidiness.
+  router.post('/:id/subjects', (req, res) => {
+    const out = convos.attachSubject(req.params.id, {
+      subjectType: req.body?.type,
+      subjectId: req.body?.id,
+      subjectHint: req.body?.hint || null,
+    });
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  // DELETE /api/convos/:id/subjects/:type/:subjectId — take one off. The card the
+  // conversation started from cannot be removed; it is the conversation's identity.
+  router.delete('/:id/subjects/:type/:subjectId', (req, res) => {
+    const out = convos.detachSubject(req.params.id, req.params.type, req.params.subjectId);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  // POST /api/convos/:id/rename — a roaming thread earns its name as it goes.
+  router.post('/:id/rename', (req, res) => {
+    const out = convos.renameConvo(req.params.id, req.body?.title);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
   });
 
   // POST /api/convos/:id/message — one user turn (or a command like /plan, /handoff).

@@ -11576,6 +11576,10 @@ document.addEventListener('keydown', (e) => {
     (e.acts || []).forEach(function(act){ if(set[act]) rows.push(['/' + act, set[act][0], set[act][1]]); });
     rows.push(['/grill-me', 'Me interrogate you', 'Sharp questions, one at a time.']);
     rows.push(['/compare', world ? 'Compare the other options' : 'Compare the attached ideas', '']);
+    // The two places a conversation can land that are NOT work: an idea card to
+    // sharpen later, or a document the rest of the app can read afterwards.
+    rows.push(['/seed', 'Save it as an idea', 'Saves what we arrived at to your notebook.']);
+    rows.push(['/note', 'Write it down', 'Saves it as a document the whole app can read.']);
     rows.push(['/plan', 'Write the brief', 'Turn this into a brief for the coding agent.']);
     if(!world) rows.push(['/handoff', 'Send it to the queue', 'Queues it as a task, set aside for you to approve.']);
     return rows;

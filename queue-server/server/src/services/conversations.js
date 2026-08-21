@@ -1,7 +1,10 @@
-// Idea Studio conversations (plan "universal-conversations-core-architecture").
-// One conversation per subject (seed / suggestion / arch component / tech-tree
-// node), stored in convos + convo_messages. Each turn calls the model fresh with
-// the windowed history + the subject context — never a persistent session.
+// Idea Studio conversations (plan "universal-conversations-core-architecture",
+// extended by "roaming-conversations-backend").
+// A conversation about one or more subjects (seed / suggestion / arch component /
+// tech-tree node / task / world idea — or 'open', which is a room to think in with
+// no card at all), stored in convos + convo_messages + convo_subjects. Each turn
+// calls the model fresh with the windowed history + every attached subject's
+// context — never a persistent session.
 //
 // Cost controls: nothing bills until you type; chat turns use a cheap model by
 // default, the plan turn a stronger one; history is windowed and older turns are
@@ -25,6 +28,8 @@ import { getComponents } from './architecture.js';
 import { projectMapBlock } from './projectMap.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
+import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
+import { createKnowledgeNote } from './knowledgeDocs.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
@@ -65,6 +70,178 @@ export function listConvosForSubjects(subjectType, ids) {
   return Object.fromEntries(rows.map((r) => [r.subject_id, r]));
 }
 
+// ─── Many subjects per conversation ──────────────────────────────────────────
+// (plan "roaming-conversations-backend" §1)
+//
+// The convos row still carries exactly one subject_type/subject_id — the PRIMARY
+// — because those two columns are NOT NULL and uniquely indexed, and changing
+// that would mean a destructive migration on live data. convo_subjects sits
+// beside it and holds the rest.
+//
+// THE BACKFILL IS READ-TIME, ON PURPOSE. A conversation with no convo_subjects
+// rows is read as having its own subject as its single primary, which is why
+// every conversation that existed before this shipped keeps working with no
+// migration script and no rows written on its behalf.
+//
+// COST: every attached card is re-sent on every turn, so the count is capped and
+// each block is trimmed. Same instinct as promptQueue.js's "Credit control,
+// threshold #1/#2" — an unbounded card count is an unbounded per-message bill.
+export const MAX_ATTACHED_SUBJECTS = 6;
+const SUBJECT_BLOCK_CAP = 5000;
+
+export function convoSubjectRows(convo) {
+  if (!db || !convo) return [];
+  const rows = db.prepare(
+    `SELECT * FROM convo_subjects WHERE convo_id=? ORDER BY is_primary DESC, added_at ASC, rowid ASC`,
+  ).all(convo.id);
+  if (rows.length) return rows.slice(0, MAX_ATTACHED_SUBJECTS);
+  return [{
+    convo_id: convo.id,
+    subject_type: convo.subject_type,
+    subject_id: convo.subject_id,
+    is_primary: 1,
+    subject_hint: convo.subject_hint || null,
+    added_at: convo.created_at,
+  }];
+}
+
+export function listConvoSubjects(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return [];
+  return convoSubjectRows(convo).map((r) => {
+    const spec = subjectSpec(r.subject_type);
+    let title = r.subject_id;
+    try { title = spec?.title?.(db, r.subject_id, r.subject_hint) || r.subject_id; } catch { /* a deleted card keeps its id */ }
+    return {
+      subject_type: r.subject_type,
+      subject_id: r.subject_id,
+      is_primary: !!r.is_primary,
+      label: spec?.label || r.subject_type,
+      title,
+    };
+  });
+}
+
+// The primary only becomes a real row the first time a second card is attached —
+// until then the read-time backfill above stands in for it.
+function ensurePrimaryRow(convo) {
+  const has = db.prepare(`SELECT 1 FROM convo_subjects WHERE convo_id=? AND is_primary=1`).get(convo.id);
+  if (has) return;
+  db.prepare(
+    `INSERT OR IGNORE INTO convo_subjects (convo_id, subject_type, subject_id, is_primary, subject_hint) VALUES (?,?,?,1,?)`,
+  ).run(convo.id, convo.subject_type, convo.subject_id, convo.subject_hint || null);
+}
+
+export function attachSubject(convoId, { subjectType, subjectId, subjectHint = null } = {}) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  if (!subjectSpec(subjectType)) return { error: 'unknown_subject_type' };
+  const id = String(subjectId || '').trim();
+  if (!id) return { error: 'empty' };
+  if (subjectType === 'open') return { error: 'cannot_attach_open', message: 'An open conversation is a room, not a card — it cannot be attached to another one.' };
+
+  ensurePrimaryRow(convo);
+  const already = db.prepare(`SELECT 1 FROM convo_subjects WHERE convo_id=? AND subject_type=? AND subject_id=?`).get(convo.id, subjectType, id);
+  if (already) return { ok: true, already: true, subjects: listConvoSubjects(convo.id) };
+
+  const count = db.prepare(`SELECT COUNT(*) AS n FROM convo_subjects WHERE convo_id=?`).get(convo.id).n;
+  if (count >= MAX_ATTACHED_SUBJECTS) {
+    return { error: 'too_many_subjects', message: `A conversation can hold ${MAX_ATTACHED_SUBJECTS} cards at once — take one off first.` };
+  }
+
+  const hint = subjectHint && typeof subjectHint !== 'string' ? JSON.stringify(subjectHint) : (subjectHint || null);
+  db.prepare(
+    `INSERT INTO convo_subjects (convo_id, subject_type, subject_id, is_primary, subject_hint) VALUES (?,?,?,0,?)`,
+  ).run(convo.id, subjectType, id, hint);
+  db.prepare(`UPDATE convos SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convo.id);
+  broadcastAll('convos:updated', { convoId: convo.id });
+  return { ok: true, subjects: listConvoSubjects(convo.id) };
+}
+
+export function detachSubject(convoId, subjectType, subjectId) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  // The primary IS the conversation's identity in convos — detaching it would
+  // leave a row whose two NOT NULL columns point at nothing real.
+  if (convo.subject_type === subjectType && convo.subject_id === subjectId) {
+    return { error: 'cannot_detach_primary', message: 'That is the card this conversation started from — it stays.' };
+  }
+  const out = db.prepare(`DELETE FROM convo_subjects WHERE convo_id=? AND subject_type=? AND subject_id=? AND is_primary=0`)
+    .run(convo.id, subjectType, subjectId);
+  if (!out.changes) return { error: 'not_attached' };
+  db.prepare(`UPDATE convos SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convo.id);
+  broadcastAll('convos:updated', { convoId: convo.id });
+  return { ok: true, subjects: listConvoSubjects(convo.id) };
+}
+
+// Every attached subject's context, primary first, each labelled so the model can
+// tell one card from another. Returns the same shape a single buildSubjectContext
+// did — { title, contextText, compare } — plus `mode`, which the system prompt
+// uses to decide how to describe what is being discussed.
+//
+// A single-subject conversation produces BYTE-IDENTICAL contextText to before:
+// no labels, no headings, nothing added. Only a conversation that actually holds
+// more than one card pays for the extra framing.
+async function convoContext(convo) {
+  const rows = convoSubjectRows(convo);
+  const blocks = [];
+  let primary = null;
+  let primaryError = null;
+
+  for (const r of rows) {
+    const hint = r.is_primary ? (r.subject_hint ?? convo.subject_hint) : r.subject_hint;
+    let ctx;
+    try {
+      ctx = await buildSubjectContext(db, r.subject_type, r.subject_id, hint);
+    } catch (e) {
+      ctx = { error: 'describe_failed', message: e.message };
+    }
+    if (ctx.error) {
+      if (r.is_primary) primaryError = ctx.error;
+      // A card that was deleted after being attached must not kill the whole
+      // conversation — it just stops contributing.
+      continue;
+    }
+    if (r.is_primary) primary = ctx;
+    const spec = subjectSpec(r.subject_type);
+    blocks.push({
+      isPrimary: !!r.is_primary,
+      label: spec?.label || r.subject_type,
+      title: ctx.title || r.subject_id,
+      text: String(ctx.contextText || '').slice(0, SUBJECT_BLOCK_CAP),
+    });
+  }
+
+  if (!blocks.length) return { error: primaryError || 'not_found' };
+
+  const mode = convo.subject_type === 'open'
+    ? (blocks.length > 1 ? 'open_with_cards' : 'open')
+    : (blocks.length > 1 ? 'multi' : 'single');
+
+  let contextText;
+  if (blocks.length === 1) {
+    contextText = blocks[0].text;
+  } else {
+    const rest = blocks.slice(1).map((b, i) => `--- CARD ${i + 2} — ${b.label}: "${b.title}" ---\n${b.text}`);
+    contextText = [
+      blocks[0].text,
+      '=== ALSO ATTACHED TO THIS CONVERSATION ===',
+      'The owner attached these himself, so they belong in this conversation — not as background, as part of what is being discussed. Say when two of them are the same thing.',
+      rest.join('\n\n'),
+    ].join('\n\n');
+  }
+
+  return {
+    title: primary?.title || blocks[0].title,
+    contextText,
+    compare: primary?.compare || null,
+    mode,
+    count: blocks.length,
+  };
+}
+
 // ─── Write paths ─────────────────────────────────────────────────────────────
 
 export function getOrCreateConvo({ subjectType, subjectId, subjectHint = null, createdBy = 'antoine' }) {
@@ -80,6 +257,39 @@ export function getOrCreateConvo({ subjectType, subjectId, subjectHint = null, c
     .run(id, subjectType, subjectId, title, subjectHint || null, createdBy);
   broadcastAll('convos:updated', { convoId: id, subjectType, subjectId });
   return { convo: getConvo(id), created: true };
+}
+
+// A roaming conversation. Its subject is synthetic — type 'open', a fresh uuid —
+// which is what keeps convos' two NOT NULL columns and their unique index valid
+// without touching them. Cards get attached afterwards, or never.
+export function createOpenConvo({ title = null, createdBy = 'antoine' } = {}) {
+  if (!db) return { error: 'no_db' };
+  const id = randomUUID();
+  const subjectId = randomUUID();
+  const name = String(title || '').trim().slice(0, 120) || 'Open conversation';
+  db.prepare(`INSERT INTO convos (id, subject_type, subject_id, title, created_by) VALUES (?,?,?,?,?)`)
+    .run(id, 'open', subjectId, name, createdBy);
+  broadcastAll('convos:updated', { convoId: id, subjectType: 'open', subjectId });
+  return { convo: getConvo(id), created: true };
+}
+
+export function listOpenConvos(limit = 50) {
+  if (!db) return [];
+  const rows = db.prepare(
+    `SELECT * FROM convos WHERE subject_type='open' AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT ?`,
+  ).all(Math.min(Math.max(Number(limit) || 50, 1), 200));
+  return rows.map((c) => ({ ...c, subjects: listConvoSubjects(c.id) }));
+}
+
+export function renameConvo(id, title) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(id);
+  if (!convo) return { error: 'not_found' };
+  const name = String(title || '').trim().slice(0, 120);
+  if (!name) return { error: 'empty' };
+  db.prepare(`UPDATE convos SET title=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(name, id);
+  broadcastAll('convos:updated', { convoId: id });
+  return { ok: true, convo: getConvo(id) };
 }
 
 export function resetConvoContext(id) {
@@ -199,24 +409,61 @@ function dispatchByName(name, input) {
 
 // ─── System prompt builders ──────────────────────────────────────────────────
 
-const BASE_SYSTEM = `You are the Idea Studio thinking partner inside FMCNS, working through one subject at a time with its owner.
+// The operating rules, assembled per turn rather than frozen into one string.
+//
+// TWO THINGS VARY, AND BOTH USED TO BE LIES.
+//
+// 1. THE TOOL CLAIM. This prompt used to promise the model could "look things up
+//    using the tools", which was false — every lane was toolless — so the claim
+//    was deleted and replaced with a flat denial. Now the conversation engine
+//    really does carry lookup tools (services/studioTools.js), but only the lanes
+//    that can run them get told so: `tools` is true exactly when the caller is
+//    about to pass them. A lane that turns out to be toolless anyway is told so at
+//    the END of the prompt by ai/text.js's NO_TOOLS_NOTE.
+// 2. WHAT IS BEING DISCUSSED. "working through one subject at a time" and "it is
+//    the whole reason this conversation exists" are both wrong for a roaming
+//    conversation with no card, and wrong again for one holding four.
+//
+// The single-subject, toolless wording is kept BYTE-IDENTICAL to what shipped
+// before, so an ordinary card conversation reads exactly as it did.
+const NO_TOOLS_BLOCK = `Everything you know about the project is in this prompt — you have NO tools and cannot look anything up. So never say or imply that you checked, searched, read the code or looked something up. Work from what the owner has said plus the reference sections below, and when you genuinely do not know, say so. If something already exists in the project, say so rather than proposing to build it again.`;
 
-Everything you know about the project is in this prompt — you have NO tools and cannot look anything up. So never say or imply that you checked, searched, read the code or looked something up. Work from what the owner has said plus the reference sections below, and when you genuinely do not know, say so. If something already exists in the project, say so rather than proposing to build it again.
+const OPENING = {
+  single: `You are the Idea Studio thinking partner inside FMCNS, working through one subject at a time with its owner.`,
+  multi: `You are the Idea Studio thinking partner inside FMCNS, working through several attached cards at once with its owner.`,
+  open: `You are the Idea Studio thinking partner inside FMCNS, in an open conversation with its owner. There is no card on the table: this is a room to think in, and nothing has to be settled by the end of it.`,
+  open_with_cards: `You are the Idea Studio thinking partner inside FMCNS, in an open conversation with its owner. It began with no card, and cards have since been attached to it.`,
+};
+
+const ANCHOR = {
+  single: `The subject being discussed is described in SUBJECT CONTEXT below. It is the whole reason this conversation exists — keep every answer anchored to it.`,
+  multi: `The cards being discussed are described in SUBJECT CONTEXT below, the first one first. They are all in play — read across them, and say when two of them are the same thought wearing different clothes.`,
+  open: `SUBJECT CONTEXT below says what kind of room this is. Follow the owner where he goes: roaming is the point, and an answer that keeps pulling him back to a decision is the wrong answer.`,
+  open_with_cards: `SUBJECT CONTEXT below says what kind of room this is, then lists the cards attached to it. Follow the owner where he goes — but the cards are in play, so use them and say when two of them are the same thought.`,
+};
+
+function baseSystem({ mode = 'single', tools = false } = {}) {
+  return `${OPENING[mode] || OPENING.single}
+
+${tools ? TOOLS_PROMPT_BLOCK : NO_TOOLS_BLOCK}
 
 Commands the user may type:
   /grill-me — switch to interrogation mode: ask the sharpest clarifying questions, one at a time, no answering yet.
+  /seed     — save what this conversation arrived at as an idea card (done by the system; you do not do this yourself).
+  /note     — save it as a document the whole app can read afterwards (done by the system).
   /plan     — produce the final plan for the coding agent (done by the system; you do not do this yourself).
   /handoff  — queue the plan as a task (done by the system).
   /compare  — compare the enrichment ideas attached to this subject (done by the system; you do not do this yourself).
   /help     — list these commands.
 
-The subject being discussed is described in SUBJECT CONTEXT below. It is the whole reason this conversation exists — keep every answer anchored to it.
+${ANCHOR[mode] || ANCHOR.single}
 
 Be direct. Never mention internal component ids, codes or file names in your answers — say what the thing DOES, not what it is called in the codebase. The owner is not a programmer, so TECHNICAL jargon is out.
 
 Conceptual, philosophical and spiritual language is NOT jargon and is welcome — the subject matter is mythic and structural, and flattening it into plain operational English loses the actual thought. Abstraction is fine. Vagueness is not.`;
+}
 
-// How long an answer should be. Split out of BASE_SYSTEM because the two lanes
+// How long an answer should be. Split out of the operating-rules block because the two lanes
 // want opposite things and used to share one instruction.
 //
 // TERSE is for the structured, system-triggered turns (compare, fold, reframe)
@@ -259,8 +506,8 @@ Conceptual, philosophical and spiritual language is NOT jargon and is welcome �
 // appeared in a real answer during testing. Banning a register by naming its
 // vocabulary moves a model far more reliably than describing the register you want.
 //
-// Layered on top of BASE_SYSTEM, not replacing it: the operational rules (no tools,
-// invent nothing, say when something already exists, stay anchored to the subject)
+// Layered on top of baseSystem(), not replacing it: the operational rules (what it can
+// and cannot look up, invent nothing, say when something already exists, stay anchored)
 // are what keep this useful instead of merely eloquent.
 //
 // Overridable live from AI Settings (ai_settings.studio_persona) because a thinking
@@ -298,8 +545,8 @@ function studioPersona() {
 const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
 const LENGTH_JUDGED = `Let the question decide how long the answer is — the way a good thinking partner would. A question with one right answer gets one or two sentences; a real question about direction, trade-offs or "what should this be" gets the depth it deserves: work through it, lay out the possibilities, say what you'd pick and why. Do not pad, and do not compress something that needs room. Never end with a summary of what you just said.`;
 
-function subjectSystemPrompt(ctxText, { depth = false } = {}) {
-  return `${BASE_SYSTEM}
+function subjectSystemPrompt(ctxText, { depth = false, mode = 'single', tools = false } = {}) {
+  return `${baseSystem({ mode, tools })}
 
 ${depth ? LENGTH_JUDGED : LENGTH_TERSE}
 
@@ -383,7 +630,7 @@ function transcriptOf(convo, msgs, windowSize) {
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
 // same thing — a second copy of this assembly would drift.
-function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true }) {
+function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
   // ORDER MATTERS, TWICE OVER, AND EACH HALF FIXES A REAL FAILURE. A later
@@ -408,7 +655,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
   // Both hold at once: stable map first, variable material after, voice last.
   return [
     includeProjectContext ? projectMapBlock() : '',
-    subjectSystemPrompt(ctx.contextText, { depth }),
+    subjectSystemPrompt(ctx.contextText, { depth, mode: ctx.mode || 'single', tools }),
     includeProjectContext ? liveListsBlock() : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
     depth ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
@@ -424,6 +671,13 @@ async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens,
   const prompt = buildTurnPrompt({ convo, ctx, instruction, includeProjectContext });
   return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000 });
 }
+
+// The lookup tools, bound to this server's db. Passed to the CHAT turns only —
+// the structured turns (/plan, /fold, /reframe, /more) ask for one JSON object
+// back, and a tool round mid-way through that is a round that returns prose
+// instead of the object the caller then has to parse.
+const studioTools = () => STUDIO_TOOLS;
+const studioDispatch = (name, input) => dispatchStudioTool(db, name, input);
 
 function saveAssistantTurn(convoId, text, meta = null) {
   const mid = randomUUID();
@@ -446,12 +700,16 @@ function saveAssistantTurn(convoId, text, meta = null) {
 async function runChatTurnStreaming(convoId, userId, onToken) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, brevity: false });
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
   const result = await generateTextStream({
     prompt, feature: 'studio', label: 'conversations:chat',
+    // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
+    // turn gets them: it is the one that answers a question, and the one whose
+    // prompt now claims it can look things up.
+    tools: studioTools(), dispatchTool: studioDispatch,
     // 4000, not 450 and not 1200. Both smaller numbers were brevity caps: 450
     // because nothing streamed and the whole answer had to be written before any
     // of it showed, 1200 because that was the timid first step away from it.
@@ -469,15 +727,18 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
 async function runChatTurn(convoId, userId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const result = await runRoutedTurn({
+  const prompt = buildTurnPrompt({ convo, ctx, tools: true });
+  const result = await generateText({
     // 450, not 1400: nothing is streamed, so the wait is the whole answer being
     // written before you see any of it. Cutting the ceiling cuts the wait roughly
     // in proportion. The brevity line above stops it reading as a truncation.
-    convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 450,
+    prompt, model: CONVO_CHAT_MODEL, maxTokens: 450,
     feature: 'studio', label: 'conversations:chat',
+    allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000,
+    tools: studioTools(), dispatchTool: studioDispatch,
   });
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text);
@@ -487,7 +748,7 @@ async function runChatTurn(convoId, userId) {
 async function runPlanTurn(convoId, userId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
   const msgs = listMessages(convoId);
@@ -523,7 +784,7 @@ async function runPlanTurn(convoId, userId) {
 async function runCompareTurn(convoId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
   const collected = ctx.compare ? await ctx.compare() : { items: [], note: 'No enrichment ideas attached to this subject.' };
   const items = (collected.items || []).slice(0, 8);
@@ -606,7 +867,7 @@ async function runSubjectWriteTurn(convoId, act) {
       ? 'There is no separate purpose to rewrite on this one — "fold it in" already rewrites what it is.'
       : 'There is nothing on this one I can rewrite from here.' };
   }
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
   const asks = Object.entries(target.fields)
@@ -652,7 +913,7 @@ ${asks}
 async function runSeedIdeasTurn(convoId) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
   const result = await runRoutedTurn({
@@ -688,6 +949,92 @@ Respond with ONLY this JSON object and nothing else:
   return { text, via: result.via, act: 'more', made };
 }
 
+// ─── Somewhere for a vision to land ──────────────────────────────────────────
+// (plan "roaming-conversations-backend" §3)
+//
+// /plan and /handoff turn a conversation into WORK. These two turn one into
+// UNDERSTANDING, which until now had nowhere to go and was simply lost when the
+// thread scrolled away.
+//
+//   /seed → an idea card in the notebook. Openable in the Idea Studio to sharpen
+//           later. The default landing place, and the cheap one.
+//   /note → a document in the knowledge base — the same store the lookup tools
+//           read. This is the one that compounds: a vision saved here becomes
+//           context for every other AI feature in the app, not just for the
+//           conversation that produced it.
+
+async function runSaveSeedTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await convoContext(convo);
+  if (ctx.error) return { error: ctx.error };
+
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 1200,
+    feature: 'studio', label: 'conversations:seed', includeProjectContext: false,
+    instruction: `Save what this conversation arrived at as ONE idea card for the owner's notebook. Not a summary of the chat — the idea itself, in its sharpest form, written for someone reading it cold who was not here. If the conversation arrived at nothing yet, say so in the title.
+Plain English, no jargon, no file names.
+Respond with ONLY this JSON object and nothing else:
+{"title":"a short title, a handful of words","notes":"what the idea is and what it would do, a few sentences"}`,
+  });
+  if (result.error) return result;
+
+  const parsed = firstJson(result.text);
+  const title = String(parsed?.title || '').trim();
+  if (!title) return { text: 'I could not get a clean idea out of that — say in one line what you want saved, then ask again.' };
+
+  const notes = String(parsed?.notes || '').trim().slice(0, 4000);
+  let idea;
+  try {
+    idea = createIdea({
+      title: title.slice(0, 200),
+      notes: notes + (notes ? '\n\n' : '') + `(Came out of a conversation about "${convo.title || 'something else'}".)`,
+      created_by: convo.created_by || 'antoine',
+    });
+  } catch (e) {
+    return { text: 'Could not save that to the notebook.' };
+  }
+
+  const text = `Saved to your notebook as **${title}**. It is a seed — nothing runs until you queue it, and you can open it and keep working on it any time.`;
+  saveAssistantTurn(convoId, text, { act: 'seed', idea_id: idea?.id || null, title });
+  broadcastAll('ideas:updated', {});
+  broadcastAll('convos:updated', { convoId });
+  return { text, via: result.via, act: 'seed', ideaId: idea?.id || null };
+}
+
+async function runSaveNoteTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await convoContext(convo);
+  if (ctx.error) return { error: ctx.error };
+
+  const result = await runRoutedTurn({
+    convo, ctx, model: CONVO_PLAN_MODEL, maxTokens: 2400,
+    feature: 'studio', label: 'conversations:note', includeProjectContext: false,
+    instruction: `Write down what this conversation UNDERSTOOD, as a standing document the app will keep and re-read later. Not a plan, not a to-do list, not a transcript — the thinking itself, in its finished form, readable years from now by someone who was not here.
+Keep every distinction the conversation actually earned. Where it changed its mind, say what it moved from and to. Where it stayed unsure, say so.
+Plain English, no jargon, no file names. Markdown headings are fine.
+Respond with ONLY this JSON object and nothing else:
+{"title":"a short title, a handful of words","description":"one sentence saying what is in it and when someone would want to read it","content":"the document itself"}`,
+  });
+  if (result.error) return result;
+
+  const parsed = firstJson(result.text);
+  const out = createKnowledgeNote(db, {
+    title: parsed?.title,
+    description: parsed?.description,
+    content: parsed?.content,
+  });
+  if (out.error) {
+    return { text: out.message || 'I could not get a clean document out of that — say in one line what should be written down, then ask again.' };
+  }
+
+  const text = `Written down as **${out.title}**. It now sits with the app's reference documents, which means every part of the app that can read them can read this — it is context from here on, not just a note in this thread.`;
+  saveAssistantTurn(convoId, text, { act: 'note', doc_title: out.title, chars: out.chars });
+  broadcastAll('convos:updated', { convoId });
+  return { text, via: result.via, act: 'note', doc: out };
+}
+
 // Everything a conversation has already rewritten on its subject, so the studio
 // can show what the thing said before. World ideas keep their own `original`
 // inside the report and are not listed here.
@@ -712,7 +1059,7 @@ async function runFoldTurn(convoId) {
   if (!convo) return { error: 'not_found' };
   const ref = worldPickRef(convo);
   if (!ref) return runSubjectWriteTurn(convoId, 'fold');
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
   const kind = ref.pick.kind || 'bold';
@@ -746,7 +1093,7 @@ async function runMoreIdeasTurn(convoId) {
   if (!convo) return { error: 'not_found' };
   const ref = worldPickRef(convo);
   if (!ref) return runSeedIdeasTurn(convoId);
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
   const existing = (ref.part?.picks || [])
@@ -785,7 +1132,7 @@ async function runReframeTurn(convoId) {
   if (!convo) return { error: 'not_found' };
   const ref = worldPickRef(convo);
   if (!ref) return runSubjectWriteTurn(convoId, 'reframe');
-  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
   const result = await runRoutedTurn({
@@ -831,16 +1178,18 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     if (slash === 'handoff') return handoffToQueue(convoId);
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data.',
+        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data, looking things up when I need to.',
       };
     }
+    if (slash === 'seed') return runSaveSeedTurn(convoId);
+    if (slash === 'note') return runSaveNoteTurn(convoId);
     if (slash === 'compare') return runCompareTurn(convoId);
     if (slash === 'fold') return runFoldTurn(convoId);
     if (slash === 'more') return runMoreIdeasTurn(convoId);
     if (slash === 'reframe') return runReframeTurn(convoId);
     if (slash === 'grill-me') {
       // interrogation mode: a single turn where the model asks questions only
-      const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+      const ctx = await convoContext(convo);
       if (ctx.error) return { error: ctx.error };
       const result = await runRoutedTurn({
         convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 700,

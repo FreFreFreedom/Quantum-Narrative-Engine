@@ -94,6 +94,31 @@ export async function buildSubjectContext(db, type, subjectId, hint) {
 // Each registers at module load. The services own their own DB rows, so `load`
 // is a thin query delegate — the registry owns the shape, the services own the data.
 
+// ─── 'open' — a conversation about nothing in particular ────────────────────
+// The roaming door into the same engine (plan "roaming-conversations-backend").
+// Its subject_id is a uuid nobody looks up: it exists only so convos' two NOT
+// NULL columns and their unique index keep holding without a destructive
+// migration. Cards get attached to it afterwards via convo_subjects.
+//
+// describe() deliberately returns NOTHING card-shaped. The standing project map
+// is already the first block of every turn (projectMapBlock() in
+// conversations.js#buildTurnPrompt) — repeating it here would double a ~10k-token
+// block and break the caching prefix it exists to protect.
+registerSubject('open', {
+  label: 'Open conversation',
+  load: (db, id) => ({ id }),
+  title: (db, id, hint) => {
+    const h = (typeof hint === 'string' ? hint : hint?.title) || '';
+    return String(h).trim().slice(0, 80) || 'Open conversation';
+  },
+  describe: () => `This conversation is not about one card. It is a room to think in: the project's own subject (entities read as fractal consciousness systems — a film, a character and a country as one object at different scales) and what this app should become. Nothing has to be decided. Cards can be attached to it at any point, and any that are appear below.`,
+  handoff: () => {
+    // Nothing owns a roaming conversation — the link lives on the convo row.
+    return;
+  },
+});
+
+
 registerSubject('seed', {
   label: 'Seed',
   load: (db, id, hint) => {

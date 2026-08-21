@@ -7,7 +7,17 @@
 // and it survives redeploys (see CLAUDE.md, "Production data IS durable"). It runs so
 // that a change to a seed file reaches the app on the next deploy without anyone
 // re-running a migration by hand. Nothing user-created is at risk: only `entities`
-// and `knowledge_docs` are written here, and no other code path writes them.
+// and `knowledge_docs` are written here.
+//
+// `knowledge_docs` HAS A SECOND WRITER as of the roaming-conversations work:
+// services/knowledgeDocs.js#createKnowledgeNote, behind the conversation `/note`
+// command. That is safe in both directions and neither side may drop its half:
+//   - seedKnowledge upserts ON CONFLICT(title) and never DELETEs, so a saved note
+//     survives every redeploy untouched.
+//   - a note can only be lost by TAKING A SEEDED TITLE, which the next boot would
+//     silently overwrite. knowledgeDocs.js therefore namespaces every note with a
+//     `Note: ` prefix and refuses the three seeded titles outright. If a new seed
+//     file is ever added here, it must not be called `Note: something`.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
