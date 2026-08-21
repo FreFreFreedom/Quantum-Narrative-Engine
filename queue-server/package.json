@@ -9,6 +9,7 @@
     "dev": "node server/src/index.js",
     "runner": "node scripts/queue-runner.js",
     "plan:send": "node scripts/send-plan.js",
+    "tier:selftest": "node scripts/tier-selftest.js",
     "ship:selftest": "node scripts/ship-selftest.js",
     "next:selftest": "node scripts/nextsteps-selftest.js",
     "tidy:selftest": "node scripts/tidy-selftest.js",

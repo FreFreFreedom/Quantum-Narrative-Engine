@@ -19,16 +19,52 @@ import { generateText } from './ai/text.js';
 // Since that commit EVERY call to createPrompt threw "DEEP_RAISERS is not
 // defined" — i.e. no new task could be added to the queue at all.
 const DEEP_RAISERS = ['refactor', 'redesign', 'rewrite', 'overhaul', 'migrate', 'multi-file', 'many files', 'architecture', 'full restructure', 'new feature', 'from scratch', 'entire'];
+// Words that used to be REQUIRED for 'mini'. They are now only a widener (below): their
+// presence is decent evidence of a small adjustment, but their absence proved nothing.
 const MINI_DOWNERS = ['typo', 'rename', 'wording', 'fix the', 'small fix', 'parameter', 'threshold', 'constant'];
+// The guard that makes size-based 'mini' safe. Introducing something that does not exist
+// yet is never small, however few words it takes to ask for it — "add GraphRAG" is two
+// words and enormous. Adjusting something that already exists usually is small. Without
+// this, judging by length alone would send exactly the under-specified requests that most
+// need a brief straight to an agent with no brief at all.
+const NEW_WORK = ['add ', 'implement', 'build ', 'create', 'integrate', 'support for', 'new ', 'from scratch', 'set up', 'introduce'];
 
+// Rewritten 2026-08-21 (Antoine). The old rule required one of the MINI_DOWNERS words
+// AND <=30 words, which made 'mini' a vocabulary lottery rather than a size judgment:
+// across his first 31 real tasks it fired ZERO times. "The button is too small" paid the
+// full preamble; "fix the button" would not have. Meanwhile 'mini' is what skips both the
+// world-look and the plan draft, so the fast lane effectively did not exist.
+//
+// Deliberately still free and instant — pure string arithmetic, no model call. His app
+// removed an AI judge from this path once already on cost grounds, and this does not bring
+// one back. It can stay this cheap because being wrong is now cheap: since the world-look
+// no longer gates dispatch, a task wrongly called 'standard' loses ~30s to a draft, not
+// six minutes. So the rule leans to 'standard' whenever it is unsure, and 'mini' has to be
+// EARNED on every count.
 export function tierForTask(prompt, title = '') {
-  const hay = `${title} ${prompt}`.toLowerCase();
+  const raw = `${title} ${prompt}`.trim();
+  const hay = raw.toLowerCase();
   const words = hay.split(/\s+/).filter(Boolean).length;
+  // No text is not evidence of a small task. createPrompt rejects an empty prompt before
+  // it ever gets here, but this function is exported and 'mini' is what skips the brief —
+  // so the one thing it must never do is treat "nothing to go on" as "safe to run raw".
+  if (!words) return 'standard';
   if (words > 65) return 'deep';
-  const raises = DEEP_RAISERS.some((k) => hay.includes(k));
-  if (raises) return 'deep';
-  const lowers = MINI_DOWNERS.some((k) => hay.includes(k));
-  if (lowers && words <= 30) return 'mini';
+  if (DEEP_RAISERS.some((k) => hay.includes(k))) return 'deep';
+
+  // Shape, not just length. A pasted plan or a list of demands is never one small ask,
+  // however terse its lines — and that is precisely the shape arriving from a terminal
+  // session or a copied brief.
+  const looksStructured = /\n\s*[-*\d]|^#{1,6}\s/m.test(raw) || raw.split('\n').filter((l) => l.trim()).length > 2;
+  const sentences = raw.split(/[.!?]+/).filter((x) => x.trim()).length;
+  const adjusting = MINI_DOWNERS.some((k) => hay.includes(k));
+  const miniLimit = adjusting ? 40 : 25;
+
+  if (words <= miniLimit
+    && sentences <= 2
+    && !looksStructured
+    && !NEW_WORK.some((k) => hay.includes(k))) return 'mini';
+
   return 'standard';
 }
 

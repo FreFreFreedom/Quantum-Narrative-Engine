@@ -176,7 +176,12 @@ export async function createPrompt({
   // Implement-mode tasks resolve this later in runPlanDraft(), against the
   // drafted brief rather than the raw text — skip here so it isn't judged twice.
   let autoContextNote = null;
-  const willDraftPreCheck = useMode === 'implement' && plan_source === 'auto';
+  // A mini task skips the plan draft as well as the world-look (Antoine, 2026-08-21):
+  // both steps are the preamble he was waiting through, and a genuinely small, concrete
+  // adjustment does not need a brief written about it. tierForTask has to EARN 'mini'
+  // (see taskPlanner.js) precisely because this is what it unlocks — the text goes to the
+  // agent exactly as typed, with nothing in front of it.
+  const willDraftPreCheck = useMode === 'implement' && plan_source === 'auto' && tier !== 'mini';
   if (context_mode === 'auto' && !useParent && !willDraftPreCheck) {
     const candidates = candidateParents({ agentKey: useAgentKey, provider: useProvider });
     const picked = await resolveParent({ mode: useMode, text, candidates }).catch(() => null);
@@ -255,10 +260,13 @@ export async function createPrompt({
     }
   }
   const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (!willInspire ? 'skipped' : 'pending');
-  // Why the world-look was skipped, shown on the card (free-only plan): mini
-  // tasks skip it for speed; the budget skip is set by startInspiration itself.
+  // Why the world-look was skipped, shown on the card (free-only plan): mini tasks skip
+  // it; the budget skip is set by startInspiration itself. The old wording promised "the
+  // plan runs instantly", which is now wrong in a way that matters — a mini task has no
+  // drafted plan at all, it runs the words as typed. Say that, so a result that answers
+  // the request literally is not a surprise.
   const preSkipNote = !willInspire && !preInsp
-    ? 'Mini task — the world-look was skipped so the plan runs instantly. One click re-runs it.'
+    ? 'Small task — it runs exactly as you wrote it, with no plan drafted and no look at the world first, so it starts straight away. One click adds the ideas.'
     : null;
   // No judge call here any more: usePreset above already resolved 'auto' from the
   // free tier heuristic, so resolved_preset is simply that (kept for the UI and for
@@ -314,19 +322,21 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
   // one quick fast-model call, plan ready in seconds.
   const fast = tier === 'mini';
 
-  // Inspiration step: the draft waits (bounded) for the automatic world-look
-  // pass so the plan is written with real-world context — this is the "wait for
-  // inspiration before starting" behavior for tasks added straight to the
-  // queue. The quick check (review) runs inside that pass; if it asks the owner
-  // a question, the wait extends (unbounded) until the answer, the skip, or the
-  // task's deletion. On timeout or failure the draft proceeds without it; the
-  // report may still land later and the human can re-draft by applying picks.
-  // inspirationOverride: the world-look already ran in the item's own section
-  // (suggestion / seed / not-built) — use that digest directly, no wait.
-  // Fast path: mini tasks draft immediately, no world-look at all.
-  const inspiration = inspirationOverride !== null
-    ? { digest: inspirationOverride }
-    : fast ? null : await waitForInspiration(id, INSPIRE_WAIT_MS);
+  // The draft no longer WAITS for the world-look (Antoine, 2026-08-21). It used to
+  // await it for 75s — and without any limit at all when the quick check asked him a
+  // question, which could hold a task indefinitely. Since the look itself takes minutes,
+  // that wait almost never had the report to show for it: it was dead time in front of
+  // every task, buying context that arrived too late to use.
+  //
+  // So the draft uses a world-look digest only when one is ALREADY in hand
+  // (inspirationOverride — the item's own section already ran the pass, so it is free).
+  // Otherwise it writes the brief from the request as submitted, immediately.
+  //
+  // The look still runs, in the background, and its ideas land on the card. If one of
+  // them matters, Antoine picks it and applyInspiration redrafts from raw_prompt — his
+  // original underneath — or steers the agent if the work has already started. Same rule
+  // as a plan he wrote himself: the ideas never rewrite it on their own.
+  const inspiration = inspirationOverride !== null ? { digest: inspirationOverride } : null;
   const inspDigest = inspiration ? (typeof inspiration === 'string' ? inspiration : inspiration.digest) : null;
   const inspNote = inspiration && typeof inspiration === 'object' ? inspiration.note : null;
 
@@ -402,11 +412,16 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
 
 // ─── Inspiration step ─────────────────────────────────────────────────────────
 // Every implement-mode task gets an automatic pass that looks at the world
-// (codeDiscovery.runInspiration: open / hidden / bold shelves) before its plan
-// is written. The pass never blocks creation and never blocks the queue — the
-// draft waits for it only up to INSPIRE_WAIT_MS, and a failure simply leaves
-// the task inspire_state='failed' with a retry button in the UI.
-const INSPIRE_WAIT_MS = 75_000;
+// (codeDiscovery.runInspiration: open / hidden / bold shelves). It runs ALONGSIDE the
+// task now, not in front of it (Antoine, 2026-08-21): it blocks neither creation, nor
+// the plan draft, nor dispatch. Its ideas land on the card, and applyInspiration is what
+// acts on them — redrafting a queued task, steering a running one, or opening a
+// follow-up. A failure just leaves inspire_state='failed' with a retry button.
+//
+// There is deliberately no "wait for the ideas" path any more. There was one
+// (waitForInspiration, 75s, and unbounded whenever the quick check asked a question);
+// it is in git if it is ever wanted back, but it sat in front of every task and, over
+// Antoine's first 31, bought context he used 4 times out of 18.
 const _inspiring = new Map();
 
 function parseInspirePicks(row) {
@@ -575,52 +590,6 @@ export async function skipPlanDraft(id) {
   broadcast();
   if (row.status === 'queued') advanceQueue();
   return getPrompt(id);
-}
-
-// Wait for the task's inspiration pass, bounded. Resolves to { digest, note }
-// (the digest already filtered by the quick check and emphasizing any applied
-// picks; the note carries the owner's answer when a quick-check question was
-// answered), or null when there is no pass to wait for, it failed, or the
-// timeout elapsed first. When the quick check asked the owner a question, the
-// wait extends without timeout until the answer, the skip, or deletion — the
-// question card is visible and the plan should be written with their answer.
-// A refresh (new pass) while waiting is given one more bounded chance, then
-// the settled row is used as-is.
-export async function waitForInspiration(id, timeoutMs = INSPIRE_WAIT_MS) {
-  const racePass = (run) => Promise.race([
-    run.catch(() => {}),
-    new Promise((res) => setTimeout(res, timeoutMs)),
-  ]);
-  let run = _inspiring.get(id);
-  if (run) await racePass(run);
-
-  let extraWaits = 0;
-  for (;;) {
-    const row = getPrompt(id);
-    if (!row) return null;
-    if (isReviewQuestion(row)) {
-      // Attach the waiter BEFORE re-checking: an answer that lands between the
-      // two reads either resolves this entry or shows up in the re-check.
-      const entry = inspireWaiter(id);
-      if (isReviewQuestion(getPrompt(id))) await entry.promise;
-      continue;
-    }
-    run = _inspiring.get(id);
-    if (run && extraWaits < 1) {
-      extraWaits++;
-      await racePass(run);
-      continue;
-    }
-    if (!row.inspire_report_id) return null;
-    const report = getReport(db, row.inspire_report_id);
-    // Task-level review wins (it may carry the owner's answer), else the
-    // report's own quick-check verdict — section looks store it there.
-    const review = parseInspireReview(row) || report?.review || null;
-    return {
-      digest: inspirationDigestFor(report, parseInspirePicks(row), review),
-      note: parseInspireReview(row)?.owner_note || null,
-    };
-  }
 }
 
 // Manual re-run from the task detail (also the entry point for tasks created
@@ -870,26 +839,23 @@ export async function autoWorldLookTasks({ limit = 16 } = {}) {
 // STAGE_STALE_MS, is by definition orphaned. Reset it and say so on the thread.
 //
 // STAGE_STALE_MS is deliberately well above the real worst case for a live
-// stage (a bounded draft is ~180s, plus INSPIRE_WAIT_MS at 75s), so a slow-but-
-// alive stage in another process is never stolen out from under itself.
+// stage (a bounded draft is ~180s; the draft no longer waits on the world-look at
+// all, so that 75s wait is gone from this budget), so a slow-but-alive stage in
+// another process is never stolen out from under itself.
 const STAGE_STALE_MS = 10 * 60_000;
 
-// A world-look that FAILED is a different kind of stuck, and the one that actually
-// stranded a task. advanceQueue() will not dispatch a queued implement row whose
-// inspire_state is 'failed' (or legacy 'off'), and nothing put a deadline on that —
-// so the task sat on "Waiting its turn" indefinitely while the card cheerfully said
-// the runner would get to it. The only exits were a hand retry or autoWorldLookTasks(),
-// which runs every 6 hours and gives up quietly when the daily side-call budget is
-// spent or no model is reachable.
+// BELT AND BRACES as of 2026-08-21, no longer the rescue path. This existed because
+// advanceQueue() would not dispatch a queued implement row whose inspire_state was
+// 'failed' (or legacy 'off'), with no deadline on it — so a task sat on "Waiting its
+// turn" indefinitely while the card said the runner would get to it. The gate itself is
+// now gone: the world-look no longer holds dispatch at all, so nothing can strand this
+// way in the first place.
 //
-// That inverted the feature's own rule, stated in createPrompt: the world-look "never
-// blocks creation... proceeds without it on failure". It was not blocking creation, it
-// was blocking dispatch, which has the same effect and is harder to see.
-//
-// So: after this long, a failed look stops being a gate. The task degrades to
-// 'skipped' — the same state the "start without inspiration" button sets — and runs on
-// a plain plan. Longer than STAGE_STALE_MS on purpose, so a retry has room to land
-// first and this only catches the ones nothing else rescued.
+// Kept anyway, because it costs nothing and still does something honest: it settles a
+// row's state to 'skipped' and says so on the thread, rather than leaving 'failed'
+// sitting there implying a wait that is no longer happening. If it ever starts freeing
+// rows again, that means a dispatch gate on inspire_state has come back — read
+// advanceQueue() before "fixing" anything here.
 const INSPIRE_GIVEUP_MS = 20 * 60_000;
 
 function stuckStageFields(row) {
@@ -1333,15 +1299,22 @@ export function advanceQueue() {
   // level of the same guard taskRunner's kick() applies at the task level — two
   // agents can genuinely run in parallel; a paused/disabled agent's prompts wait.
   //
-  // Inspiration gate (plan inspiration-before-planning): an implement task only
-  // starts once its world-look pass finished — 'ready' (ideas waiting for picks),
-  // 'applied' (picks baked in) or 'skipped' (Antoine explicitly chose a plain
-  // plan). 'off' (pre-feature rows), 'pending' and 'failed' all hold it — the
-  // pass completes and this function is re-kicked from startInspiration. Question
-  // rows are exempt (the pass never runs for them). A task with an unanswered
-  // question (a quick-check question, or any question that outlived a state
-  // change) is held too — it waits for the owner, never starts on its own.
-  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND pending_question IS NULL AND (mode='question' OR COALESCE(inspire_state,'off') NOT IN ('off','pending','failed')) AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
+  // The world-look does NOT gate this any more (Antoine, 2026-08-21). It used to:
+  // a queued implement task waited for its pass to reach 'ready'/'applied'/'skipped',
+  // and 'off'/'pending'/'failed' held it. That is where his six-minute wait came from,
+  // and the trade was indefensible once measured against his own 31 tasks — 18 waited
+  // for the look and he used an idea 4 times. So 14 waits bought nothing, and the ideas
+  // cannot rewrite a plan on their own anyway.
+  //
+  // Nothing is lost by letting them arrive late, because applyInspiration already covers
+  // every case: it redrafts a task still queued, STEERS the live agent if the task is
+  // already running, and opens a paused follow-up if it has finished. The ideas were
+  // never the thing that had to happen first — they were just in front.
+  //
+  // Still held here, deliberately: plan_pending (the brief is being written, so there is
+  // nothing final to run yet) and pending_question (it waits for the owner, never starts
+  // on its own).
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND pending_question IS NULL AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
     // Auto-assign (plan "auto devs"): no agent picked → least-loaded enabled

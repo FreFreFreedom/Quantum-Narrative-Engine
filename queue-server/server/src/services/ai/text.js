@@ -369,9 +369,21 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // reply hang for minutes.
   const fullChain = [...primaryChain, ...catalogueChain];
   const failures = [];
+  // Attempts and failure MESSAGES are counted separately (2026-08-21). They used to be the
+  // same array, so the two `continue` branches below — a model the ledger has benched, and
+  // one this process saw stall recently — each burned one of the caller's attempts. Skipping
+  // a benched model costs no network, no money and no time, so it was never an attempt; and
+  // the consequence was a call that returned generation_failed HAVING ASKED NOBODY, purely
+  // because unrelated features had benched three models first. That is why a world-look
+  // occasionally came back with nothing and no error worth reading.
+  //
+  // Safe against the metered lane: walking further down the chain cannot reach the paid row,
+  // because pickChain() -> listModels() defaults includeMetered:false (see catalog.js, "The
+  // one metered exception"). Re-check that if this loop ever changes again.
+  let attempted = 0;
 
   for (const attempt of fullChain) {
-    if (failures.length >= maxAttempts) break;
+    if (attempted >= maxAttempts) break;
     const { provider: p, model: m } = attempt;
     if (router.isExhausted(p, m) || router.isExhausted(p, '')) {
       failures.push(`${p}:${m}:cooldown`);
@@ -383,6 +395,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     }
 
     const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput });
+    attempted += 1;
 
     if (result?.text) {
       // The daily ledger exists to restrain the shared lanes — the free models and
@@ -548,15 +561,6 @@ export async function generateTextDirect({ prompt, provider, model, maxTokens = 
 // the OPTIONAL passes (world-look, draft speed tiers) — the queue itself never
 // waits on it. Every call into an ai/text.js seam costs one ledger unit.
 
-// Rate limit: 10 ledger writes per second max — one per call is enough.
-let lastLedgerWriteAt = 0;
-function ledgerWriteThrottled() {
-  const now = Date.now();
-  if (now - lastLedgerWriteAt < 100) return true;
-  lastLedgerWriteAt = now;
-  return false;
-}
-
 // Today's helper-call count (rolls over at UTC midnight by the day key).
 export function sideCallsToday() {
   if (!db) return 0;
@@ -570,10 +574,17 @@ export function sideCallBudgetLimit() {
   return loadAiSettings().queue?.sideCallBudget ?? 30;
 }
 
-// Count one helper call for today. Idempotent-ish under burst: at most one
-// ledger UPDATE per 100ms, so a burst of side calls can't hammer the row.
+// Count one helper call for today. Every call counts, exactly once.
+//
+// There was a 100ms write throttle here, and because this is called AFTER a call
+// succeeds, calls that finished close together were counted as ONE — so the daily budget
+// silently under-counted precisely when the most work was happening, and stopped being
+// the restraint it exists to be. The increment is a single atomic
+// `INSERT ... ON CONFLICT ... calls = calls + 1`, and the write rate is bounded by model
+// latency (seconds, not milliseconds), so the throttle was guarding nothing. It matters
+// more now that a metered lane exists at all — do not reinstate it.
 export function recordSideCall() {
-  if (!db || ledgerWriteThrottled()) return;
+  if (!db) return;
   const day = new Date().toISOString().slice(0, 10);
   db.prepare(`INSERT INTO side_call_ledger (day, calls, updated_at) VALUES (?, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(day) DO UPDATE SET calls = calls + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`).run(day);
