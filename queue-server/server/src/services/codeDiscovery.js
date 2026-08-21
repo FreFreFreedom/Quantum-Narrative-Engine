@@ -406,11 +406,35 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
   const ideaText = String(idea_text || '').trim();
   if (!ideaText) return { error: 'idea_text_required' };
 
-  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(ideaText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
+  // What the model calls below actually get. This pass's job is to work out what the work
+  // is ABOUT and search for related code — it needs the subject, not the implementation
+  // detail. So the text handed to the models is capped here, while `ideaText` stays whole
+  // for storage and display (discovery_reports.idea_text, the rewrite sweep, the UI).
+  //
+  // Without the cap this function resent the ENTIRE task text five times per run — once
+  // to decompose, then once per part (INSPIRE_MAX_PARTS = 3) inside the picks prompt —
+  // each with up to 3 attempts. Harmless while every task was a couple of hundred
+  // characters, which was true until whole plans started arriving from a terminal session
+  // (scripts/send-plan.js): an 11,700-character plan turned one world-look into a dozen
+  // long-prompt calls and left it grinding at 'pending' for many minutes. Credit
+  // discipline is a hard rule in this repo, not a preference — see CLAUDE.md.
+  //
+  // A plan states its subject at the top (title, then Context), so the head of the text
+  // is the part worth reading. Cut on a newline so it does not end mid-word.
+  const LOOK_MAX_CHARS = 1_500;
+  let lookText = ideaText;
+  if (lookText.length > LOOK_MAX_CHARS) {
+    const cutHead = lookText.slice(0, LOOK_MAX_CHARS);
+    const nl = cutHead.lastIndexOf('\n');
+    lookText = (nl > LOOK_MAX_CHARS * 0.5 ? cutHead.slice(0, nl) : cutHead)
+      + "\n\n[…the rest of this task's text is not shown here — this pass only needs to know what the work is about.]";
+  }
+
+  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(lookText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
   if (pass0.error) return { error: pass0.error, message: pass0.message };
   const parsed0 = parseJsonObject(pass0.text);
   const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, INSPIRE_MAX_PARTS);
-  const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: ideaText, queries: [] }];
+  const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: lookText, queries: [] }];
   const projectName = parsed0?.project_name || ideaText.slice(0, 60);
   // Which part of the app this look is FOR. Only accepted if it is a real area id, so a
   // hallucinated value degrades to "no subject named" rather than to a wrong subject —
@@ -420,7 +444,7 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
 
   const builtParts = [];
   for (const part of parts) {
-    const partDescription = String(part.description || ideaText).trim();
+    const partDescription = String(part.description || lookText).trim();
     const queries = (part.queries || []).filter(q => q && q.q).slice(0, 2);
     const resultsByQuery = [];
     for (const q of queries) {
@@ -428,7 +452,7 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
       const out = await getResults(db, qId, q.q, { forceRefresh });
       if (!out.error) resultsByQuery.push({ q, why: q.why, results: out.results || [] });
     }
-    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery, { taskText: ideaText, subject, subjectNote }), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
+    const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery, { taskText: lookText, subject, subjectNote }), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
     const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
     const picks = (parsed2?.picks || []).filter(p => p && ['open', 'hidden', 'bold'].includes(p.kind));
     const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;
