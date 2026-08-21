@@ -24,6 +24,7 @@
   --c-halo: #f4f2ee;
   --c-accent: #2f7d63;
   --c-ring: rgba(47,125,99,.5);
+  --c-hover-wash: rgba(38,34,27,.045);
   --sh-xs: 0 1px 2px rgba(38,34,27,.05); --sh-sm: 0 2px 10px rgba(38,34,27,.07); --sh-md: 0 10px 26px rgba(38,34,27,.12);
   --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
   --t-fast: 140ms; --t-med: 220ms; --ease: cubic-bezier(.2,.7,.3,1);
@@ -54,6 +55,7 @@
   --c-halo: #0c1017;
   --c-accent: #5db48c;
   --c-ring: rgba(93,180,140,.55);
+  --c-hover-wash: rgba(255,255,255,.055);
   --sh-xs: 0 1px 2px rgba(0,0,0,.3); --sh-sm: 0 2px 10px rgba(0,0,0,.38); --sh-md: 0 10px 26px rgba(0,0,0,.5);
   --c-warn: #e3a64f; --c-warn-tint: #3a2c14;
   --c-info: #6ea8dc; --c-info-tint: #16283e;
@@ -671,16 +673,20 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    detail folded into a "Details" line you open. It exists because the app had
    grown 23 kinds of card, 14 button treatments and 4 corner radii for what is
    really one object. Tokens only in here: no hard-coded radius, padding or size. */
-.uc { border:1px solid var(--c-border); border-radius:var(--r-md);
+.uc { position:relative; border:1px solid var(--c-border); border-radius:var(--r-md);
       padding:var(--sp-2) var(--sp-3); background:var(--c-surface);
       box-shadow:var(--sh-xs); margin-bottom:var(--sp-1); cursor:pointer;
       transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), background-color var(--t-fast) var(--ease); }
-.uc:hover { border-color:var(--c-border-3); }
+.uc:hover { border-color:var(--c-border-3); background-image:linear-gradient(var(--c-hover-wash), var(--c-hover-wash)); }
 .uc.is-sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
 /* A card waiting on you (violet) or moving (green) says so with its border — the
    same two-word colour vocabulary the queue rows carried before this. */
-.uc.state-asking { border-color:var(--c-violet); box-shadow:0 0 0 1px var(--c-violet-tint); }
-.uc.state-running { border-color:var(--c-accent); box-shadow:0 0 0 1px var(--c-accent); }
+.uc.state-asking, .uc.state-running { border-color:var(--c-border-2); }
+.uc.state-asking::before, .uc.state-running::before { content:''; position:absolute; left:-1px; top:-1px; bottom:-1px; width:3px; border-radius:var(--r-md) 0 0 var(--r-md); pointer-events:none; }
+.uc.state-asking::before { background:var(--c-violet); }
+.uc.state-running::before { background:var(--c-accent); }
+/* A hairline row has no rounded corner to follow. */
+.uc--row.state-asking::before, .uc--row.state-running::before { left:0; top:0; bottom:0; border-radius:0; }
 /* A piece of the tree that is ready to build keeps its amber wash. */
 .uc.is-warm { border-color:var(--c-amber); background:var(--c-warm-tint); }
 /* The denser list variant: a hairline, not a box. Long lists become rows. */
