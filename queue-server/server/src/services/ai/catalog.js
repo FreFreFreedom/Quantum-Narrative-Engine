@@ -15,7 +15,7 @@
 //
 // ─── The one metered exception ───────────────────────────────────────────────
 // Everything above assumed every entry here is free. One is not: `openai`
-// (gpt-4o) bills per token, added deliberately for Idea Studio brainstorming
+// (gpt-4.1, gpt-4o) bills per token, added deliberately for Idea Studio brainstorming
 // because Antoine wants that specific conversational feel.
 //
 // A key-present check is NOT enough of a guard for a paid entry. router.js's
@@ -129,6 +129,11 @@ export const PROVIDERS = [
     metered: true,
     limits: { rpm: 500, rpd: 10000 },
     models: [
+      // gpt-4.1 is the Idea Studio's model: cheaper than gpt-4o on every axis and
+      // 4x cheaper on CACHED input, which is the number that matters now that the
+      // studio sends a ~10k-token project map in front of every turn
+      // (services/projectMap.js). gpt-4o stays selectable, nothing else changes.
+      { id: 'gpt-4.1', codingRank: 82, contextTokens: 1000000, priceIn: 2.00, priceCached: 0.50, priceOut: 8.00 },
       { id: 'gpt-4o', codingRank: 80, contextTokens: 128000, priceIn: 2.50, priceCached: 1.25, priceOut: 10.00 },
     ],
   },

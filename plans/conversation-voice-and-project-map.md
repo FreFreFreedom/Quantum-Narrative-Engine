@@ -2,7 +2,24 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-21 |
+| **DONE (code) · one settings row + live checks left** | 2026-08-21 |
+
+**Implemented 2026-08-21.** Two things the plan text does not cover:
+
+1. **One manual step remains.** The AI Settings 'studio' row still has to be pointed
+   at `openai` / `gpt-4.1`. It is a settings row on purpose — a boot-time override
+   would silently undo a deliberate choice on every redeploy, which this project has
+   already been bitten by once.
+2. **Deviation, deliberate.** The plan folds the whole per-turn digest into the map.
+   The *components* half is folded in; the **live lists** (notebook, queue, open
+   suggestions) are NOT — they are rebuilt per turn and sent immediately after the
+   map, where being variable costs nothing. A boot-cached notebook would have made
+   the advisor's "two of your notes are the same idea" claim run days out of date,
+   and that behaviour is one of the things the new voice explicitly promises.
+
+The plan's four live verification steps (caching proven from the spend ledger, a
+map-only question, the three voice questions, the over-cap fallback note) need a
+deploy and a paid turn, so they were left to the deploy.
 
 Steps 1 and 2 of [one-conversation-system.md](one-conversation-system.md). Read that
 for the wider arc, but this file is self-contained — do not implement steps 3-6 here.

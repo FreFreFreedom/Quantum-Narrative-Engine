@@ -39,6 +39,7 @@ import { bindCardLinesDb } from './services/cardLines.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
+import { bindProjectMapDb, buildProjectMap } from './services/projectMap.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
 import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
@@ -88,6 +89,7 @@ bindCardLinesDb(db);
 bindReviewsDb(db);
 bindGitJobsDb(db);
 bindBriefingDb(db);
+bindProjectMapDb(db);
 bindAiTextDb(db);
 bindOpenAiSpendDb(db);
 bindRouterDb(db);
@@ -118,6 +120,13 @@ try {
 // Regenerate the shared-knowledge briefing (.agents/current-state.md) at boot
 // (plan Part 6). Best-effort — it needs a git repo; on Railway there is none.
 try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate failed:', e.message); }
+
+// Build the Idea Studio's standing project map ONCE, here, and hold it in memory
+// for the life of the process. It rides on every studio turn (~10k tokens), and
+// prompt caching only pays for it if it is byte-identical every time — so it must
+// never be rebuilt per turn. Runs after regenerateBriefing() on purpose: the map
+// folds in the .agents/current-state.md that call just wrote.
+try { buildProjectMap(); } catch (e) { console.error('Project map build failed:', e.message); }
 
 // Background pre-generation: book suggestions + first-tag lens for every
 // character/country, plus the suggestion/architecture/world-look sweeps.
