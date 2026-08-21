@@ -32,7 +32,12 @@ let db = null;
 export function bindConversationsDb(database) { db = database; }
 
 const CONVO_HISTORY_WINDOW = 16;
-const CONVO_CHAT_MODEL = process.env.CONVO_CHAT_MODEL || 'claude-sonnet-4-5';
+// The chat turn is the one you sit and wait for, so it runs on the fast tier by
+// default; /plan and the rewrites keep the stronger model, because those produce
+// something you keep. An explicit model is only a preference — ai/text.js drops it
+// when the configured lane cannot honour it, so the AI Settings 'studio' row still
+// has the final say.
+const CONVO_CHAT_MODEL = process.env.CONVO_CHAT_MODEL || 'claude-haiku-4-5-20251001';
 const CONVO_PLAN_MODEL = process.env.CONVO_PLAN_MODEL || 'claude-sonnet-4-5';
 
 // ─── Read paths ──────────────────────────────────────────────────────────────
@@ -287,7 +292,7 @@ async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens,
     subjectSystemPrompt(ctx.contextText),
     includeDigest ? projectDigestBlock() : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
-    instruction ? `\n=== WHAT TO DO NOW ===\n${instruction}` : `\n=== WHAT TO DO NOW ===\nReply to the owner's last message. Nothing else.`,
+    instruction ? `\n=== WHAT TO DO NOW ===\n${instruction}` : `\n=== WHAT TO DO NOW ===\nReply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`,
   ].filter(Boolean).join('\n');
   return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000 });
 }
@@ -308,7 +313,10 @@ async function runChatTurn(convoId, userId) {
   if (ctx.error) return { error: ctx.error };
 
   const result = await runRoutedTurn({
-    convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 1400,
+    // 450, not 1400: nothing is streamed, so the wait is the whole answer being
+    // written before you see any of it. Cutting the ceiling cuts the wait roughly
+    // in proportion. The brevity line above stops it reading as a truncation.
+    convo, ctx, model: CONVO_CHAT_MODEL, maxTokens: 450,
     feature: 'studio', label: 'conversations:chat',
   });
   if (result.error) return result;
