@@ -74,7 +74,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 ::-webkit-scrollbar-thumb { background:var(--c-border-3); border-radius:8px; border:3px solid transparent; background-clip:content-box; }
 ::-webkit-scrollbar-thumb:hover { background:var(--c-ink-4); border:3px solid transparent; background-clip:content-box; }
 :focus-visible { outline:2px solid var(--c-ring); outline-offset:2px; }
-body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-toolbar, .tv-toolbar, .mind-toolbar, .flow-composer, .q-right, .q-left, .ws-slot, .ws-archdetail { transition:background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
+body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, .tv-toolbar, .mind-toolbar, .flow-composer, .q-right, .q-left, .ws-slot, .ws-archdetail { transition:background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 .wrap { display:flex; height:100vh; min-height:640px; }
 .left { width:230px; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; flex-shrink:0; padding:14px; }
@@ -91,9 +91,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .pattern-chip.active { background:#3f6b85; color:#fff; }
 .searchbox { width:100%; padding:6px 8px; border:1px solid var(--c-border-2); border-radius:6px; font-size:12px; margin-bottom:6px; }
 .mid { flex:1; display:flex; flex-direction:column; min-width:0; }
-.header { padding:10px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); }
-.header h1 { font-size:15px; margin:0 0 3px; font-weight:600; }
-.header p { font-size:11.5px; margin:0; color:var(--c-ink-3); }
 .graph-controls { padding:7px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .ctrl-label { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.04em; }
 .ctrlbtn { padding:var(--sp-1) var(--sp-3); border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; cursor:pointer; }
@@ -225,23 +222,57 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .loginbox button { padding:8px 16px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:13px; cursor:pointer; }
 
 /* ---------- Top-level mode switch ---------- */
-.modebar { display:flex; align-items:center; gap:14px; padding:0 14px; height:46px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
-.mode-tabs { display:flex; align-items:center; gap:2px; padding:3px; background:var(--c-surface-2); border:1px solid var(--c-border); border-radius:10px; }
-.mode-tabs button { flex:none; padding:5px 14px; border:none; background:transparent; border-radius:7px; font-size:11.5px; font-weight:500; color:var(--c-ink-4); cursor:pointer; letter-spacing:.02em; transition:background .15s ease, color .15s ease; }
-.mode-tabs button:hover { color:var(--c-ink); }
-.mode-tabs button.active { background:var(--c-surface); color:var(--c-ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.10); }
-.mode-actions { margin-left:auto; display:flex; align-items:center; gap:6px; }
-.mode-icon { position:relative; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:8px; color:var(--c-ink-2); font-size:13px; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease; }
-.mode-icon:hover { border-color:var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink); }
-.mode-pill { display:flex; align-items:center; gap:7px; height:32px; padding:0 12px; border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:16px; color:var(--c-ink-2); font-size:11.5px; font-weight:600; letter-spacing:.02em; cursor:pointer; transition:background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease; }
-.mode-pill svg { width:14px; height:14px; color:var(--c-ink-3); }
-.mode-pill:hover { border-color:var(--c-border-3); background:var(--c-surface-2); color:var(--c-ink); transform:translateY(-1px); }
-.mode-pill:hover svg { color:var(--c-ink-2); }
-.mode-pill.warm { background:var(--c-amber-tint); border-color:var(--c-amber); color:var(--c-warn); box-shadow:0 1px 6px rgba(192,138,62,.25); }
-.mode-pill.warm svg { color:var(--c-amber); }
-.mode-pill-count { display:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; }
+/* ---------- The side rail ---------- */
+/* Two states, one geometry. .railbar is what the flex row reserves (52px, or
+   232px when pinned); .rail-inner is absolutely positioned inside it and is the
+   thing that actually widens — so an unpinned peek floats OVER the content and
+   the page never reflows under the mouse. */
+.railbar { position:relative; width:52px; flex:none; z-index:60; }
+.rail-inner { position:absolute; top:0; left:0; bottom:0; width:52px; display:flex; flex-direction:column; gap:2px; padding:8px 6px; background:var(--c-bg); border-right:1px solid var(--c-border); overflow:hidden; white-space:nowrap; transition:width var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease); }
+.railbar:hover .rail-inner, .railbar:focus-within .rail-inner, .railbar.pinned .rail-inner { width:232px; }
+/* only the floating peek gets a shadow — pinned, it is part of the layout */
+.railbar:not(.pinned):hover .rail-inner, .railbar:not(.pinned):focus-within .rail-inner { box-shadow:var(--sh-md); }
+.railbar.pinned { width:232px; }
+
+.rail-item, .rail-brand { display:flex; align-items:center; gap:10px; width:100%; height:34px; padding:0 7px; flex:none; border:none; background:none; border-radius:var(--r-md); color:var(--c-ink-3); font-size:var(--fs-sm); font-weight:400; text-align:left; cursor:pointer; position:relative; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.rail-item:hover, .rail-brand:hover { background:var(--c-surface-2); color:var(--c-ink); }
+/* the active mode has to read at 52px, where the label is invisible: a filled
+   pill plus an accent bar hard against the left edge */
+.rail-item.active { background:var(--c-surface-2); color:var(--c-ink); font-weight:var(--fw-medium); }
+.rail-item.active::before { content:''; position:absolute; left:-6px; top:7px; bottom:7px; width:2px; border-radius:0 2px 2px 0; background:var(--c-accent); }
+/* Something is waiting on you: the Queue item warms up so it reads at 52px. */
+.rail-item.warm { background:var(--c-amber-tint); color:var(--c-warn); }
+.rail-item.warm .rail-ic { color:var(--c-amber); }
+.rail-ic { width:18px; height:18px; flex:none; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+.rail-ic-glyph { width:18px; height:18px; flex:none; display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1; }
+.rail-brand { height:38px; margin-bottom:4px; color:var(--c-ink); }
+.rail-brand .rail-ic { stroke-width:1.2; color:var(--c-accent); }
+.rail-wordmark { font-size:var(--fs-base); font-weight:var(--fw-medium); letter-spacing:.06em; }
+.rail-label { opacity:0; min-width:0; overflow:hidden; text-overflow:ellipsis; transition:opacity var(--t-fast) var(--ease); }
+.railbar:hover .rail-label, .railbar:focus-within .rail-label, .railbar.pinned .rail-label { opacity:1; }
+.rail-sep { flex:none; height:1px; margin:6px 7px; background:var(--c-border); }
+.rail-foot { margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px; border-top:1px solid var(--c-border); }
+.rail-row { cursor:default; }
+.rail-row:hover { background:none; }
+.rail-foot #serverToggle { max-width:110px; font-size:var(--fs-xs); }
+.rail-foot .core-banner, .rail-foot .q-pausebadge { padding:0 7px; font-size:var(--fs-xs); overflow:hidden; text-overflow:ellipsis; }
+/* collapsed: the settings keep their symbol but shed their words. The usage bars
+   deliberately stay visible — a nearly-spent quota must still be noticeable. */
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .core-banner,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .q-pausebadge { display:none; }
+.rail-foot #usageStripHost { padding:2px 7px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-reset,
+.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-pct,
+.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-label { display:none; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-bar { height:3px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-strip { flex-direction:column; gap:3px; }
+/* the Queue count: a pill beside the label when open, a dot on the symbol when not */
+.mode-pill-count { display:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; flex:none; margin-left:auto; }
 .mode-pill-count.on { display:inline-flex; }
-.app-shell { display:flex; flex-direction:column; height:100vh; min-height:640px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .mode-pill-count.on { position:absolute; left:24px; top:4px; margin:0; min-width:14px; height:14px; padding:0 3px; font-size:9px; }
+
+.app-shell { display:flex; flex-direction:row; height:100vh; min-height:640px; }
+.app-main { flex:1; min-width:0; display:flex; flex-direction:column; }
 .app-shell .wrap { flex:1; min-height:0; }
 
 /* ---------- Queue panel: right-anchored slide-over, reachable from any mode ---------- */
@@ -280,7 +311,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 /* ---------- CORE ARCHITECTURE shell (merged Architecture/Seeds/Suggestion Engine/Dispatch Queue) ---------- */
 #coreApp { flex:1; display:none; flex-direction:column; min-height:0; }
 #coreApp.open { display:flex; }
-.core-header { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding:6px 12px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
+/* Only the Architecture/Flow chips remain here — everything else moved to the
+   side rail — so it no longer needs to wrap, and it is a thin strip now. */
+.core-header { display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-1) var(--sp-3); border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
 .core-tabs { display:flex; align-items:center; gap:2px; }
 .core-tabs button { padding:5px 10px; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; border:1px solid transparent; background:transparent; color:var(--c-ink-3); cursor:pointer; border-radius:6px; }
 .core-tabs button:hover { background:var(--c-surface-2); color:var(--c-ink); }
@@ -1220,13 +1253,11 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 
 /* ---------- Modern UI pass: one motion language, soft shadows, calmer type ---------- */
 button { -webkit-tap-highlight-color: transparent; }
-button, .mode-pill, .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .arch-inner-tabs button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button, .arch-ctxchip, .mind-actions button {
+button, .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .arch-inner-tabs button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button, .arch-ctxchip, .mind-actions button {
   transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
 }
 button:active { transform: translateY(1px) scale(.99); }
 .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .arch-inner-tabs button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button { border-radius: var(--r-md); }
-.mode-tabs { box-shadow: var(--sh-xs); }
-.mode-tabs button { font-size:12px; padding:6px 16px; }
 .core-tabs button { border-radius: var(--r-md); font-size:11px; }
 .arch-node, .mind-card, .sg-card, .id-card, .lcard, .book, .q-item, .flow-row {
   box-shadow: var(--sh-xs);
@@ -1240,7 +1271,6 @@ button:active { transform: translateY(1px) scale(.99); }
 .arch-node, .mind-card, .lcard, .book, .q-item, .flow-row, .sg-card, .id-card { animation: fmcnsRise .24s var(--ease) backwards; }
 .ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
 #mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
-.header h1 { font-size:16px; }
 .ctrlbtn { font-size:11.5px; padding:5px 11px; }
 .arch-viewbtns button { font-size:11.5px; padding:6px 12px; }
 .flow-typecips button { font-size:11px; padding:5px 11px; }
@@ -1258,6 +1288,10 @@ button:active { transform: translateY(1px) scale(.99); }
    layout (canvas/SVG panels keep their flex sizing) to avoid regressing the
    graph pan/zoom math, which assumes a stable container. ---------- */
 @media (max-width: 900px) {
+  /* The content navigator already spends 190+300px on its own two rails here,
+     so a pinned side rail stops taking real width and floats over instead. */
+  .railbar.pinned { width:52px; }
+  .railbar.pinned .rail-inner { box-shadow:var(--sh-md); }
   .left { width:190px; }
   .right { width:300px; }
   .map-sidepanel { width:260px; }
@@ -1302,6 +1336,10 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-queue" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h6"/></symbol>
   <symbol id="ic-pencil" viewBox="0 0 16 16"><path d="M11.2 2.6 13.4 4.8 5.6 12.6l-3 .8.8-3z"/></symbol>
   <symbol id="ic-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 0 1-8.6 3.5"/><path d="M3 8a5 5 0 0 1 8.6-3.5"/><path d="M11.6 1.9v2.6H9M4.4 14.1v-2.6H7"/></symbol>
+  <symbol id="ic-brand" viewBox="0 0 16 16"><path d="M8 1.4 14.6 8 8 14.6 1.4 8z"/><path d="M8 5 11 8l-3 3-3-3z"/></symbol>
+  <symbol id="ic-nodes" viewBox="0 0 16 16"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="7" cy="12.4" r="2"/><path d="M5.7 5.3 10.3 5M11.2 7.8 8.3 10.6M5.4 5.9l1.1 4.6"/></symbol>
+  <symbol id="ic-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.9 8h12.2"/><path d="M8 1.8c1.7 1.7 2.6 3.8 2.6 6.2S9.7 12.5 8 14.2C6.3 12.5 5.4 10.4 5.4 8S6.3 3.5 8 1.8z"/></symbol>
+  <symbol id="ic-layers" viewBox="0 0 16 16"><path d="M8 1.8 14 5 8 8.2 2 5z"/><path d="m2 8.4 6 3.2 6-3.2"/><path d="m2 11.6 6 3.2 6-3.2"/></symbol>
 </defs></svg>
 
 <div id="loginGate" class="loginbox">
@@ -1312,20 +1350,65 @@ button:active { transform: translateY(1px) scale(.99); }
   <div id="loginErr" style="color:var(--c-danger);margin-top:8px;font-size:12px;"></div>
 </div>
 <div class="app-shell" id="appShell" style="display:none;">
-<div class="modebar">
-  <div class="mode-tabs" role="tablist" aria-label="App modes">
-    <button id="modeContentBtn" class="active" role="tab" aria-selected="true">Content navigator</button>
-    <button id="modeMapBtn" role="tab" aria-selected="false">Map</button>
-    <button id="modeCoreBtn" role="tab" aria-selected="false">Core architecture</button>
-  </div>
-  <div class="mode-actions">
-    <button id="modeQueueBtn" class="mode-pill" title="Open the Dispatch Queue — the count is tasks waiting for your answer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-      <span>Queue</span><span id="modeQueueBadge" class="mode-pill-count"></span>
+<!-- The side rail. Collapsed it is 52px of symbols; hovering slides the labels
+     out OVER the content (.rail-inner is absolutely positioned, so nothing
+     reflows); clicking the brand mark pins it open and .app-shell gives it real
+     width. Everything that used to sit in two stacked bars across the top lives
+     here now, keeping its original ids so every existing handler still binds. -->
+<nav class="railbar" id="railbar" data-src="Global | side rail: modes + global settings | fmcns_navigator.html: setMode(), the rail IIFE near the theme toggle">
+  <div class="rail-inner">
+    <button id="railToggle" class="rail-brand" aria-expanded="false" title="Keep this panel open (or press [ )" aria-label="Keep this panel open">
+      <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-brand"/></svg>
+      <span class="rail-label rail-wordmark">FMCNS</span>
     </button>
-    <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
+    <div class="rail-nav" role="tablist" aria-label="App modes">
+      <button id="modeContentBtn" class="rail-item active" role="tab" aria-selected="true" title="Content navigator">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg>
+        <span class="rail-label">Content</span>
+      </button>
+      <button id="modeMapBtn" class="rail-item" role="tab" aria-selected="false" title="Map">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg>
+        <span class="rail-label">Map</span>
+      </button>
+      <button id="modeCoreBtn" class="rail-item" role="tab" aria-selected="false" title="Core architecture">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
+        <span class="rail-label">Architecture</span>
+      </button>
+    </div>
+    <div class="rail-sep"></div>
+    <button id="modeQueueBtn" class="rail-item" title="Open the Dispatch Queue — the count is tasks waiting for your answer">
+      <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg>
+      <span class="rail-label">Queue</span><span id="modeQueueBadge" class="mode-pill-count"></span>
+    </button>
+    <div class="rail-foot">
+      <div id="usageStripHost" data-src="Side rail → Claude usage (5h + weekly) | fmcns_navigator.html: loadUsage(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
+      <span id="archQueueBanner" class="core-banner" data-src="Side rail → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
+      <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
+      <button class="rail-item rail-btn" id="queuePauseBtn" title="Pause / resume the task queue">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
+        <span class="rail-label">Pause queue</span>
+      </button>
+      <span class="rail-item rail-row core-serverpick" title="Which backend this page talks to: the local server on this Mac, or the deployed site. Choosing one saves it and reloads.">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-refresh"/></svg>
+        <span class="rail-label">
+          <select id="serverToggle">
+            <option value="local">local</option>
+            <option value="production">production</option>
+          </select>
+        </span>
+      </span>
+      <button class="rail-item rail-btn" id="aiSheetBtn" title="AI Settings — which model handles what, and what happens when the paid one runs out">
+        <span class="rail-ic rail-ic-glyph">⚙</span>
+        <span class="rail-label">AI Settings</span>
+      </button>
+      <button class="rail-item rail-btn" id="themeToggleBtn" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">
+        <span class="rail-ic rail-ic-glyph">🌙</span>
+        <span class="rail-label">Theme</span>
+      </button>
+    </div>
   </div>
-</div>
+</nav>
+<div class="app-main" id="appMain">
 <div id="storageWarn" class="storage-warn" hidden data-src="Global | fmcns_navigator.html: renderStorageWarn() | backend: GET /api/architecture/queue-status -> storage"></div>
 <div id="queuePanelVeil" class="queue-panel-veil" hidden></div>
 <aside id="queuePanel" class="queue-panel" hidden aria-label="Dispatch Queue">
@@ -1370,9 +1453,6 @@ button:active { transform: translateY(1px) scale(.99); }
     <div id="patternList" class="pattern-chiplist"></div>
   </div>
   <div class="mid">
-    <div class="header">
-      <h1>FMCNS — Fractal Navigator</h1>
-    </div>
     <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near renderZoneLabels()">
       <span class="ctrl-label">View</span>
       <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
@@ -1637,6 +1717,7 @@ button:active { transform: translateY(1px) scale(.99); }
     <div id="mapCardHost"><div class="empty">Click a colored country to inspect it.</div></div>
   </div>
 </div>
+</div><!-- /.app-main -->
 </div>
 <script>
 // One queue, one database. This used to swing to http://localhost:3000 whenever
@@ -1727,15 +1808,23 @@ async function boot() {
     enabledSources = new Set(FACETS.sources.map(s => s.value));
 
     document.getElementById('loginGate').style.display = 'none';
+    // The pin is applied BEFORE the shell is shown, so a rail the user keeps
+    // open never flashes collapsed on load.
+    applyRailPinned(railIsPinned());
+    initRail();
     document.getElementById('appShell').style.display = 'flex';
     renderFacets();
     renderAxisControls();
     renderClusterList();
     initGraph();
-    // Queue polling runs from app start so the global Queue badge in the mode
-    // bar stays live in every mode, not only inside Core architecture.
+    // Queue polling runs from app start so the global Queue badge in the side
+    // rail stays live in every mode, not only inside Core architecture.
     startQueuePolling();
     qLoad();
+    // Pause queue, Server and AI Settings used to be wired inside initCore(),
+    // which meant they did nothing until you had opened Core architecture once.
+    // They live in the always-visible rail now, so they are wired here instead.
+    initRailControls();
     // initArchNav() used to run here on every boot; it now runs lazily from
     // switchCoreView('arch') the first time the Architecture view is opened.
   } catch (e) {
@@ -3339,10 +3428,79 @@ document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
 document.getElementById('modeCoreBtn').onclick = () => setMode('core');
 document.getElementById('modeQueueBtn').onclick = () => openQueuePanel();
+// ---------- The side rail ----------
+// Two jobs. First, the pin: unpinned the rail is 52px of symbols that widen on
+// hover (pure CSS); pinned it keeps that width and the content shrinks, and the
+// choice is remembered. Second, the controls that moved out of the top bar into
+// the rail — they are visible from the first paint now, so they are wired at
+// boot rather than the first time Core architecture is opened.
+const RAIL_KEY = 'fmcns.railPinned';
+function railIsPinned() {
+  try { return localStorage.getItem(RAIL_KEY) === '1'; } catch (e) { return false; }
+}
+function applyRailPinned(on) {
+  const rail = document.getElementById('railbar');
+  const tog = document.getElementById('railToggle');
+  if (!rail) return;
+  rail.classList.toggle('pinned', on);
+  if (tog) {
+    tog.setAttribute('aria-expanded', String(on));
+    tog.title = on ? 'Let this panel slide away again' : 'Keep this panel open (or press [ )';
+  }
+}
+function initRail() {
+  const tog = document.getElementById('railToggle');
+  if (!tog) return;
+  tog.onclick = () => {
+    const on = !document.getElementById('railbar').classList.contains('pinned');
+    applyRailPinned(on);
+    try { localStorage.setItem(RAIL_KEY, on ? '1' : '0'); } catch (e) {}
+  };
+  document.addEventListener('keydown', (e) => {
+    // '[' toggles the pin; Escape lets go of a hover-peek by dropping focus.
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === '[') { e.preventDefault(); tog.click(); }
+    else if (e.key === 'Escape') {
+      const rail = document.getElementById('railbar');
+      if (rail && rail.contains(document.activeElement)) document.activeElement.blur();
+    }
+  });
+}
+// Pause queue / Server / AI Settings + the usage bars. Called from boot().
+function initRailControls() {
+  const pause = document.getElementById('queuePauseBtn');
+  if (pause) pause.onclick = qTogglePause;
+  const ai = document.getElementById('aiSheetBtn');
+  if (ai) ai.onclick = () => {
+    document.getElementById('aiSheetRoot').style.display = 'flex';
+    loadAiSettings();
+  };
+  // "Server: local / production" — writes the shared key both constants read,
+  // then reloads so every fetch lands on the new backend. Initial value mirrors
+  // what the constants resolved to before this element existed.
+  const serverSel = document.getElementById('serverToggle');
+  if (serverSel) {
+    const saved = localStorage.getItem('fmcns_api_base');
+    const effective = saved || ((location.hostname === 'localhost' || location.protocol === 'file:') ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
+    serverSel.value = effective === 'http://localhost:3000' ? 'local' : 'production';
+    serverSel.onchange = () => {
+      localStorage.setItem('fmcns_api_base', serverSel.value === 'local' ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
+      location.reload();
+    };
+  }
+  startUsagePolling();
+}
+
 function setMode(m) {
-  document.getElementById('modeContentBtn').classList.toggle('active', m==='content');
-  document.getElementById('modeMapBtn').classList.toggle('active', m==='map');
-  document.getElementById('modeCoreBtn').classList.toggle('active', m==='core');
+  // The three rail items are the tablist now. `aria-selected` used to be written
+  // once in the markup and never updated, so a screen reader always heard
+  // "Content navigator, selected" whatever you were looking at.
+  [['modeContentBtn','content'], ['modeMapBtn','map'], ['modeCoreBtn','core']].forEach(([id, mode]) => {
+    const b = document.getElementById(id);
+    b.classList.toggle('active', m === mode);
+    b.setAttribute('aria-selected', String(m === mode));
+  });
   document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
   document.getElementById('mapApp').classList.toggle('open', m==='map');
   document.getElementById('coreApp').classList.toggle('open', m==='core');
@@ -3440,7 +3598,6 @@ function initCore() {
     document.querySelectorAll('[data-core-tab]').forEach(b => { b.onclick = () => switchCoreView(b.getAttribute('data-core-tab')); });
     document.getElementById('qAddBtn').onclick = () => qAddPrompt(false);
     document.getElementById('qSetAsideBtn').onclick = () => qAddPrompt(true);
-    document.getElementById('queuePauseBtn').onclick = qTogglePause;
     // Event delegation for flow type tabs - handles dynamically rendered buttons
     const flowTypeBtns = document.getElementById('flowTypeBtns');
     if (flowTypeBtns) {
@@ -3488,27 +3645,9 @@ function initCore() {
       b.onclick = () => { document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x === b)); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
-    document.getElementById('aiSheetBtn').onclick = () => {
-      document.getElementById('aiSheetRoot').style.display = 'flex';
-      loadAiSettings();
-    };
     document.getElementById('aiSheetCloseBtn').onclick = () => { document.getElementById('aiSheetRoot').style.display = 'none'; };
-    // "Server: local / production" — writes the shared key both constants read,
-    // then reloads so every fetch lands on the new backend. Initial value mirrors
-    // what the constants resolved to before this element existed.
-    const serverSel = document.getElementById('serverToggle');
-    if (serverSel) {
-      const saved = localStorage.getItem('fmcns_api_base');
-      const effective = saved || ((location.hostname === 'localhost' || location.protocol === 'file:') ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
-      serverSel.value = effective === 'http://localhost:3000' ? 'local' : 'production';
-      serverSel.onchange = () => {
-        localStorage.setItem('fmcns_api_base', serverSel.value === 'local' ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
-        location.reload();
-      };
-    }
   }
   switchCoreView(coreView); // lays out the shell and lazy-inits the arch view (default)
-  startUsagePolling();
   loadProviders(); // model picker + provider liveness for the New-prompt form
   loadAgents(); // agent roster for the New-prompt form
   qLoad(); // keep the Flow badge + pause state fresh even off the Flow view
@@ -3516,9 +3655,10 @@ function initCore() {
 }
 
 function teardownCore() {
-  stopUsagePolling();
-  // Queue polling deliberately keeps running across modes — the global Queue
-  // badge in the mode bar must stay live from anywhere in the app.
+  // Usage polling used to stop here. The Claude usage bars live in the side rail
+  // now — visible in every mode — so they must keep updating after you leave
+  // Core architecture. Queue polling keeps running for the same reason: the
+  // global Queue badge in the rail must stay live from anywhere in the app.
   startQueuePolling();
 }
 
@@ -10090,7 +10230,7 @@ function openChatWithPrompt(text) {
 // A right-anchored slide-over that bundles adding a task and seeing the queue in one
 // place, so there's one quick-access surface instead of several. State lives here, above
 // any mode switch, so opening it never depends on which mode (content/map/core) is active
-// — the same principle behind the modebar's Queue button and badge already staying live in
+// — the same principle behind the side rail's Queue button and badge already staying live in
 // every mode (see qLoad, called from boot() regardless of mode).
 let queuePanelOpen = false;
 let qpMode = 'implement';
@@ -11272,7 +11412,10 @@ document.addEventListener('keydown', (e) => {
   if (!btn) return;
   function refresh() {
     var dark = document.documentElement.classList.contains('dark');
-    btn.textContent = dark ? '☀️' : '🌙';
+    // The button carries a symbol AND a label in the rail, so only the symbol
+    // span is rewritten — btn.textContent would delete the label with it.
+    var glyph = btn.querySelector('.rail-ic-glyph') || btn;
+    glyph.textContent = dark ? '☀️' : '🌙';
   }
   btn.addEventListener('click', function () {
     var dark = document.documentElement.classList.toggle('dark');

@@ -197,9 +197,9 @@ function dispatchByName(name, input) {
 
 // ─── System prompt builders ──────────────────────────────────────────────────
 
-const BASE_SYSTEM = `You are the Idea Studio assistant inside FMCNS — you help turn raw ideas into a concrete plan for a coding agent, chatting about one subject at a time.
+const BASE_SYSTEM = `You are the Idea Studio thinking partner inside FMCNS, working through one subject at a time with its owner.
 
-You can look things up in the live project using the tools (read-only — you can never edit anything here). Prefer answering from what the user already said plus what the tools tell you; if something already exists, say so rather than proposing to rebuild it.
+Everything you know about the project is in this prompt — you have NO tools and cannot look anything up. So never say or imply that you checked, searched, read the code or looked something up. Work from what the owner has said plus the reference sections below, and when you genuinely do not know, say so. If something already exists in the project, say so rather than proposing to build it again.
 
 Commands the user may type:
   /grill-me — switch to interrogation mode: ask the sharpest clarifying questions, one at a time, no answering yet.
@@ -255,7 +255,7 @@ const LENGTH_JUDGED = `Let the question decide how long the answer is — the wa
 
 function subjectSystemPrompt(ctxText, { depth = false } = {}) {
   return `${BASE_SYSTEM}
-${depth ? `\n=== HOW TO THINK ===\n${studioPersona()}\n` : ''}
+
 ${depth ? LENGTH_JUDGED : LENGTH_TERSE}
 
 === SUBJECT CONTEXT ===
@@ -333,13 +333,28 @@ function transcriptOf(convo, msgs, windowSize) {
 // same thing — a second copy of this assembly would drift.
 function buildTurnPrompt({ convo, ctx, instruction = null, includeDigest = true, brevity = true }) {
   const msgs = listMessages(convo.id);
+  const depth = !brevity;
+  // ORDER MATTERS, and it is the fix for a real failure. The voice used to sit
+  // near the top, ahead of a 40-component project digest and an operational
+  // "reply to the owner's last message" — and a model weights the END of a long
+  // prompt most heavily, so gpt-4o read the frame, then buried it and answered in
+  // its default consultant register ("immersive engagement", "exploratory
+  // adventure"). Verified live before and after.
+  //
+  // So: rules, then reference material, then the conversation, then HOW TO THINK
+  // last, immediately before it answers. The digest stays — this lane is toolless,
+  // so that block is the only thing it knows about the project, and dropping it
+  // would trade a register problem for a blindness problem.
   return [
-    subjectSystemPrompt(ctx.contextText, { depth: !brevity }),
+    subjectSystemPrompt(ctx.contextText, { depth }),
     includeDigest ? projectDigestBlock() : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
+    depth ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
-      : `\n=== WHAT TO DO NOW ===\nReply to the owner's last message. Nothing else.${brevity ? `\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.` : `\n\nNo preamble and no restating the question back — start with the substance. Then give it as much room as it actually needs.`}`,
+      : `\n=== WHAT TO DO NOW ===\n${brevity
+          ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
+          : `Reply to the owner's last message, in the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs. Reach for the structural reading rather than the obvious one.`}`,
   ].filter(Boolean).join('\n');
 }
 
