@@ -35,7 +35,7 @@ export function detectLimit(text, headers = null) {
   return LIMIT_RE.test(String(text || '')) ? { label: 'quota/limit reached' } : null;
 }
 
-async function postChatCompletions({ providerId, model, messages, maxTokens, tools, timeoutMs = 60_000 }) {
+async function postChatCompletions({ providerId, model, messages, maxTokens, tools, timeoutMs = 60_000, cacheKey = null }) {
   const apiKey = apiKeyFor(providerId);
   const endpoint = endpointFor(providerId);
   if (!apiKey || !endpoint) return { error: 'no_api_key', message: `${providerId}: API key not configured` };
@@ -59,6 +59,11 @@ async function postChatCompletions({ providerId, model, messages, maxTokens, too
         // calls need it — large generations keep full thinking quality.
         ...(providerId === 'google-ai-studio' && maxTokens < 512 ? { reasoning_effort: 'low' } : {}),
         ...(tools ? { tools } : {}),
+        // Routes every turn of one conversation to the same cache, instead of
+        // scattering across machines — see stream_options below for why this is
+        // OpenAI-only. Sent only when the caller has a stable id to give it
+        // (e.g. the Idea Studio conversation id); never per-turn-varying.
+        ...(providerId === 'openai' && cacheKey ? { prompt_cache_key: cacheKey } : {}),
       }),
       signal: controller.signal,
     });
@@ -143,10 +148,10 @@ function anthropicMessagesToOpenAI(messages, system) {
 
 // Returns { toolUses, text } in Anthropic-block shape so chat.js's existing
 // dispatch/round loop needs no changes beyond swapping which function it calls.
-export async function chatCompletion({ providerId, model, system, messages, tools, maxTokens = 1500, timeoutMs = 60_000 }) {
+export async function chatCompletion({ providerId, model, system, messages, tools, maxTokens = 1500, timeoutMs = 60_000, cacheKey = null }) {
   const oaMessages = anthropicMessagesToOpenAI(messages, system);
   const oaTools = anthropicToolsToOpenAI(tools);
-  const out = await postChatCompletions({ providerId, model, messages: oaMessages, tools: oaTools, maxTokens, timeoutMs });
+  const out = await postChatCompletions({ providerId, model, messages: oaMessages, tools: oaTools, maxTokens, timeoutMs, cacheKey });
   if (out.error) return { error: out.error, message: out.message, limit: out.limit || null };
 
   const choice = out.data?.choices?.[0];
@@ -177,7 +182,7 @@ export function listModels(providerId) {
 // { type: 'content', text }, { type: 'tool_use', tool: { name, input } },
 // { type: 'usage', usage: { prompt_tokens, completion_tokens, cost } },
 // { type: 'session', sessionId }, { type: 'error', error: { message } }
-export async function postChatCompletionsStream({ providerId, model, messages, maxTokens, tools, timeoutMs = 60_000 }) {
+export async function postChatCompletionsStream({ providerId, model, messages, maxTokens, tools, timeoutMs = 60_000, cacheKey = null }) {
   const apiKey = apiKeyFor(providerId);
   const endpoint = endpointFor(providerId);
   if (!apiKey || !endpoint) return { error: 'no_api_key', message: `${providerId}: API key not configured` };
@@ -203,6 +208,8 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
         // are OpenAI-compatible to varying degrees and an unknown field is a
         // hard 400 on some of them.
         ...(providerId === 'openai' ? { stream_options: { include_usage: true } } : {}),
+        // Same reasoning and same OpenAI-only guard as postChatCompletions above.
+        ...(providerId === 'openai' && cacheKey ? { prompt_cache_key: cacheKey } : {}),
         // KNOWN LIMITATION: Gemini 3.x "thinking" models can spend the whole
         // reply on an internal reasoning trace (extra_content.google.thought_
         // signature) and hit [DONE] with zero actual answer text — confirmed via

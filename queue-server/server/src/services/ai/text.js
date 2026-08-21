@@ -277,7 +277,7 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -345,7 +345,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   const mod = getProviderModule(p);
   if (!mod) return { error: 'unknown_provider', message: p };
   if (wantsTools && mod.chatCompletion) {
-    return runCatalogueToolLoop({ mod, providerId: p, model: m, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label });
+    return runCatalogueToolLoop({ mod, providerId: p, model: m, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label, cacheKey });
   }
   const r = await mod.runToolless({ prompt: toollessPrompt, model: m, providerId: p, maxTokens, timeoutMs });
   if (r.code === 0 && r.text) return { text: r.text, via: p };
@@ -357,10 +357,10 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // openaiCompat.chatCompletion's Anthropic<->OpenAI translation rather than a
 // second copy of it. Messages stay Anthropic-shaped here because that is what
 // chatCompletion takes.
-async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label }) {
+async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label, cacheKey = null }) {
   const messages = [{ role: 'user', content: prompt }];
   for (let round = 0; round < Math.max(1, maxRounds); round++) {
-    const out = await mod.chatCompletion({ providerId, model, messages, tools, maxTokens, timeoutMs });
+    const out = await mod.chatCompletion({ providerId, model, messages, tools, maxTokens, timeoutMs, cacheKey });
     if (out.error) return { error: out.error, message: out.message, limit: out.limit || null };
     const toolUses = (out.content || []).filter((b) => b.type === 'tool_use');
     if (!toolUses.length) {
@@ -392,7 +392,7 @@ async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens,
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // Free-first platform policy: an unconfigured feature runs on the opencode
@@ -466,7 +466,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey });
     attempted += 1;
 
     if (result?.text) {
@@ -698,8 +698,9 @@ function explicitModelUsableBy(providerId, model) {
 // the paid lane or carries a notice.
 export async function generateTextStream({
   prompt, feature, maxTokens = 800, label = 'ai-text-stream', model: explicitModel = null,
-  timeoutMs = 90_000, allowLongOutput = false, onToken = null,
+  timeoutMs = 90_000, allowLongOutput = false, onToken = null, onUsage = null,
   tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP,
+  cacheKey = null,
 }) {
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
@@ -759,6 +760,7 @@ export async function generateTextStream({
     const stream = await mod.postChatCompletionsStream({
       providerId, model, maxTokens, timeoutMs, messages,
       ...(oaTools ? { tools: oaTools } : {}),
+      cacheKey,
     });
     if (stream?.error) {
       if (detectQuotaLimit(providerId, stream.message || '')) {
@@ -793,14 +795,14 @@ export async function generateTextStream({
       // Tokens already delivered are real; only give up entirely if nothing came.
       if (!text) return fallback(`the paid model's answer was cut off (${e.message}), so this answer came from the free lane instead`);
       console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
-      if (usage) recordSpend({ model, usage, providerId });
+      if (usage) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage); }
       break;
     }
 
     // Bill EVERY round. Each one is its own API call with its own usage block, so
     // pricing only the last would bill a six-round answer as one — the monthly cap
     // would then be counting a fraction of what was actually spent.
-    if (usage) recordSpend({ model, usage, providerId });
+    if (usage) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage); }
     else console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
 
     text += roundText;
