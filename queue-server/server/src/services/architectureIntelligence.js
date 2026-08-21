@@ -435,10 +435,15 @@ export function thoughtRow(r) {
   };
 }
 
-export function listThoughts(db, { status = null, scope = null } = {}) {
+// Same rule as the work suggestions list: `includeDismissed` defaults to true for
+// internal callers, and the Mind feed asks for false — a thought you dismissed
+// stays on record (it still counts in the adoption meter) but is not put back in
+// front of you. ?status=dismissed still returns them.
+export function listThoughts(db, { status = null, scope = null, includeDismissed = true } = {}) {
   let sql = `SELECT * FROM intel_thoughts WHERE deleted_at IS NULL`;
   const args = [];
   if (status) { sql += ` AND status=?`; args.push(status); }
+  else if (!includeDismissed) { sql += ` AND status <> 'dismissed'`; }
   if (scope) { sql += ` AND scope=?`; args.push(scope); }
   sql += ` ORDER BY created_at DESC LIMIT 200`;
   return db.prepare(sql).all(...args).map(thoughtRow);

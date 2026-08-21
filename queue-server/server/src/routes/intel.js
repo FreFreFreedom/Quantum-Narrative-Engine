@@ -55,6 +55,8 @@ export function intelRoutes(db) {
       thoughts: intelApi.listThoughts(db, {
         status: req.query.status || null,
         scope: req.query.scope || null,
+        // Dismissed thoughts stay out of the feed unless asked for by name.
+        includeDismissed: req.query.includeDismissed === '1',
       }),
     });
   });

@@ -13,7 +13,16 @@ export function travauxRoutes() {
   // ── Suggestions ────────────────────────────────────────────────────────────
   router.get('/suggestions', (req, res) => {
     const { status, kind } = req.query;
-    res.json({ suggestions: suggestions.listSuggestions({ status: status || null, kind: kind || null }) });
+    // Dismissed suggestions are out of the browsing list by default — you already
+    // said no to them. They come back only when asked for by name
+    // (?status=dismissed, the "Dismissed" filter button) or with ?includeDismissed=1.
+    res.json({
+      suggestions: suggestions.listSuggestions({
+        status: status || null,
+        kind: kind || null,
+        includeDismissed: req.query.includeDismissed === '1',
+      }),
+    });
   });
 
   router.post('/suggestions/generate', (req, res) => {
