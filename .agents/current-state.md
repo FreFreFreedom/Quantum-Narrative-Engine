@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-20T08:32:54.454Z
+Generated: 2026-08-21T04:13:13.645Z
 
 ## Components
 
@@ -9,7 +9,7 @@ Generated: 2026-08-20T08:32:54.454Z
 - semantic-layer · Working · next: Full corpus grounded, shared tag vocabulary enforced
 - analogical-layer · Prototype · next: Server-side pattern-instance graph, computed once and cached instead of recomputed per client
 - pattern-engine · Concept · next: One formally defined, named pattern as a proof of concept (structure, not just a tag)
-- graphrag · Concept · next: Static community detection over the existing tag/continuum data
+- graphrag · Prototype · next: Subgraph retrieval wired into the embedded chat assistant as a real tool
 - scale-echo · Prototype · next: Scale-aware weighting (distance in scale, not just axis value)
 - integration-continuum · Working · next: A third axis once cluster III is archive-grounded
 - thread-click · Working · next: Shared click-through across one unified app’s modes — largely true now that Content and Map share one renderer

@@ -9,6 +9,30 @@ import { autoShipEnabled, sideCallBudgetLimit, sideCallsToday } from '../service
 import { containerFreeBytes } from '../lib/memHeadroom.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { findUnreachable, explainedFromCache, kickExplain, buildTaskFor } from '../services/reachability.js';
+import { DB_PATH } from '../db/schema.js';
+
+// Is the database sitting on storage that survives a redeploy?
+//
+// This exists because the failure is silent. On 2026-08-18 the DB_PATH variable was
+// overwritten while following an env-var checklist; the app switched to a different,
+// empty file and nothing errored — the Queue, suggestions, ideas and architecture
+// tabs simply went blank, looking exactly like catastrophic data loss, while the
+// real 26MB database sat untouched at the old path. The only signal was one line in
+// the boot log.
+//
+// Off Railway there is no volume and that is correct, not a fault — a laptop must
+// never see this warning, or the warning stops meaning anything. On Railway it
+// catches both shapes of the mistake: no volume at all, and a path that misses it.
+//
+// What it cannot catch is the exact 2026-08-18 case: a path that IS on the volume
+// but is the wrong file on it. Nothing here can know which file is the right one.
+// The boot log still prints the exact path for that.
+function storageState() {
+  const onRailway = !!process.env.RAILWAY_ENVIRONMENT;
+  const volumeMount = process.env.RAILWAY_VOLUME_MOUNT_PATH || null;
+  const durable = !onRailway || (!!volumeMount && DB_PATH.startsWith(volumeMount));
+  return { durable, dbPath: DB_PATH, volumeMount, onRailway };
+}
 
 export function architectureRoutes(db) {
   const router = Router();
@@ -181,6 +205,9 @@ export function architectureRoutes(db) {
       costCapUsd,
       sideCallsToday: sideCallsTodayN,
       sideBudget,
+      // Rides along on a line the app already polls every 30s, so knowing the data
+      // is safe costs nothing extra.
+      storage: storageState(),
     });
   });
 

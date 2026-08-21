@@ -392,6 +392,13 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .mind-toolbtns button:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .mind-toolbtns button:disabled { opacity:.6; cursor:default; }
 .mind-selfnote { margin:12px 14px 0; border:1px dashed var(--c-warn); background:var(--c-warn-tint); color:var(--c-warn); border-radius:8px; padding:8px 11px; font-size:11px; }
+/* "Your work is about to vanish" — the one warning in this app that has earned a
+   full-width strip rather than a badge or a tooltip. Borrows .mind-selfnote's
+   dashed warning voice so it still reads as this app talking. */
+.storage-warn { margin:0; border-bottom:1px solid var(--c-warn); background:var(--c-warn-tint); color:var(--c-warn); padding:9px 14px; font-size:12px; line-height:1.5; }
+.storage-warn[hidden] { display:none; }
+.storage-warn b { font-weight:var(--fw-medium); }
+.storage-warn code { font-family:ui-monospace,Menlo,monospace; font-size:11px; }
 .mind-section { padding:12px 14px 4px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .mind-section.count { color:var(--c-ink-3); }
 .mind-empty { padding:0 14px 14px; font-size:11px; color:var(--c-ink-4); }
@@ -1257,6 +1264,7 @@ button:active { transform: translateY(1px) scale(.99); }
     <button id="themeToggleBtn" class="mode-icon" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
   </div>
 </div>
+<div id="storageWarn" class="storage-warn" hidden data-src="Global | fmcns_navigator.html: renderStorageWarn() | backend: GET /api/architecture/queue-status -> storage"></div>
 <div id="queuePanelVeil" class="queue-panel-veil" hidden></div>
 <aside id="queuePanel" class="queue-panel" hidden aria-label="Dispatch Queue">
   <div class="queue-panel-head">
@@ -1630,6 +1638,9 @@ document.getElementById('loginBtn').onclick = async function() {
 };
 
 async function boot() {
+  // Fire-and-forget: whether the data is safe is worth knowing straight away, and
+  // it must never be able to hold up or break the app coming online.
+  checkStorageOnce();
   try {
     const [entRes, clRes, axRes, facetRes, enrichRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
@@ -8528,11 +8539,38 @@ function renderArchProposals() {
   };
 }
 
+// Shown only when the app is writing somewhere a redeploy will wipe. Silent the
+// rest of the time — a strip that cries wolf on a laptop teaches you to ignore the
+// one that matters. Deliberately says what is at risk in your words, not the
+// variable's: the fix line is the only place a name appears, because that is the
+// one thing you have to go and check.
+function renderStorageWarn(storage) {
+  const el = document.getElementById('storageWarn');
+  if (!el) return;
+  if (!storage || storage.durable !== false) { el.hidden = true; el.innerHTML = ''; return; }
+  el.innerHTML = '<b>Nothing you save right now will be kept.</b> '
+    + 'The app is writing to temporary storage, so conversations, tasks and ideas will '
+    + 'disappear the next time it deploys. In Railway, check that <code>DB_PATH</code> is '
+    + 'set to <code>/data/queue.db</code>'
+    + (storage.dbPath ? ' — it is currently <code>' + qEsc(storage.dbPath) + '</code>' : '') + '.';
+  el.hidden = false;
+}
+
+// One look at startup, so the strip is there even if Core is never opened. After
+// this the 30-second header poll keeps it current at no extra cost.
+async function checkStorageOnce() {
+  try {
+    const s = await api('/api/architecture/queue-status');
+    renderStorageWarn(s && s.storage);
+  } catch (e) { /* not signed in yet, or offline — the poll will get it */ }
+}
+
 function renderArchQueueBanner() {
   const el = document.getElementById('archQueueBanner');
   if (!el) return;
   if (!archQueueStatus) { el.textContent = ''; return; }
   const s = archQueueStatus;
+  renderStorageWarn(s.storage);
   const dot = s.executionConfigured ? '●' : '○';
   const dotColor = s.paused ? '#b8860b' : (s.executionConfigured ? '#4f9d7a' : 'var(--c-ink-4)');
   // The queue status line (plan "auto-ship" item 4): what Antoine checks before
