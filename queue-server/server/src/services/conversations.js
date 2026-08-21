@@ -311,7 +311,11 @@ function projectDigestBlock() {
       `SELECT title FROM work_ideas WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 15`
     ).all();
     const brief = (rows) => rows.map((r) => `- ${String(r.title || '').slice(0, 90)}`).join('\n');
-    return `\n=== WHAT ALREADY EXISTS IN THE PROJECT (so you never propose rebuilding it) ===\n`
+    // Framed as background reference, not as the topic. Named plainly so a
+    // reader of the prompt (and the model) treats it as a list to check against
+    // rather than as the thing being discussed — it is a components dump, and
+    // left unlabelled it pulls a conversation toward the codebase.
+    return `\n=== BACKGROUND REFERENCE — what already exists, so you never propose rebuilding it. Consult it; do not let it set the subject. ===\n`
       + `${comps.length} pieces, ${built.length} already built.\n${lines.join('\n')}\n`
       + `Recent work in the queue:\n${queued.map((q) => `- [${q.status}] ${q.title}`).join('\n')}\n`
       + (sugg.length ? `Suggestions already on the table:\n${brief(sugg)}\n` : '')
