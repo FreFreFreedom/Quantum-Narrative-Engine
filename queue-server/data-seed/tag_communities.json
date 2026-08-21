@@ -1,4 +1,5 @@
 {
+  "_note": "Snapshot only — NOT live data. The running app computes theme clusters from the entity_tags table at boot (server/src/services/tagCommunities.js) and reads this file nowhere. Regenerate with scripts/detect-tag-communities.js if you want the seed JSON's own clustering.",
   "method": "louvain-single-level-greedy-modularity",
   "generatedFrom": "queue-server/data-seed/fmcns_ontology.json",
   "generatedAt": "2026-08-20T08:09:44.480Z",

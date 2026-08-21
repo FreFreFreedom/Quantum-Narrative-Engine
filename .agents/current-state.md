@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-21T04:13:13.645Z
+Generated: 2026-08-21T19:02:26.473Z
 
 ## Components
 
@@ -38,11 +38,21 @@ Generated: 2026-08-21T04:13:13.645Z
 
 ## Plan backlog
 
-- design-system-pass — **IN PROGRESS ~40%**
+- conversation-voice-and-project-map — **DONE (code)** 2026-08-21 — gpt-4.1 in the catalogue, the judgement-first persona, and a ~10k-token map built once at boot and sent first (proven byte-identical and proven to be the prompt's literal prefix). Two things left: the AI Settings 'studio' row still has to be pointed at gpt-4.1 by hand, and the four live checks (caching visible in the spend ledger, the voice tests) need the deploy. One deliberate deviation is in the plan's own header.
+- one-conversation-system — **Steps 2 + 6 DONE** 2026-08-21 (map live and reaching all its docs after `60a2092`; voice verified — it refuses a bad idea and names the cost). **Steps 1, 3, 4 split out** to [roaming-conversations-backend.md](roaming-conversations-backend.md) and sent to the queue. **Step 5 (the full-screen room) is all that stays here**, deliberately unplanned until the endpoints from that task actually ship.
+- roaming-conversations-backend — **PLANNED** 2026-08-21 — sent to the queue
+- prove-the-caching-works — **PLANNED** 2026-08-21 — sent to the queue
+- theme-clusters-that-do-something — **PLANNED** 2026-08-21 — sent to the queue
+- rotate-leaked-credentials — **Cleanup DONE · revocation deferred on purpose** (Antoine, 2026-08-21)
+- cards-one-system — **DONE** 2026-08-21 — shipped as `.ubtn`/`.uicon` plus the `⋯` menu, the one status pill and the "Details" fold; `.q-item`/`.flow-row`/`.stage-go` retired rather than left overriding. Three documented departures from the plan text are in the plan's own header.
+- cards-rest-and-narrow-screens — **DONE** 2026-08-21
+- design-system-pass — **IN PROGRESS** — **Phase 2 (buttons) DONE 2026-08-21** via [cards-one-system.md](cards-one-system.md) (shipped as `.ubtn`, not `.btn`); the cover `alt` text landed with it. Left: per-view responsive behaviour — **now owned by [cards-rest-and-narrow-screens.md](cards-rest-and-narrow-screens.md) Part B** — and keyboard access on the three graph views, which Antoine declined on 2026-08-21.
 - multi-agent-development-team — **~70% DONE · roster outstanding**
 - self-aware-platform — **Parts 1–6 DONE · 2 loose ends**
 - suggestions-that-keep-up-with-the-code — **DONE** — all four parts; `npm run ship:facts` proves the saving. Two checks (live probe transport, runner-offline) were left to the deploy
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
+- tasks-start-without-waiting — DONE 2026-08-21. §6 (fanning the world-look out concurrently) deliberately **NOT** done — off the critical path once the gate went, and it risks benching the free lane; the analysis is kept in the plan
+- send-a-plan-from-the-terminal — DONE 2026-08-21
 - brainstorm-world-ideas — DONE 2026-08-20
 - ranked-next-steps — DONE 2026-08-19
 - always-on-models — DONE (step 6 replaced by `dispatch-queue-free-model-fallback.md`). **Note:** the daily spend guard `queue_go_budget_usd` ships as `0`, which the code treats as *disabled*

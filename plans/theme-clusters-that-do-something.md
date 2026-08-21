@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-21 |
+| **DONE** | 2026-08-21 |
 
 ## Context
 

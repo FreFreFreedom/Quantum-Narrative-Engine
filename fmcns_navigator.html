@@ -162,6 +162,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .section-title.cast { color:#2f9e8f; }
 .tagrow-label { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); margin-right:2px; vertical-align:middle; }
 .tag.cluster-lens { border-color:var(--c-brand); color:var(--c-brand); }
+.theme-line { font-size:10px; color:var(--c-ink-4); margin:-2px 0 6px; cursor:pointer; line-height:1.4; }
+.theme-line:hover { color:var(--c-ink-2); }
+.theme-line b { color:var(--c-ink-3); font-weight:600; }
+.theme-line.active b { color:var(--c-brand); }
 /* ─── Exploration: continuum filter/sort controls + list view ─────────────── */
 .axisselect { width:100%; padding:5px 7px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:11px; color:var(--c-ink-2); margin-bottom:6px; font-family:inherit; }
 .axis-poles { display:flex; justify-content:space-between; font-size:9.5px; color:var(--c-ink-4); margin-bottom:3px; }
@@ -1889,11 +1893,15 @@ async function boot() {
   // it must never be able to hold up or break the app coming online.
   checkStorageOnce();
   try {
-    const [entRes, clRes, axRes, facetRes, enrichRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes, enrichRes, tcRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
       // Tolerate an older backend that predates /facets rather than failing to boot.
       api('/api/ontology/facets').catch(() => null),
       api('/api/ontology/enrichments').catch(() => null),
+      // Theme clusters: fetched once here so an entity's detail panel can name its
+      // cluster with no per-click round trip. Same tolerance — an older backend
+      // without the route just means no cluster line.
+      api('/api/ontology/tag-communities').catch(() => null),
     ]);
     ENTITIES = entRes.entities;
     ENRICHMENTS = {};
@@ -1901,6 +1909,7 @@ async function boot() {
     ENTITIES.forEach(e => { byId[e.id] = e; if (ENRICHMENTS[e.id]) e.enrichment = ENRICHMENTS[e.id]; });
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
     axRes.axes.forEach(a => AXES[a.key] = a);
+    setTagCommunities(tcRes);
 
     FACETS = facetRes || {
       types: [...new Set(ENTITIES.map(e => e.type))].map(t => ({ value: t, n: ENTITIES.filter(e => e.type === t).length })),
@@ -1990,6 +1999,92 @@ function selectCluster(code) {
   document.querySelectorAll('[data-goto]').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
 }
 
+// ---------- Theme clusters (tag communities) ----------
+// Which archetypal tags travel together, grouped by the server from every entity's
+// tags (GET /api/ontology/tag-communities, recomputed at each boot). Loaded once at
+// boot so naming an entity's cluster costs no round trip when you click through
+// entities.
+let TAG_COMMUNITIES = { communities: [], byId: {}, tagCommunity: {} };
+let activeTagCommunity = null;  // { id, name, tags, tagSet } — the cluster narrowing the view
+let themeLineEntity = null;     // entity whose cluster line is currently on screen
+
+function setTagCommunities(res) {
+  const communities = (res && res.communities) || [];
+  const byId = {};
+  communities.forEach(c => { byId[c.id] = c; });
+  TAG_COMMUNITIES = { communities, byId, tagCommunity: (res && res.tagCommunity) || {} };
+}
+
+// An entity's tags can straddle several clusters; the one most of them belong to is
+// the one worth naming. Ties go to the cluster of the entity's first tag — the same
+// tag the lens opens with, so the line agrees with the reading below it.
+function dominantCommunity(tags) {
+  if (!tags || !tags.length) return null;
+  const counts = {};
+  tags.forEach(t => { const id = TAG_COMMUNITIES.tagCommunity[t]; if (id) counts[id] = (counts[id] || 0) + 1; });
+  const ids = Object.keys(counts);
+  if (!ids.length) return null;
+  const lead = TAG_COMMUNITIES.tagCommunity[tags[0]];
+  ids.sort((a, b) => counts[b] - counts[a] || (a === lead ? -1 : (b === lead ? 1 : a.localeCompare(b))));
+  const c = TAG_COMMUNITIES.byId[ids[0]];
+  if (!c) return null;
+  return { ...c, leadTag: tags.find(t => TAG_COMMUNITIES.tagCommunity[t] === ids[0]) || tags[0] };
+}
+
+function communityCarrierCount(c, excludeId) {
+  const set = new Set(c.tags);
+  return ENTITIES.filter(e => e.id !== excludeId && (e.tags || []).some(t => set.has(t))).length;
+}
+
+// One line, no paragraph: the cluster's name and how much else lives in it.
+function themeLineHtml(e) {
+  const c = dominantCommunity(e && e.tags);
+  if (!c) return '';
+  const others = communityCarrierCount(c, e.id);
+  const on = !!(activeTagCommunity && activeTagCommunity.id === c.id);
+  const rest = on ? ' · showing only these' : (others === 1 ? ' · 1 other entity' : ' · ' + others + ' other entities');
+  return `<div class="theme-line${on ? ' active' : ''}" data-community="${c.id}" data-lead="${qEscAttr(c.leadTag)}" title="Show only the entities in this theme cluster">Theme cluster · <b>${qEsc(c.name)}</b>${rest}</div>`;
+}
+
+// Clicking it narrows every Content view to the entities carrying any of the cluster's
+// tags, through the same filter state as the type/cluster/axis controls
+// (activeEntities) rather than a second mechanism. Click again — or the chip that
+// appears under Patterns — to clear it.
+async function toggleThemeCluster(id, leadTag) {
+  if (activeTagCommunity && activeTagCommunity.id === id) { clearThemeCluster(); return; }
+  let c = TAG_COMMUNITIES.byId[id] || null;
+  // The per-tag endpoint is the authoritative answer (the server re-clusters at boot,
+  // so its copy can be newer than this page's); the boot copy is the fallback.
+  if (leadTag) {
+    try {
+      const r = await api('/api/ontology/tag-communities/' + encodeURIComponent(leadTag));
+      if (r && r.community && r.community.tags) c = r.community;
+    } catch (err) { console.warn('theme-cluster lookup failed, using the copy loaded at boot:', err); }
+  }
+  if (!c || !c.tags) return;
+  activeTagCommunity = { id: c.id, name: c.name, tags: c.tags, tagSet: new Set(c.tags) };
+  afterThemeClusterChange();
+}
+
+function clearThemeCluster() {
+  if (!activeTagCommunity) return;
+  activeTagCommunity = null;
+  afterThemeClusterChange();
+}
+
+function afterThemeClusterChange() {
+  renderPatternList();
+  refreshView();
+  const host = document.getElementById('themeLineHost');
+  if (host && themeLineEntity) { host.innerHTML = themeLineHtml(themeLineEntity); wireThemeLine(); }
+}
+
+function wireThemeLine() {
+  document.querySelectorAll('.theme-line[data-community]').forEach(el => {
+    el.onclick = () => toggleThemeCluster(el.getAttribute('data-community'), el.getAttribute('data-lead'));
+  });
+}
+
 // Clicking a pattern (tag) here focuses the graph on every entity carrying it and
 // fades the rest — the same spotlight treatment edges get, but reachable directly
 // instead of needing to first find an edge that happens to represent that pattern.
@@ -2001,6 +2096,15 @@ function renderPatternList() {
   activeEntities().forEach(e => (e.tags||[]).forEach(t => { counts[t] = (counts[t]||0) + 1; }));
   const top = Object.entries(counts).filter(([,n]) => n >= 2).sort((a,b) => b[1]-a[1]).slice(0, 18);
   el.innerHTML = '';
+  // The one always-visible way out of a theme-cluster filter, wherever you clicked it.
+  if (activeTagCommunity) {
+    const clear = document.createElement('div');
+    clear.className = 'pattern-chip active';
+    clear.textContent = '✕ ' + activeTagCommunity.name.split(' / ')[0];
+    clear.title = 'Theme cluster filter — click to clear';
+    clear.onclick = () => clearThemeCluster();
+    el.appendChild(clear);
+  }
   top.forEach(([tag, n]) => {
     const chip = document.createElement('div');
     chip.className = 'pattern-chip' + (focusedTag === tag ? ' active' : '');
@@ -2163,6 +2267,7 @@ function activeEntities() {
     if (enabledTypes.size && !enabledTypes.has(e.type)) return false;
     if (enabledSources.size && !enabledSources.has(e.source || 'archive')) return false;
     if (activeCluster && !(e.clusters||[]).includes(activeCluster)) return false;
+    if (activeTagCommunity && !(e.tags||[]).some(t => activeTagCommunity.tagSet.has(t))) return false;
     // Search covers name, the pattern note, and tags — not just the name, so that
     // searching a pattern word finds instances that express it under another title.
     if (q) {
@@ -3095,6 +3200,7 @@ function continuumHtml(e){
 
 async function selectEntity(id){
   focusedId = id;
+  themeLineEntity = null;
   activeLensTag = null;
   activeLensSalient = null;
   activeLensLabel = '';
@@ -3139,6 +3245,8 @@ async function selectEntity(id){
     else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
     if (e.tags && e.tags.length) {
       html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
+      themeLineEntity = e;
+      html += `<div id="themeLineHost">${themeLineHtml(e)}</div>`;
       html += `<div id="lensHost"></div>`;
     } else if (e.type === 'film' && e.clusters && e.clusters.length) {
       // Films carry no archetype tags — their thematic clusters are the lenses
@@ -3178,6 +3286,7 @@ async function selectEntity(id){
     document.getElementById(activeCardHost).innerHTML = html;
     document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
+    wireThemeLine();
     document.querySelectorAll('.tag[data-cluster]').forEach(elx => {
       const code = elx.getAttribute('data-cluster');
       elx.onclick = () => toggleTagLens(e, code, elx, clusterLensLabel(code));
@@ -8645,7 +8754,7 @@ const ARCH_DATA = [
     what:'Graph-based retrieval — answering questions by traversing entity relationships and community structure, not just semantic search.',
     why:'The chat assistant currently answers from flat tool calls (search/get entity); GraphRAG would let it reason across the whole relationship graph.',
     input:'The ontological + analogical graph', output:'Retrieved subgraphs / community summaries relevant to a query',
-    now:'First version, offline only. A one-shot pass groups the archetypal tags into communities by how often they land on the same entity (scripts/detect-tag-communities.js writes data-seed/tag_communities.json). Nothing in the running app reads that file yet: the chat assistant still answers from direct DB lookups (search_entities, get_entity, nearby_on_axis) — no traversal, no subgraph retrieval.',
+    now:'First version, live. Every boot regroups the archetypal tags into theme clusters from the live entity_tags table, so retagging an entity re-clusters on the next restart. Served over the ontology API and shown on every entity: one line names the cluster its themes fall into, and clicking it narrows the view to the entities that share it. Still co-occurrence only — no traversal, no subgraph retrieval, and the chat assistant still answers from direct DB lookups.',
     next:'Wire the communities into the chat assistant as a real retrieval tool, so a question can be answered from a whole community of tags rather than a flat lookup.',
     status:'Prototype', depends:['ontological-layer','semantic-layer'] },
 
