@@ -250,6 +250,19 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .rail-wordmark { font-size:var(--fs-base); font-weight:var(--fw-medium); letter-spacing:.06em; }
 .rail-label { opacity:0; min-width:0; overflow:hidden; text-overflow:ellipsis; transition:opacity var(--t-fast) var(--ease); }
 .railbar:hover .rail-label, .railbar:focus-within .rail-label, .railbar.pinned .rail-label { opacity:1; }
+/* The four places inside Architecture, indented under it. Shown only while that
+   mode is the open one AND the panel is wide: at 52px there is no room for words,
+   and four unlabelled dots would say less than nothing. Reaching Mind or Building
+   blocks used to cost three clicks across two different bars. */
+.rail-sub { display:none; flex-direction:column; gap:1px; margin:2px 0 4px; }
+.rail-sub.on { display:flex; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-sub { display:none; }
+.rail-subitem { position:relative; display:flex; align-items:center; width:100%; height:27px; padding:0 7px 0 30px; flex:none; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-3); font-size:var(--fs-sm); font-weight:400; text-align:left; white-space:nowrap; overflow:hidden; cursor:pointer; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.rail-subitem::before { content:''; position:absolute; left:17px; top:0; bottom:0; width:1px; background:var(--c-border); }
+.rail-subitem:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.rail-subitem.active { color:var(--c-ink); font-weight:var(--fw-medium); }
+.rail-subitem.active::before { width:2px; background:var(--c-accent); }
+.rail-subitem .core-tab-count { margin-left:5px; }
 .rail-sep { flex:none; height:1px; margin:6px 7px; background:var(--c-border); }
 .rail-foot { margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px; border-top:1px solid var(--c-border); }
 .rail-row { cursor:default; }
@@ -1405,6 +1418,12 @@ button:active { transform: translateY(1px) scale(.99); }
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
         <span class="rail-label">Architecture</span>
       </button>
+      <div class="rail-sub" id="railSubCore" role="group" aria-label="Inside Architecture">
+        <button class="rail-subitem" data-rail-sub="graph" title="The architecture graph">Graph</button>
+        <button class="rail-subitem" data-rail-sub="blocks" title="Building blocks — Discover and the Idea box">Building blocks</button>
+        <button class="rail-subitem" data-rail-sub="mind" title="Mind — the intel feed">Mind</button>
+        <button class="rail-subitem" data-rail-sub="flow" title="Flow — tasks, suggestions and ideas">Flow<span class="core-tab-count" id="railCountFlow"></span></button>
+      </div>
     </div>
     <div class="rail-sep"></div>
     <button id="modeQueueBtn" class="rail-item" title="Open the Dispatch Queue — the count is tasks waiting for your answer">
@@ -3475,6 +3494,16 @@ function initRail() {
     applyRailPinned(on);
     try { localStorage.setItem(RAIL_KEY, on ? '1' : '0'); } catch (e) {}
   };
+  // A mouse click left the button focused, and :focus-within holds the panel
+  // open — so after choosing a mode the rail stayed out until you clicked
+  // somewhere else, even unpinned. Drop focus on pointer clicks only: e.detail
+  // is 0 for keyboard activation, which must keep its place.
+  const railEl = document.getElementById('railbar');
+  if (railEl) railEl.addEventListener('click', (e) => {
+    if (!e.detail) return;
+    const btn = e.target.closest('button');
+    if (btn) btn.blur();
+  });
   document.addEventListener('keydown', (e) => {
     // '[' toggles the pin; Escape lets go of a hover-peek by dropping focus.
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
@@ -3517,6 +3546,17 @@ function initRailControls() {
       location.reload();
     };
   }
+  // The four Architecture destinations, straight from the rail — including from
+  // another mode, which is why this cannot live in initCore(): the rail is
+  // visible before Core has ever been opened.
+  document.querySelectorAll('[data-rail-sub]').forEach(b => {
+    b.onclick = () => {
+      const t = b.getAttribute('data-rail-sub');
+      if (!document.getElementById('coreApp').classList.contains('open')) setMode('core');
+      if (t === 'flow') switchCoreView('flow');
+      else { archTab = t; switchCoreView('arch'); }
+    };
+  });
   startUsagePolling();
 }
 
@@ -3529,6 +3569,8 @@ function setMode(m) {
     b.classList.toggle('active', m === mode);
     b.setAttribute('aria-selected', String(m === mode));
   });
+  const railSub = document.getElementById('railSubCore');
+  if (railSub) railSub.classList.toggle('on', m === 'core');
   document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
   document.getElementById('mapApp').classList.toggle('open', m==='map');
   document.getElementById('coreApp').classList.toggle('open', m==='core');
@@ -3700,6 +3742,15 @@ function renderWorkspace() {
   document.getElementById('wsMap').classList.toggle('open', v === 'arch');
   document.getElementById('wsFlow').classList.toggle('open', v !== 'arch');
   Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
+  syncRailSub();
+}
+
+// The rail's sub-items mirror whichever Architecture destination is open. Called
+// from renderWorkspace() and setArchTab() rather than sharing their data-attribute
+// selectors, so nothing double-binds the clicks initCore()/initArchNav() own.
+function syncRailSub() {
+  const cur = coreView === 'flow' ? 'flow' : archTab;
+  document.querySelectorAll('[data-rail-sub]').forEach(b => b.classList.toggle('active', b.getAttribute('data-rail-sub') === cur));
 }
 
 // Architecture view inner tabs: Graph (the canvas), Building blocks
@@ -3711,6 +3762,7 @@ function setArchTab(t) {
   document.getElementById('wsMap').classList.toggle('blocks-tab', t === 'blocks');
   document.getElementById('wsMap').classList.toggle('mind-tab', t === 'mind');
   document.querySelectorAll('[data-arch-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-arch-tab') === t));
+  syncRailSub();
   if (t === 'blocks') initBlocks();
   if (t === 'mind') initMind();
 }
@@ -4203,6 +4255,8 @@ async function qLoad() {
   const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
   const countEl = document.getElementById('coreCountFlow');
   if (countEl) countEl.textContent = activeCount || '';
+  const railCountEl = document.getElementById('railCountFlow');
+  if (railCountEl) railCountEl.textContent = activeCount || '';
   // "Waiting for you" count — how many tasks have an unanswered question.
   const askingCount = qPrompts.filter(qIsAsking).length;
   const askCountEl = document.getElementById('coreCountAsking');
