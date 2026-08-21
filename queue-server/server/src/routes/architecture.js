@@ -8,6 +8,7 @@ import { getQueuePauseState } from '../services/promptQueue.js';
 import { autoShipEnabled, sideCallBudgetLimit, sideCallsToday } from '../services/ai/text.js';
 import { containerFreeBytes } from '../lib/memHeadroom.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { findUnreachable, explainedFromCache, kickExplain, buildTaskFor } from '../services/reachability.js';
 
 export function architectureRoutes(db) {
   const router = Router();
@@ -115,6 +116,24 @@ export function architectureRoutes(db) {
     if (out.error) return res.status(out.error === 'empty' ? 400 : 502).json(out);
     res.json(out);
   }));
+
+  // "Built, but you cannot use it yet" — abilities the server has that the interface
+  // never calls. Free to detect (it is a text match over the route files and the
+  // interface file, no model), so it is safe to load with the page. The plain-English
+  // write-up costs one cheap call for the whole list and is cached against that exact
+  // list, so it is written once and reused until the list itself changes.
+  //
+  // The write-up is never waited on: this answers immediately with whatever has been
+  // written already and starts writing in the background if the list has changed. The
+  // detection is the load-bearing part and must not be held hostage to a model being
+  // reachable. ?explain=0 does not even start it.
+  router.get('/unreachable', (req, res) => {
+    const found = findUnreachable();
+    if (found.error) return res.json({ items: [], error: found.error });
+    const items = explainedFromCache(db, found.items);
+    if (req.query.explain !== '0') kickExplain(db, found.items);
+    res.json({ items: items.map(it => ({ ...it, task: buildTaskFor(it) })) });
+  });
 
   // The one idea door: any entry point can POST here with { concept, catalog }.
   // One AI call routes the idea — speculative tree node or Seed.

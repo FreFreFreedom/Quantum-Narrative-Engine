@@ -11,6 +11,9 @@
 //   prompts are tagged with component_id at creation time from now on.
 
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { generateText } from './ai/text.js';
 import { shippedSince } from './shipFacts.js';
 import { USER_FACING_STYLE } from './ai/style.js';
@@ -55,8 +58,8 @@ export const EVOLUTION = {
     ['v3', 'A pattern-authoring workflow — define new patterns without touching code'],
   ],
   'graphrag': [
-    ['v0', 'Not built — no graph traversal or retrieval beyond direct DB lookups (current)'],
-    ['v1', 'Static community detection over the existing tag/continuum data'],
+    ['v0', 'Not built — no graph traversal or retrieval beyond direct DB lookups'],
+    ['v1', 'Static community detection over the existing tag/continuum data (current — offline only, read by nothing in the app)'],
     ['v2', 'Subgraph retrieval wired into the embedded chat assistant as a real tool'],
     ['v3', 'Dynamic re-clustering as new entities are added, not a one-time static pass'],
   ],
@@ -186,6 +189,23 @@ export const SELF_COMPONENT_IDS = [
   'next-steps-ranking', 'suggestion-engine', 'idea-studio', 'world-look',
 ];
 
+// The GraphRAG v1 pass writes its result to a file next to the seed data rather than
+// into the DB (it runs offline, against the seed JSON, with no server involved), so its
+// live signal is that file. Read once and remembered — it only changes when the script
+// is re-run, which needs a redeploy anyway. Any failure (never run, unreadable, garbled)
+// answers null, and the caller falls back to the honest pre-v1 text.
+const TAG_COMMUNITIES_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)), '../../../data-seed/tag_communities.json');
+let _tagCommunities;
+function readTagCommunities() {
+  if (_tagCommunities !== undefined) return _tagCommunities;
+  try {
+    const j = JSON.parse(readFileSync(TAG_COMMUNITIES_PATH, 'utf8'));
+    _tagCommunities = (j && j.totalTags && j.totalCommunities) ? j : null;
+  } catch (e) { _tagCommunities = null; }
+  return _tagCommunities;
+}
+
 // ─── Live NOW computation ────────────────────────────────────────────────────
 // Each function returns { text, status }. Falls back to a static description when
 // there's genuinely no live signal for that component (e.g. nothing is built yet).
@@ -231,10 +251,23 @@ const NOW_COMPUTERS = {
       status: 'Concept',
     };
   },
-  'graphrag': () => ({
-    text: 'Not built. The embedded chat assistant has direct DB query tools (search_entities, get_entity, nearby_on_axis) but no graph traversal, community detection, or subgraph retrieval of any kind.',
-    status: 'Concept',
-  }),
+  // Reads the one-shot community pass's own output file rather than the DB: v1 of
+  // GraphRAG runs offline (scripts/detect-tag-communities.js) and writes a seed-adjacent
+  // file, so the file IS the live signal here. Missing file → the pre-v1 answer, which is
+  // the honest one if the pass has never been run in this checkout.
+  'graphrag': () => {
+    const c = readTagCommunities();
+    if (!c) {
+      return {
+        text: 'Not built. The embedded chat assistant has direct DB query tools (search_entities, get_entity, nearby_on_axis) but no graph traversal, community detection, or subgraph retrieval of any kind.',
+        status: 'Concept',
+      };
+    }
+    return {
+      text: `First version, offline only. A one-shot pass groups the ${c.totalTags} archetypal tags into ${c.totalCommunities} communities by how often they land on the same entity (scripts/detect-tag-communities.js → data-seed/tag_communities.json). Nothing in the running app reads that file yet: the embedded chat assistant still answers from direct DB lookups (search_entities, get_entity, nearby_on_axis) — no traversal, no subgraph retrieval, and no re-clustering as entities are added.`,
+      status: 'Prototype',
+    };
+  },
   'scale-echo': (db) => {
     const scored = db.prepare(`SELECT COUNT(DISTINCT entity_id) as n FROM entity_continuum`).get().n;
     const total = db.prepare(`SELECT COUNT(*) as n FROM entities`).get().n;

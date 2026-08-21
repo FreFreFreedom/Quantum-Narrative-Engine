@@ -338,25 +338,25 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .nb-body { flex:1; overflow-y:auto; }
 .nb-row { border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); padding:9px 12px; margin-bottom:8px; cursor:pointer; transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
 .nb-row.nb-buildable { border-color:#c08a3e; background:var(--c-warm-tint); }
+/* Built-but-unreachable rows are a different kind of thing from an unbuilt piece —
+   the work exists, it just has no door — so they read as their own group. */
+.nb-row.nb-unreach { border-color:var(--c-accent); cursor:default; }
+.nb-row.nb-unreach .nb-terr { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:10px; }
 .nb-row.nb-open { border-color:var(--c-ink-4); }
 .nb-chev { margin-left:auto; font-size:11px; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease), transform var(--t-med) var(--ease); user-select:none; }
 .nb-row.nb-open .nb-chev { color:var(--c-ink); }
 .nb-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .nb-name { font-size:13px; font-weight:700; }
 .nb-terr { font-size:10.5px; color:var(--c-ink-4); }
-.nb-status { font-size:10px; padding:2px 7px; border-radius:9px; background:var(--c-surface-2); border:1px solid var(--c-border-2); }
 .nb-what { font-size:11.5px; color:var(--c-ink-2); margin:4px 0; }
 .nb-what.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .nb-more { font-size:10.5px; color:var(--c-brand); cursor:pointer; }
-.nb-wait { font-size:11px; color:var(--c-warn); }
-.nb-wait a { text-decoration:underline; cursor:pointer; }
 .nb-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
 .nb-actions button { font-size:11.5px; padding:4px 10px; border-radius:8px; cursor:pointer; border:1px solid var(--c-border-2); background:var(--c-surface); color:var(--c-ink); }
 .nb-actions button:hover { border-color:var(--c-ink); }
 .nb-actions .nb-build { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
 .nb-markers { display:inline-flex; gap:5px; margin-left:auto; font-size:10.5px; }
 .nb-empty { font-size:12px; color:var(--c-ink-4); padding:12px 2px; }
-.nb-status-line { font-size:11px; color:var(--c-ink-3); margin-top:4px; }
 .nb-chips { display:flex; gap:4px; flex-wrap:wrap; }
 .nb-chip { font-size:11px; padding:3px 9px; border-radius:12px; }
 .nb-chip.on { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
@@ -589,6 +589,37 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
    English name of each one lives in its title/aria-label, not on screen, so
    a list of cards stays scannable. Resting opacity is deliberately .62 and
    not 0: a hover-only reveal would hide the buttons from touch entirely. */
+/* The stage strip — one line on every card saying how far along the thing is and
+   what the single next step is. Sits above .card-actions on purpose: the strip is
+   the one thing to press, the symbol row below it is everything else. Unlike that
+   row it never fades on rest — where something stands has to be readable without
+   hovering it. */
+.stage-strip { display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; margin-top:7px; padding-top:6px; border-top:1px solid var(--c-border); font-size:11px; }
+.stage-dots { display:inline-flex; gap:3px; flex:none; }
+.stage-dot { width:6px; height:6px; border-radius:50%; background:var(--c-border-2); }
+.stage-dot.on { background:var(--c-stage-tone, var(--c-accent)); }
+/* The colour a card used to carry as a coloured word ("Running") now lives in the
+   filled dots. These are the colours the queue's status pill used to paint itself
+   with, moved here whole so nothing about the app's colour language changed — and now
+   defined once, in CSS, instead of returned by a function per card. Every kind of card
+   — task, suggestion, seed, piece of the tree — says "moving", "needs you", "finished",
+   "stopped" and "sitting there" in the same five colours. */
+.stage-strip.tone-go   { --c-stage-tone:#2f7d63; }
+.stage-strip.tone-ask  { --c-stage-tone:#b8860b; }
+.stage-strip.tone-done { --c-stage-tone:#4f9d7a; }
+.stage-strip.tone-stop { --c-stage-tone:#b23a2f; }
+.stage-strip.tone-idle { --c-stage-tone:var(--c-ink-4); }
+.stage-next a { color:inherit; text-decoration:underline; cursor:pointer; }
+.stage-where { font-weight:600; color:var(--c-ink-2); }
+.stage-next { color:var(--c-ink-3); min-width:0; flex:1 1 140px; }
+.stage-next b { font-weight:600; color:var(--c-ink-4); margin-right:3px; }
+.stage-next.stage-none { font-style:italic; opacity:.75; }
+.stage-go { flex:none; font-size:11px; font-family:inherit; padding:4px 10px; border-radius:8px; border:1px solid var(--c-accent); background:var(--c-accent); color:#fff; cursor:pointer; }
+.stage-go:hover { opacity:.88; }
+.stage-go:disabled { opacity:.5; cursor:default; }
+/* Width/height on .cardbtn is sized for a 26px symbol; the strip's button is words. */
+.cardbtn.stage-go { width:auto; height:auto; }
+.cardbtn.stage-go:hover { background:var(--c-accent); color:#fff; opacity:.88; }
 .card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
 .q-item:hover .card-actions, .flow-row:hover .card-actions, .arch-node:hover .card-actions, .card-actions:focus-within { opacity:1; }
 .cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
@@ -614,8 +645,6 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 /* The row-level Start button for a parked task — deliberately louder than the
    small ▲▼ reorder arrows so it reads as "press this to run it", not just
    another control, and never requires opening the task to find. */
-.q-rowstart { flex-shrink:0; padding:4px 11px; font-size:11px; font-weight:700; border:none; background:var(--c-brand); color:#fff; border-radius:var(--r-md); }
-.q-rowstart:hover { opacity:.9; }
 .q-right { flex:1; overflow-y:auto; padding:16px; background:var(--c-bg); }
 .q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
 .q-thread-msg.user { background:var(--c-info-tint); margin-left:auto; }
@@ -3494,8 +3523,6 @@ function jumpToArchNode(id) {
 // (4s, while Dispatch Queue is the active sub-tab) is short enough that "running" ->
 // "done" feels prompt without being chatty; the other three sub-tabs throttle to 15s
 // since they only need the header/badge counts to stay roughly live.
-const Q_STATUS_COLORS = { queued:'#8a8378', running:'#2f7d63', done:'#4f9d7a', blocked:'#b23a2f', paused:'#a19a8e', cancelled:'#a19a8e' };
-const Q_STATUS_LABELS = { queued:'Queued', running:'Running', done:'Done', blocked:'Blocked', paused:'Set aside', cancelled:'Cancelled' };
 // Plan-first queue: drafting is a flag (plan_pending), not a status value, so it
 // doesn't collide with the status column's own set of allowed values — this just
 // overrides the label/color shown while it's set.
@@ -3512,16 +3539,6 @@ function qStageStuck(p) {
   if (!p.plan_pending && !['pending', 'reviewing'].includes(p.inspire_state)) return false;
   const t = Date.parse(p.updated_at || p.created_at || '');
   return Number.isFinite(t) && (Date.now() - t) > Q_STAGE_STALE_MS;
-}
-function qStatusLabel(p) {
-  if (qIsAsking(p)) return 'Waiting for you';
-  if (p.plan_pending) return qStageStuck(p) ? 'Getting ready — stuck' : 'Drafting plan…';
-  return Q_STATUS_LABELS[p.status] || p.status;
-}
-function qStatusColor(p) {
-  if (qIsAsking(p)) return '#b8860b';
-  if (p.plan_pending) return qStageStuck(p) ? '#b23a2f' : '#7a7568';
-  return Q_STATUS_COLORS[p.status] || '#8a8378';
 }
 const Q_ACTIVE_STATUSES = ['queued', 'running', 'paused'];
 const Q_REORDERABLE_STATUSES = ['queued', 'paused'];
@@ -4279,13 +4296,10 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const titleHtml = reorderable
     ? `<input class="q-title-inline" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
     : `<span class="q-item-title${unread ? ' unread' : ''}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
-  // Paused ("Parked") tasks need a press to actually enter the run queue — that
-  // button used to be a bare, tiny "▶" glyph tucked among the drag-reorder
-  // arrows, easy to miss entirely. It's now a labeled, brand-colored button up
-  // in the row's own title line, so starting a task never requires opening it.
-  const startBtn = p.status === 'paused'
-    ? `<button class="ctrlbtn q-arrow q-rowstart" data-qplay="${p.id}" title="Marks this task ready — your local runner picks it up when it's running. This does not run anything in the app.">✓ Ready</button>`
-    : '';
+  // Paused ("Parked") tasks need a press to actually enter the run queue. That
+  // button used to live up here in the title line; it is now the stage strip's
+  // button at the foot of the card, so every card's one-thing-to-press is in the
+  // same place instead of each kind hiding it somewhere different.
   const state = qCardState(p);
   // Every action a task has, as symbols, right on the card — nothing here needs
   // the card opened first. Conditions mirror the detail panel's exactly.
@@ -4320,8 +4334,6 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     <div class="q-item-top">
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder (or ▲▼ on hover)">⠿</span>' : ''}
       ${titleHtml}
-      ${qPillHtml(p)}
-      ${startBtn}
     </div>
     <div class="q-item-meta">
       <span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}${qMemoryBadge(p)}</span>
@@ -4334,6 +4346,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ${finished ? qResultLineHtml(p) : ''}
     ${finished ? qCostLine(p) : ''}
     ${finished ? qShipLine(p) : ''}
+    ${stageStripHtml(cardStage('task', p))}
     ${actions}
   </div>
   ${qSelected && qSelected.id === p.id ? '<div class="flow-expanded" id="flowExpanded"></div>' : ''}`;
@@ -4391,6 +4404,175 @@ function cardActions(btns) {
   const html = btns.filter(Boolean).join('');
   return html ? `<div class="card-actions">${html}</div>` : '';
 }
+// ---------- The stage strip ----------
+// One line, the same on every kind of card: how far along this thing is, and the
+// one thing to press to move it on. It exists because each list used to say where
+// something stood in its own private way — a coloured pill here, a bare dot there,
+// nothing at all on a seed — and none of them said what the next step was.
+//
+// Two rules keep it honest:
+//   • The dots are DERIVED from the status the card already carries. There is no
+//     second "stage" field anywhere to fall out of sync with the first.
+//   • The "Next" line is never invented. It is either a real next action the card
+//     can already perform, or a component's own authored `next` text. When there
+//     is genuinely nothing to do next, it says so and shows no button.
+function stageStripHtml(st) {
+  if (!st) return '';
+  const dots = Array.from({ length: st.total }, (_, i) =>
+    `<span class="stage-dot${i < st.step ? ' on' : ''}"></span>`).join('');
+  const where = `Step ${st.step} of ${st.total} — ${st.label}`;
+  const btn = st.btn
+    ? `<button type="button" ${st.btn.attrs} title="${qEscAttr(st.btn.title || st.next || st.btn.label)}" aria-label="${qEscAttr(st.btn.title || st.btn.label)}">${qEsc(st.btn.label)}</button>`
+    : '';
+  // nextHtml is for the one case where the next step names other things you can jump
+  // to (a locked piece waiting on its prerequisites); everything else goes through
+  // `next` and is escaped. nextLabel is the bold word — "Next" reads wrong in front
+  // of a list of blockers.
+  const nextBody = st.nextHtml || (st.next ? qEsc(st.next) : '');
+  return `<div class="stage-strip${st.tone ? ' tone-' + st.tone : ''}">
+    <span class="stage-dots" role="img" aria-label="${qEscAttr(where)}" title="${qEscAttr(where)}">${dots}</span>
+    <span class="stage-where">${qEsc(st.label)}</span>
+    ${nextBody ? `<span class="stage-next"><b>${qEsc(st.nextLabel || 'Next')}</b> ${nextBody}</span>` : '<span class="stage-next stage-none">Nothing to do next</span>'}
+    ${btn}
+  </div>`;
+}
+
+// A symbol-row action, borrowed as the strip's labelled button: same `data-act`
+// the delegated handler on each list already dispatches on, so the strip adds no
+// plumbing of its own — it only makes the one action that matters legible.
+function stageAct(label, act, id, title) {
+  return { label, title, attrs: `class="cardbtn stage-go" data-act="${act}" data-id="${qEscAttr(id)}"` };
+}
+
+// Where a card sits on its own ladder, and what moves it on. One function so no
+// list can invent a different answer for the same thing.
+function cardStage(kind, o) {
+  if (!o) return null;
+  if (kind === 'task') return taskStage(o);
+  if (kind === 'suggestion') return sgStage(o);
+  if (kind === 'seed') return seedStage(o);
+  if (kind === 'component') return componentStage(o);
+  return null;
+}
+
+// Drafting → parked → waiting its turn → running → done → live.
+// "Needs your answer" shares the running rung: the task really is mid-run, it just
+// cannot go on without you.
+const TASK_STAGE_TOTAL = 6;
+function taskStage(p) {
+  const ship = p.ship || {};
+  if (ship.state === 'live') {
+    return { step: 6, total: TASK_STAGE_TOTAL, label: 'Live in the app', next: '', tone: 'done' };
+  }
+  if (p.pending_question && p.pending_question.question) {
+    return { step: 4, total: TASK_STAGE_TOTAL, label: 'Waiting for your answer', tone: 'ask',
+      next: 'Answer the question on this card' };
+  }
+  if (p.plan_pending) {
+    return { step: 1, total: TASK_STAGE_TOTAL,
+      label: qStageStuck(p) ? 'Getting ready — stuck' : 'Drafting the plan',
+      tone: qStageStuck(p) ? 'stop' : 'go',
+      next: 'Start it now on the text you wrote, without waiting for the draft',
+      btn: stageAct('Start it now', 'skip-plan', p.id,
+        'Skip drafting the plan and start this task now, on the raw text you submitted') };
+  }
+  if (p.status === 'paused') {
+    return { step: 2, total: TASK_STAGE_TOTAL, label: 'Parked', tone: 'ask',
+      next: 'Mark it ready so your runner picks it up',
+      btn: { label: '✓ Mark it ready', attrs: `class="stage-go" data-qplay="${qEscAttr(p.id)}"`,
+        title: 'Marks this task ready — your local runner picks it up when it is running. This does not run anything in the app.' } };
+  }
+  if (p.status === 'queued') {
+    return { step: 3, total: TASK_STAGE_TOTAL, label: 'Waiting its turn', tone: 'idle',
+      next: 'Nothing — the runner starts it when the ones ahead finish' };
+  }
+  if (p.status === 'running') {
+    return { step: 4, total: TASK_STAGE_TOTAL, label: 'Running now', tone: 'go',
+      next: 'Nothing — wait for it to finish' };
+  }
+  if (p.status === 'blocked' || p.status === 'cancelled') {
+    return { step: 5, total: TASK_STAGE_TOTAL,
+      label: p.status === 'blocked' ? 'Stopped part-way' : 'Cancelled', tone: 'stop',
+      next: 'Run it again, carrying on from where it left off',
+      btn: stageAct('Run it again', 'rerun', p.id, 'Run it again, carrying on from where it left off') };
+  }
+  // Finished. What is left depends on whether the work reached the app.
+  if (['shipping', 'putting_back'].includes(ship.state)) {
+    return { step: 6, total: TASK_STAGE_TOTAL, label: 'Going live now', tone: 'go', next: 'Nothing — wait for it to land' };
+  }
+  if (ship.state === 'waiting_runner') {
+    return { step: 5, total: TASK_STAGE_TOTAL, label: 'Done — waiting for your Mac', tone: 'ask',
+      next: 'Nothing here — start the runner on your Mac and it goes live' };
+  }
+  if (['ready', 'needs_fix', 'put_back'].includes(ship.state) && ship.review_id) {
+    return { step: 5, total: TASK_STAGE_TOTAL, label: 'Done, not live yet', tone: 'ask',
+      next: 'Send this work live', btn: stageAct('Send it live', 'ship-now', p.id, 'Send this live now') };
+  }
+  if (ship.state === 'nothing_changed') {
+    return { step: 5, total: TASK_STAGE_TOTAL, label: 'Done — it changed nothing', next: '', tone: 'done' };
+  }
+  return { step: 5, total: TASK_STAGE_TOTAL, label: 'Done', next: '', tone: 'done' };
+}
+
+// Suggested → accepted (it becomes a parked task) → then the task's own ladder takes over.
+function sgStage(s) {
+  if (s.status === 'dismissed') return { step: 3, total: 3, label: 'Dismissed', next: '', tone: 'idle' };
+  if (s.status === 'accepted') {
+    return { step: 2, total: 3, label: 'Accepted — parked in the queue', tone: 'ask',
+      next: 'Open it in the Queue and mark it ready' };
+  }
+  return { step: 1, total: 3, label: 'Suggested, not decided', tone: 'ask',
+    next: 'Accept it — it lands in the queue, parked',
+    btn: stageAct('Accept it', 'sg-accept', s.id, 'Accept it — adds it to the queue, parked') };
+}
+
+// Two rungs only, because that is the truth: a seed is either still just a note,
+// or it has been turned into something the app tracks (a task, a tree node, or both).
+function seedStage(i) {
+  const where = [i.work_prompt_id ? 'in the queue' : '', i.arch_node_id ? 'planted in the tree' : '']
+    .filter(Boolean).join(' and ');
+  if (where) {
+    return { step: 2, total: 2, label: `Taken up — ${where}`, tone: 'done',
+      next: i.work_prompt_id ? 'Open the task and mark it ready' : 'Send it to the queue when you want it built',
+      btn: i.work_prompt_id ? null : stageAct('Send it to the queue', 'seed-queue', i.id, 'Send it to the queue as a task') };
+  }
+  return { step: 1, total: 2, label: 'Kept as a note — nothing runs from it', tone: 'idle',
+    next: 'Send it to the queue as a task',
+    btn: stageAct('Send it to the queue', 'seed-queue', i.id, 'Send it to the queue as a task') };
+}
+
+// A tech-tree component climbs the same six rungs the rest of the app already
+// judges "built" by, so the strip and the built/unbuilt test can never disagree.
+function componentStage(c) {
+  const i = ARCH_STAGE_ORDER.indexOf(c.status);
+  const step = i < 0 ? 1 : i + 1;
+  const next = String(c.next || '').trim();
+  const state = archNodeState(c);
+  const suffix = flowWorldPickSuffix('component', c.id);
+  const btn = state === 'built' ? null
+    : state === 'buildable'
+      ? { label: '⚡ Build the next step', attrs: `class="stage-go" data-nbbuild="${qEscAttr(c.id)}"`,
+          title: (next || `Queue a task to build the next step of ${c.name}`) + suffix }
+      : { label: 'Queue it anyway', attrs: `class="stage-go" data-nbbuild="${qEscAttr(c.id)}"`,
+          title: 'Queues it anyway — it waits until the pieces it needs are done' + suffix };
+  // A locked piece used to say what it waits on in a line of its own, above the strip.
+  // It is the same question the strip answers — what has to happen next — so it belongs
+  // inside it, and the card keeps to one status line. The blockers stay clickable.
+  const unmet = state === 'locked' ? archUnmet(c) : [];
+  const waiting = unmet.length
+    ? unmet.map(pre => `<a data-nbjump="${qEscAttr(pre.id)}">${qEsc(pre.name)}</a>`).join(', ')
+    : '';
+  return {
+    step, total: ARCH_STAGE_ORDER.length,
+    label: ARCH_STAGE_LABELS[c.status] || c.status || 'Just an idea',
+    tone: state === 'built' ? 'done' : 'idle',
+    nextLabel: waiting ? 'Waiting on' : 'Next',
+    nextHtml: waiting || '',
+    next: state === 'built' ? next : (next || 'Not decided yet — open it and talk it over'),
+    btn,
+  };
+}
+
 // Destructive icons ask twice: the first click arms the button (turns it red,
 // swaps the hover label), a second within 3s commits. A 26px trash icon is a
 // mis-click away from losing a task, and there is no undo behind it.
@@ -4412,11 +4594,13 @@ function cardBtnConfirm(btn, doIt) {
 }
 
 // ---------- Shared queue-row bricks — used by the Flow tab AND the Queue panel ----------
-// One place for the status pill, the question/options block and the reply box, so the two
-// surfaces stay visually and behaviorally identical instead of drifting apart.
-function qPillHtml(p) {
-  return `<span class="q-badge" style="background:${qStatusColor(p)};">${qStatusLabel(p)}</span>`;
-}
+// One place for the question/options block and the reply box, so the two surfaces stay
+// visually and behaviorally identical instead of drifting apart.
+//
+// The status pill that used to live here is gone: it said in one coloured word what the
+// stage strip at the foot of the same card already says in full, with the step count and
+// the next move. Its colour was the half worth keeping, and that moved into the strip's
+// dots (.stage-strip.tone-*).
 // A card's state drives its border/ring treatment (see CSS): 'asking' (waiting on you,
 // violet) beats 'running' (accent) beats plain.
 function qCardState(p) {
@@ -4710,7 +4894,7 @@ function nuRowHtml(p, n) {
     <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
     ${build}
   </div>
-  ${isOpen ? `<div class="nb-world" data-nbworldpanel="${p.id}">${flowWorldPanelHtml('component', p.id)}</div>` : ''}`;
+  ${isOpen ? `<div class="nb-world" data-nbworldpanel="${p.id}">${flowWorldPanelHtml('component', p.id)}<div data-nbstudio="${p.id}"></div></div>` : ''}`;
 }
 
 // A collapsible sub-group under "Show the other N" — the group header (`key`,
@@ -4936,6 +5120,7 @@ function flowSgRow(s) {
             <span class="flow-chev">${open ? '▾' : '▸'}</span>
           </div>
           ${s.rationale ? `<div class="sg-rationale${String(s.rationale).length > 160 ? ' clamped' : ''}">${qEsc(s.rationale)}</div>` : ''}
+          ${stageStripHtml(cardStage('suggestion', s))}
           ${cardActions([
             s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
             iconBtn('chat', 'Talk it over before deciding', 'sg-discuss', s.id),
@@ -5151,6 +5336,7 @@ function renderFlow() {
             <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '▾' : '▸'}</span>
           </div>
           ${i.notes ? `<div class="sg-rationale">${qEsc(i.notes)}</div>` : ''}
+          ${stageStripHtml(cardStage('seed', i))}
           ${cardActions([
             iconBtn('queue', 'Send it to the queue as a task', 'seed-queue', i.id, 'primary'),
             iconBtn('chat', 'Talk this idea over', 'seed-discuss', i.id),
@@ -5182,7 +5368,7 @@ function renderFlow() {
   host.innerHTML = html;
 
   // Row wiring
-  if (showNextUp) wireNextUp(host);
+  if (showNextUp) { wireNextUp(host); wireStudioSlots(host, () => { loadNextUp(true); renderFlow(); }); }
   const filterClear = document.getElementById('flowFilterClear');
   if (filterClear) filterClear.onclick = () => { flowComponentFilter = null; renderFlow(); };
   // Preset answers now live on the row itself, so a question can be answered
@@ -7312,9 +7498,9 @@ const ARCH_DATA = [
     what:'Graph-based retrieval — answering questions by traversing entity relationships and community structure, not just semantic search.',
     why:'The chat assistant currently answers from flat tool calls (search/get entity); GraphRAG would let it reason across the whole relationship graph.',
     input:'The ontological + analogical graph', output:'Retrieved subgraphs / community summaries relevant to a query',
-    now:'Not built. The embedded chat assistant has direct DB query tools (search_entities, get_entity, nearby_on_axis) but no graph traversal, no community detection, no subgraph retrieval of any kind.',
-    next:'Simplest first version: static community detection over the existing tag/continuum data, before any dynamic subgraph work.',
-    status:'Concept', depends:['ontological-layer','semantic-layer'] },
+    now:'First version, offline only. A one-shot pass groups the archetypal tags into communities by how often they land on the same entity (scripts/detect-tag-communities.js writes data-seed/tag_communities.json). Nothing in the running app reads that file yet: the chat assistant still answers from direct DB lookups (search_entities, get_entity, nearby_on_axis) — no traversal, no subgraph retrieval.',
+    next:'Wire the communities into the chat assistant as a real retrieval tool, so a question can be answered from a whole community of tags rather than a flat lookup.',
+    status:'Prototype', depends:['ontological-layer','semantic-layer'] },
 
   { id:'scale-echo', territory:'reasoning', name:'Scale Echo',
     what:'The mechanism connecting entities of different scale (individual ↔ nation ↔ civilization) that sit close on the same underlying axis.',
@@ -7502,6 +7688,19 @@ const ARCH_BY_ID = {}; ARCH_DATA.forEach(c => ARCH_BY_ID[c.id] = c);
 // sync with `status`. Because loadArchLiveData() overwrites `status` from the live
 // backend, the buildable frontier updates itself as components actually advance.
 const BUILT_STATUSES = new Set(['Working','Validated','Advanced']);
+// The same six rungs the server validates against (STATUS_LEVELS in nextSteps.js /
+// architectureNodes.js), plus the words to say them in. The order lives here rather
+// than beside the labels so the stage strip's dots and BUILT_STATUSES above are read
+// off one list — a rung added to one is visibly missing from the other.
+const ARCH_STAGE_ORDER = ['Concept','Designed','Prototype','Working','Validated','Advanced'];
+const ARCH_STAGE_LABELS = {
+  Concept:   'Just an idea',
+  Designed:  'Designed, not started',
+  Prototype: 'First version running',
+  Working:   'Working',
+  Validated: 'Proven in use',
+  Advanced:  'Advanced',
+};
 const isBuilt = c => !!c && BUILT_STATUSES.has(c.status);
 // Unknown prereq ids are ignored rather than treated as unmet, so a node whose
 // dependency doesn't resolve degrades to buildable instead of being stuck locked.
@@ -7549,6 +7748,76 @@ async function nbLoadUnplanted() {
   } catch (e) { nbUnplanted = nbUnplanted || []; }
   finally { nbUnplantedBusy = false; }
   renderNotbuilt();
+}
+
+// ─── "Built, but you can't use it yet" ────────────────────────────────────────
+// Work that landed on the server and really is finished there, but that the
+// interface never calls — so from where you sit the feature does not exist. The
+// app could not see this before: every signal it watched (task done, piece built,
+// change shipped) was looking at the server alone, and all of them said yes.
+let nbUnreachable = null, nbUnreachableBusy = false;
+
+let nbUnreachRetried = false;
+async function nbLoadUnreachable() {
+  if (nbUnreachableBusy) return;
+  nbUnreachableBusy = true;
+  try {
+    const data = await api('/api/architecture/unreachable');
+    nbUnreachable = data.items || [];
+  } catch (e) { nbUnreachable = nbUnreachable || []; }
+  finally { nbUnreachableBusy = false; }
+  renderNotbuilt();
+  // The rows arrive as bare addresses and are written up in plain English in the
+  // background, so the first look can land before the words do. One retry, once —
+  // enough to catch the write-up when it lands, and not a poll that keeps asking
+  // forever when there is no model to write it.
+  if (!nbUnreachRetried && (nbUnreachable || []).some(it => !it.does)) {
+    nbUnreachRetried = true;
+    setTimeout(() => { nbUnreachableBusy = false; nbLoadUnreachable(); }, 30000);
+  }
+}
+
+function nbUnreachableSectionHtml() {
+  if (nbUnreachable === null || !nbUnreachable.length) return '';
+  let items = nbUnreachable;
+  const q = nbSearch.trim().toLowerCase();
+  if (q) items = items.filter(it => [it.path, it.does, it.gives, it.why].join(' ').toLowerCase().includes(q));
+  if (!items.length) return '';
+  return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">🔌 Built, but you can't use it yet</span></div>
+    <div class="id-form-hint" style="margin-bottom:6px;">The server can already do each of these. Nothing in the app calls it, so there is no button and no way to reach it. Building the missing half is a job on its own — the server half is finished and must not be redone.</div>
+    ${items.map(it => `
+      <div class="nb-row nb-unreach" data-unreach="${qEscAttr(it.path)}">
+        <div class="nb-top">
+          <span class="nb-name">${qEsc(it.does || it.path.replace(/^\/api\//, ''))}</span>
+          <span class="nb-terr">${qEsc(it.method)} ${qEsc(it.path)}</span>
+        </div>
+        ${it.gives ? `<div class="nb-what"><b>What a button would give you:</b> ${qEsc(it.gives)}</div>` : ''}
+        ${it.why ? `<div class="nb-what" style="opacity:.85;"><b>Why it matters:</b> ${qEsc(it.why)}</div>` : ''}
+        ${!it.does && it.hint ? `<div class="nb-what" style="opacity:.75;">${qEsc(it.hint)}</div>` : ''}
+        <div class="stage-strip">
+          <span class="stage-dots" role="img" aria-label="Step 1 of 2 — the server half is done" title="Step 1 of 2 — the server half is done"><span class="stage-dot on"></span><span class="stage-dot"></span></span>
+          <span class="stage-where">Server half done</span>
+          <span class="stage-next"><b>Next</b> Add the way to use it from the app</span>
+          <button type="button" class="stage-go" data-unreach-build="${qEscAttr(it.path)}" title="${qEscAttr('Queues a task to build the interface for this. The server side is left alone.')}">Build the way to use it</button>
+        </div>
+      </div>
+    `).join('')}`;
+}
+
+function wireNbUnreachable(host) {
+  host.querySelectorAll('[data-unreach-build]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const it = (nbUnreachable || []).find(x => x.path === b.getAttribute('data-unreach-build'));
+      if (!it || !it.task) return;
+      b.disabled = true; b.textContent = 'Sending…';
+      // Same door every other "queue this" button in the app goes through, so this
+      // task carries the same space/mode/preset as one typed by hand.
+      const p = await queuePromptDirect(it.task.title, it.task.prompt, null, null);
+      if (p) { b.textContent = '✓ In the queue'; renderNotbuilt(); }
+      else { b.disabled = false; b.textContent = 'Build the way to use it'; alert('Could not reach the server.'); }
+    };
+  });
 }
 
 function nbUnplantedSectionHtml() {
@@ -7702,6 +7971,7 @@ function renderNotbuiltFlow() {
     loadArchNodes().then(() => { renderNotbuilt(); nbAutoLook(); }).catch(() => {});
     loadNbConvos();
     nbLoadUnplanted();
+    nbLoadUnreachable();
   }
   renderNotbuilt();
   // The open world-look panel: one lookup after a reload, then poll while a
@@ -7741,7 +8011,9 @@ function renderNotbuilt() {
     items = nbSmartOrder(items);
   }
   if (!items.length) {
-    host.innerHTML = '<div class="nb-empty">Nothing here — everything matching is either built or filtered out.</div>' + nbUnplantedSectionHtml();
+    host.innerHTML = '<div class="nb-empty">Nothing here — everything matching is either built or filtered out.</div>'
+      + nbUnreachableSectionHtml() + nbUnplantedSectionHtml();
+    wireNbUnreachable(host);
     wireNbUnplanted(host);
     return;
   }
@@ -7773,7 +8045,7 @@ function renderNotbuilt() {
       }).join('')}
     </div>`;
   }
-  items.forEach(({ c, state, unmet }) => {
+  items.forEach(({ c, state }) => {
     const terr = TERRITORIES.find(t => t.id === c.territory);
     const linked = (qPrompts || []).filter(p => p.component_id === c.id);
     const inspireReady = linked.some(p => ['ready', 'applied'].includes(p.inspire_state));
@@ -7791,24 +8063,21 @@ function renderNotbuilt() {
       <div class="nb-top">
         <span class="nb-name">${qEsc(spec + c.name)}</span>
         <span class="nb-terr">${terr ? terr.label : c.territory}</span>
-        <span class="nb-status">${qEsc(c.status || 'Concept')}</span>
         <span class="nb-markers">${markers.join(' ')}</span>
         <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
       </div>
       ${whatText ? `<div class="nb-what clamped" data-nbwhat="${c.id}">${qEsc(whatText.slice(0, 140))}${trunc ? ` <span class="nb-more" data-nbmore="${c.id}">more ▾</span>` : ''}</div>` : ''}
-      ${state === 'locked' ? `<div class="nb-wait">Waiting on: ${unmet.map(p => `<a data-nbjump="${p.id}">${qEsc(p.name)}</a> (${qEsc(p.status)})`).join(', ')}</div>` : ''}
-      ${linked.length ? `<div class="nb-status-line">${linked.map(p => `<a href="#" class="core-handoff-link" data-jump="${p.id}">${p.status === 'running' ? 'Running now' : p.status === 'queued' ? 'Queued' : p.status === 'paused' ? 'Set aside' : p.status === 'done' ? 'Done' : p.status}</a>`).join(' · ')} — open in the Flow</div>` : ''}
+      ${stageStripHtml(cardStage('component', c))}
       <div class="nb-actions">
-        ${state === 'buildable'
-          ? `<button class="nb-build" data-nbbuild="${c.id}">⚡ Build — all prerequisites met${flowWorldPickSuffix('component', c.id)}</button>`
-          : `<button data-nbbuild="${c.id}" title="Queues it anyway — it waits until its prerequisites are done">Queue anyway${flowWorldPickSuffix('component', c.id)}</button>`}
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
       </div>
     </div>
     ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${flowWorldPanelHtml('component', c.id)}<div data-nbstudio="${c.id}"></div></div>` : ''}`;
   });
+  html += nbUnreachableSectionHtml();
   html += nbUnplantedSectionHtml();
   host.innerHTML = html;
+  wireNbUnreachable(host);
   wireNbUnplanted(host);
   // Tap anywhere on the card (except its own buttons/links) to expand the
   // world-look panel — same click-anywhere interaction the queue/task and
@@ -7888,12 +8157,7 @@ function renderNotbuilt() {
       renderNotbuilt();
     };
   });
-  // The box on an expanded row — the same one the component panel shows, because
-  // it is the same conversation about the same piece.
-  host.querySelectorAll('[data-nbstudio]').forEach(slot => {
-    const c = ARCH_BY_ID[slot.getAttribute('data-nbstudio')];
-    if (c) studioEmbed(slot, archStudioOpts(c, () => { loadNbConvos(); renderNotbuilt(); }));
-  });
+  wireStudioSlots(host, () => { loadNbConvos(); renderNotbuilt(); });
   host.querySelectorAll('[data-nbmore]').forEach(m => {
     m.onclick = () => {
       const d = host.querySelector(`[data-nbwhat="${m.getAttribute('data-nbmore')}"]`);
@@ -7935,6 +8199,17 @@ async function loadNbConvos() {
   if (!items.length) return;
   await studioIndexLoad('arch_component', items.map(it => it.c.id));
   renderNotbuilt();
+}
+
+// The box on any expanded component row — "On the Horizon" and "What to do next"
+// both draw rows that open into one. It is the same conversation the component's
+// own panel shows, because it is the same piece being talked about.
+function wireStudioSlots(host, onDone) {
+  if (!host) return;
+  host.querySelectorAll('[data-nbstudio]').forEach(slot => {
+    const c = ARCH_BY_ID[slot.getAttribute('data-nbstudio')];
+    if (c) studioEmbed(slot, archStudioOpts(c, onDone));
+  });
 }
 
 // How to open a conversation about any architecture component. One place, so the
@@ -9905,7 +10180,7 @@ document.addEventListener('keydown', (e) => {
       convoId: null, msgs: [], acts: [], edits: [], promptId: null, via: null, title: '',
       hint: null,                    // travels with the request for subjects the DB cannot describe
       loaded: false, loading: false,  // `loaded` gates the refetch, so a repaint costs nothing
-      open: false, busy: false, draft: '', err: '',
+      open: false, busy: false, draft: '', err: '', note: '',
     };
     return cache[key];
   }
@@ -9964,16 +10239,19 @@ document.addEventListener('keydown', (e) => {
         e.acts = data.acts || [];
         e.edits = data.edits || [];
         e.loaded = true;
+        e.note = '';
         index[e.key] = data.convo;   // keeps the closed line's count honest
       })
       .catch(function(err){ e.err = 'Could not open this conversation: ' + (err.message || err); })
       .then(function(){ e.loading = false; if(repaint) repaint(); });
   }
 
+  // Returns true if the message was accepted and is on its way, false if it could
+  // not be sent — the caller needs to know, so it can keep the words on screen.
   function sendTurn(e, text, repaint, onDone){
     text = String(text || '').trim();
-    if(!text || !e.convoId || e.busy) return Promise.resolve();
-    e.busy = true; e.draft = '';
+    if(!text || !e.convoId || e.busy) return false;
+    e.busy = true; e.draft = ''; e.note = '';
     e.msgs.push({ role: 'user', kind: 'chat', text: text });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
@@ -10009,6 +10287,7 @@ document.addEventListener('keydown', (e) => {
         return awaitTurn(e, sentAt, repaint);
       })
       .then(function(){ e.busy = false; if(repaint) repaint(); });
+    return true;
   }
 
   // Poll the conversation for the assistant turn the cut request was producing.
@@ -10162,7 +10441,6 @@ document.addEventListener('keydown', (e) => {
         e.open = true;
         e.justOpened = true;
         paintEmbed(host, e, opts);
-        fetchConvo(e, repaint);
       };
       return;
     }
@@ -10190,6 +10468,11 @@ document.addEventListener('keydown', (e) => {
       wireEmbed(host, e, opts, repaint);
     }
     fillEmbed(host, e, opts);
+    // An open box always has its conversation, however it came to be open. The
+    // e.err guard is load-bearing: without it a conversation that genuinely fails
+    // to open would ask again on every repaint, and the Flow repaints every four
+    // seconds. A failed box sits still and offers Try again instead.
+    if(!e.loaded && !e.loading && !e.err) fetchConvo(e, repaint);
   }
 
   function teaserHtml(e){
@@ -10217,9 +10500,10 @@ document.addEventListener('keydown', (e) => {
     var send = host.querySelector('.se-send');
     var say = function(text){
       if(e.busy || !String(text || '').trim()) return;
-      input.value = '';
-      grow(input);
-      sendTurn(e, text, repaint, opts.onDone);
+      // Clear only once the message is actually on its way. Losing what someone
+      // typed is worse than any error message.
+      if(sendTurn(e, text, repaint, opts.onDone)){ input.value = ''; grow(input); }
+      else { e.note = 'Still opening this conversation — give it a second and send again.'; repaint(); }
     };
     // The draft lives on the entry, not in the box, so a rebuilt card gets it back.
     input.value = e.draft || '';
@@ -10256,6 +10540,13 @@ document.addEventListener('keydown', (e) => {
     log.querySelectorAll('[data-se-jump]').forEach(function(a){
       a.onclick = function(ev){ ev.preventDefault(); jumpToQueueItem(a.getAttribute('data-se-jump')); };
     });
+    var retry = log.querySelector('[data-se-retry]');
+    if(retry) retry.onclick = function(ev){
+      ev.stopPropagation();
+      e.err = '';
+      fetchConvo(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); });
+      fillEmbed(host, e, opts);
+    };
 
     var box = host.querySelector('.se-input');
     if(box && document.activeElement !== box && box.value !== (e.draft || '')){
@@ -10308,8 +10599,12 @@ document.addEventListener('keydown', (e) => {
 
   function logHtml(e){
     var html = '';
-    if(e.err) return '<div class="se-note err">' + qEsc(e.err) + '</div>';
-    if(e.loading && !e.loaded) return '<div class="se-note">Opening…</div>';
+    if(e.err) return '<div class="se-note err">' + qEsc(e.err)
+      + ' <button type="button" class="se-cmd" data-se-retry="1">Try again</button></div>';
+    // Still opening. The note rides along, so pressing Enter too early gets an
+    // answer of some kind rather than looking like the key did nothing.
+    if(e.loading && !e.loaded) return '<div class="se-note">Opening…</div>'
+      + (e.note ? '<div class="se-note">' + qEsc(e.note) + '</div>' : '');
     if(e.promptId){
       html += '<div class="se-pin">✓ Sent to the Dispatch Queue, set aside — '
            +  '<a href="#" data-se-jump="' + qEsc(e.promptId) + '">open the task</a></div>';
@@ -10338,6 +10633,8 @@ document.addEventListener('keydown', (e) => {
     if(!e.msgs.length && !e.promptId && !e.busy){
       html += '<div class="se-note">Nothing said yet. Push this, argue with it, or ask to be interrogated — nothing is queued or run from here.</div>';
     }
+    // Something to say that is not part of the conversation — "still opening", say.
+    if(e.note) html += '<div class="se-note">' + qEsc(e.note) + '</div>';
     return html;
   }
 

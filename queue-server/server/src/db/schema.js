@@ -1251,6 +1251,18 @@ export function initFilmEnrichmentSchema(db) {
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_git_jobs_status ON git_jobs(status, created_at)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_git_jobs_review ON git_jobs(review_id, created_at)`); } catch {}
 
+  // Small, single-row odds and ends that do not earn a table of their own — right
+  // now, the plain-English write-up of "built on the server, no way to use it yet"
+  // (services/reachability.js), cached against the exact set of endpoints it
+  // describes so it is written once and not on every page load.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_kv (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+
   // The runner's last Claude-usage reading, persisted. It used to live only in a
   // module variable, so every redeploy blanked the app's usage bar even though
   // the runner re-reports it every 5s — and a multi-instance container could
