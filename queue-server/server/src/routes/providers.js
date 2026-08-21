@@ -15,6 +15,9 @@ export function providersRoutes() {
     const providers = listProviders().map((p) => ({
       id: p.id, label: p.label, limits: p.limits,
       keyPresent: !!process.env[p.apiKeyEnv],
+      // Surfaced so the panel can mark the one paid lane as paid rather than
+      // letting it sit unlabelled among the free ones.
+      metered: !!p.metered,
       models: p.models.map((m) => ({ id: m.id, codingRank: m.codingRank, contextTokens: m.contextTokens })).sort((a, b) => b.codingRank - a.codingRank),
     }));
     const state = getQuotaState();

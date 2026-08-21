@@ -40,7 +40,8 @@ import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
-import { logBillingPosture } from './services/billingGuard.js';
+import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
+import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
 import { bindAiTextDb, migrateFreeFirstDefaults } from './services/ai/text.js';
 import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
@@ -88,6 +89,7 @@ bindReviewsDb(db);
 bindGitJobsDb(db);
 bindBriefingDb(db);
 bindAiTextDb(db);
+bindOpenAiSpendDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
@@ -230,6 +232,10 @@ app.use('/api/travaux', requireAuth, reviewsRoutes());
 
 // Say plainly at boot whether anything here can spend real money (billingGuard.js).
 logBillingPosture();
+// The one paid lane gets its own line, with the month-to-date figure — warming
+// the cache here also means the first conversation turn doesn't wait on OpenAI's
+// cost API before it can start.
+warmSpendCache().then((cap) => logOpenAiPosture(cap)).catch(() => logOpenAiPosture(null));
 
 app.get('/api/agent/usage', requireAuth, async (req, res) => {
   try {
@@ -241,7 +247,19 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
     const usage = (!local.subscriptionAvailable && fromRunner?.subscriptionAvailable)
       ? { ...fromRunner, source: 'runner' }
       : { ...local, source: 'server' };
-    res.json({ ...usage, schedulerLimitResetAt: queueDeferUntil() });
+    // The second Claude account and the paid OpenAI lane, so the header strip can
+    // show one bar per account instead of implying the main account is the whole
+    // picture. `side` is whatever the runner last reported — only the Mac holds
+    // that token, so the server can never read it directly.
+    const side = fromRunner?.sideUsage || null;
+    let openai = null;
+    try { openai = await openAiCapState(); } catch {}
+    res.json({
+      ...usage,
+      side,
+      openai,
+      schedulerLimitResetAt: queueDeferUntil(),
+    });
   } catch (err) {
     res.status(500).json({ error: 'usage_failed', message: err.message });
   }

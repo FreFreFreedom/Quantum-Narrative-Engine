@@ -450,7 +450,21 @@ async function sideHandoverReason() {
 // stream flush carries it too now. getClaudeUsage() caches for 60s, so this is
 // one real read per minute however often we flush.
 async function usageForReport() {
-  try { return await getClaudeUsage(); } catch { return null; }
+  try {
+    const usage = await getClaudeUsage();
+    if (!usage) return null;
+    // The second account's reading rides along on the same report. It was already
+    // being computed on this machine for the hand-over gate (sideHandoverReason
+    // above) but never leaving it, so the app's usage strip could only ever show
+    // the main account and quietly implied that was the whole picture. Only the
+    // Mac holds this token, so the server cannot read it any other way.
+    // Its own cache means this costs no extra HTTP call most of the time.
+    let sideUsage = null;
+    if (SIDE_TOKEN) {
+      try { sideUsage = await getSideSubscriptionUsage(SIDE_TOKEN); } catch { /* unknown — the bar shows nothing */ }
+    }
+    return { ...usage, sideUsage };
+  } catch { return null; }
 }
 
 // ─── Claude helper lane ───────────────────────────────────────────────────────
@@ -1378,8 +1392,7 @@ async function main() {
       // getClaudeUsage() caches for 60s, so sending it on every 5s poll costs one
       // real read per minute — that's what keeps the app's usage bar truthful now
       // that Claude runs here rather than in the container.
-      let usage = null;
-      try { usage = await getClaudeUsage(); } catch { /* no reading — the bar falls back */ }
+      const usage = await usageForReport();
       const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage });
       if (r.ok) {
         const body = await r.json();

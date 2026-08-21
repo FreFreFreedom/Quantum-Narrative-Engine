@@ -487,6 +487,11 @@ function initSchema(db) {
   // clearing so regeneration isn't blocked by their title fingerprints — see
   // bootstrapData.js. This flips to 1 after that cleanup runs once, ever.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN suggestions_relang_done INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Monthly ceiling on the ONE paid lane in the app: gpt-4o for Idea Studio
+  // conversations (see services/billingGuard.js and services/openaiSpend.js).
+  // Unlike every other budget here, going over does not degrade an optional
+  // pass — it stops the paid lane outright and says so in the conversation.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN openai_month_cap_usd REAL NOT NULL DEFAULT 10`); } catch {}
 
   // Daily helper-call ledger (free-only plan): one row per UTC day counting the
   // short text-model steps the queue spent (plan drafts, summaries, world-look,
@@ -497,6 +502,26 @@ function initSchema(db) {
     CREATE TABLE IF NOT EXISTS side_call_ledger (
       day TEXT PRIMARY KEY,
       calls INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+
+  // ─── OpenAI spend ledger (Idea Studio paid lane) ─────────────────────────────
+  // One row per UTC day of real money spent on gpt-4o, in dollars (side_call_ledger
+  // above counts CALLS; this counts CENTS — they are not interchangeable).
+  //
+  // This is the LIVE figure, not the record of truth. Railway's free tier wipes
+  // this file on every redeploy, and OpenAI's Costs API only buckets by whole
+  // days — so openaiSpend.js composes the two: OpenAI's reported buckets for the
+  // month so far, plus these local rows for today. Do not make the cap depend on
+  // this table alone; it forgets.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS openai_spend_ledger (
+      day TEXT PRIMARY KEY,
+      spend_usd REAL NOT NULL DEFAULT 0,
+      calls INTEGER NOT NULL DEFAULT 0,
+      tokens_in INTEGER NOT NULL DEFAULT 0,
+      tokens_out INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     )
   `);

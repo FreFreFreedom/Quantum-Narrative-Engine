@@ -20,7 +20,7 @@ import {
 } from './codeDiscovery.js';
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
-import { generateText } from './ai/text.js';
+import { generateText, generateTextStream } from './ai/text.js';
 import { getComponents } from './architecture.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
@@ -210,10 +210,27 @@ Commands the user may type:
 
 The subject being discussed is described in SUBJECT CONTEXT below. It is the whole reason this conversation exists — keep every answer anchored to it.
 
-Be direct, plain-English, no jargon. Keep answers short unless the user asks for detail. Never mention internal component ids, codes or file names in your answers — say what the thing DOES for the user, in everyday words. The user is not a programmer.`;
+Be direct, plain-English, no jargon. Never mention internal component ids, codes or file names in your answers — say what the thing DOES for the user, in everyday words. The user is not a programmer.`;
 
-function subjectSystemPrompt(ctxText) {
+// How long an answer should be. Split out of BASE_SYSTEM because the two lanes
+// want opposite things and used to share one instruction.
+//
+// TERSE is for the structured, system-triggered turns (compare, fold, reframe)
+// that land in a small card and are read at a glance.
+//
+// JUDGED is for actual conversation. Antoine's ask, in his words: "I don't want
+// just a one-line answer... I need depth in these types of conversations." The
+// old shared line ("keep answers short unless the user asks for detail") made
+// every turn default to terse and put the burden on him to ask for depth every
+// time — which is not how a real brainstorming conversation works. So the model
+// judges length from the question instead, the way ChatGPT does by default.
+const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
+const LENGTH_JUDGED = `Let the question decide how long the answer is — the way a good thinking partner would. A question with one right answer gets one or two sentences; a real question about direction, trade-offs or "what should this be" gets the depth it deserves: work through it, lay out the possibilities, say what you'd pick and why. Do not pad, and do not compress something that needs room. Never end with a summary of what you just said.`;
+
+function subjectSystemPrompt(ctxText, { depth = false } = {}) {
   return `${BASE_SYSTEM}
+
+${depth ? LENGTH_JUDGED : LENGTH_TERSE}
 
 === SUBJECT CONTEXT ===
 ${ctxText}`;
@@ -286,14 +303,22 @@ function transcriptOf(convo, msgs, windowSize) {
 
 // One turn against the routed lane (AI Settings decides which; the Claude
 // subscription when 'studio' points there). Returns { text, via } | { error }.
-async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeDigest = true }) {
+// The prompt itself, factored out so the streaming turn below sends exactly the
+// same thing — a second copy of this assembly would drift.
+function buildTurnPrompt({ convo, ctx, instruction = null, includeDigest = true, brevity = true }) {
   const msgs = listMessages(convo.id);
-  const prompt = [
-    subjectSystemPrompt(ctx.contextText),
+  return [
+    subjectSystemPrompt(ctx.contextText, { depth: !brevity }),
     includeDigest ? projectDigestBlock() : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
-    instruction ? `\n=== WHAT TO DO NOW ===\n${instruction}` : `\n=== WHAT TO DO NOW ===\nReply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`,
+    instruction
+      ? `\n=== WHAT TO DO NOW ===\n${instruction}`
+      : `\n=== WHAT TO DO NOW ===\nReply to the owner's last message. Nothing else.${brevity ? `\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.` : `\n\nNo preamble and no restating the question back — start with the substance. Then give it as much room as it actually needs.`}`,
   ].filter(Boolean).join('\n');
+}
+
+async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeDigest = true }) {
+  const prompt = buildTurnPrompt({ convo, ctx, instruction, includeDigest });
   return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000 });
 }
 
@@ -304,6 +329,38 @@ function saveAssistantTurn(convoId, text, meta = null) {
   db.prepare(`UPDATE convos SET turns=turns+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convoId);
   broadcastAll('convos:updated', { convoId });
   return mid;
+}
+
+// Streaming sibling of runChatTurn. Same prompt, same single saveAssistantTurn at
+// the end — so the DB write is identical and the frontend's existing poll fallback
+// (awaitTurn) keeps working untouched if a stream dies mid-flight.
+//
+// The output ceiling is 1200 here, not 450. That 450 existed only because nothing
+// streamed and the whole answer had to be written before any of it appeared; once
+// tokens arrive as they are produced, a longer answer costs patience nothing. The
+// brevity instruction is relaxed to match — a cramped ceiling and a "keep it very
+// short" order were solving the same vanished problem.
+async function runChatTurnStreaming(convoId, userId, onToken) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await buildSubjectContext(db, convo.subject_type, convo.subject_id, convo.subject_hint);
+  if (ctx.error) return { error: ctx.error };
+
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false });
+  const result = await generateTextStream({
+    prompt, feature: 'studio', label: 'conversations:chat',
+    // 4000, not 450 and not 1200. Both smaller numbers were brevity caps: 450
+    // because nothing streamed and the whole answer had to be written before any
+    // of it showed, 1200 because that was the timid first step away from it.
+    // Neither is a budget constraint — an answer only costs what it actually
+    // uses, so a high ceiling on a short answer costs nothing. This is headroom
+    // for the times a question genuinely needs it, not a target.
+    model: CONVO_CHAT_MODEL, maxTokens: 4000,
+    allowLongOutput: true, timeoutMs: 150_000, onToken,
+  });
+  if (result.error) return result;
+  saveAssistantTurn(convoId, result.text, result.notice ? { notice: result.notice } : null);
+  return { text: result.text, via: result.via, notice: result.notice || null };
 }
 
 async function runChatTurn(convoId, userId) {
@@ -653,7 +710,10 @@ Respond with ONLY this JSON object and nothing else:
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-export async function sendMessage(convoId, { text, userId = 'antoine' } = {}) {
+// onToken, when supplied by the route, turns the ordinary text turn into a
+// streamed one. Slash commands stay non-streamed: they are structured actions
+// (plan, handoff, fold) whose value is the finished artefact, not the typing.
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -694,7 +754,9 @@ export async function sendMessage(convoId, { text, userId = 'antoine' } = {}) {
   const mid = randomUUID();
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
     .run(mid, convoId, 'user', 'chat', trimmed);
-  const out = await runChatTurn(convoId, userId);
+  const out = onToken
+    ? await runChatTurnStreaming(convoId, userId, onToken)
+    : await runChatTurn(convoId, userId);
   if (out.error) return out;
   return out;
 }

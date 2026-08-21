@@ -100,7 +100,10 @@ export function getProviderCapability(id) {
     hasApiText: true, apiModels: cat.models.map((m) => m.id),
     hasQueueExecution: false, queueModels: [],
     hasAutoFallback: false,
-    freeModels: cat.models.map((m) => m.id),
+    // A metered provider has NO free models — anything reading freeModels is
+    // deciding whether it can call this for nothing, and for `openai` it cannot.
+    metered: !!cat.metered,
+    freeModels: cat.metered ? [] : cat.models.map((m) => m.id),
   };
 }
 

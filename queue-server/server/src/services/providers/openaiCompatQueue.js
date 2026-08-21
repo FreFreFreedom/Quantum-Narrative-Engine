@@ -126,9 +126,12 @@ export async function executeAiRouterTask({ taskId, promptPath, logPath, codePat
   }
 }
 
-// List available AI Router models (from catalog, filtered by available API keys)
+// List available AI Router models (from catalog, filtered by available API keys).
+// includeMetered:false — the Dispatch Queue runs coding tasks on subscriptions,
+// never on a per-token lane, and every row below is tagged `free: true`, which
+// would be a lie for a paid provider.
 export function listModels() {
-  const providers = listProviders({ availableOnly: true });
+  const providers = listProviders({ availableOnly: true, includeMetered: false });
   const out = [];
   for (const p of providers) {
     for (const m of p.models) {

@@ -9,6 +9,9 @@
 import { generateText as legacyGenerateText } from '../claudeText.js';
 import { getProviderCapability, getProviderModule, getDefaultModel, getFreeOpenCodeModel, listFreeOpenCodeModels, isKnownProvider } from './providers.js';
 import * as router from './router.js';
+import { isMeteredProvider } from './catalog.js';
+import { openAiStudioEnabled, openAiStudioBlockReason } from '../billingGuard.js';
+import { capStateSync, recordSpend } from '../openaiSpend.js';
 import { randomUUID } from 'node:crypto';
 
 let db = null;
@@ -574,4 +577,101 @@ export function recordSideCall() {
   const day = new Date().toISOString().slice(0, 10);
   db.prepare(`INSERT INTO side_call_ledger (day, calls, updated_at) VALUES (?, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(day) DO UPDATE SET calls = calls + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`).run(day);
+}
+
+// ─── Streaming text (Idea Studio conversations) ───────────────────────────────
+// A deliberately narrow sibling of generateText(): the ONLY lane it streams is an
+// explicitly-configured metered provider (today: openai/gpt-4o). Everything else
+// falls through to generateText() and is delivered as one chunk, so callers have
+// a single code path and nothing else in the app changes behaviour.
+//
+// Shape: takes an onToken(text) callback, resolves to the same
+// { text, via } | { error, message } that generateText returns, plus an optional
+// `notice` — a plain-English sentence explaining why the answer did NOT come from
+// where it was configured to come from.
+//
+// That notice is not decoration. The standing complaint about this lane is that
+// it falls back to a cheaper model WITHOUT SAYING SO, so a fallback that stays
+// quiet is the bug, not the feature. Every early return below either streams from
+// the paid lane or carries a notice.
+export async function generateTextStream({
+  prompt, feature, maxTokens = 800, label = 'ai-text-stream', model: explicitModel = null,
+  timeoutMs = 90_000, allowLongOutput = false, onToken = null,
+}) {
+  const { defaults } = loadAiSettings();
+  const featureDefaults = defaults[feature] || {};
+  const providerId = featureDefaults.provider || 'opencode';
+  const model = explicitModel || featureDefaults.model || null;
+
+  // Not pointed at a metered lane → ordinary generateText, no notice needed:
+  // nothing was promised and nothing was downgraded.
+  if (!isMeteredProvider(providerId)) {
+    const r = await generateText({ prompt, feature, maxTokens, label, model: explicitModel, timeoutMs, allowLongOutput });
+    if (r?.text && onToken) onToken(r.text);
+    return r;
+  }
+
+  // From here on the feature IS configured to spend money, so any deviation is
+  // something Antoine needs told.
+  const fallback = async (notice) => {
+    console.warn(`[${label}] paid lane unavailable — ${notice}`);
+    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput });
+    if (r?.text && onToken) onToken(r.text);
+    return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
+  };
+
+  const why = openAiStudioBlockReason();
+  if (why || !openAiStudioEnabled()) return fallback(`the paid gpt-4o lane is switched off (${why || 'not enabled'}), so this answer came from the free lane instead`);
+
+  // The monthly ceiling. Synchronous on purpose — a conversation turn must not
+  // wait on a network call to OpenAI's cost API before it can start, and
+  // capStateSync() is never lower than what we already know locally.
+  const cap = capStateSync();
+  if (cap.blocked) {
+    // A cap under a cent still has to print as a real number — "$0.00 budget is
+    // used up" reads as a bug rather than a ceiling.
+    const money = (n) => (n > 0 && n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`);
+    return fallback(`the ${money(cap.capUsd)} monthly gpt-4o budget is used up (${money(cap.spentUsd)} spent), so this answer came from the free lane instead`);
+  }
+
+  const mod = getProviderModule(providerId);
+  if (!mod?.postChatCompletionsStream) return fallback(`${providerId} cannot stream`);
+
+  const stream = await mod.postChatCompletionsStream({
+    providerId, model, maxTokens, timeoutMs,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  if (stream?.error) {
+    if (detectQuotaLimit(providerId, stream.message || '')) {
+      router.recordExhaustion({ providerId, model, detectedBy: 'text-stream', errText: stream.message || '' });
+    }
+    return fallback(`gpt-4o could not be reached (${stream.message || stream.error}), so this answer came from the free lane instead`);
+  }
+
+  let text = '';
+  let usage = null;
+  try {
+    for await (const ev of stream) {
+      if (ev.type === 'content' && ev.text) {
+        text += ev.text;
+        if (onToken) onToken(ev.text);
+      } else if (ev.type === 'usage') {
+        usage = ev.usage;
+      }
+    }
+  } catch (e) {
+    // Tokens already delivered are real; only give up entirely if nothing came.
+    if (!text) return fallback(`the gpt-4o answer was cut off (${e.message}), so this answer came from the free lane instead`);
+    console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
+  }
+
+  // Bill it. A missing usage block means the cap has nothing to count, which is
+  // worth a loud line rather than a silent free ride.
+  if (usage) recordSpend({ model, usage, providerId });
+  else console.warn(`[${label}] ${providerId}/${model} returned no usage block — this call is NOT counted against the monthly cap`);
+
+  if (!text.trim()) return fallback('gpt-4o returned an empty answer, so this answer came from the free lane instead');
+
+  recordSideCall();
+  return { text: text.trim(), via: providerId, usage };
 }

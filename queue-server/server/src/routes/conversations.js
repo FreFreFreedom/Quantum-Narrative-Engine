@@ -58,10 +58,54 @@ export function conversationsRoutes() {
   });
 
   // POST /api/convos/:id/message — one user turn (or a command like /plan, /handoff).
+  //
+  // Two response shapes from one endpoint:
+  //   Accept: application/x-ndjson  → chunked, one JSON object per line, tokens
+  //                                    forwarded as they arrive
+  //   anything else                 → the original single res.json(), unchanged
+  //
+  // NDJSON rather than SSE because EventSource cannot send an Authorization
+  // header, and everything in this app authenticates with a bearer token. It also
+  // needs no new endpoint and no new client library — plain fetch() can read a
+  // chunked body.
   router.post('/:id/message', asyncHandler(async (req, res) => {
-    const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id });
-    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
-    res.json(out);
+    const wantsStream = /application\/x-ndjson/i.test(String(req.headers.accept || ''));
+
+    if (!wantsStream) {
+      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id });
+      if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+      return res.json(out);
+    }
+
+    // Once the first byte is written the status code is committed and res.json()
+    // is no longer available — so from here every outcome, errors included,
+    // travels as a line in the body.
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no'); // ask any proxy in front not to buffer
+    res.flushHeaders?.();
+
+    const write = (obj) => {
+      try { res.write(JSON.stringify(obj) + '\n'); res.flush?.(); } catch {}
+    };
+
+    // If the reader hangs up we stop writing, but we do NOT abort the model turn:
+    // conversations.js saves the assistant message itself, so a closed browser
+    // still ends with the answer in the thread rather than a half-turn.
+    let clientGone = false;
+    req.on('aborted', () => { clientGone = true; });
+
+    try {
+      const out = await convos.sendMessage(req.params.id, {
+        text: req.body?.text,
+        userId: req.user?.id,
+        onToken: (t) => { if (!clientGone) write({ type: 'token', text: t }); },
+      });
+      write({ type: 'done', ...out });
+    } catch (e) {
+      write({ type: 'error', error: 'send_failed', message: e.message });
+    }
+    res.end();
   }));
 
   // POST /api/convos/:id/plan — generate the coder brief (TITLE + BRIEF).

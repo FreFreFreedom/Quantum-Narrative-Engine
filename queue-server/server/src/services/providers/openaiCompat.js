@@ -168,7 +168,8 @@ export async function chatCompletion({ providerId, model, system, messages, tool
 export function listModels(providerId) {
   const cat = getProviderCatalog(providerId);
   if (!cat) return { models: [], error: 'unknown_provider' };
-  return { models: cat.models.map((m) => ({ id: m.id, free: true, codingRank: m.codingRank })), error: null };
+  // `free` is not a given any more — the `openai` entry is metered.
+  return { models: cat.models.map((m) => ({ id: m.id, free: !cat.metered, codingRank: m.codingRank })), error: null };
 }
 
 // ─── Streaming chat completions (for queue execution) ─────────────────────────
@@ -193,6 +194,15 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
         messages,
         max_tokens: maxTokens,
         stream: true,
+        // A streamed OpenAI response carries NO usage block unless you ask for
+        // it, and without token counts services/openaiSpend.js cannot price the
+        // call — the monthly cap would silently never fire. The final SSE chunk
+        // then arrives with empty choices and a populated `usage`, which the
+        // iterator below already emits as { type: 'usage' }.
+        // Sent only where it is understood: the free providers in the catalogue
+        // are OpenAI-compatible to varying degrees and an unknown field is a
+        // hard 400 on some of them.
+        ...(providerId === 'openai' ? { stream_options: { include_usage: true } } : {}),
         // KNOWN LIMITATION: Gemini 3.x "thinking" models can spend the whole
         // reply on an internal reasoning trace (extra_content.google.thought_
         // signature) and hit [DONE] with zero actual answer text — confirmed via
@@ -221,64 +231,79 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  // Parsed-but-not-yet-delivered events.
+  //
+  // This queue is load-bearing, not tidiness. One read() can deliver several SSE
+  // lines at once (they are not aligned to network chunks), and the previous
+  // version parsed a whole batch of lines but `return`ed on the FIRST event it
+  // recognised — silently discarding every other line in that batch. Verified:
+  // a three-delta reply came out as two, with a word missing from the middle,
+  // and the final usage chunk (which OpenAI sends last, in the same tail read)
+  // was dropped every time, so no call could ever be priced.
+  const pending = [];
+
+  function parseLine(trimmed) {
+    if (!trimmed || trimmed === 'data: [DONE]' || !trimmed.startsWith('data: ')) return;
+    let parsed;
+    try { parsed = JSON.parse(trimmed.slice(6)); } catch { return; }
+
+    // Usage FIRST, and before the no-choice guard below. With
+    // stream_options.include_usage, OpenAI reports token counts in a final chunk
+    // whose `choices` array is EMPTY — so anything that requires a choice (or
+    // pairs usage with finish_reason) drops it on the floor, and
+    // services/openaiSpend.js then prices every call at zero and the monthly cap
+    // never fires.
+    if (parsed.usage) {
+      pending.push({
+        type: 'usage',
+        usage: {
+          prompt_tokens: parsed.usage.prompt_tokens,
+          completion_tokens: parsed.usage.completion_tokens,
+          // Carried through so cached input can be billed at the cheaper cached
+          // rate rather than at full price.
+          prompt_tokens_details: parsed.usage.prompt_tokens_details || null,
+          cost: null,
+        },
+        sessionId: parsed.id,
+      });
+    }
+
+    const choice = parsed.choices?.[0];
+    if (!choice) return;
+    const delta = choice.delta || {};
+    if (delta.content) {
+      pending.push({ type: 'content', text: delta.content, sessionId: parsed.id });
+      return;
+    }
+    if (delta.tool_calls) {
+      for (const tc of delta.tool_calls) {
+        if (!tc.function?.name) continue;
+        let input = {};
+        try { input = JSON.parse(tc.function.arguments || '{}'); } catch {}
+        pending.push({ type: 'tool_use', tool: { name: tc.function.name, input }, sessionId: parsed.id });
+      }
+      return;
+    }
+    if (parsed.id) pending.push({ type: 'session', sessionId: parsed.id });
+  }
 
   return {
     [Symbol.asyncIterator]() {
       return {
         async next() {
           while (true) {
+            if (pending.length) return { done: false, value: pending.shift() };
             const { done, value } = await reader.read();
-            if (done) return { done: true, value: undefined };
+            if (done) {
+              // Flush a trailing line with no newline after it.
+              if (buffer.trim()) { parseLine(buffer.trim()); buffer = ''; }
+              if (pending.length) return { done: false, value: pending.shift() };
+              return { done: true, value: undefined };
+            }
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed || trimmed === 'data: [DONE]') continue;
-              if (trimmed.startsWith('data: ')) {
-                const data = trimmed.slice(6);
-                try {
-                  const parsed = JSON.parse(data);
-                  const choice = parsed.choices?.[0];
-                  if (!choice) continue;
-                  const delta = choice.delta || {};
-                  if (delta.content) {
-                    return { done: false, value: { type: 'content', text: delta.content, sessionId: parsed.id } };
-                  }
-                  if (delta.tool_calls) {
-                    for (const tc of delta.tool_calls) {
-                      if (tc.function?.name) {
-                        return {
-                          done: false,
-                          value: {
-                            type: 'tool_use',
-                            tool: { name: tc.function.name, input: JSON.parse(tc.function.arguments || '{}') },
-                            sessionId: parsed.id,
-                          },
-                        };
-                      }
-                    }
-                  }
-                  if (choice.finish_reason && parsed.usage) {
-                    return {
-                      done: false,
-                      value: {
-                        type: 'usage',
-                        usage: {
-                          prompt_tokens: parsed.usage.prompt_tokens,
-                          completion_tokens: parsed.usage.completion_tokens,
-                          cost: null,
-                        },
-                        sessionId: parsed.id,
-                      },
-                    };
-                  }
-                  if (parsed.id && !choice.delta?.content) {
-                    return { done: false, value: { type: 'session', sessionId: parsed.id } };
-                  }
-                } catch {}
-              }
-            }
+            for (const line of lines) parseLine(line.trim());
           }
         },
         async return() {

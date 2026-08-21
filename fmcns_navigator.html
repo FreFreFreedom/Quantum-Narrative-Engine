@@ -312,6 +312,33 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .usage-reset { color:var(--c-ink-4); }
 .usage-alert { padding:3px 8px; border-radius:6px; background:var(--c-danger-tint); color:var(--c-danger); font-size:10px; }
 .usage-none { font-size:10px; color:var(--c-ink-4); }
+/* The per-account detail, folded away. The header is already a crowded flex row
+   (queue banner, pause badge, server picker, settings) so a bar per account
+   cannot all be on screen at once. The main account's two limits stay visible
+   because they are what bites during a working session; the second account and
+   the one paid lane live one click away.
+   summary needs display:inline — the default list-item marker breaks the row. */
+.usage-more { position:relative; font-size:10px; }
+.usage-more > summary { display:inline; list-style:none; cursor:pointer; color:var(--c-ink-4); border-bottom:1px dotted var(--c-border); }
+.usage-more > summary::-webkit-details-marker { display:none; }
+.usage-more > summary:hover { color:var(--c-ink); }
+.usage-more[open] > summary { color:var(--c-ink); }
+.usage-more-panel { position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:250px;
+  display:flex; flex-direction:column; gap:7px; padding:10px 12px; border:1px solid var(--c-border);
+  border-radius:8px; background:var(--c-bg-raised, var(--c-bg)); box-shadow:0 6px 20px rgba(0,0,0,.18); }
+.usage-more-panel .usage-item { justify-content:space-between; gap:8px; }
+.usage-more-head { color:var(--c-ink-4); font-weight:600; letter-spacing:.04em; text-transform:uppercase; font-size:9px; }
+.usage-more-note { color:var(--c-ink-4); line-height:1.4; }
+/* A spend bar is not a quota bar: it fills toward a ceiling you set, and the
+   number beside it is dollars, not "% left". Same three tones so the header
+   reads consistently. */
+.usage-spend .usage-bar-fill { background:#5b7fa8; }
+.usage-spend .usage-bar-fill.warn { background:#d99a3d; }
+.usage-spend .usage-bar-fill.hot { background:var(--c-danger); }
+.usage-money { font-weight:700; color:var(--c-ink); font-variant-numeric:tabular-nums; }
+.usage-money.warn { color:var(--c-warn); }
+.usage-money.hot { color:var(--c-danger); }
+.usage-stale { color:var(--c-ink-4); font-style:italic; }
 
 /* ---------- Core workspace shell (three zones) ---------- */
 .ws-shell { flex:1; min-height:0; display:flex; }
@@ -466,7 +493,11 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .se-head-acts { margin-left:auto; display:flex; gap:2px; }
 .se-iconbtn { background:none; border:none; border-radius:var(--r-sm); cursor:pointer; color:var(--c-ink-4); font-size:11px; line-height:1; padding:3px 5px; }
 .se-iconbtn:hover { background:var(--c-surface); color:var(--c-ink); }
-.se-log { max-height:320px; overflow-y:auto; padding-right:4px; }
+/* 320px was sized for the old terse answers (a few sentences, ~450 tokens). The
+   conversation lane now answers at whatever length the question deserves, so the
+   box gets real room — bounded by the viewport so it still can't push the
+   composer off screen on a short window. */
+.se-log { max-height:min(60vh, 640px); overflow-y:auto; padding-right:4px; }
 /* Turns are separated by a rule, not by alignment — nothing flips from side to
    side, so a long conversation reads straight down like a page. */
 .se-turn { padding:9px 0; border-top:1px solid var(--c-border); }
@@ -494,6 +525,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .se-dots span:nth-child(2) { animation-delay:.2s; }
 .se-dots span:nth-child(3) { animation-delay:.4s; }
 @keyframes seBlink { 0%, 80%, 100% { opacity:.25; } 40% { opacity:1; } }
+/* Caret on the end of an answer still being written. Same reduced-motion kill
+   switch as the dots above. */
+.se-cursor { display:inline-block; margin-left:1px; color:var(--c-ink-4); animation:seBlink 1s var(--ease) infinite; }
 /* The composer is a line, not a box: one rule underneath that darkens on focus. */
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
 .se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:inherit; font-size:12.5px; line-height:1.5; color:var(--c-ink); resize:none; }
@@ -7201,29 +7235,72 @@ function usageBarHtml(label, bucket, hint) {
     ${resetIn ? `<span class="usage-reset">· ${resetIn}</span>` : ''}
   </div>`;
 }
+// A dollars-against-a-ceiling bar for the one paid lane (gpt-4o, Idea Studio).
+// Deliberately NOT usageBarHtml with a faked utilizationPct: the question here is
+// "how much money have I spent", so the label is money and the tooltip says where
+// the figure came from — a spend figure that might be stale must admit it.
+function spendBarHtml(label, cap, hint) {
+  if (!cap || typeof cap.spentUsd !== 'number') return '';
+  const pct = Math.max(0, Math.min(100, Math.round(cap.pct || 0)));
+  const tone = pct >= 90 || cap.blocked ? 'hot' : (pct >= 70 ? 'warn' : '');
+  const src = cap.source ? ` Figure from ${cap.source}.` : '';
+  const stale = cap.stale ? ' This reading may be behind — treat it as a floor, not a total.' : '';
+  const tip = `${hint}${src}${stale}`.replace(/"/g, '&quot;');
+  return `<div class="usage-item usage-spend" title="${tip}">
+    <span class="ui-label">${label}</span>
+    <span class="usage-bar"><span class="usage-bar-fill ${tone}" style="width:${pct}%;"></span></span>
+    <span class="usage-money ${tone}">$${cap.spentUsd.toFixed(2)} / $${cap.capUsd.toFixed(2)}</span>
+    ${cap.blocked ? '<span class="usage-pct hot">at cap</span>' : ''}
+    ${cap.stale ? '<span class="usage-stale">·&nbsp;stale</span>' : ''}
+  </div>`;
+}
+
 async function loadUsage() {
   const host = document.getElementById('usageStripHost');
   if (!host) return;
   let u;
   try { u = await api('/api/agent/usage'); } catch (e) { host.innerHTML = ''; return; }
   const bars = [
-    usageBarHtml('Claude 5h', u.session, 'The rolling 5-hour window — the limit that bites first during a working session.'),
-    usageBarHtml('week', u.week, 'The weekly limit across all models.'),
+    usageBarHtml('Claude 5h', u.session, 'The rolling 5-hour window — the limit that bites first during a working session. Main account, the one the Dispatch Queue builds on.'),
+    usageBarHtml('week', u.week, 'The weekly limit across all models, main account.'),
     u.weekScoped ? usageBarHtml((u.weekScoped.label || 'model').toLowerCase(), u.weekScoped, 'The weekly limit for the strongest model, which runs out sooner than the overall one.') : '',
   ].filter(Boolean).join('');
+
+  // The folded panel: the second Claude account (the one the app's own AI features
+  // run on, reported by the local runner since only the Mac holds that token) and
+  // the paid gpt-4o lane. Built here so an absent reading simply omits its bar
+  // rather than showing an empty one.
+  const sideBars = u.side ? [
+    usageBarHtml('5h', u.side.session, 'The second Claude account\'s rolling 5-hour window. This is the account the app\'s own AI features run on, kept separate so brainstorming never eats the build quota.'),
+    usageBarHtml('week', u.side.week, 'The second Claude account\'s weekly limit.'),
+  ].filter(Boolean).join('') : '';
+  const openaiBar = spendBarHtml('gpt-4o', u.openai, 'Real money spent on gpt-4o for Idea Studio conversations this month, against your monthly ceiling. Past the ceiling, conversations fall back to the free lane and say so.');
+
+  let more = '';
+  if (sideBars || openaiBar) {
+    const sideBlock = sideBars
+      ? `<span class="usage-more-head">Second Claude account</span>${sideBars}`
+      : (u.openai ? '<span class="usage-more-note">Second Claude account: no reading — the local runner reports it, so start it (npm run runner) to see these.</span>' : '');
+    const paidBlock = openaiBar
+      ? `<span class="usage-more-head">Paid lane</span>${openaiBar}`
+      : '<span class="usage-more-note">Paid gpt-4o lane: off. Idea Studio runs on the free/subscription lane.</span>';
+    more = `<details class="usage-more"><summary>accounts</summary>
+      <div class="usage-more-panel">${sideBlock}${paidBlock}</div>
+    </details>`;
+  }
   // No reading available: say so plainly rather than showing empty bars. This is
   // normal when no local runner is attached (Claude runs on the Mac, so the runner
   // is what reports the account's real numbers — see noteRunnerUsage server-side).
   if (!bars) {
     const today = fmtTokens(u.today && u.today.totalTokens);
-    host.innerHTML = `<span class="usage-none" title="Attach the local runner (npm run runner) and the 5h + weekly limits appear here.">Claude limits unavailable${today !== '0' ? ` · ${today} tokens today` : ''}</span>`;
+    host.innerHTML = `<div class="usage-strip"><span class="usage-none" title="Attach the local runner (npm run runner) and the 5h + weekly limits appear here.">Claude limits unavailable${today !== '0' ? ` · ${today} tokens today` : ''}</span>${more}</div>`;
     return;
   }
   const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
   const alert = u.schedulerLimitResetAt
     ? 'Limit reached — the queue is paused and resumes automatically at reset.'
     : (hot.length ? 'Claude is close to a limit — the queue will hand new work to the free models.' : '');
-  host.innerHTML = `<div class="usage-strip">${bars}${alert ? `<span class="usage-alert">${alert}</span>` : ''}</div>`;
+  host.innerHTML = `<div class="usage-strip">${bars}${more}${alert ? `<span class="usage-alert">${alert}</span>` : ''}</div>`;
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
@@ -10582,6 +10659,7 @@ document.addEventListener('keydown', (e) => {
       hint: null,                    // travels with the request for subjects the DB cannot describe
       loaded: false, loading: false,  // `loaded` gates the refetch, so a repaint costs nothing
       open: false, busy: false, draft: '', err: '', note: '',
+      stream: '',                     // the answer as it arrives, before it becomes a msgs entry
     };
     return cache[key];
   }
@@ -10656,12 +10734,19 @@ document.addEventListener('keydown', (e) => {
     e.msgs.push({ role: 'user', kind: 'chat', text: text });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
+    e.stream = '';
     return fetch(API_BASE + '/api/convos/' + e.convoId + '/message', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + TOKEN,
+        // Asks for the chunked NDJSON shape. The server still answers plain JSON
+        // to anything that doesn't, so an old cached copy of this file keeps working.
+        'Accept': 'application/x-ndjson',
+      },
       body: JSON.stringify({ text: text }),
     })
-      .then(function(r){ return r.json().catch(function(){ return {}; }); })
+      .then(function(r){ return readTurn(r, e, repaint); })
       .then(function(d){
         if(d.report && window.refreshWorldPanels) window.refreshWorldPanels(d.report);
         if(d.error && !d.ok){
@@ -10678,17 +10763,83 @@ document.addEventListener('keydown', (e) => {
         } else if(d.text){
           e.msgs.push({ role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text });
         }
+        // The answer is now a real message, so the in-flight buffer must go or the
+        // same text paints twice.
+        e.stream = '';
         if(d.via) e.via = d.via;
+        // Where the answer actually came from, when that is not where it was meant
+        // to come from — budget used up, paid lane off, gpt-4o unreachable. Shown
+        // rather than swallowed: a quiet downgrade mid-brainstorm is the thing
+        // this notice exists to prevent.
+        e.note = d.notice || '';
         if(repaint) repaint();
       })
       .catch(function(){
         // A good answer can take well over a minute, and the connection in front
         // of the server is cut long before that — so a failed POST says nothing
         // about whether the turn failed. Watch the conversation itself instead.
+        // Partial streamed text is dropped here on purpose: the poll below returns
+        // the whole saved message, and keeping both would duplicate it.
+        e.stream = '';
         return awaitTurn(e, sentAt, repaint);
       })
       .then(function(){ e.busy = false; if(repaint) repaint(); });
     return true;
+  }
+
+  // Read the response body. Two shapes are accepted from one call: NDJSON (one
+  // JSON object per line, tokens arriving as they are produced) and a single JSON
+  // object, which is what the server still sends for slash commands and what an
+  // older server would send for everything. Resolves to the same final object
+  // either way, so the caller has one code path.
+  //
+  // Repaints are throttled to one animation frame: a token can arrive every few
+  // milliseconds and fillEmbed rebuilds innerHTML, so painting per token would
+  // spend the whole frame budget redrawing.
+  function readTurn(r, e, repaint){
+    var ctype = (r.headers && r.headers.get && r.headers.get('content-type')) || '';
+    if(ctype.indexOf('x-ndjson') === -1 || !r.body || !r.body.getReader){
+      return r.json().catch(function(){ return {}; });
+    }
+    var reader = r.body.getReader();
+    var decoder = new TextDecoder();
+    var buf = '';
+    var out = {};
+    var painting = false;
+    function paintSoon(){
+      if(painting || !repaint) return;
+      painting = true;
+      requestAnimationFrame(function(){ painting = false; repaint(); });
+    }
+    function handle(line){
+      var obj;
+      try { obj = JSON.parse(line); } catch(err) { return; }
+      if(obj.type === 'token'){
+        e.stream += obj.text;
+        paintSoon();
+      } else if(obj.type === 'done'){
+        out = obj;
+      } else if(obj.type === 'error'){
+        out = { error: obj.error, message: obj.message };
+      }
+    }
+    function pump(){
+      return reader.read().then(function(res){
+        if(res.done){
+          if(buf.trim()) handle(buf.trim());
+          return out;
+        }
+        buf += decoder.decode(res.value, { stream: true });
+        var lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for(var i = 0; i < lines.length; i++){
+          var t = lines[i].trim();
+          if(t) handle(t);
+        }
+        return pump();
+      });
+    }
+    return pump();
   }
 
   // Poll the conversation for the assistant turn the cut request was producing.
@@ -11034,8 +11185,14 @@ document.addEventListener('keydown', (e) => {
            +  '</div>';
     });
     if(e.busy){
+      // Once tokens are arriving, they ARE the waiting indicator — the answer
+      // writing itself is better than three dots. The dots stay for the gap
+      // before the first token, and for lanes that don't stream at all.
       html += '<div class="se-turn"><div class="se-who">Studio</div>'
-           +  '<div class="se-body se-dots"><span>·</span><span>·</span><span>·</span></div></div>';
+           +  (e.stream
+                ? '<div class="se-body">' + fmtBody(e.stream) + '<span class="se-cursor">▍</span></div>'
+                : '<div class="se-body se-dots"><span>·</span><span>·</span><span>·</span></div>')
+           +  '</div>';
     }
     if(e.edits && e.edits.length){
       var byField = {};
@@ -11045,7 +11202,7 @@ document.addEventListener('keydown', (e) => {
       }).join('');
       html += '<details class="se-before"><summary>What this said before a conversation rewrote it</summary>' + rows + '</details>';
     }
-    if(!e.msgs.length && !e.promptId && !e.busy){
+    if(!e.msgs.length && !e.promptId && !e.busy && !e.stream){
       html += '<div class="se-note">Nothing said yet. Push this, argue with it, or ask to be interrogated — nothing is queued or run from here.</div>';
     }
     // Something to say that is not part of the conversation — "still opening", say.

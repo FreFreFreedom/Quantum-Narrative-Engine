@@ -12,6 +12,26 @@
 // environment (see listModels({ availableOnly: true })) — a missing key is a
 // silent skip, never a runtime error, and it is what makes accidental spend on
 // a provider we never intended to use structurally impossible.
+//
+// ─── The one metered exception ───────────────────────────────────────────────
+// Everything above assumed every entry here is free. One is not: `openai`
+// (gpt-4o) bills per token, added deliberately for Idea Studio brainstorming
+// because Antoine wants that specific conversational feel.
+//
+// A key-present check is NOT enough of a guard for a paid entry. router.js's
+// pickChain() selects from this catalogue automatically, by codingRank, as the
+// fallback tail for EVERY feature — so a plain paid row would quietly become a
+// paid fallback for build/judge/warmup, and the first sign of it would be an
+// invoice rather than an error.
+//
+// Hence `metered: true` and the includeMetered flags below:
+//   - listModels()    excludes metered by DEFAULT  → pickChain() cannot reach it
+//   - listProviders() includes metered by default  → module/capability lookup and
+//                                                    the settings UI still see it
+// The consequence is that a metered provider is reachable ONLY when a feature's
+// ai_settings.defaults_json row names it explicitly. That is the load-bearing
+// safety property of the paid lane — do not "simplify" it away. billingGuard.js
+// holds the second half (an explicit opt-in plus a monthly ceiling).
 
 export const ANTHROPIC_RANKS = { opus: 95, sonnet: 85, haiku: 55 };
 
@@ -97,6 +117,21 @@ export const PROVIDERS = [
       { id: 'qwen/qwen2.5-coder-32b-instruct', codingRank: 63, contextTokens: 32000 },
     ],
   },
+  // PAID. Metered, per-token. See "The one metered exception" above before
+  // touching this entry. priceIn/priceOut are USD per 1M tokens and are what
+  // services/openaiSpend.js#costOf() bills against — keep them current with
+  // https://developers.openai.com/api/docs/pricing or the spend bar lies.
+  {
+    id: 'openai',
+    label: 'OpenAI (PAID — metered, per token)',
+    baseUrl: 'https://api.openai.com/v1',
+    apiKeyEnv: 'OPENAI_API_KEY',
+    metered: true,
+    limits: { rpm: 500, rpd: 10000 },
+    models: [
+      { id: 'gpt-4o', codingRank: 80, contextTokens: 128000, priceIn: 2.50, priceCached: 1.25, priceOut: 10.00 },
+    ],
+  },
   {
     id: 'zhipu',
     label: 'Zhipu (GLM, free tier)',
@@ -110,9 +145,21 @@ export const PROVIDERS = [
 ];
 
 // List providers, optionally filtered to those whose API key is actually set.
-export function listProviders({ availableOnly = false } = {}) {
-  if (!availableOnly) return PROVIDERS;
-  return PROVIDERS.filter((p) => !!process.env[p.apiKeyEnv]);
+// includeMetered defaults to TRUE here on purpose: getProviderModule() and
+// getProviderCapability() in ai/providers.js resolve a provider id through this
+// function, so hiding the paid entry would make it unroutable even when it is
+// explicitly configured. Automatic *selection* is blocked in listModels(), not
+// here — that is the narrower cut, and the correct one.
+export function listProviders({ availableOnly = false, includeMetered = true } = {}) {
+  let out = includeMetered ? PROVIDERS : PROVIDERS.filter((p) => !p.metered);
+  if (availableOnly) out = out.filter((p) => !!process.env[p.apiKeyEnv]);
+  return out;
+}
+
+// Is this provider one that bills real money per token?
+export function isMeteredProvider(providerId) {
+  const p = PROVIDERS.find((x) => x.id === providerId);
+  return !!(p && p.metered);
 }
 
 // Flatten to a single model list, each tagged with its provider, sorted by
@@ -120,13 +167,16 @@ export function listProviders({ availableOnly = false } = {}) {
 // below a given intelligence floor; `availableOnly` (default true — this is
 // the safe default since it's what prevents spend) filters to providers with
 // a key present.
-export function listModels({ minRank = 0, availableOnly = true } = {}) {
-  const providers = listProviders({ availableOnly });
+// includeMetered defaults to FALSE: this is the function router.js#pickChain()
+// uses to build the automatic fallback chain, so a paid model must never appear
+// unless a caller asks for it by name.
+export function listModels({ minRank = 0, availableOnly = true, includeMetered = false } = {}) {
+  const providers = listProviders({ availableOnly, includeMetered });
   const out = [];
   for (const p of providers) {
     for (const m of p.models) {
       if (m.codingRank < minRank) continue;
-      out.push({ providerId: p.id, providerLabel: p.label, baseUrl: p.baseUrl, apiKeyEnv: p.apiKeyEnv, limits: p.limits, ...m });
+      out.push({ providerId: p.id, providerLabel: p.label, baseUrl: p.baseUrl, apiKeyEnv: p.apiKeyEnv, limits: p.limits, metered: !!p.metered, ...m });
     }
   }
   out.sort((a, b) => b.codingRank - a.codingRank);
