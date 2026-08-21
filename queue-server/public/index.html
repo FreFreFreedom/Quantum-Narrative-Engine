@@ -10033,7 +10033,7 @@ function renderQueuePanel() {
       running.map(p => `<div class="qp-row"><span class="qp-num">▶</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
       'Nothing running.')}
     ${qpSectionHtml('', 'In queue', queued.length,
-      queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
+      queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span>${i > 0 ? iconBtn('top', 'Move it to the front of the queue and start it sooner', 'first', p.id) : ''}</div>`).join(''),
       'Queue is empty — add a task above.')}
   `;
 
@@ -10047,6 +10047,10 @@ function renderQueuePanel() {
       catch (e) { alert('Could not send: ' + e.message); }
     });
     qWireReplyBox(card, 'qp' + p.id, (text, placement) => qReply(p.id, text, placement));
+  });
+
+  body.querySelectorAll('.qp-row .cardbtn').forEach(b => {
+    b.onclick = () => qAction(b.getAttribute('data-act'), b.getAttribute('data-id'), b);
   });
 
   body.querySelectorAll('[data-qpmode]').forEach(b => {
