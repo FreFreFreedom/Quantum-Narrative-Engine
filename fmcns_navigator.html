@@ -649,6 +649,13 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .q-thread-msg { border-radius:8px; padding:8px 11px; margin-bottom:8px; font-size:11.5px; line-height:1.5; max-width:92%; }
 .q-thread-msg.user { background:var(--c-info-tint); margin-left:auto; }
 .q-thread-msg.agent { background:var(--c-surface); border:1px solid var(--c-border); }
+/* The studio speaking inside the task thread. Distinct from the agent, because in a
+   merged log "who said this" is the one thing that must never be ambiguous. */
+.q-thread-msg.studio { background:var(--c-surface-2); border:1px dashed var(--c-border-2); }
+.q-thread-msg.studio .q-thread-role { color:var(--c-brand); }
+/* The studio's moves, sitting under the task's own reply buttons. */
+.q-studio-cmds { display:flex; flex-wrap:wrap; align-items:center; gap:0 6px; margin-top:8px; }
+.q-studio-lead { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); margin-right:2px; }
 /* The chat has to look alive while Claude thinks: three dots, then the answer
    reveals itself. Before this, pressing Answer changed nothing on screen until
    the whole reply landed — which is why it got clicked four times in a row. */
@@ -4741,9 +4748,93 @@ function qRenderThread(promptId, messages) {
     list = list.slice(0, -1);
     extra = qThreadMsgHtml('agent', qThreadBodyHtml(pend.shown) + '<span class="q-thread-caret"></span>');
   }
-  const body = list.map(m => qThreadMsgHtml(m.role, qThreadBodyHtml(m.text))).join('') + extra;
+  const merged = qMergeStudio(promptId, list);
+  const body = merged.map(m => qThreadMsgHtml(m.role, qThreadBodyHtml(m.text))).join('') + extra;
   host.innerHTML = body || '<div class="empty">No exchanges yet.</div>';
   if (pend) host.scrollTop = host.scrollHeight;
+}
+
+// The studio's moves on a task card. They write into the same thread the agent
+// uses, and they are drawn under the reply box rather than beside a second one —
+// the card keeps one place to type and one place to read.
+//
+// The buttons deliberately do not repeat what the stage strip at the top already
+// says to do. That strip is the card's single "press this"; these are the things
+// you might want that it would never suggest.
+function qWireStudioCmds(p) {
+  const host = document.getElementById('qStudioCmds');
+  if (!host || !window.studioLend) return;
+  const e = window.studioLend.entry('task', p.id);
+  const repaint = () => {
+    if (!document.getElementById('qStudioCmds')) return;
+    qRenderThread(p.id, (qSelected && qSelected.id === p.id && qSelected.messages) || []);
+    qWireStudioCmds(p);
+  };
+  // Loaded once per card opening, not per render — a task thread already polls.
+  if (!e.loaded && !e.loading && !e.err) window.studioLend.load(e, repaint);
+
+  host.innerHTML = '';
+  const lead = document.createElement('span');
+  lead.className = 'q-studio-lead';
+  lead.textContent = e.loading && !e.loaded ? 'Studio — opening…' : 'Studio';
+  host.appendChild(lead);
+  if (!e.convoId) return;
+
+  const talk = document.createElement('button');
+  talk.type = 'button';
+  talk.className = 'se-cmd';
+  talk.textContent = 'Talk it over';
+  talk.title = 'Sends what you have typed to the studio instead of the agent — thinking out loud, not an instruction to the task.';
+  talk.disabled = !!e.busy;
+  talk.onclick = (ev) => {
+    ev.stopPropagation();
+    // Looked up now, not when this button was wired: the card rebuilds itself on
+    // every poll, and a textarea captured earlier is a detached element holding
+    // whatever was in it several seconds ago.
+    const box = document.getElementById('qReplyText');
+    const text = box && box.value.trim();
+    if (!text) { if (box) box.focus(); return; }
+    if (window.studioLend.send(e, text, repaint, () => qLoad())) { box.value = ''; box.style.height = 'auto'; }
+    repaint();
+  };
+  host.appendChild(talk);
+
+  const cta = window.studioLend.cta(e);
+  window.studioLend.commands(e).forEach((row) => {
+    { const d = document.createElement('span'); d.className = 'se-dot'; d.textContent = '·'; host.appendChild(d); }
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'se-cmd';
+    const isCta = (cta === 'plan' && row[0] === '/plan') || (cta === 'handoff' && row[0] === '/handoff');
+    b.textContent = isCta ? '→ ' + row[1] : row[1];
+    b.title = row[2] || row[1];
+    if (isCta) b.style.color = 'var(--c-ink)';
+    b.disabled = !!e.busy;
+    b.onclick = (ev) => {
+      ev.stopPropagation();
+      window.studioLend.send(e, row[0], repaint, () => qLoad());
+      repaint();
+    };
+    host.appendChild(b);
+  });
+}
+
+// Fold the studio's turns into the agent thread, in the order they were said. The
+// agent calls itself "agent" and the studio calls itself "assistant"; here they are
+// told apart by name, because "who am I talking to" is the one thing a merged log
+// must never leave ambiguous. Anything without a timestamp is something we only just
+// pushed on optimistically, so it belongs at the end.
+function qMergeStudio(promptId, agentMsgs) {
+  const e = window.studioLend && window.studioLend.entry('task', promptId);
+  if (!e || !e.msgs.length) return agentMsgs;
+  const stamp = (m, i) => (m.created_at ? Date.parse(m.created_at) || 0 : Number.MAX_SAFE_INTEGER - 1000 + i);
+  const rows = [];
+  agentMsgs.forEach((m, i) => rows.push({ role: m.role, text: m.text, at: stamp(m, i) }));
+  e.msgs.forEach((m, i) => rows.push({
+    role: m.role === 'user' ? 'user' : 'studio', text: m.text, at: stamp(m, i),
+  }));
+  rows.sort((a, b) => a.at - b.at);
+  return rows;
 }
 
 // Buttons off while a turn is in flight — the visible half of "you can't send twice".
@@ -5876,6 +5967,7 @@ function qRenderDetail(p) {
     ${p.status === 'running'
       ? qReplyBoxHtml('qReply', { chatOnly: true, placeholder: 'Ask or answer — this also passes your message to the running task. Enter sends…' })
       : qReplyBoxHtml('qReply')}
+    <div class="q-studio-cmds" id="qStudioCmds"></div>
     ${['queued','running'].includes(p.status) ? `
       <div class="q-row" style="margin-top:10px;">
         <label class="ctrlbtn" style="cursor:pointer;" title="When this task finishes, stop the whole queue instead of moving on to the next one.">
@@ -5976,6 +6068,7 @@ function qRenderDetail(p) {
   });
   if (!p.summary) qSummarize(p);
   qWireInspire(p);
+  qWireStudioCmds(p);
 }
 
 // Bullet rendering for a stored task summary (one free model call, cached on the
@@ -10420,6 +10513,20 @@ document.addEventListener('keydown', (e) => {
   // which now bring the card up with the conversation already showing.
   window.studioEmbedOpen = function(type, subjectId){ entryOf(type, subjectId).open = true; };
   window.studioIndexLoad = indexLoad;
+
+  // ── Lending the studio to a card that already has a box ──────────────────────
+  // A task card is the one card that arrived with its own conversation: the thread
+  // where you answer the agent. Two boxes there would be two boxes in one card, so
+  // instead the studio lends it the parts — the turns, the commands, the sending —
+  // and the card draws them in the box it already has.
+  window.studioLend = {
+    entry: function(type, subjectId){ return entryOf(type, subjectId); },
+    load: function(e, repaint){ return fetchConvo(e, repaint); },
+    send: function(e, text, repaint, onDone){ return sendTurn(e, text, repaint, onDone); },
+    commands: commandRows,
+    cta: ctaOf,
+    reset: resetConvo,
+  };
   window.studioHasConvo = function(type, subjectId){ return !!indexRow(type, subjectId); };
 
   function paintEmbed(host, e, opts){
