@@ -1433,11 +1433,11 @@ button:active { transform: translateY(1px) scale(.99); }
       <div id="usageStripHost" data-src="Side rail → Claude usage (5h + weekly) | fmcns_navigator.html: loadUsage(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
       <span id="archQueueBanner" class="core-banner" data-src="Side rail → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
       <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
-      <button class="rail-item rail-btn" id="queuePauseBtn" title="Pause / resume the task queue">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
+      <button class="rail-item rail-btn" id="queuePauseBtn" title="Pause the task queue">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use id="queuePauseIc" href="#ic-pause"/></svg>
         <span class="rail-label">Pause queue</span>
       </button>
-      <span class="rail-item rail-row core-serverpick" title="Which backend this page talks to: the local server on this Mac, or the deployed site. Choosing one saves it and reloads.">
+      <span class="rail-item rail-row core-serverpick" title="Which server this page talks to. Switching reloads.">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-refresh"/></svg>
         <span class="rail-label">
           <select id="serverToggle">
@@ -1690,7 +1690,7 @@ button:active { transform: translateY(1px) scale(.99); }
                 </label>
               </div>
               <div class="q-row">
-                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Skips the automatic world-look and plan-draft passes that normally run before a task starts — use for a genuinely small/simple task you want to run about as fast as pasting it into a plain terminal session.">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Starts at once — no world-look, no plan draft. For small tasks.">
                   <input type="checkbox" id="qRunRaw">
                   Run raw — skip inspiration &amp; planning (fastest)
                 </label>
@@ -4233,7 +4233,18 @@ async function qLoad() {
   const badge = document.getElementById('queuePauseBadge');
   badge.style.display = qPaused ? '' : 'none';
   badge.textContent = 'Queue paused' + (data.queue_paused_reason ? ` — ${data.queue_paused_reason}` : '');
-  document.getElementById('queuePauseBtn').textContent = qPaused ? 'Resume queue' : 'Pause queue';
+  // Write into the label, never over the button: textContent here used to delete
+  // the icon and the .rail-label wrapper with it, which is why the words spilled
+  // across a collapsed rail instead of fading out with everything else.
+  const pauseBtn = document.getElementById('queuePauseBtn');
+  if (pauseBtn) {
+    const lbl = pauseBtn.querySelector('.rail-label');
+    if (lbl) lbl.textContent = qPaused ? 'Resume queue' : 'Pause queue';
+    pauseBtn.title = qPaused ? 'Resume the task queue' : 'Pause the task queue';
+    pauseBtn.classList.toggle('warm', qPaused);
+    const ic = document.getElementById('queuePauseIc');
+    if (ic) ic.setAttribute('href', qPaused ? '#ic-play' : '#ic-pause');
+  }
   // "Work still waiting" is the useful count — finished/cancelled items no longer move
   // the number, so it stops meaning something once the list never shrinks.
   const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
@@ -5112,7 +5123,7 @@ function qWireStudioCmds(p) {
   talk.type = 'button';
   talk.className = 'se-cmd';
   talk.textContent = 'Talk it over';
-  talk.title = 'Sends what you have typed to the studio instead of the agent — thinking out loud, not an instruction to the task.';
+  talk.title = 'Sends this to the studio instead of the agent.';
   talk.disabled = !!e.busy;
   talk.onclick = (ev) => {
     ev.stopPropagation();
@@ -5263,7 +5274,7 @@ function qMemoryBadge(p) {
   const tier = p.preset === 'auto' ? (p.resolved_preset || 'standard') : p.preset;
   const ctxLimit = Q_CONTEXT_LIMITS[tier] || 6;
   const amber = ctxTurns >= ctxLimit - 1;
-  return `<span class="q-badge" style="background:${amber ? '#8a6a1e' : '#5a6b8a'};" title="Continued ${ctxTurns}/${ctxLimit} times on the same session before it auto-refreshes to save credit (limit depends on the model tier).">🔁 ${ctxTurns}/${ctxLimit}</span>`;
+  return `<span class="q-badge" style="background:${amber ? '#8a6a1e' : '#5a6b8a'};" title="Continued ${ctxTurns} of ${ctxLimit} times before the session refreshes.">🔁 ${ctxTurns}/${ctxLimit}</span>`;
 }
 
 // Fetch the ranked next steps. Free on the server, so this is safe to call on
@@ -5509,8 +5520,8 @@ const SG_CHIP_SHORT = { self: 'Core' };
 // A connector is not one of the six parts — it is something the app plugs into to
 // bring data or a service in. One word for it everywhere it shows: the chip on a row,
 // the filter chip, and the generate button all say "Connector".
-const SG_CHIP_CONNECTOR = '<span class="sg-terr-chip connector" title="A connector — something the app plugs into to bring in new data or a new service. Not one of the six parts of the app itself.">Connector</span>';
-const SG_CHIP_NONE = '<span class="sg-terr-chip none" title="Claude did not say which part of the app this touches — or this suggestion predates the question being asked.">not placed</span>';
+const SG_CHIP_CONNECTOR = '<span class="sg-terr-chip connector" title="An outside data source or service, not one of the six parts of the app.">Connector</span>';
+const SG_CHIP_NONE = '<span class="sg-terr-chip none" title="No part of the app recorded for this one.">not placed</span>';
 function sgTerritoryChip(tid) {
   const t = TERRITORIES.find(x => x.id === tid);
   if (!t) return SG_CHIP_NONE;
@@ -5737,8 +5748,8 @@ function renderFlow() {
         <div class="flow-genrow">
           <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
           <button class="ctrlbtn" id="flowGenBtn"${gen.disabled ? ' disabled' : ''} title="${qEsc(gen.disabled ? gen.why : (sgFilterTerr ? gen.note : 'Ask Claude for more work, spread across the whole app.'))}">${qEsc(gen.label)}</button>
-          <button class="ctrlbtn" id="flowRewriteBtn" title="Redo the world-look ideas attached to tasks, suggestions, pieces and seeds that were written before the ideas were held to their subject">↻ Redo the old world ideas</button>
-          <button class="ctrlbtn" id="flowSortOldBtn" title="Suggestions made before the app started recording which part they touch sit under &quot;not placed yet&quot;. This reads them once and files them into their territories.">⇅ Sort the old ones</button>
+          <button class="ctrlbtn" id="flowRewriteBtn" title="Redo world ideas written before they were held to their subject.">↻ Redo the old world ideas</button>
+          <button class="ctrlbtn" id="flowSortOldBtn" title="Files the unplaced older suggestions into their territories.">⇅ Sort the old ones</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
         </div>` + chipRow + emptied + sgRowsHtml(sg));
     }
@@ -9158,13 +9169,14 @@ function renderArchQueueBanner() {
   parts.push(`auto-ship ${s.autoShip ? 'on' : 'off'}`);
   if (s.todayCostUsd != null) parts.push(`today ~$${s.todayCostUsd.toFixed(2)}`);
   if (s.sideCallsToday != null && s.sideBudget != null) parts.push(`helpers ${s.sideCallsToday}/${s.sideBudget} today`);
+  // Figures, not explanations. This used to carry three sentences about how the
+  // cost cap, the helper budget and auto-ship work — a hover you cannot skim,
+  // hanging off a line you only glance at.
   const detail = [
-    `Tasks done: ${s.completedCount}`,
     s.pausedReason ? `Paused: ${s.pausedReason}` : '',
-    s.memFreeMb != null ? `Free memory: ${s.memFreeMb} MB` : '',
-    s.costCapUsd != null ? `Per-task cost cap: $${s.costCapUsd.toFixed(2)} — a task stops itself the moment it crosses its cap, so one task can never drain your credits.` : '',
-    s.sideBudget != null ? `Daily helper budget: ${s.sideCallsToday ?? 0} of ${s.sideBudget} short AI calls used today. Past it, optional passes skip (new world-looks, deep plan drafts) — the queue itself never stops.` : '',
-    'Auto-ship: a task that passes every check publishes itself, and you can put it back from the task afterwards.',
+    `${s.completedCount} done`,
+    s.costCapUsd != null ? `cap $${s.costCapUsd.toFixed(2)}/task` : '',
+    s.memFreeMb != null ? `${s.memFreeMb} MB free` : '',
   ].filter(Boolean).join(' · ');
   el.innerHTML = `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}`;
   el.title = detail;
