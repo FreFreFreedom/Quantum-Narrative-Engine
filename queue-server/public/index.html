@@ -784,6 +784,13 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
          color:var(--c-ink-4); cursor:pointer; font-family:inherit; font-size:var(--fs-md); line-height:1; }
 .uicon:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .ubtn:focus-visible, .uicon:focus-visible { outline:2px solid var(--c-accent); outline-offset:1px; }
+/* The secondary symbols: no room taken until you point at the card, then they
+   slide out of its right edge. max-width rather than display, so the title
+   shortens smoothly and nothing jumps vertically. */
+.uc-more { display:flex; align-items:center; gap:2px; max-width:0; overflow:hidden; opacity:0;
+           transition:max-width var(--t-med) var(--ease), opacity var(--t-fast) var(--ease); }
+.uc:hover .uc-more, .uc:focus-within .uc-more, .uc.is-sel .uc-more { max-width:260px; opacity:1; }
+.uc-more .cardbtn { width:24px; height:24px; }
 
 /* The technical detail, collapsed. Closed, a card is quiet. */
 .uc-details { margin-top:var(--sp-1); }
@@ -793,22 +800,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uc-details > summary:hover, .uc-details[open] > summary { color:var(--c-ink-3); }
 .uc-details .q-item-meta, .uc-details .q-detail-row { margin-top:2px; margin-bottom:0; }
 
-/* ---------- The "⋯" menu — one instance for the whole page ----------
-   Word labels, not glyphs; destructive items last and in red. The items carry the
-   same data-act/data-id pairs the old symbol buttons did, so the action code
-   behind them is untouched. */
-/* Above the side rail (60) and the queue slide-over (9993), below the studio
-   overlay (10000) — a menu must never open behind the thing it belongs to. */
-.umenu { position:fixed; z-index:9994; min-width:170px; padding:var(--sp-1);
-         border:1px solid var(--c-border-2); border-radius:var(--r-md);
-         background:var(--c-surface); box-shadow:var(--sh-md); }
-.umenu-item { display:block; width:100%; text-align:left; padding:var(--sp-1) var(--sp-2);
-              border:none; border-radius:var(--r-sm); background:none; color:var(--c-ink-2);
-              font-family:inherit; font-size:var(--fs-sm); cursor:pointer; white-space:nowrap; }
-.umenu-item:hover { background:var(--c-surface-2); color:var(--c-ink); }
-.umenu-item.is-danger { color:var(--c-danger); }
-.umenu-item.is-danger:hover { background:var(--c-danger-tint); color:var(--c-danger); }
-.umenu-item.armed { background:var(--c-danger); color:#fff; }
 
 /* (Deleted here: 15 rules for the old review card — .q-review*, .q-check-ok/bad,
    .q-mergebtn, .q-revertbtn. Nothing has emitted class="q-review" since the
@@ -861,7 +852,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .stage-where { font-weight:600; color:var(--c-ink-2); }
 .stage-next { color:var(--c-ink-3); min-width:0; flex:1 1 140px; }
 .stage-next b { font-weight:600; color:var(--c-ink-4); margin-right:3px; }
-.stage-next.stage-none { font-style:italic; opacity:.75; }
 .card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
 .arch-suggestion:hover .card-actions, .card-actions:focus-within { opacity:1; }
 .cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
@@ -4869,13 +4859,27 @@ function ubtnStage(btn, kind = 'is-primary', id = '') {
   return btn.act ? ubtnHtml(btn.label, btn.act, id, kind, btn.title)
                  : ubtnRaw(btn.label, btn.attrs, kind, btn.title);
 }
-// The "⋯" trigger. `items` are [{label, act, id, danger}] — the SAME data-act /
-// data-id pairs the old symbol buttons carried, so qCardDispatch() fires unchanged
-// and no action code moved. Destructive items go last and are marked danger.
+// The secondary actions. They were a "⋯" that opened a word menu; Antoine wanted
+// them reachable without the extra click, so they are symbols that slide out of the
+// right edge of the card you are pointing at, and you press the one you want.
+// The word survives as the tooltip and the screen-reader label — the only place the
+// action is ever spelled out, so it is never allowed to be jargon.
+//
+// One table maps an action to its symbol, rather than an icon argument at each of
+// the eleven call sites: a new action inherits the fallback instead of breaking.
+const UC_MENU_ICON = {
+  pause: 'pause', first: 'top', up: 'up', down: 'down',
+  rerun: 'again', 'rerun-fresh': 'again-fresh', 'ship-undo': 'refresh',
+  'sg-discuss': 'chat', 'seed-plant': 'seed',
+  delete: 'trash', 'seed-delete': 'trash',
+};
 function cardMenuBtn(items) {
   const live = (items || []).filter(Boolean);
   if (!live.length) return '';
-  return `<button type="button" class="uicon" data-umenu="${qEscAttr(JSON.stringify(live))}" title="More things you can do" aria-label="More things you can do" aria-haspopup="menu">⋯</button>`;
+  // Destructive ones keep .danger: the delegated click handler arms them, so a
+  // symbol still asks twice before it deletes anything.
+  const btns = live.map(it => iconBtn(UC_MENU_ICON[it.act] || 'spark', it.label, it.act, it.id, it.danger ? 'danger' : '')).join('');
+  return `<span class="uc-more">${btns}</span>`;
 }
 // The head line's action cluster. Returns '' when a card has nothing to offer, so
 // no card grows an empty gap.
@@ -4884,57 +4888,6 @@ function cardActs(primary, menuItems) {
   return html ? `<span class="uc-acts">${html}</span>` : '';
 }
 
-// ---------- The "⋯" menu itself: one instance for the whole page ----------
-// Built on open from the trigger's own JSON payload and positioned from its
-// rectangle, so a list of 40 cards costs 40 attributes and not 40 hidden menus.
-let ucMenuEl = null;
-function ucMenuClose() { if (ucMenuEl) { ucMenuEl.remove(); ucMenuEl = null; } }
-function ucMenuOpen(trigger) {
-  let items = [];
-  try { items = JSON.parse(trigger.getAttribute('data-umenu') || '[]'); } catch (e) { items = []; }
-  ucMenuClose();
-  if (!items.length) return;
-  const el = document.createElement('div');
-  el.className = 'umenu';
-  el.id = 'ucMenu';
-  el.setAttribute('role', 'menu');
-  el.innerHTML = items.map(it =>
-    `<button type="button" class="umenu-item${it.danger ? ' is-danger' : ''}" role="menuitem" data-act="${qEscAttr(it.act)}" data-id="${qEscAttr(it.id)}" aria-label="${qEscAttr(it.label)}">${qEsc(it.label)}</button>`).join('');
-  document.body.appendChild(el);
-  ucMenuEl = el;
-  const r = trigger.getBoundingClientRect();
-  const w = el.offsetWidth, h = el.offsetHeight;
-  el.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
-  el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
-  el.querySelectorAll('.umenu-item').forEach(b => {
-    b.onclick = (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      const act = b.dataset.act, id = b.dataset.id;
-      const fire = () => { ucMenuClose(); qCardDispatch(act, id, null); };
-      // Delete still asks twice — the item arms to "Really delete?" on first click.
-      if (b.classList.contains('is-danger')) { cardBtnConfirm(b, fire); return; }
-      fire();
-    };
-  });
-}
-// Capture phase, so pressing "⋯" opens the menu without also toggling the card
-// open underneath it. Closes on an outside click, Escape, or any scroll.
-document.addEventListener('click', (ev) => {
-  const hit = ev.target.closest ? ev.target.closest('[data-umenu], .umenu') : null;
-  if (hit && hit.hasAttribute && hit.hasAttribute('data-umenu')) {
-    ev.preventDefault();
-    ev.stopPropagation();
-    const key = hit.getAttribute('data-umenu');
-    if (ucMenuEl && ucMenuEl.dataset.for === key) { ucMenuClose(); return; }
-    ucMenuOpen(hit);
-    if (ucMenuEl) ucMenuEl.dataset.for = key;
-    return;
-  }
-  if (!hit) ucMenuClose();
-}, true);
-document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') ucMenuClose(); });
-window.addEventListener('scroll', ucMenuClose, true);
 
 // ---------- One status pill ----------
 // A card shows ONE. This absorbs the six ways the app used to say where something
@@ -5045,7 +4998,7 @@ function stageStripHtml(st) {
   return `<div class="stage-strip${st.tone ? ' tone-' + st.tone : ''}">
     <span class="stage-dots" role="img" aria-label="${qEscAttr(where)}" title="${qEscAttr(where)}">${dots}</span>
     <span class="stage-where">${qEsc(st.label)}</span>
-    ${nextBody ? `<span class="stage-next"><b>${qEsc(st.nextLabel || 'Next')}</b> ${nextBody}</span>` : '<span class="stage-next stage-none">Nothing to do next</span>'}
+    ${nextBody ? `<span class="stage-next"><b>${qEsc(st.nextLabel || 'Next')}</b> ${nextBody}</span>` : ''}
   </div>`;
 }
 
