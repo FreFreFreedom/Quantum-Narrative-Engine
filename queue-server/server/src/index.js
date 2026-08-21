@@ -40,6 +40,7 @@ import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { bindProjectMapDb, buildProjectMap } from './services/projectMap.js';
+import { bindTagCommunitiesDb, buildTagCommunities } from './services/tagCommunities.js';
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
 import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
@@ -95,6 +96,7 @@ bindOpenAiSpendDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
+bindTagCommunitiesDb(db);
 
 // Free-first platform policy (plan self-aware-platform.md Part 1): one-time
 // migration of per-feature defaults away from the Claude subscription. Idempotent.
@@ -116,6 +118,13 @@ try {
 } catch (e) {
   console.error('Bootstrap data load failed:', e.message);
 }
+
+// Theme clusters: regroup the archetypal tags by how often they land on the same
+// entity, once, from the live entity_tags table. Deliberately AFTER the bootstrap
+// block above — that is what (re)fills entity_tags, and clustering before it would
+// read an empty table on the first boot after a deploy. Pure arithmetic, no model
+// calls, and it answers an empty index rather than throwing.
+buildTagCommunities();
 
 // Regenerate the shared-knowledge briefing (.agents/current-state.md) at boot
 // (plan Part 6). Best-effort — it needs a git repo; on Railway there is none.

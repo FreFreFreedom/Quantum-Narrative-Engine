@@ -2,6 +2,8 @@
 // (routes/ontology.js) and the chat assistant's tools (services/chat.js), so the two
 // never drift out of sync with each other.
 
+import { getTagCommunities } from './tagCommunities.js';
+
 export function hydrate(db, row) {
   if (!row) return null;
   const tags = db.prepare(`SELECT tag FROM entity_tags WHERE entity_id=?`).all(row.id).map((t) => t.tag);
@@ -63,4 +65,37 @@ export function listFacets(db) {
   `).all();
   const total = db.prepare(`SELECT COUNT(*) AS n FROM entities`).get().n;
   return { types, sources, axes, total };
+}
+
+// ─── Theme clusters (tag communities) ────────────────────────────────────────
+// The index itself is computed once at boot from entity_tags (services/tagCommunities.js).
+// These two read it; nothing here touches the frozen data-seed snapshot.
+
+export function listTagCommunities() { return getTagCommunities(); }
+
+// Everything the detail panel needs for one tag in one call: the community it belongs
+// to, its sibling tags, and the entities that carry any of them — heaviest sharers
+// first, so "what else lives here" is answered in reading order.
+export function tagCommunity(db, tag, limit = 200) {
+  const idx = getTagCommunities();
+  const id = idx.tagCommunity[tag];
+  if (!id) return null;
+  const community = idx.communities.find((c) => c.id === id);
+  if (!community) return null;
+  const placeholders = community.tags.map(() => '?').join(',');
+  const entities = db.prepare(`
+    SELECT e.id, e.name, e.type, COALESCE(e.source,'archive') AS source, COUNT(*) AS shared
+    FROM entity_tags t JOIN entities e ON e.id = t.entity_id
+    WHERE t.tag IN (${placeholders})
+    GROUP BY e.id, e.name, e.type, source
+    ORDER BY shared DESC, e.name ASC
+    LIMIT ?
+  `).all(...community.tags, limit);
+  return {
+    tag,
+    community,
+    siblings: community.tags.filter((t) => t !== tag),
+    entities,
+    entityCount: entities.length,
+  };
 }

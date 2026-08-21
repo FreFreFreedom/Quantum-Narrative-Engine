@@ -210,11 +210,34 @@ are explicitly later phases (see "Known gaps" below and the removed items list a
   any use of this by the chat assistant's retrieval or the navigator's rendering — the
   output today is a standalone file, read by nothing else yet.
 
+### Update (2026-08-21) — the clusters now do something
+
+The paragraph above described a file with no consumer. Both halves of that are fixed:
+
+- **Computed live, not from a snapshot.** The same algorithm now runs inside the server
+  (`server/src/services/tagCommunities.js`) against the `entity_tags` table, once per
+  boot, right after the bootstrap seeding that fills it. Boot prints
+  `[tag-communities] 641 tags → 106 communities from entity_tags`, and the result is
+  byte-identical to the snapshot for the current data (checked). Retagging an entity
+  re-clusters on the next restart. No model calls: it is arithmetic, and it costs
+  nothing.
+- **Read by the app.** `GET /api/ontology/tag-communities` (the list) and
+  `GET /api/ontology/tag-communities/:tag` (one tag's cluster, its siblings, and the
+  entities carrying them). An entity's detail panel names the cluster its tags fall
+  into in one line; clicking it narrows the Content view to the entities that share it,
+  through the same filter state as the type/cluster/axis controls.
+- Still not built: chat-assistant retrieval over the communities (deliberately deferred —
+  it collides with the roaming-conversations work), overlapping membership, gap
+  detection, graph colouring.
+- `scripts/detect-tag-communities.js` and `data-seed/tag_communities.json` are kept as a
+  manual/offline tool for inspecting the seed's own clustering. **The running app reads
+  neither.**
+
 ## Known gaps / honest caveats
 
 - ~~No queue UI yet.~~ Fixed — see the new Queue page above.
 - **76% of the film corpus is still reasoned, not grounded** — same as before, no archive-mining done this round.
-- ~~**GraphRAG and a formal Pattern Engine don't exist**~~ — GraphRAG now has a first (static, offline) version; see above. A formal Pattern Engine still doesn't exist.
+- ~~**GraphRAG and a formal Pattern Engine don't exist**~~ — GraphRAG's community half is live: recomputed from the DB at every boot, served over the API, and shown on every entity (see the 2026-08-21 update above). Traversal/retrieval is still missing, and a formal Pattern Engine still doesn't exist.
 - **Fractal Zoom isn't actually recursive yet** — camera zoom/pan only, no per-node internal graph revealed on zoom-in, except as a first proof-of-concept in the Architecture Navigator's own territory→component drill-down.
 - **Maps app only has 10 hand-scored countries**, static data, no drill-down.
 - **Film metadata (director/year) is knowledge-based, not verified** against TMDB/Wikidata — sandbox can't reach those domains.

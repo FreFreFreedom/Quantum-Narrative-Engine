@@ -4,6 +4,13 @@
 // DB or the app's own graph/UI code — this reads the seed JSON directly and writes
 // its result back out as a new seed-adjacent file.
 //
+// THE RUNNING APP NO LONGER READS THIS SCRIPT'S OUTPUT. Since the "theme clusters
+// that do something" task, the same clustering runs inside the server against the
+// live entity_tags table (server/src/services/tagCommunities.js), rebuilt at every
+// boot. This file and data-seed/tag_communities.json are kept as a manual/offline
+// tool — useful for inspecting the seed's own clustering without a server — but
+// editing either one changes nothing in the app.
+//
 // Method: tags are nodes; an edge (tag_a, tag_b) gets +1 weight for every entity
 // (character or country) that carries both tags. Communities are found with a
 // single-level Louvain-style greedy local-moving pass (no aggregation phase) —

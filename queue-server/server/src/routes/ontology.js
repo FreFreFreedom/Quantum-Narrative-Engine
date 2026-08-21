@@ -49,6 +49,16 @@ export function ontologyRoutes(db) {
   // client's filter UI is built from real data instead of a hardcoded list of three types.
   router.get('/facets', (req, res) => res.json(q.listFacets(db)));
 
+  // Theme clusters: which archetypal tags travel together, recomputed from the live
+  // entity_tags table at every boot (services/tagCommunities.js).
+  router.get('/tag-communities', (req, res) => res.json(q.listTagCommunities()));
+
+  router.get('/tag-communities/:tag', (req, res) => {
+    const out = q.tagCommunity(db, req.params.tag);
+    if (!out) return res.status(404).json({ error: 'unknown_tag' });
+    res.json(out);
+  });
+
   router.get('/clusters', (req, res) => res.json({ clusters: q.listClusters(db) }));
   router.get('/continuum-axes', (req, res) => res.json({ axes: q.listContinuumAxes(db) }));
 
