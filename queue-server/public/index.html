@@ -923,6 +923,9 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .wl-swap.failed { opacity:1; color:var(--c-warn); border-color:var(--c-warn); }
 @keyframes wl-swap-spin { to { transform:rotate(360deg); } }
 .wl-line { font-size:11px; color:var(--c-ink-3); margin:0 0 1px 26px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* Opening a row does not print the text again — it stops cutting the line that
+   was already there, so it grows in place and keeps its first words put. */
+.wl-line.open { white-space:normal; overflow:visible; text-overflow:clip; margin-bottom:4px; }
 .wl-reason { font-style:italic; cursor:default; }
 .wl-detail { margin:3px 0 5px 26px; }
 .wl-detail .sg-rationale { margin-bottom:3px; }
@@ -4429,7 +4432,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
       ${qInspireBadge(p)}
       ${qStopAfterBadge(p)}
     </div>
-    ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt)}
+    ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'sg-rationale', !!(qSelected && qSelected.id === p.id))}
     ${p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : ''}
     ${p.status === 'running' ? qRunStateLine(p) : ''}
     ${p.pending_question ? qQuestionBlockHtml(p) : ''}
@@ -4724,7 +4727,7 @@ function qQuestionBlockHtml(p, { showQuestion = true } = {}) {
 // so nothing is lost and no re-render is needed to expand it.
 const Q_THREAD_CLAMP_CHARS = 260;
 function qThreadBodyHtml(text) {
-  const full = String(text == null ? '' : text);
+  const full = String(text == null ? '' : text).split('\n❓')[0].trim();
   const flat = full.replace(/\s+/g, ' ').trim();
   if (flat.length <= Q_THREAD_CLAMP_CHARS) return qEsc(full);
   const cut = flat.slice(0, Q_THREAD_CLAMP_CHARS).replace(/\s\S*$/, '');
@@ -5305,7 +5308,7 @@ function flowSgRow(s) {
             ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
             <span class="flow-chev">${open ? '▾' : '▸'}</span>
           </div>
-          ${cardLineHtml('suggestion', s.id, s.summary, s.rationale)}
+          ${cardLineHtml('suggestion', s.id, s.summary, s.rationale, 'sg-rationale', open)}
           ${stageStripHtml(cardStage('suggestion', s))}
           ${cardActions([
             s.status === 'new' ? iconBtn('check', 'Accept it — adds it to the queue, parked', 'sg-accept', s.id, 'primary') : '',
@@ -5533,7 +5536,7 @@ function renderFlow() {
             ${i.arch_node_id ? '<span class="q-badge" style="background:#7a5ea8;">Planted</span>' : ''}
             <span class="flow-chev">${flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id ? '▾' : '▸'}</span>
           </div>
-          ${cardLineHtml('seed', i.id, i.summary, i.notes)}
+          ${cardLineHtml('seed', i.id, i.summary, i.notes, 'sg-rationale', !!(flowSideSel && flowSideSel.kind === 'seed' && flowSideSel.id === i.id))}
           ${stageStripHtml(cardStage('seed', i))}
           ${cardActions([
             iconBtn('queue', 'Send it to the queue as a task', 'seed-queue', i.id, 'primary'),
@@ -5837,9 +5840,15 @@ const cardLineBusy = new Set();
 
 // `cls` keeps each card's existing spacing class, so the line drops into the
 // layout the card already had instead of every card needing new CSS.
-function cardLineHtml(kind, id, stored, fallbackText, cls = 'sg-rationale') {
+// `isOpen` matters because the two kinds of line behave differently when the card
+// is opened. A written summary is not a truncation of anything, so it stays. The
+// stand-in IS the opening of the text the opened card shows in full — leaving it
+// there is exactly the stacked repetition this is all about, so it steps aside
+// and comes back when the card closes.
+function cardLineHtml(kind, id, stored, fallbackText, cls = 'sg-rationale', isOpen = false) {
   const key = `${kind}:${id}`;
   const known = stored || cardLineStore.get(key) || '';
+  if (!known && isOpen) return '';
   const line = known || cardOneLine(fallbackText);
   if (!line) return '';
   const src = known ? '' : ` data-cardsrc="${qEscAttr(String(fallbackText || '').slice(0, 4000))}"`;
@@ -6136,7 +6145,7 @@ function qRenderDetail(p) {
           <span style="font-size:11px;color:var(--c-ink-4);">Switching provider drops the old session link and starts fresh.</span>
         </div>` : ''}
     </details>
-    <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : qPurposePreview(p)}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
       <div class="arch-field-label">Inspired by — the world's ideas <button class="ctrlbtn" id="qAddWorldIdeaBtn" style="font-size:11px;padding:2px 8px;margin-left:8px;" title="Add your own bold idea to this task's world-look">✨ Add world idea</button></div>
@@ -6273,12 +6282,6 @@ function qPurposeHtml(summary) {
 // Instant placeholder while the AI bullets are on their way: the opening of the
 // prompt itself, trimmed — the card never shows a spinner, and the raw prompt is
 // always one click away below.
-function qPurposePreview(p) {
-  const text = String(p.raw_prompt || p.prompt || '').replace(/\s+/g, ' ').trim();
-  const cut = text.length > 140 ? text.slice(0, 140).replace(/\s\S*$/, '') + '…' : text;
-  return '<div class="q-purpose-preview">' + qEsc(cut || 'No prompt text.') + '</div>';
-}
-
 // Lazy per-task summary: fired in the background on first open, then cached on
 // the object and the row. In-flight re-renders (polls) hit the busy flag instead
 // of re-calling. Always silent — on failure the preview simply stays.
@@ -6395,9 +6398,16 @@ const worldSwapError = new Map();
 const worldSwapKey = (reportId, pi, i) => `${reportId}|${pi}|${i}`;
 
 // The single line a closed row shows: the pick's leading field, cut to its first
-// sentence, or ~90 characters on a word boundary. Same idea as qPurposePreview.
-function worldOneLine(pick) {
-  return cardOneLine(pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? pick.what : pick.vision);
+// sentence, or ~90 characters on a word boundary.
+// The field the closed row's line is drawn from. The row shows this text whole
+// and lets CSS cut it to one line; opening the row un-cuts it, and the detail
+// below skips this field entirely — so the sentence you were reading grows in
+// place instead of being reprinted under a label. One definition, used by both
+// the row and the detail, so the two can never drift apart again.
+function worldLeadField(pick) {
+  if (pick.kind === 'open') return { label: 'Why it fits:', text: pick.why_fits || '' };
+  if (pick.kind === 'hidden') return { label: 'What it is:', text: pick.what || '' };
+  return { label: 'The big idea:', text: pick.vision || '' };
 }
 
 function worldPickTitle(pick) {
@@ -6424,18 +6434,17 @@ function worldOriginalHtml(pick) {
 
 function worldDetailHtml(pick) {
   const r = (label, text) => `<div class="sg-rationale"><b>${label}</b> ${qEsc(text)}</div>`;
+  // The lead field is deliberately absent from all three branches: the row's line
+  // is that text, and it expands in place when the row opens.
   if (pick.kind === 'open') {
-    return (pick.why_fits ? r('Why it fits:', pick.why_fits) : '') +
-      (pick.use ? r("How we'd use it:", pick.use) : '') +
+    return (pick.use ? r("How we'd use it:", pick.use) : '') +
       (pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${qEsc(pick.repo)}" target="_blank" rel="noopener">github.com/${qEsc(pick.repo)}</a></div>` : '');
   }
   if (pick.kind === 'hidden') {
-    return (pick.what ? r('What it is:', pick.what) : '') +
-      (pick.lesson ? r('What we can learn:', pick.lesson) : '') +
+    return (pick.lesson ? r('What we can learn:', pick.lesson) : '') +
       (pick.use ? r('What we could do even better:', pick.use) : '');
   }
-  return (pick.vision ? r('The big idea:', pick.vision) : '') +
-    (pick.why_possible ? r("Why it's doable:", pick.why_possible) : '') +
+  return (pick.why_possible ? r("Why it's doable:", pick.why_possible) : '') +
     (pick.how_fmcns ? r("How we'd get there first:", pick.how_fmcns) : '');
 }
 
@@ -6490,7 +6499,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
   const markTitle = isApplied ? 'Already baked into the plan.'
     : inGroup ? 'Pick this one — it clears the other options in this box.'
       : isSel ? 'Picked. Click to drop it.' : 'Include this idea.';
-  const line = worldOneLine(pick);
+  const line = worldLeadField(pick).text.replace(/\s+/g, ' ').trim();
   const title = worldPickTitle(pick);
   const chips = (pick.developed_at
     ? `<span class="wl-chip" title="This idea's own text was rewritten from a conversation. What it said before is kept under it.">developed</span>`
@@ -6522,7 +6531,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
         ${bestWhy !== undefined ? `<span class="wl-star" title="${qEsc(bestWhy ? 'Our pick — ' + bestWhy : 'Our pick.')}">⭐</span>` : ''}
         <span class="wl-caret" data-worldexpand="${ek}" title="The full idea">${isOpen ? '▾' : '▸'}</span>
       </div>
-      ${line ? `<div class="wl-line" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
+      ${line ? `<div class="wl-line${isOpen ? ' open' : ''}" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
       ${removed ? `<div class="wl-line wl-reason" title="Only the quick check's opinion — the idea stays in the list and you can pick it.">The quick check wasn't sure: ${qEsc(removed)}</div>` : ''}
       <div class="wl-detail" ${isOpen ? '' : 'hidden'}>${worldDetailHtml(pick)}${worldOriginalHtml(pick)}</div>
     </div>`;
@@ -6588,6 +6597,10 @@ document.addEventListener('click', (ev) => {
   if (wasOpen) worldOpen.delete(ek); else worldOpen.add(ek);
   const body = row.querySelector('.wl-detail');
   if (body) body.hidden = wasOpen;
+  // The line is the idea's leading field in full, cut to one line by CSS. Opening
+  // the row uncuts it rather than printing a second copy underneath.
+  const lead = row.querySelector('.wl-line:not(.wl-reason)');
+  if (lead) lead.classList.toggle('open', !wasOpen);
   const caret = row.querySelector('.wl-caret');
   if (caret) caret.textContent = wasOpen ? '▸' : '▾';
 });
@@ -8517,7 +8530,7 @@ function renderNotbuilt() {
         <span class="nb-markers">${markers.join(' ')}</span>
         <span class="nb-chev" title="Tap to ${isOpen ? 'hide' : 'show'} the world-look ideas">${isOpen ? '▾' : '▸'}</span>
       </div>
-      ${cardLineHtml('component', c.id, c.summary, whatText, 'nb-what')}
+      ${cardLineHtml('component', c.id, c.summary, whatText, 'nb-what', isOpen)}
       ${stageStripHtml(cardStage('component', c))}
       <div class="nb-actions">
         <button data-nbdiscuss="${c.id}">💬 Discuss</button>
