@@ -854,6 +854,24 @@ export async function autoWorldLookTasks({ limit = 16 } = {}) {
 // alive stage in another process is never stolen out from under itself.
 const STAGE_STALE_MS = 10 * 60_000;
 
+// A world-look that FAILED is a different kind of stuck, and the one that actually
+// stranded a task. advanceQueue() will not dispatch a queued implement row whose
+// inspire_state is 'failed' (or legacy 'off'), and nothing put a deadline on that —
+// so the task sat on "Waiting its turn" indefinitely while the card cheerfully said
+// the runner would get to it. The only exits were a hand retry or autoWorldLookTasks(),
+// which runs every 6 hours and gives up quietly when the daily side-call budget is
+// spent or no model is reachable.
+//
+// That inverted the feature's own rule, stated in createPrompt: the world-look "never
+// blocks creation... proceeds without it on failure". It was not blocking creation, it
+// was blocking dispatch, which has the same effect and is harder to see.
+//
+// So: after this long, a failed look stops being a gate. The task degrades to
+// 'skipped' — the same state the "start without inspiration" button sets — and runs on
+// a plain plan. Longer than STAGE_STALE_MS on purpose, so a retry has room to land
+// first and this only catches the ones nothing else rescued.
+const INSPIRE_GIVEUP_MS = 20 * 60_000;
+
 function stuckStageFields(row) {
   const fields = {};
   if (row.plan_pending) fields.plan_pending = 0;
@@ -893,6 +911,47 @@ export function unstickPrompt(id) {
   return getPrompt(id);
 }
 
+// The other half of the recovery, for the state advanceQueue() refuses to dispatch:
+// a queued implement task whose world-look failed and was never rescued. See
+// INSPIRE_GIVEUP_MS above for why this has to have a deadline at all. Runs inside the
+// same 60s tick; never throws.
+function sweepHeldByFailedLook() {
+  const cutoff = new Date(Date.now() - INSPIRE_GIVEUP_MS).toISOString();
+  let freed = 0;
+  try {
+    const rows = db.prepare(`
+      SELECT * FROM work_prompts
+      WHERE deleted_at IS NULL
+        AND status='queued'
+        AND mode!='question'
+        AND plan_pending=0
+        AND pending_question IS NULL
+        AND COALESCE(inspire_state,'off') IN ('off','failed')
+        AND COALESCE(updated_at, created_at) < ?
+    `).all(cutoff);
+    for (const row of rows) {
+      // A pass that started again in the meantime is alive, not stuck.
+      if (_inspiring.has(row.id)) continue;
+      db.prepare(`
+        UPDATE work_prompts SET inspire_state='skipped',
+          inspire_error='The look at the world did not finish, so this ran on a plain plan. One click re-runs it.',
+          updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE id=?
+      `).run(row.id);
+      addMessage(row.id, {
+        role: 'agent',
+        text: 'This task was waiting on a look at the world that never finished. Rather than wait for ever, it goes ahead on a plain plan — the ideas can still be fetched later.',
+      });
+      freed++;
+      console.warn(`[sweepHeldByFailedLook] released ${row.id} ("${(row.title || '').slice(0, 60)}")`);
+    }
+  } catch (e) {
+    console.error('sweepHeldByFailedLook failed —', e.message);
+    return 0;
+  }
+  return freed;
+}
+
 // The periodic sweep (quotaScheduler's 60s tick). Never throws.
 export function sweepStuckStages() {
   const cutoff = new Date(Date.now() - STAGE_STALE_MS).toISOString();
@@ -921,6 +980,7 @@ export function sweepStuckStages() {
     console.error('sweepStuckStages failed —', e.message);
     return { freed: 0, error: e.message };
   }
+  freed += sweepHeldByFailedLook();
   if (freed) { broadcast(); advanceQueue(); }
   return { freed };
 }
