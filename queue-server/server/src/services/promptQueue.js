@@ -175,7 +175,7 @@ export async function createPrompt({
   // Implement-mode tasks resolve this later in runPlanDraft(), against the
   // drafted brief rather than the raw text — skip here so it isn't judged twice.
   let autoContextNote = null;
-  const willDraftPreCheck = useMode === 'implement' && plan_source !== 'skip';
+  const willDraftPreCheck = useMode === 'implement' && plan_source === 'auto';
   if (context_mode === 'auto' && !useParent && !willDraftPreCheck) {
     const candidates = candidateParents({ agentKey: useAgentKey, provider: useProvider });
     const picked = await resolveParent({ mode: useMode, text, candidates }).catch(() => null);
@@ -197,10 +197,27 @@ export async function createPrompt({
   }
 
   // Plan-first queue (Part A): every implement-mode task is auto-drafted into an
-  // unambiguous brief before it runs. Question-mode tasks and any caller that
-  // already produced a deliberated plan (plan_source:'skip', e.g. a future
-  // conversation handoff) skip this and behave exactly as before — resolvePreset
+  // unambiguous brief before it runs. Question-mode tasks and any caller that already
+  // produced a deliberated plan skip this and behave exactly as before — resolvePreset
   // runs synchronously against the text as submitted.
+  //
+  // plan_source, the three values (Antoine, 2026-08-21):
+  //   'auto' — ours to draft, and to redraft (the sweep at redraftHeldTasks, and the
+  //            answer path further down, both act only on 'auto').
+  //   'own'  — the caller's plan is FINAL, but still look at the world. Used by the
+  //            Idea Studio handoff, the thought handoff, and plans sent in from a
+  //            terminal session (scripts/send-plan.js). The ONLY thing allowed to
+  //            rewrite an owned plan is Antoine picking a world idea, which goes
+  //            through applyInspiration and redrafts from raw_prompt so his original
+  //            is kept underneath.
+  //   'skip' — run this raw: no draft, no world-look, dispatch immediately. The
+  //            composer's "Run raw" toggle, and the deliberate escape hatch for
+  //            launching something without waiting for ideas.
+  //
+  // 'own' exists because these two used to be ONE flag: 'skip' meant both "keep my
+  // plan" and "don't look at the world", so every caller that handed over a finished
+  // plan silently got no world ideas at all — nothing looked broken, the shelves were
+  // simply always empty. Do not re-merge them.
   const willDraft = willDraftPreCheck;
   // Inspiration step (plan inspiration-before-planning): EVERY implement-mode
   // task — suggestion, hand-typed, seed, thought, handoff — gets a background
@@ -208,12 +225,14 @@ export async function createPrompt({
   // is written. Question-mode tasks skip it, mini-tier tasks skip it for speed
   // (free-only plan: a tiny fix's plan cannot need world context — the card
   // shows the skip reason and the world-look stays one click away), and
-  // plan_source:'skip' skips it too — that flag already means "run this raw,
-  // no drafted plan", and a world-look for a plan that won't exist is pure
-  // waste (this is also the "Run raw" composer toggle's fast path). The pass
-  // never blocks creation: the row lands with inspire_state='pending' and the
-  // draft simply waits up to its timeout for the report (below), then
-  // proceeds without it on failure.
+  // plan_source:'skip' skips it too — that flag means "run this raw, right now", and
+  // waiting on a look for a plan that won't exist is pure waste (this is also the
+  // "Run raw" composer toggle's fast path). 'own' deliberately does NOT skip it: the
+  // ideas cannot rewrite the plan on their own, but they are exactly how you find out
+  // a chunk of it is already built. The pass never blocks creation: the row lands with
+  // inspire_state='pending' and the draft simply waits up to its timeout for the
+  // report (below), then proceeds without it on failure. Nothing can strand on it
+  // either — sweepHeldByFailedLook releases a held task after INSPIRE_GIVEUP_MS.
   const willInspire = useMode === 'implement' && tier !== 'mini' && plan_source !== 'skip';
   // Precomputed world-look: the item's own section (suggestion / seed / not-built
   // component) already ran the pass, so the task reuses it instead of searching
@@ -250,7 +269,7 @@ export async function createPrompt({
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    willDraft ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
+    (willDraft || plan_source === 'own') ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
 
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
@@ -1776,10 +1795,12 @@ async function answerInspireQuestion(row, text, userId) {
   if (!fresh) return null;
   if (fresh.plan_pending) return { prompt: fresh, task: null }; // runPlanDraft drafts
 
-  // The caller's own plan stays untouched (plan_source:'skip' — e.g. a
-  // conversation handoff): the answer only settles the world-look, and the
-  // queue gate releases the task as it now has no open question.
-  if (fresh.plan_source === 'skip') {
+  // The caller's own plan stays untouched (plan_source:'own' — an Idea Studio or
+  // terminal handoff — or 'skip', run raw): the answer only settles the world-look,
+  // and the queue gate releases the task as it now has no open question. Only 'auto'
+  // plans are ours to redraft; for an owned plan the ONLY thing allowed to rewrite it
+  // is Antoine picking a world idea (applyInspiration).
+  if (fresh.plan_source !== 'auto') {
     advanceQueue();
     return { prompt: getPrompt(row.id), task: null };
   }

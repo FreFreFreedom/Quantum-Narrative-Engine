@@ -41,6 +41,12 @@ that produced it.
 - On "implement `<plan name>`": read the plan, then verify it still fits the current
   code (paths, function names and line references drift), report what changed, and only
   then implement. Update the status in both the index and the plan's own header.
+- **When a plan is finished in a terminal session, offer to send it to the queue** —
+  Antoine should not have to remember the option exists. The `send-plan` skill
+  (`.claude/skills/send-plan/SKILL.md`) files the plan, asks whether it starts now or
+  waits parked, and hands it to the app as a real task via
+  `queue-server/scripts/send-plan.js`. Offering is not implementing: the plan still is
+  not a green light until he says go.
 
 ## Commands
 

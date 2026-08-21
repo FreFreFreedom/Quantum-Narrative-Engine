@@ -179,4 +179,8 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
 - `queue-server/` — Node/Express backend; server code under `queue-server/server/src/`.
 - `plans/` — implementation plans; `plans/README.md` is the index. A plan in
   `plans/` is not a green light unless Antoine explicitly asks for it by name.
+  When a plan is finished in a terminal session, **offer to send it to the queue**
+  (the `send-plan` skill / `queue-server/scripts/send-plan.js`) — Antoine should not
+  have to remember the option exists. Ask whether it starts now or waits parked; his
+  standing instruction is to be asked every time. Offering is not implementing.
 - `BUILD_STATUS.md` — in-place status doc, tracked in git (git log is the history).

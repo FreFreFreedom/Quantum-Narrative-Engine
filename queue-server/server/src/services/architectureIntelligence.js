@@ -512,7 +512,9 @@ async function acceptThought(db, id, { editedTitle = null, editedPrompt = null }
     created_by: 'antoine',
     thought_id: t.id,
     component_id: t.scope === 'node' ? t.target_id : null,
-    plan_source: 'skip', // the thought's draft already IS the plan
+    // 'own', not 'skip': the thought's draft already IS the plan, so nothing redrafts
+    // it — but it still gets the world-look, which used to be silently skipped here.
+    plan_source: 'own',
   });
   db.prepare(`UPDATE intel_thoughts SET status='accepted', work_prompt_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
     .run(promptRow.id, id);

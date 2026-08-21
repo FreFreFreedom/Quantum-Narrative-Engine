@@ -730,7 +730,11 @@ export async function handoffToQueue(convoId, { title = null, prompt = null } = 
     preset: 'standard',
     space: 'fmcns',
     status: 'paused', // set aside, not auto-dispatched — Antoine decides
-    plan_source: 'skip', // the conversation already deliberated — no auto-draft
+    // 'own', not 'skip': the conversation already deliberated, so the plan is final and
+    // is never auto-drafted over — but the world-look still runs, because "this part
+    // already exists" is worth knowing about a plan nobody has checked against the
+    // code yet. Picking an idea redrafts from raw_prompt, keeping the original.
+    plan_source: 'own',
     created_by: convo.created_by || 'antoine',
     convo_id: convoId,
   });
