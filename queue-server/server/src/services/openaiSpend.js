@@ -66,30 +66,32 @@ export function costOf(model, usage, providerId = 'openai') {
 // throttle is fine for counting calls; dropping dollars would make the cap
 // under-report, which is the one direction that costs money. Bursts are buffered
 // and flushed instead.
-let pending = { spendUsd: 0, calls: 0, tokensIn: 0, tokensOut: 0 };
+let pending = { spendUsd: 0, calls: 0, tokensIn: 0, tokensOut: 0, tokensCached: 0 };
 let flushTimer = null;
 
 function flushPending() {
   flushTimer = null;
   if (!db || (!pending.calls && !pending.spendUsd)) return;
-  const { spendUsd, calls, tokensIn, tokensOut } = pending;
-  pending = { spendUsd: 0, calls: 0, tokensIn: 0, tokensOut: 0 };
+  const { spendUsd, calls, tokensIn, tokensOut, tokensCached } = pending;
+  pending = { spendUsd: 0, calls: 0, tokensIn: 0, tokensOut: 0, tokensCached: 0 };
   try {
     db.prepare(`
-      INSERT INTO openai_spend_ledger (day, spend_usd, calls, tokens_in, tokens_out, updated_at)
-      VALUES (?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      INSERT INTO openai_spend_ledger (day, spend_usd, calls, tokens_in, tokens_out, tokens_cached, updated_at)
+      VALUES (?,?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
       ON CONFLICT(day) DO UPDATE SET
         spend_usd = spend_usd + excluded.spend_usd,
         calls     = calls + excluded.calls,
         tokens_in = tokens_in + excluded.tokens_in,
         tokens_out= tokens_out + excluded.tokens_out,
+        tokens_cached = tokens_cached + excluded.tokens_cached,
         updated_at= strftime('%Y-%m-%dT%H:%M:%fZ','now')
-    `).run(utcDay(), spendUsd, calls, tokensIn, tokensOut);
+    `).run(utcDay(), spendUsd, calls, tokensIn, tokensOut, tokensCached);
   } catch (e) {
     // Put it back rather than losing it — an under-counted cap is the failure
     // mode with a price attached.
     pending.spendUsd += spendUsd; pending.calls += calls;
     pending.tokensIn += tokensIn; pending.tokensOut += tokensOut;
+    pending.tokensCached += tokensCached;
     console.error('[openai-spend] ledger write failed —', e.message);
   }
 }
@@ -100,6 +102,9 @@ export function recordSpend({ model, usage, providerId = 'openai' }) {
   pending.calls += 1;
   pending.tokensIn += Number(usage?.prompt_tokens || 0);
   pending.tokensOut += Number(usage?.completion_tokens || 0);
+  // A SUBSET of tokens_in, not additional tokens — same field costOf() already
+  // reads to price the cache discount. tokens_cached <= tokens_in always.
+  pending.tokensCached += Number(usage?.prompt_tokens_details?.cached_tokens || 0);
   // Invalidate the composed figure so the next read reflects this call.
   _composed = null;
   if (!flushTimer) flushTimer = setTimeout(flushPending, 250);
@@ -120,6 +125,25 @@ function localMonth() {
     const row = db.prepare(`SELECT SUM(spend_usd) AS s FROM openai_spend_ledger WHERE day LIKE ?`).get(`${utcMonthPrefix()}%`);
     return row && row.s ? Number(row.s) : 0;
   } catch { return 0; }
+}
+
+// Cache hit rate for the month: tokens_cached is a SUBSET of tokens_in (see
+// schema.js), so the rate is cached/in, never cached/(in+cached). Local-only —
+// OpenAI's Costs API does not break spend down by cache status — but this is
+// the number the prompt-caching design actually rests on, so it is worth
+// showing even though it can't be cross-checked against OpenAI's own figures.
+function localMonthCacheHitPct() {
+  if (!db) return null;
+  try {
+    const row = db.prepare(`
+      SELECT SUM(tokens_in) AS tin, SUM(tokens_cached) AS tcached
+      FROM openai_spend_ledger WHERE day LIKE ?
+    `).get(`${utcMonthPrefix()}%`);
+    const tin = row && row.tin ? Number(row.tin) : 0;
+    const tcached = row && row.tcached ? Number(row.tcached) : 0;
+    if (tin <= 0) return null;
+    return Math.min(100, (tcached / tin) * 100);
+  } catch { return null; }
 }
 
 // Today's local figure including anything still buffered, so a cap check right
@@ -246,6 +270,7 @@ export async function capState() {
     blocked: cap > 0 && spentUsd >= cap,
     stale,
     source,
+    cacheHitPct: localMonthCacheHitPct(),
   };
 }
 
