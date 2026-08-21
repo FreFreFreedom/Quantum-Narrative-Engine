@@ -831,7 +831,7 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .sg-terrchip.dead { color:var(--c-ink-4); opacity:.5; cursor:default; }
 .sg-terrchip.dead:hover { background:var(--c-surface); }
 .sg-terr-chip { font-size:9px; padding:2px 8px; border-radius:20px; color:#fff; flex-shrink:0; text-transform:none; letter-spacing:0; }
-.sg-terr-chip.outside { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
+.sg-terr-chip.connector { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-3); }
 .sg-terr-chip.none { background:transparent; border:1px dashed var(--c-border-2); color:var(--c-ink-4); font-style:italic; }
 /* Inspired-by panel (task detail): the three shelves */
 .q-inspire-toolbar { display:flex; align-items:center; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
@@ -3331,7 +3331,7 @@ let nextUpBusy = false;     // a fetch (or a second opinion) is in flight
 let nextUpErr = '';         // last failure, shown plainly rather than as an empty box
 let nuGroupCollapsed = {};  // group key ("ready"/"blocked") -> true if its rows are hidden
 // Which part of the app the suggestions list is narrowed to: '' for all of it, a
-// territory id, 'outside' for integrations, or 'none' for the ones we could not place.
+// territory id, 'connector' for connectors, or 'none' for the ones we could not place.
 // Mirrors nbFilterTerr in "On the Horizon" on purpose — same gesture, same rules — and
 // lives out here because renderFlow() rebuilds the list on every poll.
 let sgFilterTerr = '';
@@ -5236,7 +5236,10 @@ function sgTerritoryOf(s) {
 // where a suggestion belongs. "Core architecture" is too wide for a row that already
 // carries a kind and a status, so that one territory gets a short name.
 const SG_CHIP_SHORT = { self: 'Core' };
-const SG_CHIP_OUTSIDE = '<span class="sg-terr-chip outside" title="About bringing in something from outside the app — a new data source or service. Not one of the six parts inside it.">outside</span>';
+// A connector is not one of the six parts — it is something the app plugs into to
+// bring data or a service in. One word for it everywhere it shows: the chip on a row,
+// the filter chip, and the generate button all say "Connector".
+const SG_CHIP_CONNECTOR = '<span class="sg-terr-chip connector" title="A connector — something the app plugs into to bring in new data or a new service. Not one of the six parts of the app itself.">Connector</span>';
 const SG_CHIP_NONE = '<span class="sg-terr-chip none" title="Claude did not say which part of the app this touches — or this suggestion predates the question being asked.">not placed</span>';
 function sgTerritoryChip(tid) {
   const t = TERRITORIES.find(x => x.id === tid);
@@ -5244,12 +5247,12 @@ function sgTerritoryChip(tid) {
   return `<span class="sg-terr-chip" style="background:${TERRITORY_COLORS[tid]}" title="${qEsc(t.label + ' — ' + t.sub)}">${qEsc(SG_CHIP_SHORT[tid] || t.label)}</span>`;
 }
 
-// The chip for one suggestion. Kind is checked before territory, so an integration
-// reads as "outside" rather than "not placed" — we know exactly what it is, it just
+// The chip for one suggestion. Kind is checked before territory, so a connector
+// reads as "Connector" rather than "not placed" — we know exactly what it is, it just
 // isn't one of the six. Without this, the flat "All" view would label every
-// integration as unplaced while the grouped view filed it correctly.
+// connector as unplaced while the grouped view filed it correctly.
 function sgChipFor(s) {
-  return s.kind === 'integration' ? SG_CHIP_OUTSIDE : sgTerritoryChip(sgTerritoryOf(s));
+  return s.kind === 'integration' ? SG_CHIP_CONNECTOR : sgTerritoryChip(sgTerritoryOf(s));
 }
 
 // One suggestion row, plus the empty detail card when it is the selected one. Lifted
@@ -5263,7 +5266,7 @@ function flowSgRow(s) {
             <span class="q-item-title">${qEsc(s.title)}</span>
             ${flowWorldEntry('suggestion', s.id).state === 'ready' ? '<span title="World-look ideas ready — open the suggestion">✨</span>' : ''}
             ${sgChipFor(s)}
-            <span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>
+            ${s.kind === 'integration' ? '' : `<span class="sg-kind-badge ${s.kind}">${TV_KIND_LABEL[s.kind] || s.kind}</span>`}
             <span class="sg-status-badge">${TV_STATUS_LABEL[s.status] || s.status}</span>
             ${s.maybe_shipped ? `<span class="sg-maybe-done" title="${qEsc('Words in this suggestion overlap work that already shipped: ' + s.maybe_shipped + '. This is a guess — nothing has been changed or hidden.')}">may already be done</span>` : ''}
             <span class="flow-chev">${open ? '▾' : '▸'}</span>
@@ -5286,11 +5289,11 @@ function flowSgRow(s) {
 // read before territory, matching sgChipFor above, so the chip on a row and the chip
 // that selects it can never disagree.
 function sgBucketOf(s) {
-  if (s.kind === 'integration') return 'outside';
+  if (s.kind === 'integration') return 'connector';
   return sgTerritoryOf(s) || 'none';
 }
 
-// The filter chip row: All, the six territories, outside connections, and (only while
+// The filter chip row: All, the six territories, connectors, and (only while
 // it has anything in it) the ones we could not place. Same gesture as the chips in
 // "On the Horizon" — rebuilt from state every render, so the lit chip is always the
 // one actually filtering and cannot drift; single-select by assignment, with '' as a
@@ -5306,17 +5309,23 @@ function sgChipRowHtml(all) {
   const buckets = [
     ['', 'All', all.length],
     ...TERRITORIES.map(t => [t.id, SG_CHIP_SHORT[t.id] || t.label, count(t.id)]),
-    ['outside', 'Outside connections', count('outside')],
+    ['connector', 'Connectors', count('connector')],
   ];
   // Hidden once empty: after the one-off sort at boot this is the normal state, and a
   // permanent "0" chip is clutter. It reappears by itself if anything lands unplaced.
   if (count('none')) buckets.push(['none', 'Not placed', count('none')]);
+  // "Show only what touches X" reads right for a part of the app and wrong for the two
+  // buckets that aren't one, so those two say what they are instead.
+  const chipTitle = (key, label) => ({
+    connector: 'Show only the connectors — things the app could plug into',
+    none: 'Show only the ones the app could not place',
+  }[key] || ('Show only what touches ' + label));
   const chips = buckets.map(([key, label, n]) => {
     // An empty bucket stays visible so the shape of the list reads at a glance, but
     // is not clickable — nothing is worse than a filter that empties the screen.
     const dead = n === 0 && key !== '';
     return `<button class="ctrlbtn nb-chip sg-terrchip${sgFilterTerr === key ? ' on' : ''}${dead ? ' dead' : ''}"${dead ? ' disabled' : ''} data-sgterr="${key}"`
-      + `${key && !dead ? ` title="${qEsc('Show only what touches ' + label)}"` : ''}>`
+      + `${key && !dead ? ` title="${qEsc(chipTitle(key, label))}"` : ''}>`
       + `${qEsc(label)} <span class="sg-chipn">${n}</span></button>`;
   }).join('');
   return `<div class="nb-chips sg-chiprow">${chips}</div>`;
@@ -5328,11 +5337,11 @@ function sgChipRowHtml(all) {
 function sgGenIntent() {
   const key = sgFilterTerr;
   if (!key) return { label: '✨ Generate now', busy: '✨ Generating…', body: {}, note: 'Claude is thinking about what to work on next — this takes a minute or two.' };
-  if (key === 'outside') {
+  if (key === 'connector') {
     return {
-      label: '✨ Generate outside connections', busy: '✨ Generating…',
+      label: '✨ Generate connectors', busy: '✨ Generating…',
       body: { kind: 'integration' },
-      note: 'Claude is looking for new outside sources to plug in — this takes a minute or two.',
+      note: 'Claude is looking for new connectors the app could plug into — this takes a minute or two.',
     };
   }
   // The unplaced pile is not a part of the app, so there is nothing coherent to ask
@@ -7218,7 +7227,7 @@ async function loadUsage() {
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
-const TV_KIND_LABEL = { chantier: 'Work item', integration: 'Integration' };
+const TV_KIND_LABEL = { chantier: 'Work item', integration: 'Connector' };
 const TV_STATUS_LABEL = { new: 'New', accepted: 'Accepted', dismissed: 'Dismissed' };
 
 async function loadSuggestions() {
@@ -8023,7 +8032,7 @@ const ARCH_DATA = [
     why:'Ranking only orders what you already know about. This is the only piece whose job is to add something new to the list.',
     input:'The state of the material, the state of the app\'s own build system, and everything already proposed or turned down',
     output:'Proposed work items, each already written as an instruction Claude could act on',
-    now:'Prototype. Two engines run — one proposes work, one proposes outside services to plug in — on a timer and on demand. It never proposes the same thing twice, and remembers what you turned down. Every proposal can be accepted straight into the queue as a parked task.',
+    now:'Prototype. Two engines run — one proposes work, one proposes connectors to plug in — on a timer and on demand. It never proposes the same thing twice, and remembers what you turned down. Every proposal can be accepted straight into the queue as a parked task.',
     next:'Learn from what you accept and what you turn down, instead of only avoiding exact repeats.',
     status:'Prototype', depends:['self-model','self-observation'],
     versions:[['v0','Proposals from the material\'s state only'],['v1','Both sides of the app read, with a balance rule (current)'],['v2','Learns from what gets accepted versus turned down']] },
