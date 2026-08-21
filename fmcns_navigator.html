@@ -694,6 +694,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uc.state-running::before { background:var(--c-accent); }
 /* A hairline row has no rounded corner to follow. */
 .uc--row.state-asking::before, .uc--row.state-running::before { left:0; top:0; bottom:0; border-radius:0; }
+/* The bar needs air after it, or the title sits on top of it. */
+.uc.state-asking, .uc.state-running { padding-left:var(--sp-4); }
+.uc--row.state-asking, .uc--row.state-running { padding-left:var(--sp-3); }
 /* A piece of the tree that is ready to build keeps its amber wash. */
 .uc.is-warm { border-color:var(--c-amber); background:var(--c-warm-tint); }
 /* The denser list variant: a hairline, not a box. Long lists become rows. */
