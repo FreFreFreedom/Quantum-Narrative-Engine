@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-21T19:02:26.473Z
+Generated: 2026-08-21T21:29:04.359Z
 
 ## Components
 
@@ -40,9 +40,11 @@ Generated: 2026-08-21T19:02:26.473Z
 
 - conversation-voice-and-project-map — **DONE (code)** 2026-08-21 — gpt-4.1 in the catalogue, the judgement-first persona, and a ~10k-token map built once at boot and sent first (proven byte-identical and proven to be the prompt's literal prefix). Two things left: the AI Settings 'studio' row still has to be pointed at gpt-4.1 by hand, and the four live checks (caching visible in the spend ledger, the voice tests) need the deploy. One deliberate deviation is in the plan's own header.
 - one-conversation-system — **Steps 2 + 6 DONE** 2026-08-21 (map live and reaching all its docs after `60a2092`; voice verified — it refuses a bad idea and names the cost). **Steps 1, 3, 4 split out** to [roaming-conversations-backend.md](roaming-conversations-backend.md) and sent to the queue. **Step 5 (the full-screen room) is all that stays here**, deliberately unplanned until the endpoints from that task actually ship.
-- roaming-conversations-backend — **PLANNED** 2026-08-21 — sent to the queue
+- roaming-conversations-backend — **DONE** 2026-08-21 — shipped from the queue. `convo_subjects` + the `open` subject type (read-time backfill, no migration); the ten lookup tools on the unified engine with a working tool loop on BOTH the streaming and non-streaming lanes, every round priced into the ledger; `/seed` and `/note` with their two buttons. Step 5, the full-screen room, can now be planned against real endpoints.
 - prove-the-caching-works — **PLANNED** 2026-08-21 — sent to the queue
-- theme-clusters-that-do-something — **PLANNED** 2026-08-21 — sent to the queue
+- theme-clusters-that-do-something — **DONE** 2026-08-21
+- make-the-caching-actually-work — **PLANNED** 2026-08-21 — sent to the queue
+- the-room-to-think-in — **DONE** 2026-08-21 — built as a third Core sub-view (Room), reusing `studioEmbed`; the attach picker covers seeds, suggestions, tasks and architecture pieces (entities are not a registered subject type, so they would need a backend change).
 - rotate-leaked-credentials — **Cleanup DONE · revocation deferred on purpose** (Antoine, 2026-08-21)
 - cards-one-system — **DONE** 2026-08-21 — shipped as `.ubtn`/`.uicon` plus the `⋯` menu, the one status pill and the "Details" fold; `.q-item`/`.flow-row`/`.stage-go` retired rather than left overriding. Three documented departures from the plan text are in the plan's own header.
 - cards-rest-and-narrow-screens — **DONE** 2026-08-21

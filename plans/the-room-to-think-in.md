@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-21 |
+| **DONE** | 2026-08-21 |
 
 Step 5 — the last step — of [one-conversation-system.md](one-conversation-system.md),
 rewritten against what actually shipped rather than what was planned. Frontend only; every
