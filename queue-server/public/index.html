@@ -4777,7 +4777,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     <div class="uc-head">
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
       ${titleHtml}
-      ${cardPillHtml('task', p)}
+      ${taskPillHtml(p, st)}
       ${cardActs(primary, menu)}
     </div>
     ${cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
@@ -4995,10 +4995,26 @@ function taskPill(p) {
   }
   return { text: 'Done', cls: 'is-done' };
 }
-function cardPillHtml(kind, o) {
-  const pill = cardPill(kind, o);
+function pillHtml(pill) {
   if (!pill) return '';
   return `<span class="upill${pill.cls ? ' ' + pill.cls : ''}"${pill.title ? ` title="${qEscAttr(pill.title)}"` : ''}>${qEsc(pill.text)}</span>`;
+}
+function cardPillHtml(kind, o) {
+  return pillHtml(cardPill(kind, o));
+}
+// A task card carries both a pill and the stage strip, and for most states they
+// were the same word twice: "Parked" over "Parked", "Live" over "Live in the app",
+// "Waiting its turn" over "Waiting its turn". The strip is the better of the two —
+// it also gives the step count and the next move — so the pill now appears only
+// when it says something the strip does not, like "Ideas ready" sitting above
+// "Waiting its turn".
+function taskPillHtml(p, st) {
+  const pill = cardPill('task', p);
+  if (!pill) return '';
+  const a = (pill.text || '').trim().toLowerCase();
+  const b = (st && st.label || '').trim().toLowerCase();
+  if (a && b && (b.includes(a) || a.includes(b))) return '';
+  return pillHtml(pill);
 }
 // ---------- The stage strip ----------
 // One line, the same on every kind of card: how far along this thing is, and the
