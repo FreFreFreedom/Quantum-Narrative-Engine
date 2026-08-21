@@ -651,6 +651,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uc--row.state-asking, .uc--row.state-running { padding-left:var(--sp-3); }
 /* A piece of the tree that is ready to build keeps its amber wash. */
 .uc.is-warm { border-color:var(--c-amber); background:var(--c-warm-tint); }
+/* A world idea shows how well it fits as one colour, on the same left edge the
+   running/asking bar uses. */
+.uc.has-fit { padding-left:var(--sp-4); }
+.uc.has-fit .wl-fit { left:6px; top:10px; bottom:10px; }
 /* Not every card is a place to click. A Discover question, a thought, a proposed
    pick and the built-but-unreachable rows only offer buttons — a pointer over the
    whole box would promise something that is not there. */
@@ -842,10 +846,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .stage-strip.tone-done { --c-stage-tone:#4f9d7a; }
 .stage-strip.tone-stop { --c-stage-tone:#b23a2f; }
 .stage-strip.tone-idle { --c-stage-tone:var(--c-ink-4); }
-.stage-next a { color:inherit; text-decoration:underline; cursor:pointer; }
 .stage-where { font-weight:600; color:var(--c-ink-2); }
-.stage-next { color:var(--c-ink-3); min-width:0; flex:1 1 140px; }
-.stage-next b { font-weight:600; color:var(--c-ink-4); margin-right:3px; }
 .card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
 .arch-suggestion:hover .card-actions, .card-actions:focus-within { opacity:1; }
 .cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
@@ -1057,7 +1058,11 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .wl-group-head { font-size:10.5px; color:var(--c-ink-3); margin:0 0 4px; display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; }
 .wl-group-head b { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-2); }
 .wl-rows-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:10px 0 3px; }
-.wl-row { border:none; background:none; padding:3px 2px; margin:0; border-radius:6px; }
+.wl-row { position:relative; border:none; background:none; padding:3px 2px 3px 10px; margin:0; border-radius:6px; }
+/* How well the idea fits, as one colour. Deliberately thin: it should register
+   without being read. */
+.wl-fit { position:absolute; left:2px; top:4px; bottom:4px; width:3px; border-radius:2px; opacity:.85; }
+.wl-row:hover .wl-fit { opacity:1; }
 .wl-row:hover { background:var(--c-surface-2); }
 .wl-row.q-inspire-sel { background:color-mix(in srgb, var(--c-accent) 9%, transparent); }
 .wl-head { display:flex; align-items:center; gap:6px; min-height:20px; }
@@ -5072,16 +5077,15 @@ function stageStripHtml(st) {
   if (!st) return '';
   const dots = Array.from({ length: st.total }, (_, i) =>
     `<span class="stage-dot${i < st.step ? ' on' : ''}"></span>`).join('');
-  const where = `Step ${st.step} of ${st.total} — ${st.label}`;
-  // nextHtml is for the one case where the next step names other things you can jump
-  // to (a locked piece waiting on its prerequisites); everything else goes through
-  // `next` and is escaped. nextLabel is the bold word — "Next" reads wrong in front
-  // of a list of blockers.
-  const nextBody = st.nextHtml || (st.next ? qEsc(st.next) : '');
-  return `<div class="stage-strip${st.tone ? ' tone-' + st.tone : ''}">
-    <span class="stage-dots" role="img" aria-label="${qEscAttr(where)}" title="${qEscAttr(where)}">${dots}</span>
+  // The "Next — do this" sentence used to be printed on the strip. It said out loud
+  // what the dots and the card's one button already say, on every card at every step,
+  // so it read as noise and went unread. It survives only as the strip's tooltip:
+  // there when wanted, never taking a line.
+  const where = [`Step ${st.step} of ${st.total} — ${st.label}`,
+    st.next ? `${st.nextLabel || 'Next'}: ${st.next}` : ''].filter(Boolean).join('\n');
+  return `<div class="stage-strip${st.tone ? ' tone-' + st.tone : ''}" title="${qEscAttr(where)}">
+    <span class="stage-dots" role="img" aria-label="${qEscAttr(where)}">${dots}</span>
     <span class="stage-where">${qEsc(st.label)}</span>
-    ${nextBody ? `<span class="stage-next"><b>${qEsc(st.nextLabel || 'Next')}</b> ${nextBody}</span>` : ''}
   </div>`;
 }
 
@@ -5212,20 +5216,18 @@ function componentStage(c) {
           title: (next || `Queue a task to build the next step of ${c.name}`) + suffix }
       : { label: 'Queue it anyway', attrs: `data-nbbuild="${qEscAttr(c.id)}"`,
           title: 'Queues it anyway — it waits until the pieces it needs are done' + suffix };
-  // A locked piece used to say what it waits on in a line of its own, above the strip.
-  // It is the same question the strip answers — what has to happen next — so it belongs
-  // inside it, and the card keeps to one status line. The blockers stay clickable.
+  // What a locked piece waits on. It used to be a line of clickable blockers on the
+  // strip; the strip prints no next-step line any more (see stageStripHtml), so the
+  // names go in its tooltip as plain text. The pieces stay reachable — they are cards
+  // in this same list.
   const unmet = state === 'locked' ? archUnmet(c) : [];
-  const waiting = unmet.length
-    ? unmet.map(pre => `<a data-nbjump="${qEscAttr(pre.id)}">${qEsc(pre.name)}</a>`).join(', ')
-    : '';
+  const waiting = unmet.map(pre => pre.name).join(', ');
   return {
     step, total: ARCH_STAGE_ORDER.length,
     label: ARCH_STAGE_LABELS[c.status] || c.status || 'Just an idea',
     tone: state === 'built' ? 'done' : 'idle',
     nextLabel: waiting ? 'Waiting on' : 'Next',
-    nextHtml: waiting || '',
-    next: state === 'built' ? next : (next || 'Not decided yet — open it and talk it over'),
+    next: waiting || (state === 'built' ? next : (next || 'Not decided yet — open it and talk it over')),
     btn,
   };
 }
@@ -6891,7 +6893,9 @@ function qInspireReviewFacts(review) {
   const removed = new Map();
   const groupOf = new Map();
   const bestOf = new Map();
+  const fitOf = new Map();
   for (const r of (review?.removed || [])) removed.set(r.part_index + ':' + r.pick_index, r.reason || '');
+  for (const f of (review?.fit || [])) fitOf.set(f.part_index + ':' + f.pick_index, f.score);
   const rec = new Map();
   for (const r of (review?.recommended || [])) rec.set(r.group_id, { key: r.part_index + ':' + r.pick_index, why: r.why || '' });
   for (const g of (review?.groups || [])) {
@@ -6899,7 +6903,7 @@ function qInspireReviewFacts(review) {
     for (const k of (g.picks || [])) groupOf.set(k[0] + ':' + k[1], { id: g.id, note: g.note || '', bestKey: best?.key || null });
     if (best) bestOf.set(best.key, best.why);
   }
-  return { removed, groupOf, bestOf };
+  return { removed, groupOf, bestOf, fitOf };
 }
 
 // Toggles `key` ({part_index,pick_index}) in `list` in place. Picks in the same
@@ -6959,6 +6963,34 @@ function worldLeadField(pick) {
   if (pick.kind === 'open') return { label: 'Why it fits:', text: pick.why_fits || '' };
   if (pick.kind === 'hidden') return { label: 'What it is:', text: pick.what || '' };
   return { label: 'The big idea:', text: pick.vision || '' };
+}
+
+// How well an idea fits, 0-100, as one colour. The quick check scores every
+// surviving pick (codeDiscovery.js#sanitizeReview); reports written before it did
+// fall back to what the check already said out loud, so no row is left blank.
+function worldFitScore(key, facts, isApplied) {
+  const scored = facts?.fitOf?.get(key);
+  if (Number.isFinite(scored)) return scored;
+  if (isApplied) return 90;
+  if (facts?.removed?.has(key)) return 20;
+  if (facts?.bestOf?.has(key)) return 85;
+  return facts ? 60 : null;
+}
+
+// Straight ramp: red at 0, yellow-green around the middle, green at 100.
+function worldFitColor(score) { return `hsl(${Math.round(score * 1.45)} 58% 46%)`; }
+
+function worldFitWord(score) {
+  if (score >= 80) return 'Fits this task squarely';
+  if (score >= 60) return 'Fits this task well';
+  if (score >= 40) return 'Useful, but a stretch';
+  return 'Barely related';
+}
+
+function worldFitBar(key, facts, isApplied) {
+  const score = worldFitScore(key, facts, isApplied);
+  if (score == null) return '';
+  return `<span class="wl-fit" style="background:${worldFitColor(score)}" title="${worldFitWord(score)} — ${score} out of 100"></span>`;
 }
 
 function worldPickTitle(pick) {
@@ -7072,6 +7104,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
     : '';
   return `
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
+      ${worldFitBar(key, facts, isApplied)}
       <div class="wl-head">
         <button class="wl-mark ${inGroup ? 'wl-radio' : ''}" data-action="${pickAction}" title="${qEsc(markTitle)}" ${isApplied ? 'disabled' : ''}>${mark}</button>
         <span class="wl-title" data-worldexpand="${ek}">${qEsc(title)}</span>
@@ -8223,7 +8256,8 @@ function bkPickCard(pick, partIdx, pickIdx, recommended, facts = null) {
     ? [{ label: 'Useful — show me more like this', act: 'bk-useful', id: key },
        { label: 'Not useful — show me fewer like this', act: 'bk-not-useful', id: key }] : [];
   return `
-    <div class="uc is-static ${dim ? 'q-inspire-removed' : ''} ${group ? 'q-inspire-in-group' : ''}" data-partidx="${partIdx}" data-pickidx="${pickIdx}">
+    <div class="uc is-static has-fit ${dim ? 'q-inspire-removed' : ''} ${group ? 'q-inspire-in-group' : ''}" data-partidx="${partIdx}" data-pickidx="${pickIdx}">
+      ${worldFitBar(key, facts, false)}
       <div class="uc-head">
         <span class="uc-title" title="${qEscAttr(title)}">${qEsc(title)}</span>
         ${recommended ? `<span class="bk-stars" title="AI-recommended pick for this part">★ AI pick</span>` : ''}
@@ -8892,10 +8926,9 @@ function nbUnreachableSectionHtml() {
         ${it.gives ? `<div class="nb-what"><b>What a button would give you:</b> ${qEsc(it.gives)}</div>` : ''}
         ${it.why ? `<div class="nb-what" style="opacity:.85;"><b>Why it matters:</b> ${qEsc(it.why)}</div>` : ''}
         ${!it.does && it.hint ? `<div class="nb-what" style="opacity:.75;">${qEsc(it.hint)}</div>` : ''}
-        <div class="stage-strip">
-          <span class="stage-dots" role="img" aria-label="Step 1 of 2 — the server half is done" title="Step 1 of 2 — the server half is done"><span class="stage-dot on"></span><span class="stage-dot"></span></span>
+        <div class="stage-strip" title="Step 1 of 2 — the server half is done&#10;Next: add the way to use it from the app">
+          <span class="stage-dots" role="img" aria-label="Step 1 of 2 — the server half is done"><span class="stage-dot on"></span><span class="stage-dot"></span></span>
           <span class="stage-where">Server half done</span>
-          <span class="stage-next"><b>Next</b> Add the way to use it from the app</span>
         </div>
       </div>
     `).join('')}`;
@@ -9243,9 +9276,6 @@ function renderNotbuilt() {
   });
   wireStudioSlots(host, () => { loadNbConvos(); renderNotbuilt(); });
   cardLineFill();
-  host.querySelectorAll('[data-nbjump]').forEach(a => {
-    a.onclick = () => { setArchTab('graph'); renderArchStage(); selectArchNode(a.getAttribute('data-nbjump')); };
-  });
   host.querySelectorAll('[data-jump]').forEach(a => {
     a.onclick = (e) => { e.preventDefault(); jumpToQueueItem(a.getAttribute('data-jump')); };
   });

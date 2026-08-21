@@ -626,12 +626,13 @@ Do:
 1b. OFF-SUBJECT IS OFF-TOPIC, and it is the most common failure here. A pick that improves a different part of the app than the task names must be removed even when it is a genuinely good idea — the plan for THIS task is written from what survives, so a good idea about the wrong part of the app just makes the plan wrong. Read the task's own words for what part of the app it is about, and hold every pick to it.${subjectBlock}
 2. GROUP picks that are alternatives of each other — they would build the same thing, the owner only needs one. Do NOT group picks just because they are related or would work well together: if two picks could both be built and used at the same time without conflict, they are complementary, not alternatives — leave them ungrouped. Only group when picking one makes the other redundant. Give each group a short id ("A", "B"...) and a one-sentence note on why they are the same thing in different wrapping. A group of one is not a group.
 3. RECOMMEND, for each group, the single best pick, with one short sentence why.
+3b. FIT: score EVERY pick you did not remove from 0 to 100 for how well it serves THIS task — 100 means squarely what the task needs, 50 means useful but a stretch, under 30 means barely related. Use the whole range and be honest; most reports should not be all high. Score is a number only, no text.
 ${questionRule}
 
 ${USER_FACING_STYLE}
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"removed":[{"part_index":0,"pick_index":1,"reason":"short plain reason"}],"groups":[{"id":"A","picks":[[0,2],[1,0]],"note":"why they are alternatives"}],"recommended":[{"group_id":"A","part_index":0,"pick_index":2,"why":"one short sentence"}],"question":null}`;
+{"removed":[{"part_index":0,"pick_index":1,"reason":"short plain reason"}],"fit":[{"part_index":0,"pick_index":0,"score":85}],"groups":[{"id":"A","picks":[[0,2],[1,0]],"note":"why they are alternatives"}],"recommended":[{"group_id":"A","part_index":0,"pick_index":2,"why":"one short sentence"}],"question":null}`;
 }
 
 // Validate the model's review against the real report shape: indices must exist,
@@ -649,6 +650,14 @@ function sanitizeReview(parsed, report, allowQuestion = true) {
     .filter(k => validKey(k) && String(k.reason || '').trim())
     .map(k => ({ part_index: k.part_index, pick_index: k.pick_index, reason: String(k.reason).trim().slice(0, 180) }));
   const removedKeys = new Set(removed.map(r => `${r.part_index}:${r.pick_index}`));
+
+  // How well each surviving pick fits, 0-100. Drives the colour of a row's left
+  // bar in the UI — green squarely-relevant through amber to red barely-related.
+  // Removed picks get no score: they already carry the quick check's reason.
+  const fit = (Array.isArray(parsed.fit) ? parsed.fit : [])
+    .filter(k => validKey(k) && Number.isFinite(Number(k.score)))
+    .filter(k => !removedKeys.has(`${k.part_index}:${k.pick_index}`))
+    .map(k => ({ part_index: k.part_index, pick_index: k.pick_index, score: Math.max(0, Math.min(100, Math.round(Number(k.score)))) }));
 
   const groups = [];
   const usedIds = new Set();
@@ -692,8 +701,8 @@ function sanitizeReview(parsed, report, allowQuestion = true) {
     }
   }
 
-  if (!removed.length && !groups.length && !question) return null;
-  return { removed, groups, recommended, question };
+  if (!removed.length && !groups.length && !question && !fit.length) return null;
+  return { removed, fit, groups, recommended, question };
 }
 
 /**
