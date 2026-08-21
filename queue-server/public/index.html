@@ -260,12 +260,31 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    deliberately stay visible — a nearly-spent quota must still be noticeable. */
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .core-banner,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .q-pausebadge { display:none; }
-.rail-foot #usageStripHost { padding:2px 7px; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-reset,
-.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-pct,
-.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-label { display:none; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-bar { height:3px; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) #usageStripHost .usage-strip { flex-direction:column; gap:3px; }
+/* The quota strip was written for a 46px-tall bar across the top: three items
+   side by side, each with a 56px bar plus label, percentage and reset time. None
+   of that fits a 232px-wide column, so in the rail it stacks — one row per
+   limit, label above, bar and figure below. */
+.rail-foot #usageStripHost { padding:4px 7px 2px; }
+.rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:5px; }
+.rail-foot .usage-item { display:grid; grid-template-columns:1fr auto; grid-template-areas:'label pct' 'bar bar'; align-items:center; gap:2px 6px; }
+.rail-foot .usage-item .ui-label { grid-area:label; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rail-foot .usage-item .usage-pct { grid-area:pct; white-space:nowrap; }
+.rail-foot .usage-bar { grid-area:bar; width:auto; }
+/* the reset time has nowhere to go in a column — it is already in the tooltip */
+.rail-foot .usage-reset { display:none; }
+.rail-foot .usage-none { white-space:normal; line-height:1.35; }
+/* the "accounts" fold is absolutely positioned, and .rail-inner clips overflow,
+   so in the rail it opens in place instead of as a popover */
+.rail-foot .usage-more { margin-top:2px; }
+.rail-foot .usage-more-panel { position:static; min-width:0; right:auto; top:auto; margin-top:4px; }
+/* collapsed: the bars alone. A nearly-spent quota still has to be noticeable,
+   so they stay — only the words go. */
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .ui-label,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-pct,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-none,
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-more { display:none; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-strip { gap:3px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-bar { height:4px; }
 /* the Queue count: a pill beside the label when open, a dot on the symbol when not */
 .mode-pill-count { display:none; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--c-amber); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; flex:none; margin-left:auto; }
 .mode-pill-count.on { display:inline-flex; }
@@ -1491,18 +1510,6 @@ button:active { transform: translateY(1px) scale(.99); }
       <button id="coreTabArch" class="active" data-core-tab="arch">Architecture</button>
       <button id="coreTabFlow" data-core-tab="flow">Flow <span class="core-tab-count" id="coreCountFlow"></span></button>
     </div>
-    <div id="usageStripHost" data-src="CORE ARCHITECTURE → slim header → Claude usage (5h + weekly) | fmcns_navigator.html: loadUsage(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
-    <span id="archQueueBanner" class="core-banner" data-src="CORE ARCHITECTURE → slim header → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
-    <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
-    <button class="core-hbtn" id="queuePauseBtn" title="Pause / resume the task queue">Pause queue</button>
-    <span class="core-serverpick" title="Which backend this page talks to: the local server on this Mac, or the deployed site. Choosing one saves it and reloads.">
-      Server:
-      <select id="serverToggle">
-        <option value="local">local</option>
-        <option value="production">production</option>
-      </select>
-    </span>
-    <button class="core-hbtn" id="aiSheetBtn" title="AI Settings — which model handles what, and what happens when the paid one runs out">⚙</button>
   </div>
   <div class="ws-shell">
     <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage(), initBlocks() into #tvBodyBlocks | backend: services/architecture.js, routes/architecture.js, routes/discovery.js">
