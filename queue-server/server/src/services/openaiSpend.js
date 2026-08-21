@@ -216,8 +216,8 @@ export async function monthSpendUsd() {
     if (!day.startsWith(utcMonthPrefix())) continue;
     sum += amount;
   }
-  // Today: OpenAI lags the last few minutes, the local ledger is wiped by a
-  // redeploy. Neither is reliable alone; the larger is the safe one.
+  // Today: OpenAI lags the last few minutes, and the local ledger only counts what
+  // THIS deploy has spent. Neither is complete alone; the larger is the safe one.
   sum += Math.max(reported.byDay.get(today) || 0, localToday());
 
   const age = Date.now() - reported.at;

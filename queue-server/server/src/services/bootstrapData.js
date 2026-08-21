@@ -1,8 +1,13 @@
 // Runs on every server boot (see index.js) and repopulates the ontology + knowledge
-// tables from the seed files checked into the repo. Idempotent (upsert throughout),
-// and necessary because Railway's free tier resets the database on every deploy —
-// without this, the character/film/country data and reference docs would vanish
-// after every code push until someone remembered to re-run the migration by hand.
+// tables from the seed files checked into the repo. Idempotent (upsert throughout)
+// and cheap, which is why it simply runs unconditionally rather than being gated on
+// "is it already there?".
+//
+// It does NOT run because the database gets wiped — production keeps it on a volume
+// and it survives redeploys (see CLAUDE.md, "Production data IS durable"). It runs so
+// that a change to a seed file reaches the app on the next deploy without anyone
+// re-running a migration by hand. Nothing user-created is at risk: only `entities`
+// and `knowledge_docs` are written here, and no other code path writes them.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -67,8 +67,8 @@ park a job in `helper_jobs`, and the runner answers it with one cheap haiku call
 | `JWT_SECRET` | yes | Long random string. |
 | `ADMIN_PASSWORD` | yes | The one password this single-user app accepts. |
 | `PORT` | no | Defaults to 8080; Railway sets this for you. |
-| `DB_PATH` | no | Defaults to `./data/queue.db`. Resets on redeploy on Railway's free tier unless a volume is attached. |
-| `DATA_DIR` | no | Where task-runner artifacts (`agent-tasks.json`, exec logs) live. Defaults to `./data`. Same free-tier caveat as `DB_PATH`. |
+| `DB_PATH` | **in production, yes** | Where the SQLite file lives. Production sets `/data/queue.db`, pointing into the attached volume. **Do not leave it unset on Railway:** the default is `$RAILWAY_VOLUME_MOUNT_PATH/data/queue.db`, i.e. `/data/data/queue.db` — a *different*, empty database on the same volume. That double-nesting is what made the app look wiped on 2026-08-18. Unset locally it is `./data/queue.db`, which is fine. |
+| `DATA_DIR` | no | Where task-runner artifacts (`agent-tasks.json`, exec logs) live. Defaults to `./data`. On Railway put it on the volume too, or artifacts are lost on redeploy (unlike the DB, nothing re-creates these). |
 | `CLAUDE_BIN` | no | Path to the Claude Code CLI binary. Defaults to `claude` (must be on `PATH`). **Not installed/authenticated anywhere yet — see above.** |
 | `AGENT_CWD` | no | The working tree the agent edits. Defaults to the server's own cwd — almost certainly wrong for a real deployment; should point at a checked-out repo. |
 | `APP_URL` | no | Included in recap notifications as a link back to the app, if set. |

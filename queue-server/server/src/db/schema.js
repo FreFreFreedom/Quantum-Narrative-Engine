@@ -14,9 +14,15 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 // Falls back to the Railway volume mount (auto-injected whenever a volume is attached)
-// before process.cwd(), so the DB lands on durable storage by default even if DB_PATH is
-// never explicitly set — process.cwd() alone sits in the container's ephemeral filesystem
-// and gets wiped on every redeploy on Railway's free tier.
+// before process.cwd(), so the DB lands on durable storage even if DB_PATH is never set —
+// process.cwd() alone sits in the container's ephemeral filesystem and does get wiped on
+// every redeploy on Railway's free tier.
+//
+// But "durable" is not the same as "the right file". With a volume at /data and DB_PATH
+// unset, this resolves to /data/data/queue.db — durable, and a DIFFERENT, EMPTY database
+// from the /data/queue.db production actually uses. That double-nesting is why the app
+// once looked wiped when nothing had been lost (2026-08-18). So DB_PATH is load-bearing
+// in production; see queue-server/README.md.
 export const DB_PATH = process.env.DB_PATH || path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH || process.cwd(), 'data', 'queue.db');
 
 export function openDb() {
@@ -510,11 +516,14 @@ function initSchema(db) {
   // One row per UTC day of real money spent on gpt-4o, in dollars (side_call_ledger
   // above counts CALLS; this counts CENTS — they are not interchangeable).
   //
-  // This is the LIVE figure, not the record of truth. Railway's free tier wipes
-  // this file on every redeploy, and OpenAI's Costs API only buckets by whole
-  // days — so openaiSpend.js composes the two: OpenAI's reported buckets for the
-  // month so far, plus these local rows for today. Do not make the cap depend on
-  // this table alone; it forgets.
+  // This is the LIVE figure, not the record of truth — OpenAI's Costs API only
+  // buckets by whole days, so openaiSpend.js composes the two: OpenAI's reported
+  // buckets for the month so far, plus these local rows for today. Do not make the
+  // cap depend on this table alone.
+  //
+  // (It used to say the reason was Railway wiping this file every redeploy. That is
+  // not true of production — the DB is on a volume. The composition is still right,
+  // for the whole-day-buckets reason above. Corrected 2026-08-21.)
   db.exec(`
     CREATE TABLE IF NOT EXISTS openai_spend_ledger (
       day TEXT PRIMARY KEY,

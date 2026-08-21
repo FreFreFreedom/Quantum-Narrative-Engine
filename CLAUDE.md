@@ -177,8 +177,9 @@ whole thing).
   text-generation feature down at once.
 - `services/warmup.js` — fire-and-forget job run right after boot that
   pre-generates book suggestions + first-tag lens for every character/country
-  not yet cached, so nothing is cold immediately after a Railway redeploy wipes
-  the DB.
+  not yet cached, so a first click doesn't wait on a live generation. Note this
+  is now mostly belt-and-braces in production: the DB is durable (above), so
+  caches survive a redeploy and the "not yet cached" set is normally empty.
 - `services/claudeUsage.js` — backs `/api/agent/usage` (quota strip in the UI).
 
 ## Frontend apps

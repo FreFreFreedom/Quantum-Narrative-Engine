@@ -1,7 +1,6 @@
-// Boot-time cache warm-up: because Railway's free tier resets the DB on every
-// deploy (see index.js), the generate-once-and-cache pattern used by books.js and
-// tagLens.js means every entity starts "cold" after a redeploy — the first person
-// to click it eats the live Claude-API latency. This module pre-generates the two
+// Boot-time cache warm-up for the generate-once-and-cache pattern in books.js and
+// tagLens.js: an entity nobody has opened yet has nothing cached, so the first person
+// to click it eats a live generation. This module pre-generates the two
 // things a user sees the instant they click an entity (book suggestions, and the
 // first tag's lens) for every character and country in the background, right after
 // boot, so that by the time anyone is actually navigating the app those responses

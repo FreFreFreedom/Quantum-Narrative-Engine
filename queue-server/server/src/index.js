@@ -101,8 +101,10 @@ try {
   if (migrated.changed) console.log(`Free-first policy: flipped ${migrated.changed} feature default(s) off Claude.`);
 } catch (e) { console.error('Free-first defaults migration failed:', e.message); }
 
-// Repopulate ontology + knowledge data on every boot — Railway's free tier resets
-// the DB on each deploy, so this has to be automatic, not a one-off manual step.
+// Repopulate ontology + knowledge data on every boot. Not because the DB is wiped —
+// production keeps it on a volume (CLAUDE.md, "Production data IS durable") — but so a
+// change to a seed file reaches the app on the next deploy with no manual step. Cheap
+// and idempotent; see services/bootstrapData.js.
 try {
   const ontologyResult = migrateOntology(db);
   const knowledgeResult = seedKnowledge(db);
@@ -120,13 +122,21 @@ try { regenerateBriefing(); } catch (e) { console.error('Briefing regenerate fai
 // Background pre-generation: book suggestions + first-tag lens for every
 // character/country, plus the suggestion/architecture/world-look sweeps.
 //
-// OFF BY DEFAULT (opt in with PREGEN_ENABLED=1). It used to run on every boot,
-// which on Railway's free tier means every single deploy: the DB is reset each
-// redeploy, so the "already cached?" guards always read empty and the whole
-// sweep re-ran from scratch — ~369 AI calls per deploy for content that may
-// never be opened. Every one of these results is cached in the DB on first
-// view anyway (entity_book_suggestions / entity_tag_lenses), so generating on
-// demand costs one short wait once per item instead of a full bill per deploy.
+// OFF BY DEFAULT (opt in with PREGEN_ENABLED=1), because these results are cached in
+// the DB on first view anyway (entity_book_suggestions / entity_tag_lenses), so
+// generating on demand costs one short wait once per item — for content that may never
+// be opened at all. That is the whole reason, and it stands on its own.
+//
+// CAREFUL IF YOU REVISIT THIS. The original reason given here was different and was
+// WRONG: it said Railway's free tier reset the DB every redeploy, so the "already
+// cached?" guards always read empty and the full sweep re-ran every deploy at ~369 AI
+// calls. Production keeps the DB on a volume (CLAUDE.md, "Production data IS durable"),
+// so those guards DO work and the real cost of turning this on is only the
+// not-yet-cached items — far less than 369, and near zero once warm. So the honest
+// position is: re-enabling this is a legitimate judgment call about whether to pay
+// up-front for content nobody may open, NOT something the old comment's arithmetic
+// forbids. Decide it deliberately; don't let either version of this comment decide for
+// you. Corrected 2026-08-21.
 // WARMUP_DISABLED=1 is still honoured — the review runner's ephemeral boot
 // check relies on it and must never spend credits.
 if (process.env.PREGEN_ENABLED === '1' && process.env.WARMUP_DISABLED !== '1') {
