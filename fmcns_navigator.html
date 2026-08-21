@@ -755,6 +755,12 @@ body, .left, .right, .header, .graph-controls, .modebar, .core-header, .arch-too
 .ai-adv { margin-top:14px; font-size:11.5px; color:var(--c-ink-2); }
 .ai-adv summary { cursor:pointer; color:var(--c-ink-2); }
 .ai-adv textarea { margin-top:6px; font-family:ui-monospace, Menlo, monospace; font-size:11px; min-height:90px; }
+/* The Idea Studio voice box. Prose, not JSON, so it gets the reading font and
+   real room — this is text you rewrite and re-read, not a config blob. */
+.ai-voice { margin-top:14px; }
+.ai-voice summary { cursor:pointer; color:var(--c-ink-2); font-size:11.5px; }
+.ai-voice textarea { margin-top:8px; width:100%; min-height:170px; font-family:inherit; font-size:12px; line-height:1.55; resize:vertical; }
+.ai-voice-note { margin-top:6px; font-size:11px; color:var(--c-ink-4); line-height:1.5; }
 .ai-savebtn:hover { background:var(--c-ink-solid-2); }
 .ai-savebtn:disabled { background:var(--c-border-3); cursor:default; }
 .ai-savemsg { font-size:11px; color:var(--c-brand); margin-left:10px; }
@@ -3868,6 +3874,11 @@ function renderAiSettings() {
       <tbody>${rows}</tbody>
     </table>
     <div class="ai-fp-sub" style="margin-top:6px;">&ldquo;Second account&rdquo; means your smaller Claude subscription. Those jobs run on your Mac, so the runner has to be on. When that account runs out for the next few hours, the same question is asked again on your main account rather than dropping to a free model &mdash; and the same happens if its token isn&rsquo;t set. Coding tasks always stay on the main account.</div>
+    <details class="ai-voice">
+      <summary>How Idea Studio thinks &mdash; the voice it answers in</summary>
+      <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" placeholder="Leave empty to use the built-in voice.">${qEsc(aiSettings.studioPersona || '')}</textarea>
+      <div class="ai-voice-note">This is the lens your brainstorming conversations think through &mdash; the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest (use the real project data, invent nothing, say when something already exists), so you can rewrite it freely without breaking anything. Empty means the built-in voice. Only affects Idea Studio conversations, not the shorter system answers.</div>
+    </details>
     <details class="ai-adv">
       <summary>Advanced — queue budget &amp; intel (JSON)</summary>
       <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
@@ -3911,7 +3922,9 @@ function renderAiSettings() {
     }
     btn.disabled = true; msg.textContent = '';
     try {
-      aiSettings = await apiWrite('/api/travaux/ai-settings', 'PUT', { defaults, policy, queue, intel });
+      const personaEl = document.getElementById('aiStudioPersona');
+      const studioPersona = personaEl ? personaEl.value : undefined;
+      aiSettings = await apiWrite('/api/travaux/ai-settings', 'PUT', { defaults, policy, queue, intel, studioPersona });
       msg.textContent = 'Saved.';
       setTimeout(() => { if (msg.textContent === 'Saved.') msg.textContent = ''; }, 3000);
     } catch (e) {

@@ -51,8 +51,8 @@ export function queueRoutes() {
   });
 
   router.put('/ai-settings', (req, res) => {
-    const { defaults, policy, queue, intel } = req.body || {};
-    res.json(updateAiSettings({ defaults, policy, queue, intel }));
+    const { defaults, policy, queue, intel, studioPersona } = req.body || {};
+    res.json(updateAiSettings({ defaults, policy, queue, intel, studioPersona }));
   });
 
   router.get('/prompts', (req, res) => {

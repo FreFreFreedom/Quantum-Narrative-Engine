@@ -28,6 +28,7 @@ function loadAiSettings() {
   }
   const row = db.prepare(`SELECT * FROM ai_settings WHERE id='global'`).get();
   if (!row) return settingsCache;
+  const studioPersona = typeof row.studio_persona === 'string' ? row.studio_persona : '';
   let queue = { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30 };
   if (typeof row.queue_go_budget_usd === 'number' && Number.isFinite(row.queue_go_budget_usd)) {
     queue.goBudgetUsd = row.queue_go_budget_usd;
@@ -56,14 +57,18 @@ function loadAiSettings() {
       cooldown: JSON.parse(row.cooldown_json || '{}'),
       queue,
       intel,
+      studioPersona,
     };
   } catch {
-    settingsCache = { at: now, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue, intel: {} };
+    settingsCache = { at: now, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue, intel: {}, studioPersona: '' };
   }
   return settingsCache;
 }
 
 export function refreshAiSettings() { settingsCache.at = 0; return loadAiSettings(); }
+
+// The Idea Studio voice, or '' when unset (meaning: use the built-in default).
+export function studioPersonaText() { return loadAiSettings().studioPersona || ''; }
 
 // 'reply' is the chat on a task card. It was missing here for as long as the chat
 // existed, which meant no per-feature choice could ever reach it: an unlisted
@@ -74,7 +79,7 @@ const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
 // shouldn't have to re-derive that from a raw ISO timestamp).
 export function getAiSettings() {
-  const { defaults, policy, cooldown, queue, intel } = refreshAiSettings();
+  const { defaults, policy, cooldown, queue, intel, studioPersona } = refreshAiSettings();
   const now = Date.now();
   const cooldownOut = {};
   for (const [providerId, until] of Object.entries(cooldown || {})) {
@@ -83,13 +88,13 @@ export function getAiSettings() {
   }
   const defaultsOut = {};
   for (const f of FEATURES) defaultsOut[f] = defaults[f] || {};
-  return { defaults: defaultsOut, policy, cooldown: cooldownOut, features: FEATURES, queue, intel };
+  return { defaults: defaultsOut, policy, cooldown: cooldownOut, features: FEATURES, queue, intel, studioPersona: studioPersona || '' };
 }
 
 // Update per-feature defaults and/or the quota policy. Partial: only the keys
 // present in `patch.defaults` are merged in, so the panel can save one feature's
 // row without clobbering the others.
-export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel } = {}) {
+export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel, studioPersona } = {}) {
   if (!db) return { error: 'no_db' };
   const current = loadAiSettings();
   const nextDefaults = { ...current.defaults };
@@ -118,8 +123,14 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
   }
   let nextIntel = { ...(current.intel || {}) };
   if (intel) nextIntel = { ...nextIntel, ...intel };
-  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, side_call_budget=?, intel_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, nextQueue.sideCallBudget, JSON.stringify(nextIntel));
+  // Empty string is a meaningful value here — it means "go back to the built-in
+  // default voice" — so only `undefined` leaves it untouched. Capped so one paste
+  // cannot push the whole prompt past a sane size.
+  const nextPersona = typeof studioPersona === 'string'
+    ? studioPersona.slice(0, 4000)
+    : (current.studioPersona || '');
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, side_call_budget=?, intel_json=?, studio_persona=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, nextQueue.sideCallBudget, JSON.stringify(nextIntel), nextPersona);
   return getAiSettings();
 }
 

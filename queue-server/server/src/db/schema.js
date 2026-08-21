@@ -498,6 +498,12 @@ function initSchema(db) {
   // Unlike every other budget here, going over does not degrade an optional
   // pass — it stops the paid lane outright and says so in the conversation.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN openai_month_cap_usd REAL NOT NULL DEFAULT 10`); } catch {}
+  // The voice Idea Studio conversations think in — editable from AI Settings so it
+  // can be tuned without a deploy, which matters because a thinking partner's
+  // register is something you only get right by iterating on it. Empty string means
+  // "use the built-in default" (see conversations.js DEFAULT_STUDIO_PERSONA); it is
+  // layered ON TOP of the operational rules, never a replacement for them.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN studio_persona TEXT NOT NULL DEFAULT ''`); } catch {}
 
   // Daily helper-call ledger (free-only plan): one row per UTC day counting the
   // short text-model steps the queue spent (plan drafts, summaries, world-look,

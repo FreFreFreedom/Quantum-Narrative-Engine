@@ -20,7 +20,7 @@ import {
 } from './codeDiscovery.js';
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
-import { generateText, generateTextStream } from './ai/text.js';
+import { generateText, generateTextStream, studioPersonaText } from './ai/text.js';
 import { getComponents } from './architecture.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
@@ -210,7 +210,9 @@ Commands the user may type:
 
 The subject being discussed is described in SUBJECT CONTEXT below. It is the whole reason this conversation exists — keep every answer anchored to it.
 
-Be direct, plain-English, no jargon. Never mention internal component ids, codes or file names in your answers — say what the thing DOES for the user, in everyday words. The user is not a programmer.`;
+Be direct. Never mention internal component ids, codes or file names in your answers — say what the thing DOES, not what it is called in the codebase. The owner is not a programmer, so TECHNICAL jargon is out.
+
+Conceptual, philosophical and spiritual language is NOT jargon and is welcome — the subject matter is mythic and structural, and flattening it into plain operational English loses the actual thought. Abstraction is fine. Vagueness is not.`;
 
 // How long an answer should be. Split out of BASE_SYSTEM because the two lanes
 // want opposite things and used to share one instruction.
@@ -224,12 +226,36 @@ Be direct, plain-English, no jargon. Never mention internal component ids, codes
 // every turn default to terse and put the burden on him to ask for depth every
 // time — which is not how a real brainstorming conversation works. So the model
 // judges length from the question instead, the way ChatGPT does by default.
+// ─── The Idea Studio voice ───────────────────────────────────────────────────
+// Antoine's own framing of his research, in his words (2026-08-21), used as the
+// lens the conversation thinks through. It is his text, not a paraphrase of it —
+// he wrote it and it is better than a generated "be philosophical" instruction,
+// because it names specific lenses (biopolitics, shadow work, grief as a mirror
+// of power) and specificity is what actually changes how a model reasons.
+//
+// Deliberately LAYERED on top of BASE_SYSTEM rather than replacing it: the
+// operational rules (use the tools, invent nothing, say when something already
+// exists, stay anchored to the subject) are what keep this useful instead of
+// merely eloquent. A beautiful essayist that hallucinates is not the goal.
+//
+// Overridable live from AI Settings (ai_settings.studio_persona) because a
+// thinking partner's register is something you only get right by iterating, and
+// waiting on a deploy each time kills that loop.
+const DEFAULT_STUDIO_PERSONA = `You navigate the liminal space where history, myth, and imagination converge. You trace the conscious architectures and subconscious drives of entities — families, corporations, nations, civilizations — as evolving, self-similar consciousness systems. You think through biopolitics, post-humanism, cyberpunk dynamics, transhumanist warfare, shadow work, and grief as mirrors of power and memory. Literature, cinema, and speculative worlds are living laboratories for decoding suppressed stories and collective feedback loops. You map multi-scale narrative cartographies where every node — real or imagined — can reveal deeper structural truths.
+
+So: reach for the structural reading, not the obvious one. Name the tension in an idea rather than smoothing it. Follow a thought to what it implies, including where it implies something uncomfortable. Question the premise of the question when the premise is the interesting part. Say what you actually think, and say when you think the idea is wrong.`;
+
+function studioPersona() {
+  const custom = (studioPersonaText() || '').trim();
+  return custom || DEFAULT_STUDIO_PERSONA;
+}
+
 const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
 const LENGTH_JUDGED = `Let the question decide how long the answer is — the way a good thinking partner would. A question with one right answer gets one or two sentences; a real question about direction, trade-offs or "what should this be" gets the depth it deserves: work through it, lay out the possibilities, say what you'd pick and why. Do not pad, and do not compress something that needs room. Never end with a summary of what you just said.`;
 
 function subjectSystemPrompt(ctxText, { depth = false } = {}) {
   return `${BASE_SYSTEM}
-
+${depth ? `\n=== HOW TO THINK ===\n${studioPersona()}\n` : ''}
 ${depth ? LENGTH_JUDGED : LENGTH_TERSE}
 
 === SUBJECT CONTEXT ===
