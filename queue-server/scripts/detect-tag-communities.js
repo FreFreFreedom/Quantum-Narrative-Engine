@@ -169,6 +169,10 @@ export function run() {
   communities.forEach((c) => c.tags.forEach((t) => tagToCommunityId.set(t, c.id)));
 
   const result = {
+    // Rewritten on every run, so the "this is not live data" warning survives a
+    // regeneration instead of being silently dropped from the output.
+    _note:
+      'Snapshot only — NOT live data. The running app computes theme clusters from the entity_tags table at boot (server/src/services/tagCommunities.js) and reads this file nowhere. Regenerate with scripts/detect-tag-communities.js if you want the seed JSON\'s own clustering.',
     method: 'louvain-single-level-greedy-modularity',
     generatedFrom: 'queue-server/data-seed/fmcns_ontology.json',
     generatedAt: new Date().toISOString(),
