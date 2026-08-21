@@ -1463,7 +1463,7 @@ button:active { transform: translateY(1px) scale(.99); }
           </span>
           <span class="flow-sg-filters" id="flowSgFilters">
             <span class="sg-filterbtns" role="group" aria-label="Suggestion status filter">
-              <button class="active" data-sg-status="all" title="Show all suggestions">All</button>
+              <button class="active" data-sg-status="all" title="Everything except the ones you dismissed">All</button>
               <button data-sg-status="new" title="Only unread suggestions">New</button>
               <button data-sg-status="accepted" title="Only accepted suggestions">Accepted</button>
               <button data-sg-status="dismissed" title="Only dismissed suggestions">Dismissed</button>
@@ -7131,7 +7131,12 @@ async function loadSuggestions() {
     if (tvSuggestionFilter.status !== 'all') q.push('status=' + tvSuggestionFilter.status);
     if (tvSuggestionFilter.kind !== 'all') q.push('kind=' + tvSuggestionFilter.kind);
     const data = await api('/api/travaux/suggestions' + (q.length ? '?' + q.join('&') : ''));
-    tvSuggestions = data.suggestions || [];
+    // The server already leaves dismissed ones out unless they are asked for by
+    // name. Held again here so the rule is also true in the list that gets drawn:
+    // once you turn a suggestion down it stops showing up, and the only way back
+    // to it is pressing "Dismissed".
+    tvSuggestions = (data.suggestions || [])
+      .filter(sg => tvSuggestionFilter.status === 'dismissed' || sg.status !== 'dismissed');
   } catch (e) { tvSuggestions = []; }
   // Their world-looks are prepared in the background on the server — sync each
   // suggestion's state once per session so ready ones show their ✨ marker (and
@@ -7588,7 +7593,10 @@ async function loadMind(quiet) {
     if (quiet && sig === ARCH_INTEL_SIG) return;
     ARCH_INTEL_SIG = sig;
     ARCH_INTEL = sigRes;
-    MIND_THOUGHTS = thRes.thoughts || [];
+    // Dismissed thoughts stay out of the feed — same rule as the suggestions list.
+    // They are still on record server-side (the adoption meter counts them), just
+    // not put back in front of you.
+    MIND_THOUGHTS = (thRes.thoughts || []).filter(t => t.status !== 'dismissed');
     renderMind();
     if (archSelected) renderArchDetail(archSelected);
   } catch (e) {

@@ -41,10 +41,17 @@ function row(r) {
   return { ...r, deleted_at: undefined };
 }
 
-export function listSuggestions({ status = null, kind = null, flagShipped = true } = {}) {
+// `includeDismissed` defaults to true so internal callers (a lookup by id, the
+// conversation tool) still see every row. The read the UI does asks for false:
+// a suggestion you turned down should not come back in the list you browse —
+// the row is kept only so the engine never re-proposes it (see dismissSuggestion),
+// not so you have to read it again. Asking for status='dismissed' explicitly
+// still returns them, which is what the "Dismissed" filter button does.
+export function listSuggestions({ status = null, kind = null, flagShipped = true, includeDismissed = true } = {}) {
   let sql = `SELECT * FROM work_suggestions WHERE deleted_at IS NULL`;
   const args = [];
   if (status) { sql += ` AND status = ?`; args.push(status); }
+  else if (!includeDismissed) { sql += ` AND status <> 'dismissed'`; }
   if (kind) { sql += ` AND kind = ?`; args.push(kind); }
   sql += ` ORDER BY created_at DESC`;
   const rows = db.prepare(sql).all(...args).map(row);
