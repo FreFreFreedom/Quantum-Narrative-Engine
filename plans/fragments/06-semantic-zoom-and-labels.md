@@ -72,3 +72,28 @@ dots stay separate where they crowd (Stage 2.4, minus anything colour-related).
   `d3-force`, `d3-hierarchy`, all on the global `d3`. Do not add, re-fetch or
   re-order them, and do not introduce any other dependency.
 - No test suite exists. Verify by the checks listed below, in a browser.
+
+## Measured on the live app before this fragment was sent (2026-08-22)
+
+Numbers from production with Stage 1 complete, so you are not guessing:
+
+- The graph stage is only **503 x 711 CSS px** with both side rails open, while the
+  settled layout spans roughly **1150 x 1200 world units**. Fit-to-view therefore
+  resolves to a camera scale of about **0.30**, filling 80% of the width but only
+  52% of the height.
+- At 0.30, **the default view is permanently inside your `< 0.6` band.** That is not
+  an edge case to design later — it is what the graph looks like when it opens.
+- The layout settles in **278 ticks / ~156ms**, ending at alpha 0.001, with **zero
+  overlapping nodes** (worst gap 8px). So collision is already solved; what remains
+  illegible is **labels**, not dots.
+
+Two consequences for this fragment:
+
+1. **The far band is the primary view, not a fallback.** Make `< 0.6` genuinely
+   good — cluster regions with readable names and clean dots, a map of territories
+   worth looking at on its own. Do not treat it as a degraded version of the middle
+   band.
+2. **Labels are the whole problem.** With 214 nodes at 0.30 scale, per-node labels
+   cannot all fit and should not all be drawn. The halo and the collision skipping
+   matter more than any other line in this fragment. Prefer drawing fewer, better
+   labels over cramming them in.
