@@ -586,6 +586,12 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .room-picktitle { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .room-note { font-size:11.5px; color:var(--c-ink-4); margin-top:6px; }
 .room-note.err { color:var(--c-danger); }
+.room-cardfilter { margin-bottom:8px; }
+.room-cardfilter .searchbox { margin-bottom:6px; }
+.room-chiprow { display:flex; flex-wrap:wrap; gap:5px; }
+.room-chip { flex:none; padding:3px 8px; border:1px solid var(--c-border-2); border-radius:999px; background:none; font:inherit; font-size:10.5px; letter-spacing:.02em; color:var(--c-ink-4); cursor:pointer; }
+.room-chip:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.room-chip.is-on { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
 /* Inline task/seed/suggestion detail — the row expands downwards into this card. */
 .flow-expanded { border:1px solid var(--c-border-2); background:var(--c-surface-2); border-radius:10px; padding:14px; margin:2px 0 10px; animation:fmcnsRise .22s var(--ease); }
 .flow-expanded h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 10px; }
@@ -1927,6 +1933,10 @@ button:active { transform: translateY(1px) scale(.99); }
         <div id="roomAttachPick" hidden>
           <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
           <div id="roomPickList" class="room-picklist"></div>
+        </div>
+        <div id="roomCardFilter" class="room-cardfilter" hidden>
+          <input class="searchbox" id="roomCardSearch" placeholder="Filter attached…" autocomplete="off">
+          <div id="roomCardTypes" class="room-chiprow"></div>
         </div>
         <div id="roomCardList"></div>
         <div id="roomCardsNote" class="room-note"></div>
@@ -4146,6 +4156,10 @@ function switchCoreView(v) {
 // what studioEmbed is handed.
 let roomThreads = [], roomSel = null, roomSubjects = [], roomMax = 6;
 let roomInited = false, roomPickOpen = false, roomPickQ = '';
+// Filters over the attached-cards list itself (not the picker above it): free-text
+// substring match plus a multi-select set of subject_type values. An empty set
+// means "all types" rather than "no types", so the chips start unselected/inert.
+let roomCardQ = '', roomCardTypes = new Set();
 let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // The picker's own copies of the two lists the Flow owns. Fetched here rather
 // than by calling loadSuggestions(), which also kicks off a world-look sync per
@@ -4177,6 +4191,8 @@ function initRoom() {
   };
   const search = document.getElementById('roomPickSearch');
   search.oninput = () => { roomPickQ = search.value.trim(); renderRoomPick(); };
+  const cardSearch = document.getElementById('roomCardSearch');
+  cardSearch.oninput = () => { roomCardQ = cardSearch.value.trim(); renderRoomCards(); };
   // Narrow windows: each side zone is an overlay behind its own button, the same
   // gesture the Content rails and the architecture detail pane already use. On a
   // wide window the zones are inline columns, so collapsing them shrinks the
@@ -4351,6 +4367,8 @@ function renderRoomConvo() {
 function renderRoomCards() {
   const host = document.getElementById('roomCardList');
   if (!host) return;
+  const cardSearch = document.getElementById('roomCardSearch');
+  if (cardSearch && cardSearch.value !== roomCardQ) cardSearch.value = roomCardQ;
   const cards = roomAttachedCards();
   // The room's own primary row occupies one of the server's slots, so the number
   // of real cards that fit is one below the cap it reports.
@@ -4362,7 +4380,33 @@ function renderRoomCards() {
     add.disabled = !roomSel || (!roomPickOpen && cards.length >= slots);
     add.textContent = roomPickOpen ? '✕' : '＋';
   }
-  host.innerHTML = cards.map(s => `<div class="uc uc--row is-static">`
+  // The filter row only earns its space once there is more than one card to
+  // sift through, and the type chips only once the attached set spans more
+  // than one type — with just one, the chip would be a no-op toggle.
+  const filterBox = document.getElementById('roomCardFilter');
+  const types = [...new Set(cards.map(s => s.subject_type))];
+  if (filterBox) filterBox.hidden = cards.length < 2;
+  const chipHost = document.getElementById('roomCardTypes');
+  if (chipHost) {
+    chipHost.innerHTML = types.length < 2 ? '' : types.map(t => {
+      const label = (cards.find(s => s.subject_type === t) || {}).label || t;
+      return `<button type="button" class="room-chip${roomCardTypes.has(t) ? ' is-on' : ''}" data-room-chip="${qEscAttr(t)}">${qEsc(label)}</button>`;
+    }).join('');
+    chipHost.querySelectorAll('[data-room-chip]').forEach(b => {
+      b.onclick = () => {
+        const t = b.getAttribute('data-room-chip');
+        if (roomCardTypes.has(t)) roomCardTypes.delete(t); else roomCardTypes.add(t);
+        renderRoomCards();
+      };
+    });
+  }
+  const q = roomCardQ.toLowerCase();
+  const shown = cards.filter(s =>
+    (!roomCardTypes.size || roomCardTypes.has(s.subject_type))
+    && (!q || roomCardTitle(s).toLowerCase().indexOf(q) !== -1 || (s.label || s.subject_type).toLowerCase().indexOf(q) !== -1));
+  host.innerHTML = !cards.length ? ''
+    : !shown.length ? '<div class="room-note">Nothing attached matches this filter.</div>'
+    : shown.map(s => `<div class="uc uc--row is-static">`
     + `<div class="uc-head">`
     + `<span class="room-cardlabel">${qEsc(s.label || s.subject_type)}</span>`
     + `<span class="uc-title" title="${qEscAttr(roomCardTitle(s))}">${qEsc(roomCardTitle(s))}</span>`
@@ -4385,6 +4429,7 @@ function roomSelect(id) {
   try { localStorage.setItem(ROOM_SEL_KEY, id); } catch (e) {}
   roomSubjects = [];
   roomPickOpen = false; roomPickQ = '';
+  roomCardQ = ''; roomCardTypes = new Set();
   roomNote = ''; roomNoteErr = false;
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');
