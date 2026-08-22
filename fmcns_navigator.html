@@ -529,6 +529,16 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .room-side-head { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
 .room-side-head h2 { flex:1; min-width:0; }
 .room-cap { font-family:monospace; font-size:10px; color:var(--c-ink-5); letter-spacing:0; flex:none; }
+/* The one loud control in the sidebar — everything else in this app is quiet by
+   design, but "start a new thread" is the ChatGPT-style action people look for
+   first, so it gets the same primary-fill treatment as the app's other one
+   primary button rather than blending into the icon row. */
+.room-newbtn { width:100%; margin-bottom:10px; }
+/* Delete stays hidden until the row is actually in play — hover, keyboard focus,
+   or already selected — so the list reads as titles, not as a row of icons. */
+.room-row-acts { opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.uc--row:hover .room-row-acts, .uc--row:focus-within .room-row-acts, .uc--row.is-sel .room-row-acts { opacity:1; }
+.room-row-acts .uicon { padding:2px 4px; }
 .room-main { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; }
 .room-toolbar { gap:8px; }
 .room-toolbar .arch-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -537,16 +547,36 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* The conversation itself is painted by studioEmbed() — the same markup a card's
    box gets. Only the frame changes: no rule above it, and the log takes every
    pixel the composer does not instead of stopping at its in-card ceiling. */
-.room-convo { flex:1; min-height:0; padding:10px 18px 14px; display:flex; flex-direction:column; }
+.room-convo { flex:1; min-height:0; padding:0 18px 14px; display:flex; flex-direction:column; }
 .room-convo .se-wrap { flex:1; min-height:0; display:flex; flex-direction:column; border-top:none; margin-top:0; padding-top:0; }
-.room-convo .se-log { max-height:none; flex:1; min-height:0; }
-.room-convo .se-body { font-size:13.5px; }
+.room-convo .se-log { max-height:none; flex:1; min-height:0; padding:var(--sp-6) 0 var(--sp-3); }
+.room-convo .se-body { font-size:14px; }
 /* The thread's name is in the toolbar above, and a view whose reason for existing
    is the conversation cannot offer to fold it away. What is left of the head — the
    turn count and "start fresh" — becomes a thin strip on the right, ruled off, so
    the one remaining symbol reads as a control and not as a stray mark. */
 .room-convo .se-head-title, .room-convo .se-iconbtn[data-se-act="shut"] { display:none; }
 .room-convo .se-head { justify-content:flex-end; padding-bottom:5px; margin-bottom:0; border-bottom:1px solid var(--c-border); }
+/* ChatGPT-style reading column: every turn and the composer share one centered
+   ~48rem measure, wide enough to read comfortably without the eye crossing the
+   whole panel. Only this room gets it — the in-card studio keeps the plain,
+   full-width column described above, since a 330px architecture panel has no
+   room to spare on a second margin. */
+#roomConvo .se-turn { max-width:48rem; margin:0 auto; padding:14px 18px; border-top:none; }
+#roomConvo .se-turn.plan { max-width:calc(48rem + 18px); }
+/* A message from you reads as a bubble, right-aligned — everything else (the
+   assistant, a plan) stays full-width plain text, the ChatGPT split. */
+#roomConvo .se-turn.you { display:flex; flex-direction:column; align-items:flex-end; }
+#roomConvo .se-turn.you .se-who { align-self:flex-end; }
+#roomConvo .se-turn.you .se-body { display:inline-block; max-width:80%; text-align:left; background:var(--c-surface-2); border-radius:var(--r-lg); padding:9px 14px; }
+.room-convo .se-pin, .room-convo .se-note, .room-convo .se-before { max-width:48rem; margin:0 auto; padding-left:18px; padding-right:18px; }
+/* The composer as a pill, centered under the same measure, always the last
+   thing in the flex column — .se-log is what scrolls, so this never moves. */
+.room-convo .se-compose { max-width:48rem; margin:8px auto 0; width:100%; gap:8px; border:1px solid var(--c-border-2); border-radius:999px; background:var(--c-surface); box-shadow:var(--sh-xs); padding:8px 8px 8px 16px; }
+.room-convo .se-input { border-bottom:none; padding:6px 0; }
+.room-convo .se-input:focus { border-bottom:none; }
+.room-convo .se-send { border-radius:999px; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none; }
+.room-convo .se-cmds, .room-convo .se-cost { max-width:48rem; margin:6px auto 0; padding:0 18px; }
 .room-empty { flex:1; display:flex; align-items:center; justify-content:center; }
 .room-picklist { max-height:300px; overflow-y:auto; margin-bottom:10px; border:1px solid var(--c-border); border-radius:var(--r-md); }
 .room-pickrow { display:flex; align-items:center; gap:6px; width:100%; padding:6px 8px; background:none; border:none; border-bottom:1px solid var(--c-border); text-align:left; font:inherit; font-size:11.5px; color:var(--c-ink-2); cursor:pointer; }
@@ -838,6 +868,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
          padding:0; border:none; background:none; border-radius:var(--r-sm); flex:none;
          color:var(--c-ink-4); cursor:pointer; font-family:inherit; font-size:var(--fs-md); line-height:1; }
 .uicon:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.uicon.is-danger:hover { color:var(--c-danger); }
+.uicon:disabled { opacity:.4; cursor:default; }
+.uicon:disabled:hover { background:none; color:var(--c-ink-4); }
 .uicon .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 /* A control that exists only once the window is too narrow for the panel it opens
    — see the 820px block at the foot of this file. */
@@ -1863,11 +1896,9 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="room-threads" id="roomThreads">
         <div class="room-side-head">
           <h2>Threads</h2>
-          <span class="room-side-acts">
-            <button type="button" class="uicon" id="roomNewBtn" title="Start a new thread" aria-label="Start a new thread">＋</button>
-            <button type="button" class="uicon room-collapse-btn" id="roomThreadsCollapse" title="Collapse the thread list" aria-label="Collapse the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg></button>
-          </span>
+          <button type="button" class="uicon room-collapse-btn" id="roomThreadsCollapse" title="Collapse the thread list" aria-label="Collapse the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg></button>
         </div>
+        <button type="button" class="ubtn ubtn--block ubtn--pill is-primary room-newbtn" id="roomNewBtn">＋ New chat</button>
         <div id="roomThreadList"></div>
         <div id="roomThreadsNote" class="room-note"></div>
       </div>
@@ -1879,6 +1910,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <span class="room-toolacts">
             <button type="button" class="uicon" id="roomRenameBtn" title="Rename this thread" aria-label="Rename this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-pencil"/></svg></button>
             <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg></button>
+            <button type="button" class="uicon is-danger" id="roomDeleteBtn" title="Delete this thread" aria-label="Delete this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-trash"/></svg></button>
           </span>
         </div>
         <div class="room-convo" id="roomConvo"></div>
@@ -4126,6 +4158,7 @@ function initRoom() {
   roomInited = true;
   document.getElementById('roomNewBtn').onclick = roomNewThread;
   document.getElementById('roomRenameBtn').onclick = roomBeginRename;
+  document.getElementById('roomDeleteBtn').onclick = () => roomDeleteThread(roomSel);
   const box = document.getElementById('roomRenameBox');
   box.onkeydown = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); roomCommitRename(); }
@@ -4244,12 +4277,16 @@ function renderRoomThreads() {
     return `<div class="uc uc--row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0">`
       + `<div class="uc-head"><span class="uc-title">${qEsc(t.title || 'Open conversation')}</span>`
       + (n ? `<span class="room-cap">${n}</span>` : '')
+      + `<span class="uc-acts room-row-acts"><button type="button" class="uicon is-danger" data-room-delete="${qEscAttr(t.id)}" title="Delete this thread" aria-label="Delete this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-trash"/></svg></button></span>`
       + `</div></div>`;
   }).join('');
   host.querySelectorAll('[data-room-thread]').forEach(el => {
     const pick = () => roomSelect(el.getAttribute('data-room-thread'));
     el.onclick = pick;
     el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+  });
+  host.querySelectorAll('[data-room-delete]').forEach(b => {
+    b.onclick = (e) => { e.stopPropagation(); roomDeleteThread(b.getAttribute('data-room-delete')); };
   });
   const note = document.getElementById('roomThreadsNote');
   if (note) { note.textContent = roomThreadsNote; note.className = 'room-note' + (roomThreadsNote ? ' err' : ''); }
@@ -4263,7 +4300,29 @@ function renderRoomHead() {
   if (rename) rename.disabled = !t;
   const cardsBtn = document.getElementById('roomCardsBtn');
   if (cardsBtn) cardsBtn.disabled = !t;
+  const delBtn = document.getElementById('roomDeleteBtn');
+  if (delBtn) delBtn.disabled = !t;
   if (!t) roomEndRename();
+}
+
+// Two clicks from the sidebar (trash icon, then confirm) or from the open
+// thread's own header (same trash icon, same confirm) — either way it is a
+// real DELETE, not a local-only removal, so it survives a refresh.
+async function roomDeleteThread(id) {
+  const t = roomThreads.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`Delete "${t.title || 'Open conversation'}"? This cannot be undone.`)) return;
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(id), 'DELETE');
+    if (roomSel === id) {
+      roomSel = null;
+      try { localStorage.removeItem(ROOM_SEL_KEY); } catch (e) {}
+    }
+    await loadRoom();
+  } catch (e) {
+    roomThreadsNote = 'Could not delete this thread.';
+    renderRoomThreads();
+  }
 }
 
 function renderRoomConvo() {
