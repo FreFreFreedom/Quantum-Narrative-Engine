@@ -55,7 +55,16 @@ export function checkInlineHtmlScripts(root, files) {
   if (!existsSync(htmlPath)) return { ok: false, detail: `${APP_FILE} is missing` };
   try {
     const html = readFileSync(htmlPath, 'utf8');
-    const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    // HTML comments are blanked (not deleted — the padding keeps every later offset,
+    // and therefore every "inline script #n", pointing at the same block it did
+    // before) before scripts are extracted. Without this, a comment that merely
+    // MENTIONS a script tag is read as one: the tag regex only excludes `src=` with
+    // an equals sign, so the prose `<script src>` matched, and block #2 became a
+    // paragraph of English glued to the next real script. That is not a hypothetical
+    // — it happened on 2026-08-22 and refused all eleven tasks of an overnight run
+    // with an identical syntax error, hours of work each, none of it at fault.
+    const scannable = html.replace(/<!--[\s\S]*?-->/g, (m) => ' '.repeat(m.length));
+    const scripts = [...scannable.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
     // Checked one block at a time rather than concatenated: joining them can hide a
     // fault (or invent one) across a boundary, and it loses which block was wrong.
     for (let i = 0; i < scripts.length; i++) {
