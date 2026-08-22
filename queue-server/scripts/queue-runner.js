@@ -40,6 +40,7 @@ import * as claudeCli from '../server/src/services/providers/claudeCode.js';
 import { getClaudeUsage, getSideSubscriptionUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
+import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
 import { shipJob, undoJob } from './git-ship.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -1038,6 +1039,11 @@ async function runTask(task) {
       console.error('  could not save the work to git —', e.message);
       ship = { committed: false, reason: 'commit_failed', branch: wt.branch || null };
     }
+    // Read the code before it publishes itself. Rides back on the result POST the
+    // runner already makes, exactly like the ship checks do — no new endpoint, no
+    // second round trip, and the server has the findings before it decides whether
+    // to auto-ship.
+    if (ship?.committed) ship.review = await runReviewPass({ wt, ship, task });
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,
       cost_usd: isClaude ? null : (r.cost || null), tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
@@ -1177,6 +1183,74 @@ function commitWork({ wt, task, status, summary, model }) {
     files_changed: files, insertions, deletions,
     checks: checks.checks, checks_ok: checks.ok,
   };
+}
+
+// ─── The second opinion ───────────────────────────────────────────────────────
+// A queue task writes code with nobody watching and auto-ship publishes it, and
+// publishing the trunk IS the deploy. Until this, the only things between "an
+// agent wrote it" and "it is live" were three mechanical checks that never read
+// the code. So the runner reads it — here, on the Mac, because this is the only
+// machine that has the diff AND a Claude subscription.
+//
+// It runs AFTER the commit, deliberately: the work is safe in git either way, and
+// nothing a review says can lose it. What a finding can do is stop the
+// *publishing*, and only for the two cases named in codeReviewPass.js — that call
+// belongs to the server (reviewRunner.js#judgeTask), which is why this function
+// reports facts and decides nothing.
+//
+// Terminal sessions are untouched by this. Antoine watches those himself; the
+// queue is the lane where nobody does (his call, 2026-08-21).
+
+// Sonnet, not haiku. A review that misses the bug is worse than no review, and
+// this is the one model call in the whole finish path whose entire value is
+// judgement. It runs on the SECOND subscription when there is one, so reviewing
+// never eats the quota the queue needs for building.
+const REVIEW_MODEL = process.env.REVIEW_MODEL || 'sonnet';
+const REVIEW_TIMEOUT_MS = Number(process.env.REVIEW_TIMEOUT_MS || 180_000);
+
+async function runReviewPass({ wt, ship, task }) {
+  if (process.env.REVIEW_DISABLED === '1') return null;
+  const side = Boolean(SIDE_TOKEN);
+  try {
+    const out = await reviewPass({
+      root: wt.path,
+      baseSha: ship.base_sha,
+      headSha: ship.head_sha,
+      files: ship.files_changed,
+      task,
+      callModel: async (prompt) => {
+        const r = await claudeCli.runToolless({
+          prompt,
+          model: REVIEW_MODEL,
+          timeoutMs: REVIEW_TIMEOUT_MS,
+          cwd: wt.path,
+          env: claudeCli.spawnEnv(side ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
+        });
+        // A non-zero exit is a failed call, not an answer — returning its stderr
+        // as if it were a review is how "could not start the CLI" would end up
+        // parsed as findings.
+        if (!r || r.code !== 0) throw new Error(String(r?.text || r?.error || `exit ${r?.code}`).slice(0, 200));
+        return r.text || '';
+      },
+    });
+    if (!out?.ran) {
+      console.log(dim(`  review skipped — ${out?.error || 'unavailable'}`));
+      return out || null;
+    }
+    const n = out.findings.length;
+    const secTxt = out.security_ran ? ' + security' : '';
+    const note = out.blocking
+      ? red(`${n} finding(s), HELD BACK`)
+      : (n ? `${n} note(s)` : green('nothing to flag'));
+    console.log(`  reviewed${secTxt} on ${bold('claude:' + REVIEW_MODEL)}${side ? dim(' (second account)') : ''} — ${note}`);
+    if (out.error) console.log(dim(`    (${out.error})`));
+    return out;
+  } catch (e) {
+    // Belt to the module's own braces. A review must never be able to strand a
+    // finished task, so every failure here is the same as not having run one.
+    console.log(dim(`  review skipped — ${e.message}`));
+    return null;
+  }
 }
 
 // ─── Housekeeping ─────────────────────────────────────────────────────────────

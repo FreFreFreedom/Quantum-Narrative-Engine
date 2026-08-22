@@ -5241,7 +5241,11 @@ function qShipLine(p) {
   // not — i.e. when something went wrong.
   const explain = ['needs_fix', 'waiting_runner', 'put_back', 'legacy'].includes(sh.state) && sh.message
     ? `<div class="q-item-meta q-ship-why">${qEsc(sh.message)}</div>` : '';
-  return `<div class="q-item-meta"><span class="q-ship-pill" style="color:${style.color};border-color:${style.color}">${style.text}</span>${detail ? `<span>${qEsc(detail)}</span>` : ''}</div>${explain}`;
+  // What the reviewer noticed in the code. Shown on every state, including live —
+  // these do not stop anything, so the only way they matter is by being read.
+  const notes = (sh.notes || []).length
+    ? `<div class="q-item-meta q-ship-why">${(sh.notes || []).map((n) => '· ' + qEsc(n)).join('\n')}</div>` : '';
+  return `<div class="q-item-meta"><span class="q-ship-pill" style="color:${style.color};border-color:${style.color}">${style.text}</span>${detail ? `<span>${qEsc(detail)}</span>` : ''}</div>${explain}${notes}`;
 }
 
 // The app's one date formatter. It used to be three — this, fmtVerified() in the

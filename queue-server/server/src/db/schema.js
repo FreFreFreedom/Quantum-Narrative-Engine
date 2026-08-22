@@ -341,6 +341,12 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_files TEXT`); } catch {}
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_insertions INTEGER`); } catch {}
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_deletions INTEGER`); } catch {}
+  // What the reviewer made of the code, as JSON: {ran, findings[], blocking,
+  // security_ran, summary}. The runner produces it on the Mac right after the
+  // commit (services/codeReviewPass.js) and it rides back on the same result POST
+  // as the columns above. NULL means no review ran, which must behave exactly like
+  // the world before there was one — see reviewRunner.js#judgeTask.
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_review TEXT`); } catch {}
 
   // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
   // because node:sqlite enforces foreign keys by default — the REFERENCES above

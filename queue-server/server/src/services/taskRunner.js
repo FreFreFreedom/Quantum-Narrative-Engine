@@ -1493,6 +1493,9 @@ export function recordRunnerResult(taskId, {
     ship_files: Array.isArray(ship?.files_changed) ? JSON.stringify(ship.files_changed) : (task.ship_files || null),
     ship_insertions: Number.isFinite(ship?.insertions) ? ship.insertions : (task.ship_insertions ?? null),
     ship_deletions: Number.isFinite(ship?.deletions) ? ship.deletions : (task.ship_deletions ?? null),
+    // The reviewer's verdict on the code itself, from the same POST. Kept as the
+    // runner sent it; judging it is reviewRunner.js's job, not this one's.
+    ship_review: ship?.review ? JSON.stringify(ship.review) : (task.ship_review || null),
     cost_usd: Number.isFinite(cost_usd) && cost_usd > 0 ? cost_usd : task.cost_usd,
     tokens_in: tokens_in ?? task.tokens_in, tokens_out: tokens_out ?? task.tokens_out,
     run_state: pending_question?.question ? 'awaiting_input' : 'idle',

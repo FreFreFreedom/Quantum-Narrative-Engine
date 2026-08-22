@@ -20,6 +20,7 @@ import { getAgent } from './agents.js';
 import { getPrompt } from './promptQueue.js';
 import { autoShipEnabled } from './ai/text.js';
 import { shipCheckMessage } from './shipChecks.js';
+import { concernLines, summariseForAntoine } from './codeReviewPass.js';
 import { enqueueShipJob, enqueueUndoJob, setGitJobHandler } from './gitJobs.js';
 import { broadcastAll } from '../realtime.js';
 
@@ -140,7 +141,7 @@ export function createReviewForTask(task) {
     insertions: verdict.insertions,
     deletions: verdict.deletions,
     status: verdict.ok ? 'approved' : 'changes_requested',
-    verdict: verdict.ok ? 'safe' : 'risky',
+    verdict: verdict.ok ? 'safe' : (verdict.severity || 'risky'),
     plain_summary: verdict.plainSummary,
   });
   broadcastReview(id);
@@ -180,11 +181,31 @@ function judgeTask(task) {
     };
   }
 
+  // The reviewer's read of the code, done on the Mac right after the commit
+  // (services/codeReviewPass.js, run by the runner). Absent is the normal state
+  // for anything that finished before this existed, and for the in-container path
+  // that reports no ship facts at all — so it must change nothing.
+  const review = parseJsonOr(task.ship_review, null);
+  const findings = Array.isArray(review?.findings) ? review.findings : [];
+  // Only the two named cases can block (a secret committed, a login check
+  // removed). Everything else the reviewer says is a note that travels with the
+  // change and does not stop it — Antoine's rule, 2026-08-21: he ships directly
+  // and Put it back is the net.
+  const blocking = findings.filter((f) => f && f.blocking === true);
+
   const checks = {
     saved: { ok: true, detail: task.head_sha.slice(0, 8) },
     syntax: runnerChecks?.syntax || { ok: true, detail: 'not reported' },
     html: runnerChecks?.html || { ok: true, detail: 'not reported' },
     scope: checkScope(files, task.agent_key || 'dev1'),
+    review: review?.ran
+      ? {
+          ok: blocking.length === 0,
+          detail: summariseForAntoine(findings, { securityRan: Boolean(review.security_ran) }),
+          findings,
+          security_ran: Boolean(review.security_ran),
+        }
+      : { ok: true, detail: review?.error || 'not reviewed' },
   };
 
   const failed = shipCheckMessage({ syntax: checks.syntax, html: checks.html });
@@ -192,11 +213,20 @@ function judgeTask(task) {
   if (!checks.scope.ok) {
     concerns.push(`Not live — this changed files it is not allowed to touch: ${checks.scope.detail}.`);
   }
+  // Findings go into the same `concerns` array the app already shows, blocking
+  // ones first. Non-blocking ones appear there too and the change still ships:
+  // seeing them is the point, waiting on them is not.
+  concerns.push(...concernLines(findings));
 
-  const ok = checks.syntax.ok && checks.html.ok && checks.scope.ok;
+  const ok = checks.syntax.ok && checks.html.ok && checks.scope.ok && blocking.length === 0;
   return {
     ok, checks, concerns, filesChanged: files, insertions, deletions,
-    plainSummary: buildPlainSummary({ ok, files, insertions, deletions, concerns }),
+    // 'unsafe' rather than 'risky' when the reviewer was the one that stopped it,
+    // so the card can say it was a security finding and not a failed parse.
+    severity: blocking.length ? 'unsafe' : null,
+    plainSummary: blocking.length
+      ? `${blocking[0].what} — held back until you look at it.`
+      : buildPlainSummary({ ok, files, insertions, deletions, concerns, findings }),
   };
 }
 
@@ -269,10 +299,14 @@ function matchesAny(path, patterns) {
 }
 
 // One line, plain English, no jargon — shown to Antoine verbatim.
-function buildPlainSummary({ ok, files, insertions, deletions, concerns }) {
+function buildPlainSummary({ ok, files, insertions, deletions, concerns, findings = [] }) {
   const n = (files || []).length;
   const scale = `${n} file${n === 1 ? '' : 's'} changed, +${insertions} / −${deletions}`;
   if (!ok) return `${concerns[0] || 'Not live.'} (${scale})`;
+  // It passed, but the reviewer still left notes. Say so on the same line rather
+  // than a flat "ready to go live" that hides them one panel deeper.
+  const k = (findings || []).length;
+  if (k) return `Ready to go live, with ${k} note${k === 1 ? '' : 's'} to read. ${scale}.`;
   return `Ready to go live. ${scale}.`;
 }
 

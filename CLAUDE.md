@@ -146,6 +146,21 @@ whole thing).
 - `routes/queue.js` + `routes/travaux.js` — both mounted under `/api/travaux`
   (`queue.js` owns `/prompts*`; `travaux.js` owns `/suggestions*` and `/ideas*`
   for the "Suggestions de Claude" and "Idées" notebook features).
+- `services/codeReviewPass.js` — the second opinion on a finished task's code,
+  the gap the `reviews` table's own comment flagged ("the model second opinion is
+  step 9 scope"). Dependency-free like `shipChecks.js` and for the same reason:
+  the **runner** imports it and runs it on the Mac right after `commitWork`, since
+  that is the only machine with both the diff and a Claude subscription. Findings
+  ride back on the existing result POST (`ship.review` → `agent_tasks.ship_review`)
+  and `reviewRunner.js#judgeTask` folds them in. A security pass runs only when a
+  free deterministic trigger fires (login code, a route, upload handling, or
+  credential-shaped text in the *added* lines). **Only two findings can stop a
+  change publishing** — a secret committed, or an auth check removed; everything
+  else is a note on the card and the change ships anyway (Antoine's rule: he ships
+  directly, **Put it back** is the net). Every failure path — timeout, decline,
+  unreadable reply, no review at all — is identical to not having run one, because
+  a review that can strand work is worse than none. `npm run review:selftest`
+  covers all of it with a fake reviewer and zero model credits.
 - Running this for real requires the Claude Code CLI installed and
   authenticated wherever the server runs — Railway can't do an interactive OAuth
   login, so this is set via `CLAUDE_CODE_OAUTH_TOKEN`. Without it, tasks enqueue

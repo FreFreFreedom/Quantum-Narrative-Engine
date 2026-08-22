@@ -188,6 +188,18 @@ export function recordGitJobResult(id, payload = {}) {
 
 // ─── What the app shows ───────────────────────────────────────────────────────
 
+// The reviewer's non-blocking findings, as plain lines. Kept to three: this is a
+// glance at a card, not a report, and a list long enough to scroll is a list
+// nobody reads.
+function reviewNotes(review) {
+  const found = review?.checks?.review?.findings;
+  if (!Array.isArray(found)) return [];
+  return found
+    .filter((f) => f && !f.blocking && f.what)
+    .slice(0, 3)
+    .map((f) => String(f.what));
+}
+
 // One place decides the word Antoine sees, so the frontend has no logic to get
 // wrong. Every state name here is plain English on purpose — never "merged",
 // never "approved" (AGENTS.md: everything the app writes for him is plain English).
@@ -202,6 +214,12 @@ export function shipStateFor(review, { runnerConnected = true } = {}) {
     insertions: review.insertions || 0,
     deletions: review.deletions || 0,
     at: review.merged_at || review.reverted_at || null,
+    // What the reviewer found in the code (services/codeReviewPass.js). Rides on
+    // every state, including 'live': a change that shipped with two notes on it is
+    // still a change with two notes on it, and hiding them once it is live is how
+    // they would never get read. Blocking findings are not here — those already
+    // stop the ship and speak through `message`.
+    notes: reviewNotes(review),
   };
 
   if (review.status === 'reverted') {
