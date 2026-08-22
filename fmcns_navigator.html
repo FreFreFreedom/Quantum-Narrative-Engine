@@ -3467,6 +3467,12 @@ function drawnRadius(n, far, farDot) {
 //     and the arrival calls requestRender() to swap it in.
 const NODE_IMG_SIZE = 'w185';
 const NODE_IMG_MAX_INFLIGHT = 6;
+// Give up on a single poster after this long. The cap above is only polite if slots come
+// back: a load that neither succeeds nor errors held its slot forever, and six of those
+// would have stopped every poster loading until the page was reloaded.
+const NODE_IMG_TIMEOUT_MS = 15000;
+// path -> how many times we have given up waiting on it (see the timeout below).
+const _nodeImgTries = new Map();
 const NODE_IMG_MARGIN = 80; // screen px outside the stage still counted as "in view"
 
 // poster_path -> Image (loaded) | 'pending' (in flight or queued) | 'failed' (never retried)
@@ -3501,14 +3507,35 @@ function nodeImagePump() {
     // or toDataURL anywhere), so tainting it costs nothing and asking for CORS would
     // only add a way for the load to fail.
     img.decoding = 'async';
+    // Exactly one of load / error / timeout may release the slot. Without this guard a
+    // late error after a timeout would decrement twice and let inflight drift negative,
+    // which would quietly raise the real concurrency limit above the cap.
+    let settled = false;
+    const claim = () => (settled ? false : (settled = true, _nodeImgInflight--, true));
+    const timer = setTimeout(() => {
+      if (!claim()) return;
+      img.onload = img.onerror = null;
+      img.src = '';                  // abort it rather than leave the request hanging
+      // A hang is NOT evidence the poster is missing: a backgrounded tab defers image
+      // loads entirely (observed — a path that curl 404s in 0.6s sat pending for minutes
+      // in a hidden tab). So forget the first hang and let a later paint ask again; only
+      // a second one is called failed, which is what stops a truly dead path retrying
+      // every timeout forever.
+      const tries = (_nodeImgTries.get(path) || 0) + 1;
+      _nodeImgTries.set(path, tries);
+      if (tries >= 2) _nodeImg.set(path, 'failed'); else _nodeImg.delete(path);
+      nodeImagePump();
+    }, NODE_IMG_TIMEOUT_MS);
     img.onload = () => {
-      _nodeImgInflight--;
+      clearTimeout(timer);
+      if (!claim()) return;
       _nodeImg.set(path, img);
       nodeImagePump();
       requestRender(); // the frame that wanted this one is long gone; ask for a new one
     };
     img.onerror = () => {
-      _nodeImgInflight--;
+      clearTimeout(timer);
+      if (!claim()) return;
       _nodeImg.set(path, 'failed'); // remembered forever — see the note above
       nodeImagePump();
     };
