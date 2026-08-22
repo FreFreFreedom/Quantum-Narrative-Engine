@@ -154,7 +154,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    (LBL_NODE / LBL_FOCUS / LBL_ZONE / LBL_ZONE_FAR) with a 3px --c-halo outline behind
    every one. Which of those are drawn depends on the semantic-zoom band — see
    updateBands(). Kept in one place there rather than half here, half there. */
-.legend { position:absolute; left:12px; bottom:12px; background:rgba(var(--c-surface-rgb),.92); border:1px solid var(--c-border); border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
+.legend { position:absolute; left:12px; bottom:12px; background:rgb(var(--c-surface-rgb) / .92); border:1px solid var(--c-border); border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
 .legend .section-label { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); margin:7px 0 4px; }
 .legend .section-label:first-child { margin-top:0; }
 .legend .row { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
@@ -1295,7 +1295,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-stage { flex:1; overflow:hidden; position:relative; box-shadow:inset 0 0 0 0 transparent; transition:box-shadow var(--t-med) var(--ease); }
 .arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
 .arch-canvas.arch-zoom-anim { transition:transform var(--t-fast) var(--ease); }
-.arch-focusbar { position:absolute; top:12px; left:12px; z-index:6; display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:9px; background:rgba(var(--c-surface-rgb),.95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:11px; max-width:calc(100% - 200px); }
+.arch-focusbar { position:absolute; top:12px; left:12px; z-index:6; display:flex; align-items:center; gap:9px; padding:7px 11px; border-radius:9px; background:rgb(var(--c-surface-rgb) / .95); border:1px solid var(--c-border-2); box-shadow:0 2px 12px rgba(0,0,0,.14); font-size:11px; max-width:calc(100% - 200px); }
 .arch-focusbar .arch-focusname { font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
 .arch-focusbar .arch-focusmeta { color:var(--c-ink-4); }
 .arch-focusbar button { padding:4px 9px; border-radius:6px; border:1px solid var(--c-border-2); background:var(--c-surface); font-size:10.5px; cursor:pointer; color:var(--c-ink); }
@@ -1482,7 +1482,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .country-active.selected { stroke:#2a2621; stroke-width:1.4; }
 #mapworldg, #mapdetailg { transition: transform 0.6s cubic-bezier(.2,.8,.2,1); }
 .map-controls { position:absolute; top:14px; right:14px; display:flex; gap:8px; }
-.map-legend { position:absolute; left:14px; bottom:14px; background:rgba(var(--c-surface-rgb),.92); border:1px solid var(--c-border); border-radius:8px; padding:10px 12px; width:250px; font-size:11.5px; z-index:5; }
+.map-legend { position:absolute; left:14px; bottom:14px; background:rgb(var(--c-surface-rgb) / .92); border:1px solid var(--c-border); border-radius:8px; padding:10px 12px; width:250px; font-size:11.5px; z-index:5; }
 .map-legend-title { font-weight:600; margin-bottom:6px; font-size:12px; }
 .map-legend-bar { height:10px; border-radius:5px; background:linear-gradient(to right,#b23a2f,#d99a3d,#dcb84a,#4f9d7a,#2f7d63); }
 .map-legend-labels { display:flex; justify-content:space-between; color:var(--c-ink-3); margin-top:4px; }
@@ -2462,8 +2462,59 @@ document.getElementById('axisSort').addEventListener('change', (e) => {
 });
 
 // ---------- Colors ----------
-const TYPE_COLORS = { character: '#8b3f85', film: '#3f6b85', country: '#5f7a3f' };
-const CLUSTER_COLORS = { I:"#b23a2f",II:"#8b3f85",III:"#3f6b85",IV:"#5f7a3f",V:"#85703f",VI:"#7a3f3f",VII:"#3f8577",VIII:"#4a4a85",IX:"#3f8598",X:"#85503f",XI:"#6b5f3f",XII:"#5b6b3f" };
+// The graph palette. Twelve clusters, but NOT twelve unrelated hues — the old set was
+// picked one at a time and it showed: III/VII/IX were three near-identical teal-blues
+// while I/VI/X were three near-identical red-browns, so the colours neither told the
+// clusters apart nor said anything true about them.
+//
+// The twelve clusters actually fall into four themes, and the palette now says so. Each
+// family is one region of the colour wheel (~90 degrees apart, so families never blur),
+// and the three members of a family sit ~20 degrees apart inside it (so members stay
+// individually readable). Related clusters therefore look related, which is the whole
+// point:
+//
+//   clay / red     the body and what is done to it   VI War · I Ascetic · IV Grief
+//   plum / rose    intimacy and the household        II Eros · X Family · III Marriage
+//   blue           being watched and controlled      VIII Espionage · VII Cults · IX Sci-Fi
+//   gold / olive   land, history and its ideals      XI Historical · V Wilderness · XII Counterculture
+//
+// TWO TUNED SETS, not one set with opacity tricks. The two themes are different colour
+// worlds — warm parchment (#faf9f6) against cool navy (#0c1017) — and the first attempt
+// at this proved why it matters: a light-theme ramp that varied by LIGHTNESS looked
+// considered on parchment and washed out to near-white on navy, losing the families
+// entirely. So the dark set holds lightness roughly constant and lets hue do the work.
+//
+// Green is deliberately the smallest presence here: --c-accent is green in both themes
+// and it belongs to the app's own chrome, so nodes mostly stay out of its way.
+const CLUSTER_COLORS_LIGHT = {
+  VI:'#b04a34', I:'#a8674a', IV:'#96725f',
+  II:'#a83f83', X:'#7d4fa0', III:'#a86f8a',
+  VIII:'#2f6ba8', VII:'#2f7f92', IX:'#5f8fae',
+  XI:'#96702c', V:'#7d7d3a', XII:'#5f8543'
+};
+const CLUSTER_COLORS_DARK = {
+  VI:'#e0685a', I:'#cf7d5c', IV:'#bd8f78',
+  II:'#d06fae', X:'#a878cc', III:'#d99ab6',
+  VIII:'#4f8fd1', VII:'#4fa8bd', IX:'#93c2dd',
+  XI:'#c99a4a', V:'#a8a85e', XII:'#86b06b'
+};
+// Type colouring is a separate mode (never shown at the same time as cluster colouring),
+// so it can borrow the anchor of three families rather than invent a fourth colour axis.
+const TYPE_COLORS_LIGHT = { character: '#a83f83', film: '#2f6ba8', country: '#96702c' };
+const TYPE_COLORS_DARK  = { character: '#d06fae', film: '#4f8fd1', country: '#c69a4a' };
+
+// These two are MUTATED IN PLACE on a theme flip rather than reassigned, and that is
+// load-bearing: the legend, the detail-panel gradient, the cluster regions and the node
+// pass all captured these exact objects long ago. Keeping the identity means the theme
+// switch reaches every one of them without a single other line changing.
+const TYPE_COLORS = {};
+const CLUSTER_COLORS = {};
+function applyGraphPalette() {
+  const dark = document.documentElement.classList.contains('dark');
+  Object.assign(CLUSTER_COLORS, dark ? CLUSTER_COLORS_DARK : CLUSTER_COLORS_LIGHT);
+  Object.assign(TYPE_COLORS, dark ? TYPE_COLORS_DARK : TYPE_COLORS_LIGHT);
+}
+applyGraphPalette();
 function continuumColor(p) {
   if (p === null || p === undefined) return '#c9c3b8';
   const stops = [[0,[178,58,47]],[.25,[217,154,61]],[.5,[220,184,74]],[.75,[79,157,122]],[1,[47,125,99]]];
@@ -3532,7 +3583,7 @@ function drawnRadius(n, far, farDot) {
 //     can see.
 //   - Only nodes actually ON SCREEN at that zoom are ever requested. Panning around a
 //     200-node graph must not fire 200 requests.
-//   - At most 6 in flight; the rest wait in a queue, newest viewport first.
+//   - At most NODE_IMG_MAX_INFLIGHT in flight; the rest wait in a queue, newest viewport first.
 //   - One entry per poster_path, and a FAILURE IS AN ENTRY TOO. A 404 that is not
 //     remembered becomes a request on every frame — the one bug that would turn this
 //     from a nicety into a denial-of-service on TMDb.
@@ -4362,7 +4413,9 @@ function initGraphCanvas() {
   if (typeof ResizeObserver === 'function') new ResizeObserver(onResize).observe(gCanvas);
   else window.addEventListener('resize', onResize);
   // The theme lives in CSS custom properties the canvas has to be told about.
-  new MutationObserver(() => { _gVarCache.clear(); requestRender(); })
+  // The palette is re-picked here too, not only the cached CSS vars: the graph's own
+  // colours are two hand-tuned sets, and canvas never re-reads anything on its own.
+  new MutationObserver(() => { _gVarCache.clear(); applyGraphPalette(); renderLegend(); requestRender(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   setupGraphPointer();
 }
@@ -4384,6 +4437,10 @@ function layoutAndDraw(){
 }
 
 function renderLegend(){
+  // Called from the theme observer as well as from the view code, and that observer can
+  // fire before the ontology has loaded — so bail rather than throw on a half-built page.
+  const box = document.getElementById('legend');
+  if (!box) return;
   let html = '<div class="section-label">Connections</div>';
   html += '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div>';
   html += '<div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div>';
@@ -4400,7 +4457,7 @@ function renderLegend(){
     const axis = AXES[colorMode];
     html += `<div class="continuum-bar" style="margin:4px 0 2px;"></div><div class="continuum-poles">${axis?`<span>${axis.low}</span><span>${axis.high}</span>`:''}</div>`;
   }
-  document.getElementById('legend').innerHTML = html;
+  box.innerHTML = html;
 }
 
 // Unified trackpad / keyboard / touch navigation for any graph surface.
