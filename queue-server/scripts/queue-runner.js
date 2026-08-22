@@ -41,6 +41,7 @@ import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
+import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk } from './git-ship.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -473,6 +474,28 @@ function answerRepoProbe(job) {
   return JSON.stringify({ head: gitHeadSha(RUNNER_REPO), files, grep, recent });
 }
 
+// A 'witness' job: the architecture tree asking whether the things it claims to
+// have built are actually in the code. Same deal as the probe — read-only git,
+// no model, no cost — and the server is equally unable to do it itself.
+//
+// The rule from services/witnessCheck.js applies at this end too: anything this
+// cannot answer comes back as ok:null, and a job that throws is simply not
+// answered, which the server reads as "not checked". Neither can retire anything.
+const WITNESS_CODE_GLOBS = ['*.js', '*.mjs', '*.cjs', '*.ts', '*.tsx', '*.jsx', '*.html', '*.sql'];
+
+function answerWitnessJob(job) {
+  let req = {};
+  try { req = JSON.parse(job.prompt || '{}'); } catch { /* malformed → nothing checked */ }
+  const items = Array.isArray(req.items) ? req.items : [];
+  const results = answerRepoWitnesses(items, {
+    pathFacts: (paths) => gitPathFacts(RUNNER_REPO, paths, { max: 200 }),
+    // Code only, and several hits per term: witnessCheck.js throws away hits in
+    // documentation, so a plan that merely talks about a route cannot prove it.
+    grepHits: (terms) => gitGrepHits(RUNNER_REPO, terms, { perTerm: 8, max: 8, paths: WITNESS_CODE_GLOBS }),
+  });
+  return JSON.stringify({ head: gitHeadSha(RUNNER_REPO), results });
+}
+
 async function runHelperJobs() {
   let r;
   try { r = await api('/worker/helper/claim', {}); } catch { return; }
@@ -490,6 +513,18 @@ async function runHelperJobs() {
       await api(`/worker/helper/${job.id}/result`, out ? { text: out } : { error: err || 'probe failed' });
     } catch { /* the caller's own deadline covers this */ }
     console.log(`  probe ${job.label || job.feature} ${out ? 'answered from the checkout (no model)' : `failed — ${err}`}`);
+    return;
+  }
+
+  // Same treatment for the architecture tree's witnesses: read-only git, no model,
+  // no quota gate.
+  if (job.kind === 'witness') {
+    let out = null, err = null;
+    try { out = answerWitnessJob(job); } catch (e) { err = e.message; }
+    try {
+      await api(`/worker/helper/${job.id}/result`, out ? { text: out } : { error: err || 'witness check failed' });
+    } catch { /* the caller's own deadline covers this — and reads it as "not checked" */ }
+    console.log(`  witness ${job.label || job.feature} ${out ? 'checked against the checkout (no model)' : `failed — ${err}`}`);
     return;
   }
 

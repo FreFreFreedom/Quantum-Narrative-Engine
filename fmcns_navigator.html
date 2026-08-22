@@ -1347,6 +1347,22 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-tnode.tt-spec .arch-tnode-ring { stroke:var(--c-violet); stroke-dasharray:3,3; opacity:.85; }
 @keyframes archPulse { 0%,100% { r:15; opacity:.85; } 50% { r:20; opacity:.25; } }
 .arch-tnode.arch-unlock .arch-tnode-ring { animation:archUnlock .9s ease; }
+/* The quiet built substrate. A node whose witness passes has been PROVED to
+   exist, so it stops competing for attention and only the frontier — concept,
+   planned, building — stays loud. This is what keeps the tree readable as it
+   grows. Opacity only, deliberately: no colour is changed anywhere by lifecycle,
+   and hover/selection bring a quiet node straight back to full strength so it is
+   never harder to reach, only quieter at rest. Retired is quieter still. */
+.arch-tnode.lc-live { opacity:.42; }
+.arch-tnode.lc-retired { opacity:.28; }
+.arch-tnode.lc-live:hover, .arch-tnode.lc-retired:hover,
+.arch-tnode.lc-live:focus, .arch-tnode.lc-retired:focus,
+.arch-tnode.lc-live.selected, .arch-tnode.lc-retired.selected,
+.arch-tnode.lc-live.arch-hot, .arch-tnode.lc-retired.arch-hot { opacity:1; }
+.arch-list-row.lc-live { opacity:.5; }
+.arch-list-row.lc-retired { opacity:.32; text-decoration:line-through; }
+.arch-list-row.lc-live:hover, .arch-list-row.lc-retired:hover,
+.arch-list-row.lc-live.selected, .arch-list-row.lc-retired.selected { opacity:1; }
 @keyframes archUnlock { 0% { r:11; opacity:1; stroke:#4f9d7a; stroke-width:2; } 60% { r:30; opacity:.2; stroke:#4f9d7a; stroke-width:3; } 100% { r:16; opacity:.55; } }
 
 /* Checklist rows — one compact line each, several per row on a wide screen. */
@@ -1726,7 +1742,7 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
   <div class="ws-shell">
-    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage(), initBlocks() into #tvBodyBlocks | backend: services/architecture.js, routes/architecture.js, routes/discovery.js">
+    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage(), initBlocks() into #tvBodyBlocks | backend: services/architecture.js, services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
       <div class="arch-inner-tabs">
         <button class="active" data-arch-tab="graph">Graph</button>
         <button data-arch-tab="blocks">Building blocks</button>
@@ -1751,6 +1767,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button data-arch-layer="status" title="Color by build status">Status</button>
             <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
           </span>
+          <button class="ctrlbtn arch-segdivider" id="archWitnessBtn" title="Check which pieces are really in the app right now. Free, and it also runs by itself every time something goes live.">Re-check</button>
         </div>
       </div>
       <div id="archProposals" class="arch-proposals" hidden></div>
@@ -9906,6 +9923,21 @@ function archNodeState(c) {
   return archUnmet(c).length === 0 ? 'buildable' : 'locked';
 }
 
+// Proved to exist by its witness (backend: services/witnessCheck.js). These sink
+// into a quiet built substrate — still there, still clickable — so only the
+// frontier reads loud. It is the thing that keeps the tree legible at 400 nodes
+// instead of 42. Nothing here changes a colour; it is opacity only.
+const archIsLive = c => !!c && c.lifecycle === 'live';
+const archIsRetired = c => !!c && c.lifecycle === 'retired';
+
+// Why a node is quiet, on hover. One short line, no paragraph on screen.
+function archLifecycleNote(c) {
+  if (archIsRetired(c)) return 'Was built, and is not in the code any more.';
+  if (!archIsLive(c)) return '';
+  const when = c.witness_first_ok_at ? new Date(c.witness_first_ok_at).toLocaleDateString() : '';
+  return `Built${when ? ' — first proved ' + when : ''}.`;
+}
+
 // Longest prereq chain, memoised. The visited set guards against a dependency cycle
 // (impossible in today's hand-written data, but authored nodes are coming).
 const _archDepthCache = {};
@@ -10493,6 +10525,37 @@ function archProposalSource(n) {
   return 'Auto-proposed';
 }
 
+// "Re-check" — ask every piece that can prove itself to prove itself again
+// (backend: services/witnessCheck.js). Free, so it is safe to press as often as
+// you like; it also runs by itself every time something goes live.
+//
+// The reply distinguishes checked from not-checked, and so does this button. With
+// the Mac asleep, the pieces that can only be read from the code come back
+// unchecked and nothing is marked as gone — saying "nothing is built" there would
+// be a lie, and a confident one.
+async function witnessRecheck() {
+  const btn = document.getElementById('archWitnessBtn');
+  if (!btn) return;
+  const restore = () => { btn.disabled = false; btn.textContent = 'Re-check'; };
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    const out = await apiWrite('/api/architecture/witness/recheck', 'POST', {});
+    await loadArchNodes();
+    renderArchStage();
+    if (archSelected) renderArchDetail(archSelected);
+    const bits = [];
+    if (out.live) bits.push(`${out.live} built`);
+    if (out.retired) bits.push(`${out.retired} gone`);
+    if (out.unchecked) bits.push(`${out.unchecked} could not be checked`);
+    btn.textContent = bits.length ? `✓ ${bits.join(' · ')}` : (out.total ? '✓ No change' : '✓ Nothing to check');
+    btn.title = out.unchecked
+      ? 'Some pieces can only be read from the code on your Mac. Start the runner and press this again.'
+      : 'Checked just now.';
+    btn.disabled = false;
+    setTimeout(() => { if (btn.textContent.startsWith('✓')) btn.textContent = 'Re-check'; }, 6000);
+  } catch (e) { restore(); alert('Error: ' + e.message); }
+}
+
 function renderArchProposals() {
   const host = document.getElementById('archProposals');
   if (!host) return;
@@ -10645,6 +10708,8 @@ async function initArchNav() {
       renderArchStage();
     });
   }
+  const witnessBtn = document.getElementById('archWitnessBtn');
+  if (witnessBtn) witnessBtn.onclick = witnessRecheck;
   const stage = document.getElementById('archStage');
   // Hover / selection on nodes — keep for all layouts.
   stage.addEventListener('mousemove', (e) => {
@@ -11011,7 +11076,7 @@ function archBuildTreeNodeEl(c, pool, focus, activeFocus, transform, labelW = 20
   const dimmed = activeFocus && !focus.has(c.id);
   const justBuilt = archPrevStates[c.id] && archPrevStates[c.id] !== 'built' && state === 'built';
   const badge = archNodeBadge(c);
-  const cls = ['arch-tnode', `tt-${state}`, spec && 'tt-spec', off && 'st-off', dimmed && 'arch-dim', archSelected === c.id && 'selected', justBuilt && 'arch-unlock', archTrail && archTrail.has(c.id) && 'arch-hot'].filter(Boolean).join(' ');
+  const cls = ['arch-tnode', `tt-${state}`, spec && 'tt-spec', off && 'st-off', dimmed && 'arch-dim', archIsLive(c) && 'lc-live', archIsRetired(c) && 'lc-retired', archSelected === c.id && 'selected', justBuilt && 'arch-unlock', archTrail && archTrail.has(c.id) && 'arch-hot'].filter(Boolean).join(' ');
   const g = el('g', { class: cls, id: 'archnode-' + c.id, 'data-arch-id': c.id, tabindex: '0', role: 'button', transform });
   // Generous invisible hit target, plus a rect covering the label below it —
   // the name is the obvious thing to aim at, so it must be clickable too.
@@ -11028,7 +11093,8 @@ function archBuildTreeNodeEl(c, pool, focus, activeFocus, transform, labelW = 20
   label.textContent = (spec ? '✦ ' : '') + truncate(c.name, Math.max(13, Math.floor(labelW / 6.2)));
   g.appendChild(label);
   const titleEl = el('title', {});
-  titleEl.textContent = c.name;
+  const lifeNote = archLifecycleNote(c);
+  titleEl.textContent = lifeNote ? `${c.name} — ${lifeNote}` : c.name;
   g.appendChild(titleEl);
   g.onclick = () => selectArchNode(c.id);
   g.onmouseenter = () => { archHover = c.id; archApplyHoverDim(); };
@@ -11220,10 +11286,12 @@ function archListRowHtml(c) {
   const spec = c.provenance === 'speculative';
   const unmet = state === 'locked' ? archUnmet(c) : [];
   const icon = state === 'built' ? '✓' : state === 'buildable' ? '●' : spec ? '✦' : '○';
-  const cls = ['arch-list-row', `tt-${state}`, spec && 'tt-spec', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
+  const cls = ['arch-list-row', `tt-${state}`, spec && 'tt-spec', archIsLive(c) && 'lc-live', archIsRetired(c) && 'lc-retired', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
   // "Waiting on" is a tooltip, not its own line — it's the one detail that can
   // get long, and this view is built to stay one line per component.
-  const waitText = unmet.length ? `Waiting on ${unmet.map(p => qEsc(p.name)).join(', ')}` : '';
+  // Falls back to why the row is quiet, so a dimmed "live" row explains itself on
+  // hover instead of just looking switched off.
+  const waitText = unmet.length ? `Waiting on ${unmet.map(p => qEsc(p.name)).join(', ')}` : qEsc(archLifecycleNote(c));
   return `<div class="${cls}" data-listrow="${c.id}" title="${qEsc(c.name)}${waitText ? ' — ' + waitText : ''}">
       <span class="arch-list-icon">${icon}</span>
       <span class="arch-list-name" style="white-space:normal;overflow:visible;text-overflow:clip;">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
