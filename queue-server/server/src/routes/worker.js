@@ -24,7 +24,8 @@ import {
 } from '../services/taskRunner.js';
 import * as queue from '../services/promptQueue.js';
 import { claimHelperJob, recordHelperResult } from '../services/ai/text.js';
-import { claimGitJob, recordGitJobResult, noteGitJobHeartbeat } from '../services/gitJobs.js';
+import { claimGitJob, recordGitJobResult, noteGitJobHeartbeat, strandedReviews } from '../services/gitJobs.js';
+import { markReviewLive } from '../services/reviewRunner.js';
 
 export function workerRoutes() {
   const router = Router();
@@ -100,6 +101,25 @@ export function workerRoutes() {
   router.post('/worker/git/:jobId/result', (req, res) => {
     noteRunnerPoll();
     const out = recordGitJobResult(req.params.jobId, req.body || {});
+    if (out.error) return res.status(409).json(out);
+    res.json({ ok: true });
+  });
+
+  // Reviews that say "not live yet" but might already be — see gitJobs.js's
+  // strandedReviews(). This is a pure read; the runner decides what to do with it.
+  router.get('/worker/git/stranded', (req, res) => {
+    if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
+    res.json({ reviews: strandedReviews() });
+  });
+
+  // The runner checked git itself and found the commit already on the trunk.
+  // Catches the record up — never merges or pushes anything from this side.
+  router.post('/worker/git/reconcile', (req, res) => {
+    if (!isLocalExecution()) return res.status(409).json({ error: 'server_execution_mode' });
+    noteRunnerPoll();
+    const { review_id, merge_commit } = req.body || {};
+    if (!review_id) return res.status(400).json({ error: 'no_review_id' });
+    const out = markReviewLive(review_id, { merge_commit: merge_commit || null });
     if (out.error) return res.status(409).json(out);
     res.json({ ok: true });
   });

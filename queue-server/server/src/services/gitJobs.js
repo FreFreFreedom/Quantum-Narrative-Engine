@@ -106,6 +106,26 @@ export function enqueueUndoJob(review) {
   return { ok: true, id };
 }
 
+// ─── Stranded reviews ─────────────────────────────────────────────────────────
+// A review that claims not to be live but might be: it landed some other way
+// than the ship-job lane above (published by hand, or a ship whose push actually
+// went through but whose result never made it back). `shipping`/`reverting` are
+// excluded — those are mid-flight and belong to the job lane, not this net.
+export function strandedReviews() {
+  if (!db) return [];
+  return db.prepare(`
+    SELECT r.id AS review_id, r.head_sha AS head_sha
+    FROM reviews r
+    WHERE r.head_sha IS NOT NULL
+      AND r.status IN ('approved', 'changes_requested')
+      AND NOT EXISTS (
+        SELECT 1 FROM git_jobs g WHERE g.review_id = r.id AND g.status IN ('queued', 'running')
+      )
+    ORDER BY r.created_at DESC
+    LIMIT 20
+  `).all();
+}
+
 // ─── Claim / heartbeat / result ───────────────────────────────────────────────
 
 // One git job in flight across the whole system, enforced in the database rather
@@ -153,10 +173,14 @@ export function releaseStaleGitJobs() {
       db.prepare(`UPDATE git_jobs SET status='queued', claimed_at=NULL, heartbeat_at=NULL WHERE id=?`).run(job.id);
       console.log(`[gitJobs] ${job.id} (${job.kind}) went quiet — queued again (attempt ${job.attempts + 1}/${MAX_ATTEMPTS})`);
     } else {
-      db.prepare(`UPDATE git_jobs SET status='failed', error=?, finished_at=? WHERE id=?`).run(
-        'Your Mac stopped part-way through publishing this. Nothing was lost — press "Send it live" to try again.',
-        new Date().toISOString(), job.id,
-      );
+      // Route through the same finalize path a normal failure uses — otherwise
+      // the `reviews` row is never settled and the card sits on "Going live…"
+      // forever, with no job left to ever unstick it.
+      finalizeGitJob(job.id, {
+        ok: false,
+        error: 'runner_gone',
+        detail: 'Your Mac stopped part-way through publishing this. Nothing was lost — press "Send it live" to try again.',
+      });
       console.log(`[gitJobs] ${job.id} (${job.kind}) gave up after ${job.attempts} attempts`);
     }
   }
@@ -168,12 +192,9 @@ export function releaseStaleGitJobs() {
 let _onDone = null;
 export function setGitJobHandler(fn) { _onDone = fn; }
 
-export function recordGitJobResult(id, payload = {}) {
-  if (!db) return { error: 'no_db' };
-  const job = getGitJob(id);
-  if (!job) return { error: 'not_found' };
-  if (job.status !== 'running') return { error: 'not_running' };
-
+// Shared by the runner's normal result report and by the stale-job sweep giving
+// up on a runner that went quiet — both are "this job is over, tell the review".
+function finalizeGitJob(id, payload = {}) {
   const ok = !!payload.ok && !payload.error;
   db.prepare(`UPDATE git_jobs SET status=?, result=?, error=?, finished_at=? WHERE id=?`).run(
     ok ? 'done' : 'failed',
@@ -183,6 +204,15 @@ export function recordGitJobResult(id, payload = {}) {
     id,
   );
   try { _onDone?.(getGitJob(id), payload); } catch (e) { console.error('[gitJobs] handler failed:', e.message); }
+}
+
+export function recordGitJobResult(id, payload = {}) {
+  if (!db) return { error: 'no_db' };
+  const job = getGitJob(id);
+  if (!job) return { error: 'not_found' };
+  if (job.status !== 'running') return { error: 'not_running' };
+
+  finalizeGitJob(id, payload);
   return { ok: true };
 }
 
@@ -231,7 +261,13 @@ export function shipStateFor(review, { runnerConnected = true } = {}) {
   if (job && job.kind === 'undo' && job.status === 'running') {
     return { ...base, state: 'putting_back', message: 'Putting it back…' };
   }
-  if (job && job.status === 'failed') {
+  // A ship failure already settles the review to 'changes_requested' with the
+  // plain-English message reviewRunner composed for it (see below) — prefer that
+  // over the raw job error (a git conflict failure reports a bare filename like
+  // `plans/README.md`, and AGENTS.md requires plain English everywhere Antoine
+  // reads). An undo failure leaves the review 'merged' instead, so it still needs
+  // this branch.
+  if (job && job.status === 'failed' && review.status !== 'changes_requested') {
     return { ...base, state: 'needs_fix', message: job.error || 'It could not be published.' };
   }
   if (job && (job.status === 'queued' || job.status === 'running')) {

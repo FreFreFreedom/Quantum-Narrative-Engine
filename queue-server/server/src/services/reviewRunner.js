@@ -337,6 +337,30 @@ export function mergeReview(id) {
   return { ok: true, queued: true, id: out.id };
 }
 
+// The stranded-review sweep (queue-runner.js, via /worker/git/reconcile): a
+// review that said "not live yet" but git shows its commit already on the
+// trunk — published by hand, or a ship whose push landed but whose result never
+// made it back. This never merges or pushes anything; it only catches the record
+// up to what git already shows. `merge_commit` can legitimately be null (work
+// landed outside the ship-job lane leaves no `Ship-Review:` trailer to find) —
+// that is honest and "Put it back" correctly can't undo it (git-ship.js).
+export function markReviewLive(id, { merge_commit = null } = {}) {
+  const review = getReview(id);
+  if (!review) return { error: 'not_found' };
+  if (review.status === 'merged') return { error: 'already_merged' };
+  if (review.status === 'reverted') return { error: 'locked' };
+
+  updateReview(id, {
+    status: 'merged',
+    merge_commit: merge_commit || null,
+    merged_at: new Date().toISOString(),
+    concerns: null,
+  });
+  broadcastReview(id);
+  console.log(`[reviews] ${id} was already live — record caught up (${merge_commit ? merge_commit.slice(0, 8) : 'no sha'})`);
+  return { ok: true, review: getReview(id) };
+}
+
 // "Put it back." Reverses the published change and republishes, so the app returns
 // to how it was. Uses a reverse-commit rather than rewinding history, so anything
 // published after this stays published — see git-ship.js.

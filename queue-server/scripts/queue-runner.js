@@ -41,7 +41,7 @@ import { getClaudeUsage, getSideSubscriptionUsage } from '../server/src/services
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
-import { shipJob, undoJob } from './git-ship.js';
+import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk } from './git-ship.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
@@ -1376,6 +1376,40 @@ async function runGitJobs() {
   }
 }
 
+// ─── Catching up cards that lied ───────────────────────────────────────────────
+// A card can say "not live yet" when the work is actually live: the ship-job lane
+// above is the only path that ever tells the app it published, and work reaches
+// the trunk other ways too — landed by hand from a terminal, or a push that
+// actually went through right before the runner or the network died, so the
+// result never made it back. Nothing else ever re-checks those cards, so once
+// stale they stay stale forever. This only observes: it never merges, pushes, or
+// writes to the tree, and it only runs when idle, so it never competes with a
+// task or a real ship for the repo.
+const STRANDED_SWEEP_MS = 5 * 60_000;
+let lastStrandedSweepAt = 0;
+
+async function runStrandedSweep() {
+  if (Date.now() - lastStrandedSweepAt < STRANDED_SWEEP_MS) return;
+  lastStrandedSweepAt = Date.now();
+
+  let r;
+  try { r = await api('/worker/git/stranded', undefined, { method: 'GET' }); } catch { return; }
+  if (!r.ok) return;
+  const { reviews } = await r.json();
+  if (!Array.isArray(reviews) || !reviews.length) return; // the normal case — no git at all
+
+  const wt = shipTree(RUNNER_REPO, TRUNK);
+  if (!wt || !fetchTrunk(RUNNER_REPO, wt, TRUNK)) return;
+
+  for (const { review_id, head_sha } of reviews) {
+    let found;
+    try { found = alreadyOnTrunk({ head_sha, review_id }, { repo: RUNNER_REPO, trunk: TRUNK }); } catch { continue; }
+    if (!found.live) continue;
+    console.log(`  ${green('✓ already live')} ${review_id.slice(0, 8)} — record was behind git`);
+    try { await api('/worker/git/reconcile', { review_id, merge_commit: found.merge_commit }); } catch { /* try again next sweep */ }
+  }
+}
+
 // ─── One runner at a time ─────────────────────────────────────────────────────
 // Two runners on the same queue is not a data-corruption problem — the server's
 // claim is a guarded `UPDATE … WHERE status='approved'`, so a task can only ever
@@ -1486,6 +1520,7 @@ async function main() {
       // Publishing first: a finished task sitting unpublished matters more than
       // rescuing a text call, and a git job is seconds long.
       try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
+      try { await runStrandedSweep(); } catch (e) { console.error('Stranded-review sweep failed —', e.message); }
       if (helperInFlight < HELPER_CONCURRENCY) {
         helperInFlight++;
         try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }

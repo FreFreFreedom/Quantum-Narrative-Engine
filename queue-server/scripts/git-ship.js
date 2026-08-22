@@ -47,7 +47,7 @@ function git(cwd, args, { lines = false } = {}) {
 
 // A worktree kept for this purpose alone, reused between jobs. `.claude/worktrees`
 // is already git-excluded, so it never shows up as a stray file.
-function shipTree(repo, trunk) {
+export function shipTree(repo, trunk) {
   const path = join(repo, '.claude', 'worktrees', 'ship');
   if (!existsSync(path)) {
     const base = git(repo, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${trunk}`]) ? `origin/${trunk}` : 'HEAD';
@@ -56,7 +56,7 @@ function shipTree(repo, trunk) {
   return path;
 }
 
-function fetchTrunk(repo, wt, trunk) {
+export function fetchTrunk(repo, wt, trunk) {
   // One ref. This used to fetch `main` alongside the trunk, which becomes a trap the
   // moment `main` stops existing: git fails the ENTIRE fetch on an unknown ref rather
   // than fetching what it can, git() swallows the error, and this function then
@@ -83,6 +83,29 @@ function pushTrunk(wt, trunk, dryRun) {
   return { ok: true, pushed: [trunk] };
 }
 
+// ─── is it already live? ────────────────────────────────────────────────────
+// The one genuinely dangerous case for a ship in flight: the runner pushed, then
+// died before it could report. Without this check a retry would merge the same
+// work twice. Also the whole of the stranded-review sweep (queue-runner.js) —
+// same question, asked later and from outside an active ship job, for a review
+// that was never mid-flight at all (published by hand, or a ship that failed
+// after the push somehow still landed).
+//
+// Assumes the trunk was already fetched into the ship worktree (fetchTrunk) —
+// callers checking many reviews at once (the sweep) fetch exactly once and call
+// this per review, rather than paying for a fetch each time.
+export function alreadyOnTrunk({ head_sha, review_id }, { repo, trunk = 'develop', log = () => {} } = {}) {
+  const wt = shipTree(repo, trunk);
+  if (!wt || !head_sha) return { live: false, merge_commit: null };
+  if (git(wt, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${trunk}`]) === null) return { live: false, merge_commit: null };
+  if (git(wt, ['merge-base', '--is-ancestor', head_sha, `origin/${trunk}`]) === null) {
+    return { live: false, merge_commit: null };
+  }
+  const found = git(wt, ['log', `origin/${trunk}`, '--merges', `--grep=Ship-Review: ${review_id}`, '--format=%H', '-n', '1']);
+  log('already published — recovering the record');
+  return { live: true, merge_commit: found || null };
+}
+
 // ─── ship ─────────────────────────────────────────────────────────────────────
 
 export function shipJob(job, { repo, trunk = 'develop', dryRun = false, log = () => {} } = {}) {
@@ -91,14 +114,8 @@ export function shipJob(job, { repo, trunk = 'develop', dryRun = false, log = ()
 
   if (!fetchTrunk(repo, wt, trunk)) return { ok: false, error: 'network', detail: `cannot see origin/${trunk}` };
 
-  // Already published? This is the one genuinely dangerous case: the runner pushed,
-  // then died before it could report. Without this check a retry would merge the
-  // same work twice.
-  if (job.head_sha && git(wt, ['merge-base', '--is-ancestor', job.head_sha, `origin/${trunk}`]) !== null) {
-    const found = git(wt, ['log', `origin/${trunk}`, '--merges', `--grep=Ship-Review: ${job.review_id}`, '--format=%H', '-n', '1']);
-    log('already published — recovering the record');
-    return { ok: true, already: true, merge_commit: found || null };
-  }
+  const already = alreadyOnTrunk(job, { repo, trunk, log });
+  if (already.live) return { ok: true, already: true, merge_commit: already.merge_commit };
 
   resetToTrunk(wt, trunk);
 
