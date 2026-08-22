@@ -104,6 +104,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    panning rule so a pan in progress still wins. */
 #graphCanvas.is-hit { cursor:pointer; }
 #graphCanvas.panning, #graphCanvas.nav-panning { cursor:grabbing; }
+/* Visually hidden, still read aloud. The graph is one canvas with no per-node
+   elements to announce, so keyboard navigation writes the current node's name here
+   instead (see announceGraph()). */
+.sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
 .arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
 .arch-canvas.arch-zoom-anim { transition:transform var(--t-fast) var(--ease); }
 .arch-canvas.nav-panning * { cursor:grabbing; }
@@ -1720,9 +1724,10 @@ button:active { transform: translateY(1px) scale(.99); }
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
-    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), d3-force layout in runLayout(), hit-testing in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
+      <div id="graphLive" class="sr-only" aria-live="polite"></div>
     </div>
     <div class="list-stage" id="listStage" data-src="Content navigator → list view of entities | fmcns_navigator.html: renderList() (~line 937)">
       <div class="list-summary" id="listSummary"></div>
@@ -2838,7 +2843,7 @@ function runLayout() {
       // hand-written centroid term did, keeping clusters legible as regions.
       .force('cx', d3.forceX(d => centroidFor(d).x).strength(0.05))
       .force('cy', d3.forceY(d => centroidFor(d).y).strength(0.05))
-      .on('tick', requestRender);
+      .on('tick', onSimTick);
   } else {
     // sim.nodes() re-initialises every force against the new array, which re-reads the
     // collide radius and both centroid accessors. Only the link force keeps its own
@@ -2847,8 +2852,14 @@ function runLayout() {
     sim.force('link').links(links);
   }
   // Enough energy to rearrange, not enough to throw the surviving layout away.
+  _gQuad = null; // positions just changed wholesale — see nodeAt()
   sim.alpha(0.6).restart();
 }
+
+// Every tick moves every node, so the hit-test index is thrown away and rebuilt lazily
+// on the next pointer event rather than eagerly here — a tick that nobody points at
+// costs nothing, and a pointer event only ever pays for one rebuild.
+function onSimTick() { _gQuad = null; requestRender(); }
 
 function el(tag, attrs) { const e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
 function truncate(s,n){ return s.length>n? s.slice(0,n-1)+"…" : s; }
@@ -3094,6 +3105,18 @@ function paintGraph() {
     ctx.fillStyle = gPaint(nodeColor(n), inkC);
     ctx.fill();
     ctx.stroke();
+    // Dropped by a drag and therefore PINNED: the simulation no longer moves it. The
+    // dashed ring is the only thing that says so, so it has to be visible without
+    // being loud — same ink as the focus ring, thin, broken.
+    if (n.fx != null || n.fy != null) {
+      ctx.save();
+      ctx.setLineDash([2, 2.5]);
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = inkC;
+      ctx.globalAlpha = dimmed ? 0.15 : 0.55;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
   });
   ctx.globalAlpha = 1;
 
@@ -3142,21 +3165,36 @@ function paintGraph() {
 
 // ---------- Hit-testing ----------
 // There are no DOM elements left to hang onmouseenter/onclick on, so hover and click
-// are resolved against the geometry. The targets are deliberately the same size the
-// old invisible hit-shapes were: a node's radius + 7, and 6 either side of an edge.
-// Plain linear scans — the pool is a few hundred nodes and this runs once per pointer
-// event, not per frame. (A quadtree, node dragging and keyboard nav are a later step.)
+// are resolved against the geometry.
+//
+// Node lookups go through a d3-quadtree of the current positions, dropped on every
+// simulation tick and rebuilt on the next pointer event that needs one. The linear
+// scan this replaces was fine at a few hundred nodes; the quadtree is what keeps a
+// pointermove cheap once the corpus grows, and it is the same structure the layout's
+// own repulsion force already uses.
+//
+// Both tolerances are now measured in SCREEN pixels (world units / scale) rather than
+// world units, because a fixed world-unit target shrank to nothing on screen at the
+// default zoom — the whole 1500x1080 world framed in the stage sits at about scale
+// 0.3, where the old radius+7 was under 4 pixels of aim.
+let _gQuad = null;
+function graphQuadtree() {
+  if (!_gQuad) _gQuad = d3.quadtree().x(n => n.x).y(n => n.y).addAll(nodes);
+  return _gQuad;
+}
 function gStagePoint(ev) {
   const rect = gCanvas.getBoundingClientRect();
   return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
 }
 function nodeAt(wx, wy) {
-  let best = null, bestD = Infinity;
-  for (const n of nodes) {
-    const d = Math.hypot(n.x - wx, n.y - wy);
-    if (d <= nodeRadius(n) + 7 && d < bestD) { best = n; bestD = d; }
-  }
-  return best;
+  if (!nodes.length) return null;
+  const screenTol = 14 / camera.scale;
+  // The search radius has to cover the widest tolerance any single node can claim —
+  // radius+7 for the largest node (11+7) or the screen-pixel target, whichever wins —
+  // or find() would rule out a node that the per-node check below would have accepted.
+  const n = graphQuadtree().find(wx, wy, Math.max(18, screenTol));
+  if (!n) return null;
+  return Math.hypot(n.x - wx, n.y - wy) <= Math.max(nodeRadius(n) + 7, screenTol) ? n : null;
 }
 function pointSegDist(px, py, x1, y1, x2, y2) {
   const dx = x2 - x1, dy = y2 - y1, len2 = dx * dx + dy * dy;
@@ -3164,20 +3202,61 @@ function pointSegDist(px, py, x1, y1, x2, y2) {
   return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 function edgeAt(wx, wy, spotlight) {
+  // 6 screen pixels either side of the line, floored at 1.4 world units so the target
+  // never ends up narrower than the widest stroke the renderer actually draws (2.6).
+  const tol = Math.max(1.4, 6 / camera.scale);
   let best = null, bestD = Infinity;
   for (const e of edges) {
     if (!edgeVisible(e, spotlight)) continue; // only what is actually drawn is clickable
     const a = byId[e.a], b = byId[e.b]; if (!a || !b) continue;
     const d = pointSegDist(wx, wy, a.x, a.y, b.x, b.y);
-    if (d <= 6 && d < bestD) { best = e; bestD = d; }
+    if (d <= tol && d < bestD) { best = e; bestD = d; }
   }
   return best;
+}
+
+// The node under a pressed pointer. Set by the graph's shouldPan predicate, which
+// NavCtrl calls on pointerdown, and cleared on release. Its presence is what makes a
+// drag move the node instead of the view.
+let gPressNode = null;
+
+// ---------- Keyboard navigation ----------
+// A canvas has no per-node elements, so per-node tabindex is simply not available
+// here. The canvas itself takes focus (NavCtrl sets tabIndex) and Tab walks a cursor
+// around the graph instead: through the selected node's neighbours when something is
+// selected, through every node when nothing is. Enter selects what the cursor is on,
+// Esc lets go. The cursor rides on hoveredId, so it lights the graph up in exactly the
+// way a mouse hover does — one highlight rule, not two.
+let kbCursorId = null;
+function announceGraph(text) {
+  const live = document.getElementById('graphLive');
+  if (live) live.textContent = text;
+}
+// The ordered list Tab walks. Sorted by name so the order is the same every time you
+// come back to a node, rather than following whatever order the edges happen to be in.
+function kbRing() {
+  const anchor = focusedId && byId[focusedId] ? focusedId : null;
+  let ids = null;
+  if (anchor) ids = [...neighborSet(anchor)].filter(id => id !== anchor && byId[id]);
+  if (!ids || !ids.length) ids = nodes.map(n => n.id);
+  return ids.sort((a, b) => String(byId[a].name || '').localeCompare(String(byId[b].name || '')));
+}
+function kbStep(dir) {
+  const ring = kbRing();
+  if (!ring.length) return;
+  const at = kbCursorId ? ring.indexOf(kbCursorId) : -1;
+  const idx = at < 0 ? (dir > 0 ? 0 : ring.length - 1) : (at + dir + ring.length) % ring.length;
+  kbCursorId = ring[idx];
+  hoveredId = kbCursorId;
+  hoveredEdge = null;
+  const n = byId[kbCursorId];
+  announceGraph((n ? n.name : kbCursorId) + ', ' + (idx + 1) + ' of ' + ring.length);
+  requestRender();
 }
 
 function setupGraphPointer() {
   const c = graphCtx() && gCanvas;
   if (!c) return;
-  let down = null;
   const hoverAt = (ev) => {
     if (!nodes.length) return;
     const p = gStagePoint(ev), w = sToW(p.x, p.y);
@@ -3192,27 +3271,98 @@ function setupGraphPointer() {
     // torn down mid-gesture and nothing left for a click to race against.
     hoveredId = nid;
     hoveredEdge = e;
+    kbCursorId = null; // the mouse has taken over the highlight
     requestRender();
   };
-  c.addEventListener('pointermove', hoverAt);
+  c.addEventListener('pointermove', (ev) => {
+    if (gPressNode) {
+      // NavCtrl owns the drag threshold, and this listener is deliberately registered
+      // after its one (see initGraph) so the answer is already up to date for THIS
+      // event. Nothing moves until the gesture is a real drag — a click with a pixel
+      // of hand jitter must not nudge a node, and must not pin it.
+      if (_cnNav && _cnNav.dragMoved()) {
+        const p = gStagePoint(ev), w = sToW(p.x, p.y);
+        gPressNode.fx = gPressNode.x = w.x;
+        gPressNode.fy = gPressNode.y = w.y;
+        _gQuad = null;
+        // Keep the simulation warm while the node is being pulled around, so its
+        // neighbours get out of the way live instead of snapping on release.
+        if (sim) sim.alphaTarget(0.3).restart();
+        requestRender();
+      }
+      return;
+    }
+    hoverAt(ev);
+  });
+  // Release: fx/fy stay exactly where the node was dropped, so it is now PINNED and
+  // the rest of the layout flows around it. Double-click hands it back.
+  const releaseNode = () => {
+    if (!gPressNode) return;
+    gPressNode = null;
+    if (sim) sim.alphaTarget(0); // stop feeding the simulation energy
+    requestRender();
+  };
+  c.addEventListener('pointerup', releaseNode);
+  c.addEventListener('pointercancel', releaseNode);
   c.addEventListener('pointerleave', () => {
     c.classList.remove('is-hit');
-    if (hoveredId || hoveredEdge) { hoveredId = null; hoveredEdge = null; requestRender(); }
+    // Pointer capture means this should not fire mid-drag, but if it ever does the
+    // simulation must not be left running warm with a phantom node held down.
+    releaseNode();
+    if (hoveredId || hoveredEdge) { hoveredId = null; hoveredEdge = null; kbCursorId = null; requestRender(); }
   });
-  c.addEventListener('pointerdown', (ev) => { if (ev.button === 0) down = gStagePoint(ev); });
-  c.addEventListener('click', (ev) => {
-    const p = gStagePoint(ev);
-    // Match NavCtrl's 8px pan threshold so a pan is never also read as a click.
-    const panned = down && Math.hypot(p.x - down.x, p.y - down.y) > 8;
-    down = null;
-    if (panned) return;
-    const w = sToW(p.x, p.y);
-    const { spotlight } = graphSpotlight();
+  c.addEventListener('dblclick', (ev) => {
+    const p = gStagePoint(ev), w = sToW(p.x, p.y);
     const n = nodeAt(w.x, w.y);
-    if (n) { selectEntity(n.id); return; }
-    const e = edgeAt(w.x, w.y, spotlight);
-    if (e) { ev.stopPropagation(); selectEdgeConnection(e); }
+    if (!n || (n.fx == null && n.fy == null)) return;
+    ev.preventDefault();
+    n.fx = null; n.fy = null;
+    if (sim) { sim.alphaTarget(0); sim.alpha(0.4).restart(); }
+    announceGraph((n.name || n.id) + ' released');
+    requestRender();
   });
+  c.addEventListener('keydown', (ev) => {
+    if (ev.target !== c) return;
+    if (ev.key === 'Tab') {
+      ev.preventDefault();
+      kbStep(ev.shiftKey ? -1 : 1);
+    } else if (ev.key === 'Enter') {
+      if (!kbCursorId) return;
+      ev.preventDefault();
+      const id = kbCursorId;
+      kbCursorId = null;
+      announceGraph((byId[id] ? byId[id].name : id) + ' selected');
+      selectEntity(id);
+    } else if (ev.key === 'Escape') {
+      const had = kbCursorId || focusedId || focusedEdge || hoveredId;
+      kbCursorId = null; hoveredId = null; hoveredEdge = null; focusedId = null; focusedEdge = null;
+      if (had) { ev.preventDefault(); announceGraph('Selection cleared'); requestRender(); }
+      // Tab is swallowed above, so Esc on an already-clear graph is the way out of it.
+      else c.blur();
+    }
+  });
+}
+
+// What NavCtrl calls on pointerdown to ask whether the gesture is its to pan with.
+// Answering "no" over a node is the whole of "dragging a node drags the node".
+function graphShouldPan(ev) {
+  gPressNode = null;
+  if (!graphCtx() || !nodes.length) return true;
+  const p = gStagePoint(ev), w = sToW(p.x, p.y);
+  gPressNode = nodeAt(w.x, w.y);
+  return !gPressNode;
+}
+// What NavCtrl calls on pointerup when the gesture never crossed its drag threshold.
+// This is how a click reaches a node or an edge now there is no DOM to hang one on —
+// and it reuses that one threshold instead of measuring the same thing twice.
+function graphTap(ev) {
+  if (!graphCtx()) return;
+  const p = gStagePoint(ev), w = sToW(p.x, p.y);
+  const { spotlight } = graphSpotlight();
+  const n = nodeAt(w.x, w.y);
+  if (n) { kbCursorId = null; selectEntity(n.id); return; }
+  const e = edgeAt(w.x, w.y, spotlight);
+  if (e) selectEdgeConnection(e);
 }
 
 function initGraphCanvas() {
@@ -3283,7 +3433,16 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     // Additive, defaulting to the old hardcoded reset-to-origin so Map mode and the
     // Architecture graph behave exactly as before. A host whose "100%" is not
     // {0,0,1} (the content canvas frames its world instead) passes its own.
-    homeFn = opts.home ?? null;
+    homeFn = opts.home ?? null,
+    // Also additive, also defaulting to today's behaviour — a host that passes
+    // neither gets exactly the control it had before.
+    //   shouldPan(e) — return false to claim the gesture. The gesture is still
+    //     TRACKED (so the tap below still works), it just doesn't move the view.
+    //   onTap(e) — fired on pointerup when the pointer never crossed dragThreshold.
+    //     A canvas host has no elements to hang a click handler on; this is the
+    //     click, measured against the one threshold that already exists here.
+    shouldPanFn = opts.shouldPan ?? null,
+    onTapFn = opts.onTap ?? null;
   let activeTouch = null, lastTouchDist = 0, lastTouchCentroid = null, drag = null;
   // Momentum state
   let momentumVX = 0, momentumVY = 0, momentumRAF = null;
@@ -3358,15 +3517,16 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     // Allow pan on SVG elements - only exclude interactive HTML elements
     const target = e.target;
     if (target.closest && target.closest('a, button, input, select, textarea, [data-no-pan]')) return;
-    drag = { x: e.clientX, y: e.clientY, sx: state.x, sy: state.y, moved: false };
+    const canPan = !shouldPanFn || shouldPanFn(e) !== false;
+    drag = { x: e.clientX, y: e.clientY, sx: state.x, sy: state.y, moved: false, pan: canPan };
     stopMomentum();
     try { container.setPointerCapture(e.pointerId); } catch (err) {}
   });
   container.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!drag.moved && Math.hypot(dx, dy) > dragThreshold) { drag.moved = true; container.classList.add('nav-panning'); }
-    if (drag.moved) panBy(dx, dy);
+    if (!drag.moved && Math.hypot(dx, dy) > dragThreshold) { drag.moved = true; if (drag.pan) container.classList.add('nav-panning'); }
+    if (drag.moved && drag.pan) panBy(dx, dy);
   });
   const endDrag = () => {
     if (drag) {
@@ -3374,7 +3534,11 @@ function NavCtrl(container, state, applyFn, opts = {}) {
       container.classList.remove('nav-panning');
     }
   };
-  container.addEventListener('pointerup', endDrag);
+  container.addEventListener('pointerup', (e) => {
+    const tap = !!(drag && !drag.moved);
+    endDrag();
+    if (tap && onTapFn) onTapFn(e);
+  });
   container.addEventListener('pointercancel', endDrag);
   container.addEventListener('pointerleave', endDrag);
   // Touch events
@@ -3423,7 +3587,10 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     else if (e.key.toLowerCase() === 'f' && fitFn) { e.preventDefault(); fitFn(); if (onZoom) onZoom(); }
   });
   container.focus({ preventScroll: true });
-  return { zoomAt, panBy, applyFn: () => applyFn() };
+  // dragMoved() is read by the content canvas mid-gesture to decide whether a
+  // pointermove is a real drag yet. Additive to the returned object; no existing
+  // caller looks at it.
+  return { zoomAt, panBy, applyFn: () => applyFn(), dragMoved: () => !!(drag && drag.moved) };
 }
 
 // The camera is no longer an SVG transform on a <g> — it is applied inside
@@ -3431,10 +3598,15 @@ function NavCtrl(container, state, applyFn, opts = {}) {
 function applyCamera(){ requestRender(); }
 
 function initGraph(){
+  // NavCtrl first, deliberately. It is the thing that decides, on each pointermove,
+  // whether the gesture has crossed the drag threshold, and the canvas's own
+  // pointermove (registered inside initGraphCanvas) reads that answer to drag a node.
+  // Listeners on the same element fire in registration order, so NavCtrl has to be
+  // the earlier one or the node would lag a whole event behind the cursor.
+  setupZoomPan();
   initGraphCanvas();
   frameWholeWorld();
   layoutAndDraw();
-  setupZoomPan();
   document.getElementById('toggleBridges').onclick = function(e){
     bridgesOn = !bridgesOn;
     e.target.textContent = 'Bridges: ' + (bridgesOn?'on':'off');
@@ -3468,6 +3640,8 @@ function setupZoomPan(){
     home: () => frameWholeWorld(),
     fit: () => { frameWholeWorld(); requestRender(); },
     fixedViewBox: true,
+    shouldPan: graphShouldPan,
+    onTap: graphTap,
   });
 }
 
@@ -9804,8 +9978,8 @@ const ARCH_DATA = [
     what:'How the user actually moves through and manipulates the graph and detail views — pan, zoom, hover, click.',
     why:'Flagged directly: click-drag-only panning and no pinch-to-zoom made the graph feel clumsy well before the clutter itself was the issue.',
     input:'Mouse/trackpad/touch input', output:'Camera movement, spotlight/fade focus state, panel updates',
-    now:'Prototype. Click-drag pan and scroll-wheel zoom work; node and edge hover/click both now drive a spotlight/fade focus state. No native trackpad gesture support (two-finger pan, pinch-to-zoom) yet.',
-    next:'Wire native trackpad gestures — wheel-event pan (deltaX/deltaY without ctrlKey) and pinch-to-zoom (wheel + ctrlKey, matching browser convention) on the graph canvas.',
+    now:'Working. Two-finger pan and pinch-to-zoom, click-drag pan, and arrow-key/zoom shortcuts all work. Hovering or clicking a node or a connection lights up the pattern it belongs to. Nodes can be dragged; a node you drop stays put and shows a dashed ring until you double-click it. Tab walks through the neighbours of whatever is selected, Enter picks one, Esc lets go.',
+    next:'Frame the view on what is actually there rather than on a fixed box, and give the graph a way back to a clean starting view.',
     status:'Prototype', depends:[] },
 
   { id:'per-view-polish', territory:'interface', name:'Per-view polish',
