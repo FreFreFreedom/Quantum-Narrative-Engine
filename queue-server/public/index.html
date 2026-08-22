@@ -339,6 +339,12 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .qp-pick-btn { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:var(--c-ink-2); }
 .qp-pick-btn.active { border-color:var(--c-danger); color:var(--c-danger); }
 .qp-pick-ctx { font-size:10.5px; color:var(--c-ink-4); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qp-pick-list { display:flex; flex-wrap:wrap; gap:5px; width:100%; }
+.qp-pick-chip { display:inline-flex; align-items:center; gap:5px; max-width:100%; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:20px; padding:3px 6px 3px 10px; font-size:10.5px; color:var(--c-ink-3); }
+.qp-pick-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+.qp-pick-chip button { border:none; background:none; cursor:pointer; color:var(--c-ink-4); font-size:12px; line-height:1; padding:1px 3px; border-radius:50%; }
+.qp-pick-chip button:hover { background:var(--c-surface-3); color:var(--c-danger); }
+.qp-pick-clear { border:none; background:none; cursor:pointer; color:var(--c-ink-4); font-size:10.5px; text-decoration:underline; padding:0; }
 .qp-submit { margin-left:auto; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); border-radius:8px; padding:7px 14px; font-size:12px; cursor:pointer; }
 .qp-submit:disabled { opacity:.5; cursor:default; }
 .qp-status { font-size:11px; color:var(--c-ink-4); }
@@ -11323,7 +11329,7 @@ function openChatWithPrompt(text) {
 // every mode (see qLoad, called from boot() regardless of mode).
 let queuePanelOpen = false;
 let qpMode = 'implement';
-let qpPicked = null;
+let qpPicked = []; // ordered list of pointed-element descriptions (add order preserved)
 let qpPickActive = false;
 let qpPickBanner = null;
 
@@ -11351,9 +11357,14 @@ function renderQueuePanel() {
         </div>
       </div>
       <div class="qp-composer-row">
-        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn">${qpPickActive ? '✕ Cancel' : '✏️ Point at an element'}</button>
-        <span class="qp-pick-ctx" id="qpPickCtx">${qpPicked ? '🎯 ' + qEsc(qpPicked) : ''}</span>
+        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn">${qpPickActive ? '✕ Cancel' : (qpPicked.length ? '＋ Point at another element' : '✏️ Point at an element')}</button>
+        ${qpPicked.length > 1 ? '<button class="qp-pick-clear" id="qpPickClear">Clear all</button>' : ''}
       </div>
+      ${qpPicked.length ? `<div class="qp-composer-row">
+        <div class="qp-pick-list" id="qpPickList">
+          ${qpPicked.map((desc, i) => `<span class="qp-pick-chip" data-idx="${i}">🎯 <span>${qEsc(desc)}</span><button data-qpremove="${i}" title="Remove">✕</button></span>`).join('')}
+        </div>
+      </div>` : ''}
       <div class="qp-composer-row">
         <div class="qp-place-seg" id="qpPlaceSeg">
           <button class="active" data-pl="last">Last in line</button>
@@ -11401,6 +11412,11 @@ function renderQueuePanel() {
     b.onclick = () => body.querySelectorAll('#qpPlaceSeg button').forEach(x => x.classList.toggle('active', x === b));
   });
   document.getElementById('qpPickBtn').onclick = qpTogglePicking;
+  const clearBtn = document.getElementById('qpPickClear');
+  if (clearBtn) clearBtn.onclick = () => { qpPicked = []; renderQueuePanel(); };
+  body.querySelectorAll('[data-qpremove]').forEach(b => {
+    b.onclick = () => { qpPicked.splice(Number(b.getAttribute('data-qpremove')), 1); renderQueuePanel(); };
+  });
   document.getElementById('qpSubmit').onclick = qpSubmitTask;
   const textEl = document.getElementById('qpText');
   if (textEl) textEl.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) qpSubmitTask(); });
@@ -11412,7 +11428,12 @@ async function qpSubmitTask() {
   const submitBtn = document.getElementById('qpSubmit');
   const text = (textEl.value || '').trim();
   if (!text) return;
-  const fullText = text + (qpPicked ? '\n\n(context: ' + qpPicked + ')' : '');
+  const contextText = qpPicked.length === 1
+    ? '\n\n(context: ' + qpPicked[0] + ')'
+    : qpPicked.length > 1
+      ? '\n\n(context — ' + qpPicked.length + ' elements pointed at, in order:\n' + qpPicked.map((d, i) => (i + 1) + '. ' + d).join('\n') + ')'
+      : '';
+  const fullText = text + contextText;
   const first = (document.querySelector('#qpPlaceSeg .active') || {}).getAttribute?.('data-pl') === 'first';
   submitBtn.disabled = true;
   try {
@@ -11420,7 +11441,7 @@ async function qpSubmitTask() {
       title: '', prompt: fullText, mode: qpMode, status: 'queued', priority: first, space: 'fmcns',
     });
     textEl.value = '';
-    qpPicked = null;
+    qpPicked = [];
     await qLoad();
   } catch (e) {
     statusEl.textContent = 'Error: ' + e.message;
@@ -11464,7 +11485,7 @@ function qpClick(e) {
   e.preventDefault();
   e.stopPropagation();
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
-  qpPicked = qpDescribeEl(t);
+  qpPicked.push(qpDescribeEl(t));
   qpStopPicking();
 }
 function qpStopPicking() {
@@ -11486,7 +11507,6 @@ function qpStopPicking() {
 function qpTogglePicking() {
   if (qpPickActive) { qpStopPicking(); return; }
   qpPickActive = true;
-  qpPicked = null;
   // Hide the panel AND its full-viewport veil while picking — otherwise the veil (it sits
   // on top of the whole page, not just the panel's own width) swallows every hover/click
   // before it reaches the real element underneath, which is why pointing used to fail.
