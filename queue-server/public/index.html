@@ -3469,9 +3469,9 @@ function drawnRadius(n, far, farDot) {
 //   - Nothing here ever blocks a frame: the plain node is drawn until an image resolves,
 //     and the arrival calls requestRender() to swap it in.
 const NODE_IMG_SIZE = 'w185';
-const NODE_IMG_MAX_INFLIGHT = 6;
+const NODE_IMG_MAX_INFLIGHT = 12;
 // Give up on a single poster after this long. The cap above is only polite if slots come
-// back: a load that neither succeeds nor errors held its slot forever, and six of those
+// back: a load that neither succeeds nor errors held its slot forever, and twelve of those
 // would have stopped every poster loading until the page was reloaded.
 const NODE_IMG_TIMEOUT_MS = 15000;
 // path -> how many times we have given up waiting on it (see the timeout below).
