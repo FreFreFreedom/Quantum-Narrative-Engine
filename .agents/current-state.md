@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-21T21:29:04.359Z
+Generated: 2026-08-22T18:55:52.877Z
 
 ## Components
 
@@ -9,7 +9,7 @@ Generated: 2026-08-21T21:29:04.359Z
 - semantic-layer · Working · next: Full corpus grounded, shared tag vocabulary enforced
 - analogical-layer · Prototype · next: Server-side pattern-instance graph, computed once and cached instead of recomputed per client
 - pattern-engine · Concept · next: One formally defined, named pattern as a proof of concept (structure, not just a tag)
-- graphrag · Prototype · next: Subgraph retrieval wired into the embedded chat assistant as a real tool
+- graphrag · Prototype · next: Static community detection over the existing tag/continuum data
 - scale-echo · Prototype · next: Scale-aware weighting (distance in scale, not just axis value)
 - integration-continuum · Working · next: A third axis once cluster III is archive-grounded
 - thread-click · Working · next: Shared click-through across one unified app’s modes — largely true now that Content and Map share one renderer
@@ -45,6 +45,9 @@ Generated: 2026-08-21T21:29:04.359Z
 - theme-clusters-that-do-something — **DONE** 2026-08-21
 - make-the-caching-actually-work — **PLANNED** 2026-08-21 — sent to the queue
 - the-room-to-think-in — **DONE** 2026-08-21 — built as a third Core sub-view (Room), reusing `studioEmbed`; the attach picker covers seeds, suggestions, tasks and architecture pieces (entities are not a registered subject type, so they would need a backend change).
+- count-every-dollar-we-spend — **PLANNED** 2026-08-21 — sent to the queue
+- let-the-ai-ask-about-the-clusters — **PLANNED** 2026-08-21 — sent to the queue
+- the-app-should-know-what-is-live — **PLANNED** 2026-08-22
 - rotate-leaked-credentials — **Cleanup DONE · revocation deferred on purpose** (Antoine, 2026-08-21)
 - cards-one-system — **DONE** 2026-08-21 — shipped as `.ubtn`/`.uicon` plus the `⋯` menu, the one status pill and the "Details" fold; `.q-item`/`.flow-row`/`.stage-go` retired rather than left overriding. Three documented departures from the plan text are in the plan's own header.
 - cards-rest-and-narrow-screens — **DONE** 2026-08-21
@@ -52,6 +55,8 @@ Generated: 2026-08-21T21:29:04.359Z
 - multi-agent-development-team — **~70% DONE · roster outstanding**
 - self-aware-platform — **Parts 1–6 DONE · 2 loose ends**
 - suggestions-that-keep-up-with-the-code — **DONE** — all four parts; `npm run ship:facts` proves the saving. Two checks (live probe transport, runner-offline) were left to the deploy
+- an-architecture-that-knows-what-it-is — **PLANNED** 2026-08-22 — backend sent to the queue; the packed map waits on the graph renderer
+- a-map-of-what-belongs-together — **PLANNED** 2026-08-22 — waits on the graph renderer it inherits
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
 - tasks-start-without-waiting — DONE 2026-08-21. §6 (fanning the world-look out concurrently) deliberately **NOT** done — off the critical path once the gate went, and it risks benching the free lane; the analysis is kept in the plan
 - send-a-plan-from-the-terminal — DONE 2026-08-21
