@@ -19,7 +19,7 @@
 // text, exactly what the free lane is for.
 import { randomUUID, createHash } from 'node:crypto';
 import { generateText as generateTextByFeature } from './ai/text.js';
-import { createNode } from './architectureNodes.js';
+import { createNode, fallbackWitness } from './architectureNodes.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { APP_BLURB, TERRITORY_LINES, TERRITORY_IDS, onSubjectRule } from './ai/appModel.js';
 import { conciseQuestionPayload } from '../lib/concise.js';
@@ -1545,8 +1545,9 @@ export function plant(db, { report_id, part_index = 0, pick_index, target_node_i
 
 function plantPick(db, pick, { target_node_id = null, report_id = null, part_index = null, pick_index = null } = {}) {
   const target = pick.tree_target || {};
+  const name = target.name || pick.repo || pick.name || 'Discovery pick';
   const out = createNode(db, {
-    name: target.name || pick.repo || pick.name || 'Discovery pick',
+    name,
     territory: target.territory,
     what: pick.use || pick.vision || '',
     why: pick.why_fits || pick.how_fmcns || '',
@@ -1554,6 +1555,9 @@ function plantPick(db, pick, { target_node_id = null, report_id = null, part_ind
     status: 'Concept',
     provenance: 'speculative',
     parent_node_id: target_node_id,
+    // Every node needs a witness (architectureNodes.js). A pick is something not
+    // adopted yet, so it starts on the derived slug rather than blocking the plant.
+    ...fallbackWitness(name),
   });
   if (out.error) return out;
 
@@ -1582,8 +1586,9 @@ export function plantProject(db, { report_id } = {}) {
   if (!report) return { error: 'report_not_found' };
   if (!report.parts || report.parts.length < 2) return { error: 'not_a_project' };
 
+  const projectName = report.project_name || report.idea_text.slice(0, 60);
   const parentOut = createNode(db, {
-    name: report.project_name || report.idea_text.slice(0, 60),
+    name: projectName,
     territory: report.project_territory,
     what: report.idea_text,
     why: '',
@@ -1591,6 +1596,7 @@ export function plantProject(db, { report_id } = {}) {
     status: 'Concept',
     provenance: 'speculative',
     parent_node_id: null,
+    ...fallbackWitness(projectName),
   });
   if (parentOut.error) return parentOut;
   const projectNode = parentOut.node;

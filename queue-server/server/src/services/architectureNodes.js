@@ -20,6 +20,48 @@ import { APP_BLURB } from './ai/appModel.js';
 const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface', 'self'];
 const STATUS_LEVELS = ['Concept', 'Designed', 'Prototype', 'Working', 'Validated', 'Advanced'];
 
+// ─── The witness (plan an-architecture-that-knows-what-it-is, section 1) ────────
+// Every node says how the app could PROVE it exists, and saying it is mandatory at
+// creation. That is the whole mechanism: a tree where every node can be checked is
+// a tree that can retire things, instead of one that only ever grows.
+//
+// A witness on an unbuilt node is a claim about the future ("this is where it will
+// live"), so it is allowed to fail — failing is information. What is not allowed is
+// a node with no way of ever being checked at all.
+export const WITNESS_KINDS = ['file', 'symbol', 'route', 'table', 'query'];
+export const LIFECYCLE_STATES = ['concept', 'planned', 'building', 'live', 'retired'];
+
+// Plain-English because it reaches Antoine through the API and the UI (AGENTS.md).
+const WITNESS_REQUIRED = {
+  error: 'witness_required',
+  message: 'Say how the app can check this exists: pick a kind (file, symbol, route, table or query) and give one value — for example the file services/witnessCheck.js.',
+};
+
+function readWitness(input = {}) {
+  const kind = WITNESS_KINDS.includes(input.witness_kind) ? input.witness_kind : null;
+  const value = String(input.witness_value == null ? '' : input.witness_value).trim().slice(0, 400);
+  return kind && value ? { kind, value } : null;
+}
+
+// Fallback for the creation paths where nothing real can be pointed at yet — a Seed
+// planted by hand, a discovery pick, a speculative branch. The honest witness for
+// something that does not exist is a claim: when this gets built, the code will say
+// its name. A `symbol` on the node's own slug is cheap to grep and obviously wrong
+// when it is wrong, which is what makes it something to correct rather than proof.
+export function fallbackWitness(name) {
+  const words = String(name || '').toLowerCase().match(/[a-z0-9]+/g) || [];
+  const symbol = words.slice(0, 4).map((w, i) => i ? w[0].toUpperCase() + w.slice(1) : w).join('');
+  return { witness_kind: 'symbol', witness_value: symbol || 'node' };
+}
+
+// A model-returned witness, or nothing — spread over fallbackWitness() at the call
+// site so a missing or malformed answer degrades to the slug instead of failing the
+// creation. Nothing here is trusted: only the five kinds are accepted.
+export function pickWitness(p = {}) {
+  const w = readWitness(p);
+  return w ? { witness_kind: w.kind, witness_value: w.value } : {};
+}
+
 // Note the unique index is (parent_node_id, fingerprint), and SQLite treats NULLs as
 // distinct — so this dedups repeated speculation under a parent (always non-null)
 // without ever blocking you from hand-adding two root nodes that share a name.
@@ -49,14 +91,54 @@ function rowToNode(r) {
     provenance: r.provenance,
     parent_node_id: r.parent_node_id,
     created_at: r.created_at,
+    witness_kind: r.witness_kind || null,
+    witness_value: r.witness_value || '',
+    // null (never checked) is a different answer from 0 (checked, not there).
+    witness_ok: r.witness_ok === null || r.witness_ok === undefined ? null : !!r.witness_ok,
+    witness_checked_at: r.witness_checked_at || null,
+    witness_first_ok_at: r.witness_first_ok_at || null,
+    lifecycle: LIFECYCLE_STATES.includes(r.lifecycle) ? r.lifecycle : 'concept',
   };
+}
+
+// Planned and Building are never typed by hand: a queued task tagged to a node
+// means planned, a running one means building. work_prompts.component_id IS that
+// tag (it is written when the task is created, not guessed) and it is indexed, so
+// this is one grouped read for the whole list.
+function taskLifecycles(db) {
+  const map = new Map();
+  try {
+    const rows = db.prepare(`
+      SELECT component_id AS id,
+             SUM(CASE WHEN status='running' THEN 1 ELSE 0 END) AS running
+        FROM work_prompts
+       WHERE component_id IS NOT NULL AND deleted_at IS NULL AND status IN ('queued','running')
+       GROUP BY component_id
+    `).all();
+    for (const r of rows) map.set(r.id, r.running > 0 ? 'building' : 'planned');
+  } catch { /* older database without component_id — everything stays as stored */ }
+  return map;
+}
+
+// The witness checker owns live/retired, and what it found beats what a task board
+// implies: a node that is proven to exist is Live even while more work is queued on
+// it. Anything below that is the derived state when there is one.
+function effectiveLifecycle(stored, derived) {
+  const base = LIFECYCLE_STATES.includes(stored) ? stored : 'concept';
+  if (base === 'live' || base === 'retired') return base;
+  return derived || base;
 }
 
 export function listNodes(db) {
   const rows = db.prepare(
     `SELECT * FROM architecture_nodes WHERE deleted_at IS NULL ORDER BY created_at`,
   ).all();
-  return rows.map(rowToNode);
+  const derived = taskLifecycles(db);
+  return rows.map(r => {
+    const node = rowToNode(r);
+    node.lifecycle = effectiveLifecycle(node.lifecycle, derived.get(node.id));
+    return node;
+  });
 }
 
 // The fallback must itself be a known territory — passing the unvalidated input
@@ -73,16 +155,22 @@ function sanitize(input, fallbackTerritory) {
 export function createNode(db, input) {
   const name = String(input.name || '').trim();
   if (!name) return { error: 'name_required' };
+  // No witness, no node — the one rule that keeps the tree checkable. Every caller
+  // supplies one: treeSync from the changed file list, the AI paths from the model
+  // (with fallbackWitness() when it says nothing), the API from the request.
+  const witness = readWitness(input);
+  if (!witness) return { ...WITNESS_REQUIRED };
   const { territory, status, depends } = sanitize(input);
   const provenance = input.provenance === 'speculative' ? 'speculative' : 'canon';
   const parentId = input.parent_node_id || null;
   const id = makeId(db, name);
   try {
     db.prepare(`
-      INSERT INTO architecture_nodes (id, territory, name, what, why, next, depends_json, status, provenance, parent_node_id, fingerprint)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      INSERT INTO architecture_nodes (id, territory, name, what, why, next, depends_json, status, provenance, parent_node_id, fingerprint, witness_kind, witness_value)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(id, territory, name, input.what || '', input.why || '', input.next || '',
-      JSON.stringify(depends), status, provenance, parentId, fingerprint(parentId, name));
+      JSON.stringify(depends), status, provenance, parentId, fingerprint(parentId, name),
+      witness.kind, witness.value);
   } catch (e) {
     // Unique fingerprint per parent — a duplicate proposal is a no-op, not an error.
     if (String(e.message || '').includes('UNIQUE')) return { error: 'duplicate' };
@@ -105,15 +193,38 @@ export function updateNode(db, id, input) {
   // and anything already depending on it stays wired up.
   const provenance = input.provenance === 'canon' || input.provenance === 'speculative'
     ? input.provenance : row.provenance;
+  // A witness can be corrected but never emptied — a node that loses its witness
+  // becomes uncheckable again, which is the state this whole mechanism exists to
+  // prevent. A partial edit (kind only, or value only) falls back to what is stored.
+  const witness = readWitness({
+    witness_kind: input.witness_kind !== undefined ? input.witness_kind : row.witness_kind,
+    witness_value: input.witness_value !== undefined ? input.witness_value : row.witness_value,
+  });
+  if (!witness && (input.witness_kind !== undefined || input.witness_value !== undefined)) {
+    return { ...WITNESS_REQUIRED };
+  }
+  // Changing what a node points at invalidates the last check: the old pass was
+  // about a different thing. The checker (next fragment) re-answers it.
+  const witnessChanged = !!witness
+    && (witness.kind !== row.witness_kind || witness.value !== row.witness_value);
   db.prepare(`
     UPDATE architecture_nodes SET territory=?, name=?, what=?, why=?, next=?, depends_json=?,
-      status=?, provenance=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
+      status=?, provenance=?, witness_kind=?, witness_value=?,
+      witness_ok=CASE WHEN ? THEN NULL ELSE witness_ok END,
+      witness_checked_at=CASE WHEN ? THEN NULL ELSE witness_checked_at END,
+      updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(territory, name,
     input.what !== undefined ? input.what : row.what,
     input.why !== undefined ? input.why : row.why,
     input.next !== undefined ? input.next : row.next,
-    JSON.stringify(depends), status, provenance, id);
-  return { node: rowToNode(db.prepare(`SELECT * FROM architecture_nodes WHERE id=?`).get(id)) };
+    JSON.stringify(depends), status, provenance,
+    witness ? witness.kind : row.witness_kind,
+    witness ? witness.value : row.witness_value,
+    witnessChanged ? 1 : 0, witnessChanged ? 1 : 0, id);
+  const derived = taskLifecycles(db);
+  const node = rowToNode(db.prepare(`SELECT * FROM architecture_nodes WHERE id=?`).get(id));
+  node.lifecycle = effectiveLifecycle(node.lifecycle, derived.get(node.id));
+  return { node };
 }
 
 // Soft delete, so dismissing a speculation keeps its fingerprint row out of the way
@@ -155,8 +266,10 @@ Propose 3 distinct capabilities that could be built ON TOP of this node — thin
 
 ${USER_FACING_STYLE}
 
+For each proposal also say how the app could one day CHECK that it has actually been built: witness_kind is one of file (a path like services/witnessCheck.js), symbol (a function, class or constant name), route (like POST /api/architecture/witness), table (a database table name), or query (a SQL query that returns a row once it exists). witness_value is that one concrete value. It does not exist yet — name where it would live.
+
 Respond with ONLY a JSON array, no prose, no markdown fence:
-[{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence on what it is","why":"one sentence on why it matters","next":"the concrete first step to build it"}]`;
+[{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence on what it is","why":"one sentence on why it matters","next":"the concrete first step to build it","witness_kind":"file|symbol|route|table|query","witness_value":"the one concrete value"}]`;
 }
 
 function parseProposals(text) {
@@ -195,6 +308,9 @@ export async function speculate(db, parentId, ctx) {
       status: 'Concept',
       provenance: 'speculative',
       parent_node_id: parentId,
+      // Asked for in the same call, so it costs nothing; a slug the code would say
+      // its name with if the model skipped it.
+      ...fallbackWitness(p.name), ...pickWitness(p),
     });
     if (r.node) created.push(r.node);
   }
@@ -231,8 +347,10 @@ Decide where it fits. Give it a short name (as written in the idea, trimmed), pl
 
 ${USER_FACING_STYLE}
 
+Also say how the app could one day CHECK that this has actually been built: witness_kind is one of file (a path like services/witnessCheck.js), symbol (a function, class or constant name), route (like POST /api/architecture/witness), table (a database table name), or query (a SQL query that returns a row once it exists). witness_value is that one concrete value. It does not exist yet — name where it would live.
+
 Respond with ONLY JSON, no prose, no markdown fence:
-{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}`;
+{"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"],"witness_kind":"file|symbol|route|table|query","witness_value":"the one concrete value"}`;
 }
 
 function parseAuto(text) {
@@ -264,6 +382,7 @@ export async function autoPlaceNode(db, conceptInput, ctx = {}) {
   const r = createNode(db, {
     name: p.name, territory: p.territory, what: p.what, why: p.why, next: p.next,
     depends, status: 'Concept', provenance: 'speculative',
+    ...fallbackWitness(p.name), ...pickWitness(p),
   });
   if (r.error) return { error: r.error, message: r.error === 'duplicate' ? 'This idea is already in the tree.' : 'Could not add the node.' };
   return { node: r.node };
@@ -339,10 +458,12 @@ The owner proposes:
 
 Decide the kind. If it is an architecture idea, return isArchitecture true with a short name, the ONE territory it belongs to, one-sentence what/why, one concrete next step, and 0 to 3 existing ids it depends on (none if it is a root idea). If it is a seed, return isArchitecture false with a short title and a one-line note.
 
+For an architecture idea, also say how the app could one day CHECK that it has actually been built: witness_kind is one of file (a path like services/witnessCheck.js), symbol (a function, class or constant name), route (like POST /api/architecture/witness), table (a database table name), or query (a SQL query that returns a row once it exists). witness_value is that one concrete value. It does not exist yet — name where it would live.
+
 ${USER_FACING_STYLE}
 
 Respond with ONLY JSON, no prose, no markdown fence.
-Architecture idea: {"isArchitecture":true,"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"]}
+Architecture idea: {"isArchitecture":true,"name":"Short Title","territory":"one of perception|knowledge|reasoning|experience|interface|self","what":"one sentence","why":"one sentence","next":"one concrete first step","depends":["existing-id-1"],"witness_kind":"file|symbol|route|table|query","witness_value":"the one concrete value"}
 Seed: {"isArchitecture":false,"title":"Short title","notes":"one line"}`;
 }
 
@@ -376,6 +497,7 @@ export async function routeIdea(db, conceptInput, ctx = {}) {
     const r = createNode(db, {
       name: p.name, territory: p.territory, what: p.what, why: p.why, next: p.next,
       depends, status: 'Concept', provenance: 'speculative',
+      ...fallbackWitness(p.name), ...pickWitness(p),
     });
     if (r.error) return r.error === 'duplicate'
       ? { error: 'duplicate', message: 'This idea is already in the tree.' }
