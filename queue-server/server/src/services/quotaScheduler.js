@@ -6,6 +6,7 @@
 // queued until someone notices.
 
 import { clearExpired } from './ai/router.js';
+import { releaseStaleGitJobs } from './gitJobs.js';
 
 const TICK_MS = 60_000;
 let timer = null;
@@ -25,6 +26,13 @@ async function tick() {
     // timer keeps this to one background clock.
     const { sweepStuckStages } = await import('./promptQueue.js');
     sweepStuckStages();
+
+    // A runner that died mid-publish would otherwise hold the system-wide
+    // one-at-a-time git lock forever with nothing to ever notice. Its own caller
+    // (claimGitJob) only fires while a runner is actively polling for git work,
+    // which a dead runner by definition is not doing — so this clock is the only
+    // thing that ever calls it when the runner is the one that's gone.
+    try { releaseStaleGitJobs(); } catch (e) { console.error('quotaScheduler: stale-git-job release failed —', e.message); }
 
     // The matching hole one layer down: releaseStaleClaims() frees a task whose
     // runner died mid-execution, but it is only called from POST /worker/claim —
