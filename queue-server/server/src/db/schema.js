@@ -1042,6 +1042,31 @@ export function initArchitectureSchema(db) {
     )
   `);
 
+  // Umbrellas that are earned, not decreed (plan an-architecture-that-knows-what-it-is,
+  // section 3). The five `territory` values were named BEFORE the nodes existed, so
+  // "reasoning" ended up fifteen flat siblings — a label with no weight that cannot
+  // absorb growth. These rows are re-derived from the nodes' own text instead
+  // (services/umbrellas.js).
+  //
+  // `territory` deliberately stays on architecture_nodes as a legacy field: the
+  // frontend's hardcoded trunk, every prompt in services/ai/appModel.js and the node
+  // colouring all read it, and none of that changes here. `umbrella_id` is the new,
+  // derived grouping living alongside it.
+  //
+  // No FK on umbrella_id, per this schema's no-cascade convention. A dangling id is
+  // read as "not sorted yet" rather than an error, which is also what a brand-new
+  // node looks like.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS architecture_umbrellas (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      blurb TEXT,
+      derived_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    )
+  `);
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN umbrella_id TEXT`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_arch_nodes_umbrella ON architecture_nodes(umbrella_id)`); } catch {}
+
   // Phase 4: a Seed can be planted directly into the tree, making Idées the list
   // rendering of the same objects the tree renders spatially. Additive ALTER in a
   // try/catch per this file's convention — it throws harmlessly once applied.
