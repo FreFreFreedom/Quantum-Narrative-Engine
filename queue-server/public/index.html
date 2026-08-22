@@ -98,19 +98,23 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ctrlbtn { padding:var(--sp-1) var(--sp-3); font-size:11px; }
 .ctrlbtn.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .graph-stage { flex:1; position:relative; overflow:hidden; background:var(--c-stage); }
-#graphSvg { width:100%; height:100%; display:block; cursor:grab; }
-#graphSvg.panning, #graphSvg.nav-panning { cursor:grabbing; }
+#graphCanvas { width:100%; height:100%; display:block; cursor:grab; }
+/* The old SVG nodes carried cursor:pointer themselves. A canvas has no elements,
+   so the renderer's hit-test toggles this class instead — declared BEFORE the
+   panning rule so a pan in progress still wins. */
+#graphCanvas.is-hit { cursor:pointer; }
+#graphCanvas.panning, #graphCanvas.nav-panning { cursor:grabbing; }
 .arch-canvas { position:relative; padding:26px; transform-origin:0 0; }
 .arch-canvas.arch-zoom-anim { transition:transform var(--t-fast) var(--ease); }
 .arch-canvas.nav-panning * { cursor:grabbing; }
 .arch-scrollwrap { cursor:grab; }
 .arch-scrollwrap.nav-panning { cursor:grabbing; }
 #mapSvg { cursor:grab; }
-.gnode { cursor:pointer; transition:opacity .18s ease; }
-.gnode circle { stroke:var(--c-bg); stroke-width:1.6; }
-.gnode.focused circle { stroke:var(--c-ink); stroke-width:3; }
-.gnode text { font-size:10.5px; font-weight:500; fill:var(--c-ink); text-anchor:middle; cursor:pointer; paint-order:stroke; stroke:var(--c-halo); stroke-width:3px; stroke-linejoin:round; }
-.gedge { transition:opacity .18s ease; }
+/* The content graph's nodes, edges and labels used to be SVG elements styled here
+   (.gnode / .gedge). They are drawn on #graphCanvas now, so the equivalent values
+   live in the renderer instead — see paintGraph(): node fill + a 1.6px ring in
+   --c-bg (3px in --c-ink when focused), and 10.5px/500 labels with a 3px --c-halo
+   outline behind them. Kept in one place there rather than half here, half there. */
 .legend { position:absolute; left:12px; bottom:12px; background:rgba(var(--c-surface-rgb),.92); border:1px solid var(--c-border); border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
 .legend .section-label { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); margin:7px 0 4px; }
 .legend .section-label:first-child { margin-top:0; }
@@ -1681,7 +1685,7 @@ button:active { transform: translateY(1px) scale(.99); }
     <div id="patternList" class="pattern-chiplist"></div>
   </div>
   <div class="mid">
-    <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near renderZoneLabels()">
+    <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near initGraph()/setContentView()">
       <button type="button" class="uicon narrow-only" id="leftRailBtn" title="Filters" aria-label="Show or hide the filters"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
       <span class="ctrl-label">View</span>
       <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
@@ -1700,10 +1704,8 @@ button:active { transform: translateY(1px) scale(.99); }
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
-    <div class="graph-stage" data-src="Content navigator → main graph (nodes/edges/zones) | fmcns_navigator.html: #graphSvg rendering near renderZoneLabels()/renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
-      <svg id="graphSvg" viewBox="0 0 1500 1080" preserveAspectRatio="xMidYMid meet">
-        <g id="viewport"><g id="zoneLayer"></g><g id="edgeLayer"></g><g id="nodeLayer"></g></g>
-      </svg>
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), hit-testing in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
+      <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
     </div>
     <div class="list-stage" id="listStage" data-src="Content navigator → list view of entities | fmcns_navigator.html: renderList() (~line 937)">
@@ -2304,7 +2306,7 @@ function renderPatternList() {
     const chip = document.createElement('div');
     chip.className = 'pattern-chip' + (focusedTag === tag ? ' active' : '');
     chip.textContent = tag + ' (' + n + ')';
-    chip.onclick = () => { focusedTag = focusedTag === tag ? null : tag; renderPatternList(); drawGraph(); };
+    chip.onclick = () => { focusedTag = focusedTag === tag ? null : tag; renderPatternList(); requestRender(); };
     el.appendChild(chip);
   });
 }
@@ -2377,7 +2379,7 @@ document.querySelectorAll('.ctrlbtn[data-color]').forEach(b => {
     document.querySelectorAll('.ctrlbtn[data-color]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
     colorMode = b.getAttribute('data-color');
-    drawGraph();
+    requestRender();
     renderLegend();
   };
 });
@@ -2388,6 +2390,9 @@ document.querySelectorAll('.ctrlbtn[data-color]').forEach(b => {
 // spreads nodes out further before it's overwhelmed by the centroid pull.
 const GVBW=1500, GVBH=1080;
 let nodes=[], edges=[];
+// Bumped on every rebuild. The only thing that needs it is the spotlight memo, which
+// uses it as a cheap stand-in for "the pool or the filters changed".
+let graphEpoch=0;
 let focusedId=null, hoveredId=null, bridgesOn=true, showAllConnections=false;
 const camera={x:0,y:0,scale:1};
 let simRunning=false;
@@ -2422,25 +2427,13 @@ function centroidFor(e) {
   return CLUSTER_CENTROIDS[code] || CLUSTER_CENTROIDS.other || {x:GVBW/2,y:GVBH/2};
 }
 
-// Faint, non-interactive region labels at each active cluster's centroid — orientation
-// cues so it's obvious at a glance which loose region of the canvas belongs to which
-// cluster, without adding any new clickable surface (pointer-events:none throughout,
-// so this can never interfere with node/edge clicks). Only draws zones that actually
-// have members in the current pool — recomputed alongside the layout, not fixed.
-function renderZoneLabels() {
-  const layer = document.getElementById('zoneLayer');
-  if (!layer) return;
-  layer.innerHTML = '';
-  layer.setAttribute('style', 'pointer-events:none;');
-  const zoneR = activeClusterCodes.length <= 1 ? 260 : 150;
-  activeClusterCodes.forEach(code => {
-    if (code === 'other') return;
-    const c = CLUSTER_CENTROIDS[code];
-    const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
-    layer.appendChild(el('circle',{cx:c.x,cy:c.y,r:zoneR,fill:CLUSTER_COLORS[code]||'var(--c-border-3)',opacity:0.05}));
-    layer.appendChild(el('text',{x:c.x,y:c.y-zoneR-8,'text-anchor':'middle',style:'font-size:13px;fill:'+(CLUSTER_COLORS[code]||'var(--c-ink-4)')+';opacity:0.5;letter-spacing:.03em;'})).textContent = code + '. ' + truncate(name, 22);
-  });
-}
+// The faint region circles and names at each active cluster's centroid used to be a
+// separate SVG layer (renderZoneLabels(), pointer-events:none). They are the first
+// pass of paintGraph() now — see paintZones() — which is why nothing here builds
+// them any more: same radius, same 0.05 / 0.5 opacities, same colours, but drawn
+// under the edges instead of layered beneath them, and inherently unclickable.
+// Only zones with real members in the current pool are drawn, as before.
+function zoneRadius() { return activeClusterCodes.length <= 1 ? 260 : 150; }
 
 // Type and source filters are built from whatever the backend actually reports (see
 // /api/ontology/facets), not a hardcoded list of three checkboxes — so a new kind of
@@ -2766,6 +2759,7 @@ function buildGraph() {
   const byDegree = nodes.slice().sort((a,b)=>b.degree-a.degree);
   const topN = Math.max(6, Math.round(nodes.length*0.15));
   byDegree.slice(0, topN).forEach(n => { if (n.degree>0) n.big = true; });
+  graphEpoch++; // invalidates the memoised spotlight — see graphSpotlight()
 }
 
 function el(tag, attrs) { const e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
@@ -2795,15 +2789,6 @@ function labelVisible(n, spotlight) {
   return false;
 }
 
-// Hover-driven redraws are debounced well past a normal click's mousedown-to-mouseup
-// span, so a rebuild triggered by cursor jitter during a click always lands after the
-// click has already fully dispatched, instead of destroying the element mid-gesture.
-let hoverRedrawTimer = null;
-function scheduleHoverRedraw() {
-  clearTimeout(hoverRedrawTimer);
-  hoverRedrawTimer = setTimeout(drawGraph, 200);
-}
-
 // ---------- Edge hover/click: full-cluster highlight + connection panel ----------
 let hoveredEdge = null, focusedEdge = null;
 function edgeKey(e){ return [e.a,e.b,e.type,e.axis||''].join('|'); }
@@ -2825,70 +2810,340 @@ function clusterForEdge(e) {
   return set;
 }
 
-function drawGraph() {
-  const edgeLayer=document.getElementById('edgeLayer'), nodeLayer=document.getElementById('nodeLayer');
-  edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
+// ---------- The canvas renderer ----------
+// This used to be drawGraph(): `edgeLayer.innerHTML=''; nodeLayer.innerHTML=''`
+// followed by a brand-new <g>/<circle>/<text> for every node, a <line> for every
+// edge, AND a second invisible wide hit-shape for each — rebuilt once per
+// simulation frame, 170 frames per load / filter change / toggle. Nothing is
+// created per frame now. paintGraph() is a pure draw over the persistent
+// nodes/edges arrays, scheduled through one dirty flag.
+//
+// The visibility rules above (edgeVisible / labelVisible / neighborSet /
+// clusterForEdge / edgeKey and the spotlight-priority block) are unchanged — they
+// were never the problem, only what they were driving.
+
+let gCanvas = null, gCtx = null, gDpr = 1, gW = 0, gH = 0;
+let needsRender = false, renderRAF = null;
+// Hoisted so a frame allocates nothing. Same values the SVG stroke-dasharray used,
+// in the same (world) units.
+const DASH_NONE = [], DASH_ENT = [4, 3], DASH_BRIDGE = [1.5, 2.5];
+
+function requestRender() {
+  needsRender = true;
+  if (!renderRAF) renderRAF = requestAnimationFrame(renderFrame);
+}
+function renderFrame() {
+  renderRAF = null;
+  if (!needsRender) return; // nothing dirty — the loop stops instead of spinning
+  needsRender = false;
+  paintGraph();
+}
+
+// A canvas cannot read CSS custom properties the way an SVG attribute could, so the
+// handful of theme tokens the graph needs are resolved once and cached. The cache is
+// dropped when the theme class flips on <html> (see initGraphCanvas), which is the
+// only thing that can change them.
+const _gVarCache = new Map();
+function gVar(name, fallback) {
+  if (_gVarCache.has(name)) return _gVarCache.get(name);
+  const v = (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || fallback;
+  _gVarCache.set(name, v);
+  return v;
+}
+// nodeColor() and CLUSTER_COLORS can hand back a `var(--x)` string; canvas paint
+// styles need a real colour. Values are left exactly as they are — this only looks
+// the variable up.
+function gPaint(value, fallback) {
+  const str = String(value == null ? '' : value).trim();
+  const m = /^var\(\s*(--[\w-]+)\s*\)$/.exec(str);
+  return m ? gVar(m[1], fallback) : (str || fallback);
+}
+// The SVG <text> inherited the page font; a canvas has to be told. Read from the
+// document rather than hardcoded, so it follows the body stack if that ever changes.
+let _gFontStack = null;
+function gFont(px, weight) {
+  if (!_gFontStack) _gFontStack = getComputedStyle(document.body).fontFamily ||
+    '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif';
+  return (weight ? weight + ' ' : '') + px + 'px ' + _gFontStack;
+}
+
+function graphCtx() {
+  if (!gCtx) {
+    gCanvas = document.getElementById('graphCanvas');
+    if (!gCanvas) return null;
+    gCtx = gCanvas.getContext('2d');
+  }
+  return gCtx;
+}
+// The backing store is sized in device pixels and the CSS box in layout pixels, so
+// the graph is sharp on a retina screen and RE-sharpens when the left/right rails
+// collapse or the window changes, instead of being stretched from a stale bitmap.
+function sizeGraphCanvas() {
+  if (!graphCtx()) return false;
+  const w = gCanvas.clientWidth, h = gCanvas.clientHeight;
+  if (!w || !h) return false; // hidden (list view) — nothing to size against yet
+  const dpr = window.devicePixelRatio || 1;
+  const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
+  if (gCanvas.width !== bw || gCanvas.height !== bh) { gCanvas.width = bw; gCanvas.height = bh; }
+  gDpr = dpr; gW = w; gH = h;
+  return true;
+}
+
+// World -> screen. One world unit is one layout pixel at scale 1 and `camera` is in
+// layout pixels, so the mapping is direct. (The SVG applied `camera` INSIDE
+// viewBox="0 0 1500 1080", i.e. in viewBox units, while NavCtrl panned by raw
+// clientX/clientY deltas — two different units, which is why panning never quite
+// tracked the cursor. Same picture, honest units.)
+function wToS(x, y) { return { x: camera.x + x * camera.scale, y: camera.y + y * camera.scale }; }
+function sToW(px, py) { return { x: (px - camera.x) / camera.scale, y: (py - camera.y) / camera.scale }; }
+
+// The SVG carried preserveAspectRatio="xMidYMid meet", so the whole 1500x1080 world
+// was framed on load and on reset. That framing is now a camera rather than a
+// viewBox — this reproduces it exactly. (Framing the nodes' real bounding box, which
+// is what "fit" should mean, is a later step; this only preserves today's picture.)
+let gAwaitingFirstFrame = true;
+function frameWholeWorld() {
+  if (!gW || !gH) { sizeGraphCanvas(); }
+  if (!gW || !gH) return;
+  const k = Math.max(0.3, Math.min(gW / GVBW, gH / GVBH)); // 0.3 = NavCtrl's minScale
+  camera.scale = k;
+  camera.x = (gW - GVBW * k) / 2;
+  camera.y = (gH - GVBH * k) / 2;
+}
+
+// Priority: an actively hovered/clicked edge > a clicked pattern chip > an axis-based
+// color mode (only entities scored on that axis count as "in the pattern") > the
+// plain hover/click neighbor-highlight. Only one spotlight is active at a time.
+// Lifted out of the old drawGraph() unchanged, so the renderer and the hit-test
+// agree on what is visible instead of each deciding for itself.
+//
+// Memoised, because the hit-test now asks for it on every pointer event and
+// clusterForEdge() re-filters the whole corpus each time it is asked. The key covers
+// every input: the graph epoch stands in for the filter state, since any filter change
+// goes through buildGraph().
+let _spotKey = null, _spotVal = null;
+function graphSpotlight() {
+  const key = [graphEpoch, focusedEdge && edgeKey(focusedEdge), hoveredEdge && edgeKey(hoveredEdge),
+    focusedTag, colorMode, hoveredId, focusedId].join('\u0001');
+  if (key === _spotKey) return _spotVal;
   const activeEdge = focusedEdge || hoveredEdge;
-  // Priority: an actively hovered/clicked edge > a clicked pattern chip > an axis-based
-  // color mode (only entities scored on that axis count as "in the pattern") > the
-  // plain hover/click neighbor-highlight. Only one spotlight is active at a time.
   const axisMode = colorMode !== 'type' && colorMode !== 'cluster';
   let spotlight;
   if (activeEdge) spotlight = clusterForEdge(activeEdge);
   else if (focusedTag) spotlight = new Set(nodes.filter(n => (n.tags||[]).includes(focusedTag)).map(n => n.id));
   else if (axisMode) spotlight = new Set(nodes.filter(n => n.continuum && n.continuum[colorMode] !== undefined).map(n => n.id));
   else spotlight = neighborSet(hoveredId || focusedId);
+  // A deliberately clicked pattern (tag chip, edge, or axis color mode) fades the rest
+  // of the graph harder than a passing hover does — the point is to isolate the pattern,
+  // not just nudge attention toward it.
+  _spotKey = key;
+  _spotVal = { activeEdge, axisMode, spotlight, isPatternFocus: !!(activeEdge || focusedTag || axisMode) };
+  return _spotVal;
+}
 
-  edges.forEach(e=>{
-    const a=byId[e.a], b=byId[e.b]; if(!a||!b) return;
+function nodeRadius(n) { return n.id === focusedId ? 11 : (n.type === 'country' ? 8 : 6); }
+
+function paintGraph() {
+  const ctx = graphCtx();
+  if (!ctx || !sizeGraphCanvas()) return;
+  const dpr = gDpr, s = camera.scale;
+  const { activeEdge, spotlight, isPatternFocus } = graphSpotlight();
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+
+  // --- world space: zones, then edges, then nodes ---
+  ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * camera.x, dpr * camera.y);
+
+  // 1. Cluster zones — the faint orientation wash, unchanged from renderZoneLabels().
+  const zoneR = zoneRadius();
+  activeClusterCodes.forEach(code => {
+    if (code === 'other') return;
+    const c = CLUSTER_CENTROIDS[code];
+    if (!c) return;
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = gPaint(CLUSTER_COLORS[code] || 'var(--c-border-3)', '#c8bfae');
+    ctx.beginPath(); ctx.arc(c.x, c.y, zoneR, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // 2. Edges.
+  edges.forEach(e => {
+    const a = byId[e.a], b = byId[e.b]; if (!a || !b) return;
     const visible = edgeVisible(e, spotlight);
     if (!visible && !spotlight) return; // fully hidden by default, not just faded — keeps the graph legible
     const stroke = e.type==='diag'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
-    const dash = e.type==='ent'?'4,3': e.type==='bridge'?'1.5,2.5':'none';
+    const dash = e.type==='ent'?DASH_ENT: e.type==='bridge'?DASH_BRIDGE:DASH_NONE;
     const dimmed = spotlight && !(spotlight.has(e.a) && spotlight.has(e.b));
     const isThisEdge = activeEdge && edgeKey(activeEdge) === edgeKey(e);
     const opacity = !visible ? 0 : (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='diag'?0.75:0.55)));
     const width = isThisEdge ? (e.type==='diag'?2.6:2.2) : (e.type==='diag'?1.6:1.3);
-    edgeLayer.appendChild(el('line',{class:'gedge',x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke,'stroke-width':width,'stroke-dasharray':dash,opacity}));
-    if (visible) {
-      // Invisible wide hit-line layered over the thin visible one — the real line is too
-      // thin to hover/click reliably, this gives it a comfortable target without changing
-      // how it looks.
-      const hit = el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:'transparent','stroke-width':12,style:'cursor:pointer;pointer-events:stroke;'});
-      // Hover used to call drawGraph() here, which tears down and rebuilds every node
-      // and edge as brand-new DOM elements. A trackpad click almost always includes a
-      // tiny bit of cursor jitter, which could trigger a hover-out/hover-in — and thus
-      // a full rebuild — in the middle of a click gesture. When that happens, mousedown
-      // and mouseup land on two different DOM element instances and the browser silently
-      // drops the click. Debounced instead of removed: hover-driven spotlight still
-      // updates, just not synchronously inside the same tick a click could be racing.
-      hit.onmouseenter=()=>{ hoveredEdge=e; hoveredId=null; scheduleHoverRedraw(); };
-      hit.onmouseleave=()=>{ hoveredEdge=null; scheduleHoverRedraw(); };
-      hit.onclick=(ev)=>{ ev.stopPropagation(); selectEdgeConnection(e); };
-      edgeLayer.appendChild(hit);
-    }
+    if (opacity <= 0) return; // the SVG drew these at opacity 0; not drawing them is the same picture
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   });
-  // A deliberately clicked pattern (tag chip, edge, or axis color mode) fades the rest
-  // of the graph harder than a passing hover does — the point is to isolate the pattern,
-  // not just nudge attention toward it.
-  const isPatternFocus = !!(activeEdge || focusedTag || axisMode);
-  nodes.forEach(n=>{
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // 3. Nodes — fill, plus the ring the old `.gnode circle` rule drew.
+  const inkC = gVar('--c-ink', '#26221b'), bgC = gVar('--c-bg', '#fbfaf8');
+  nodes.forEach(n => {
     const dimmed = spotlight && !spotlight.has(n.id);
-    const g=el('g',{class:'gnode'+(n.id===focusedId?' focused':''),opacity: dimmed?(isPatternFocus?0.06:0.15):1});
-    const r = n.id===focusedId?11:(n.type==='country'?8:6);
-    // An invisible, larger hit-circle under the visible one — the graph gets dense
-    // enough (150+ edges) that the real 6-8px dot is a hard target to land on exactly.
-    g.appendChild(el('circle',{cx:n.x,cy:n.y,r:r+7,fill:'transparent',style:'pointer-events:all;'}));
-    g.appendChild(el('circle',{cx:n.x,cy:n.y,r,fill:nodeColor(n),style:'pointer-events:none;'}));
-    if (labelVisible(n, spotlight)) {
-      const t=el('text',{x:n.x,y:n.y+r+10}); t.textContent=truncate(n.name,18); g.appendChild(t);
-    }
-    g.onclick=()=>selectEntity(n.id);
-    g.onmouseenter=()=>{ hoveredId=n.id; hoveredEdge=null; scheduleHoverRedraw(); };
-    g.onmouseleave=()=>{ hoveredId=null; scheduleHoverRedraw(); };
-    nodeLayer.appendChild(g);
+    ctx.globalAlpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
+    const r = nodeRadius(n), focused = n.id === focusedId;
+    ctx.lineWidth = focused ? 3 : 1.6;
+    ctx.strokeStyle = focused ? inkC : bgC;
+    // The old markup put an invisible larger hit-circle under every node, and the
+    // `.gnode circle` rule stroked that too — so a faint --c-bg ring at r+7 (and a
+    // second --c-ink one when focused) is part of how the graph looks today, not an
+    // accident of the hit-testing. Kept, since the hit target itself moved into
+    // nodeAt() where it draws nothing.
+    ctx.beginPath(); ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = gPaint(nodeColor(n), inkC);
+    ctx.fill();
+    ctx.stroke();
   });
-  document.getElementById('graphInfo').textContent = nodes.length+' nodes, '+edges.length+' connections total';
+  ctx.globalAlpha = 1;
+
+  // --- screen space: labels ---
+  // The transform is reset and every label position projected by hand, so text stays
+  // a constant size at every zoom instead of ballooning to 16x with the geometry.
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin = 'round';
+
+  // 4a. Zone names, above their circle.
+  ctx.font = gFont(13);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0.03em';
+  activeClusterCodes.forEach(code => {
+    if (code === 'other') return;
+    const c = CLUSTER_CENTROIDS[code];
+    if (!c) return;
+    const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
+    const p = wToS(c.x, c.y - zoneR);
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = gPaint(CLUSTER_COLORS[code] || 'var(--c-ink-4)', '#89806f');
+    ctx.fillText(code + '. ' + truncate(name, 22), p.x, p.y - 8);
+  });
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+
+  // 4b. Node labels — halo first, then the text, which is what `paint-order:stroke`
+  // did on the old SVG <text>.
+  ctx.font = gFont(10.5, 500);
+  ctx.lineWidth = 3;
+  const haloC = gVar('--c-halo', '#f4f2ee');
+  nodes.forEach(n => {
+    if (!labelVisible(n, spotlight)) return;
+    const dimmed = spotlight && !spotlight.has(n.id);
+    ctx.globalAlpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
+    const p = wToS(n.x, n.y);
+    // The gap is measured in screen pixels off the node's on-screen edge — a
+    // world-unit gap would collapse into the dot as you zoom out.
+    const y = p.y + nodeRadius(n) * s + 10;
+    const txt = truncate(n.name, 18);
+    ctx.strokeStyle = haloC; ctx.strokeText(txt, p.x, y);
+    ctx.fillStyle = inkC; ctx.fillText(txt, p.x, y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ---------- Hit-testing ----------
+// There are no DOM elements left to hang onmouseenter/onclick on, so hover and click
+// are resolved against the geometry. The targets are deliberately the same size the
+// old invisible hit-shapes were: a node's radius + 7, and 6 either side of an edge.
+// Plain linear scans — the pool is a few hundred nodes and this runs once per pointer
+// event, not per frame. (A quadtree, node dragging and keyboard nav are a later step.)
+function gStagePoint(ev) {
+  const rect = gCanvas.getBoundingClientRect();
+  return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+}
+function nodeAt(wx, wy) {
+  let best = null, bestD = Infinity;
+  for (const n of nodes) {
+    const d = Math.hypot(n.x - wx, n.y - wy);
+    if (d <= nodeRadius(n) + 7 && d < bestD) { best = n; bestD = d; }
+  }
+  return best;
+}
+function pointSegDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, len2 = dx * dx + dy * dy;
+  const t = len2 ? Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2)) : 0;
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+function edgeAt(wx, wy, spotlight) {
+  let best = null, bestD = Infinity;
+  for (const e of edges) {
+    if (!edgeVisible(e, spotlight)) continue; // only what is actually drawn is clickable
+    const a = byId[e.a], b = byId[e.b]; if (!a || !b) continue;
+    const d = pointSegDist(wx, wy, a.x, a.y, b.x, b.y);
+    if (d <= 6 && d < bestD) { best = e; bestD = d; }
+  }
+  return best;
+}
+
+function setupGraphPointer() {
+  const c = graphCtx() && gCanvas;
+  if (!c) return;
+  let down = null;
+  const hoverAt = (ev) => {
+    if (!nodes.length) return;
+    const p = gStagePoint(ev), w = sToW(p.x, p.y);
+    const { spotlight } = graphSpotlight();
+    const n = nodeAt(w.x, w.y);
+    const e = n ? null : edgeAt(w.x, w.y, spotlight);
+    const nid = n ? n.id : null;
+    const ek = e ? edgeKey(e) : null;
+    c.classList.toggle('is-hit', !!(n || e));
+    if (nid === hoveredId && ek === (hoveredEdge ? edgeKey(hoveredEdge) : null)) return;
+    // No debounce: hover is a state change plus one repaint, so there is no DOM to be
+    // torn down mid-gesture and nothing left for a click to race against.
+    hoveredId = nid;
+    hoveredEdge = e;
+    requestRender();
+  };
+  c.addEventListener('pointermove', hoverAt);
+  c.addEventListener('pointerleave', () => {
+    c.classList.remove('is-hit');
+    if (hoveredId || hoveredEdge) { hoveredId = null; hoveredEdge = null; requestRender(); }
+  });
+  c.addEventListener('pointerdown', (ev) => { if (ev.button === 0) down = gStagePoint(ev); });
+  c.addEventListener('click', (ev) => {
+    const p = gStagePoint(ev);
+    // Match NavCtrl's 8px pan threshold so a pan is never also read as a click.
+    const panned = down && Math.hypot(p.x - down.x, p.y - down.y) > 8;
+    down = null;
+    if (panned) return;
+    const w = sToW(p.x, p.y);
+    const { spotlight } = graphSpotlight();
+    const n = nodeAt(w.x, w.y);
+    if (n) { selectEntity(n.id); return; }
+    const e = edgeAt(w.x, w.y, spotlight);
+    if (e) { ev.stopPropagation(); selectEdgeConnection(e); }
+  });
+}
+
+function initGraphCanvas() {
+  if (!graphCtx()) return;
+  sizeGraphCanvas();
+  const onResize = () => {
+    if (!sizeGraphCanvas()) return;
+    // The first observation is the one that reports the settled stage size, so the
+    // opening framing is taken from it rather than from whatever the layout happened
+    // to be mid-boot. After that, a resize never moves the camera.
+    if (gAwaitingFirstFrame) { gAwaitingFirstFrame = false; frameWholeWorld(); }
+    requestRender();
+  };
+  if (typeof ResizeObserver === 'function') new ResizeObserver(onResize).observe(gCanvas);
+  else window.addEventListener('resize', onResize);
+  // The theme lives in CSS custom properties the canvas has to be told about.
+  new MutationObserver(() => { _gVarCache.clear(); requestRender(); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  setupGraphPointer();
 }
 
 function runSim(){
@@ -2914,7 +3169,7 @@ function runSim(){
       n.vx=(n.vx+fx)*.75; n.vy=(n.vy+fy)*.75;
     });
     nodes.forEach(n=>{ n.x+=n.vx*.05; n.y+=n.vy*.05; n.x=Math.max(20,Math.min(GVBW-20,n.x)); n.y=Math.max(20,Math.min(GVBH-20,n.y)); });
-    drawGraph();
+    requestRender();
     // Fewer ticks than before (260 -> 170) — the layout converges faster with more room
     // to work with, which also shortens the window where the graph is still animating
     // (and therefore redrawing every frame) right after a page load or filter change.
@@ -2923,7 +3178,17 @@ function runSim(){
   requestAnimationFrame(step);
 }
 
-function layoutAndDraw(){ buildGraph(); drawGraph(); runSim(); renderLegend(); renderPatternList(); renderZoneLabels(); }
+function layoutAndDraw(){
+  buildGraph();
+  const info = document.getElementById('graphInfo');
+  // Used to be rewritten inside every one of the 170 per-frame rebuilds; the counts
+  // only change when the graph is rebuilt, so it is set here instead.
+  if (info) info.textContent = nodes.length+' nodes, '+edges.length+' connections total';
+  requestRender();
+  runSim();
+  renderLegend();
+  renderPatternList();
+}
 
 function renderLegend(){
   let html = '<div class="section-label">Connections</div>';
@@ -2959,16 +3224,29 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   const minScale = opts.minScale ?? 0.2, maxScale = opts.maxScale ?? 8,
     step = opts.step ?? 1.03, keyPan = opts.keyPan ?? 80, onZoom = opts.onZoom ?? null,
     fitFn = opts.fit ?? null, fixedViewBox = opts.fixedViewBox ?? true,
-    momentumEnabled = opts.momentum ?? true, dragThreshold = opts.dragThreshold ?? 8;
+    momentumEnabled = opts.momentum ?? true, dragThreshold = opts.dragThreshold ?? 8,
+    // Additive, defaulting to the old hardcoded reset-to-origin so Map mode and the
+    // Architecture graph behave exactly as before. A host whose "100%" is not
+    // {0,0,1} (the content canvas frames its world instead) passes its own.
+    homeFn = opts.home ?? null;
   let activeTouch = null, lastTouchDist = 0, lastTouchCentroid = null, drag = null;
   // Momentum state
   let momentumVX = 0, momentumVY = 0, momentumRAF = null;
   const clamp = (s) => Math.min(maxScale, Math.max(minScale, s));
+  // Cursor-anchored zoom: the world point under (cx,cy) must stay under (cx,cy).
+  // This used to invert BOTH axes through state.x — and read it after the x line had
+  // already overwritten it — so the vertical anchor was wrong by (state.y - state.x)
+  // times the zoom factor. It was invisible while a host happened to sit at x === y
+  // (both 0), which is where every host started, and showed up only as vertical drift
+  // once you had panned. The content graph now rests at a non-zero y (it frames its
+  // world instead of sitting at the origin), which turned that drift into the view
+  // flying off screen on the first zoom. Old scale/offsets are captured first for the
+  // same reason.
   const zoomAt = (delta, cx, cy) => {
     const k = clamp(state.scale * delta);
-    const inv = (p, s) => (p - state.x) / s;
-    state.x = cx - inv(cx, state.scale) * k;
-    state.y = cy - inv(cy, state.scale) * k;
+    const s0 = state.scale, x0 = state.x, y0 = state.y;
+    state.x = cx - ((cx - x0) / s0) * k;
+    state.y = cy - ((cy - y0) / s0) * k;
     state.scale = k;
     applyFn();
   };
@@ -3086,16 +3364,20 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     else if (e.key === 'ArrowDown') { e.preventDefault(); panBy(0, -stepPx); if (onZoom) onZoom(); }
     else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomAt(step, state.x + container.clientWidth / 2, state.y + container.clientHeight / 2); if (onZoom) onZoom(); applyFn(); }
     else if (e.key === '-') { e.preventDefault(); zoomAt(1 / step, state.x + container.clientWidth / 2, state.y + container.clientHeight / 2); if (onZoom) onZoom(); applyFn(); }
-    else if (e.key === '0') { e.preventDefault(); state.x = 0; state.y = 0; state.scale = 1; applyFn(); if (onZoom) onZoom(); }
+    else if (e.key === '0') { e.preventDefault(); if (homeFn) homeFn(); else { state.x = 0; state.y = 0; state.scale = 1; } applyFn(); if (onZoom) onZoom(); }
     else if (e.key.toLowerCase() === 'f' && fitFn) { e.preventDefault(); fitFn(); if (onZoom) onZoom(); }
   });
   container.focus({ preventScroll: true });
   return { zoomAt, panBy, applyFn: () => applyFn() };
 }
 
-function applyCamera(){ document.getElementById('viewport').setAttribute('transform', `translate(${camera.x},${camera.y}) scale(${camera.scale})`); }
+// The camera is no longer an SVG transform on a <g> — it is applied inside
+// paintGraph() as the canvas transform, so "apply the camera" is just "repaint".
+function applyCamera(){ requestRender(); }
 
 function initGraph(){
+  initGraphCanvas();
+  frameWholeWorld();
   layoutAndDraw();
   setupZoomPan();
   document.getElementById('toggleBridges').onclick = function(e){
@@ -3107,27 +3389,29 @@ function initGraph(){
   document.getElementById('toggleShowAll').onclick = function(e){
     showAllConnections = !showAllConnections;
     e.target.classList.toggle('active', showAllConnections);
-    drawGraph();
+    graphEpoch++; // changes what edgeVisible() answers without rebuilding the graph
+    requestRender();
   };
-  document.getElementById('resetBtn').onclick = function(){ camera.x=0;camera.y=0;camera.scale=1; applyCamera(); focusedId=null; hoveredId=null; layoutAndDraw(); };
+  document.getElementById('resetBtn').onclick = function(){ frameWholeWorld(); applyCamera(); focusedId=null; hoveredId=null; layoutAndDraw(); };
   document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
 }
 
 // NavCtrl-powered pan/zoom/keyboard/pinch for the Content Navigator graph.
 // Replaces the old wheel-only handler — now also handles native two-finger
 // pinch (cursor-anchored), wheel pan without Ctrl, click-drag panning, and
-// keyboard arrows / +/- / 0 / F. Live panning is unthrottled (no CSS lag),
-// label reveal stays debounced after a zoom lands.
+// keyboard arrows / +/- / 0 / F. Every gesture is one repaint, so nothing here
+// is throttled or debounced any more.
 let _cnNav = null;
 function setupZoomPan(){
-  const svg=document.getElementById('graphSvg');
-  if (_cnNav) return;
-  let zoomLabelTimer=null;
-  const deb = () => { clearTimeout(zoomLabelTimer); zoomLabelTimer=setTimeout(drawGraph, 120); };
-  _cnNav = NavCtrl(svg, camera, applyCamera, {
+  const cv=document.getElementById('graphCanvas');
+  if (_cnNav || !cv) return;
+  // The label reveal used to be debounced 120ms behind a zoom because each reveal
+  // meant a full DOM rebuild. A repaint is cheap, so labels now follow the zoom live.
+  _cnNav = NavCtrl(cv, camera, applyCamera, {
     minScale: 0.3, maxScale: 16, step: 1.06, keyPan: 90,
-    onZoom: deb,
-    fit: () => { camera.x=0;camera.y=0;camera.scale=1; applyCamera(); clearTimeout(zoomLabelTimer); zoomLabelTimer=setTimeout(() => { layoutAndDraw(); }, 120); },
+    onZoom: requestRender,
+    home: () => frameWholeWorld(),
+    fit: () => { frameWholeWorld(); requestRender(); },
     fixedViewBox: true,
   });
 }
@@ -3402,7 +3686,7 @@ async function selectEntity(id){
   activeLensFailed = false;
   tmdbForceExpand = false;
   focusedEdge = null;
-  drawGraph();
+  requestRender();
   let e = byId[id];
   try {
     const r = await api('/api/ontology/entities/' + id);
@@ -3515,7 +3799,7 @@ async function selectEntity(id){
 // user click into any entity in the highlighted cluster to see that entity's own read.
 async function selectEdgeConnection(e) {
   focusedEdge = e; hoveredEdge = null; focusedId = null; activeLensTag = null;
-  drawGraph();
+  requestRender();
   const cluster = Array.from(clusterForEdge(e)).map(id => byId[id]).filter(Boolean);
   const kindLabel = e.type === 'diag' ? 'Shared author' : e.type === 'ent' ? 'Shared pattern' : 'Continuum proximity';
   let html = `<div class="section-title" style="color:var(--c-ink-3);">Connection</div>`;
