@@ -348,6 +348,10 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
     return runCatalogueToolLoop({ mod, providerId: p, model: m, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label, cacheKey });
   }
   const r = await mod.runToolless({ prompt: toollessPrompt, model: m, providerId: p, maxTokens, timeoutMs });
+  if (isMeteredProvider(p)) {
+    if (r.usage) recordSpend({ model: m, usage: r.usage, providerId: p });
+    else console.warn(`[${label}] ${p}/${m} returned no usage block — this call is NOT counted against the monthly cap`);
+  }
   if (r.code === 0 && r.text) return { text: r.text, via: p };
   return { error: `${p}_failed`, message: r.text || `exit ${r.code}` };
 }
@@ -362,6 +366,12 @@ async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens,
   for (let round = 0; round < Math.max(1, maxRounds); round++) {
     const out = await mod.chatCompletion({ providerId, model, messages, tools, maxTokens, timeoutMs, cacheKey });
     if (out.error) return { error: out.error, message: out.message, limit: out.limit || null };
+    // Bill EVERY round, same reasoning as the streaming loop below: pricing only
+    // the last round would bill a six-round tool answer as one.
+    if (isMeteredProvider(providerId)) {
+      if (out.usage) recordSpend({ model, usage: out.usage, providerId });
+      else console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
+    }
     const toolUses = (out.content || []).filter((b) => b.type === 'tool_use');
     if (!toolUses.length) {
       const text = out.text || (out.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
@@ -795,15 +805,19 @@ export async function generateTextStream({
       // Tokens already delivered are real; only give up entirely if nothing came.
       if (!text) return fallback(`the paid model's answer was cut off (${e.message}), so this answer came from the free lane instead`);
       console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
-      if (usage) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage); }
+      if (usage && isMeteredProvider(providerId)) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage); }
       break;
     }
 
     // Bill EVERY round. Each one is its own API call with its own usage block, so
     // pricing only the last would bill a six-round answer as one — the monthly cap
     // would then be counting a fraction of what was actually spent.
-    if (usage) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage); }
-    else console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
+    if (usage) {
+      if (isMeteredProvider(providerId)) recordSpend({ model, usage, providerId });
+      if (onUsage) onUsage(usage);
+    } else {
+      console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
+    }
 
     text += roundText;
 
