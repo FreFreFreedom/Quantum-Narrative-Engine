@@ -1386,6 +1386,13 @@ export function initFilmEnrichmentSchema(db) {
   // exist before writing a brief, instead of instructing the model to guess. Same
   // claim/result/deadline plumbing, different work at the far end.
   try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'`); } catch {}
+  // How long the RUNNER is allowed to spend on this one job, in ms. Null means
+  // "use the lane's default", which is right for the cheap rescues the helper lane
+  // was built for. It is wrong for the architecture umbrella derivation: grouping
+  // 79 nodes in one call takes longer than the 120s default, so every attempt died
+  // at exactly 120s with the caller still waiting — the model was working, the
+  // runner just stopped listening. Set by the caller via helperWaitMs.
+  try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN timeout_ms INTEGER`); } catch {}
 
   // Git work the SERVER wants doing but cannot do: it runs in a Railway container
   // with no git repository, so publishing a finished task (merge the branch onto the

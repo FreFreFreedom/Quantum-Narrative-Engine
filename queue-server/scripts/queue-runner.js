@@ -568,7 +568,15 @@ async function runHelperJobs() {
   // exactly 60s ("helper inspire-review failed — no response after 60s") while the
   // sweep sat still. 100s gives it room and still lands inside the server's own 120s
   // wait, so the runner never answers into a caller that has already given up.
-  const timeoutMs = (job.account === 'side' || tools) ? 120_000 : 100_000;
+  // A job may carry its own deadline, set by a caller that knows the question is
+  // heavy (the architecture umbrella derivation groups 79 nodes in one answer and
+  // needs minutes, not seconds). The server only ever sets it BELOW its own wait,
+  // so honouring it can never mean answering into a caller that has given up.
+  // Capped anyway, because a bad value here would hold the helper lane open.
+  const laneDefaultMs = (job.account === 'side' || tools) ? 120_000 : 100_000;
+  const timeoutMs = Number.isFinite(job.timeout_ms) && job.timeout_ms > laneDefaultMs
+    ? Math.min(job.timeout_ms, 600_000)
+    : laneDefaultMs;
   console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {

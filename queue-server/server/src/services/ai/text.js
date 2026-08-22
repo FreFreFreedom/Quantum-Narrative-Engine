@@ -525,7 +525,7 @@ export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, timeout_ms FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -577,9 +577,19 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     // helper job silently ran on the runner's own default — invisible while haiku
     // was the only answer anyone wanted, and wrong the moment one feature (the
     // task-card chat) needs a stronger model than the rest.
-    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind) VALUES (?,?,?,?,?,?,?,?,?)`)
+    // A caller that asked for a long wait is telling the runner it may take that
+    // long. Without passing it through, the runner keeps its own 120s cap and hangs
+    // up on a job the caller is still waiting for — which is exactly how the
+    // umbrella derivation failed every time while looking like a model problem.
+    // Trimmed by a poll interval so the runner always answers INSIDE the caller's
+    // window rather than into a deadline that has just expired.
+    const jobTimeoutMs = (Number.isFinite(waitMs) && waitMs > HELPER_WAIT_MS)
+      ? Math.max(0, waitMs - HELPER_POLL_MS * 2)
+      : null;
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind, timeout_ms) VALUES (?,?,?,?,?,?,?,?,?,?)`)
       .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
-        model || 'haiku', account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text');
+        model || 'haiku', account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text',
+        jobTimeoutMs);
 
     // A caller with a person waiting on the other end (the task-card chat) sets
     // its own, much shorter deadline: 120s is right for rescuing a background

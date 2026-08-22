@@ -201,11 +201,18 @@ export async function deriveUmbrellas(db, { force = false } = {}) {
     return { error: 'too_few_nodes', message: 'There are not enough components on the map to group yet.', nodes: nodes.length };
   }
 
+  // One call, but a LONG one: the answer names the umbrellas and then assigns every
+  // node, so it grows with the tree — at 79 nodes it does not finish inside the
+  // helper lane's ordinary 120s, and every attempt died there with the model still
+  // working and the runner no longer listening. This is a rare, explicitly-clicked
+  // derivation, so it is allowed to take minutes; helperWaitMs is passed through to
+  // the runner as the job's own deadline (see runHelperJob).
   const out = await generateText({
     prompt: buildPrompt(nodes),
     feature: 'umbrellas',
     maxTokens: 1600,
     label: 'arch-umbrellas',
+    helperWaitMs: 420_000,
   });
   if (out.error) return { error: out.error, message: out.message };
 
