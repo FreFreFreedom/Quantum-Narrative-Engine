@@ -513,8 +513,17 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
-.room-threads { width:250px; min-width:220px; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; }
-.room-cards { width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; }
+.room-threads { width:250px; min-width:220px; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+.room-cards { width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+/* Collapsed on a wide window: the inline column shrinks to nothing so the
+   conversation takes the room. The panel only ever holds a thin gap now, and
+   the toolbar "Threads"/"Attached" buttons remain to bring it back. */
+.room-threads.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
+.room-cards.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-left-color:transparent; }
+.room-side-acts { display:flex; align-items:center; gap:1px; margin-left:auto; flex:none; }
+.room-side-head .uicon { flex:none; }
+.room-collapse-btn { opacity:.65; }
+.room-collapse-btn:hover { opacity:1; }
 .room-threads h2, .room-cards h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0; }
 .room-side-head { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
 .room-side-head h2 { flex:1; min-width:0; }
@@ -1510,6 +1519,8 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-nodes" viewBox="0 0 16 16"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="7" cy="12.4" r="2"/><path d="M5.7 5.3 10.3 5M11.2 7.8 8.3 10.6M5.4 5.9l1.1 4.6"/></symbol>
   <symbol id="ic-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.9 8h12.2"/><path d="M8 1.8c1.7 1.7 2.6 3.8 2.6 6.2S9.7 12.5 8 14.2C6.3 12.5 5.4 10.4 5.4 8S6.3 3.5 8 1.8z"/></symbol>
   <symbol id="ic-layers" viewBox="0 0 16 16"><path d="M8 1.8 14 5 8 8.2 2 5z"/><path d="m2 8.4 6 3.2 6-3.2"/><path d="m2 11.6 6 3.2 6-3.2"/></symbol>
+  <symbol id="ic-chevron-left" viewBox="0 0 16 16"><path d="M10 3.5 5.5 8 10 12.5"/></symbol>
+  <symbol id="ic-chevron-right" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></symbol>
 </defs></svg>
 
 <div id="loginGate" class="loginbox">
@@ -1851,19 +1862,22 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="room-threads" id="roomThreads">
         <div class="room-side-head">
           <h2>Threads</h2>
-          <button type="button" class="uicon" id="roomNewBtn" title="Start a new thread" aria-label="Start a new thread">＋</button>
+          <span class="room-side-acts">
+            <button type="button" class="uicon" id="roomNewBtn" title="Start a new thread" aria-label="Start a new thread">＋</button>
+            <button type="button" class="uicon room-collapse-btn" id="roomThreadsCollapse" title="Collapse the thread list" aria-label="Collapse the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg></button>
+          </span>
         </div>
         <div id="roomThreadList"></div>
         <div id="roomThreadsNote" class="room-note"></div>
       </div>
       <div class="room-main">
         <div class="tv-toolbar room-toolbar">
-          <button type="button" class="uicon narrow-only" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
+          <button type="button" class="uicon" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
           <span class="arch-title" id="roomTitle">Room</span>
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-toolacts">
             <button type="button" class="uicon" id="roomRenameBtn" title="Rename this thread" aria-label="Rename this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-pencil"/></svg></button>
-            <button type="button" class="uicon narrow-only" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg></button>
+            <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg></button>
           </span>
         </div>
         <div class="room-convo" id="roomConvo"></div>
@@ -1872,7 +1886,10 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-side-head">
           <h2>Attached</h2>
           <span class="room-cap" id="roomCardCount"></span>
-          <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
+          <span class="room-side-acts">
+            <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
+            <button type="button" class="uicon room-collapse-btn" id="roomCardsCollapse" title="Collapse the attached panel" aria-label="Collapse the attached panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg></button>
+          </span>
         </div>
         <div id="roomAttachPick" hidden>
           <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
@@ -4127,20 +4144,39 @@ function initRoom() {
   const search = document.getElementById('roomPickSearch');
   search.oninput = () => { roomPickQ = search.value.trim(); renderRoomPick(); };
   // Narrow windows: each side zone is an overlay behind its own button, the same
-  // gesture the Content rails and the architecture detail pane already use.
+  // gesture the Content rails and the architecture detail pane already use. On a
+  // wide window the zones are inline columns, so collapsing them shrinks the
+  // column to nothing (the .collapsed class) instead of sliding an overlay.
   const threads = document.getElementById('roomThreads');
   const cards = document.getElementById('roomCards');
-  const toggle = (el) => {
-    const was = el.classList.contains('open');
-    threads.classList.remove('open');
-    cards.classList.remove('open');
-    if (!was) el.classList.add('open');
+  const isRoomNarrow = () => window.matchMedia('(max-width: 819px)').matches;
+  const toggleZone = (el) => {
+    const other = el === threads ? cards : threads;
+    if (isRoomNarrow()) {
+      const was = el.classList.contains('open');
+      other.classList.remove('open');
+      el.classList.remove('collapsed');
+      el.classList.toggle('open', !was);
+    } else {
+      el.classList.remove('open');
+      el.classList.toggle('collapsed');
+    }
   };
-  document.getElementById('roomThreadsBtn').onclick = (e) => { e.stopPropagation(); toggle(threads); };
-  document.getElementById('roomCardsBtn').onclick = (e) => { e.stopPropagation(); toggle(cards); };
+  document.getElementById('roomThreadsBtn').onclick = (e) => { e.stopPropagation(); toggleZone(threads); };
+  document.getElementById('roomCardsBtn').onclick = (e) => { e.stopPropagation(); toggleZone(cards); };
+  const thColl = document.getElementById('roomThreadsCollapse');
+  if (thColl) thColl.onclick = () => { threads.classList.remove('open'); threads.classList.toggle('collapsed'); };
+  const caColl = document.getElementById('roomCardsCollapse');
+  if (caColl) caColl.onclick = () => { cards.classList.remove('open'); cards.classList.toggle('collapsed'); };
   document.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
-    if (e.key === 'Escape' && !typing) { threads.classList.remove('open'); cards.classList.remove('open'); }
+    if (e.key === 'Escape' && !typing) { threads.classList.remove('open', 'collapsed'); cards.classList.remove('open', 'collapsed'); }
+  });
+  // Crossing the wide/narrow boundary clears states that no longer apply, so a
+  // stuck overlay or a collapsed column never lingers across a resize.
+  window.addEventListener('resize', () => {
+    if (isRoomNarrow()) { threads.classList.remove('collapsed'); cards.classList.remove('collapsed'); }
+    else { threads.classList.remove('open'); cards.classList.remove('open'); }
   });
 }
 
