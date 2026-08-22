@@ -116,9 +116,11 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 #mapSvg { cursor:grab; }
 /* The content graph's nodes, edges and labels used to be SVG elements styled here
    (.gnode / .gedge). They are drawn on #graphCanvas now, so the equivalent values
-   live in the renderer instead — see paintGraph(): node fill + a 1.6px ring in
-   --c-bg (3px in --c-ink when focused), and 10.5px/500 labels with a 3px --c-halo
-   outline behind them. Kept in one place there rather than half here, half there. */
+   live in the renderer instead — see paintGraph(): node fill, a 1-screen-px ring in
+   --c-stage plus the soft --c-bg wash at r+7, and labels off the type scale
+   (LBL_NODE / LBL_FOCUS / LBL_ZONE / LBL_ZONE_FAR) with a 3px --c-halo outline behind
+   every one. Which of those are drawn depends on the semantic-zoom band — see
+   updateBands(). Kept in one place there rather than half here, half there. */
 .legend { position:absolute; left:12px; bottom:12px; background:rgba(var(--c-surface-rgb),.92); border:1px solid var(--c-border); border-radius:8px; padding:9px 11px; font-size:10.5px; z-index:5; width:230px; max-height:70%; overflow-y:auto; }
 .legend .section-label { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); margin:7px 0 4px; }
 .legend .section-label:first-child { margin-top:0; }
@@ -1724,7 +1726,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
-    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
       <div id="graphLive" class="sr-only" aria-live="polite"></div>
@@ -2894,11 +2896,16 @@ function edgeVisible(e, spotlight) {
   if (spotlight && (spotlight.has(e.a) || spotlight.has(e.b))) return true;
   return false;
 }
-function labelVisible(n, spotlight) {
-  if (spotlight) return spotlight.has(n.id);
-  if (n.big) return true;
-  if (camera.scale > 2.0) return true; // zoom in far enough and more labels reveal themselves
-  return false;
+// How much of a node's label to draw, 0..1 — the semantic-zoom rule, expressed as a
+// weight rather than a yes/no so that crossing a band threshold CROSS-FADES the label
+// layer instead of snapping it. Far: nothing standing, only what the pointer is on, so
+// the far band reads as a map of territories. Mid: the high-degree nodes, as before.
+// Near: everything — subject to the collision pass in paintGraph(), which is what
+// decides how much of "everything" actually fits.
+function labelWeight(n, spotlight) {
+  if (spotlight) return spotlight.has(n.id) ? 1 : 0;
+  const w = bandWeights();
+  return Math.min(1, (n.big ? w.mid : 0) + w.near);
 }
 
 // ---------- Edge hover/click: full-cluster highlight + connection panel ----------
@@ -2930,9 +2937,10 @@ function clusterForEdge(e) {
 // created per frame now. paintGraph() is a pure draw over the persistent
 // nodes/edges arrays, scheduled through one dirty flag.
 //
-// The visibility rules above (edgeVisible / labelVisible / neighborSet /
-// clusterForEdge / edgeKey and the spotlight-priority block) are unchanged — they
-// were never the problem, only what they were driving.
+// The visibility rules above (edgeVisible / neighborSet / clusterForEdge / edgeKey and
+// the spotlight-priority block) are unchanged — they were never the problem, only what
+// they were driving. labelVisible() is the one that did change: it became labelWeight(),
+// because semantic zoom needs a fade, not a boolean.
 
 let gCanvas = null, gCtx = null, gDpr = 1, gW = 0, gH = 0;
 let needsRender = false, renderRAF = null;
@@ -2948,8 +2956,71 @@ function renderFrame() {
   renderRAF = null;
   if (!needsRender) return; // nothing dirty — the loop stops instead of spinning
   needsRender = false;
-  paintGraph();
+  // A band cross-fade is driven by the clock, not by the camera, so while one is in
+  // flight it has to keep asking for frames of its own: the wheel gesture that started
+  // it has long since stopped dirtying the canvas. Only if the frame actually drew,
+  // though — a stage with no size (list view) would otherwise spin the loop on a fade
+  // that can never advance because nothing is calling updateBands().
+  if (paintGraph() && bandWeights().fading) requestRender();
 }
+
+// ---------- Semantic zoom: three bands ----------
+// The picture should MEAN something different at each scale rather than merely be
+// bigger. Three bands — and every band-dependent value in the renderer is a blend of
+// their three weights rather than an `if`, which is what makes a threshold crossing a
+// ~200ms cross-fade instead of a pop.
+//
+//   far  (< 0.6)    cluster regions with names, small uniform dots, diagonal edges only
+//   mid  (0.6-2.5)  the familiar picture: degree-sized nodes, the existing edge rules,
+//                   labels on the high-degree nodes
+//   near (> 2.5)    a label on everything that fits, collision-avoided
+//
+// The far band is the OPENING view, not a zoomed-out fallback: measured on the live app,
+// the graph stage is ~503x711 CSS px with both rails open while the settled layout spans
+// ~1150x1200 world units, so fit-to-view lands at about scale 0.30 — permanently inside
+// `far`. It is designed to be worth looking at on its own.
+const BAND_EDGES = [0.6, 2.5];
+const BAND_HYST = 0.06;    // +/-6% deadband, so wheel jitter on a threshold cannot flicker
+const BAND_FADE_MS = 200;
+
+let _bandCur = -1, _bandFrom = null, _bandFadeStart = 0;
+let _bandW = { far: 1, mid: 0, near: 0, fading: false };
+
+// Which band a scale belongs to, with hysteresis: LEAVING a band costs 6% more zoom than
+// entering it did, so a scale parked exactly on 0.6 cannot oscillate between two bands
+// (and re-trigger a fade) on every rounding wobble of the wheel.
+function bandForScale(s) {
+  const lo = BAND_EDGES[0], hi = BAND_EDGES[1];
+  const grow = 1 + BAND_HYST, shrink = 1 - BAND_HYST;
+  if (_bandCur < 0) return s < lo ? 0 : (s > hi ? 2 : 1); // first frame: plain thresholds
+  if (_bandCur === 0) return s > hi * grow ? 2 : (s > lo * grow ? 1 : 0);
+  if (_bandCur === 2) return s < lo * shrink ? 0 : (s < hi * shrink ? 1 : 2);
+  return s < lo * shrink ? 0 : (s > hi * grow ? 2 : 1);
+}
+
+// Called once at the top of every frame. Everything else in the renderer reads the
+// result through bandWeights(), so one frame is drawn against one consistent blend.
+function updateBands() {
+  const b = bandForScale(camera.scale);
+  if (b !== _bandCur) {
+    // The fade starts from the blend actually ON SCREEN, not from the band the previous
+    // fade started in: a fast wheel through both thresholds must not snap a half-faded
+    // band straight to nothing. Snapshotting the weights makes every handover continuous,
+    // however many times the band changes mid-fade.
+    _bandFrom = _bandCur < 0 ? null : [_bandW.far, _bandW.mid, _bandW.near];
+    _bandCur = b;
+    _bandFadeStart = gNow();
+  }
+  let t = _bandFrom ? (gNow() - _bandFadeStart) / BAND_FADE_MS : 1;
+  if (t >= 1) { t = 1; _bandFrom = null; }
+  const e = t * t * (3 - 2 * t); // smoothstep: the fade has no visible start or stop
+  const w = [0, 0, 0];
+  if (_bandFrom) for (let i = 0; i < 3; i++) w[i] = _bandFrom[i] * (1 - e);
+  w[_bandCur] += e; // the three always sum to 1, so nothing dips or doubles mid-fade
+  _bandW = { far: w[0], mid: w[1], near: w[2], fading: t < 1 };
+  return _bandW;
+}
+function bandWeights() { return _bandW; }
 
 // A canvas cannot read CSS custom properties the way an SVG attribute could, so the
 // handful of theme tokens the graph needs are resolved once and cached. The cache is
@@ -3158,7 +3229,27 @@ function graphSpotlight() {
   return _spotVal;
 }
 
-function nodeRadius(n) { return n.id === focusedId ? 11 : (n.type === 'country' ? 8 : 6); }
+// Size carries structure: a node's radius grows with the square root of its degree, so a
+// hub is visibly a hub at a glance. sqrt rather than linear because degree here is very
+// long-tailed (one prolific director gives every one of their films a diagonal edge to
+// every other), and a linear map would turn that one cluster into beachballs. Clamped at
+// both ends — a lone node still has to be clickable, a hub still has to fit its region.
+// This replaced the flat 6/8/11, and it feeds forceCollide too, so the layout now leaves
+// more room around the busy nodes than around the quiet ones.
+const NODE_R_MIN = 5, NODE_R_MAX = 12, NODE_R_K = 1.9;
+function nodeRadius(n) {
+  const r = Math.min(NODE_R_MAX, NODE_R_MIN + NODE_R_K * Math.sqrt(n.degree || 0) + (n.type === 'country' ? 1.2 : 0));
+  return n.id === focusedId ? r + 2 : r;
+}
+// The far band draws every node as the same small dot — a territory map has places, not
+// personalities. Constant in SCREEN pixels, so the map stays legible however far out the
+// camera goes; the value is in world units because the node pass draws in world space.
+const FAR_DOT_PX = 2.8;
+function drawnRadius(n, far, farDot) {
+  const full = nodeRadius(n);
+  const dot = n.id === focusedId ? farDot * 1.8 : farDot;
+  return full + (dot - full) * far;
+}
 
 // ---------- Cluster regions ----------
 // A cluster is a place on the canvas, not a circle drawn at an arbitrary radius: the
@@ -3286,10 +3377,95 @@ function clusterRegions() {
   return out;
 }
 
+// ---------- Labels ----------
+// Sizes come from the app's own type scale (--fs-xs 10.5 .. --fs-md 14) and weights from
+// --fw-normal / --fw-medium, rather than being invented here; the old renderer hardcoded
+// a 13 in one place, which is how a file ends up with a private type scale nobody knows
+// about. Letter-spacing is generous at the small sizes, where a canvas sets text tighter
+// than the browser sets HTML at the same size.
+const LBL_NODE     = { px: 10.5, weight: null, spacing: '0.025em' }; // --fs-xs / --fw-normal
+const LBL_FOCUS    = { px: 11.5, weight: 600,  spacing: '0.02em'  }; // --fs-sm / --fw-medium
+const LBL_ZONE     = { px: 13,   weight: null, spacing: '0.03em'  }; // --fs-base
+const LBL_ZONE_FAR = { px: 14,   weight: 600,  spacing: '0.07em'  }; // --fs-md / --fw-medium
+[LBL_NODE, LBL_FOCUS, LBL_ZONE, LBL_ZONE_FAR].forEach(f => { f.key = f.px + '/' + f.weight + '/' + f.spacing; });
+
+// Setting ctx.font is not free and a frame sets it once per label otherwise. Reset at the
+// top of each label pass rather than trusted across frames, so nothing else touching the
+// context can leave this lying about what is actually set.
+let _curLabelFont = null;
+function applyLabelFont(ctx, f) {
+  if (_curLabelFont === f) return;
+  ctx.font = gFont(f.px, f.weight);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = f.spacing;
+  _curLabelFont = f;
+}
+
+// measureText is the single thing that can make a canvas text pass slow, and the label
+// set barely changes between frames — so every width is measured once per (font, string)
+// and never again. This is a requirement of the design, not an optimisation for later:
+// during a layout the same few hundred names are re-laid-out sixty times a second.
+const _gTextW = new Map();
+function labelWidth(ctx, f, text) {
+  const key = f.key + '\u0000' + text;
+  let w = _gTextW.get(key);
+  if (w === undefined) {
+    applyLabelFont(ctx, f); // measureText reads the CURRENT font AND letter-spacing
+    w = ctx.measureText(text).width;
+    if (_gTextW.size > 4000) _gTextW.clear(); // a few filter changes retire a lot of names
+    _gTextW.set(key, w);
+  }
+  return w;
+}
+
+// One frame's worth of "this rectangle of screen is taken". Labels are offered in
+// priority order and anything that would land on an occupied box is simply not drawn — a
+// missing label costs far less than an unreadable one, and at 214 nodes on a 503x711
+// stage most of them cannot be drawn at all. Boxes go into a coarse screen grid so the
+// overlap test stays cheap when several hundred labels compete for the same room.
+const LBL_CELL = 64;
+function makeLabelSpace() {
+  const cells = new Map();
+  return {
+    // Returns false (and reserves nothing) if the box overlaps anything already taken.
+    take(b) {
+      const cx0 = Math.floor(b.x0 / LBL_CELL), cx1 = Math.floor(b.x1 / LBL_CELL);
+      const cy0 = Math.floor(b.y0 / LBL_CELL), cy1 = Math.floor(b.y1 / LBL_CELL);
+      for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+        const bucket = cells.get(cx + ',' + cy);
+        if (!bucket) continue;
+        for (const o of bucket) if (b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0) return false;
+      }
+      for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+        const k = cx + ',' + cy;
+        let bucket = cells.get(k);
+        if (!bucket) cells.set(k, bucket = []);
+        bucket.push(b);
+      }
+      return true;
+    }
+  };
+}
+// Which labels won a place last frame. Positions drift under the simulation, so two
+// labels contesting the same gap would otherwise trade it back and forth every frame and
+// flicker; holding the place costs half a rank point and buys a still picture.
+let _lblPlaced = new Set();
+
+// Halo first, then the text — what paint-order:stroke did on the old SVG <text>. Every
+// label gets one: it is why a name stays readable where it crosses an edge, and it does
+// more for how finished the graph looks than anything else in this pass.
+function drawLabel(ctx, f, text, x, y, alpha, color, haloC) {
+  applyLabelFont(ctx, f);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = haloC; ctx.strokeText(text, x, y);
+  ctx.fillStyle = color; ctx.fillText(text, x, y);
+}
+
+// Returns false if there was nothing to draw on (the stage is hidden or unmeasured).
 function paintGraph() {
   const ctx = graphCtx();
-  if (!ctx || !sizeGraphCanvas()) return;
+  if (!ctx || !sizeGraphCanvas()) return false;
   const dpr = gDpr, s = camera.scale;
+  const bw = updateBands();
   const { activeEdge, spotlight, isPatternFocus } = graphSpotlight();
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3298,24 +3474,28 @@ function paintGraph() {
   // --- world space: zones, then edges, then nodes ---
   ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * camera.x, dpr * camera.y);
 
-  // 1. Cluster regions — the faint orientation wash, now shaped to where the cluster's
-  // nodes actually are (see clusterRegions()) rather than a circle of fixed radius.
-  // Drawn first, so everything else sits on top of it.
+  // 1. Cluster regions, shaped to where the cluster's nodes actually are (see
+  // clusterRegions()) rather than a circle of fixed radius. Drawn first, so everything
+  // else sits on top. In the far band the regions ARE the picture and come forward; in
+  // the near bands they retreat to the orientation wash they have always been. Only the
+  // alpha moves — every colour is exactly the one CLUSTER_COLORS already held.
+  const regionFill = 0.06 + 0.045 * bw.far;
+  const regionLine = 0.18 + 0.16 * bw.far;
   const regions = clusterRegions();
   regions.forEach(rg => {
     const col = gPaint(CLUSTER_COLORS[rg.code] || 'var(--c-border-3)', '#c8bfae');
     ctx.fillStyle = col;
     if (!rg.pts) { // 1–2 members: the old soft circle, at the old opacity
-      ctx.globalAlpha = 0.05;
+      ctx.globalAlpha = regionFill * 0.83;
       ctx.beginPath(); ctx.arc(rg.center.x, rg.center.y, rg.r, 0, Math.PI * 2); ctx.fill();
       return;
     }
     traceBlob(ctx, rg.pts, HULL_ROUND);
-    ctx.globalAlpha = 0.06;
+    ctx.globalAlpha = regionFill;
     ctx.fill();
     // The outline is what makes it read as a region and not a smudge, so it stays a
     // hairline at every zoom — hence 1 SCREEN pixel divided back out of the world scale.
-    ctx.globalAlpha = 0.18;
+    ctx.globalAlpha = regionLine;
     ctx.strokeStyle = col;
     ctx.lineWidth = 1 / (s || 1);
     ctx.stroke();
@@ -3331,9 +3511,18 @@ function paintGraph() {
     const dash = e.type==='ent'?DASH_ENT: e.type==='bridge'?DASH_BRIDGE:DASH_NONE;
     const dimmed = spotlight && !(spotlight.has(e.a) && spotlight.has(e.b));
     const isThisEdge = activeEdge && edgeKey(activeEdge) === edgeKey(e);
-    const opacity = !visible ? 0 : (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='diag'?0.75:0.55)));
+    // Far band: diagonal edges only. A shared author is a fact about the territory and
+    // survives being zoomed out; the entanglement/bridge mesh at 0.3x is grey noise over
+    // the whole stage. What the pointer is actually on is exempt — hovering a node must
+    // still show you its connections, whatever the zoom.
+    // ...and so is "show all connections": a control the user just pressed must not be
+    // quietly undone by where the camera happens to be.
+    const standing = e.type === 'diag' || showAllConnections ||
+      (spotlight && (spotlight.has(e.a) || spotlight.has(e.b)));
+    const band = standing ? 1 : 1 - bw.far;
+    const opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='diag'?0.75:0.55)));
     const width = isThisEdge ? (e.type==='diag'?2.6:2.2) : (e.type==='diag'?1.6:1.3);
-    if (opacity <= 0) return; // the SVG drew these at opacity 0; not drawing them is the same picture
+    if (opacity <= 0.004) return; // the SVG drew these at opacity 0; not drawing them is the same picture
     ctx.globalAlpha = opacity;
     ctx.strokeStyle = stroke;
     ctx.lineWidth = width;
@@ -3344,22 +3533,38 @@ function paintGraph() {
   ctx.globalAlpha = 1;
 
   // 3. Nodes — fill, plus the ring the old `.gnode circle` rule drew.
+  // Every one of these is re-read from the CSS custom properties on each frame (gVar's
+  // cache is dropped the moment the .dark class flips), never captured at boot — a canvas
+  // does not restyle itself, so a cached colour is a colour that is wrong after a theme
+  // change until the page reloads.
   const inkC = gVar('--c-ink', '#26221b'), bgC = gVar('--c-bg', '#fbfaf8');
+  const stageC = gVar('--c-stage', '#f0ede6');
+  const farDot = FAR_DOT_PX / (s || 1);
   nodes.forEach(n => {
     const dimmed = spotlight && !spotlight.has(n.id);
-    ctx.globalAlpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
-    const r = nodeRadius(n), focused = n.id === focusedId;
-    ctx.lineWidth = focused ? 3 : 1.6;
-    ctx.strokeStyle = focused ? inkC : bgC;
+    const alpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
+    const r = drawnRadius(n, bw.far, farDot), focused = n.id === focusedId;
     // The old markup put an invisible larger hit-circle under every node, and the
-    // `.gnode circle` rule stroked that too — so a faint --c-bg ring at r+7 (and a
-    // second --c-ink one when focused) is part of how the graph looks today, not an
-    // accident of the hit-testing. Kept, since the hit target itself moved into
-    // nodeAt() where it draws nothing.
-    ctx.beginPath(); ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2); ctx.stroke();
+    // `.gnode circle` rule stroked that too — so a faint --c-bg ring at r+7 is part of
+    // how the graph looks today, not an accident of the hit-testing. Kept for the two
+    // near bands, faded out for the far one: 7 world units is 2 screen px at 0.3x, where
+    // the ring stops being breathing room and starts fusing the map into one smear.
+    if (bw.far < 1) {
+      ctx.globalAlpha = alpha * (1 - bw.far);
+      ctx.lineWidth = 1.6; ctx.strokeStyle = bgC;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.globalAlpha = alpha;
     ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
     ctx.fillStyle = gPaint(nodeColor(n), inkC);
     ctx.fill();
+    // A ring in the STAGE colour, one screen pixel wide at every zoom — this is what
+    // keeps two dots reading as two dots wherever the layout crowds them. Screen-constant
+    // because crowding is a screen-space problem: the old world-unit ring was half a
+    // pixel at the default zoom (invisible, exactly where it was needed) and a fat collar
+    // at 16x. The focus ring is the same rule at 2.5px in ink.
+    ctx.lineWidth = (focused ? 2.5 : 1) / (s || 1);
+    ctx.strokeStyle = focused ? inkC : stageC;
     ctx.stroke();
     // Dropped by a drag and therefore PINNED: the simulation no longer moves it. The
     // dashed ring is the only thing that says so, so it has to be visible without
@@ -3383,38 +3588,72 @@ function paintGraph() {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.lineJoin = 'round';
+  ctx.lineWidth = 3; // the halo, in screen px now that the transform is off
+  _curLabelFont = null;
+  const haloC = gVar('--c-halo', '#f4f2ee');
+  const space = makeLabelSpace();
 
-  // 4a. Zone names, above the top of the shape drawn for that cluster in pass 1 —
-  // the hull's highest vertex, or the circle's top for the 1–2 member fallback.
-  ctx.font = gFont(13);
-  if ('letterSpacing' in ctx) ctx.letterSpacing = '0.03em';
+  // 4a. Zone names, above the top of the shape drawn for that cluster in pass 1 — the
+  // hull's highest vertex, or the circle's top for the 1–2 member fallback. They are
+  // placed FIRST and therefore win every contest: in the far band the cluster name is
+  // the whole point of the picture, and no entity name outranks it.
   regions.forEach(rg => {
     const name = CLUSTERS[rg.code] ? CLUSTERS[rg.code].name.split(',')[0] : rg.code;
+    const txt = rg.code + '. ' + truncate(name, 22);
     const p = wToS(rg.top.x, rg.top.y);
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = gPaint(CLUSTER_COLORS[rg.code] || 'var(--c-ink-4)', '#89806f');
-    ctx.fillText(rg.code + '. ' + truncate(name, 22), p.x, p.y - 8);
+    if (p.x < -240 || p.x > gW + 240 || p.y < -60 || p.y > gH + 90) return;
+    // Reserved at the width of the LARGER of the two fonts, so the box holds through a
+    // cross-fade instead of two neighbouring names shuffling as the fade runs.
+    const half = labelWidth(ctx, LBL_ZONE_FAR, txt) / 2 + 5;
+    // Two names can want the same gap; one nudge upward usually settles it, and a name
+    // that still has nowhere to go is dropped rather than overprinted.
+    let y = p.y - 8;
+    if (!space.take({ x0: p.x - half, x1: p.x + half, y0: y - 14, y1: y + 5 })) {
+      y -= 17;
+      if (!space.take({ x0: p.x - half, x1: p.x + half, y0: y - 14, y1: y + 5 })) return;
+    }
+    const col = gPaint(CLUSTER_COLORS[rg.code] || 'var(--c-ink-4)', '#89806f');
+    // Two fixed fonts cross-faded, rather than one whose size is interpolated: a size
+    // that changes every frame would miss the width cache on every frame.
+    if (bw.far < 1) drawLabel(ctx, LBL_ZONE, txt, p.x, y, 0.5 * (1 - bw.far), col, haloC);
+    if (bw.far > 0) drawLabel(ctx, LBL_ZONE_FAR, txt, p.x, y, 0.9 * bw.far, col, haloC);
   });
-  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
 
-  // 4b. Node labels — halo first, then the text, which is what `paint-order:stroke`
-  // did on the old SVG <text>.
-  ctx.font = gFont(10.5, 500);
-  ctx.lineWidth = 3;
-  const haloC = gVar('--c-halo', '#f4f2ee');
-  nodes.forEach(n => {
-    if (!labelVisible(n, spotlight)) return;
-    const dimmed = spotlight && !spotlight.has(n.id);
-    ctx.globalAlpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
+  // 4b. Node labels, in priority order — the focused node, then its neighbours (the
+  // spotlight), then by degree, with last frame's winners holding their place by half a
+  // rank point so a settling layout does not make them blink. Anything off-stage is
+  // dropped before it is measured; anything that lands on an already-taken box is not
+  // drawn at all. At 214 nodes on a 503x711 stage that is most of them, deliberately:
+  // fewer, readable labels beat a complete set nobody can read.
+  const cands = [];
+  for (const n of nodes) {
+    const w = labelWeight(n, spotlight);
+    if (w < 0.02) continue;
     const p = wToS(n.x, n.y);
-    // The gap is measured in screen pixels off the node's on-screen edge — a
-    // world-unit gap would collapse into the dot as you zoom out.
-    const y = p.y + nodeRadius(n) * s + 10;
+    if (p.x < -140 || p.x > gW + 140 || p.y < -40 || p.y > gH + 40) continue;
+    const rank = (n.id === focusedId ? 3e6 : (spotlight && spotlight.has(n.id) ? 2e6 : 0))
+      + (n.degree || 0) + (_lblPlaced.has(n.id) ? 0.5 : 0);
+    cands.push({ n, p, w, rank });
+  }
+  cands.sort((a, b) => b.rank - a.rank);
+
+  const placed = new Set();
+  for (const c of cands) {
+    const n = c.n, focused = n.id === focusedId;
+    const f = focused ? LBL_FOCUS : LBL_NODE;
     const txt = truncate(n.name, 18);
-    ctx.strokeStyle = haloC; ctx.strokeText(txt, p.x, y);
-    ctx.fillStyle = inkC; ctx.fillText(txt, p.x, y);
-  });
+    const half = labelWidth(ctx, f, txt) / 2 + 3;
+    // The gap is measured in screen pixels off the node's on-screen edge — a world-unit
+    // gap would collapse into the dot as you zoom out.
+    const y = c.p.y + drawnRadius(n, bw.far, farDot) * s + 10;
+    if (!space.take({ x0: c.p.x - half, x1: c.p.x + half, y0: y - f.px * 0.85, y1: y + f.px * 0.3 })) continue;
+    const dimmed = spotlight && !spotlight.has(n.id);
+    drawLabel(ctx, f, txt, c.p.x, y, c.w * (dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1), inkC, haloC);
+    placed.add(n.id);
+  }
+  _lblPlaced = placed;
   ctx.globalAlpha = 1;
+  return true;
 }
 
 // ---------- Hit-testing ----------
@@ -3444,9 +3683,11 @@ function nodeAt(wx, wy) {
   if (!nodes.length) return null;
   const screenTol = 14 / camera.scale;
   // The search radius has to cover the widest tolerance any single node can claim —
-  // radius+7 for the largest node (11+7) or the screen-pixel target, whichever wins —
-  // or find() would rule out a node that the per-node check below would have accepted.
-  const n = graphQuadtree().find(wx, wy, Math.max(18, screenTol));
+  // radius+7 for the largest node, or the screen-pixel target, whichever wins — or
+  // find() would rule out a node that the per-node check below would have accepted.
+  // Derived from NODE_R_MAX rather than written out, so re-tuning the size range cannot
+  // silently shrink the hit target of the biggest nodes.
+  const n = graphQuadtree().find(wx, wy, Math.max(NODE_R_MAX + 2 + 7, screenTol));
   if (!n) return null;
   return Math.hypot(n.x - wx, n.y - wy) <= Math.max(nodeRadius(n) + 7, screenTol) ? n : null;
 }
