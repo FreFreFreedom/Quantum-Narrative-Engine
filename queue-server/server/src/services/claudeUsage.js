@@ -213,58 +213,6 @@ async function fetchSubscription() {
   return parsed;
 }
 
-// The second (smaller) subscription's own reading. Separate cache, keyed by the
-// token, so it can never be confused with the main account's numbers — that mix-up
-// would be worse than no reading at all, since it decides which account pays.
-let _sideCache = null;
-let _lastSideGood = null;
-
-// Same read, but it also says WHY there is no reading. Every failure here used to
-// collapse into the same null, so the app could only ever print "No reading." for
-// four completely different problems — a closed laptop, a missing token, a
-// rate-limited endpoint and a login that is not allowed to read quota at all.
-// Telling them apart is the difference between a fixable message and a mystery.
-//
-// reason: 'off' | 'ok' | 'stale' | 'throttled' | 'forbidden' | 'unreachable'
-export async function getSideUsageState(token) {
-  if (!token) return { data: null, reason: 'off', stale: false, at: null };
-  const now = Date.now();
-  if (_sideCache && _sideCache.token === token && now - _sideCache.at < _sideCache.ttl) {
-    return { data: _sideCache.data, reason: _sideCache.reason, stale: _sideCache.stale, at: _sideCache.readAt };
-  }
-
-  const { data: fresh, throttled, status } = await fetchUsageForToken(token);
-  if (fresh) _lastSideGood = { at: now, token, data: fresh };
-
-  // Fall back to the last good reading, exactly as the main account's does. This is
-  // not politeness: the endpoint rate-limits a busy machine, and a 429 is not
-  // evidence of an empty window. Without this, every throttled read would look like
-  // "no reading" and the hand-over threshold would quietly stop being enforced —
-  // which is the one failure mode this whole gate exists to prevent. A reading older
-  // than SUB_STALE_MAX_MS is dropped instead, since a 5h window moves.
-  const recovered = !fresh && _lastSideGood && _lastSideGood.token === token
-    && (now - _lastSideGood.at) < SUB_STALE_MAX_MS
-    ? _lastSideGood : null;
-
-  const data = fresh || recovered?.data || null;
-  const reason = fresh ? 'ok'
-    : recovered ? 'stale'
-    : throttled ? 'throttled'
-    : (status === 401 || status === 403) ? 'forbidden'
-    : 'unreachable';
-  const readAt = fresh ? now : (recovered?.at ?? null);
-  _sideCache = {
-    token, at: now, data, reason, readAt, stale: !fresh && !!data,
-    ttl: fresh ? CACHE_TTL_MS : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS),
-  };
-  return { data, reason, stale: !fresh && !!data, at: readAt };
-}
-
-// The hand-over gate's view: just the numbers, unchanged.
-export async function getSideSubscriptionUsage(token) {
-  return (await getSideUsageState(token)).data;
-}
-
 let _cache = null;
 
 async function compute() {

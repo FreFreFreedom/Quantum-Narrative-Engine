@@ -37,7 +37,7 @@ import {
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
-import { getClaudeUsage, getSideSubscriptionUsage, getSideUsageState } from '../server/src/services/claudeUsage.js';
+import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
@@ -141,14 +141,6 @@ const CLAUDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_WEEK_RESERVE_PCT || 90
 // Deep (opus) work is the expensive kind — hold it to a stricter weekly reserve so a
 // single big task can't be what finally exhausts the week.
 const CLAUDE_DEEP_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_DEEP_WEEK_RESERVE_PCT || 70);
-// The SECOND (smaller) subscription gets its own, much later reserve. Its whole job
-// is to be spent — holding it back at 85% would waste the plan we bought it for. But
-// running it to 100% means the call that discovers the ceiling is a FAILED call: the
-// question gets asked, times out or errors, and only then is re-asked on the main
-// account. Handing over a few percent early costs one unused sliver of the small
-// plan and buys a clean answer every time.
-const CLAUDE_SIDE_RESERVE_PCT = Number(process.env.CLAUDE_SIDE_RESERVE_PCT || 93);
-const CLAUDE_SIDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_SIDE_WEEK_RESERVE_PCT || 97);
 // Set CLAUDE_QUEUE=0 to switch the priority lane off entirely (everything free).
 const CLAUDE_LANE_ENABLED = process.env.CLAUDE_QUEUE !== '0';
 
@@ -422,59 +414,20 @@ async function claudeGate({ tier, preset }) {
   return null;
 }
 
-// Rule 2 for the second account: hand this job to the MAIN account before the small
-// plan is spent, rather than after it fails. The reactive fallback in ai/text.js stays
-// as the safety net (it catches a limit we did not see coming); this is the part that
-// avoids the wasted, failed call in the first place.
-//
-// Returns null when the second account should answer, or a plain-English reason to
-// hand over. An unreadable percentage never hands over — an unknown reading is not
-// evidence of a full window, and the net below still catches a real ceiling.
-async function sideHandoverReason() {
-  let u = null;
-  try { u = await getSideSubscriptionUsage(SIDE_TOKEN); } catch { /* unknown — use it */ }
-  if (!u) return null;
-  const sess = u.session?.utilizationPct;
-  if (Number.isFinite(sess) && sess >= CLAUDE_SIDE_RESERVE_PCT) {
-    return `its 5h window is ${Math.round(sess)}% used (hand-over at ${CLAUDE_SIDE_RESERVE_PCT}%)`;
-  }
-  const week = u.week?.utilizationPct;
-  if (Number.isFinite(week) && week >= CLAUDE_SIDE_WEEK_RESERVE_PCT) {
-    return `its weekly limit is ${Math.round(week)}% used (hand-over at ${CLAUDE_SIDE_WEEK_RESERVE_PCT}%)`;
-  }
-  return null;
-}
-
 // The app's usage bar is fed by whatever this runner last reported, and the only
 // place that used to happen was the idle claim poll — so the bar went blank for
 // the entire duration of every task, which is exactly when it matters. The
 // stream flush carries it too now. getClaudeUsage() caches for 60s, so this is
 // one real read per minute however often we flush.
+// Only the MAIN account is reported. The second account's own quota used to ride
+// along here, but Anthropic rate-limits that reading for this account with a
+// ~45-minute back-off, so it was permanently unreadable — and now that nothing
+// decides anything from it (the account is simply spent to its ceiling), reading
+// it at all was cost with no answer.
 async function usageForReport() {
-  // The two accounts are read independently: a failed MAIN read used to return null
-  // here and take the second account's reading down with it, for no reason.
   let usage = null;
-  try { usage = await getClaudeUsage(); } catch { /* unknown — the side block still goes */ }
-
-  // The second account's reading rides along on the same report. It was already
-  // being computed on this machine for the hand-over gate (sideHandoverReason
-  // above) but never leaving it, so the app's usage strip could only ever show
-  // the main account and quietly implied that was the whole picture. Only the
-  // Mac holds this token, so the server cannot read it any other way.
-  // Its own cache means this costs no extra HTTP call most of the time.
-  let side = { data: null, reason: SIDE_TOKEN ? 'unreachable' : 'off', stale: false, at: null };
-  if (SIDE_TOKEN) {
-    try { side = await getSideUsageState(SIDE_TOKEN); } catch { /* stays 'unreachable' */ }
-  }
-
-  // Worth sending even with no numbers at all: the reason itself is the reading
-  // the app needs, so it can say "rate-limited" instead of "no reading".
-  if (!usage && !side.data && side.reason === 'off') return null;
-  return {
-    ...(usage || {}),
-    sideUsage: side.data,
-    sideState: { reason: side.reason, stale: side.stale, at: side.at },
-  };
+  try { usage = await getClaudeUsage(); } catch { /* unknown — nothing to report */ }
+  return usage || null;
 }
 
 // ─── Claude helper lane ───────────────────────────────────────────────────────
@@ -544,16 +497,11 @@ async function runHelperJobs() {
   // reached ONLY by handing its token to this single spawn as an extra — never by
   // writing it into this process's environment, which would silently move every
   // queue coding task onto it as well.
-  let side = job.account === 'side' && !!SIDE_TOKEN;
-  let handedOver = null;
+  // No reserve is held back on this one: the small plan exists to be spent, so it
+  // answers until it genuinely runs out. ai/text.js is what notices a real ceiling
+  // and re-asks the same question on the main account.
+  const side = job.account === 'side' && !!SIDE_TOKEN;
   if (job.account === 'side' && !SIDE_TOKEN) warnSideTokenMissingOnce();
-  if (side) {
-    handedOver = await sideHandoverReason();
-    if (handedOver) {
-      side = false;
-      console.log(`  helper ${job.label || job.feature}: second account handing over to the main one — ${handedOver}`);
-    }
-  }
 
   // The window reserve protects the MAIN account's week. A second-account job has
   // nothing to do with that bank, so gating it on this would decline work the main
@@ -561,12 +509,8 @@ async function runHelperJobs() {
   if (!side) {
     const gate = await claudeGate({ tier: 'standard', preset: 'fast' });
     if (gate) {
-      // Say both halves when this arrived here by hand-over: "the small plan is
-      // spent AND the big one is low" is a different situation from either alone,
-      // and the message is what the person actually sees.
-      const why = handedOver ? `${handedOver}, and on the main account ${gate}` : gate;
-      console.log(`  helper ${job.label || job.feature}: declined — ${why}`);
-      try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${why}` }); } catch {}
+      console.log(`  helper ${job.label || job.feature}: declined — ${gate}`);
+      try { await api(`/worker/helper/${job.id}/result`, { error: `Claude declined: ${gate}` }); } catch {}
       return;
     }
   }
@@ -590,7 +534,7 @@ async function runHelperJobs() {
   // sweep sat still. 100s gives it room and still lands inside the server's own 120s
   // wait, so the runner never answers into a caller that has already given up.
   const timeoutMs = (job.account === 'side' || tools) ? 120_000 : 100_000;
-  console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${handedOver ? ' (main account, handed over)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
+  console.log(`  helper ${job.label || job.feature} → claude:${model}${side ? ' (second account)' : ''}${tools ? ` (may read: ${tools})` : ''}`);
   let out = null;
   try {
     out = await claudeCli.runToolless({
@@ -1220,6 +1164,7 @@ const REVIEW_TIMEOUT_MS = Number(process.env.REVIEW_TIMEOUT_MS || 180_000);
 async function runReviewPass({ wt, ship, task }) {
   if (process.env.REVIEW_DISABLED === '1') return null;
   const side = Boolean(SIDE_TOKEN);
+  let handedToMain = false;
   try {
     const out = await reviewPass({
       root: wt.path,
@@ -1228,16 +1173,30 @@ async function runReviewPass({ wt, ship, task }) {
       files: ship.files_changed,
       task,
       callModel: async (prompt) => {
-        const r = await claudeCli.runToolless({
+        const ask = (onSide) => claudeCli.runToolless({
           prompt,
           model: REVIEW_MODEL,
           timeoutMs: REVIEW_TIMEOUT_MS,
           cwd: wt.path,
-          env: claudeCli.spawnEnv(side ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
+          env: claudeCli.spawnEnv(onSide ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
         });
+        let r = await ask(side);
         // A non-zero exit is a failed call, not an answer — returning its stderr
         // as if it were a review is how "could not start the CLI" would end up
         // parsed as findings.
+        if (side && (!r || r.code !== 0)) {
+          const why = String(r?.text || r?.error || `exit ${r?.code}`);
+          // The second account is now spent to its ceiling rather than handed over
+          // early, so the review is one of the calls that will meet that ceiling.
+          // A spent window means ask the main account, not lose the review. A near-full
+          // window sometimes goes quiet instead of saying so, so a timeout counts too
+          // — same reasoning as ai/text.js's claude-side branch.
+          const spent = claudeCli.detectLimit(why) || /no response|timed out|timeout/i.test(why);
+          if (spent) {
+            handedToMain = true;
+            r = await ask(false);
+          }
+        }
         if (!r || r.code !== 0) throw new Error(String(r?.text || r?.error || `exit ${r?.code}`).slice(0, 200));
         return r.text || '';
       },
@@ -1251,7 +1210,7 @@ async function runReviewPass({ wt, ship, task }) {
     const note = out.blocking
       ? red(`${n} finding(s), HELD BACK`)
       : (n ? `${n} note(s)` : green('nothing to flag'));
-    console.log(`  reviewed${secTxt} on ${bold('claude:' + REVIEW_MODEL)}${side ? dim(' (second account)') : ''} — ${note}`);
+    console.log(`  reviewed${secTxt} on ${bold('claude:' + REVIEW_MODEL)}${side && !handedToMain ? dim(' (second account)') : ''}${handedToMain ? dim(' (main account — the second one was spent)') : ''} — ${note}`);
     if (out.error) console.log(dim(`    (${out.error})`));
     return out;
   } catch (e) {
@@ -1495,7 +1454,7 @@ async function main() {
   console.log(dim(`  models: Claude (queue's priority lane) → OpenCode Go → free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
   console.log(dim(`  money : nothing bills per token — subscriptions only (ALLOW_METERED_API=1 would permit real spending). Paid OpenCode Go lane: ${GO_LANE_ENABLED ? 'on (OPENCODE_GO=0 turns it off)' : 'off'}.`));
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
-  console.log(dim(`  second account: ${SIDE_TOKEN ? `on — hands work back to the main account at ${CLAUDE_SIDE_RESERVE_PCT}% of its 5h window / ${CLAUDE_SIDE_WEEK_RESERVE_PCT}% of its week` : 'no token (CLAUDE_SIDE_OAUTH_TOKEN unset) — everything runs on the main account'}`));
+  console.log(dim(`  second account: ${SIDE_TOKEN ? 'on — spent to its ceiling, then the main account takes over' : 'no token (CLAUDE_SIDE_OAUTH_TOKEN unset) — everything runs on the main account'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   try { tidyWorktrees(); } catch (e) { console.log(dim(`  (could not tidy old task folders — ${e.message})`)); }

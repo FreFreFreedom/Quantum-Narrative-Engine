@@ -21,7 +21,7 @@ import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory, cleanupFrenchSuggestions } from './services/bootstrapData.js';
-import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage, runnerReportedUsageRaw } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
@@ -275,40 +275,15 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
     const usage = (!local.subscriptionAvailable && fromRunner?.subscriptionAvailable)
       ? { ...fromRunner, source: 'runner' }
       : { ...local, source: 'server' };
-    // The second Claude account and the paid OpenAI lane, so the header strip can
-    // show one bar per account instead of implying the main account is the whole
-    // picture. `side` is whatever the runner last reported — only the Mac holds
-    // that token, so the server can never read it directly.
-    //
-    // It also says WHY when there is nothing: a blank second account used to mean
-    // any of four different things (Mac asleep, no token, rate-limited endpoint, a
-    // login not allowed to read quota) and the app printed the same "No reading."
-    // for all of them. And because only the Mac can read it, a slightly old reading
-    // beats none — kept for 30 minutes, matching the stale window in claudeUsage.js,
-    // past which a 5-hour window has moved too far to quote.
-    const SIDE_STALE_MAX_MS = 30 * 60_000;
-    const raw = runnerReportedUsageRaw();
-    let side = fromRunner?.sideUsage || null;
-    let sideState;
-    if (!raw || raw.ageMs > SIDE_STALE_MAX_MS) {
-      side = null;
-      sideState = { reason: 'runner-offline', stale: false, ageMs: raw?.ageMs ?? null };
-    } else if (raw.ageMs > 5 * 60_000) {
-      side = raw.usage?.sideUsage || null;
-      sideState = { reason: side ? 'stale' : (raw.usage?.sideState?.reason || 'runner-offline'), stale: true, ageMs: raw.ageMs };
-    } else {
-      const rs = raw.usage?.sideState || null;
-      sideState = rs
-        ? { reason: rs.reason, stale: !!rs.stale, ageMs: raw.ageMs }
-        // An older runner that predates sideState: infer it from the numbers alone.
-        : { reason: side ? 'ok' : 'unreachable', stale: false, ageMs: raw.ageMs };
-    }
+    // The paid OpenAI lane, so the strip can show it beside the build quota. The
+    // second Claude account no longer reports a quota at all: Anthropic rate-limits
+    // that reading with a ~45-minute back-off, and nothing decides anything from it
+    // any more — that account is simply spent to its ceiling, then work moves to the
+    // main one (see ai/text.js).
     let openai = null;
     try { openai = await openAiCapState(); } catch {}
     res.json({
       ...usage,
-      side,
-      sideState,
       openai,
       schedulerLimitResetAt: queueDeferUntil(),
     });
