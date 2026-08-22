@@ -4,6 +4,7 @@ import { getComponents, getQueueStatus, getComponentHistory, generateSuggestions
 import { listNodes, createNode, updateNode, deleteNode, speculate, autoPlaceNode, askGraph, routeIdea, rankUnbuilt, shortlistUnbuilt } from '../services/architectureNodes.js';
 import { nextSteps } from '../services/nextSteps.js';
 import { listProposals, acceptProposal, rejectProposal, syncFromGit } from '../services/treeSync.js';
+import { getUmbrellaMap, deriveUmbrellas, umbrellaChurn } from '../services/umbrellas.js';
 import { getQueuePauseState } from '../services/promptQueue.js';
 import { autoShipEnabled, sideCallBudgetLimit, sideCallsToday } from '../services/ai/text.js';
 import { containerFreeBytes } from '../lib/memHeadroom.js';
@@ -78,6 +79,29 @@ export function architectureRoutes(db) {
     if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
     res.json(out);
   });
+
+  // ─── Umbrellas ──────────────────────────────────────────────────────────────
+  // The read is free, always, and can never trigger a derivation — that is the
+  // "never on view" half of the cost rule (plan
+  // an-architecture-that-knows-what-it-is, section 3). Shape is d3.pack()-ready:
+  // `root` is {name, children} two levels deep with `value` on every leaf.
+  router.get('/umbrellas', (req, res) => {
+    res.json(getUmbrellaMap(db));
+  });
+
+  // Free: the churn numbers on their own, so a button can say whether a
+  // re-grouping would actually do anything before anyone clicks it.
+  router.get('/umbrellas/churn', (req, res) => {
+    res.json({ churn: umbrellaChurn(db) });
+  });
+
+  // The only path that can spend anything here — one cheap call. Without
+  // `force` the churn gate decides, and a gated request asks no model at all.
+  router.post('/umbrellas/derive', asyncHandler(async (req, res) => {
+    const out = await deriveUmbrellas(db, { force: !!(req.body || {}).force });
+    if (out.error) return res.status(out.error === 'too_few_nodes' ? 400 : 502).json(out);
+    res.json(out);
+  }));
 
   // Manual "Sync now" from the Architecture tab — runs the git-history watcher
   // immediately (cheap: one model call only when main has new commits).

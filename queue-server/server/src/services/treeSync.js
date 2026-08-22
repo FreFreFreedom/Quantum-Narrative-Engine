@@ -24,6 +24,7 @@ import { existsSync } from 'node:fs';
 import { createNode } from './architectureNodes.js';
 import { generateText } from './ai/text.js';
 import { parseJsonObject } from './codeDiscovery.js';
+import { maybeDeriveUmbrellas } from './umbrellas.js';
 import { mainRepo, gitLogSummaries, gitDiffStat, gitChangedFiles, gitHeadSha, gitFetchOriginTrunk } from './gitOps.js';
 
 const FMCNS_BLURB = 'FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool: single-file vanilla-JS frontend, Node/Express + SQLite backend, a knowledge graph of "characters", an agent task queue, fractal navigation UI, and recommender ambitions';
@@ -84,6 +85,17 @@ function createProposal(db, proposal, { source, promptId = null, sha = null }) {
   return out;
 }
 
+// Planting nodes is the one thing that moves the node set, so it is the honest
+// place to ask whether the umbrellas still describe the tree (plan
+// an-architecture-that-knows-what-it-is, section 3). Gated by churn inside
+// maybeDeriveUmbrellas: below the threshold this costs three COUNT(*)s and asks no
+// model. Fire-and-forget on purpose — the tree must never be able to affect a task
+// finishing, same rule as the sync itself.
+function nudgeUmbrellas(db, created) {
+  if (!created) return;
+  maybeDeriveUmbrellas(db).catch(e => console.error('[treeSync] umbrella nudge failed —', e.message));
+}
+
 // ─── Capture path 1: a finished queue task ────────────────────────────────────
 // Fire-and-forget from promptQueue.finishPrompt. Never throws — the tree must
 // never be able to affect task completion.
@@ -111,7 +123,9 @@ export async function syncFromTask(db, promptId) {
     const parsed = parseJsonObject(out.text);
     const proposals = (parsed?.proposals || []).filter(p => p && p.name).slice(0, MAX_PROPOSALS);
     const results = proposals.map(p => createProposal(db, p, { source: 'queue', promptId, sha: head }));
-    return { created: results.filter(r => !r.error).length, proposals: results.map(r => r.node?.name || null) };
+    const created = results.filter(r => !r.error).length;
+    nudgeUmbrellas(db, created);
+    return { created, proposals: results.map(r => r.node?.name || null) };
   } catch (e) {
     console.error('[treeSync] syncFromTask failed —', e.message);
     return { error: e.message };
@@ -175,7 +189,9 @@ export async function syncFromGit(db) {
     const proposals = (parsed?.proposals || []).filter(p => p && p.name).slice(0, MAX_PROPOSALS);
     const results = proposals.map(p => createProposal(db, p, { source: 'git', sha: head }));
     db.prepare(`UPDATE tree_sync_state SET last_sha=?, last_run_at=?, last_error=NULL WHERE id=1`).run(head, now());
-    return { created: results.filter(r => !r.error).length, proposals: results.map(r => r.node?.name || null), last_sha: head };
+    const created = results.filter(r => !r.error).length;
+    nudgeUmbrellas(db, created);
+    return { created, proposals: results.map(r => r.node?.name || null), last_sha: head };
   } catch (e) {
     console.error('[treeSync] syncFromGit failed —', e.message);
     return { error: e.message };

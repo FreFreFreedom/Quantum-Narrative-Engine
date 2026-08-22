@@ -87,7 +87,7 @@ export function studioPersonaText() { return loadAiSettings().studioPersona || '
 // 'reply' is the chat on a task card. It was missing here for as long as the chat
 // existed, which meant no per-feature choice could ever reach it: an unlisted
 // feature falls through to the free lane below no matter what the settings say.
-const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply'];
+const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply', 'umbrellas'];
 
 // Read-only snapshot for the AI Settings panel: per-feature defaults, the global
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
