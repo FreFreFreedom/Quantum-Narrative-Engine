@@ -125,7 +125,8 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* The content graph's nodes, edges and labels used to be SVG elements styled here
    (.gnode / .gedge). They are drawn on #graphCanvas now, so the equivalent values
    live in the renderer instead — see paintGraph(): node fill, a 1-screen-px ring in
-   --c-stage plus the soft --c-bg wash at r+7, and labels off the type scale
+   --c-stage (widened a little where a poster or flag is drawn inside the node, see
+   paintNodeImagery()) plus the soft --c-bg wash at r+7, and labels off the type scale
    (LBL_NODE / LBL_FOCUS / LBL_ZONE / LBL_ZONE_FAR) with a 3px --c-halo outline behind
    every one. Which of those are drawn depends on the semantic-zoom band — see
    updateBands(). Kept in one place there rather than half here, half there. */
@@ -1735,7 +1736,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
     <div class="scopebar" id="scopeBar" aria-label="What the view is narrowed to" data-src="Content navigator → scope breadcrumb | fmcns_navigator.html: scopeTrail()/renderScopeBar()/scopeGoTo() — ego view, cluster, theme cluster and search, and the way back out of each"></div>
-    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
       <div id="graphLive" class="sr-only" aria-live="polite"></div>
@@ -3446,6 +3447,165 @@ function drawnRadius(n, far, farDot) {
   return full + (dot - full) * far;
 }
 
+// ---------- Node imagery: posters and flags in the near band ----------
+// Past 2.5x the graph stops being a diagram and starts being a shelf: a film node draws
+// its TMDb poster clipped into its own circle, a country node draws its flag. This is
+// the single biggest step from dot-diagram to something worth exploring — and the one
+// place in the renderer that touches the network, so every rule below is about being
+// polite with it.
+//
+//   - w185, not the w342 the detail panel uses. A node is ~24 screen px across at the
+//     zoom where posters appear; w342 would be four times the bytes for pixels nobody
+//     can see.
+//   - Only nodes actually ON SCREEN at that zoom are ever requested. Panning around a
+//     200-node graph must not fire 200 requests.
+//   - At most 6 in flight; the rest wait in a queue, newest viewport first.
+//   - One entry per poster_path, and a FAILURE IS AN ENTRY TOO. A 404 that is not
+//     remembered becomes a request on every frame — the one bug that would turn this
+//     from a nicety into a denial-of-service on TMDb.
+//   - Nothing here ever blocks a frame: the plain node is drawn until an image resolves,
+//     and the arrival calls requestRender() to swap it in.
+const NODE_IMG_SIZE = 'w185';
+const NODE_IMG_MAX_INFLIGHT = 6;
+const NODE_IMG_MARGIN = 80; // screen px outside the stage still counted as "in view"
+
+// poster_path -> Image (loaded) | 'pending' (in flight or queued) | 'failed' (never retried)
+const _nodeImg = new Map();
+const _nodeImgQueue = [];
+let _nodeImgInflight = 0;
+
+// Cheap screen-space cull. The whole politeness budget rests on this: without it, a
+// 200-node graph at high zoom would request 200 posters to draw the twelve you can see.
+function nodeInView(n) {
+  const p = wToS(n.x, n.y);
+  return p.x >= -NODE_IMG_MARGIN && p.x <= gW + NODE_IMG_MARGIN &&
+         p.y >= -NODE_IMG_MARGIN && p.y <= gH + NODE_IMG_MARGIN;
+}
+
+function nodePosterPath(n) {
+  if (n.type !== 'film') return null;
+  // The node is a spread copy taken at buildGraph() time, so a later enrichment refresh
+  // lands on the ENTITY, not on it — fall back to the live map rather than showing a
+  // stale "no poster" until the next rebuild.
+  const enr = n.enrichment || ENRICHMENTS[n.id];
+  return (enr && enr.status === 'matched' && enr.poster_path) ? enr.poster_path : null;
+}
+
+function nodeImagePump() {
+  while (_nodeImgInflight < NODE_IMG_MAX_INFLIGHT && _nodeImgQueue.length) {
+    const path = _nodeImgQueue.shift();
+    if (_nodeImg.get(path) !== 'pending') continue; // already resolved while it waited
+    _nodeImgInflight++;
+    const img = new Image();
+    // No crossOrigin: the canvas is only ever painted, never read back (no getImageData
+    // or toDataURL anywhere), so tainting it costs nothing and asking for CORS would
+    // only add a way for the load to fail.
+    img.decoding = 'async';
+    img.onload = () => {
+      _nodeImgInflight--;
+      _nodeImg.set(path, img);
+      nodeImagePump();
+      requestRender(); // the frame that wanted this one is long gone; ask for a new one
+    };
+    img.onerror = () => {
+      _nodeImgInflight--;
+      _nodeImg.set(path, 'failed'); // remembered forever — see the note above
+      nodeImagePump();
+    };
+    img.src = 'https://image.tmdb.org/t/p/' + NODE_IMG_SIZE + path;
+  }
+}
+
+// Returns the loaded image, or null and (at most once per path) starts fetching it.
+function nodeImageFor(path) {
+  const hit = _nodeImg.get(path);
+  if (hit === undefined) {
+    _nodeImg.set(path, 'pending');
+    _nodeImgQueue.push(path);
+    nodeImagePump();
+    return null;
+  }
+  return (hit === 'pending' || hit === 'failed') ? null : hit;
+}
+
+// Countries carry names, not ISO codes (`countries_json` holds names) — so the flag comes
+// from a hardcoded name->ISO table rather than a lookup service. It covers the ten
+// countries in the corpus plus the ones most likely to join it; anything absent simply
+// draws the plain node, which is why an incomplete table is safe. Free, offline, and no
+// new dependency: the flag itself is a regional-indicator emoji pair, drawn as text.
+const COUNTRY_ISO = {
+  'Russia': 'RU', 'Turkey': 'TR', 'Japan': 'JP', 'United States': 'US', 'France': 'FR',
+  'Canada': 'CA', 'Argentina': 'AR', 'South Africa': 'ZA', 'Rwanda': 'RW', 'Germany': 'DE',
+  'United Kingdom': 'GB', 'Italy': 'IT', 'Spain': 'ES', 'Portugal': 'PT', 'Poland': 'PL',
+  'Ukraine': 'UA', 'Greece': 'GR', 'Sweden': 'SE', 'Norway': 'NO', 'Denmark': 'DK',
+  'Finland': 'FI', 'Netherlands': 'NL', 'Belgium': 'BE', 'Austria': 'AT', 'Switzerland': 'CH',
+  'Ireland': 'IE', 'Hungary': 'HU', 'Czechia': 'CZ', 'Romania': 'RO', 'Serbia': 'RS',
+  'China': 'CN', 'South Korea': 'KR', 'India': 'IN', 'Iran': 'IR', 'Israel': 'IL',
+  'Egypt': 'EG', 'Nigeria': 'NG', 'Senegal': 'SN', 'Morocco': 'MA', 'Algeria': 'DZ',
+  'Mexico': 'MX', 'Brazil': 'BR', 'Chile': 'CL', 'Colombia': 'CO', 'Cuba': 'CU',
+  'Australia': 'AU', 'New Zealand': 'NZ', 'Thailand': 'TH', 'Vietnam': 'VN', 'Indonesia': 'ID',
+  'Taiwan': 'TW', 'Philippines': 'PH', 'Cambodia': 'KH', 'Lebanon': 'LB', 'Syria': 'SY',
+  'Bosnia and Herzegovina': 'BA', 'Croatia': 'HR', 'Georgia': 'GE', 'Armenia': 'AM',
+  'Kazakhstan': 'KZ', 'Congo': 'CG', 'Dem. Rep. Congo': 'CD', 'Ethiopia': 'ET',
+  'Kenya': 'KE', 'Burundi': 'BI', 'Uganda': 'UG', 'Angola': 'AO', 'Mali': 'ML',
+};
+const _flagGlyph = new Map();
+function countryFlag(name) {
+  if (_flagGlyph.has(name)) return _flagGlyph.get(name);
+  const iso = COUNTRY_ISO[name];
+  const glyph = iso
+    ? String.fromCodePoint(...iso.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65))
+    : null;
+  _flagGlyph.set(name, glyph);
+  return glyph;
+}
+// The page font stack has no flags in it; the emoji families do. Prepended rather than
+// substituted so the fallback chain still ends where gFont() ends.
+let _flagFontStack = null;
+function flagFont(px) {
+  if (!_flagFontStack) _flagFontStack = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",' +
+    (getComputedStyle(document.body).fontFamily || 'sans-serif');
+  return px + 'px ' + _flagFontStack;
+}
+
+// Draws whatever imagery this node has, clipped into its circle, and returns true if it
+// drew anything (the caller then rings it in the stage colour so the picture cannot bleed
+// into the edges behind it). World space, like the rest of the node pass.
+function paintNodeImagery(ctx, n, r, alpha) {
+  const path = nodePosterPath(n);
+  if (path) {
+    const img = nodeImageFor(path);
+    if (!img) return false; // still loading, or dead — the plain node stands in
+    const d = r * 2;
+    // Cover, not contain: a 2:3 poster letterboxed inside a circle would show more node
+    // than film. Scaled to the larger ratio and centred, so the circle is full.
+    const k = Math.max(d / (img.naturalWidth || d), d / (img.naturalHeight || d));
+    const w = (img.naturalWidth || d) * k, h = (img.naturalHeight || d) * k;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.clip();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, n.x - w / 2, n.y - h / 2, w, h);
+    ctx.restore();
+    return true;
+  }
+  if (n.type === 'country') {
+    const glyph = countryFlag(n.name);
+    if (!glyph) return false;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.clip();
+    ctx.globalAlpha = alpha;
+    // 2.7r rather than 2r: a flag emoji is drawn about three quarters as tall as its
+    // font size, so sizing it by WIDTH would leave the top and bottom of the circle bare.
+    ctx.font = flagFont(r * 2.7);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(glyph, n.x, n.y);
+    ctx.restore();
+    return true;
+  }
+  return false;
+}
+
 // ---------- Cluster regions ----------
 // A cluster is a place on the canvas, not a circle drawn at an arbitrary radius: the
 // region is the convex hull of the nodes that are actually in it, pushed outward and
@@ -3753,12 +3913,27 @@ function paintGraph() {
     ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
     ctx.fillStyle = gPaint(nodeColor(n), inkC);
     ctx.fill();
+    // 3b. The near band puts the real thing on the node: a film's poster, a country's
+    // flag, clipped into the circle just drawn (see paintNodeImagery). The alpha is the
+    // band weight, so it CROSS-FADES in over the ~200ms handover rather than popping the
+    // instant the wheel crosses 2.5x, and the fill underneath is what shows through until
+    // an image arrives. Off-screen nodes are skipped before anything is requested.
+    let imaged = false;
+    if (bw.near > 0.01 && nodeInView(n)) {
+      imaged = paintNodeImagery(ctx, n, r, alpha * bw.near);
+      // paintNodeImagery restores the clip but the current path is not part of that
+      // state, so the ring below is re-traced rather than assumed.
+      if (imaged) { ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); }
+    }
     // A ring in the STAGE colour, one screen pixel wide at every zoom — this is what
     // keeps two dots reading as two dots wherever the layout crowds them. Screen-constant
     // because crowding is a screen-space problem: the old world-unit ring was half a
     // pixel at the default zoom (invisible, exactly where it was needed) and a fat collar
     // at 16x. The focus ring is the same rule at 2.5px in ink.
-    ctx.lineWidth = (focused ? 2.5 : 1) / (s || 1);
+    // ...and a touch wider over an image, so a poster cannot bleed into the edges
+    // running behind it. Interpolated on the band weight so the ring does not jump a
+    // width halfway through the cross-fade.
+    ctx.lineWidth = (focused ? 2.5 : (imaged ? 1 + 0.6 * bw.near : 1)) / (s || 1);
     ctx.strokeStyle = focused ? inkC : stageC;
     ctx.stroke();
     // Dropped by a drag and therefore PINNED: the simulation no longer moves it. The
