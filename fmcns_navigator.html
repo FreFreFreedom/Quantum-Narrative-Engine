@@ -1361,6 +1361,16 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    absolutely positioned against .arch-stage, stay put instead of scrolling
    away with the content. */
 .arch-scrollwrap { position:absolute; inset:0; overflow:auto; padding:18px 20px 90px; }
+/* ---------- Map layout (circle-packed canvas) ---------- */
+/* The one layout that does NOT scroll natively: it is a 2D canvas panned and
+   zoomed by NavCtrl, exactly like the Content graph. `touch-action:none` is what
+   lets NavCtrl's pinch handler see both fingers instead of the browser scrolling
+   the pane out from under it. */
+.arch-mapwrap { position:absolute; inset:0; overflow:hidden; }
+#archMapCanvas { display:block; width:100%; height:100%; cursor:grab; outline:none; touch-action:none; }
+#archMapCanvas.is-hit { cursor:pointer; }
+#archMapCanvas.nav-panning { cursor:grabbing; }
+.arch-mapnote { position:absolute; left:0; right:0; top:44%; text-align:center; font-size:12px; color:var(--c-ink-4); pointer-events:none; }
 .arch-treesvg { display:block; }
 .arch-tcol-label { font-size:13px; font-weight:700; letter-spacing:.06em; fill:var(--c-ink-4); pointer-events:none; }
 /* Tech Tree nodes. Deliberately NOT .arch-node — see the comment on
@@ -1821,7 +1831,7 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
   <div class="ws-shell">
-    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage(), initBlocks() into #tvBodyBlocks | backend: services/architecture.js, services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
+    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage() with three layouts — Checklist (archDrawChecklist()), Tech Tree (archDrawTree()) and Map, a zoomable d3.pack() circle-packing on #archMapCanvas (paintArchMap()/requestArchMapRender(), umbrella grouping from GET /api/architecture/umbrellas, colour = status ramp, area = nodes beneath, click-to-zoom via archMapTap()/archMapFitTo()); initBlocks() into #tvBodyBlocks | backend: services/architecture.js, services/umbrellas.js, services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
       <div class="arch-inner-tabs">
         <button class="active" data-arch-tab="graph">Graph</button>
         <button data-arch-tab="blocks">Building blocks</button>
@@ -1833,6 +1843,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <span class="arch-layoutseg" role="group" aria-label="Layout">
             <button class="active" data-arch-layout="list" title="Compact checklist grouped by territory — best for tracking progress">Checklist</button>
             <button data-arch-layout="techtree" title="Dependency columns by build order — shows what unlocks what">Tech Tree</button>
+            <button data-arch-layout="map" title="Circle-packed groups — click a group to zoom into it">Map</button>
           </span>
           <span class="arch-statusseg arch-segdivider" role="group" aria-label="Status filter">
             <button class="active" data-arch-status="all" title="Show everything">All</button>
@@ -6380,11 +6391,14 @@ function jumpToQueueItem(id) {
 
 // Mirror of jumpToQueueItem for the tech tree: switch to Architecture, force the
 // Tree layout (a planted Seed only appears there), and select the node.
+// (It used to force `'tree'`, a layout that has not existed for some time — so the
+// jump silently landed on the checklist with no layout button lit. `'techtree'` is
+// the real name of the layout this line has always meant.)
 function jumpToArchNode(id) {
   setMode('core');
   archTab = 'graph';
   switchCoreView('arch');
-  archLayout = 'tree';
+  archLayout = 'techtree';
   syncArchControls();
   renderArchStage();
   selectArchNode(id);
@@ -12102,6 +12116,30 @@ function renderArchQueueBanner() {
   el.title = detail;
 }
 
+// NavCtrl pan/zoom/pinch/keyboard for the one layout that is a canvas. Checklist and
+// Tech Tree pan by native overflow:auto scrolling and want none of this.
+//
+// This used to be a closure inside initArchNav() testing `archLayout === 'map' ||
+// archLayout === 'tree'` against an #archCanvas element that no surviving code
+// produced — neither layout existed, so it had been a no-op for a long time. 'map' is
+// real now; 'tree' never comes back, so it is gone rather than left as a second lie.
+// Lifted to the top level because renderArchStage() rebuilds the stage's innerHTML
+// (and with it the canvas) on every render, so the attach has to be reachable from
+// there and not only from init.
+function attachArchNav() {
+  if (archLayout !== 'map') return;
+  const container = document.getElementById('archMapCanvas');
+  if (!container || container._navAttached) return;
+  container._navAttached = true;
+  NavCtrl(container, archMapCam, applyArchMapCam, {
+    minScale: 0.18, maxScale: 8, step: 1.15, keyPan: 80,
+    fit: fitArchMap,
+    home: fitArchMap,
+    fixedViewBox: true,
+    onTap: archMapTap,
+  });
+}
+
 async function initArchNav() {
   if (archInited) return; archInited = true;
   syncArchControls();
@@ -12144,23 +12182,8 @@ async function initArchNav() {
     const id = node ? node.getAttribute('data-arch-id') : null;
     if (id !== archHover) { archHover = id; if (archEdgesOn) drawArchDeps(); }
   });
-  // NavCtrl for pan/zoom/pinch on the canvas (Map/Tree) or scrollwrap (Checklist/TechTree).
-  // Attaches to the actual content container for the current layout.
-  const attachNav = () => {
-    const isCanvas = archLayout === 'map' || archLayout === 'tree';
-    if (!isCanvas) return; // checklist/techtree use native overflow:auto scroll
-    const container = document.getElementById('archCanvas');
-    if (!container || container._navAttached) return;
-    container._navAttached = true;
-    NavCtrl(container, archViewport, applyArchTransform, {
-      minScale: 0.18, maxScale: 4, step: 1.15, keyPan: 80,
-      fit: fitArchCanvas,
-      fixedViewBox: true,
-    });
-  };
-  attachNav();
-  // Re-attach when layout changes (handled by renderArchStage which calls this after render).
-  // Layout switch buttons already call renderArchStage, so just re-attach each time.
+  // No attach here: the canvas does not exist until a render has produced it, and
+  // every render that draws the Map goes through archMapEnter(), which attaches.
   renderArchStage();
   await loadArchLiveData();
   renderArchStage();
@@ -12194,6 +12217,9 @@ function archTreeSvg() {
 
 // Zoom around a point in the stage's coordinate space (null = stage center), clamped.
 function zoomArchCanvas(ratio, at) {
+  // The Map layout owns its own camera (NavCtrl on #archMapCanvas), so the − / +
+  // buttons hand off to it rather than scaling an SVG that is not on screen.
+  if (archLayout === 'map') { archMapZoomBy(ratio); return; }
   const svg = archTreeSvg();
   if (svg) {
     const host = document.getElementById('archTreeHost');
@@ -12219,6 +12245,9 @@ function zoomArchCanvas(ratio, at) {
 
 // Center the whole graph in the stage at a comfortable scale.
 function fitArchCanvas() {
+  // Map: back all the way out to the whole packing, which is also what the F key
+  // and NavCtrl's own `fit` option reach.
+  if (archLayout === 'map') { fitArchMap(); return; }
   const svg = archTreeSvg();
   if (svg) {
     // The tree is already laid out to fit the pane's width (see archDrawTree), so
@@ -12455,6 +12484,9 @@ function archFocusName(id) {
 // Whichever layout is showing right now — selection, filters, edge toggle and
 // live-data reloads all funnel through this instead of assuming one renderer.
 function archRedrawCurrent() {
+  // The map is a canvas whose picture is a pure function of the camera and the data,
+  // so "redraw" is a repaint — rebuilding it would throw away the zoom and the fly.
+  if (archLayout === 'map') { requestArchMapRender(); return; }
   // archDrawTree writes a fresh SVG at natural size, so the current zoom has to be
   // re-applied or every redraw (an edges toggle, a filter change) silently resets it.
   if (archLayout === 'techtree') { archDrawTree(); applyArchTransform(); }
@@ -12765,6 +12797,475 @@ function archDrawChecklist() {
   pool.forEach(c => { archPrevStates[c.id] = archNodeState(c); });
 }
 
+
+// ---------- Map layout: the zoomable circle-packed map ----------
+// Plan: an-architecture-that-knows-what-it-is.md §4, fragment
+// plans/fragments/12-architecture-packed-map.md.
+//
+// The hierarchy is NOT built here. GET /api/architecture/umbrellas already returns
+// a d3.pack()-ready {root:{id,name,children:[umbrella,{...leaves}]}} with `value` on
+// every leaf (services/umbrellas.js#getUmbrellaMap), so this file only draws it.
+//
+// Two things the plan says that the data does not yet support, and what is drawn
+// instead (checked against production on 2026-08-22):
+//   • "area = how much beneath it is Live" — every node is lifecycle `concept` and
+//     not one has a passing witness, so a live-mass map would be uniformly empty.
+//     Area is the node count beneath, which is exactly what `value` already carries.
+//   • "colour carries lifecycle" — same reason. Colour carries `status`, which is
+//     populated (75 Concept · 2 Designed · 2 Prototype), on one faint→solid ramp.
+// When witnesses start passing, the lifecycle version of both is the better picture.
+//
+// Everything about how this paints is borrowed from the Content graph rather than
+// re-invented: one dirty flag into requestAnimationFrame, a devicePixelRatio backing
+// store re-sized by a ResizeObserver, the LBL_* fonts with their measureText cache,
+// haloed labels through drawLabel(), and makeLabelSpace() for collision. The camera
+// is NavCtrl, the same controller Map mode and the Content graph use.
+
+const ARCH_MAP_WORLD = 1000;   // the pack is laid out once into a fixed square world
+const ARCH_MAP_PAD = 26;       // screen px of breathing room when a circle is fitted
+const ARCH_MAP_FLY_MS = 350;
+
+// The status ramp — this map's own small set, deliberately NOT the Content graph's
+// hand-tuned CLUSTER/TYPE palettes and not the badge colours in STATUS_COLORS (which
+// are six unrelated hues, not a ramp). One family, faint at Concept and solid at
+// Advanced, so "how far along is this?" is legible without reading a single word.
+// Canvas gets no CSS, so both sets are read fresh on every frame — never cached at
+// boot, or a theme flip would leave the light ramp painted on a dark ground.
+const ARCH_MAP_RAMP_LIGHT = {
+  Concept: '#cac2b1', Designed: '#a8b79b', Prototype: '#83a98e',
+  Working: '#5b9a7c', Validated: '#3a8365', Advanced: '#286850',
+};
+const ARCH_MAP_RAMP_DARK = {
+  Concept: '#3e4650', Designed: '#4f6459', Prototype: '#658c74',
+  Working: '#7db998', Validated: '#95cfaf', Advanced: '#aee1c5',
+};
+function archMapIsDark() { return document.documentElement.classList.contains('dark'); }
+function archMapStatusColor(status) {
+  const ramp = archMapIsDark() ? ARCH_MAP_RAMP_DARK : ARCH_MAP_RAMP_LIGHT;
+  return ramp[status] || ramp.Concept;
+}
+
+// The file's global reduced-motion CSS block only reaches CSS animations and
+// transitions. A canvas fly-to is neither, so it has to ask in JS.
+function archReduceMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+let archMapData = null, archMapErr = null, archMapLoading = false;
+let archMapRoot = null, archMapNodes = null, archMapFocusNode = null;
+let archMapHover = null;
+const archMapCam = { x: 0, y: 0, scale: 1 };
+let _archMapCv = null, _archMapCtx = null, _archMapDpr = 1, _archMapW = 0, _archMapH = 0;
+let _archMapDirty = false, _archMapRAF = 0, _archMapFlyRAF = 0;
+let _archMapThemeWatched = false;
+// Whether the opening frame has ever been struck. The stage's innerHTML is rebuilt
+// on every render (a filter change, a witness re-check), and re-fitting there would
+// yank the view back from wherever it had been panned to. So: fit once, when there
+// is both a packing and a canvas with a size — and never again unasked.
+let _archMapFitted = false;
+
+function requestArchMapRender() {
+  _archMapDirty = true;
+  if (!_archMapRAF) _archMapRAF = requestAnimationFrame(() => {
+    _archMapRAF = 0;
+    if (!_archMapDirty) return;
+    _archMapDirty = false;
+    paintArchMap();
+  });
+}
+
+// Free (no request): the grouping only changes when the node set does, and the read
+// endpoint can never trigger a derivation. Fetched the first time Map is opened.
+async function archMapLoad(force) {
+  if (archMapLoading) return;
+  // Already loaded: re-packing would also re-fit, which would throw away the camera
+  // on every re-render. Only build if there is no packing yet.
+  if (archMapData && !force) { if (!archMapRoot) archMapBuild(); else requestArchMapRender(); return; }
+  archMapLoading = true; archMapErr = null;
+  requestArchMapRender();
+  try { archMapData = await api('/api/architecture/umbrellas'); }
+  catch (e) { archMapErr = (e && e.message) || 'could not load'; }
+  archMapLoading = false;
+  archMapBuild();
+}
+
+// d3.pack() over the hierarchy as it arrives. Leaves carry value 1, so a circle's
+// area is the number of components beneath it and the biggest umbrella is visibly
+// the biggest. Laid out once into a fixed world; resizing moves the camera, never
+// the packing, so a rail opening does not reshuffle the whole picture.
+function archMapBuild() {
+  archMapRoot = archMapNodes = archMapFocusNode = null;
+  _archMapFitted = false;
+  _archMapTerrCache.clear();
+  const root = archMapData && archMapData.root;
+  if (root && (root.children || []).length) {
+    const h = d3.hierarchy(root)
+      .sum(d => (d.children && d.children.length) ? 0 : (d.value || 1))
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+    archMapRoot = d3.pack().size([ARCH_MAP_WORLD, ARCH_MAP_WORLD]).padding(9)(h);
+    archMapNodes = archMapRoot.descendants();
+    archMapFocusNode = archMapRoot;
+    fitArchMap();
+  }
+  requestArchMapRender();
+}
+
+// The umbrella's own circle carries a category colour, and an umbrella has no
+// category of its own — it is derived. So it takes the territory most of its
+// children belong to, which is the honest answer and needs no new field.
+const _archMapTerrCache = new Map();
+function archMapUmbrellaColor(node) {
+  const id = node.data.id;
+  if (_archMapTerrCache.has(id)) return _archMapTerrCache.get(id);
+  const tally = {};
+  (node.children || []).forEach(c => { const t = c.data.territory; if (t) tally[t] = (tally[t] || 0) + 1; });
+  let best = null, n = 0;
+  for (const t in tally) if (tally[t] > n) { n = tally[t]; best = t; }
+  const col = (best && TERRITORY_COLORS[best]) || '#8a8378';
+  _archMapTerrCache.set(id, col);
+  return col;
+}
+
+// ── Camera ───────────────────────────────────────────────────────────────────
+function archMapSizeCanvas() {
+  if (!_archMapCv) return false;
+  const w = _archMapCv.clientWidth, h = _archMapCv.clientHeight;
+  if (!w || !h) return false; // hidden or mid-layout — nothing to size against yet
+  const dpr = window.devicePixelRatio || 1;
+  const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
+  if (_archMapCv.width !== bw || _archMapCv.height !== bh) { _archMapCv.width = bw; _archMapCv.height = bh; }
+  _archMapDpr = dpr; _archMapW = w; _archMapH = h;
+  return true;
+}
+
+// The scale at which the WHOLE map fits. The three detail bands are measured
+// against it rather than against absolute numbers, so they land in the same place
+// whether the panel is docked or the window is small.
+function archMapFitScale() {
+  if (!archMapRoot || !_archMapW || !_archMapH) return 1;
+  const d = archMapRoot.r * 2;
+  return Math.max(0.05, Math.min((_archMapW - ARCH_MAP_PAD * 2) / d, (_archMapH - ARCH_MAP_PAD * 2) / d));
+}
+
+function archMapCamFor(node) {
+  const d = node.r * 2;
+  const k = Math.max(0.05, Math.min((_archMapW - ARCH_MAP_PAD * 2) / d, (_archMapH - ARCH_MAP_PAD * 2) / d));
+  return { x: _archMapW / 2 - node.x * k, y: _archMapH / 2 - node.y * k, scale: k };
+}
+
+// Zoom-into-circle: the classic zoomable pack. Animated over ~350ms ease-out, and
+// skipped outright under Reduce Motion — canvas is invisible to the CSS block that
+// handles that everywhere else in the file.
+function archMapFitTo(node, animate) {
+  if (!node || !archMapSizeCanvas()) return;
+  archMapFlyTo(archMapCamFor(node), animate);
+}
+function fitArchMap() {
+  if (!archMapRoot) return;
+  archMapFocusNode = archMapRoot;
+  if (!archMapSizeCanvas()) return;
+  _archMapFitted = true;
+  archMapFlyTo(archMapCamFor(archMapRoot), false);
+}
+function archMapFlyTo(target, animate) {
+  if (_archMapFlyRAF) { cancelAnimationFrame(_archMapFlyRAF); _archMapFlyRAF = 0; }
+  if (!animate || archReduceMotion()) {
+    archMapCam.x = target.x; archMapCam.y = target.y; archMapCam.scale = target.scale;
+    requestArchMapRender();
+    return;
+  }
+  const from = { x: archMapCam.x, y: archMapCam.y, scale: archMapCam.scale };
+  const t0 = performance.now();
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / ARCH_MAP_FLY_MS);
+    const e = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    archMapCam.x = from.x + (target.x - from.x) * e;
+    archMapCam.y = from.y + (target.y - from.y) * e;
+    archMapCam.scale = from.scale + (target.scale - from.scale) * e;
+    requestArchMapRender();
+    _archMapFlyRAF = p < 1 ? requestAnimationFrame(step) : 0;
+  };
+  _archMapFlyRAF = requestAnimationFrame(step);
+}
+
+// NavCtrl's applyFn. A hand-driven pan or zoom supersedes a fly still in flight —
+// otherwise the animation would keep dragging the view back out from under it.
+function applyArchMapCam() {
+  if (_archMapFlyRAF) { cancelAnimationFrame(_archMapFlyRAF); _archMapFlyRAF = 0; }
+  requestArchMapRender();
+}
+function archMapZoomBy(ratio) {
+  if (!archMapSizeCanvas()) return;
+  const cx = _archMapW / 2, cy = _archMapH / 2;
+  const k = Math.min(8, Math.max(0.18, archMapCam.scale * ratio));
+  archMapCam.x = cx - ((cx - archMapCam.x) / archMapCam.scale) * k;
+  archMapCam.y = cy - ((cy - archMapCam.y) / archMapCam.scale) * k;
+  archMapCam.scale = k;
+  applyArchMapCam();
+}
+
+// ── Hit-testing ──────────────────────────────────────────────────────────────
+// No DOM elements to hang a click on, so both hover and click resolve against the
+// geometry. Deepest circle wins, which is what makes a leaf clickable inside the
+// umbrella that contains it.
+function archMapHit(px, py) {
+  if (!archMapNodes) return null;
+  const wx = (px - archMapCam.x) / archMapCam.scale, wy = (py - archMapCam.y) / archMapCam.scale;
+  let best = null;
+  for (const n of archMapNodes) {
+    if (!n.depth) continue;
+    const dx = wx - n.x, dy = wy - n.y;
+    if (dx * dx + dy * dy <= n.r * n.r && (!best || n.depth > best.depth)) best = n;
+  }
+  return best;
+}
+function archMapPoint(ev) {
+  const rect = _archMapCv.getBoundingClientRect();
+  return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+}
+
+// NavCtrl's onTap: a pointerup that never crossed its drag threshold. Clicking a
+// leaf opens the existing detail panel and nothing else — the Room button on that
+// panel is already the brainstorming path, and there is no second one here.
+function archMapTap(ev) {
+  if (!_archMapCv) return;
+  const p = archMapPoint(ev);
+  const hit = archMapHit(p.x, p.y);
+  if (!hit) { // the background: back out one level
+    if (archMapFocusNode && archMapFocusNode !== archMapRoot) { archMapFocusNode = archMapRoot; archMapFitTo(archMapRoot, true); }
+    deselectArchNode();
+    return;
+  }
+  if (hit.depth >= 2) { selectArchNode(hit.data.id); return; }
+  if (archMapFocusNode === hit) { archMapFocusNode = archMapRoot; archMapFitTo(archMapRoot, true); }
+  else { archMapFocusNode = hit; archMapFitTo(hit, true); }
+}
+
+function archMapMove(ev) {
+  if (!_archMapCv) return;
+  const p = archMapPoint(ev);
+  const hit = archMapHit(p.x, p.y);
+  const id = hit ? hit.data.id : null;
+  _archMapCv.classList.toggle('is-hit', !!hit);
+  if (id === archMapHover) return; // same circle — nothing to repaint or re-title
+  archMapHover = id;
+  const c = hit && hit.depth >= 2 ? ARCH_BY_ID[hit.data.id] : null;
+  _archMapCv.title = hit
+    ? (hit.depth >= 2
+        ? hit.data.name + ' · ' + (hit.data.status || 'Concept') + (c && archLifecycleNote(c) ? ' — ' + archLifecycleNote(c) : '')
+        : hit.data.name + ' · ' + hit.value + ' component' + (hit.value === 1 ? '' : 's'))
+    : '';
+  requestArchMapRender();
+}
+
+// ── The frame ────────────────────────────────────────────────────────────────
+// Three detail bands, measured against the fit scale (see archMapFitScale):
+//   far  — umbrella names only
+//   mid  — umbrella names plus the largest leaves
+//   near — every leaf that can find room
+function archMapBand() {
+  const rel = archMapCam.scale / (archMapFitScale() || 1);
+  return rel < 1.45 ? 'far' : (rel < 3 ? 'mid' : 'near');
+}
+
+function paintArchMap() {
+  const ctx = _archMapCtx;
+  if (!ctx || !archMapSizeCanvas()) return false;
+  const dpr = _archMapDpr, s = archMapCam.scale;
+  const dark = archMapIsDark();
+  const inkC = gVar('--c-ink', dark ? '#e6e9ee' : '#2b2721');
+  const inkDim = gVar('--c-ink-4', '#89806f');
+  const haloC = gVar('--c-halo', dark ? '#0c1017' : '#f4f2ee');
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, _archMapCv.width, _archMapCv.height);
+
+  const note = document.getElementById('archMapNote');
+  if (note) {
+    note.textContent = archMapLoading ? 'Loading…'
+      : archMapErr ? 'Could not load the grouping.'
+      : (!archMapRoot ? 'Nothing grouped yet.' : '');
+  }
+  if (!archMapRoot) return true;
+
+  // --- world space: the circles ---
+  ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * archMapCam.x, dpr * archMapCam.y);
+
+  // 1. Umbrellas: a wash of their territory colour with a ring of the same, so the
+  //    groups read as groups before a single name is legible.
+  (archMapRoot.children || []).forEach(u => {
+    const col = archMapUmbrellaColor(u);
+    const focused = archMapFocusNode === u;
+    ctx.beginPath(); ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2);
+    ctx.globalAlpha = dark ? 0.16 : 0.10;
+    ctx.fillStyle = col; ctx.fill();
+    ctx.globalAlpha = focused ? 0.9 : 0.42;
+    ctx.strokeStyle = col; ctx.lineWidth = (focused ? 2.4 : 1.4) / s; ctx.stroke();
+  });
+
+  // 2. Leaves, shaded by status. Retired is drawn hollow — it was built and is not
+  //    in the code any more, which is a different thing from never having existed.
+  (archMapNodes || []).forEach(n => {
+    if (n.depth < 2) return;
+    const c = ARCH_BY_ID[n.data.id];
+    const off = c ? archFilteredOff(c) : false;
+    const outFocus = archFocus && n.data.territory !== archFocus;
+    const dim = off || outFocus;
+    const retired = archIsRetired(c);
+    const selected = archSelected === n.data.id;
+    const hovered = archMapHover === n.data.id;
+    const col = archMapStatusColor(n.data.status);
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    if (retired) {
+      ctx.globalAlpha = dim ? 0.18 : 0.7;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.6 / s;
+      ctx.setLineDash([4 / s, 3 / s]); ctx.stroke(); ctx.setLineDash([]);
+    } else {
+      ctx.globalAlpha = dim ? 0.18 : 1;
+      ctx.fillStyle = col; ctx.fill();
+      // A separator ring in the page's own ground colour, so touching circles read
+      // as two circles rather than one blob. It has to be stronger on light, where
+      // the faint end of the ramp sits close to the umbrella wash behind it.
+      ctx.globalAlpha = dim ? 0.12 : (dark ? 0.34 : 0.6);
+      ctx.strokeStyle = dark ? '#0c1017' : '#ffffff'; ctx.lineWidth = 1.2 / s; ctx.stroke();
+    }
+    // A proposed node is not part of the tree yet — dashed, the same signal the
+    // other two layouts already use for it.
+    if (n.data.proposed && !retired) {
+      ctx.globalAlpha = dim ? 0.2 : 0.75;
+      ctx.strokeStyle = inkDim; ctx.lineWidth = 1.2 / s;
+      ctx.setLineDash([3 / s, 3 / s]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (selected || hovered) {
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 3 / s, 0, Math.PI * 2);
+      ctx.globalAlpha = selected ? 1 : 0.5;
+      ctx.strokeStyle = inkC; ctx.lineWidth = (selected ? 2.2 : 1.6) / s; ctx.stroke();
+    }
+  });
+  ctx.globalAlpha = 1;
+
+  // --- screen space: labels ---
+  // Positions projected by hand so text stays one size at every zoom, and every
+  // label is haloed — the same pass the Content graph runs.
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  _curLabelFont = null; // the width cache is shared with the Content graph's canvas
+  const space = makeLabelSpace();
+  const band = archMapBand();
+  const toS = (wx, wy) => ({ x: archMapCam.x + wx * s, y: archMapCam.y + wy * s });
+
+  // 4a. Umbrella names first, so they win every contest with a component name —
+  //     at any distance the groups are the point of the picture.
+  (archMapRoot.children || []).forEach(u => {
+    const p = toS(u.x, u.y);
+    const rs = u.r * s;
+    if (p.x + rs < -60 || p.x - rs > _archMapW + 60 || p.y + rs < -40 || p.y - rs > _archMapH + 40) return;
+    if (rs < 26) return; // too small on screen to name honestly
+    const f = band === 'far' ? LBL_ZONE_FAR : LBL_ZONE;
+    const txt = truncate(u.data.name, 26);
+    const half = labelWidth(ctx, f, txt) / 2 + 5;
+    // On the group's top edge rather than through its middle. A packed circle is
+    // full of leaves all the way to the centre, so a centred name sits on top of
+    // three or four of them; the rim is the one place inside the circle that is
+    // reliably quiet.
+    let y = p.y - rs + f.px + 3;
+    // Two neighbouring groups can want the same gap; one nudge upward usually
+    // settles it, and a name that still has nowhere to go is dropped, not overprinted.
+    const box = () => ({ x0: p.x - half, x1: p.x + half, y0: y - f.px, y1: y + f.px * 0.35 });
+    if (!space.take(box())) { y -= f.px + 4; if (!space.take(box())) return; }
+    drawLabel(ctx, f, txt, p.x, y, band === 'far' ? 0.95 : 0.8, gPaint(archMapUmbrellaColor(u), inkDim), haloC);
+  });
+
+  // 4b. Component names. In `mid` only the leaves that are already large on screen
+  //     are offered; in `near` every one of them is, biggest first, and anything
+  //     that lands on a taken box is simply not drawn.
+  if (band !== 'far') {
+    // Every leaf is value 1 today, so they all pack to the same radius and "the
+    // largest leaves" is decided by which ones win room rather than by size. The
+    // size gate still matters — it is what stops a name being offered for a circle
+    // it cannot possibly sit in — and it is what will do the sorting once leaves
+    // stop being all the same size.
+    const minR = band === 'mid' ? 16 : 8;
+    const cands = [];
+    (archMapNodes || []).forEach(n => {
+      if (n.depth < 2) return;
+      const rs = n.r * s;
+      if (rs < minR) return;
+      const p = toS(n.x, n.y);
+      if (p.x < -140 || p.x > _archMapW + 140 || p.y < -40 || p.y > _archMapH + 40) return;
+      const rank = rs + (archSelected === n.data.id ? 1e6 : 0) + (archMapHover === n.data.id ? 5e5 : 0);
+      cands.push({ n, p, rs, rank });
+    });
+    cands.sort((a, b) => b.rank - a.rank);
+    for (const cd of cands) {
+      const n = cd.n;
+      const c = ARCH_BY_ID[n.data.id];
+      const dim = (c ? archFilteredOff(c) : false) || (archFocus && n.data.territory !== archFocus);
+      const focused = archSelected === n.data.id || archMapHover === n.data.id;
+      const f = focused ? LBL_FOCUS : LBL_NODE;
+      const txt = truncate(n.data.name, band === 'near' ? 22 : 16);
+      const half = labelWidth(ctx, f, txt) / 2 + 3;
+      // Names are wider than the circles they belong to, so at close range two
+      // neighbours contest the same strip. One nudge down the circle settles most
+      // of them; anything still homeless is dropped rather than overprinted.
+      let y = cd.p.y + f.px * 0.34;
+      const box = () => ({ x0: cd.p.x - half, x1: cd.p.x + half, y0: y - f.px * 0.85, y1: y + f.px * 0.3 });
+      if (!space.take(box())) {
+        y += f.px + 4;
+        if (y - cd.p.y > cd.rs || !space.take(box())) continue;
+      }
+      drawLabel(ctx, f, txt, cd.p.x, y, dim ? 0.2 : 1, inkC, haloC);
+    }
+  }
+  ctx.globalAlpha = 1;
+  return true;
+}
+
+// Entered on every renderArchStage() that draws the Map, because the stage's
+// innerHTML is rebuilt each time and the canvas with it. The packing survives (it
+// is data, not layout); the context, the observers and NavCtrl are re-hung.
+function archMapEnter() {
+  const cv = document.getElementById('archMapCanvas');
+  if (!cv) return;
+  _archMapCv = cv;
+  _archMapCtx = cv.getContext('2d');
+  cv.addEventListener('mousemove', archMapMove);
+  cv.addEventListener('mouseleave', () => {
+    if (archMapHover) { archMapHover = null; requestArchMapRender(); }
+    cv.classList.remove('is-hit');
+  });
+  // NavCtrl takes focus when it attaches, which is right the first time and rude on
+  // a re-render triggered from a toolbar control — so whatever was focused keeps it.
+  const prev = document.activeElement;
+  attachArchNav();
+  if (prev && prev !== cv && prev !== document.body && document.contains(prev)) {
+    try { prev.focus({ preventScroll: true }); } catch (e) { /* focus is best-effort */ }
+  }
+  // The backing store is in device pixels and the CSS box in layout pixels, so the
+  // map re-sharpens when the detail panel docks or the window changes.
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+    if (!archMapSizeCanvas()) return;
+    if (!_archMapFitted && archMapRoot) fitArchMap(); // unmeasurable when the pack landed
+    requestArchMapRender();
+  }) : null;
+  if (ro) ro.observe(cv);
+  // Canvas gets no CSS: a theme flip has to be repainted by hand, with every colour
+  // re-read rather than reused. (The Content graph's own observer clears the shared
+  // CSS-variable cache; clearing it here too keeps this independent of that order.)
+  if (!_archMapThemeWatched) {
+    _archMapThemeWatched = true;
+    new MutationObserver(() => { _gVarCache.clear(); requestArchMapRender(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
+  archMapSizeCanvas();
+  if (archMapRoot && !_archMapFitted) fitArchMap();
+  requestArchMapRender();
+  archMapLoad();
+}
+
 function renderArchStage() {
   const stage = document.getElementById('archStage');
   if (!stage) return;
@@ -12782,6 +13283,7 @@ function renderArchStage() {
       ${archFocus ? `<span class="arch-focusmeta">${qEsc((() => { const s = archTerritoryStats(archFocus); return `${s.total} components · ${s.built} built · ${s.locked} need work${s.spec ? ' · ' + s.spec + ' speculative' : ''}`; })())}</span>` : ''}
     </div>
     ${archLayout === 'techtree' ? `<div class="arch-scrollwrap" id="archTreeHost"></div>`
+      : archLayout === 'map' ? `<div class="arch-mapwrap" id="archMapHost"><canvas id="archMapCanvas" role="img" aria-label="Circle-packed map of the architecture, grouped into umbrellas"></canvas><div class="arch-mapnote" id="archMapNote"></div></div>`
       : `<div class="arch-scrollwrap" id="archListHost"></div>`}
     <div class="arch-ask" id="archAsk">
       <div class="arch-ask-inputrow">
@@ -12790,11 +13292,11 @@ function renderArchStage() {
       </div>
       <div class="arch-ask-answer" id="archAskAnswer" hidden></div>
     </div>
-    ${archLayout === 'techtree' ? `<div class="arch-zoombtns">
+    ${(archLayout === 'techtree' || archLayout === 'map') ? `<div class="arch-zoombtns">
       <button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
       <button data-arch-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
       <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>
-      <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
+      ${archLayout === 'techtree' ? `<button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>` : ''}
     </div>` : ''}`;
   wireArchStageControls();
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = (e) => { if (e.target.closest && e.target.closest('.cardbtn')) return; selectArchNode(n.getAttribute('data-arch-id')); }; });
@@ -12841,6 +13343,7 @@ function renderArchStage() {
     };
   });
   if (archLayout === 'techtree') { archDrawTree(); return; }
+  if (archLayout === 'map') { archMapEnter(); return; }
   archDrawChecklist(); // default to list
   // (Removed a call to attachNav() here: it is a const declared inside
   // initArchNav(), so from this top-level function it threw a ReferenceError on

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED 2026-08-22 |
+| **Status** | DONE 2026-08-22 — Map is the third layout in the Graph inner tab; colour = status, area = nodes beneath, as the two corrections below require |
 | **Parent plan** | `plans/an-architecture-that-knows-what-it-is.md` |
 | **Part of** | the fragment chain in `plans/fragments/` — run in filename order |
 
