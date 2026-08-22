@@ -3,7 +3,7 @@
 // promptQueue.createPrompt() instead of a generic seam.
 import { randomUUID } from 'node:crypto';
 import * as queue from './promptQueue.js';
-import { createNode } from './architectureNodes.js';
+import { createNode, fallbackWitness } from './architectureNodes.js';
 import { cardLine, eagerCardLine } from './cardLines.js';
 
 let db = null;
@@ -91,6 +91,10 @@ export function plantIdea(id, { territory = 'reasoning', depends = [] } = {}) {
     depends,
     status: 'Concept',
     provenance: 'canon',
+    // Every node needs a witness (architectureNodes.js). A Seed is an idea with
+    // nothing built to point at, so it starts on the derived slug and is corrected
+    // on the node itself — planting must never fail for want of one.
+    ...fallbackWitness(idea.title),
   });
   if (out.error) return { error: out.error };
   db.prepare(`UPDATE work_ideas SET arch_node_id=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(out.node.id, id);

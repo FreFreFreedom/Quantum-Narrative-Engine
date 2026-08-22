@@ -499,6 +499,11 @@ function initSchema(db) {
   // clearing so regeneration isn't blocked by their title fingerprints — see
   // bootstrapData.js. This flips to 1 after that cleanup runs once, ever.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN suggestions_relang_done INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // One-time cleanup flag: architecture_nodes held a node literally named `test`,
+  // left over from trying the node API out. It is junk in the middle of the tech
+  // tree, so it is soft-deleted once, ever (bootstrapData.js). Flag-guarded rather
+  // than a standing rule so a node Antoine deliberately names "test" later is his.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN arch_test_node_cleaned INTEGER NOT NULL DEFAULT 0`); } catch {}
   // Monthly ceiling on the ONE paid lane in the app: gpt-4o for Idea Studio
   // conversations (see services/billingGuard.js and services/openaiSpend.js).
   // Unlike every other budget here, going over does not degrade an optional
@@ -1002,6 +1007,32 @@ export function initArchitectureSchema(db) {
   // every surface that listed a node used to slice it mid-sentence. This is the
   // written one-liner those rows show instead.
   try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN summary TEXT`); } catch {}
+
+  // ─── The witness (plan an-architecture-that-knows-what-it-is, section 1) ──────
+  // Every node declares how the app could PROVE it exists: a file, a symbol, a
+  // route, a table, or a SQL query that returns something. Required at creation
+  // (architectureNodes.createNode) — this is the mechanism that stops the tech
+  // tree from only ever growing, because a node that can never be proven can be
+  // retired instead of accumulating forever.
+  //
+  // NOT architecture_node_evidence: that table links a node to a GitHub discovery
+  // pick (repo_full_name, stars), which is a different thing entirely.
+  //
+  // witness_ok / witness_checked_at / witness_first_ok_at are written by the
+  // checker (next fragment), never here. witness_first_ok_at is the node's real
+  // "built on" date — the first moment the app could see the thing itself.
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_kind TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_value TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_ok INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_checked_at TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_first_ok_at TEXT`); } catch {}
+  // Lifecycle: concept -> planned -> building -> live -> retired. Only 'concept'
+  // is stored at creation; 'planned' and 'building' are DERIVED on read from a
+  // queued/running work_prompts row tagged to the node (component_id), so they
+  // can never drift out of date. 'live' and 'retired' are written by the witness
+  // checker. No CHECK constraint: ALTER TABLE ... ADD COLUMN cannot add one in
+  // SQLite, and the value is validated in architectureNodes.js instead.
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN lifecycle TEXT NOT NULL DEFAULT 'concept'`); } catch {}
   db.exec(`
     CREATE TABLE IF NOT EXISTS tree_sync_state (
       id INTEGER PRIMARY KEY CHECK(id=1),

@@ -153,3 +153,23 @@ export function cleanupFrenchSuggestions(db) {
   db.prepare(`UPDATE ai_settings SET suggestions_relang_done=1 WHERE id='global'`).run();
   return { cleared: result.changes };
 }
+
+// One-time cleanup: architecture_nodes held a node literally named `test`, left
+// over from trying the node API out, sitting in the middle of the tech tree as
+// junk. Soft-deleted (the same delete the UI does, so the same idea could be
+// planted again) and the fingerprint cleared so the name is not held hostage.
+//
+// Guarded by ai_settings.arch_test_node_cleaned rather than run as a standing
+// rule: this is a specific piece of leftover, not a policy that any node named
+// "test" is junk forever.
+export function cleanupTestArchNode(db) {
+  const row = db.prepare(`SELECT arch_test_node_cleaned FROM ai_settings WHERE id='global'`).get();
+  if (!row || row.arch_test_node_cleaned) return { skipped: true };
+  const result = db.prepare(`
+    UPDATE architecture_nodes
+       SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), fingerprint=NULL
+     WHERE deleted_at IS NULL AND lower(trim(name))='test'
+  `).run();
+  db.prepare(`UPDATE ai_settings SET arch_test_node_cleaned=1 WHERE id='global'`).run();
+  return { removed: result.changes };
+}

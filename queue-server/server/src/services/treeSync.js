@@ -21,7 +21,7 @@
 // obey the same model policy and free-first lane as every other text feature.
 
 import { existsSync } from 'node:fs';
-import { createNode } from './architectureNodes.js';
+import { createNode, fallbackWitness } from './architectureNodes.js';
 import { generateText } from './ai/text.js';
 import { parseJsonObject } from './codeDiscovery.js';
 import { mainRepo, gitLogSummaries, gitDiffStat, gitChangedFiles, gitHeadSha, gitFetchOriginTrunk } from './gitOps.js';
@@ -50,9 +50,40 @@ Decide whether this change is a SIGNIFICANT FEATURE — a real new capability or
 
 If significant, propose up to ${MAX_PROPOSALS} tech-tree nodes for it: a short name, the territory it belongs to (one of perception|knowledge|reasoning|experience|interface), one sentence on WHAT it is, one sentence on WHY it matters in this system. If nothing is significant, return an empty proposals list.
 
+For each proposal, also name the proof it exists — you can see the code, so this costs you nothing: witness_file is the ONE path from the file list above that this feature most lives in (copy it exactly, and never a deleted file), and witness_symbol is the function, class, route or table name it is most identifiable by, if one is visible in the commit messages or the paths.
+
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"proposals":[{"name":"short node name","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence: what this feature is","why":"one sentence: why it matters to the system"}]}`;
+{"proposals":[{"name":"short node name","territory":"one of perception|knowledge|reasoning|experience|interface","what":"one sentence: what this feature is","why":"one sentence: why it matters to the system","witness_file":"exact path from the list","witness_symbol":"a name, or empty"}]}`;
 }
+
+// `git diff --name-status` lines: "M\tpath", or "R100\told\tnew" for a rename —
+// the path is always the last field. Deleted files are dropped: a witness pointing
+// at something the same diff removed can never pass.
+function livePaths(changed) {
+  const out = [];
+  for (const line of changed || []) {
+    const parts = String(line).split('\t').filter(Boolean);
+    if (parts.length < 2 || parts[0].startsWith('D')) continue;
+    out.push(parts[parts.length - 1]);
+  }
+  return out;
+}
+
+// The witness (plan an-architecture-that-knows-what-it-is, section 1) costs this
+// path nothing: the classifier already sees the changed file list, so the file the
+// proposal is based on IS its proof of existence. The model's answer is checked
+// against the real list — a hallucinated path would be a witness that can never
+// pass, which is worse than no answer. Order of preference: the named file, the
+// named symbol, then simply the first file in the diff.
+function witnessFor(proposal, paths) {
+  const file = String(proposal.witness_file || '').trim();
+  if (file && paths.includes(file)) return { witness_kind: 'file', witness_value: file };
+  const symbol = String(proposal.witness_symbol || '').trim();
+  if (symbol) return { witness_kind: 'symbol', witness_value: symbol };
+  if (paths.length) return { witness_kind: 'file', witness_value: paths[0] };
+  return fallbackWitness(proposal.name);
+}
+
 
 // Create the proposal node (speculative → the tree draws it dashed) and stamp it
 // with the sync metadata. Duplicate fingerprints (same parent+name) are a no-op.
@@ -65,7 +96,7 @@ Respond with ONLY a JSON object, no prose, no markdown fence:
 // status, not on provenance/proposed) as if they still needed to be built.
 // `provenance: 'speculative'` + `proposed: 1` still stand — that's what keeps
 // the node awaiting your accept/reject review; only the built-ness was wrong.
-function createProposal(db, proposal, { source, promptId = null, sha = null }) {
+function createProposal(db, proposal, { source, promptId = null, sha = null, paths = [] }) {
   const out = createNode(db, {
     name: proposal.name,
     territory: proposal.territory,
@@ -75,6 +106,7 @@ function createProposal(db, proposal, { source, promptId = null, sha = null }) {
     status: 'Working',
     provenance: 'speculative',
     parent_node_id: null,
+    ...witnessFor(proposal, paths),
   });
   if (out.error) return out;
   db.prepare(`
@@ -110,7 +142,7 @@ export async function syncFromTask(db, promptId) {
     if (out.error) return { error: out.error, message: out.message };
     const parsed = parseJsonObject(out.text);
     const proposals = (parsed?.proposals || []).filter(p => p && p.name).slice(0, MAX_PROPOSALS);
-    const results = proposals.map(p => createProposal(db, p, { source: 'queue', promptId, sha: head }));
+    const results = proposals.map(p => createProposal(db, p, { source: 'queue', promptId, sha: head, paths: livePaths(changed) }));
     return { created: results.filter(r => !r.error).length, proposals: results.map(r => r.node?.name || null) };
   } catch (e) {
     console.error('[treeSync] syncFromTask failed —', e.message);
@@ -173,7 +205,7 @@ export async function syncFromGit(db) {
     }
     const parsed = parseJsonObject(out.text);
     const proposals = (parsed?.proposals || []).filter(p => p && p.name).slice(0, MAX_PROPOSALS);
-    const results = proposals.map(p => createProposal(db, p, { source: 'git', sha: head }));
+    const results = proposals.map(p => createProposal(db, p, { source: 'git', sha: head, paths: livePaths(changed) }));
     db.prepare(`UPDATE tree_sync_state SET last_sha=?, last_run_at=?, last_error=NULL WHERE id=1`).run(head, now());
     return { created: results.filter(r => !r.error).length, proposals: results.map(r => r.node?.name || null), last_sha: head };
   } catch (e) {

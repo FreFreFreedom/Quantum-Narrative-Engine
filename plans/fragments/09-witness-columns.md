@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED 2026-08-22 |
+| **Status** | DONE 2026-08-22 |
 | **Parent plan** | `plans/an-architecture-that-knows-what-it-is.md` |
 | **Part of** | the overnight chain filed in `plans/fragments/` — run in filename order |
 

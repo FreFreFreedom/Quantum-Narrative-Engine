@@ -51,7 +51,8 @@ export function architectureRoutes(db) {
 
   router.patch('/nodes/:id', (req, res) => {
     const out = updateNode(db, req.params.id, req.body || {});
-    if (out.error) return res.status(404).json(out);
+    // A refused edit is not a missing node: emptying the witness is a bad request.
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
     res.json(out);
   });
 
