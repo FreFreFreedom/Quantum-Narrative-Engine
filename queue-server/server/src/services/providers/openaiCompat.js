@@ -96,7 +96,7 @@ export async function runToolless({ prompt, model, providerId, timeoutMs = 60_00
   if (out.error) return { code: -1, text: out.message || out.error, limit: out.limit || null };
   const text = out.data?.choices?.[0]?.message?.content?.trim() || '';
   if (!text) return { code: -1, text: 'empty_response' };
-  return { code: 0, text };
+  return { code: 0, text, usage: out.data?.usage || null };
 }
 
 // ─── Tool-capable chat call (chat.js free-fallback path) ──────────────────────
@@ -157,6 +157,7 @@ export async function chatCompletion({ providerId, model, system, messages, tool
   const choice = out.data?.choices?.[0];
   const msg = choice?.message || {};
   const toolCalls = msg.tool_calls || [];
+  const usage = out.data?.usage || null;
   if (toolCalls.length) {
     const content = toolCalls.map((tc) => ({
       type: 'tool_use',
@@ -164,10 +165,10 @@ export async function chatCompletion({ providerId, model, system, messages, tool
       name: tc.function?.name,
       input: (() => { try { return JSON.parse(tc.function?.arguments || '{}'); } catch { return {}; } })(),
     }));
-    return { content, toolUses: content, text: '' };
+    return { content, toolUses: content, text: '', usage };
   }
   const text = (msg.content || '').trim();
-  return { content: text ? [{ type: 'text', text }] : [], toolUses: [], text };
+  return { content: text ? [{ type: 'text', text }] : [], toolUses: [], text, usage };
 }
 
 export function listModels(providerId) {
