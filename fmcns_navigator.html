@@ -1984,11 +1984,11 @@ button:active { transform: translateY(1px) scale(.99); }
 
      Inlined rather than loaded from a CDN because this app is deliberately ONE
      self-contained HTML file with no build step (see CLAUDE.md) — it is opened
-     straight from disk as often as it is served, so a runtime <script src> would
+     straight from disk as often as it is served, so a runtime script-src tag would
      make the graph depend on network access it may not have. Four small modules,
      not full d3 (270KB of which we use almost none). Load order matters: each UMD
      bundle attaches to the global `d3` and reads the earlier ones from it, so plain
-     <script> order is the whole dependency resolution.
+     plain script-tag order is the whole dependency resolution.
 
      Only these are used, and only for what is named:
        • d3-dispatch    v3.0.1   d3-force dependency (event dispatch)
