@@ -2202,6 +2202,7 @@ function renderClusterList() {
       activeCluster = activeCluster === code ? null : code;
       renderClusterList(); layoutAndDraw();
       if (activeCluster) selectCluster(code); // also show cluster info in the right panel, not just filter the graph
+      else syncRightPanelOpen(); // toggling the cluster back off can leave the panel with nothing selected
     };
     el.appendChild(div);
   });
@@ -2212,6 +2213,7 @@ function renderClusterList() {
 // corresponding detail view, unlike entities and edges which both have one.
 function selectCluster(code) {
   focusedId = null; focusedEdge = null; activeLensTag = null;
+  syncRightPanelOpen();
   const c = CLUSTERS[code];
   const members = ENTITIES.filter(e => (e.clusters||[]).includes(code));
   let html = `<div class="uc uc--detail" style="background:linear-gradient(160deg, ${CLUSTER_COLORS[code]||'var(--c-ink-4)'}, var(--c-ink));">
@@ -3383,6 +3385,7 @@ function noteGraphPoolChanged() {
 // so "reset" left the graph visibly not reset.
 function resetGraphView() {
   focusedId = null; hoveredId = null; focusedEdge = null; hoveredEdge = null;
+  syncRightPanelOpen();
   egoStack = [];                 // an ego scope is view state, so "reset view" drops it
   kbCursorId = null;
   gPressNode = null;
@@ -4243,7 +4246,7 @@ function setupGraphPointer() {
       if (egoStack.length) { ev.preventDefault(); exitEgo(); return; }
       const had = kbCursorId || focusedId || focusedEdge || hoveredId;
       kbCursorId = null; hoveredId = null; hoveredEdge = null; focusedId = null; focusedEdge = null;
-      if (had) { ev.preventDefault(); announceGraph('Selection cleared'); requestRender(); }
+      if (had) { ev.preventDefault(); announceGraph('Selection cleared'); syncRightPanelOpen(); requestRender(); }
       // Tab is swallowed above, so Esc on an already-clear graph is the way out of it.
       else c.blur();
     }
@@ -4879,6 +4882,7 @@ function continuumHtml(e){
 
 async function selectEntity(id){
   focusedId = id;
+  syncRightPanelOpen();
   themeLineEntity = null;
   activeLensTag = null;
   activeLensSalient = null;
@@ -4999,6 +5003,7 @@ async function selectEntity(id){
 // user click into any entity in the highlighted cluster to see that entity's own read.
 async function selectEdgeConnection(e) {
   focusedEdge = e; hoveredEdge = null; focusedId = null; activeLensTag = null;
+  syncRightPanelOpen();
   requestRender();
   const cluster = Array.from(clusterForEdge(e)).map(id => byId[id]).filter(Boolean);
   const kindLabel = e.type === 'diag' ? 'Shared author' : e.type === 'ent' ? 'Shared pattern' : 'Continuum proximity';
@@ -5372,6 +5377,17 @@ function initRail() {
       if (rail && rail.contains(document.activeElement)) document.activeElement.blur();
     }
   });
+}
+// The right panel has nothing to show once there's no entity, edge, or cluster
+// selected — so an empty selection collapses it via the same .open class the
+// narrow-window rail button below toggles manually, instead of a parallel
+// mechanism. Call this right after any assignment to focusedId/focusedEdge/
+// activeCluster so the panel never falls out of sync with what it's showing.
+function syncRightPanelOpen() {
+  const right = document.querySelector('#app .right');
+  if (!right) return;
+  if (focusedId || focusedEdge || activeCluster) right.classList.add('open');
+  else right.classList.remove('open');
 }
 // Content's two rails and Map's country panel become overlays on a narrow window
 // (see the 820px block in the stylesheet). Each needs a way back, so each has a
