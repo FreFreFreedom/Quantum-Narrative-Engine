@@ -1720,7 +1720,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
-    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), hit-testing in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), d3-force layout in runLayout(), hit-testing in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
     </div>
@@ -2412,7 +2412,22 @@ let nodes=[], edges=[];
 let graphEpoch=0;
 let focusedId=null, hoveredId=null, bridgesOn=true, showAllConnections=false;
 const camera={x:0,y:0,scale:1};
-let simRunning=false;
+
+// The layout is a real d3-force simulation now, not the hand-rolled runSim() loop that
+// used to live at the bottom of the renderer. That loop was O(n^2) with no collision
+// force (nodes sat on top of each other), clamped every node inside
+// the 1500x1080 box, and stopped dead after 170 ticks — so the layout never actually
+// settled and a node could never be dragged. `sim` is created once, on the first
+// buildGraph(), and re-pointed at the new nodes/links on every rebuild so a filter
+// change morphs instead of teleporting.
+//
+// `links` is deliberately a SEPARATE array from `edges`. d3's forceLink MUTATES what it
+// is given, rewriting each link's source/target from an id into a node object — and
+// edgeKey(), clusterForEdge(), edgeVisible(), neighborSet() and selectEdgeConnection()
+// all read `e.a`/`e.b` as raw ids. Feeding `edges` straight to forceLink would break
+// edge selection silently. Each link carries the type (for distance/strength) and a
+// reference back to its edge; `edges` itself is never handed to d3.
+let sim = null, links = [];
 
 // Cluster-zone layout: each cluster that actually has entities in the CURRENT active
 // pool gets a centroid on a ring, so same-cluster nodes drift toward the same region.
@@ -2746,9 +2761,26 @@ function computeBridges(e, pool) {
 function buildGraph() {
   const pool = activeEntities();
   computeCentroids(pool);
+  // Positions carry over. A node that was already on screen keeps its exact x/y/vx/vy,
+  // so toggling Bridges or changing a type filter makes the survivors SLIDE to their new
+  // places under the simulation instead of being re-scattered from scratch every time.
+  // Only genuinely new nodes are seeded — at their cluster centroid, with a little
+  // jitter so they don't start life stacked on one pixel (which forceCollide would then
+  // have to explode apart).
   nodes = pool.map(e => {
+    const prev = byId[e.id];
+    const carried = prev && Number.isFinite(prev.x) && Number.isFinite(prev.y);
     const c = centroidFor(e);
-    return { ...e, x: c.x+(Math.random()-.5)*70, y: c.y+(Math.random()-.5)*70, vx:0, vy:0, degree:0, big:false };
+    const n = { ...e, degree:0, big:false };
+    n.x  = carried ? prev.x  : c.x + (Math.random()-.5)*70;
+    n.y  = carried ? prev.y  : c.y + (Math.random()-.5)*70;
+    n.vx = carried && Number.isFinite(prev.vx) ? prev.vx : 0;
+    n.vy = carried && Number.isFinite(prev.vy) ? prev.vy : 0;
+    // A pinned node stays pinned across a rebuild (nothing sets fx/fy yet — dragging is
+    // a later step — but carrying them costs nothing and avoids a surprise then).
+    if (carried && prev.fx != null) n.fx = prev.fx;
+    if (carried && prev.fy != null) n.fy = prev.fy;
+    return n;
   });
   nodes.forEach(n => byId[n.id]=n);
   const seen = new Set();
@@ -2777,6 +2809,45 @@ function buildGraph() {
   const topN = Math.max(6, Math.round(nodes.length*0.15));
   byDegree.slice(0, topN).forEach(n => { if (n.degree>0) n.big = true; });
   graphEpoch++; // invalidates the memoised spotlight — see graphSpotlight()
+  // The simulation's own copy of the connections: plain {source,target} ids for d3 to
+  // rewrite into node references, leaving `edges` untouched. See the note on `links`.
+  links = edges.map(e => ({ source: e.a, target: e.b, type: e.type, edge: e }));
+  runLayout();
+}
+
+// One simulation for the life of the page. Built on the first call, re-pointed at the
+// current nodes/links afterwards — re-pointing also re-reads every force's accessor,
+// which is how the centroid pull picks up the new CLUSTER_CENTROIDS computed above.
+function runLayout() {
+  if (!sim) {
+    sim = d3.forceSimulation(nodes)
+      // Repulsion. Capped at 700 world units so a node on the far side of the canvas
+      // isn't still pushing on this one — that global shove is what used to compress
+      // every cluster toward the middle.
+      .force('charge', d3.forceManyBody().strength(-160).theta(0.9).distanceMax(700))
+      // Connections pull, at a distance that says what kind of connection it is: a
+      // shared author is tight, a shared pattern looser, a continuum bridge long and
+      // weak so cross-scale echoes hint at a relationship without dragging the two
+      // clusters into each other.
+      .force('link', d3.forceLink(links).id(d => d.id)
+        .distance(e => e.type === 'diag' ? 70 : e.type === 'ent' ? 110 : 190)
+        .strength(e => e.type === 'bridge' ? 0.04 : 0.35))
+      // The force the old loop never had: nothing may sit on top of anything else.
+      .force('collide', d3.forceCollide(d => nodeRadius(d) + 4).iterations(2))
+      // Weak pull toward this node's own cluster centroid — the same job the old
+      // hand-written centroid term did, keeping clusters legible as regions.
+      .force('cx', d3.forceX(d => centroidFor(d).x).strength(0.05))
+      .force('cy', d3.forceY(d => centroidFor(d).y).strength(0.05))
+      .on('tick', requestRender);
+  } else {
+    // sim.nodes() re-initialises every force against the new array, which re-reads the
+    // collide radius and both centroid accessors. Only the link force keeps its own
+    // list, so that one is handed over explicitly.
+    sim.nodes(nodes);
+    sim.force('link').links(links);
+  }
+  // Enough energy to rearrange, not enough to throw the surviving layout away.
+  sim.alpha(0.6).restart();
 }
 
 function el(tag, attrs) { const e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
@@ -3163,38 +3234,6 @@ function initGraphCanvas() {
   setupGraphPointer();
 }
 
-function runSim(){
-  if (simRunning) return; simRunning=true;
-  let ticks=0;
-  function step(){
-    ticks++;
-    nodes.forEach(n=>{
-      let fx=0,fy=0;
-      // Local repulsion — this is what prevents same-cluster nodes from sitting on
-      // top of each other, since they're all pulled toward the same centroid. Constant
-      // raised well past the original (900 -> 2600) now that the canvas has the room
-      // to let it actually push nodes apart instead of being overwhelmed immediately.
-      nodes.forEach(o=>{ if(o===n)return; let dx=n.x-o.x,dy=n.y-o.y; let d2=dx*dx+dy*dy+.01; let d=Math.sqrt(d2); let f=2600/d2; fx+=(dx/d)*f; fy+=(dy/d)*f; });
-      // Weak pull toward this node's own cluster centroid — keeps clusters visibly
-      // separated as distinct regions instead of one undifferentiated blob. Slightly
-      // softened so the now-much-stronger repulsion isn't immediately fought back into
-      // a tight clump.
-      const c = centroidFor(n);
-      fx+=(c.x-n.x)*.009; fy+=(c.y-n.y)*.009;
-      if (focusedId && n.id===focusedId) { fx+=(GVBW/2-n.x)*.02; fy+=(GVBH/2-n.y)*.02; }
-      edges.forEach(e=>{ if(e.a!==n.id&&e.b!==n.id)return; const oid=e.a===n.id?e.b:e.a; const o=byId[oid]; if(!o)return; fx+=(o.x-n.x)*.006; fy+=(o.y-n.y)*.006; });
-      n.vx=(n.vx+fx)*.75; n.vy=(n.vy+fy)*.75;
-    });
-    nodes.forEach(n=>{ n.x+=n.vx*.05; n.y+=n.vy*.05; n.x=Math.max(20,Math.min(GVBW-20,n.x)); n.y=Math.max(20,Math.min(GVBH-20,n.y)); });
-    requestRender();
-    // Fewer ticks than before (260 -> 170) — the layout converges faster with more room
-    // to work with, which also shortens the window where the graph is still animating
-    // (and therefore redrawing every frame) right after a page load or filter change.
-    if (ticks<170) requestAnimationFrame(step); else simRunning=false;
-  }
-  requestAnimationFrame(step);
-}
-
 function layoutAndDraw(){
   buildGraph();
   const info = document.getElementById('graphInfo');
@@ -3202,7 +3241,6 @@ function layoutAndDraw(){
   // only change when the graph is rebuilt, so it is set here instead.
   if (info) info.textContent = nodes.length+' nodes, '+edges.length+' connections total';
   requestRender();
-  runSim();
   renderLegend();
   renderPatternList();
 }
