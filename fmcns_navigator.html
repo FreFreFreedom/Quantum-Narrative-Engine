@@ -97,6 +97,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ctrl-label { font-size:10.5px; color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.04em; }
 .ctrlbtn { padding:var(--sp-1) var(--sp-3); font-size:11px; }
 .ctrlbtn.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
+/* The scope trail. One row, only ever on screen when something is actually narrowing
+   the view (an ego scope, a cluster, a theme cluster, a search term) — so it is both
+   the breadcrumb and the always-available way back to everything. */
+.scopebar { display:none; align-items:center; gap:5px; flex-wrap:wrap; padding:5px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); font-size:10.5px; }
+.scope-crumb { font-family:inherit; font-size:10.5px; line-height:1.4; padding:3px 9px; border-radius:11px; cursor:pointer; background:var(--c-surface-2); color:var(--c-ink-3); border:1px solid transparent; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scope-crumb:hover { background:var(--c-surface-3); color:var(--c-ink); }
+.scope-crumb.is-current { background:transparent; border-color:var(--c-border-2); color:var(--c-ink); font-weight:var(--fw-medium); cursor:default; opacity:1; }
+.scope-sep { color:var(--c-ink-4); }
 .graph-stage { flex:1; position:relative; overflow:hidden; background:var(--c-stage); }
 #graphCanvas { width:100%; height:100%; display:block; cursor:grab; }
 /* The old SVG nodes carried cursor:pointer themselves. A canvas has no elements,
@@ -1726,6 +1734,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
+    <div class="scopebar" id="scopeBar" aria-label="What the view is narrowed to" data-src="Content navigator → scope breadcrumb | fmcns_navigator.html: scopeTrail()/renderScopeBar()/scopeGoTo() — ego view, cluster, theme cluster and search, and the way back out of each"></div>
     <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
@@ -2500,9 +2509,80 @@ function axisValue(e, key) {
   return (typeof v === 'number') ? v : null;
 }
 
-function activeEntities() {
+// ---------- Ego view: one node and its direct neighbours ----------
+// The cure for the hairball. `egoStack` is the trail of nodes you have stepped into:
+// the deepest one decides what the view shows. It is a FILTER, not a second graph —
+// it composes on top of the type/source/cluster/theme/search/axis filters through
+// activeEntities() rather than fighting them, which is why a cluster filter and an
+// ego scope can be on at the same time.
+//
+// The neighbourhood is always computed against the pool the OTHER filters allow, never
+// against the already-ego-narrowed pool: double-clicking a neighbour has to be able to
+// reach that neighbour's own connections, including the ones outside the scope you are
+// currently looking at. Otherwise stepping "further" could only ever show you less.
+let egoStack = [];
+// The base pool + its adjacency map, cached against a signature of every filter EXCEPT
+// the ego scope. A search keystroke or a cluster click changes the signature, so the
+// neighbourhood is recomputed instead of silently showing the one from before. Nothing
+// here is built at all while egoStack is empty — both entry points return early.
+let _egoBaseCache = { sig: null, ids: null, adj: null };
+let _egoScopeCache = { sig: null, key: null, ids: null };
+function egoFilterSig() {
+  const s = document.getElementById('search');
+  return [
+    [...enabledTypes].sort().join(','), [...enabledSources].sort().join(','),
+    activeCluster || '', activeTagCommunity ? activeTagCommunity.id : '',
+    s ? s.value.trim().toLowerCase() : '',
+    axisFilter.key, axisFilter.min, axisFilter.max,
+    bridgesOn ? 1 : 0, ENTITIES.length
+  ].join('|');
+}
+function egoBase() {
+  const sig = egoFilterSig();
+  if (_egoBaseCache.sig === sig && _egoBaseCache.adj) return _egoBaseCache;
+  const pool = activeEntities({ ego: false });
+  const ids = new Set(pool.map(e => e.id));
+  const adj = new Map();
+  const add = (a, b) => { let set = adj.get(a); if (!set) adj.set(a, set = new Set()); set.add(b); };
+  // The same edge builder the graph itself uses — the neighbours shown are exactly the
+  // nodes you can see a line to, not a second, subtly different definition.
+  computeEdges(pool).forEach(e => { add(e.a, e.b); add(e.b, e.a); });
+  _egoBaseCache = { sig, ids, adj };
+  return _egoBaseCache;
+}
+// The id set the view is narrowed to, or null for "not narrowed by an ego scope".
+function egoScopeIds() {
+  if (!egoStack.length) return null;
+  const sig = egoFilterSig(), key = egoStack.join('>');
+  if (_egoScopeCache.sig === sig && _egoScopeCache.key === key) return _egoScopeCache.ids;
+  const root = egoStack[egoStack.length - 1];
+  const base = egoBase();
+  // A root the other filters have removed narrows nothing — pruneEgoStack() drops the
+  // level on the next render, and until then the full pool is better than a blank stage.
+  const ids = base.ids.has(root) ? new Set([root, ...(base.adj.get(root) || [])]) : null;
+  _egoScopeCache = { sig, key, ids };
+  return ids;
+}
+// A filter change can take the node a scope is built on out of the pool (typing a search
+// that no longer matches it). The levels that no longer exist are dropped, so the
+// breadcrumb only ever offers scopes that are really there.
+function pruneEgoStack() {
+  if (!egoStack.length) return false;
+  const base = egoBase();
+  const keep = [];
+  for (const id of egoStack) { if (!base.ids.has(id)) break; keep.push(id); }
+  if (keep.length === egoStack.length) return false;
+  egoStack = keep;
+  return true;
+}
+
+function activeEntities(opts) {
   const q = document.getElementById('search').value.toLowerCase();
+  // `{ ego:false }` is how egoBase() asks what the pool would be WITHOUT the ego
+  // scope — the one caller that must not see its own narrowing.
+  const scope = (opts && opts.ego === false) ? null : egoScopeIds();
   return ENTITIES.filter(e => {
+    if (scope && !scope.has(e.id)) return false;
     if (enabledTypes.size && !enabledTypes.has(e.type)) return false;
     if (enabledSources.size && !enabledSources.has(e.source || 'archive')) return false;
     if (activeCluster && !(e.clusters||[]).includes(activeCluster)) return false;
@@ -2526,6 +2606,112 @@ function activeEntities() {
   });
 }
 function isAxisRangeNarrowed() { return axisFilter.min > 0 || axisFilter.max < 1; }
+
+// ---------- The scope trail: breadcrumb, and the way back to everything ----------
+// One row that answers "why am I not seeing everything?" and undoes it. It is not an
+// ego-view widget: an ego scope, a cluster, a theme cluster and a search term all
+// narrow the view, so all four are crumbs, and the first crumb is always the whole
+// corpus. Standard breadcrumb semantics — clicking a crumb undoes everything to its
+// right, so the last crumb IS the current scope and is not clickable.
+function scopeTrail() {
+  const trail = [{ label: 'All entities', kind: 'all' }];
+  if (activeCluster) {
+    const c = CLUSTERS[activeCluster];
+    trail.push({ label: activeCluster + '. ' + (c ? c.name.split(',')[0] : activeCluster), kind: 'cluster' });
+  }
+  if (activeTagCommunity) trail.push({ label: activeTagCommunity.name.split(' / ')[0], kind: 'theme' });
+  const sEl = document.getElementById('search');
+  const q = sEl ? sEl.value.trim() : '';
+  if (q) trail.push({ label: '\u201c' + q + '\u201d', kind: 'search' });
+  egoStack.forEach((id, i) => {
+    const n = byId[id];
+    trail.push({ label: (n && n.name) || id, kind: 'ego', level: i });
+  });
+  return trail;
+}
+
+function renderScopeBar() {
+  const bar = document.getElementById('scopeBar');
+  if (!bar) return;
+  const trail = scopeTrail();
+  // Nothing is narrowing the view, so there is nothing to get back from.
+  if (trail.length < 2) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '';
+  trail.forEach((crumb, i) => {
+    if (i) {
+      const sep = document.createElement('span');
+      sep.className = 'scope-sep';
+      sep.textContent = '\u203a';
+      bar.appendChild(sep);
+    }
+    const last = i === trail.length - 1;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'scope-crumb' + (last ? ' is-current' : '');
+    b.textContent = crumb.label;
+    if (last) { b.disabled = true; b.setAttribute('aria-current', 'true'); }
+    else { b.title = 'Back to ' + crumb.label; b.onclick = () => scopeGoTo(i); }
+    bar.appendChild(b);
+  });
+}
+
+// Restore the scope this crumb stands for: drop every narrowing applied after it.
+function scopeGoTo(i) {
+  const trail = scopeTrail();
+  let touchedCluster = false, touchedTheme = false;
+  trail.slice(i + 1).forEach(c => {
+    if (c.kind === 'cluster') { activeCluster = null; touchedCluster = true; }
+    else if (c.kind === 'theme') { activeTagCommunity = null; touchedTheme = true; }
+    else if (c.kind === 'search') { const sEl = document.getElementById('search'); if (sEl) sEl.value = ''; }
+    // The first ego crumb dropped sets the depth; the deeper ones are already gone.
+    else if (c.kind === 'ego' && egoStack.length > c.level) egoStack.length = c.level;
+  });
+  if (touchedCluster) renderClusterList();
+  if (touchedTheme) {
+    const host = document.getElementById('themeLineHost');
+    if (host && themeLineEntity) { host.innerHTML = themeLineHtml(themeLineEntity); wireThemeLine(); }
+  }
+  refreshView();
+  reframeGraph();
+  announceGraph('Showing ' + (trail[i].kind === 'all' ? 'every entity' : trail[i].label));
+}
+
+// Enter the ego view of a node: the view keeps only that node and its direct
+// neighbours, the layout rearranges around them, and the camera frames the result.
+function enterEgo(id) {
+  const n = byId[id];
+  if (!n) return;
+  if (egoStack[egoStack.length - 1] === id) return; // already the current scope
+  egoStack.push(id);
+  refreshView();
+  // The plan's reheat: enough energy to genuinely rearrange the handful of survivors,
+  // more than the 0.6 a normal filter change asks for, because this is a new picture
+  // rather than a nudge to the old one.
+  if (sim) sim.alpha(0.8).restart();
+  reframeGraph();
+  announceGraph((n.name || id) + ' and its direct connections, ' + nodes.length + ' nodes');
+}
+
+function exitEgo() {
+  if (!egoStack.length) return;
+  egoStack = [];
+  refreshView();
+  if (sim) sim.alpha(0.8).restart();
+  reframeGraph();
+  announceGraph('Back to the full graph');
+}
+
+// Frame the new pool twice: once now, so the click reads as immediate, and again once
+// the reheated layout has settled where it is really going (the same two-step
+// resetGraphView() uses).
+function reframeGraph() {
+  if (contentView !== 'graph') return;
+  fitVisibleNodes();
+  gPendingFit = true;
+  scheduleAutoFitCheck(300);
+  requestRender();
+}
 
 const TYPE_LABELS = { character:'Characters', country:'Countries', film:'Films (containers)' };
 const SOURCE_LABELS = { archive:'Archive / curated', reddit:'Reddit-derived' };
@@ -2615,7 +2801,7 @@ let contentView = 'graph';
 
 function refreshView() {
   if (contentView === 'graph') layoutAndDraw();
-  else { renderList(); renderPatternList(); }
+  else { pruneEgoStack(); renderScopeBar(); renderList(); renderPatternList(); }
 }
 
 function entityNote(e) {
@@ -2777,6 +2963,33 @@ function computeBridges(e, pool) {
   return out.sort((a,b)=>a.delta-b.delta).slice(0,5);
 }
 
+// Every connection between the entities in `pool`, deduplicated. Lifted out of
+// buildGraph() unchanged so the ego view can ask the same question of a different pool
+// (see egoBase()) instead of keeping a second, drifting definition of "neighbour".
+function computeEdges(pool) {
+  const seen = new Set();
+  const out = [];
+  pool.forEach(e => {
+    const diag = computeDiagonal(e, pool);
+    const diagIds = new Set(diag.map(o=>o.id));
+    diag.forEach(o => {
+      const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k);
+      const auteurs = (e.meta&&e.meta.auteurs)||[];
+      const shared = auteurs.filter(a => ((o.meta&&o.meta.auteurs)||[]).includes(a));
+      out.push({a:e.id,b:o.id,type:'diag',auteur:shared[0]||null});
+    });
+    computeEntanglement(e, pool, diagIds).forEach(({o,shared})=>{
+      const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k);
+      out.push({a:e.id,b:o.id,type:'ent',tags:shared});
+    });
+    if (bridgesOn) computeBridges(e, pool).forEach(({o,axis,delta})=>{
+      const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k);
+      out.push({a:e.id,b:o.id,type:'bridge',axis,delta});
+    });
+  });
+  return out;
+}
+
 function buildGraph() {
   const pool = activeEntities();
   computeCentroids(pool);
@@ -2802,26 +3015,7 @@ function buildGraph() {
     return n;
   });
   nodes.forEach(n => byId[n.id]=n);
-  const seen = new Set();
-  edges = [];
-  pool.forEach(e => {
-    const diag = computeDiagonal(e, pool);
-    const diagIds = new Set(diag.map(o=>o.id));
-    diag.forEach(o => {
-      const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k);
-      const auteurs = (e.meta&&e.meta.auteurs)||[];
-      const shared = auteurs.filter(a => ((o.meta&&o.meta.auteurs)||[]).includes(a));
-      edges.push({a:e.id,b:o.id,type:'diag',auteur:shared[0]||null});
-    });
-    computeEntanglement(e, pool, diagIds).forEach(({o,shared})=>{
-      const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k);
-      edges.push({a:e.id,b:o.id,type:'ent',tags:shared});
-    });
-    if (bridgesOn) computeBridges(e, pool).forEach(({o,axis,delta})=>{
-      const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k);
-      edges.push({a:e.id,b:o.id,type:'bridge',axis,delta});
-    });
-  });
+  edges = computeEdges(pool);
   // Degree per node, used to decide which labels earn a permanent spot.
   edges.forEach(e => { if(byId[e.a]) byId[e.a].degree++; if(byId[e.b]) byId[e.b].degree++; });
   const byDegree = nodes.slice().sort((a,b)=>b.degree-a.degree);
@@ -3188,6 +3382,7 @@ function noteGraphPoolChanged() {
 // so "reset" left the graph visibly not reset.
 function resetGraphView() {
   focusedId = null; hoveredId = null; focusedEdge = null; hoveredEdge = null;
+  egoStack = [];                 // an ego scope is view state, so "reset view" drops it
   kbCursorId = null;
   gPressNode = null;
   nodes.forEach(n => { n.fx = null; n.fy = null; }); // unpin everything
@@ -3806,15 +4001,26 @@ function setupGraphPointer() {
     releaseNode();
     if (hoveredId || hoveredEdge) { hoveredId = null; hoveredEdge = null; kbCursorId = null; requestRender(); }
   });
+  // Double-click does two jobs, and which one depends on the node: a node you have
+  // PINNED by dragging it is released (that was this handler's only job before), and
+  // any other node opens its ego view. The two never collide — a pinned node is one
+  // you deliberately placed, so releasing it is what you meant. Shift+double-click
+  // opens the ego view either way, which is the way into a pinned node's neighbourhood
+  // without losing its position first.
   c.addEventListener('dblclick', (ev) => {
     const p = gStagePoint(ev), w = sToW(p.x, p.y);
     const n = nodeAt(w.x, w.y);
-    if (!n || (n.fx == null && n.fy == null)) return;
+    if (!n) return;
     ev.preventDefault();
-    n.fx = null; n.fy = null;
-    if (sim) { sim.alphaTarget(0); sim.alpha(0.4).restart(); }
-    announceGraph((n.name || n.id) + ' released');
-    requestRender();
+    if (!ev.shiftKey && (n.fx != null || n.fy != null)) {
+      n.fx = null; n.fy = null;
+      if (sim) { sim.alphaTarget(0); sim.alpha(0.4).restart(); }
+      announceGraph((n.name || n.id) + ' released');
+      requestRender();
+      return;
+    }
+    if (sim) sim.alphaTarget(0); // the double-click's own pointerdown can leave it warm
+    enterEgo(n.id);
   });
   c.addEventListener('keydown', (ev) => {
     if (ev.target !== c) return;
@@ -3829,6 +4035,10 @@ function setupGraphPointer() {
       announceGraph((byId[id] ? byId[id].name : id) + ' selected');
       selectEntity(id);
     } else if (ev.key === 'Escape') {
+      // An ego scope is the thing you most want out of, so it goes first — and it goes
+      // all the way out, however many levels deep you walked. The breadcrumb is how you
+      // step back one level.
+      if (egoStack.length) { ev.preventDefault(); exitEgo(); return; }
       const had = kbCursorId || focusedId || focusedEdge || hoveredId;
       kbCursorId = null; hoveredId = null; hoveredEdge = null; focusedId = null; focusedEdge = null;
       if (had) { ev.preventDefault(); announceGraph('Selection cleared'); requestRender(); }
@@ -3883,6 +4093,11 @@ function initGraphCanvas() {
 }
 
 function layoutAndDraw(){
+  // A filter change can invalidate the node an ego scope is built on, and the
+  // breadcrumb has to agree with whatever the pool ends up being — so both happen
+  // before anything reads the pool.
+  pruneEgoStack();
+  renderScopeBar();
   buildGraph();
   const info = document.getElementById('graphInfo');
   // Used to be rewritten inside every one of the 170 per-frame rebuilds; the counts
@@ -4158,6 +4373,20 @@ function initGraph(){
   };
   document.getElementById('resetBtn').onclick = resetGraphView;
   document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
+  // Escape has to work whether or not the canvas happens to hold focus — you can enter
+  // an ego view by double-clicking without the canvas ever being focused, and a scope
+  // you cannot leave is a trap. The canvas's own handler runs first and empties the
+  // stack, so this only ever fires when that one did not: the guard below is what makes
+  // the two one behaviour instead of two.
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape' || !egoStack.length) return;
+    const appEl = document.getElementById('app');
+    if (!appEl || appEl.style.display === 'none') return; // Content is not the open tab
+    const t = ev.target || {};
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '') || t.isContentEditable) return;
+    ev.preventDefault();
+    exitEgo();
+  });
 }
 
 // NavCtrl-powered pan/zoom/keyboard/pinch for the Content Navigator graph.
