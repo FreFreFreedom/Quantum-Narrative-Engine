@@ -2444,9 +2444,17 @@ let sim = null, links = [];
 const CLUSTER_ORDER_ALL = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','other'];
 let CLUSTER_CENTROIDS = {};
 let activeClusterCodes = [];
+// The one place that decides which cluster an entity belongs to for layout purposes:
+// its first cluster code, with anything unknown or missing folded into 'other'. Shared
+// by the centroid ring and the cluster regions so the two can never disagree about
+// membership.
+function clusterCodeOf(e) {
+  const code = (e.clusters||[])[0];
+  return code && CLUSTER_ORDER_ALL.includes(code) ? code : 'other';
+}
 function computeCentroids(pool) {
   const present = new Set();
-  pool.forEach(e => { const code=(e.clusters||[])[0]; present.add(code && CLUSTER_ORDER_ALL.includes(code) ? code : 'other'); });
+  pool.forEach(e => { present.add(clusterCodeOf(e)); });
   activeClusterCodes = CLUSTER_ORDER_ALL.filter(c => present.has(c));
   if (!activeClusterCodes.length) activeClusterCodes = ['other'];
   CLUSTER_CENTROIDS = {};
@@ -2466,10 +2474,14 @@ function centroidFor(e) {
 
 // The faint region circles and names at each active cluster's centroid used to be a
 // separate SVG layer (renderZoneLabels(), pointer-events:none). They are the first
-// pass of paintGraph() now — see paintZones() — which is why nothing here builds
-// them any more: same radius, same 0.05 / 0.5 opacities, same colours, but drawn
-// under the edges instead of layered beneath them, and inherently unclickable.
-// Only zones with real members in the current pool are drawn, as before.
+// pass of paintGraph() now — see clusterRegions() — drawn under the edges instead of
+// layered beneath them, and inherently unclickable. Only zones with real members in
+// the current pool are drawn, as before.
+//
+// The fixed circle survives as the FALLBACK only: a cluster holding 1 or 2 nodes has
+// no shape of its own, so it keeps the old wash rather than being drawn as a dot or a
+// line. Three or more members get a real region — the convex hull of where those nodes
+// actually are.
 function zoneRadius() { return activeClusterCodes.length <= 1 ? 260 : 150; }
 
 // Type and source filters are built from whatever the backend actually reports (see
@@ -3148,6 +3160,132 @@ function graphSpotlight() {
 
 function nodeRadius(n) { return n.id === focusedId ? 11 : (n.type === 'country' ? 8 : 6); }
 
+// ---------- Cluster regions ----------
+// A cluster is a place on the canvas, not a circle drawn at an arbitrary radius: the
+// region is the convex hull of the nodes that are actually in it, pushed outward and
+// rounded off. Recomputed every frame (so on every simulation tick) — the regions
+// breathe with the layout instead of the nodes drifting out of a static circle.
+// All three constants are WORLD units, matching zoneRadius(), so a region zooms with
+// the graph like the nodes inside it do.
+const HULL_PAD = 34;    // how far outside the outermost nodes the edge of the region sits
+const HULL_ROUND = 26;  // corner radius, which is what turns a polygon into a blob
+
+// Andrew's monotone chain. Sort by x (then y), walk the lower and upper chains keeping
+// only left turns, join them. O(n log n), no dependency — deliberately not d3-polygon.
+// Returns fewer than 3 points when the input is degenerate (all coincident, or all on
+// one line); callers treat that as "no hull".
+function convexHull(pts) {
+  if (pts.length < 3) return pts.slice();
+  const p = pts.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [];
+  for (const pt of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pt) <= 0) lower.pop();
+    lower.push(pt);
+  }
+  const upper = [];
+  for (let i = p.length - 1; i >= 0; i--) {
+    const pt = p[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pt) <= 0) upper.pop();
+    upper.push(pt);
+  }
+  lower.pop(); upper.pop();
+  return lower.concat(upper);
+}
+
+// Push a convex polygon outward by `pad`, evenly. Each vertex slides along the average
+// of the two edge normals meeting there (a mitre), which keeps the gap between a node
+// and the region's edge the same all the way round — a purely radial push from the
+// centre would bunch up along a long, thin cluster. Which side is "outward" is decided
+// against the centroid, so whichever winding the hull came out in is irrelevant.
+function expandPolygon(pts, pad) {
+  const n = pts.length;
+  let cx = 0, cy = 0;
+  pts.forEach(p => { cx += p.x; cy += p.y; });
+  cx /= n; cy /= n;
+  const norms = pts.map((p, i) => {
+    const q = pts[(i + 1) % n];
+    let nx = q.y - p.y, ny = p.x - q.x;
+    const len = Math.hypot(nx, ny) || 1;
+    nx /= len; ny /= len;
+    if (nx * ((p.x + q.x) / 2 - cx) + ny * ((p.y + q.y) / 2 - cy) < 0) { nx = -nx; ny = -ny; }
+    return { nx, ny };
+  });
+  return pts.map((p, i) => {
+    const a = norms[(i - 1 + n) % n], b = norms[i];
+    const nx = a.nx + b.nx, ny = a.ny + b.ny;
+    const len = Math.hypot(nx, ny) || 1;
+    const ux = nx / len, uy = ny / len;
+    // Mitre length: a vertex has to travel further than `pad` for the two SIDES meeting
+    // there to each end up `pad` out. Without this a right-angled corner leaves its own
+    // edges only 24 units clear instead of 34. The floor on the cosine caps how far a
+    // near-spike vertex can shoot out.
+    const scale = 1 / Math.max(0.35, ux * b.nx + uy * b.ny);
+    return { x: p.x + ux * pad * scale, y: p.y + uy * pad * scale };
+  });
+}
+
+// Trace a polygon with its corners rounded off: straight along each side, a quadratic
+// through each vertex. The cut is capped at half the shorter adjoining side so a small
+// region can't round itself inside out. Only the corners soften — rounding by running
+// the curve through the edge MIDPOINTS instead would pull a wide triangle so far in
+// that its own nodes would sit outside the region.
+function traceBlob(ctx, pts, radius) {
+  const n = pts.length;
+  const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  const corners = pts.map((p, i) => {
+    const prev = pts[(i - 1 + n) % n], next = pts[(i + 1) % n];
+    const dp = Math.hypot(p.x - prev.x, p.y - prev.y) || 1;
+    const dn = Math.hypot(next.x - p.x, next.y - p.y) || 1;
+    return { p, in: lerp(p, prev, Math.min(radius, dp / 2) / dp), out: lerp(p, next, Math.min(radius, dn / 2) / dn) };
+  });
+  ctx.beginPath();
+  ctx.moveTo(corners[0].out.x, corners[0].out.y);
+  for (let i = 1; i <= n; i++) {
+    const c = corners[i % n];
+    ctx.lineTo(c.in.x, c.in.y);
+    ctx.quadraticCurveTo(c.p.x, c.p.y, c.out.x, c.out.y);
+  }
+  ctx.closePath();
+}
+
+// One entry per active cluster (never 'other', which is a bucket rather than a place):
+// either `pts` — the expanded hull to draw as a blob — or `center`/`r` for the old soft
+// circle, plus `top`, the world point the cluster's name is set above. Computed once per
+// frame and used by both the region pass and the label pass, so the name always sits on
+// the shape actually drawn.
+function clusterRegions() {
+  const members = new Map();
+  nodes.forEach(n => {
+    if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) return;
+    const code = clusterCodeOf(n);
+    if (code === 'other') return;
+    let arr = members.get(code);
+    if (!arr) members.set(code, arr = []);
+    arr.push({ x: n.x, y: n.y });
+  });
+  const zoneR = zoneRadius();
+  const out = [];
+  activeClusterCodes.forEach(code => {
+    if (code === 'other') return;
+    const c = CLUSTER_CENTROIDS[code];
+    const own = members.get(code) || [];
+    if (own.length >= 3) {
+      const hull = convexHull(own);
+      if (hull.length >= 3) {
+        const pts = expandPolygon(hull, HULL_PAD);
+        let top = pts[0];
+        pts.forEach(p => { if (p.y < top.y) top = p; });
+        out.push({ code, pts, top });
+        return;
+      }
+    }
+    if (!c) return; // 1–2 members and no centroid to fall back on: nothing to draw
+    out.push({ code, pts: null, center: c, r: zoneR, top: { x: c.x, y: c.y - zoneR } });
+  });
+  return out;
+}
+
 function paintGraph() {
   const ctx = graphCtx();
   if (!ctx || !sizeGraphCanvas()) return;
@@ -3160,15 +3298,27 @@ function paintGraph() {
   // --- world space: zones, then edges, then nodes ---
   ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * camera.x, dpr * camera.y);
 
-  // 1. Cluster zones — the faint orientation wash, unchanged from renderZoneLabels().
-  const zoneR = zoneRadius();
-  activeClusterCodes.forEach(code => {
-    if (code === 'other') return;
-    const c = CLUSTER_CENTROIDS[code];
-    if (!c) return;
-    ctx.globalAlpha = 0.05;
-    ctx.fillStyle = gPaint(CLUSTER_COLORS[code] || 'var(--c-border-3)', '#c8bfae');
-    ctx.beginPath(); ctx.arc(c.x, c.y, zoneR, 0, Math.PI * 2); ctx.fill();
+  // 1. Cluster regions — the faint orientation wash, now shaped to where the cluster's
+  // nodes actually are (see clusterRegions()) rather than a circle of fixed radius.
+  // Drawn first, so everything else sits on top of it.
+  const regions = clusterRegions();
+  regions.forEach(rg => {
+    const col = gPaint(CLUSTER_COLORS[rg.code] || 'var(--c-border-3)', '#c8bfae');
+    ctx.fillStyle = col;
+    if (!rg.pts) { // 1–2 members: the old soft circle, at the old opacity
+      ctx.globalAlpha = 0.05;
+      ctx.beginPath(); ctx.arc(rg.center.x, rg.center.y, rg.r, 0, Math.PI * 2); ctx.fill();
+      return;
+    }
+    traceBlob(ctx, rg.pts, HULL_ROUND);
+    ctx.globalAlpha = 0.06;
+    ctx.fill();
+    // The outline is what makes it read as a region and not a smudge, so it stays a
+    // hairline at every zoom — hence 1 SCREEN pixel divided back out of the world scale.
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1 / (s || 1);
+    ctx.stroke();
   });
   ctx.globalAlpha = 1;
 
@@ -3234,18 +3384,16 @@ function paintGraph() {
   ctx.textBaseline = 'alphabetic';
   ctx.lineJoin = 'round';
 
-  // 4a. Zone names, above their circle.
+  // 4a. Zone names, above the top of the shape drawn for that cluster in pass 1 —
+  // the hull's highest vertex, or the circle's top for the 1–2 member fallback.
   ctx.font = gFont(13);
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0.03em';
-  activeClusterCodes.forEach(code => {
-    if (code === 'other') return;
-    const c = CLUSTER_CENTROIDS[code];
-    if (!c) return;
-    const name = CLUSTERS[code] ? CLUSTERS[code].name.split(',')[0] : code;
-    const p = wToS(c.x, c.y - zoneR);
+  regions.forEach(rg => {
+    const name = CLUSTERS[rg.code] ? CLUSTERS[rg.code].name.split(',')[0] : rg.code;
+    const p = wToS(rg.top.x, rg.top.y);
     ctx.globalAlpha = 0.5;
-    ctx.fillStyle = gPaint(CLUSTER_COLORS[code] || 'var(--c-ink-4)', '#89806f');
-    ctx.fillText(code + '. ' + truncate(name, 22), p.x, p.y - 8);
+    ctx.fillStyle = gPaint(CLUSTER_COLORS[rg.code] || 'var(--c-ink-4)', '#89806f');
+    ctx.fillText(rg.code + '. ' + truncate(name, 22), p.x, p.y - 8);
   });
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
 
