@@ -2818,6 +2818,7 @@ function buildGraph() {
   // rewrite into node references, leaving `edges` untouched. See the note on `links`.
   links = edges.map(e => ({ source: e.a, target: e.b, type: e.type, edge: e }));
   runLayout();
+  noteGraphPoolChanged(); // a dramatically different pool earns a re-fit once it settles
 }
 
 // One simulation for the life of the page. Built on the first call, re-pointed at the
@@ -2859,7 +2860,7 @@ function runLayout() {
 // Every tick moves every node, so the hit-test index is thrown away and rebuilt lazily
 // on the next pointer event rather than eagerly here — a tick that nobody points at
 // costs nothing, and a pointer event only ever pays for one rebuild.
-function onSimTick() { _gQuad = null; requestRender(); }
+function onSimTick() { _gQuad = null; maybeAutoFit(); requestRender(); }
 
 function el(tag, attrs) { const e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
 function truncate(s,n){ return s.length>n? s.slice(0,n-1)+"…" : s; }
@@ -2996,18 +2997,123 @@ function sizeGraphCanvas() {
 function wToS(x, y) { return { x: camera.x + x * camera.scale, y: camera.y + y * camera.scale }; }
 function sToW(px, py) { return { x: (px - camera.x) / camera.scale, y: (py - camera.y) / camera.scale }; }
 
+// The content graph's zoom range, in one place. The floor used to be 0.3, duplicated
+// as a magic number in both framing helpers and in setupZoomPan() — and it was too
+// high to be honest: in a narrow window the pool is wider than 0.3x can show, so "fit"
+// could not fit. The fit only ever zooms as far out as it needs to; this is just the
+// limit it is allowed to reach.
+const GRAPH_MIN_SCALE = 0.15, GRAPH_MAX_SCALE = 16;
+
 // The SVG carried preserveAspectRatio="xMidYMid meet", so the whole 1500x1080 world
-// was framed on load and on reset. That framing is now a camera rather than a
-// viewBox — this reproduces it exactly. (Framing the nodes' real bounding box, which
-// is what "fit" should mean, is a later step; this only preserves today's picture.)
+// was framed on load. That framing is now a camera rather than a viewBox — this
+// reproduces it exactly. It is still the right thing for the opening frame (the
+// simulation has not run yet, so there is no settled layout to fit) and the fallback
+// when there is nothing to fit; "fit" itself is fitVisibleNodes() below.
 let gAwaitingFirstFrame = true;
 function frameWholeWorld() {
   if (!gW || !gH) { sizeGraphCanvas(); }
   if (!gW || !gH) return;
-  const k = Math.max(0.3, Math.min(gW / GVBW, gH / GVBH)); // 0.3 = NavCtrl's minScale
+  const k = Math.max(GRAPH_MIN_SCALE, Math.min(gW / GVBW, gH / GVBH));
   camera.scale = k;
   camera.x = (gW - GVBW * k) / 2;
   camera.y = (gH - GVBH * k) / 2;
+}
+
+// "Fit" now means fit what is actually on screen: the bounding box of the nodes in the
+// current pool, not the 1500x1080 world they happen to live inside. Once the force
+// layout settles, the nodes rarely fill that world — so framing the world framed a lot
+// of empty stage, which is why the old F felt like it did nothing.
+const FIT_PAD = 48;       // screen px of breathing room on each side
+const FIT_MAX_SCALE = 2;  // a two-node pool must not be blown up to NavCtrl's 16x
+function fitVisibleNodes() {
+  if (!gW || !gH) { sizeGraphCanvas(); }
+  if (!gW || !gH) return false; // stage not measurable yet (list view / mid-boot)
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, seen = 0;
+  for (const n of nodes) {
+    if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) continue;
+    // The node's own radius counts, or fitting would clip every node on the rim in half.
+    const r = nodeRadius(n);
+    if (n.x - r < x0) x0 = n.x - r;
+    if (n.y - r < y0) y0 = n.y - r;
+    if (n.x + r > x1) x1 = n.x + r;
+    if (n.y + r > y1) y1 = n.y + r;
+    seen++;
+  }
+  if (!seen) { frameWholeWorld(); gLastFitCount = 0; return true; }
+  // A narrow window can't afford 48px a side, so the padding is also capped as a
+  // fraction of the stage — otherwise "fit" would zoom OUT on a small window.
+  const pad = Math.min(FIT_PAD, gW * 0.12, gH * 0.12);
+  const availW = Math.max(1, gW - pad * 2), availH = Math.max(1, gH - pad * 2);
+  const bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
+  const k = Math.max(GRAPH_MIN_SCALE, Math.min(FIT_MAX_SCALE, availW / bw, availH / bh));
+  camera.scale = k;
+  camera.x = gW / 2 - k * (x0 + x1) / 2;
+  camera.y = gH / 2 - k * (y0 + y1) / 2;
+  gLastFitCount = nodes.length;
+  return true;
+}
+
+// Auto re-fit. Toggling Films on roughly triples the pool, and the camera that framed
+// the old pool frames the wrong thing entirely afterwards. Two rules make it not
+// annoying: never while the user is mid-gesture (their hand wins over our opinion), and
+// never while the layout is still flying — the fit waits for the simulation to cool so
+// it frames where the nodes ended up rather than where they were thrown.
+let gLastFitCount = 0, gPendingFit = false, gAutoFitTimer = null;
+// -Infinity, not 0: performance.now() starts near zero, so 0 would read as "the user
+// touched the camera a moment ago" for the first 700ms of the page's life — which is
+// exactly when the opening fit wants to run.
+let gLastUserCameraMove = -Infinity;
+const gNow = () => (typeof performance === 'object' && performance.now ? performance.now() : 0);
+function userOwnsCamera() {
+  if (gPressNode) return true;                       // dragging a node
+  if (_cnNav && _cnNav.dragMoved()) return true;     // dragging the view
+  return (gNow() - gLastUserCameraMove) < 700;       // wheel/pinch still in flight
+}
+// One pending check is enough — this is asked from every simulation tick, and
+// re-arming a timer seventy times per rebuild would be pure churn.
+function scheduleAutoFitCheck(ms) {
+  if (gAutoFitTimer) return;
+  gAutoFitTimer = setTimeout(() => { gAutoFitTimer = null; maybeAutoFit(); }, ms || 400);
+}
+// Asked on every simulation tick (a flag read, so free), from the resize observer, and
+// from its own timer — whichever gets there first once the conditions are met.
+function maybeAutoFit() {
+  if (!gPendingFit) return;
+  if (userOwnsCamera() || (sim && sim.alpha() > 0.12)) { scheduleAutoFitCheck(400); return; }
+  // A failed fit means the stage has no size yet (list view). Don't spin a timer on it:
+  // the resize observer asks again the moment the canvas is measurable.
+  if (!fitVisibleNodes()) return;
+  gPendingFit = false;
+  if (gAutoFitTimer) { clearTimeout(gAutoFitTimer); gAutoFitTimer = null; }
+  requestRender();
+}
+// What counts as "dramatic": a quarter of the pool AND at least six nodes. Refining a
+// search by one character is not a reason to move the camera; the first build, and
+// switching Films on, are.
+function noteGraphPoolChanged() {
+  if (!nodes.length) return;
+  const diff = Math.abs(nodes.length - gLastFitCount);
+  if (!gLastFitCount || (diff >= 6 && diff >= gLastFitCount * 0.25)) {
+    gPendingFit = true;
+    scheduleAutoFitCheck(400);
+  }
+}
+
+// Reset view: the camera AND the state that survives it. The old version framed the
+// world, cleared focusedId/hoveredId and stopped — leaving the focused edge, the
+// hovered edge and every node the user had pinned by dragging exactly where they were,
+// so "reset" left the graph visibly not reset.
+function resetGraphView() {
+  focusedId = null; hoveredId = null; focusedEdge = null; hoveredEdge = null;
+  kbCursorId = null;
+  gPressNode = null;
+  nodes.forEach(n => { n.fx = null; n.fy = null; }); // unpin everything
+  if (sim) sim.alphaTarget(0);   // a pin released mid-drag can leave the sim warm
+  layoutAndDraw();               // rebuild (pins are gone, so nothing carries them) + reheat
+  fitVisibleNodes();             // frame it now, so the click reads as immediate...
+  gPendingFit = true;            // ...and again once the reheated layout settles
+  scheduleAutoFitCheck(400);
+  requestRender();
 }
 
 // Priority: an actively hovered/clicked edge > a clicked pattern chip > an axis-based
@@ -3374,6 +3480,9 @@ function initGraphCanvas() {
     // opening framing is taken from it rather than from whatever the layout happened
     // to be mid-boot. After that, a resize never moves the camera.
     if (gAwaitingFirstFrame) { gAwaitingFirstFrame = false; frameWholeWorld(); }
+    // The stage just became measurable — which is the one thing a deferred fit was
+    // waiting for if the graph was built while it was hidden.
+    maybeAutoFit();
     requestRender();
   };
   if (typeof ResizeObserver === 'function') new ResizeObserver(onResize).observe(gCanvas);
@@ -3430,6 +3539,12 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     step = opts.step ?? 1.03, keyPan = opts.keyPan ?? 80, onZoom = opts.onZoom ?? null,
     fitFn = opts.fit ?? null, fixedViewBox = opts.fixedViewBox ?? true,
     momentumEnabled = opts.momentum ?? true, dragThreshold = opts.dragThreshold ?? 8,
+    // 'live' (the default, i.e. what Map mode and the Architecture graph keep doing)
+    // starts the glide while the fingers are still moving, which means the view travels
+    // FURTHER than the gesture did — the pan is not 1:1 with the cursor. 'release'
+    // holds the glide until the wheel goes quiet, so the gesture itself tracks exactly
+    // and the momentum is only what happens after you let go.
+    momentumMode = opts.momentumMode ?? 'live',
     // Additive, defaulting to the old hardcoded reset-to-origin so Map mode and the
     // Architecture graph behave exactly as before. A host whose "100%" is not
     // {0,0,1} (the content canvas frames its world instead) passes its own.
@@ -3445,7 +3560,7 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     onTapFn = opts.onTap ?? null;
   let activeTouch = null, lastTouchDist = 0, lastTouchCentroid = null, drag = null;
   // Momentum state
-  let momentumVX = 0, momentumVY = 0, momentumRAF = null;
+  let momentumVX = 0, momentumVY = 0, momentumRAF = null, wheelIdleTimer = null;
   const clamp = (s) => Math.min(maxScale, Math.max(minScale, s));
   // Cursor-anchored zoom: the world point under (cx,cy) must stay under (cx,cy).
   // This used to invert BOTH axes through state.x — and read it after the x line had
@@ -3479,6 +3594,7 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   };
   const stopMomentum = () => {
     if (momentumRAF) { cancelAnimationFrame(momentumRAF); momentumRAF = null; }
+    if (wheelIdleTimer) { clearTimeout(wheelIdleTimer); wheelIdleTimer = null; }
     momentumVX = momentumVY = 0;
   };
   const onWheel = (e) => {
@@ -3504,9 +3620,26 @@ function NavCtrl(container, state, applyFn, opts = {}) {
       panBy(dx, dy);
       // Build momentum from wheel velocity
       if (momentumEnabled && !drag) {
-        momentumVX += dx * 1.5;
-        momentumVY += dy * 1.5;
-        if (!momentumRAF) momentumRAF = requestAnimationFrame(animateMomentum);
+        if (momentumMode === 'release') {
+          // A smoothed estimate of the CURRENT velocity, not a running total: over a
+          // long two-finger scroll the old accumulator grew without bound, so a
+          // released glide would fling the view off screen. Nothing moves until the
+          // wheel has been quiet for a moment, which is what keeps the pan exact.
+          momentumVX = momentumVX * 0.6 + dx * 0.9;
+          momentumVY = momentumVY * 0.6 + dy * 0.9;
+          if (momentumRAF) { cancelAnimationFrame(momentumRAF); momentumRAF = null; }
+          if (wheelIdleTimer) clearTimeout(wheelIdleTimer);
+          wheelIdleTimer = setTimeout(() => {
+            wheelIdleTimer = null;
+            if (!momentumRAF && (Math.abs(momentumVX) >= 0.5 || Math.abs(momentumVY) >= 0.5)) {
+              momentumRAF = requestAnimationFrame(animateMomentum);
+            }
+          }, 90);
+        } else {
+          momentumVX += dx * 1.5;
+          momentumVY += dy * 1.5;
+          if (!momentumRAF) momentumRAF = requestAnimationFrame(animateMomentum);
+        }
       }
     }
     if (onZoom) onZoom();
@@ -3561,10 +3694,17 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
     const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2, cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     const pt = touchCenterInStage(cx, cy);
+    if (!lastTouchCentroid) lastTouchCentroid = { x: cx, y: cy }; // a 3rd finger lifting clears it mid-gesture
     if (lastTouchDist > 0) { zoomAt(dist / lastTouchDist, pt.x, pt.y); }
-    const ptc = touchCenterInStage(lastTouchCentroid.x, lastTouchCentroid.y);
-    // Fixed pixel delta for touch pan (no scale multiplier)
-    if (Math.abs(dist - lastTouchDist) < 3) panBy(ptc.x - lastTouchCentroid.x, ptc.y - lastTouchCentroid.y);
+    // Fixed pixel delta for touch pan (no scale multiplier). This used to convert the
+    // PREVIOUS centroid into stage coordinates and subtract the raw previous centroid
+    // from it — a difference of nothing but the container's own offset, so every
+    // touchmove panned by a constant (rect.left, rect.top) instead of by how far the
+    // fingers had moved. It also never advanced lastTouchCentroid, so there was no
+    // delta to compute in the first place. Both fixed: the centroid is in the same
+    // space on both sides, and it moves with the fingers.
+    if (Math.abs(dist - lastTouchDist) < 3) panBy(cx - lastTouchCentroid.x, cy - lastTouchCentroid.y);
+    lastTouchCentroid = { x: cx, y: cy };
     lastTouchDist = dist;
     e.preventDefault();
   }, { passive: false });
@@ -3595,7 +3735,15 @@ function NavCtrl(container, state, applyFn, opts = {}) {
 
 // The camera is no longer an SVG transform on a <g> — it is applied inside
 // paintGraph() as the canvas transform, so "apply the camera" is just "repaint".
-function applyCamera(){ requestRender(); }
+// This is NavCtrl's applyFn and nothing else calls it, so every call is the user
+// moving the camera by hand: it stamps the time (so a pending auto-fit knows to wait)
+// and cancels a pending auto-fit outright. Once they have aimed the camera themselves,
+// yanking it back to a fit a moment later would be the app arguing with them.
+function applyCamera(){
+  gLastUserCameraMove = gNow();
+  gPendingFit = false;
+  requestRender();
+}
 
 function initGraph(){
   // NavCtrl first, deliberately. It is the thing that decides, on each pointermove,
@@ -3619,7 +3767,7 @@ function initGraph(){
     graphEpoch++; // changes what edgeVisible() answers without rebuilding the graph
     requestRender();
   };
-  document.getElementById('resetBtn').onclick = function(){ frameWholeWorld(); applyCamera(); focusedId=null; hoveredId=null; layoutAndDraw(); };
+  document.getElementById('resetBtn').onclick = resetGraphView;
   document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
 }
 
@@ -3635,10 +3783,13 @@ function setupZoomPan(){
   // The label reveal used to be debounced 120ms behind a zoom because each reveal
   // meant a full DOM rebuild. A repaint is cheap, so labels now follow the zoom live.
   _cnNav = NavCtrl(cv, camera, applyCamera, {
-    minScale: 0.3, maxScale: 16, step: 1.06, keyPan: 90,
+    minScale: GRAPH_MIN_SCALE, maxScale: GRAPH_MAX_SCALE, step: 1.06, keyPan: 90,
     onZoom: requestRender,
     home: () => frameWholeWorld(),
-    fit: () => { frameWholeWorld(); requestRender(); },
+    // F frames the nodes; 0 (home) still snaps back to the whole-world framing, which
+    // is the closest thing this camera has to "100%".
+    fit: () => { fitVisibleNodes(); requestRender(); },
+    momentumMode: 'release',
     fixedViewBox: true,
     shouldPan: graphShouldPan,
     onTap: graphTap,
