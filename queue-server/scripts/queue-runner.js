@@ -37,7 +37,7 @@ import {
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
-import { getClaudeUsage, getSideSubscriptionUsage } from '../server/src/services/claudeUsage.js';
+import { getClaudeUsage, getSideSubscriptionUsage, getSideUsageState } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
@@ -451,21 +451,30 @@ async function sideHandoverReason() {
 // stream flush carries it too now. getClaudeUsage() caches for 60s, so this is
 // one real read per minute however often we flush.
 async function usageForReport() {
-  try {
-    const usage = await getClaudeUsage();
-    if (!usage) return null;
-    // The second account's reading rides along on the same report. It was already
-    // being computed on this machine for the hand-over gate (sideHandoverReason
-    // above) but never leaving it, so the app's usage strip could only ever show
-    // the main account and quietly implied that was the whole picture. Only the
-    // Mac holds this token, so the server cannot read it any other way.
-    // Its own cache means this costs no extra HTTP call most of the time.
-    let sideUsage = null;
-    if (SIDE_TOKEN) {
-      try { sideUsage = await getSideSubscriptionUsage(SIDE_TOKEN); } catch { /* unknown — the bar shows nothing */ }
-    }
-    return { ...usage, sideUsage };
-  } catch { return null; }
+  // The two accounts are read independently: a failed MAIN read used to return null
+  // here and take the second account's reading down with it, for no reason.
+  let usage = null;
+  try { usage = await getClaudeUsage(); } catch { /* unknown — the side block still goes */ }
+
+  // The second account's reading rides along on the same report. It was already
+  // being computed on this machine for the hand-over gate (sideHandoverReason
+  // above) but never leaving it, so the app's usage strip could only ever show
+  // the main account and quietly implied that was the whole picture. Only the
+  // Mac holds this token, so the server cannot read it any other way.
+  // Its own cache means this costs no extra HTTP call most of the time.
+  let side = { data: null, reason: SIDE_TOKEN ? 'unreachable' : 'off', stale: false, at: null };
+  if (SIDE_TOKEN) {
+    try { side = await getSideUsageState(SIDE_TOKEN); } catch { /* stays 'unreachable' */ }
+  }
+
+  // Worth sending even with no numbers at all: the reason itself is the reading
+  // the app needs, so it can say "rate-limited" instead of "no reading".
+  if (!usage && !side.data && side.reason === 'off') return null;
+  return {
+    ...(usage || {}),
+    sideUsage: side.data,
+    sideState: { reason: side.reason, stale: side.stale, at: side.at },
+  };
 }
 
 // ─── Claude helper lane ───────────────────────────────────────────────────────

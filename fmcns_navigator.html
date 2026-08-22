@@ -284,6 +284,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-none,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-alert,
 .railbar:not(.pinned):not(:hover):not(:focus-within) .usage-seeall { display:none; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-group.is-blank { display:none; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-strip { gap:3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-group { gap:3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-bar { height:4px; }
@@ -385,6 +386,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .usage-reset { color:var(--c-ink-4); }
 .usage-alert { padding:3px 8px; border-radius:6px; background:var(--c-danger-tint); color:var(--c-danger); font-size:10px; }
 .usage-none { font-size:10px; color:var(--c-ink-4); }
+/* An account with no reading still holds its place, dimmed, with the reason on
+   hover — the whole trouble was that a missing one looked like a missing account. */
+.usage-none-row { opacity:.5; cursor:help; }
+.usage-none-row:hover { opacity:.85; }
 /* The per-account detail, folded away. The header is already a crowded flex row
    (queue banner, pause badge, server picker, settings) so a bar per account
    cannot all be on screen at once. The main account's two limits stay visible
@@ -8425,6 +8430,19 @@ function spendBarHtml(label, cap, hint) {
 // model-scoped weekly limit on top, since that sheet is already the full picture.
 let lastUsage = null;
 
+// Why the second account has no numbers. Four different problems used to print the
+// same blank, so none of them could be acted on. One sentence each, no mechanism.
+const USAGE_SIDE_REASON = {
+  'runner-offline': "Your Mac isn't connected right now.",
+  off: 'No second account set up.',
+  throttled: 'Anthropic is holding off the check — back shortly.',
+  forbidden: "This account's login can't read its own quota.",
+  unreachable: "Couldn't reach Anthropic for this one.",
+};
+function usageSideWhy(state) {
+  return USAGE_SIDE_REASON[state?.reason] || 'No reading.';
+}
+
 // A rail row: which window, how much is left, the bar, and when it comes back.
 function usageRailRow(label, bucket) {
   if (!bucket || typeof bucket.utilizationPct !== 'number') return '';
@@ -8441,12 +8459,25 @@ function usageRailRow(label, bucket) {
 // One account: its name, then both windows. Nothing is folded into a "tightest
 // limit" any more — the 5-hour window and the week run out at different times and
 // for different reasons, so seeing one of them was seeing half the picture.
-function usageRailGroup(name, hint, session, week) {
+function usageRailGroup(name, hint, session, week, state) {
   const rows = usageRailRow('5 hours', session) + usageRailRow('This week', week);
-  if (!rows) return '';
-  return `<div class="usage-group">
-    <div class="usage-groupname" title="${hint.replace(/"/g, '&quot;')}">${name}</div>${rows}
+  // With no reading, the account still shows — dimmed, with the reason on hover.
+  // Hiding it was the whole problem: an account that is simply absent from the
+  // rail looks like an account that is not there at all.
+  const body = rows || (state
+    ? `<div class="usage-item usage-none-row" title="${usageSideWhy(state).replace(/"/g, '&quot;')}">
+        <span class="ui-label">&mdash;</span></div>`
+    : '');
+  if (!body) return '';
+  const age = state?.stale && state?.ageMs ? ` · ${fmtAgo(state.ageMs)}` : '';
+  return `<div class="usage-group${rows ? '' : ' is-blank'}">
+    <div class="usage-groupname" title="${hint.replace(/"/g, '&quot;')}">${name}${age}</div>${body}
   </div>`;
+}
+// Minutes, for a reading that is a little old.
+function fmtAgo(ms) {
+  const m = Math.round(ms / 60000);
+  return m < 1 ? 'just now' : `${m}m ago`;
 }
 // A row in the full breakdown: label, figure, bar, and when it resets.
 function usageFullRow(label, bucket) {
@@ -8473,6 +8504,8 @@ function usageFullHtml(u) {
   const think = u.side ? [
     usageFullRow('Next 5 hours', u.side.session),
     usageFullRow('This week', u.side.week),
+    u.sideState?.stale && u.sideState?.ageMs
+      ? `<div class="uq-note">as of ${fmtAgo(u.sideState.ageMs)}</div>` : '',
   ].filter(Boolean).join('') : '';
   const paid = spendBarHtml('This month', u.openai, 'Real money spent on Idea Studio conversations this month, against your monthly ceiling.');
 
@@ -8485,7 +8518,7 @@ function usageFullHtml(u) {
 
   return `<div class="uq-panel">
     ${lane('Building account', 'Runs your tasks — the account that writes code.', build, 'No reading.')}
-    ${lane('Thinking account', "The app's own brainstorming, ideas and summaries — kept separate so it never eats the build quota.", think, 'No reading.')}
+    ${lane('Thinking account', "The app's own brainstorming, ideas and summaries — kept separate so it never eats the build quota.", think, usageSideWhy(u.sideState))}
     ${lane('Paid lane', 'Real money, Idea Studio.', paid, 'Off.')}
   </div>`;
 }
@@ -8504,7 +8537,7 @@ async function loadUsage() {
   // back. The paid lane has no window — it is a monthly ceiling.
   const rows = [
     usageRailGroup('Building', 'The account that runs your tasks.', u.session, u.week),
-    usageRailGroup('Thinking', "The second account — the app's own thinking.", u.side?.session, u.side?.week),
+    usageRailGroup('Thinking', "The second account — the app's own thinking.", u.side?.session, u.side?.week, u.sideState),
     spendBarHtml('Paid', u.openai, 'Real money spent on Idea Studio this month, against your monthly ceiling.'),
   ].filter(Boolean).join('');
 

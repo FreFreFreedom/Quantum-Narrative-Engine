@@ -21,7 +21,7 @@ import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedArchitectureHistory, cleanupFrenchSuggestions } from './services/bootstrapData.js';
-import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage, runnerReportedUsageRaw } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
@@ -279,12 +279,36 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
     // show one bar per account instead of implying the main account is the whole
     // picture. `side` is whatever the runner last reported — only the Mac holds
     // that token, so the server can never read it directly.
-    const side = fromRunner?.sideUsage || null;
+    //
+    // It also says WHY when there is nothing: a blank second account used to mean
+    // any of four different things (Mac asleep, no token, rate-limited endpoint, a
+    // login not allowed to read quota) and the app printed the same "No reading."
+    // for all of them. And because only the Mac can read it, a slightly old reading
+    // beats none — kept for 30 minutes, matching the stale window in claudeUsage.js,
+    // past which a 5-hour window has moved too far to quote.
+    const SIDE_STALE_MAX_MS = 30 * 60_000;
+    const raw = runnerReportedUsageRaw();
+    let side = fromRunner?.sideUsage || null;
+    let sideState;
+    if (!raw || raw.ageMs > SIDE_STALE_MAX_MS) {
+      side = null;
+      sideState = { reason: 'runner-offline', stale: false, ageMs: raw?.ageMs ?? null };
+    } else if (raw.ageMs > 5 * 60_000) {
+      side = raw.usage?.sideUsage || null;
+      sideState = { reason: side ? 'stale' : (raw.usage?.sideState?.reason || 'runner-offline'), stale: true, ageMs: raw.ageMs };
+    } else {
+      const rs = raw.usage?.sideState || null;
+      sideState = rs
+        ? { reason: rs.reason, stale: !!rs.stale, ageMs: raw.ageMs }
+        // An older runner that predates sideState: infer it from the numbers alone.
+        : { reason: side ? 'ok' : 'unreachable', stale: false, ageMs: raw.ageMs };
+    }
     let openai = null;
     try { openai = await openAiCapState(); } catch {}
     res.json({
       ...usage,
       side,
+      sideState,
       openai,
       schedulerLimitResetAt: queueDeferUntil(),
     });

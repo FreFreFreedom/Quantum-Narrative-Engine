@@ -156,7 +156,7 @@ async function mainAccountToken() {
 // percentage, from the same endpoint, with no token ever leaking into the other's
 // reading. Returns null on any failure, which every caller treats as "unknown".
 async function fetchUsageForToken(token) {
-  if (!token) return { data: null, throttled: false };
+  if (!token) return { data: null, throttled: false, status: null };
 
   let data;
   try {
@@ -170,10 +170,10 @@ async function fetchUsageForToken(token) {
         signal: controller.signal,
       });
     } finally { clearTimeout(timer); }
-    if (res.status === 429) return { data: null, throttled: true };
-    if (!res.ok) return { data: null, throttled: false };
+    if (res.status === 429) return { data: null, throttled: true, status: 429 };
+    if (!res.ok) return { data: null, throttled: false, status: res.status };
     data = await res.json();
-  } catch { return { data: null, throttled: false }; }
+  } catch { return { data: null, throttled: false, status: 0 }; }
 
   const limits = Array.isArray(data.limits) ? data.limits : [];
   const byKind = (kind) => limits.find((l) => l?.kind === kind) || null;
@@ -203,7 +203,7 @@ async function fetchUsageForToken(token) {
     } : null,
     extraUsageEnabled: !!data.extra_usage?.is_enabled,
   };
-  return { data: parsed, throttled: false };
+  return { data: parsed, throttled: false, status: 200 };
 }
 
 async function fetchSubscription() {
@@ -218,12 +218,22 @@ async function fetchSubscription() {
 // would be worse than no reading at all, since it decides which account pays.
 let _sideCache = null;
 let _lastSideGood = null;
-export async function getSideSubscriptionUsage(token) {
-  if (!token) return null;
-  const now = Date.now();
-  if (_sideCache && _sideCache.token === token && now - _sideCache.at < _sideCache.ttl) return _sideCache.data;
 
-  const { data: fresh, throttled } = await fetchUsageForToken(token);
+// Same read, but it also says WHY there is no reading. Every failure here used to
+// collapse into the same null, so the app could only ever print "No reading." for
+// four completely different problems — a closed laptop, a missing token, a
+// rate-limited endpoint and a login that is not allowed to read quota at all.
+// Telling them apart is the difference between a fixable message and a mystery.
+//
+// reason: 'off' | 'ok' | 'stale' | 'throttled' | 'forbidden' | 'unreachable'
+export async function getSideUsageState(token) {
+  if (!token) return { data: null, reason: 'off', stale: false, at: null };
+  const now = Date.now();
+  if (_sideCache && _sideCache.token === token && now - _sideCache.at < _sideCache.ttl) {
+    return { data: _sideCache.data, reason: _sideCache.reason, stale: _sideCache.stale, at: _sideCache.readAt };
+  }
+
+  const { data: fresh, throttled, status } = await fetchUsageForToken(token);
   if (fresh) _lastSideGood = { at: now, token, data: fresh };
 
   // Fall back to the last good reading, exactly as the main account's does. This is
@@ -234,11 +244,25 @@ export async function getSideSubscriptionUsage(token) {
   // than SUB_STALE_MAX_MS is dropped instead, since a 5h window moves.
   const recovered = !fresh && _lastSideGood && _lastSideGood.token === token
     && (now - _lastSideGood.at) < SUB_STALE_MAX_MS
-    ? _lastSideGood.data : null;
+    ? _lastSideGood : null;
 
-  const data = fresh || recovered;
-  _sideCache = { token, at: now, data, ttl: fresh ? CACHE_TTL_MS : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS) };
-  return data;
+  const data = fresh || recovered?.data || null;
+  const reason = fresh ? 'ok'
+    : recovered ? 'stale'
+    : throttled ? 'throttled'
+    : (status === 401 || status === 403) ? 'forbidden'
+    : 'unreachable';
+  const readAt = fresh ? now : (recovered?.at ?? null);
+  _sideCache = {
+    token, at: now, data, reason, readAt, stale: !fresh && !!data,
+    ttl: fresh ? CACHE_TTL_MS : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS),
+  };
+  return { data, reason, stale: !fresh && !!data, at: readAt };
+}
+
+// The hand-over gate's view: just the numbers, unchanged.
+export async function getSideSubscriptionUsage(token) {
+  return (await getSideUsageState(token)).data;
 }
 
 let _cache = null;

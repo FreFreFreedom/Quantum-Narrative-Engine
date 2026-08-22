@@ -1561,6 +1561,21 @@ export function runnerReportedUsage() {
     return usage && Object.keys(usage).length ? usage : null;
   } catch { return null; }
 }
+// Same reading, with its age and no cut-off. The 5-minute rule above is right for
+// the main account (a stale percentage is worse than none) but it also threw away
+// the SECOND account's numbers every time the Mac went quiet — and only the Mac can
+// read those, so there was nothing to fall back to. Callers decide what age they
+// can live with.
+export function runnerReportedUsageRaw() {
+  if (_runnerUsage) return { usage: _runnerUsage.usage, ageMs: Date.now() - _runnerUsage.at };
+  try {
+    const row = db?.prepare(`SELECT runner_usage_json, runner_usage_at FROM ai_settings WHERE id='global'`).get();
+    if (!row?.runner_usage_at) return null;
+    const usage = JSON.parse(row.runner_usage_json || '{}');
+    if (!usage || !Object.keys(usage).length) return null;
+    return { usage, ageMs: Date.now() - new Date(row.runner_usage_at).getTime() };
+  } catch { return null; }
+}
 export function runnerStatus() {
   const running = readTasks().filter((t) => t.status === 'in_progress' && t.claimed_by);
   const lastBeat = running
