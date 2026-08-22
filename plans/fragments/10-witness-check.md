@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED 2026-08-22 |
+| **Status** | DONE 2026-08-22 — `npm run witness:selftest` covers the lifecycle rules; the schema columns from fragment 09 are declared here too (idempotent `ALTER`s, so whichever lands first wins) because the checker cannot run without them |
 | **Parent plan** | `plans/an-architecture-that-knows-what-it-is.md` |
 | **Part of** | the overnight chain filed in `plans/fragments/` — run in filename order |
 

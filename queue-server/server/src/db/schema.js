@@ -1002,6 +1002,35 @@ export function initArchitectureSchema(db) {
   // every surface that listed a node used to slice it mid-sentence. This is the
   // written one-liner those rows show instead.
   try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN summary TEXT`); } catch {}
+
+  // The witness — how a node could one day PROVE it exists, and the lifecycle that
+  // proof drives (plan an-architecture-that-knows-what-it-is.md, sections 1-2).
+  // Without this the tree only ever grows: everything is 'Concept' forever and
+  // nothing is ever taken out of it.
+  //
+  //   witness_kind      file | symbol | route | table | query
+  //   witness_value     e.g. 'services/witnessCheck.js', 'runWitness',
+  //                     'POST /api/architecture/witness/recheck', 'architecture_umbrellas',
+  //                     or a SELECT that returns something truthy
+  //   witness_ok        0/1 — the LAST result. Never written for an unknown result;
+  //                     see services/witnessCheck.js on why "not checked" must stay
+  //                     distinguishable from "checked and failed".
+  //   witness_checked_at   when it was last actually checked
+  //   witness_first_ok_at  when it first passed — the node's real "built on" date,
+  //                     and the thing that makes a later failure mean 'retired'
+  //                     rather than 'still just an idea'.
+  //   lifecycle         concept | planned | building | live | retired
+  //
+  // These ALTERs are idempotent (they throw harmlessly once applied), which is also
+  // why it is safe for them to be declared here and in the fragment that introduces
+  // the witness UI — whichever lands first wins and the other is a no-op.
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_kind TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_value TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_ok INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_checked_at TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN witness_first_ok_at TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE architecture_nodes ADD COLUMN lifecycle TEXT NOT NULL DEFAULT 'concept'`); } catch {}
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS tree_sync_state (
       id INTEGER PRIMARY KEY CHECK(id=1),
@@ -1329,6 +1358,9 @@ export function initFilmEnrichmentSchema(db) {
   // NO model at all — the drafting pass uses it to learn which files actually
   // exist before writing a brief, instead of instructing the model to guess. Same
   // claim/result/deadline plumbing, different work at the far end.
+  // 'witness' is the same idea again: the architecture tree's file/symbol/route
+  // witnesses can only be read from a checkout, and this container has none
+  // (services/witnessCheck.js). Also model-free.
   try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'`); } catch {}
 
   // Git work the SERVER wants doing but cannot do: it runs in a Railway container

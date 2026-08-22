@@ -558,6 +558,10 @@ const HELPER_WAIT_MS = 120_000;
 const HELPER_SIDE_WAIT_MS = 180_000;
 const HELPER_POLL_MS = 1_500;
 
+// Helper kinds the Mac answers with local git/grep and no model at all. Anything
+// not in here is a Claude call, which is the default.
+const MODEL_FREE_KINDS = new Set(['repo_probe', 'witness']);
+
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
 async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main', kind = 'text' }) {
@@ -575,7 +579,7 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     // task-card chat) needs a stronger model than the rest.
     db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind) VALUES (?,?,?,?,?,?,?,?,?)`)
       .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
-        model || 'haiku', account === 'side' ? 'side' : 'main', kind === 'repo_probe' ? 'repo_probe' : 'text');
+        model || 'haiku', account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text');
 
     // A caller with a person waiting on the other end (the task-card chat) sets
     // its own, much shorter deadline: 120s is right for rescuing a background
@@ -616,6 +620,29 @@ export async function runRepoProbe({ request, waitMs = 20_000, label = 'repo-pro
     label,
     waitMs,
     kind: 'repo_probe',
+  });
+  if (!r?.text) return null;
+  try { return JSON.parse(r.text); } catch { return null; }
+}
+
+// The architecture tree's file/symbol/route witnesses (services/witnessCheck.js).
+// Same model-free channel as the repo probe, and null for the same reasons: no
+// runner attached, no answer in time, or a reply that will not parse. Every one of
+// those must reach the caller as "not checked" — witnessCheck.js turns a missing
+// result into "leave the node exactly as it was", never into a retirement.
+//
+// That also covers the deploy gap. A runner started before this existed does not
+// know the 'witness' kind and falls through to its Claude branch: max_tokens is 1,
+// so the call is worth nothing, and whatever comes back will not parse as results
+// — so the whole batch reads as "not checked" until the runner is restarted.
+export async function runWitnessProbe({ request, waitMs = 30_000, label = 'witness-check' }) {
+  const r = await runHelperJob({
+    prompt: JSON.stringify(request || {}),
+    feature: 'witness',
+    maxTokens: 1,
+    label,
+    waitMs,
+    kind: 'witness',
   });
   if (!r?.text) return null;
   try { return JSON.parse(r.text); } catch { return null; }

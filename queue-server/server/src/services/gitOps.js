@@ -163,12 +163,17 @@ export function gitPathFacts(cwd, paths, { ref = TRUNK, max = 12 } = {}) {
 // tracked tree and out of node_modules for free. Fixed-string search (-F): these
 // terms come from a person's request text, and a stray '(' would otherwise be a
 // broken regex rather than a search.
-export function gitGrepHits(cwd, terms, { ref = TRUNK, perTerm = 4, max = 8 } = {}) {
+// `paths` is an optional pathspec (e.g. ['*.js', '*.html']) narrowing the search.
+// Default null keeps the whole-tree behaviour every existing caller relies on; the
+// architecture witness check passes code globs so a mention in a plan document
+// cannot pass for the thing itself.
+export function gitGrepHits(cwd, terms, { ref = TRUNK, perTerm = 4, max = 8, paths = null } = {}) {
   const out = [];
+  const pathspec = Array.isArray(paths) && paths.length ? ['--', ...paths] : [];
   for (const t of (terms || []).slice(0, max)) {
     const term = String(t || '').trim();
     if (term.length < 3) continue;
-    const res = git(['-C', cwd, 'grep', '-n', '-F', '-I', '--max-count', String(perTerm), term, ref], { quiet: true });
+    const res = git(['-C', cwd, 'grep', '-n', '-F', '-I', '--max-count', String(perTerm), term, ref, ...pathspec], { quiet: true });
     if (!res) { out.push({ term, hits: [] }); continue; }
     const hits = res.split('\n').filter(Boolean).slice(0, perTerm).map((line) => {
       // "<ref>:<path>:<lineno>:<text>"

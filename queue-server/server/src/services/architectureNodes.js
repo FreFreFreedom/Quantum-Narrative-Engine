@@ -16,6 +16,7 @@ import crypto from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { APP_BLURB } from './ai/appModel.js';
+import { parseWitness } from './witnessCheck.js';
 
 const TERRITORIES = ['perception', 'knowledge', 'reasoning', 'experience', 'interface', 'self'];
 const STATUS_LEVELS = ['Concept', 'Designed', 'Prototype', 'Working', 'Validated', 'Advanced'];
@@ -49,6 +50,16 @@ function rowToNode(r) {
     provenance: r.provenance,
     parent_node_id: r.parent_node_id,
     created_at: r.created_at,
+    // How this node could prove it exists, and what the last proof attempt said
+    // (services/witnessCheck.js). `lifecycle` is what the frontend dims by: a
+    // 'live' node has been proved and sinks into the quiet built substrate, so
+    // only the frontier stays loud.
+    witness_kind: r.witness_kind || null,
+    witness_value: r.witness_value || null,
+    witness_ok: r.witness_ok === null || r.witness_ok === undefined ? null : !!r.witness_ok,
+    witness_checked_at: r.witness_checked_at || null,
+    witness_first_ok_at: r.witness_first_ok_at || null,
+    lifecycle: r.lifecycle || 'concept',
   };
 }
 
@@ -113,6 +124,27 @@ export function updateNode(db, id, input) {
     input.why !== undefined ? input.why : row.why,
     input.next !== undefined ? input.next : row.next,
     JSON.stringify(depends), status, provenance, id);
+
+  // Setting or moving a witness is a separate write on purpose: it must clear the
+  // LAST RESULT, or a node keeps the verdict of the witness it used to have and
+  // reads as proved by something it no longer claims.
+  //
+  // `witness_first_ok_at` is deliberately NOT cleared. It is the node's real
+  // "built on" date, and it is what makes a later failure mean retired rather than
+  // "still just an idea" — a node that was proved, and whose witness now points at
+  // something that is not there, is exactly the signal this whole mechanism exists
+  // to surface. Fixing the witness and re-checking puts it straight back to live.
+  if (input.witness_kind !== undefined || input.witness_value !== undefined) {
+    const w = parseWitness({
+      witness_kind: input.witness_kind !== undefined ? input.witness_kind : row.witness_kind,
+      witness_value: input.witness_value !== undefined ? input.witness_value : row.witness_value,
+    });
+    db.prepare(`
+      UPDATE architecture_nodes SET witness_kind=?, witness_value=?, witness_ok=NULL, witness_checked_at=NULL
+      WHERE id=?
+    `).run(w ? w.kind : null, w ? w.value : null, id);
+  }
+
   return { node: rowToNode(db.prepare(`SELECT * FROM architecture_nodes WHERE id=?`).get(id)) };
 }
 

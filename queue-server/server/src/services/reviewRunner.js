@@ -22,6 +22,7 @@ import { autoShipEnabled } from './ai/text.js';
 import { shipCheckMessage } from './shipChecks.js';
 import { concernLines, summariseForAntoine } from './codeReviewPass.js';
 import { enqueueShipJob, enqueueUndoJob, setGitJobHandler } from './gitJobs.js';
+import { kickWitnessRecheck } from './witnessCheck.js';
 import { broadcastAll } from '../realtime.js';
 
 let db = null;
@@ -428,6 +429,11 @@ setGitJobHandler((job, payload) => {
         concerns: null,
       });
       console.log(`[reviews] ${job.review_id} is live (${payload.merge_commit?.slice(0, 8) || 'no sha'})${payload.already ? ' — was already published' : ''}`);
+      // Something just went live, so the tree's picture of what is built is now out
+      // of date — re-check every witness (services/witnessCheck.js). Fire-and-forget
+      // and free: a grep and a SELECT, no model. Publishing must never wait on it,
+      // and it can never fail the ship.
+      kickWitnessRecheck('after a ship');
     } else {
       // Words Antoine can act on, per failure. The generic fallback still says what
       // to do rather than naming a git error he cannot use.

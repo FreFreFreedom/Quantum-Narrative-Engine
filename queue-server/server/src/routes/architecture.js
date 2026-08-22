@@ -10,6 +10,7 @@ import { containerFreeBytes } from '../lib/memHeadroom.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { findUnreachable, explainedFromCache, kickExplain, buildTaskFor } from '../services/reachability.js';
 import { DB_PATH } from '../db/schema.js';
+import { recheckAllWitnesses } from '../services/witnessCheck.js';
 
 // Is the database sitting on storage that survives a redeploy?
 //
@@ -78,6 +79,20 @@ export function architectureRoutes(db) {
     if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
     res.json(out);
   });
+
+  // "Re-check" from the Architecture tab — ask every node with a witness to prove
+  // itself again. Free (a grep and a SELECT, no model), so it is safe to press as
+  // often as you like, and it is the same pass that runs by itself on every ship.
+  //
+  // `unchecked` is reported separately from `failed` on purpose. With the Mac
+  // asleep, every file/symbol/route witness comes back unchecked and NOTHING is
+  // retired — the outcome has to read as "we could not look", never as "it is
+  // gone". See services/witnessCheck.js.
+  router.post('/witness/recheck', asyncHandler(async (req, res) => {
+    const out = await recheckAllWitnesses(db);
+    if (out.error) return res.status(500).json(out);
+    res.json(out);
+  }));
 
   // Manual "Sync now" from the Architecture tab — runs the git-history watcher
   // immediately (cheap: one model call only when main has new commits).
