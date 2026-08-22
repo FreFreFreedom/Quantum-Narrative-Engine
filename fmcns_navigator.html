@@ -79,9 +79,33 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, .tv-toolbar, .mind-toolbar, .flow-composer, .q-right, .q-left, .ws-slot, .ws-archdetail { transition:background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 .wrap { display:flex; height:100vh; min-height:640px; position:relative; }
-.left { width:230px; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; flex-shrink:0; padding:14px; }
+/* The filters panel, in two parts for the same reason the side rail is (see the
+   .railbar note): .left is the width the flex row reserves, and above 820px
+   .left-inner floats out of it over the graph on hover instead of widening it.
+   A hover that re-sized the graph would re-run the force layout every pass of the
+   mouse. --filters-w is the open width, so the responsive blocks below set that
+   one value instead of repeating the geometry. */
+.left { --filters-w:230px; position:relative; width:var(--filters-w); border-right:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; display:flex; flex-direction:column; min-height:0; }
+.left-inner { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:14px; }
 .left h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:14px 0 8px; }
-.left h2:first-child { margin-top:0; }
+.left-head + h2 { margin-top:0; }
+.left-head { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.left-head-title { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); }
+.left-pin { margin-left:auto; }
+/* One chevron at a time: it points the way the panel is about to go. Specific enough
+   to beat .uicon .ic's own display, which is declared further down. */
+.left .left-pin .pin-close, .left.pinned .left-pin .pin-open { display:none; }
+.left.pinned .left-pin .pin-close { display:block; }
+/* The 44px face the collapsed panel leaves behind. Drawn at every width but only
+   shown by the min-width:821px block, since below that the panel is an overlay
+   with its own button in the graph toolbar. */
+.left-spine { display:none; position:absolute; top:0; left:0; bottom:0; width:44px; flex-direction:column; align-items:center; gap:9px; padding:13px 0; border:none; background:none; color:var(--c-ink-4); cursor:pointer; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.left-spine:hover { color:var(--c-ink-2); }
+.left-spine .ic { width:16px; height:16px; flex:none; display:block; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+.left-spine-word { writing-mode:vertical-rl; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }
+/* One dot, so a collapsed panel can never hide that the view is narrowed. */
+.left-spine-dot { display:none; width:5px; height:5px; flex:none; border-radius:50%; background:var(--c-accent); }
+.left.has-filters .left-spine-dot { display:block; }
 .type-toggle { display:flex; align-items:center; gap:7px; padding:6px 4px; font-size:12.5px; cursor:pointer; }
 .type-toggle input { margin:0; }
 .cluster-item { padding:7px 8px; border-radius:6px; cursor:pointer; margin-bottom:2px; font-size:12px; }
@@ -1508,7 +1532,7 @@ button:active { transform: translateY(1px) scale(.99); }
      so a pinned side rail stops taking real width and floats over instead. */
   .railbar.pinned { width:52px; }
   .railbar.pinned .rail-inner { box-shadow:var(--sh-md); }
-  .left { width:190px; }
+  .left { --filters-w:190px; }
   .right { width:300px; }
   .map-sidepanel { width:260px; }
   /* Core Architecture (Phase B1): the detail pane permanently ate 330px of
@@ -1520,7 +1544,8 @@ button:active { transform: translateY(1px) scale(.99); }
   .ws-archdetail { position:absolute; top:0; right:0; bottom:0; z-index:8; box-shadow:var(--sh-md); }
 }
 @media (max-width: 600px) {
-  .left { width:150px; padding:10px; }
+  .left { --filters-w:150px; }
+  .left-inner { padding:10px; }
   .right { width:240px; padding:10px; }
   .map-sidepanel { width:210px; padding:10px; }
   .ctrlbtn, .core-hbtn { padding:var(--sp-1) var(--sp-2); }
@@ -1536,9 +1561,11 @@ button:active { transform: translateY(1px) scale(.99); }
 @media (max-width: 820px) {
   .narrow-only { display:inline-flex; }
   .left, .right, .map-sidepanel {
-    position:absolute; top:0; bottom:0; z-index:8; padding:14px;
+    position:absolute; top:0; bottom:0; z-index:8;
     box-shadow:var(--sh-md); transition:transform var(--t-med) var(--ease); }
-  .left { left:0; width:230px; max-width:80vw; transform:translateX(-100%); }
+  .right, .map-sidepanel { padding:14px; }
+  .left { left:0; --filters-w:230px; width:var(--filters-w); max-width:80vw; transform:translateX(-100%); }
+  .left-inner { padding:14px; }
   .right { right:0; width:320px; max-width:92vw; transform:translateX(100%); }
   .map-sidepanel { right:0; width:300px; max-width:92vw; transform:translateX(100%); }
   .left.open, .right.open, .map-sidepanel.open { transform:none; }
@@ -1562,6 +1589,27 @@ button:active { transform: translateY(1px) scale(.99); }
 @media (max-width: 560px) {
   .uc-head { flex-wrap:wrap; }
   .uc-acts { margin-left:auto; }
+}
+/* ---------- The filters panel, collapsed ----------
+   The graph is the content; 230px of checkboxes that are set once and read never
+   is not. So above 820px the panel keeps 44px of spine and the rest floats out
+   over the graph when the mouse (or the keyboard, via focus) arrives — .is-open
+   is put on by initFilterPanel(), not by :hover, because leaving has to wait a
+   moment and has to lose to anything still focused inside. The pin puts the panel
+   back in the flex row for good. Below 821px none of this applies: there the
+   panel is already an overlay with its own button in the graph toolbar.
+   Last in the stylesheet so it wins the widths the responsive blocks set. */
+@media (min-width: 821px) {
+  .left { width:44px; z-index:9; transition:width var(--t-med) var(--ease); }
+  .left-inner { position:absolute; top:0; left:0; bottom:0; width:44px; background:var(--c-bg);
+    border-right:1px solid var(--c-border); opacity:0; pointer-events:none;
+    transition:width var(--t-med) var(--ease), opacity var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease); }
+  .left-spine { display:flex; }
+  .left.is-open .left-inner { width:var(--filters-w); opacity:1; pointer-events:auto; }
+  /* Floating over the graph it needs an edge; sitting in the row it already has one. */
+  .left.is-open:not(.pinned) .left-inner { box-shadow:var(--sh-md); }
+  .left.is-open .left-spine { opacity:0; pointer-events:none; }
+  .left.pinned { width:var(--filters-w); }
 }
 </style>
 </head>
@@ -1684,36 +1732,50 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="queue-panel-body" id="queuePanelBody"></div>
 </aside>
   <div class="wrap" id="app">
-  <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls() | backend: GET /api/ontology/facets, /api/ontology/clusters">
-    <h2>Entity types</h2>
-    <div id="typeList"></div>
-    <div id="sourceBlock" style="display:none;">
-      <h2>Source</h2>
-      <div id="sourceList"></div>
-    </div>
-    <h2>Search</h2>
-    <input class="searchbox" id="search" placeholder="Search entities...">
-    <h2>Axis</h2>
-    <select class="axisselect" id="axisSelect"><option value="">No axis filter</option></select>
-    <div id="axisControls" style="display:none;">
-      <div class="axis-poles"><span id="axisLow">low</span><span id="axisHigh">high</span></div>
-      <div class="axis-range">
-        <label>from <input type="number" id="axisMin" min="0" max="1" step="0.05" value="0"></label>
-        <label>to <input type="number" id="axisMax" min="0" max="1" step="0.05" value="1"></label>
+  <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls(); collapsed-to-a-spine hover/pin behaviour in initFilterPanel()/syncFiltersActive() | backend: GET /api/ontology/facets, /api/ontology/clusters">
+    <div class="left-inner">
+      <div class="left-head">
+        <span class="left-head-title">Filters</span>
+        <button type="button" class="uicon left-pin" id="filtersPin" aria-expanded="false" title="Keep the filters open (or press ] )" aria-label="Keep the filters open">
+          <svg class="ic pin-open" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg>
+          <svg class="ic pin-close" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg>
+        </button>
       </div>
-      <select class="axisselect" id="axisSort">
-        <option value="">Sort: default</option>
-        <option value="asc">Sort: lowest value first</option>
-        <option value="desc">Sort: highest value first</option>
-        <option value="near1">Sort: closest to full integration</option>
-        <option value="near0">Sort: closest to the low pole</option>
-      </select>
-      <div class="axis-note" id="axisNote"></div>
+      <h2>Entity types</h2>
+      <div id="typeList"></div>
+      <div id="sourceBlock" style="display:none;">
+        <h2>Source</h2>
+        <div id="sourceList"></div>
+      </div>
+      <h2>Search</h2>
+      <input class="searchbox" id="search" placeholder="Search entities...">
+      <h2>Axis</h2>
+      <select class="axisselect" id="axisSelect"><option value="">No axis filter</option></select>
+      <div id="axisControls" style="display:none;">
+        <div class="axis-poles"><span id="axisLow">low</span><span id="axisHigh">high</span></div>
+        <div class="axis-range">
+          <label>from <input type="number" id="axisMin" min="0" max="1" step="0.05" value="0"></label>
+          <label>to <input type="number" id="axisMax" min="0" max="1" step="0.05" value="1"></label>
+        </div>
+        <select class="axisselect" id="axisSort">
+          <option value="">Sort: default</option>
+          <option value="asc">Sort: lowest value first</option>
+          <option value="desc">Sort: highest value first</option>
+          <option value="near1">Sort: closest to full integration</option>
+          <option value="near0">Sort: closest to the low pole</option>
+        </select>
+        <div class="axis-note" id="axisNote"></div>
+      </div>
+      <h2>Clusters</h2>
+      <div id="clusterList"></div>
+      <h2>Patterns</h2>
+      <div id="patternList" class="pattern-chiplist"></div>
     </div>
-    <h2>Clusters</h2>
-    <div id="clusterList"></div>
-    <h2>Patterns</h2>
-    <div id="patternList" class="pattern-chiplist"></div>
+    <button type="button" class="left-spine" id="filtersSpine" title="Filters — keep them open (or press ] )" aria-label="Filters">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg>
+      <span class="left-spine-dot" aria-hidden="true"></span>
+      <span class="left-spine-word">Filters</span>
+    </button>
   </div>
   <div class="mid">
     <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near initGraph()/setContentView()">
@@ -2150,12 +2212,19 @@ async function boot() {
     // Films are containers — on by default they bury the characters inside them.
     enabledTypes = new Set(FACETS.types.map(t => t.value).filter(t => t !== 'film'));
     enabledSources = new Set(FACETS.sources.map(s => s.value));
+    // What "nothing filtered" looks like, so the collapsed panel's dot can tell a
+    // real narrowing from the film default (see syncFiltersActive()).
+    FILTER_DEFAULTS = { types: new Set(enabledTypes), sources: new Set(enabledSources) };
 
     document.getElementById('loginGate').style.display = 'none';
     // The pin is applied BEFORE the shell is shown, so a rail the user keeps
     // open never flashes collapsed on load.
     applyRailPinned(railIsPinned());
     initRail();
+    // Same reason as the rail: the pin is applied before the shell is shown, so a
+    // filters panel the user keeps open never flashes collapsed on load.
+    applyFiltersPinned(filtersArePinned());
+    initFilterPanel();
     initNarrowPanels();
     document.getElementById('appShell').style.display = 'flex';
     renderFacets();
@@ -2803,6 +2872,7 @@ function axisComparator() {
 let contentView = 'graph';
 
 function refreshView() {
+  syncFiltersActive();
   if (contentView === 'graph') layoutAndDraw();
   else { pruneEgoStack(); renderScopeBar(); renderList(); renderPatternList(); }
 }
@@ -5388,6 +5458,106 @@ function syncRightPanelOpen() {
   if (!right) return;
   if (focusedId || focusedEdge || activeCluster) right.classList.add('open');
   else right.classList.remove('open');
+}
+// ---------- The filters panel ----------
+// Collapsed to a 44px spine unless you reach for it, on the same two-states-one-
+// geometry plan as the side rail: the open panel floats OVER the graph instead of
+// widening the row, because a hover that changed the graph's width would re-run the
+// force layout on every pass of the mouse. Pinning puts it back in the row for good
+// and is remembered. Not done in pure CSS :hover for two reasons — leaving has to
+// wait a moment (a corner-cut with the mouse should not slam it shut), and anything
+// focused inside has to keep it open, so an open axis dropdown or a half-typed
+// search box can never be snatched away while the pointer wanders off it.
+const FILTERS_PIN_KEY = 'fmcns.filtersPinned';
+const FILTERS_CLOSE_MS = 320;
+let filtersCloseTimer = null;
+function filtersPanel() { return document.querySelector('#app .left'); }
+function filtersArePinned() {
+  try { return localStorage.getItem(FILTERS_PIN_KEY) === '1'; } catch (e) { return false; }
+}
+function openFilters() {
+  clearTimeout(filtersCloseTimer); filtersCloseTimer = null;
+  const left = filtersPanel();
+  if (left) left.classList.add('is-open');
+}
+function closeFiltersSoon() {
+  const left = filtersPanel();
+  if (!left || left.classList.contains('pinned')) return;
+  clearTimeout(filtersCloseTimer);
+  filtersCloseTimer = setTimeout(() => {
+    filtersCloseTimer = null;
+    // Still in use, so wait another beat rather than closing on it. An open native
+    // <select> counts: its list is drawn outside the panel, so the mouse has
+    // already "left" by the time you pick an option.
+    if (left.contains(document.activeElement) || left.matches(':hover')) { closeFiltersSoon(); return; }
+    left.classList.remove('is-open');
+  }, FILTERS_CLOSE_MS);
+}
+function applyFiltersPinned(on) {
+  const left = filtersPanel();
+  if (!left) return;
+  left.classList.toggle('pinned', on);
+  if (on) openFilters(); else closeFiltersSoon();
+  const pin = document.getElementById('filtersPin');
+  if (pin) {
+    pin.setAttribute('aria-expanded', String(on));
+    pin.title = on ? 'Let the filters slide away again' : 'Keep the filters open (or press ] )';
+    pin.setAttribute('aria-label', on ? 'Let the filters slide away again' : 'Keep the filters open');
+  }
+}
+function initFilterPanel() {
+  const left = filtersPanel();
+  if (!left) return;
+  const setPin = (on) => {
+    applyFiltersPinned(on);
+    try { localStorage.setItem(FILTERS_PIN_KEY, on ? '1' : '0'); } catch (e) {}
+    // Nothing to redraw by hand: pinning is the one state that changes the row's
+    // widths, and initGraphCanvas()'s ResizeObserver is watching the canvas itself.
+  };
+  left.addEventListener('mouseenter', openFilters);
+  left.addEventListener('mouseleave', closeFiltersSoon);
+  // Tab into any control inside and the panel opens itself — otherwise the
+  // keyboard could reach filters that are invisible.
+  left.addEventListener('focusin', openFilters);
+  left.addEventListener('focusout', closeFiltersSoon);
+  const spine = document.getElementById('filtersSpine');
+  if (spine) spine.onclick = () => setPin(true);
+  const pin = document.getElementById('filtersPin');
+  // e.detail is 0 for keyboard activation, which must keep its place; a mouse click
+  // has to let go, or the focus it leaves behind holds the panel open (see initRail).
+  if (pin) pin.onclick = (e) => { setPin(!left.classList.contains('pinned')); if (e.detail) pin.blur(); };
+  document.addEventListener('keydown', (e) => {
+    // Escape lets go of a hover-peek the way it does on the rail — by dropping the
+    // focus that is holding it open. Checked before the typing guard on purpose:
+    // this panel holds a search box, and Escape out of a search box is exactly the
+    // moment you want the panel to fold away.
+    if (e.key === 'Escape' && left.contains(document.activeElement)) { document.activeElement.blur(); return; }
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    // ']' pins the filters, next to the rail's '['.
+    if (e.key === ']') { e.preventDefault(); setPin(!left.classList.contains('pinned')); }
+  });
+}
+// One dot on the collapsed spine whenever a filter is actually narrowing the view,
+// so folding the panel away can never hide what it is doing. Types and sources are
+// compared against the defaults chosen at boot, not against "all" — films start off
+// and that is not the user filtering anything. Called from refreshView(), which
+// every one of these controls already goes through.
+let FILTER_DEFAULTS = { types: null, sources: null };
+function sameFilterSet(a, b) {
+  if (!a || !b || a.size !== b.size) return false;
+  for (const v of a) if (!b.has(v)) return false;
+  return true;
+}
+function syncFiltersActive() {
+  const left = filtersPanel();
+  if (!left) return;
+  const sEl = document.getElementById('search');
+  const on = !!(activeCluster || activeTagCommunity || axisFilter.key || egoStack.length
+    || (sEl && sEl.value.trim())
+    || !sameFilterSet(enabledTypes, FILTER_DEFAULTS.types)
+    || !sameFilterSet(enabledSources, FILTER_DEFAULTS.sources));
+  left.classList.toggle('has-filters', on);
 }
 // Content's two rails and Map's country panel become overlays on a narrow window
 // (see the 820px block in the stylesheet). Each needs a way back, so each has a
