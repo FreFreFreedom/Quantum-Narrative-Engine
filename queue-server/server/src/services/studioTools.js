@@ -46,7 +46,7 @@ export const STUDIO_TOOLS = [
   },
   {
     name: 'list_clusters',
-    description: 'List all thematic clusters with their grounding status (grounded vs. reasoned).',
+    description: 'List the 12 hand-defined thematic FILM clusters (roman-numeral IDs) with their grounding status (grounded vs. reasoned). This is NOT the tag communities — for those, use list_theme_clusters / theme_cluster_for_tag.',
     input_schema: { type: 'object', properties: {} },
   },
   {
@@ -95,6 +95,20 @@ export const STUDIO_TOOLS = [
     },
   },
   {
+    name: 'list_theme_clusters',
+    description: 'List the theme clusters — communities of tags computed from which entities actually share them, NOT the 12 hand-defined film clusters (use list_clusters for those). Returns a bounded summary: each cluster\'s id, name, size and a few example tags. For the full tag list, siblings and entities of one cluster, call theme_cluster_for_tag with one of its tags.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'theme_cluster_for_tag',
+    description: 'Given one tag, return the theme cluster (tag community, NOT a film cluster) it belongs to: the cluster\'s full tag list, its sibling tags, and the entities that carry any of them, heaviest sharers first. Answers "what else travels with this tag, and what carries it".',
+    input_schema: {
+      type: 'object',
+      properties: { tag: { type: 'string' } },
+      required: ['tag'],
+    },
+  },
+  {
     name: 'list_recent_work',
     description: 'List recent items in the Dispatch Queue — what has been built lately, what is running and what is waiting. Optional status filter (queued/running/done/blocked/paused/cancelled).',
     input_schema: {
@@ -110,6 +124,13 @@ const ENTITY_CAP = 40;
 const NODE_CAP = 80;
 const WORK_CAP = 40;
 const DOC_SLICE_CAP = 24000;
+// list_theme_clusters is a summary of the WHOLE index (106 communities as of
+// 2026-08-21) — every one, with just id/name/size/a few tags, would still risk
+// clearing toolResultCap (8000 chars) and coming back truncated mid-JSON. Capped
+// like the other list tools above, biggest communities first (the index is
+// already ordered that way).
+const CLUSTER_CAP = 40;
+const CLUSTER_TAG_EXAMPLES = 4;
 
 export function dispatchStudioTool(db, name, input) {
   const args = input || {};
@@ -154,6 +175,32 @@ export function dispatchStudioTool(db, name, input) {
           provenance: n.provenance || null,
         }));
     }
+    case 'list_theme_clusters': {
+      const idx = q.listTagCommunities();
+      const communities = idx.communities || [];
+      return {
+        totalTags: idx.totalTags,
+        totalCommunities: idx.totalCommunities,
+        showing: Math.min(communities.length, CLUSTER_CAP),
+        clusters: communities.slice(0, CLUSTER_CAP).map((c) => ({
+          id: c.id, name: c.name, size: c.size, example_tags: c.tags.slice(0, CLUSTER_TAG_EXAMPLES),
+        })),
+      };
+    }
+    case 'theme_cluster_for_tag': {
+      const tag = String(args.tag || '').trim();
+      if (!tag) return { error: 'tag_required' };
+      const result = q.tagCommunity(db, tag, ENTITY_CAP);
+      if (!result) return { found: false, tag, message: 'No theme cluster for this tag — it does not exist, or shares no tags with any entity.' };
+      return {
+        found: true,
+        tag: result.tag,
+        community: { id: result.community.id, name: result.community.name, size: result.community.size },
+        siblings: result.siblings,
+        entityCount: result.entityCount,
+        entities: result.entities,
+      };
+    }
     case 'list_recent_work': {
       const status = args.status ? String(args.status) : null;
       const limit = Math.min(Number(args.limit) || 25, WORK_CAP);
@@ -176,7 +223,7 @@ export function dispatchStudioTool(db, name, input) {
 // old "can look things up" line had to be deleted).
 export const TOOLS_PROMPT_BLOCK = `You have read-only lookup tools and you should USE them rather than guessing. They cover two things:
 
-The project's content — search its entities (characters, films, countries are one kind of object at different scales), open one in full with its tags and continuum scores, list the thematic clusters, list the Integration Continuum axes, find what else scores near a given value on an axis, and list or read the reference documents in full (the ontology doc, the films master list, the source archive, and every note saved out of an earlier conversation).
+The project's content — search its entities (characters, films, countries are one kind of object at different scales), open one in full with its tags and continuum scores, list the 12 hand-defined film clusters, list the Integration Continuum axes, find what else scores near a given value on an axis, and list or read the reference documents in full (the ontology doc, the films master list, the source archive, and every note saved out of an earlier conversation). Separately, there are theme clusters — communities of tags computed from which entities actually share them, a different thing from the film clusters above: list them as a bounded summary, or give one tag to get its full cluster, sibling tags and the entities carrying them.
 
 The app itself — list the pieces it is built from and where each stands, read the tech tree of what it could become, and list recent work in its queue.
 
