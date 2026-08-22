@@ -12063,6 +12063,11 @@ document.addEventListener('keydown', (e) => {
           if(onDone) onDone();
         } else if(d.text){
           e.msgs.push({ role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text });
+          // A roaming thread can pick up its title from this very turn (the first
+          // exchange), so the list needs to come back the same way /fold or
+          // /handoff already trigger it — every other subject type keeps its own
+          // name regardless of what gets said, so this is scoped to 'open' only.
+          if(e.type === 'open' && onDone) onDone();
         }
         // The answer is now a real message, so the in-flight buffer must go or the
         // same text paints twice.

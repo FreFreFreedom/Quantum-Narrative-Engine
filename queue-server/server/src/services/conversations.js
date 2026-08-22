@@ -46,6 +46,64 @@ const CONVO_HISTORY_WINDOW = 16;
 const CONVO_CHAT_MODEL = process.env.CONVO_CHAT_MODEL || 'claude-haiku-4-5-20251001';
 const CONVO_PLAN_MODEL = process.env.CONVO_PLAN_MODEL || 'claude-sonnet-4-5';
 
+const DEFAULT_OPEN_TITLE = 'Open conversation';
+
+// ─── Auto-title (roaming conversations only) ─────────────────────────────────
+// A roaming thread starts as "Open conversation" — no subject to name it after,
+// unlike every other convo type, which titles itself from the card it is about
+// (see subjectContext.js). Deliberately NOT a model call: this is keyword
+// extraction off the owner's own first message, in the spirit of the cost
+// discipline elsewhere in this file (chat turns already run on the cheap tier;
+// spending a second model call just to name the thread would double that for
+// no real gain over reusing the words already typed).
+const TITLE_STOPWORDS = new Set([
+  'a', 'an', 'the', 'please', 'can', 'could', 'would', 'should', 'will',
+  'i', 'you', 'we', 'me', 'my', 'your', 'our', 'it', 'this', 'that',
+  'is', 'are', 'was', 'were', 'be', 'to', 'so', 'just', 'hey', 'hi', 'ok', 'okay',
+  'want', 'wanna', 'need', 'like', 'think', 'lets', "let's", 'about',
+]);
+const TITLE_MAX_WORDS = 8;
+const TITLE_MAX_CHARS = 80;
+
+export function generateTitleFromText(text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return null;
+  // First line, first clause — the part of a ChatGPT-style opener that actually
+  // names the topic, before it wanders into detail.
+  const firstLine = trimmed.split('\n')[0];
+  const clauseMatch = firstLine.match(/^.{0,160}?[.!?](?=\s|$)/);
+  const clause = (clauseMatch ? clauseMatch[0] : firstLine).replace(/[.!?]+$/, '').trim();
+  let words = clause.replace(/^[/#>*\-\s]+/, '').split(/\s+/).filter(Boolean);
+  // Drop leading filler so the title opens on the substance, not "can you...".
+  while (words.length > 3 && TITLE_STOPWORDS.has(words[0].toLowerCase().replace(/[^a-z']/g, ''))) {
+    words.shift();
+  }
+  if (!words.length) return null;
+  const truncated = words.length > TITLE_MAX_WORDS;
+  let title = words.slice(0, TITLE_MAX_WORDS).join(' ');
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+  if (truncated) title += '…';
+  return title.slice(0, TITLE_MAX_CHARS) || null;
+}
+
+// Called right after the FIRST assistant reply in a roaming thread. `convo` is
+// the pre-turn row (fetched before this exchange's saveAssistantTurn ran), so
+// convo.turns === 0 here means "this was turn one" — the same moment ChatGPT
+// names a new chat. Never overwrites a title the owner already set: a rename
+// (manual or a prior auto-title) means this has already been decided.
+function maybeAutoTitleConvo(convo) {
+  if (!db || !convo || convo.subject_type !== 'open') return;
+  if ((convo.turns || 0) !== 0) return;
+  if (String(convo.title || '').trim() !== DEFAULT_OPEN_TITLE) return;
+  const firstUser = db.prepare(
+    `SELECT text FROM convo_messages WHERE convo_id=? AND role='user' ORDER BY created_at ASC, rowid ASC LIMIT 1`,
+  ).get(convo.id);
+  const title = generateTitleFromText(firstUser?.text);
+  if (!title) return;
+  db.prepare(`UPDATE convos SET title=? WHERE id=?`).run(title, convo.id);
+  broadcastAll('convos:updated', { convoId: convo.id });
+}
+
 // ─── Read paths ──────────────────────────────────────────────────────────────
 
 export function getConvo(id) {
@@ -266,7 +324,7 @@ export function createOpenConvo({ title = null, createdBy = 'antoine' } = {}) {
   if (!db) return { error: 'no_db' };
   const id = randomUUID();
   const subjectId = randomUUID();
-  const name = String(title || '').trim().slice(0, 120) || 'Open conversation';
+  const name = String(title || '').trim().slice(0, 120) || DEFAULT_OPEN_TITLE;
   db.prepare(`INSERT INTO convos (id, subject_type, subject_id, title, created_by) VALUES (?,?,?,?,?)`)
     .run(id, 'open', subjectId, name, createdBy);
   broadcastAll('convos:updated', { convoId: id, subjectType: 'open', subjectId });
@@ -734,6 +792,7 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
   });
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text, result.notice ? { notice: result.notice } : null);
+  maybeAutoTitleConvo(convo);
   return { text: result.text, via: result.via, notice: result.notice || null };
 }
 
@@ -756,6 +815,7 @@ async function runChatTurn(convoId, userId) {
   });
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text);
+  maybeAutoTitleConvo(convo);
   return { text: result.text, via: result.via };
 }
 
