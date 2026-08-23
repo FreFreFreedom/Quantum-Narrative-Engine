@@ -781,15 +781,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .q-primary-hint a { color:var(--c-brand); text-decoration:underline; cursor:pointer; }
 .q-primary-hint:empty { display:none; }
 
-/* Run details — the agent/provider/timing/cost chrome, tucked behind a toggle
-   so the card leads with what a person needs (status, purpose, thread). */
-.flow-rundetails { margin:8px 0 12px; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; background:var(--c-surface-2); }
-.flow-rundetails summary { cursor:pointer; color:var(--c-ink-3); font-size:11px; text-transform:uppercase; letter-spacing:.05em; user-select:none; }
-.flow-rundetails summary:hover { color:var(--c-ink); }
-.flow-rundetails[open] summary { margin-bottom:8px; }
-.flow-rundetails .q-detail-row { margin-bottom:6px; }
-.flow-rundetails .q-detail-row:last-child { margin-bottom:0; }
-
 .core-pane { flex:1; display:none; flex-direction:column; min-height:0; min-width:0; }
 .core-pane.open { display:flex; }
 
@@ -7416,8 +7407,8 @@ let qConnFails = 0;
 // Queue tab is opened, so a pick never happens against stale/empty options.
 let qProviders = { claude: { available: true }, opencode: { available: false, models: [], error: null }, aiRouter: { available: false, models: [], error: null } };
 // Models for whichever "extra" provider (opencode / ai-router) is currently
-// picked — both use the same qOpenModel/qDetailModel selects, so this is the
-// one place that knows how to map a provider value to its model list.
+// picked — the qOpenModel select on the add-task form uses this, so this is
+// the one place that knows how to map a provider value to its model list.
 function qModelsForProvider(providerVal) {
   if (providerVal === 'opencode') return qProviders.opencode?.models || [];
   if (providerVal === 'ai-router') return qProviders.aiRouter?.models || [];
@@ -10275,23 +10266,13 @@ function qRenderDetail(p) {
   if (!host) return;
   const snap = qSnapInputs(host);
   const messages = (p.messages || []);
-  const provVal = p.provider || 'claude-code';
-  const isOpen = provVal === 'opencode';
-  const isAiRouter = provVal === 'ai-router';
-  const usesModelPicker = isOpen || isAiRouter;
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
-  const switchable = p.status !== 'running';
-  const providerOpts = `
-    <option value="claude-code"${provVal === 'claude-code' ? ' selected' : ''}>Claude Code</option>
-    <option value="opencode"${isOpen ? ' selected' : ''}>OpenCode (free models supported)</option>
-    <option value="ai-router"${isAiRouter ? ' selected' : ''}>AI Router (free — questions only)</option>`;
   // Start and finish timestamps, token counts, the dollar figure and the auto-chosen
   // parent task all used to open this panel. None of them changes what you would do
   // next, which is the only test a line on this card has to pass.
   // Only worth its tinted box when it actually says something — with the repeated
   // status row gone this would otherwise open the panel with an empty box.
   const primaryHint = p.status === 'paused' ? qPrimaryHintHtml(p) : '';
-  const rdOpen = host.querySelector('.flow-rundetails')?.open || false;
   // A frozen preparation step is invisible from the status pill alone — it just
   // reads as "still working". This says it plainly, once, at the top, and works
   // for the plan-draft case too (the world-look panel below only exists for
@@ -10319,20 +10300,6 @@ function qRenderDetail(p) {
     <div class="q-primary-action">
       <div class="q-primary-hint" id="qPrimaryHint">${primaryHint}</div>
     </div>` : ''}
-${switchable ? `
-    <details class="flow-rundetails"${rdOpen ? ' open' : ''}>
-      <summary>Engine</summary>
-      <div class="q-detail-row" style="gap:8px;align-items:center;">
-        <span><b>Provider:</b>
-          <select id="qDetailProvider" class="q-input" style="width:auto;">${providerOpts}</select>
-        </span>
-        <span><b>Model:</b>
-          <select id="qDetailModel" class="q-input" style="width:auto;" ${usesModelPicker ? '' : 'disabled'}>
-            <option value="${p.provider_model || ''}">${p.provider_model || '— pick one —'}</option>
-          </select>
-        </span>
-      </div>
-    </details>` : ''}
     <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
@@ -10370,46 +10337,6 @@ ${switchable ? `
       body.style.display = open ? 'none' : '';
       rawToggle.textContent = open ? 'Originally submitted ▾' : 'Originally submitted ▴';
     };
-  }
-
-  if (switchable) {
-    const provSel = document.getElementById('qDetailProvider');
-    const modelSel = document.getElementById('qDetailModel');
-    modelSel.innerHTML = '<option value="">— pick one —</option>' +
-      qModelsForProvider(provVal).map(m => qModelOptionHtml(m, provVal, p.provider_model)).join('');
-    const commitPatch = async (patch) => {
-      try {
-        await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', patch);
-        await qLoad();
-      } catch (e) { alert('Could not switch: ' + e.message); }
-    };
-    provSel.onchange = async () => {
-      const newVal = provSel.value;
-      const newUsesModelPicker = newVal === 'opencode' || newVal === 'ai-router';
-      if (newVal === provVal) {
-        modelSel.disabled = !newUsesModelPicker;
-        return;
-      }
-      // AI Router can't edit the repo — refuse the switch for an implement task
-      // rather than silently letting it "succeed" with a text answer only.
-      if (newVal === 'ai-router' && p.mode !== 'question') {
-        alert('AI Router only runs question-mode tasks (no file-editing tools). Switch this task\'s Mode to Question first, or pick a different provider.');
-        provSel.value = provVal;
-        return;
-      }
-      if (!confirm('Switch this task to a different provider? Its session link resets — replies start fresh.')) {
-        provSel.value = provVal;
-        return;
-      }
-      modelSel.disabled = !newUsesModelPicker;
-      if (newUsesModelPicker) {
-        modelSel.innerHTML = '<option value="">🤖 Auto (system default)</option>' +
-          qModelsForProvider(newVal).map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('');
-        modelSel.value = '';
-      }
-      await commitPatch({ provider: newVal, provider_model: newUsesModelPicker ? (modelSel.value || null) : null });
-    };
-    modelSel.onchange = async () => { await commitPatch({ provider_model: modelSel.value || null }); };
   }
 
 
