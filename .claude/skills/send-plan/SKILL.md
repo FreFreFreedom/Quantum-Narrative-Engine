@@ -16,6 +16,14 @@ to send it — don't wait to be asked.
 
 ## The workflow
 
+0. **Write it to be read cold.** The agent that runs this task never sees the
+   conversation that produced the plan — it gets the file and nothing else. Before
+   anything else, check the plan carries: where you are (what the app is, which view,
+   which file); why, in Antoine's words; what to do, with paths and line numbers plus a
+   warning that they drift; the commit to read first if it amends earlier work; the traps
+   a competent reader would get wrong; how to verify it with no test suite; and what is
+   out of scope. See AGENTS.md, "A plan sent to the queue must stand alone".
+
 1. **File the plan.** Save it to `plans/<kebab-case-name>.md` with the standard header
    table, as `plans/ranked-next-steps.md:1-5` does:
 
@@ -48,6 +56,11 @@ to send it — don't wait to be asked.
 6. **Report back in plain English** (AGENTS.md "Working with Antoine"): it is in the
    queue, it will start now or is parked, and whether his Mac runner is on. The script
    prints all three — pass on what it says rather than guessing.
+
+   **Also say whether the plan carries enough context, every time.** Antoine's standing
+   instruction (2026-08-22). He cannot tell from the outside whether a queued task will
+   land well, and a thin plan burns a whole run before anyone notices. If you had to add
+   anything to make it self-contained, say what.
 
 ## What happens to the plan once it is sent
 

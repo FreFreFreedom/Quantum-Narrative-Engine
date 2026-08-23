@@ -31,6 +31,34 @@ shared style module). New features must attach it from day one; before
 shipping a feature, check its text is style-tagged. This is a hard rule, not a
 preference.
 
+### A plan sent to the queue must stand alone (hard)
+
+The agent that picks a task off the queue **never sees the conversation that
+produced the plan.** It gets the plan file and nothing else. So a plan written as
+"the two corrections we discussed" or "finish what I described above" is not a
+task, it is a note to yourself, and it will be implemented badly or not at all.
+
+Before sending any plan, make it readable cold. It must carry:
+
+- **Where you are** — what the app is, which view or subsystem this touches, and
+  which file. Do not assume the reader has ever opened this repo.
+- **Why**, in Antoine's own words where possible, so the agent can tell the point
+  of the change from its details and make the right call when the two conflict.
+- **What to do**, with real file paths and line numbers — and a warning that line
+  numbers drift and must be re-checked, because in this repo they do, daily.
+- **If it amends earlier work, name the commit** and say "read `git show <sha>`
+  first". A correction to something invisible is a guess.
+- **The traps** — the things a competent reader would get wrong. This is the most
+  valuable part of a brief and the part most often left out.
+- **How to verify it**, given there is no test suite, plus the frontend sync rule
+  if the change touches the frontend.
+- **What is out of scope**, so the agent does not helpfully do more.
+
+**Then tell Antoine, every time, whether the plan carries enough context** — and
+if you had to add anything to make it self-contained, say what. He asked for this
+standing (2026-08-22) because he cannot tell from the outside whether a queued
+task will land well, and a thin plan wastes a whole run before anyone notices.
+
 ### Ship directly — no local test phase (hard)
 
 Antoine reviews quality by using the app. When he asks for a change and says
@@ -194,4 +222,6 @@ For agents working in this repo — what FMCNS is, how to run things, the rules.
   (the `send-plan` skill / `queue-server/scripts/send-plan.js`) — Antoine should not
   have to remember the option exists. Ask whether it starts now or waits parked; his
   standing instruction is to be asked every time. Offering is not implementing.
+  Every plan sent must be self-contained — see "A plan sent to the queue must stand
+  alone" above; the queue's agent never sees the conversation that produced it.
 - `BUILD_STATUS.md` — in-place status doc, tracked in git (git log is the history).
