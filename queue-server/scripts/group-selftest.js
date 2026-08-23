@@ -65,5 +65,13 @@ check('no strict `is_group === 1` left on the WRITE side',
 check('the status-patch guard is still there', /patch\.status !== undefined && row\.is_group === 1/.test(src), true);
 check('moveToFront still refuses a group', /if \(target\.is_group === 1\)/.test(src), true);
 
+// The second bug in the same feature: the route did not await an async create, so every
+// caller got HTTP 201 and a body of `{}` while failures became unhandled rejections.
+const routeSrc = readFileSync(resolve(HERE, '../server/src/routes/queue.js'), 'utf8');
+check('POST /prompts/group awaits createGroup',
+  /await queue\.createGroup\(/.test(routeSrc), true);
+check('POST /prompts/group refuses to report success without a row',
+  /if \(!row\?\.id\) return res\.status\(500\)/.test(routeSrc), true);
+
 console.log(failed ? `\n${failed} check(s) failed\n` : '\nall checks passed\n');
 process.exit(failed ? 1 : 0);

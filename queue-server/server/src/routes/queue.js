@@ -163,13 +163,20 @@ export function queueRoutes() {
   // Create a group umbrella (a plan filed in parts). Thin wrapper delegating to
   // promptQueue.createGroup — same auth/shape as POST /prompts, is_group handled
   // inside the service. The umbrella is parked and never dispatched on its own.
-  router.post('/prompts/group', (req, res) => {
+  //
+  // AWAITED, unlike when this shipped. createGroup is async (createPrompt is), so the
+  // un-awaited version serialised a pending Promise: every caller got HTTP 201 and a body
+  // of `{}`, and any failure inside became an unhandled rejection nobody saw. A create
+  // that cannot fail visibly is worse than one that cannot succeed — see POST /prompts
+  // just above, which has always awaited.
+  router.post('/prompts/group', async (req, res) => {
     let row;
     try {
-      row = queue.createGroup({ ...req.body, created_by: req.user?.sub || 'antoine' });
+      row = await queue.createGroup({ ...req.body, created_by: req.user?.sub || 'antoine' });
     } catch (e) {
       return res.status(400).json({ error: e.message });
     }
+    if (!row?.id) return res.status(500).json({ error: 'the umbrella was not created' });
     res.status(201).json(row);
   });
 
