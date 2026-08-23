@@ -1,0 +1,30 @@
+#!/bin/sh
+# Guard for OpenCode's worktree only (wired via a worktree-scoped core.hooksPath, so
+# the main checkout, the queue's task worktrees and the ship worktree are unaffected).
+#
+# The app is served from queue-server/public/index.html, but the file everyone edits is
+# fmcns_navigator.html. Push them out of sync and the live site silently ships the old
+# frontend. AGENTS.md says to copy one onto the other before publishing; this refuses
+# the push when that has not happened.
+top=$(git rev-parse --show-toplevel) || exit 0
+master="$top/fmcns_navigator.html"
+served="$top/queue-server/public/index.html"
+[ -f "$master" ] && [ -f "$served" ] || exit 0
+if [ "$(md5 -q "$master")" != "$(md5 -q "$served")" ]; then
+  cat >&2 <<'MSG'
+
+  Push refused — the frontend is out of sync.
+
+  fmcns_navigator.html and queue-server/public/index.html are different, so
+  publishing now would put the OLD frontend on the live site.
+
+  Fix it with:
+      cp fmcns_navigator.html queue-server/public/index.html
+      git add queue-server/public/index.html && git commit -m "sync served frontend"
+
+  then push again.
+
+MSG
+  exit 1
+fi
+exit 0
