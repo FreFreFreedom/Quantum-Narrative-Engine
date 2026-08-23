@@ -57,6 +57,13 @@ export function conversationsRoutes() {
     res.json({ plans: convos.listPlans() });
   });
 
+  // GET /api/convos/files — the file backlog mirrored into the knowledge store,
+  // as a light list ({id, title, status}) for the Room's attach picker. Titles
+  // and statuses only; the picker must not download the full document to draw a list.
+  router.get('/files', (req, res) => {
+    res.json({ files: convos.listFiles() });
+  });
+
   // POST /api/convos/open — start one. No subject to pick: it gets a synthetic
   // one, and cards are attached afterwards (or never).
   router.post('/open', (req, res) => {
@@ -183,6 +190,73 @@ export function conversationsRoutes() {
     const out = await convos.handoffToQueue(req.params.id, { title: req.body?.title || null, prompt: req.body?.prompt || null });
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
+  }));
+
+// POST /api/convos/:id/files — upload a file and store it in knowledge_docs
+  // as a File: subject. Expects multipart/form-data with a "file" field.
+  // Returns { id, title, status } so it can be attached to the conversation.
+  router.post('/:id/files', asyncHandler(async (req, res) => {
+    const convo = convos.getConvo(req.params.id);
+    if (!convo) return res.status(404).json({ error: 'not_found' });
+
+    // Parse multipart/form-data manually (no extra dependencies)
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=(.+)/);
+    if (!boundaryMatch) return res.status(400).json({ error: 'missing boundary' });
+    const boundary = `--${boundaryMatch[1]}`;
+    
+    let body = '';
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', async () => {
+      const parts = body.split(boundary).filter((p) => p.trim().length > 0);
+      let fileName = 'uploadedfile';
+      let fileContent = '';
+      
+      for (const part of parts) {
+        const headerEnd = part.indexOf('\r\n\r\n');
+        if (headerEnd === -1) continue;
+        const headers = part.slice(0, headerEnd);
+        const payload = part.slice(headerEnd + 4);
+        
+        // Check if this is the file part
+        const nameMatch = headers.match(/name="file"/);
+        const filenameMatch = headers.match(/filename="([^"]+)"/);
+        
+        if (nameMatch) {
+          fileName = filenameMatch ? filenameMatch[1] : 'uploadedfile';
+          // Extract content — strip trailing \r\n-- and leading boundary
+          const contentEnd = payload.lastIndexOf('\r\n');
+          if (contentEnd > 0) {
+            fileContent = payload.slice(0, contentEnd).replace(/\r\n$/, '');
+          }
+          break;
+        }
+      }
+      
+      if (!fileContent) return res.status(400).json({ error: 'no file content' });
+      
+      // Generate stable id from filename
+      const id = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_') || 'upload';
+      const title = fileName.replace(/\.[^/.]+$/, '') || 'uploaded file';
+      const description = `FILE — ${fileName} uploaded via drag-and-drop.`;
+      const status = 'PLANNED';
+      
+      db.prepare(`
+        INSERT INTO knowledge_docs (id, title, description, content, updated_at)
+        VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        ON CONFLICT(title) DO UPDATE SET description=excluded.description, content=excluded.content, updated_at=excluded.updated_at
+      `).run(randomUUID(), 'File: ' + title, description, fileContent);
+      
+      // Attach the file to the conversation
+      db.prepare(
+        `INSERT INTO convo_subjects (convo_id, subject_type, subject_id, is_primary, subject_hint) VALUES (?,?,?,0,?)`,
+      ).run(convo.id, 'file', title, '');
+      
+      db.prepare(`UPDATE convos SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convo.id);
+      broadcastAll('convos:updated', { convoId: convo.id });
+      
+      res.json({ id: title, title: title, status: status });
+    });
   }));
 
   // POST /api/convos/:id/reset — fold conversation into a recap, clear messages.

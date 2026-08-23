@@ -52,6 +52,21 @@ export function listPlans() {
   });
 }
 
+// Files live in knowledge_docs under the `File: ` prefix (seeded by
+// bootstrapData.js#seedFiles from data-seed/files/). This returns just
+// {id, title, status} so a picker can draw a list without downloading the
+// full document. `id` is the file's basename; `status` is parsed from the
+// description prefix.
+export function listFiles() {
+  if (!db) return [];
+  const rows = db.prepare(`SELECT title, description FROM knowledge_docs WHERE title LIKE ? ESCAPE '\\' ORDER BY title`).all('File: %');
+  return rows.map((r) => {
+    const id = r.title.replace(/^File: /, '');
+    const status = (/^([A-Z ]+? \d{4}-\d{2}-\d{2})/.exec(r.description || '') || [])[1] || '';
+    return { id, title: id, status };
+  });
+}
+
 const CONVO_HISTORY_WINDOW = 16;
 // The chat turn is the one you sit and wait for, so it runs on the fast tier by
 // default; /plan and the rewrites keep the stronger model, because those produce

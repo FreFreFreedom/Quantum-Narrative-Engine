@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-23T01:11:15.922Z
+Generated: 2026-08-23T22:10:11.162Z
 
 ## Components
 
@@ -38,6 +38,10 @@ Generated: 2026-08-23T01:11:15.922Z
 
 ## Plan backlog
 
+- one-chat-many-minds — **PLANNED** 2026-08-23 — Part 7 sent to the queue
+- files-in-the-room — **PLANNED** 2026-08-23 — sent to the queue
+- one-card-for-a-plan-in-parts — **DONE** 2026-08-23 — shipped as `1e79af04` and was **inert**: `createGroup` passed `true` while the check compared `=== 1`, and the route did not await the async create (HTTP 201, empty body, silent rejection). Both fixed (`f0068ae`, `1047fe1`) with `npm run group:selftest` guarding them. The rendering half was always correct
+- plans-in-the-room — **DONE** 2026-08-23 — shipped as `6a06972`; plans mirror into project-docs/, seed as `Plan:` knowledge docs, and attach in the Room as a seventh subject type
 - conversation-voice-and-project-map — **DONE (code)** 2026-08-21 — gpt-4.1 in the catalogue, the judgement-first persona, and a ~10k-token map built once at boot and sent first (proven byte-identical and proven to be the prompt's literal prefix). Two things left: the AI Settings 'studio' row still has to be pointed at gpt-4.1 by hand, and the four live checks (caching visible in the spend ledger, the voice tests) need the deploy. One deliberate deviation is in the plan's own header.
 - one-conversation-system — **Steps 2 + 6 DONE** 2026-08-21 (map live and reaching all its docs after `60a2092`; voice verified — it refuses a bad idea and names the cost). **Steps 1, 3, 4 split out** to [roaming-conversations-backend.md](roaming-conversations-backend.md) and sent to the queue. **Step 5 (the full-screen room) is all that stays here**, deliberately unplanned until the endpoints from that task actually ship.
 - roaming-conversations-backend — **DONE** 2026-08-21 — shipped from the queue. `convo_subjects` + the `open` subject type (read-time backfill, no migration); the ten lookup tools on the unified engine with a working tool loop on BOTH the streaming and non-streaming lanes, every round priced into the ledger; `/seed` and `/note` with their two buttons. Step 5, the full-screen room, can now be planned against real endpoints.
@@ -47,7 +51,9 @@ Generated: 2026-08-23T01:11:15.922Z
 - the-room-to-think-in — **DONE** 2026-08-21 — built as a third Core sub-view (Room), reusing `studioEmbed`; the attach picker covers seeds, suggestions, tasks and architecture pieces (entities are not a registered subject type, so they would need a backend change).
 - count-every-dollar-we-spend — **PLANNED** 2026-08-21 — sent to the queue
 - let-the-ai-ask-about-the-clusters — **PLANNED** 2026-08-21 — sent to the queue
-- the-app-should-know-what-is-live — **PLANNED** 2026-08-22
+- the-app-should-know-what-is-live — **DONE** 2026-08-22 — shipped as `e30f948`, live on `develop`
+- sidebar-pin-lit-and-no-close — **PLANNED** 2026-08-22
+- done-cards-read-and-compact — **PLANNED** 2026-08-22
 - rotate-leaked-credentials — **Cleanup DONE · revocation deferred on purpose** (Antoine, 2026-08-21)
 - cards-one-system — **DONE** 2026-08-21 — shipped as `.ubtn`/`.uicon` plus the `⋯` menu, the one status pill and the "Details" fold; `.q-item`/`.flow-row`/`.stage-go` retired rather than left overriding. Three documented departures from the plan text are in the plan's own header.
 - cards-rest-and-narrow-screens — **DONE** 2026-08-21
@@ -58,6 +64,8 @@ Generated: 2026-08-23T01:11:15.922Z
 - an-architecture-that-knows-what-it-is — **DONE** 2026-08-22 — all five sections shipped: backend (witness, lifecycle, umbrellas), the packed map as the third layout (fragment 12), and the lifecycle board as the fourth plus the merge with the 25 built components (fragment 13). The board is five columns (`Concept · Planned · Building · Live · Retired`); only Concept and Retired can be dragged, because every other column is something the app derived. The built components are folded into both Board and Map **at read time** — never copied into `architecture_nodes`, which was the whole point. **Three measured corrections** live in the fragment briefs: the umbrellas endpoint already returns a `d3.pack`-ready hierarchy; colour must carry `status` (populated) not `lifecycle` (uniformly `concept`, because not one of the 79 nodes has a witness); and two of the 25 built components compute to `Concept` — their own live check says they are not there — so they enter Concept, not Live.
 - a-map-of-what-belongs-together — **IN PROGRESS** 2026-08-22 — fragment 14 (the layout and the plumbing) **DONE**: Landscape is the third Content view, laid out by cosine similarity over the theme communities **plus the 59 tags more than one entity carries** — the brief's community-only vector had to be corrected, because 118 of the 214 tagged entities live entirely inside one community and would all have had the same vector. Measured: same-community pairs sit 74 units apart, unrelated pairs 388 — 5.2x. The 199 untagged entities are parked on an outer ring by roman-numeral cluster and drawn hollow, never mixed into the field. Fragment 15 (the look — community regions, labels, posters, the continuum overlay) is still to run.
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
+- world-ideas-close-the-loop — **PLANNED** 2026-08-23
+- theme-follows-the-mac — **PLANNED** 2026-08-23
 - tasks-start-without-waiting — DONE 2026-08-21. §6 (fanning the world-look out concurrently) deliberately **NOT** done — off the critical path once the gate went, and it risks benching the free lane; the analysis is kept in the plan
 - send-a-plan-from-the-terminal — DONE 2026-08-21
 - brainstorm-world-ideas — DONE 2026-08-20

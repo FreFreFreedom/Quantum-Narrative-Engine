@@ -604,6 +604,22 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
   width:290px; min-width:0; max-width:92vw; padding:14px;
   border-left-color:var(--c-border); box-shadow:var(--sh-md); }
 .room-side-acts { display:flex; align-items:center; gap:1px; margin-left:auto; flex:none; }
+.room-dropzone {
+  flex:none;
+  margin-left:6px;
+  padding:6px 10px;
+  border:1px dashed var(--c-border);
+  border-radius:6px;
+  background:var(--c-bg);
+  color:var(--c-ink);
+  font-size:11px;
+  transition:border-color var(--t-fast), background var(--t-fast);
+  cursor:pointer;
+}
+.room-dropzone:hover { border-color:var(--c-ink); }
+.room-dropzone--over { border-color:var(--c-ink); background:var(--c-bg-2); }
+.room-dropzone p { margin:0; }
+.room-dropzone .room-drop-instr { font-size:10px; opacity:.6; }
 .room-side-head .uicon { flex:none; }
 .room-collapse-btn { opacity:.65; }
 .room-collapse-btn:hover { opacity:1; }
@@ -2177,6 +2193,10 @@ button:active { transform: translateY(1px) scale(.99); }
             <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
             <button type="button" class="uicon room-collapse-btn" id="roomCardsCollapse" title="Collapse the attached panel" aria-label="Collapse the attached panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg></button>
           </span>
+          <div id="roomDropZone" class="room-dropzone">
+            <p>Drag & drop a file here</p>
+            <p class="room-drop-instr">or browse attached picker</p>
+          </div>
         </div>
         <div id="roomAttachPick" hidden>
           <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
@@ -7316,16 +7336,80 @@ async function roomDetach(type, id) {
 // they are not a registered subject type, so attaching one would need a backend
 // change, which this view does not make.
 async function roomLoadPickSources() {
-  if (roomPickIdeas && roomPickSuggestions && roomPickPlans) return;
-  const [ideas, sgs, plans] = await Promise.all([
+  if (roomPickIdeas && roomPickSuggestions && roomPickPlans && roomPickFiles) return;
+  const [ideas, sgs, plans, files] = await Promise.all([
     api('/api/travaux/ideas').catch(() => null),
     api('/api/travaux/suggestions').catch(() => null),
     api('/api/convos/plans').catch(() => null),
+    api('/api/convos/files').catch(() => null),
   ]);
   roomPickIdeas = (ideas && ideas.ideas) || [];
   roomPickSuggestions = (sgs && sgs.suggestions) || [];
   roomPickPlans = (plans && plans.plans) || [];
+  roomPickFiles = (files && files.files) || [];
   if (roomPickOpen) renderRoomPick();
+}
+
+// ── Drag & drop file upload ──────────────────────────────────────────────────
+const roomDropZone = document.getElementById('roomDropZone');
+if (roomDropZone) {
+  const allowedTypes = ['.md', '.txt', '.pdf', '.doc', '.docx'];
+  roomDropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    roomDropZone.classList.add('room-dropzone--over');
+  });
+  roomDropZone.addEventListener('dragleave', () => {
+    roomDropZone.classList.remove('room-dropzone--over');
+  });
+  roomDropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    roomDropZone.classList.remove('room-dropzone--over');
+    const files = e.dataTransfer?.files || [];
+    if (!files.length) return;
+    const file = files[0];
+    if (!roomSel) {
+      roomDropZone.innerHTML = `<p class="room-note">No conversation selected</p>`;
+      setTimeout(() => {
+        roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
+      }, 2000);
+      return;
+    }
+    const ext = `.${file.name.split('.').pop() || ''}`;
+    if (!allowedTypes.includes(ext.toLowerCase())) {
+      roomDropZone.innerHTML = `<p class="room-note">Unsupported file type: ${ext}</p>`;
+      setTimeout(() => {
+        roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
+      }, 2000);
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const resp = await fetch(API_BASE + `/api/convos/${roomSel}/files`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + TOKEN },
+        body: formData,
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        roomLoadPickSources().then(() => renderRoomPick());
+        roomDropZone.innerHTML = `<p>File "${file.name}" uploaded</p>`;
+        setTimeout(() => {
+          roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
+        }, 2000);
+      } else {
+        roomDropZone.innerHTML = `<p class="room-note">Upload failed: ${data.error || 'unknown'}</p>`;
+        setTimeout(() => {
+          roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
+        }, 3000);
+      }
+    } catch (err) {
+      roomDropZone.innerHTML = `<p class="room-note">Upload error: ${err.message}</p>`;
+      setTimeout(() => {
+        roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
+      }, 3000);
+    }
+  });
 }
 
 function roomPickRows() {
@@ -7333,6 +7417,7 @@ function roomPickRows() {
   (roomPickIdeas || tvIdeas || []).forEach(i => rows.push({ type: 'seed', label: 'Seed', id: i.id, title: i.title || i.id }));
   (roomPickSuggestions || tvSuggestions || []).forEach(s => rows.push({ type: 'suggestion', label: 'Suggestion', id: s.id, title: s.title || s.id }));
   (roomPickPlans || []).forEach(p => rows.push({ type: 'plan', label: 'Plan', id: p.id, title: `${p.id} — ${p.status || 'UNKNOWN'}` }));
+  (roomPickFiles || []).forEach(f => rows.push({ type: 'file', label: 'File', id: f.id, title: `${f.id} — ${f.status || 'UNKNOWN'}` }));
   (qPrompts || []).forEach(p => rows.push({ type: 'task', label: 'Task', id: p.id, title: p.title || p.prompt || p.id }));
   (typeof ARCH_DATA !== 'undefined' ? ARCH_DATA : []).forEach(c => rows.push({
     // Tech-tree pieces (`_stored`) are real DB rows; the rest live in this file,

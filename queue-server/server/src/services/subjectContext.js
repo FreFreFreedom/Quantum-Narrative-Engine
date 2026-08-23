@@ -403,6 +403,7 @@ function worldPickBody(pick) {
 // only ever fold a SUMMARY into the prompt, never the full file, or a 400-line
 // plan would add tens of thousands of tokens to every turn of the thread.
 const PLAN_TITLE_PREFIX = 'Plan: ';
+const FILE_TITLE_PREFIX = 'File: ';
 
 registerSubject('plan', {
   label: 'Plan',
@@ -432,6 +433,36 @@ registerSubject('plan', {
   },
   handoff: () => {
     // Nothing owns a plan the way a seed owns its task row — the link lives on
+    // the conversation row. No owner-row back-reference needed.
+    return;
+  },
+});
+
+
+registerSubject('file', {
+  label: 'File',
+  load: (db, id) => {
+    if (!db) return null;
+    const row = db.prepare(`SELECT * FROM knowledge_docs WHERE title=?`).get(FILE_TITLE_PREFIX + id);
+    if (!row) return null;
+    return { id, title: FILE_TITLE_PREFIX + id, content: row.content, description: row.description };
+  },
+  title: (db, id) => {
+    const row = db?.prepare(`SELECT description FROM knowledge_docs WHERE title=?`).get(FILE_TITLE_PREFIX + id);
+    return row?.description || id;
+  },
+  describe: (subject) => {
+    const summary = String(subject.content || '').replace(/\s+/g, ' ').trim().slice(0, 1500);
+    const lines = [];
+    lines.push(`This is a FILE from the project's document backlog.`);
+    lines.push(`Title: "${subject.title}".`);
+    lines.push(`Opening (first ~1500 characters, because the whole document is long):`);
+    lines.push(summary);
+    lines.push(`The full document is readable with the read_knowledge_doc tool under the title "${FILE_TITLE_PREFIX}${subject.id}", in slices — ask for a specific section rather than pulling the whole file at once.`);
+    return lines.join('\n');
+  },
+  handoff: () => {
+    // Nothing owns a file the way a seed owns its task row — the link lives on
     // the conversation row. No owner-row back-reference needed.
     return;
   },

@@ -118,6 +118,29 @@ export function seedKnowledge(db) {
   return { docs: count };
 }
 
+// ─── Seed files into knowledge_docs with `File: ` prefix ───────────────────────
+// Reads each .md from data-seed/files/, namespaced with `File: ` title prefix.
+// Idempotent (upsert on title). A file deleted from the repo should not linger
+// forever — pruning is handled by the caller or by noting the row was not re-seeded.
+export function seedFiles(db) {
+  const filesDir = resolve(SEED_DIR, 'files');
+  if (!existsSync(filesDir)) return { skipped: true };
+  let count = 0;
+  for (const file of readdirSync(filesDir)) {
+    if (!file.endsWith('.md')) continue;
+    const content = readFileSync(resolve(filesDir, file), 'utf8');
+    const title = file.replace(/\.md$/, '');
+    const description = `FILE — ${content.replace(/\s+/g, ' ').trim().slice(0, 200)}`;
+    db.prepare(`
+      INSERT INTO knowledge_docs (id, title, description, content, updated_at)
+      VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(title) DO UPDATE SET description=excluded.description, content=excluded.content, updated_at=excluded.updated_at
+    `).run(randomUUID(), FILE_TITLE_PREFIX + title, description, content);
+    count++;
+  }
+  return { files: count };
+}
+
 // ─── Plans mirrored into project-docs/plans/ (see scripts/sync-docs.js) ──────
 // Plans are real DB rows of knowledge_docs, namespaced with a `Plan: ` prefix so
 // they can never collide with either the seeded reference docs or a `Note: `
