@@ -858,7 +858,17 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
            padding:var(--sp-2) var(--sp-1); border-bottom:1px solid var(--c-border);
            background:transparent; }
 .uc--row:hover { background:var(--c-surface-2); border-color:var(--c-border); }
-.uc--row.is-sel { box-shadow:none; background:var(--c-surface-2); }
+ .uc--row.is-sel { box-shadow:none; background:var(--c-surface-2); }
+ /* Umbrella group card in the Flow: collapses a plan's parts into one line with a
+    progress count. No start button — each part keeps its own, shown when expanded.
+    The chevron toggles the fold; the whole row is the click target too. */
+ .uc--group { cursor:pointer; background:var(--c-surface-2); font-weight:600; }
+ .uc--group:hover { background:var(--c-surface-3, var(--c-surface-2)); }
+ .uc--group .q-group-chev { display:inline-block; width:1em; color:var(--c-accent); margin-right:2px; }
+ .uc--group .uc-sum { font-weight:400; opacity:.8; margin-left:8px; }
+ /* Parts nested under an open umbrella, indented one step. */
+ .flow-group-kids { margin-left:18px; border-left:2px solid var(--c-border); padding-left:6px; }
+ .flow-group-kids .uc--row:last-child { border-bottom:none; }
 /* Rows inside the amber "what to do next" panel keep that panel's warmth: the
    grey hover would fight it. */
 .nb-shortlist .uc--row:hover, .nb-shortlist .uc--row.is-sel { background:var(--c-surface); }
@@ -6626,7 +6636,7 @@ let coreInited = false;
 const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
-let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowSideSel = null;
+let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowGroupOpen = new Set(), flowSideSel = null;
 // Inspiration panel state: rendered HTML per task (avoids refetching on every
 // 4s poll), the human's un-applied selections, and the in-flight guard.
 let qInspireCache = {}, qInspireSel = {};
@@ -9679,7 +9689,116 @@ function renderFlow() {
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
   const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
 
-  // In-flight world-looks (server-side auto-looks included) tick forward here,
+  // ── Group umbrella computation ──────────────────────────────────────────────
+  // Identify group rows (is_group=1) and their children (parts with parent_prompt_id).
+  // A part under a live group never renders as its own row — it only appears inside the
+  // umbrella, which travels through the Flow in the section of its most urgent child.
+  // A part whose group was deleted (parent_prompt_id pointing at nothing) still shows.
+  const groupPrompts = qPrompts.filter(p => p.is_group === 1);
+  const groupSectionMap = new Map();   // groupId -> 'questions'|'running'|'ready'|'parked'|'done'
+  const groupChildrenMap = new Map();  // groupId -> [child prompts], in plan (position) order
+
+  // A part is hidden (as its own row) only while its umbrella is still live.
+  const hiddenPartIds = new Set();
+  for (const group of groupPrompts) {
+    const children = qPrompts.filter(p =>
+      p.parent_prompt_id === group.id && flowMatches([p.title, p.prompt])
+    ).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+    groupChildrenMap.set(group.id, children);
+    for (const child of children) hiddenPartIds.add(child.id);
+
+    // Section by the MOST URGENT child (precedence, not first-in-array):
+    //   pending question > running > queued > any not-done > all done.
+    let section = 'done';
+    if (children.some(c => c.pending_question)) section = 'questions';
+    else if (children.some(c => c.status === 'running')) section = 'running';
+    else if (children.some(c => c.status === 'queued')) section = 'ready';
+    else if (children.some(c => Q_ACTIVE_STATUSES.includes(c.status))) section = 'parked';
+    else section = 'done';
+    groupSectionMap.set(group.id, section);
+  }
+  const groupsInSection = (s) => [...groupSectionMap.values()].filter(x => x === s).length;
+
+  // ── Filter parts from every section list (including Done) ─────────────────
+  const questionsRaw = qPrompts.filter(p => rel(p) && p.pending_question && flowMatches([p.title, p.prompt]) && !hiddenPartIds.has(p.id));
+  const runningRaw = qPrompts.filter(p => rel(p) && p.status === 'running' && flowMatches([p.title, p.prompt]) && !hiddenPartIds.has(p.id));
+  const readyRaw = qPrompts.filter(p => rel(p) && p.status === 'queued' && flowMatches([p.title, p.prompt]) && !hiddenPartIds.has(p.id));
+  const parkedRaw = qPrompts.filter(p => rel(p) && p.status === 'paused' && flowMatches([p.title, p.prompt]) && !hiddenPartIds.has(p.id));
+  const visibleDone = done.filter(p => !hiddenPartIds.has(p.id));
+
+  // ── Build section html ───────────────────────────────────────────────────
+  const busy = runningRaw.length > 0;
+
+  // The umbrella card: the plan title + "N of M done", no start button, no menu.
+  // Clicking it toggles the fold that reveals its parts (each part keeps its own
+  // button, inside the expanded group). Reuses the .uc/.uc--row card shell.
+  function groupRowHtml(groupId, open) {
+    const children = groupChildrenMap.get(groupId) || [];
+    const doneCount = children.filter(c => !Q_ACTIVE_STATUSES.includes(c.status)).length;
+    const total = children.length;
+    const group = qPrompts.find(p => p.id === groupId);
+    const title = group?.title || '(plan)';
+    const chev = open ? '▾' : '▸';
+    let out = `<div class="uc uc--row uc--group${open ? ' is-open' : ''}" data-qid="${qEscAttr(groupId)}" data-isgroup="1" role="button" tabindex="0" aria-expanded="${open}" aria-label="Umbrella plan">
+      <span class="q-group-chev" data-groupchev="${qEscAttr(groupId)}" title="Show or hide the parts">${chev}</span>
+      <span class="uc-title">${qEsc(title)}</span>
+      <span class="uc-sum">${doneCount} of ${total} done</span>
+      ${cardActs('', [])}
+    </div>`;
+    if (open) {
+      const sorted = children.slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+      out += `<div class="flow-group-kids">${sorted.map(c => flowQueueRow(c, false)).join('')}</div>`;
+    }
+    return out;
+  }
+  const groupRowsFor = (sectionName) => {
+    const ids = [...groupSectionMap.entries()].filter(([_, s]) => s === sectionName).map(([gid]) => gid);
+    return ids.map(gid => groupRowHtml(gid, flowGroupOpen.has(gid))).join('');
+  };
+
+  // Questions section
+  {
+    const gHtml = groupRowsFor('questions');
+    const hasG = !!gHtml;
+    if (questionsRaw.length > 0 || hasG) {
+      const rows = questionsRaw.map(p => flowQueueRow(p, false)).join('');
+      html += flowSection('❓', 'Questions to answer', questionsRaw.length + groupsInSection('questions'), rows + gHtml);
+    }
+  }
+
+  // Running section
+  {
+    const gHtml = groupRowsFor('running');
+    const hasG = !!gHtml;
+    if (runningRaw.length > 0 || hasG) {
+      const rows = runningRaw.map(p => flowQueueRow(p, false)).join('');
+      html += flowSection('▶', 'Running now', runningRaw.length + groupsInSection('running'), rows + gHtml);
+    }
+  }
+
+  // Ready section
+  {
+    const gHtml = groupRowsFor('ready');
+    const hasG = !!gHtml;
+    if (readyRaw.length > 0 || hasG) {
+      const rows = readyRaw.map((p, i) => flowQueueRow(p, true, busy, i)).join('');
+      html += flowSection('⏳', 'Ready to start', readyRaw.length + groupsInSection('ready'), rows + gHtml);
+    }
+  }
+
+  // Parked section
+  {
+    const gHtml = groupRowsFor('parked');
+    const hasG = !!gHtml;
+    if (parkedRaw.length > 0 || hasG) {
+      const rows = parkedRaw.map(p => flowQueueRow(p, true)).join('');
+      html += flowSection('⏸', 'Parked', parkedRaw.length + groupsInSection('parked'), rows + gHtml);
+    }
+  }
+
+  if (!questionsRaw.length && !runningRaw.length && !readyRaw.length && !parkedRaw.length && !groupSectionMap.size) {
+    html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
+  }
   // so ✨ markers appear on rows the moment a look lands — no need to open the
   // item first. Poll is a no-op unless the item is pending.
   if (showSg) {
@@ -9691,30 +9810,17 @@ function renderFlow() {
     tvIdeas.forEach(i => flowWorldPoll('idea', i.id));
   }
 
-  if (showQueue) {
-    const questions = qPrompts.filter(p => rel(p) && p.pending_question && flowMatches([p.title, p.prompt]));
-    const running = qPrompts.filter(p => rel(p) && p.status === 'running' && flowMatches([p.title, p.prompt]));
-    const ready = qPrompts.filter(p => rel(p) && p.status === 'queued' && flowMatches([p.title, p.prompt]));
-    const parked = qPrompts.filter(p => rel(p) && p.status === 'paused' && flowMatches([p.title, p.prompt]));
-    const busy = running.length > 0;
-    if (questions.length) html += flowSection('❓', 'Questions to answer', questions.length, questions.map(p => flowQueueRow(p, false)).join(''));
-    if (running.length) html += flowSection('▶', 'Running now', running.length, running.map(p => flowQueueRow(p, false)).join(''));
-    if (ready.length) html += flowSection('⏳', 'Ready to start', ready.length, ready.map((p, i) => flowQueueRow(p, true, busy, i)).join(''));
-    if (parked.length) html += flowSection('⏸', 'Parked', parked.length, parked.map(p => flowQueueRow(p, true)).join(''));
-    if (flowType === 'queue' && !questions.length && !running.length && !ready.length && !parked.length && !done.length) {
-      html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
-    }
-  }
-
   if (showDone) {
-    if (done.length) {
+    const doneGroupRows = groupRowsFor('done');
+    const doneCount = visibleDone.length + groupsInSection('done');
+    if (doneCount) {
       const showDoneList = flowType === 'done' || flowDoneOpen || flowSearch !== '';
       const doneRows = flowType === 'done'
-        ? done.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
-        : done;
-      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${done.length}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
+        ? visibleDone.slice().sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
+        : visibleDone;
+      html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${doneCount}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneGroupRows + doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
-    if (flowType === 'done' && !done.length) {
+    if (flowType === 'done' && !doneCount) {
       html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
     }
   }
@@ -9796,6 +9902,19 @@ function renderFlow() {
   });
   host.querySelectorAll('.uc[data-qid]').forEach(el => {
     const id = el.getAttribute('data-qid');
+    // An umbrella group row: clicking toggles the fold that reveals its parts.
+    // It marks the group seen (not its children — each part carries its own dot),
+    // and never opens a side detail or dispatches anything.
+    if (el.getAttribute('data-isgroup')) {
+      el.onclick = (e) => {
+        if (e.target.closest('.uc-acts') || e.target.closest('.cardbtn') || e.target.closest('.ubtn')) return;
+        if (flowGroupOpen.has(id)) flowGroupOpen.delete(id); else flowGroupOpen.add(id);
+        const g = qPrompts.find(p => p.id === id);
+        if (g && !g.seen_at) { g.seen_at = '1'; apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {}); }
+        renderFlow();
+      };
+      return;
+    }
     el.onclick = (e) => {
       if (e.target.closest('.uc-acts')) return;
       if (e.target.closest('.uc-details')) return;

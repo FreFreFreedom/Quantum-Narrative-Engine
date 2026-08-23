@@ -160,6 +160,19 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  // Create a group umbrella (a plan filed in parts). Thin wrapper delegating to
+  // promptQueue.createGroup — same auth/shape as POST /prompts, is_group handled
+  // inside the service. The umbrella is parked and never dispatched on its own.
+  router.post('/prompts/group', (req, res) => {
+    let row;
+    try {
+      row = queue.createGroup({ ...req.body, created_by: req.user?.sub || 'antoine' });
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
+    res.status(201).json(row);
+  });
+
   // Hand to the Hive. Deleting a finished card is the moment the work is declared
   // over, so that is where the ledger of labelled examples gets fed — the "Clear done"
   // button this used to hang off was removed in 4142889 and left the whole backend

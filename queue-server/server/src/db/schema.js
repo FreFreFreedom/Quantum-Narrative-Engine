@@ -126,6 +126,8 @@ function initSchema(db) {
   // "the previous row in this space" is somebody else's task. NULL = fresh
   // session (the backfill value for every existing row).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN parent_prompt_id TEXT REFERENCES work_prompts(id)`); } catch {}
+  // Group umbrella: one row owns several ordinary tasks, each still run one at a time.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN is_group INTEGER NOT NULL DEFAULT 0`); } catch {}
   // Plan-first queue (plan "plan-first-queue-and-idea-composition", Part A): every
   // implement-mode task is auto-drafted into an unambiguous brief before it runs.
   // raw_prompt keeps what was actually submitted (for the "Originally submitted"
