@@ -143,6 +143,12 @@ function initSchema(db) {
   // handoff — see plans/universal-conversations-core-architecture.md §7).
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN convo_id TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN seen_at TEXT`); } catch {}
+  // Why a task blocked, in one word: no_engine | quota | timeout | nothing_changed |
+  // crashed | lost. Added 2026-08-23 after a task blocked on spent quota, told nobody,
+  // and read exactly like a task that had run and failed. The two need opposite
+  // reactions — one retries itself, the other needs a person — so the cause is stored
+  // rather than left to be inferred from the report text.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN blocked_reason TEXT`); } catch {}
   // Purpose summary for the task detail: 3-5 plain-language bullets on what the
   // task is FOR. Generated lazily on first open (one free-model call), then
   // cached here so revisits cost nothing (see routes/queue.js summarize).
@@ -354,6 +360,9 @@ function initSchema(db) {
   // result POST. NULL means no check ran, and must read exactly like the world
   // before there was one — never as "the idea was not built".
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_ideas TEXT`); } catch {}
+  // The runner's own word for why this run failed; copied onto work_prompts by
+  // finishPrompt so the card and the notice read the same fact.
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN blocked_reason TEXT`); } catch {}
 
   // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
   // because node:sqlite enforces foreign keys by default — the REFERENCES above

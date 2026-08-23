@@ -5,7 +5,7 @@ import { listOpenCodeModels, listAiRouterModels, defaultOpenCodeModel } from '..
 import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode.js';
 import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution, runnerStatus, attemptCapMsFor } from '../services/taskRunner.js';
 import { latestReviewForPrompt } from '../services/reviewRunner.js';
-import { shipStateFor } from '../services/gitJobs.js';
+import { shipStateFor, shipStateForBlocked } from '../services/gitJobs.js';
 import { gapCountsByPrompt } from '../services/inspireLanding.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 import { feedCompletedToRecommender } from '../services/workSuggestions.js';
@@ -109,9 +109,18 @@ export function queueRoutes() {
         // app, on its way, refused, or waiting for the Mac. Before this the answer
         // existed nowhere in the UI, so a finished task looked identical whether it
         // had been published or silently thrown away.
+        // A blocked task has no review to read, so it falls back to the runner's own
+        // measurements (services/gitJobs.js#shipStateForBlocked) — which is how a card
+        // can finally say "nothing was built" instead of showing nothing at all.
         ship: p.status === 'done' || p.status === 'blocked'
-          ? shipStateFor(latestReviewForPrompt(p.id), { runnerConnected })
+          ? (shipStateFor(latestReviewForPrompt(p.id), { runnerConnected })
+             || (p.status === 'blocked' ? shipStateForBlocked(task) : null))
           : null,
+        // Why it blocked, and the same thing in words. Only ever set from what the
+        // runner reported — an unlabelled failure stays unlabelled rather than being
+        // guessed at from the report text.
+        blocked_reason: p.blocked_reason || null,
+        blocked_why: queue.blockedWords(p.blocked_reason),
         // Picked world ideas proven not usable, with no fix queued yet. Only a
         // proven gap counts — 'not_checked' is a missing answer, not a finding,
         // and must never put a warning mark on a card.

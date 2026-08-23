@@ -1361,7 +1361,7 @@ export function advanceQueue() {
   for (const running of db.prepare(`${SELECT()} AND status='running' ORDER BY started_at`).all()) {
     const task = running.agent_task_id ? findAgentTask(running.agent_task_id) : null;
     if (!task) {
-      finishPrompt(running.id, { status: 'blocked', agent_result: '(task not found — execution lost)', user_summary: null, session_id: null });
+      finishPrompt(running.id, { status: 'blocked', agent_result: '(task not found — execution lost)', user_summary: null, session_id: null, blocked_reason: 'lost' });
     } else if (task.stop_requested) {
       // Being (or about to be) handled by onAgentTaskFinalized's stop_requested branch —
       // don't race it by recording this deliberate stop as a 'blocked' failure here.
@@ -1524,13 +1524,16 @@ function finishPrompt(id, task) {
   const q = asked ? JSON.stringify(asked) : null;
   const isOpen = (task.provider || 'opencode') === 'opencode';
   const sessionCol = isOpen ? 'opencode_session_id' : 'session_id';
+  // Cleared outright on success, so a task that blocked once and then succeeded on a
+  // re-run does not keep wearing the old cause.
+  const blockedReason = status === 'done' ? null : (task.blocked_reason || null);
   db.prepare(`
     UPDATE work_prompts SET status=?, ${sessionCol}=COALESCE(?, ${sessionCol}), pending_question=?,
       cost_usd=COALESCE(?, cost_usd), tokens_in=COALESCE(?, tokens_in), tokens_out=COALESCE(?, tokens_out),
-      run_model=COALESCE(?, run_model),
+      run_model=COALESCE(?, run_model), blocked_reason=?,
       completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
     WHERE id=?
-  `).run(status, task.session_id || null, q, task.cost_usd ?? null, task.tokens_in ?? null, task.tokens_out ?? null, task.run_model || null, id);
+  `).run(status, task.session_id || null, q, task.cost_usd ?? null, task.tokens_in ?? null, task.tokens_out ?? null, task.run_model || null, blockedReason, id);
   broadcast();
   eagerSummarize(id); // purpose bullets ready by the time the finished task is opened
   // The card's one line meant "what this will do" while the task was waiting; now
@@ -2150,8 +2153,37 @@ export function buildRecapMessage(prompt, task, { stopped = false } = {}) {
   return `${head}${link}${pause}`;
 }
 
+// Words for the cause, not code names. Only the first two mean "it will sort itself
+// out"; the rest need a person, and the whole point of storing a cause is that those
+// two groups stop looking alike.
+const BLOCKED_WORDS = {
+  no_engine: 'no model could run it — it will retry when one frees up',
+  quota: 'every model was out of quota — it will retry when limits reset',
+  timeout: 'it ran but did not finish',
+  nothing_changed: 'it finished without changing any file — nothing was built',
+  crashed: 'the runner crashed',
+  lost: 'the run was lost (a restart, most likely)',
+};
+export function blockedWords(reason) { return BLOCKED_WORDS[reason] || null; }
+
 async function sendRecap(prompt, task, { stopped = false } = {}) {
   const text = buildRecapMessage(prompt, task, { stopped });
+  // Tell the open app, always. This is the half that was missing: the runner on the
+  // Mac announces the endings IT decides, but an ending decided here — a task lost to
+  // a restart, a chain with nothing left to run — reached only NOTIFY_WEBHOOK_URL,
+  // and with that unset it reached a log line. On 2026-08-23 that is exactly how a
+  // blocked task went unnoticed. A broadcast costs nothing and cannot fail the task.
+  try {
+    broadcastAll('task:ended', {
+      id: prompt.id,
+      title: prompt.title,
+      status: prompt.status,
+      blocked_reason: prompt.blocked_reason || task?.blocked_reason || null,
+      why: blockedWords(prompt.blocked_reason || task?.blocked_reason),
+      asking: !!task?.pending_question?.question,
+      stopped: !!stopped,
+    });
+  } catch (e) { console.error('queue: ending broadcast failed —', e.message); }
   if (!NOTIFY_WEBHOOK_URL) {
     console.log(`[recap] ${text}`);
     return;

@@ -15,6 +15,7 @@
     "tidy:selftest": "node scripts/tidy-selftest.js",
     "ship:facts": "node scripts/shipfacts-selftest.js",
     "review:selftest": "node scripts/review-selftest.js",
+    "notify:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/notify-selftest.js",
     "witness:selftest": "node scripts/witness-selftest.js",
     "world:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/worldbrainstorm-selftest.js",
     "docs:sync": "node scripts/sync-docs.js",

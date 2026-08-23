@@ -167,16 +167,71 @@ async function slackNotify(text) {
   } catch (e) { console.log(dim(`  (Slack ping not sent — ${e.message})`)); }
 }
 
-// What the DM says: outcome, task, which engine ran it, how long it took, and — when
-// Claude ran it — what it drew from the subscription, so credit use is visible
-// without opening the app.
-function slackLine({ task, status, engine, startedAt, cost, why }) {
+// ─── The desktop banner ───────────────────────────────────────────────────────
+// The channel Antoine actually asked for (2026-08-23), after a task blocked on
+// spent quota and nothing told him. Slack already worked and is kept, but the
+// banner is what reaches him with no tab open and no webhook configured.
+//
+// osascript ships with macOS, so this adds no dependency. Guarded on darwin so
+// the runner stays runnable elsewhere, and fire-and-forget with the same
+// discipline as slackNotify: a failed banner is a logged line, never something
+// that can hold up the queue.
+function desktopNotify({ head, body }) {
+  if (process.platform !== 'darwin') return;
+  // Single quotes are the delimiter in the AppleScript literal below, so they are
+  // the one character that must not pass through raw. Backslashes go first or they
+  // would escape the escapes.
+  const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').slice(0, 220);
+  const script = `display notification "${esc(body)}" with title "FMCNS" subtitle "${esc(head)}"`;
+  try {
+    const p = spawn('osascript', ['-e', script], { stdio: 'ignore', detached: false });
+    p.on('error', (e) => console.log(dim(`  (desktop banner not shown — ${e.message})`)));
+  } catch (e) { console.log(dim(`  (desktop banner not shown — ${e.message})`)); }
+}
+
+// One text, both channels. Every ending goes through here, so there is a single
+// place that decides what an ending is called — and no path that can end a task
+// without saying so.
+async function notifyEnding(parts) {
+  const { head, body } = endingParts(parts);
+  await slackNotify(endingLine(parts));
+  desktopNotify({ head, body });
+}
+
+// Plain words for what happened, split into the two lines a banner shows.
+//
+// WHY THE CAUSE MATTERS MORE THAN THE STATUS. "Blocked" covers two situations that
+// deserve opposite reactions: the task never ran (quota spent, no engine free) and
+// will retry by itself, or it ran and genuinely failed. Reporting both as "blocked"
+// is what made the 2026-08-23 failure unreadable at a glance. `reason` is the code
+// from taskRunner/promptQueue; the words here are what Antoine reads.
+const NEVER_RAN = new Set(['no_engine', 'quota']);
+function endingParts({ task, status, engine, startedAt, cost, why, reason, ship }) {
   const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60_000));
-  const icon = status === 'done' ? '✅' : '⚠️';
-  const head = status === 'done' ? 'Task done' : 'Task blocked';
-  const spend = cost ? (engine.startsWith('Claude') ? ` · ~$${cost.toFixed(2)} of subscription quota` : ` · $${cost.toFixed(4)}`) : '';
-  const reason = status === 'done' ? '' : ` — ${why || 'see the task for details'}`;
-  return `${icon} *${head}* — ${task.title || task.id}${reason}\n_${engine} · ${mins} min${spend}_ · <${APP_URL}|open the queue>`;
+  const title = task.title || task.id;
+  const neverRan = NEVER_RAN.has(reason);
+  const icon = status === 'done' ? '✅' : neverRan ? '⏳' : '⚠️';
+  const head = status === 'done' ? 'Task done'
+    : neverRan ? 'Task did not run — it will retry'
+    : 'Task blocked';
+  // Whether the work is actually in the app is a separate fact from whether the
+  // agent finished, and conflating them is how "Task done" came to be sent before
+  // publishing had even been attempted.
+  const shipWord = status !== 'done' ? ''
+    : ship?.committed === false && ship?.reason === 'nothing_changed' ? ' · nothing was changed'
+    : ship?.published === true ? ' · live in the app'
+    : ship?.published === false ? ' · NOT published yet'
+    : '';
+  const spend = cost ? (String(engine).startsWith('Claude') ? ` · ~$${cost.toFixed(2)} of subscription quota` : ` · $${cost.toFixed(4)}`) : '';
+  const tail = `${engine} · ${mins} min${spend}${shipWord}`;
+  const reasonText = status === 'done' ? '' : (why || 'see the task for details');
+  return { icon, head, title, tail, reasonText,
+    body: `${title}${reasonText ? ` — ${reasonText}` : ''}\n${tail}` };
+}
+
+function endingLine(parts) {
+  const { icon, head, title, tail, reasonText } = endingParts(parts);
+  return `${icon} *${head}* — ${title}${reasonText ? ` — ${reasonText}` : ''}\n_${tail}_ · <${APP_URL}|open the queue>`;
 }
 const STREAM_FLUSH_MS = 2_000;
 // How often to print what this runner currently sees in the queue — a quick
@@ -1012,7 +1067,14 @@ async function runTask(task) {
       status: 'blocked',
       result: 'Could not run: every model in the chain is currently rate-limited or failing. It will be retried automatically.',
       tried_models: chain,
+      blocked_reason: 'quota',
+      ship: { committed: false, reason: 'never_ran', files_changed: [], insertions: 0, deletions: 0 },
     });
+    // This path sent nothing at all before — the quietest of the three ways a task
+    // can end without running.
+    await notifyEnding({ task, status: 'blocked', engine: 'every model is benched',
+      startedAt: Date.now(), cost: 0, reason: 'quota',
+      why: 'every model in the chain is rate-limited or failing right now' });
     return;
   }
 
@@ -1099,24 +1161,37 @@ async function runTask(task) {
     // but leaves no change means the model answered instead of building — reporting it
     // as done files an empty result and closes the task for good, so it goes back as
     // blocked and gets another run. Question mode legitimately produces no diff.
+    let blockedReason = null;
     if (status === 'done' && task.mode !== 'question' && ship && !ship.committed && ship.reason === 'nothing_changed') {
       status = 'blocked';
+      blockedReason = 'nothing_changed';
       report = `${report}\n\n(stopped: it finished without changing any file — nothing was built.)`.trim();
       console.log(yellow('  Nothing was changed — reporting this as blocked, not done.'));
+    } else if (status !== 'done') {
+      // It ran and did not finish: a timeout, a cap, or the agent giving up. Told
+      // apart from "never ran" because only one of the two retries by itself.
+      blockedReason = 'timeout';
     }
     if (ship?.committed) ship.review = await runReviewPass({ wt, ship, task });
     if (ship?.committed) ship.ideas = await runIdeaLandingPass({ wt, ship, task });
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,
       cost_usd: isClaude ? null : (r.cost || null), tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
-      worktree_path: wt.path, branch: wt.branch, ship,
+      worktree_path: wt.path, branch: wt.branch, ship, blocked_reason: blockedReason,
     });
-    await slackNotify(slackLine({ task, status, engine: shown, startedAt: taskStartedAt, cost: r.cost, why: r.why }));
     // Publish straight away rather than waiting for the next idle tick, so a
     // finished task goes live in seconds. The server's one-at-a-time lock still
     // applies, so this cannot collide with anything.
+    //
+    // THE NOTICE IS SENT AFTER THIS, NOT BEFORE. It used to fire here-minus-one,
+    // ahead of publishing, so it always read "Task done" even when the work never
+    // reached the app — and a publish that then failed said nothing at all. Whether
+    // the work is live is the half Antoine actually needs, so the notice waits the
+    // few seconds it takes to know.
+    let published = null;
     if (ship?.committed) {
-      try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
+      try { await runGitJobs(); published = true; }
+      catch (e) { console.error('Publishing step failed —', e.message); published = false; }
       // Then settle up to two OLDEST tasks whose picked ideas never got an answer.
       // Fire-and-forget on purpose — it must not delay this runner's next claim —
       // and fully wrapped inside (see sweepLeftoverIdeas): no failure of its own
@@ -1124,6 +1199,8 @@ async function runTask(task) {
       // answered by the pass above.
       sweepLeftoverIdeas({ skipRange: `${ship.base_sha || ''}..${ship.head_sha}` }).catch(() => {});
     }
+    await notifyEnding({ task, status, engine: shown, startedAt: taskStartedAt,
+      cost: r.cost, why: r.why, reason: blockedReason, ship: ship ? { ...ship, published } : null });
     return;
   }
 
@@ -1134,12 +1211,20 @@ async function runTask(task) {
   const headline = deadLanes.size
     ? 'No model could run this: the OpenCode plan\'s usage limit is spent and the free models are rate-limited. Nothing will run until one of those frees up (or the plan is topped up).'
     : 'None of the models could run this task right now.';
+  // `ship` used to be omitted here, which left every ship_* column null — and a null
+  // is indistinguishable from "no data yet". So the card could not say that nothing
+  // was built, because as far as it knew nothing had been measured. Sending the zero
+  // makes it a fact, which is the only thing a warning mark is allowed to key on.
   await api(`/worker/${task.id}/result`, {
     status: 'blocked',
     result: `${headline}\n\nWhat each model said:\n${reasons.map((r) => `• ${r}`).join('\n')}\n\nThe task stays in the queue and will be retried automatically.`,
     tried_models: tried, worktree_path: wt.path, branch: wt.branch,
+    blocked_reason: deadLanes.size ? 'no_engine' : 'quota',
+    ship: { committed: false, reason: 'never_ran', branch: wt.branch || null, files_changed: [], insertions: 0, deletions: 0 },
   });
-  await slackNotify(slackLine({ task, status: 'blocked', engine: 'no engine could run it', startedAt: taskStartedAt, cost: 0, why: headline }));
+  await notifyEnding({ task, status: 'blocked', engine: 'no engine could run it',
+    startedAt: taskStartedAt, cost: 0, why: headline,
+    reason: deadLanes.size ? 'no_engine' : 'quota' });
 }
 
 // ─── Saving the work ──────────────────────────────────────────────────────────
@@ -1589,11 +1674,22 @@ async function runGitJobs() {
 
   if (out.ok) {
     console.log(`  ${green(job.kind === 'undo' ? '✓ put back' : '✓ live')}${out.merge_commit ? dim(' — ' + out.merge_commit.slice(0, 8)) : ''}`);
+    const subject = job.commit_subject || job.branch || 'the change';
     await slackNotify(job.kind === 'undo'
       ? `↩️ *Put back* — the app is back to how it was before that task.\n_<${APP_URL}|open the queue>_`
-      : `🚀 *Live in the app* — ${job.commit_subject || job.branch}\n_<${APP_URL}|open the queue>_`);
+      : `🚀 *Live in the app* — ${subject}\n_<${APP_URL}|open the queue>_`);
+    desktopNotify(job.kind === 'undo'
+      ? { head: 'Put back', body: 'The app is back to how it was before that task.' }
+      : { head: 'Live in the app', body: subject });
   } else if (out.error !== 'dry_run') {
+    // This used to be a terminal line and nothing else, which is the "Task done,
+    // then silence" case: the agent finished, the work committed, publishing failed,
+    // and the only record was a colour code in a log nobody was watching.
     console.log(`  ${red('✗ not published')} — ${out.error}${out.detail ? dim(' (' + out.detail + ')') : ''}`);
+    const what = job.commit_subject || job.branch || 'a finished task';
+    const why = `${out.error}${out.detail ? ` (${out.detail})` : ''}`;
+    await slackNotify(`⚠️ *Not published* — ${what} — ${why}\n_The work is committed but not in the app. Open the queue and publish it._ · <${APP_URL}|open the queue>`);
+    desktopNotify({ head: 'Not published', body: `${what} — ${why}. The work is committed but not in the app.` });
   }
 }
 
@@ -1684,6 +1780,9 @@ async function notifyStopped(why) {
   if (stopNotified) return;
   stopNotified = true;
   await slackNotify(`🛑 *Queue runner stopped* — ${why}\n_Nothing in the Dispatch Queue will run until it is started again._`);
+  // Worth a banner: a stopped runner is the one failure where nothing else will
+  // ever notify, because nothing else runs.
+  desktopNotify({ head: 'Queue runner stopped', body: `${why}. Nothing will run until it is started again.` });
 }
 
 // ─── Main loop ────────────────────────────────────────────────────────────────
@@ -1757,8 +1856,12 @@ async function main() {
     catch (e) {
       console.error('  Task failed unexpectedly —', e.message);
       try {
-        await api(`/worker/${claimed.id}/result`, { status: 'blocked', result: `The runner hit an error: ${e.message}` });
+        await api(`/worker/${claimed.id}/result`, { status: 'blocked', result: `The runner hit an error: ${e.message}`, blocked_reason: 'crashed' });
       } catch { /* the stale-claim reaper will free it */ }
+      // A crash here is the one ending with no report to read, so the notice is the
+      // only thing that will ever mention it.
+      await notifyEnding({ task: claimed, status: 'blocked', engine: 'the runner itself',
+        startedAt: Date.now(), cost: 0, reason: 'crashed', why: e.message });
     }
     await printSnapshot({ force: true });
   }

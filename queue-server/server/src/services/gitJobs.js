@@ -233,6 +233,35 @@ function reviewNotes(review) {
 // One place decides the word Antoine sees, so the frontend has no logic to get
 // wrong. Every state name here is plain English on purpose — never "merged",
 // never "approved" (AGENTS.md: everything the app writes for him is plain English).
+// A failed task never gets a review — reviewRunner refuses to write one unless the
+// task finished — so `shipStateFor(null)` was the whole story for every blocked card:
+// no file counts, no reason, nothing to say. Meanwhile the runner HAD measured it and
+// the numbers were sitting in agent_tasks.ship_*.
+//
+// This reads those columns directly and reports what they say, with one rule taken
+// from services/ideaLanded.js: a null is missing information, not a finding. No stored
+// numbers means no claim — never "nothing was built" inferred from silence.
+export function shipStateForBlocked(task) {
+  if (!task) return null;
+  const skip = task.ship_skip_reason || null;
+  const hasCounts = Number.isFinite(task.ship_insertions) || Number.isFinite(task.ship_deletions);
+  if (!skip && !hasCounts) return null;                    // nothing measured — say nothing
+  let files = 0;
+  try { files = (JSON.parse(task.ship_files || '[]') || []).length; } catch { files = 0; }
+  const nothing = skip === 'never_ran' || skip === 'nothing_changed'
+    || (hasCounts && !files && !task.ship_insertions && !task.ship_deletions);
+  if (!nothing) return null;                               // it did change something
+  return {
+    review_id: null, merge_commit: null,
+    files, insertions: task.ship_insertions || 0, deletions: task.ship_deletions || 0,
+    at: null, notes: [],
+    state: 'nothing_changed',
+    message: skip === 'never_ran'
+      ? 'Nothing was built — it never got as far as running.'
+      : 'Nothing was built — it finished without changing any file.',
+  };
+}
+
 export function shipStateFor(review, { runnerConnected = true } = {}) {
   if (!review) return null;
   const job = latestGitJobForReview(review.id);

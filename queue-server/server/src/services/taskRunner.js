@@ -1460,6 +1460,11 @@ export function recordRunnerResult(taskId, {
   status = 'done', result = '', session_id = null, model = null, tried_models = null,
   cost_usd = null, tokens_in = null, tokens_out = null, worktree_path = null, branch = null,
   ship = null,
+  // Why it blocked, in one word from the runner: no_engine | quota | timeout |
+  // nothing_changed | crashed. Before this, every failure arrived as the bare word
+  // "blocked" and "it never ran, it will retry itself" was byte-identical to "it ran
+  // and hit a wall" — the two situations that deserve the most opposite reactions.
+  blocked_reason = null,
 } = {}) {
   const task = readTasks().find((t) => t.id === taskId);
   if (!task) return null;
@@ -1502,6 +1507,10 @@ export function recordRunnerResult(taskId, {
     cost_usd: Number.isFinite(cost_usd) && cost_usd > 0 ? cost_usd : task.cost_usd,
     tokens_in: tokens_in ?? task.tokens_in, tokens_out: tokens_out ?? task.tokens_out,
     run_state: pending_question?.question ? 'awaiting_input' : 'idle',
+    // Only meaningful on a failure, and only ever set from what the runner said —
+    // never inferred here. An unlabelled block stays unlabelled rather than being
+    // guessed at, which is the same rule the idea-landing checker follows.
+    blocked_reason: finalStatus === 'done' ? null : (blocked_reason || task.blocked_reason || null),
     completed_at: new Date().toISOString(), heartbeat_at: new Date().toISOString(),
     claimed_by: null, claimed_at: null,
   });
