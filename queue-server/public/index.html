@@ -90,12 +90,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .left h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:14px 0 8px; }
 .left-head + h2 { margin-top:0; }
 .left-head { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-.left-head-title { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); }
-.left-pin { margin-left:auto; }
-/* One chevron at a time: it points the way the panel is about to go. Specific enough
-   to beat .uicon .ic's own display, which is declared further down. */
-.left .left-pin .pin-close, .left.pinned .left-pin .pin-open { display:none; }
-.left.pinned .left-pin .pin-close { display:block; }
+/* The word IS the pin. There is no separate chevron: clicking "Filters" stops the
+   panel sliding away, clicking it again lets it slide again. A dot after the word
+   is the only thing that says which of the two it currently is. */
+.left-head-title { font-family:inherit; border:none; background:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease); }
+.left-head-title:hover { color:var(--c-ink-2); }
+.left.pinned .left-head-title { color:var(--c-ink-2); }
+.left-head-title::after { content:''; width:5px; height:5px; border-radius:50%; border:1px solid currentColor; }
+.left.pinned .left-head-title::after { background:var(--c-accent); border-color:var(--c-accent); }
 /* The 44px face the collapsed panel leaves behind. Drawn at every width but only
    shown by the min-width:821px block, since below that the panel is an overlay
    with its own button in the graph toolbar. */
@@ -1782,11 +1784,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls(); collapsed-to-a-spine hover/pin behaviour in initFilterPanel()/syncFiltersActive() | backend: GET /api/ontology/facets, /api/ontology/clusters">
     <div class="left-inner">
       <div class="left-head">
-        <span class="left-head-title">Filters</span>
-        <button type="button" class="uicon left-pin" id="filtersPin" aria-expanded="false" title="Keep the filters open (or press ] )" aria-label="Keep the filters open">
-          <svg class="ic pin-open" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg>
-          <svg class="ic pin-close" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg>
-        </button>
+        <button type="button" class="left-head-title" id="filtersPin" aria-pressed="false" title="Keep the filters open (or press ] )">Filters</button>
       </div>
       <h2>Entity types</h2>
       <div id="typeList"></div>
@@ -5912,9 +5910,8 @@ function applyFiltersPinned(on) {
   if (on) openFilters(); else closeFiltersSoon();
   const pin = document.getElementById('filtersPin');
   if (pin) {
-    pin.setAttribute('aria-expanded', String(on));
+    pin.setAttribute('aria-pressed', String(on));
     pin.title = on ? 'Let the filters slide away again' : 'Keep the filters open (or press ] )';
-    pin.setAttribute('aria-label', on ? 'Let the filters slide away again' : 'Keep the filters open');
   }
 }
 function initFilterPanel() {
