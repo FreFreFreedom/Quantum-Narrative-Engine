@@ -41,7 +41,7 @@ import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
-import { runIdeaLanding as ideaLandingPass } from '../server/src/services/ideaLanded.js';
+import { runIdeaLanding as ideaLandingPass, buildDiff as buildIdeaDiff } from '../server/src/services/ideaLanded.js';
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk } from './git-ship.js';
 
@@ -1117,6 +1117,12 @@ async function runTask(task) {
     // applies, so this cannot collide with anything.
     if (ship?.committed) {
       try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
+      // Then settle up to two OLDEST tasks whose picked ideas never got an answer.
+      // Fire-and-forget on purpose — it must not delay this runner's next claim —
+      // and fully wrapped inside (see sweepLeftoverIdeas): no failure of its own
+      // can reach the ship path. The range just checked is skipped; its ideas were
+      // answered by the pass above.
+      sweepLeftoverIdeas({ skipRange: `${ship.base_sha || ''}..${ship.head_sha}` }).catch(() => {});
     }
     return;
   }
@@ -1339,10 +1345,34 @@ async function runReviewPass({ wt, ship, task }) {
 // Everything about it is optional. No ideas, no witnesses, no model, no answer: all of
 // them end the same way as never having run, because a check that can accuse a task of
 // not building something it did build is worse than no check at all.
+// The model ladder for the ideas check — second subscription first, main account
+// when that window is spent or goes quiet. Kept as its own helper so the leftover
+// sweep below runs the EXACT same ladder, not a lookalike.
+function ideaCallModel(cwd) {
+  return async (prompt) => {
+    const ask = (onSide) => claudeCli.runToolless({
+      prompt, model: REVIEW_MODEL, timeoutMs: REVIEW_TIMEOUT_MS, cwd,
+      env: claudeCli.spawnEnv(onSide ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
+    });
+    const side = Boolean(SIDE_TOKEN);
+    let r = await ask(side);
+    if (side && (!r || r.code !== 0)) {
+      const why = String(r?.text || r?.error || `exit ${r?.code}`);
+      if (claudeCli.detectLimit(why) || /no response|timed out|timeout/i.test(why)) r = await ask(false);
+    }
+    if (!r || r.code !== 0) throw new Error(String(r?.text || r?.error || `exit ${r?.code}`).slice(0, 200));
+    return r.text || '';
+  };
+}
+
 async function runIdeaLandingPass({ wt, ship, task }) {
   if (process.env.IDEA_CHECK_DISABLED === '1') return null;
   try {
-    const got = await api(`/worker/${task.id}/ideas`, undefined, { method: 'GET' }).catch(() => null);
+    // api() hands back the raw fetch Response — the body must be read before its
+    // JSON means anything. (The first version read `.ideas` straight off the
+    // Response, which is always undefined, so this pass silently never ran.)
+    const res = await api(`/worker/${task.id}/ideas`, undefined, { method: 'GET' }).catch(() => null);
+    const got = res && res.ok ? await res.json().catch(() => null) : null;
     const ideas = got?.ideas || [];
     if (!ideas.length) return null;
 
@@ -1352,20 +1382,7 @@ async function runIdeaLandingPass({ wt, ship, task }) {
       headSha: ship.head_sha,
       files: ship.files_changed,
       ideas,
-      callModel: async (prompt) => {
-        const ask = (onSide) => claudeCli.runToolless({
-          prompt, model: REVIEW_MODEL, timeoutMs: REVIEW_TIMEOUT_MS, cwd: wt.path,
-          env: claudeCli.spawnEnv(onSide ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
-        });
-        const side = Boolean(SIDE_TOKEN);
-        let r = await ask(side);
-        if (side && (!r || r.code !== 0)) {
-          const why = String(r?.text || r?.error || `exit ${r?.code}`);
-          if (claudeCli.detectLimit(why) || /no response|timed out|timeout/i.test(why)) r = await ask(false);
-        }
-        if (!r || r.code !== 0) throw new Error(String(r?.text || r?.error || `exit ${r?.code}`).slice(0, 200));
-        return r.text || '';
-      },
+      callModel: ideaCallModel(wt.path),
     });
     if (!out?.ran) {
       console.log(dim(`  world ideas not checked — ${out?.error || 'unavailable'}`));
@@ -1384,6 +1401,76 @@ async function runIdeaLandingPass({ wt, ship, task }) {
   } catch (e) {
     console.log(dim(`  world ideas not checked — ${e.message}`));
     return null;
+  }
+}
+
+// ─── Sweeping up the ideas no ship ever answered for ──────────────────────────
+// The pass above only sees the task that just finished. An idea whose one model
+// check came back empty used to stay unanswered forever unless someone remembered
+// scripts/ideas-audit.js --deep by hand. So after each normal ship finishes its OWN
+// ideas check, this settles up to TWO oldest tasks still carrying unchecked ideas —
+// same three layers, at most one model call per task, exactly as ideas-audit --deep
+// does by hand.
+//
+// The guards, in order of importance:
+//   • IDEA_CHECK_DISABLED=1 silences it along with everything else;
+//   • it is never awaited by the ship path and swallows every error itself — a sweep
+//     failure cannot touch a finished ship;
+//   • diffs are built against the MAIN checkout (RUNNER_REPO), not a task worktree —
+//     worktrees get tidied away, the main checkout keeps its history;
+//   • the range whose own pass just ran is skipped: its leftovers are new answers,
+//     not old ones;
+//   • if the model does not answer for a range, the rest of the sweep is abandoned
+//     quietly — another day will pick it up, and hammering a spent window helps nobody.
+const SWEEP_MAX_TASKS = 2;
+let _sweepInFlight = false;
+
+async function sweepLeftoverIdeas({ skipRange = null } = {}) {
+  if (process.env.IDEA_CHECK_DISABLED === '1') return;
+  if (_sweepInFlight) return;
+  _sweepInFlight = true;
+  try {
+    const res = await api('/ideas-landed/unsettled', undefined, { method: 'GET' }).catch(() => null);
+    const data = res && res.ok ? await res.json().catch(() => null) : null;
+    const ranges = data?.tasks || [];
+    let attempted = 0, gaps = 0;
+    for (const t of ranges) {
+      if (attempted >= SWEEP_MAX_TASKS) break;
+      if (skipRange && `${t.base_sha || ''}..${t.head_sha}` === skipRange) continue;
+      // A commit this machine does not have is no evidence either way — skip it and
+      // leave its ideas for a day when it exists, exactly as ideas-audit does.
+      const diff = buildIdeaDiff(RUNNER_REPO, t.base_sha, t.head_sha);
+      if (!diff.text) continue;
+      const label = String(t.prompt_title || t.head_sha.slice(0, 8)).slice(0, 60);
+      const out = await ideaLandingPass({
+        root: RUNNER_REPO,
+        baseSha: t.base_sha,
+        headSha: t.head_sha,
+        files: [],
+        ideas: t.ideas || [],
+        callModel: ideaCallModel(RUNNER_REPO),
+      });
+      attempted++;
+      if (!out?.ran || !out.items?.length) continue;
+      const items = out.items.map(i => ({ id: i.id, verdict: i.verdict, note: i.note }));
+      await api('/ideas-landed/verdicts', { items }).catch(() => {});
+      const half = items.filter(i => i.verdict === 'server_only').length;
+      const missing = items.filter(i => i.verdict === 'not_landed').length;
+      gaps += half + missing;
+      console.log(dim(`  swept older world ideas — ${label}: ${items.map(i => i.verdict).join(', ')}`));
+      // Items left undecided carry by:'none' — the model was asked and did not
+      // answer. Stop here rather than ask it again for the next range.
+      if (out.items.some(i => i.by === 'none')) {
+        console.log(dim('  sweep stopped early — the model did not answer; it tries again after the next ship.'));
+        break;
+      }
+    }
+    if (attempted && !gaps) console.log(dim('  swept older world ideas — nothing new to flag.'));
+  } catch {
+    // Deliberately silent: the sweep is an extra, never a dependency. A failed one
+    // costs nothing but a retry after the next ship.
+  } finally {
+    _sweepInFlight = false;
   }
 }
 

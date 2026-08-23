@@ -6,6 +6,7 @@ import { resolveBin as resolveClaudeBin } from '../services/providers/claudeCode
 import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution, runnerStatus, attemptCapMsFor } from '../services/taskRunner.js';
 import { latestReviewForPrompt } from '../services/reviewRunner.js';
 import { shipStateFor } from '../services/gitJobs.js';
+import { gapCountsByPrompt } from '../services/inspireLanding.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
 import { feedCompletedToRecommender } from '../services/workSuggestions.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
@@ -67,6 +68,10 @@ export function queueRoutes() {
     // Asked once per request, not per prompt: whether a runner is attached decides
     // between "going live" and "waiting for your Mac" for every finished task.
     const runnerConnected = runnerStatus().connected;
+    // Same once-per-request rule: how many picked world ideas are sitting unusable
+    // on each card, in one grouped query (services/inspireLanding.js). The Flow
+    // turns a nonzero count into the amber ✨ badge on the finished card.
+    const ideaGaps = gapCountsByPrompt();
     const prompts = queue.listPrompts({ space }).map((p) => {
       // Surface the RUNNING task's process state (run_state + heartbeat) so the UI
       // can tell a wedged agent from a busy one — plan Part 3. Null for prompts
@@ -107,6 +112,10 @@ export function queueRoutes() {
         ship: p.status === 'done' || p.status === 'blocked'
           ? shipStateFor(latestReviewForPrompt(p.id), { runnerConnected })
           : null,
+        // Picked world ideas proven not usable, with no fix queued yet. Only a
+        // proven gap counts — 'not_checked' is a missing answer, not a finding,
+        // and must never put a warning mark on a card.
+        idea_gaps: ideaGaps[p.id] || 0,
       };
     });
     res.json({

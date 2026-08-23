@@ -1716,3 +1716,37 @@ cramped and cut component names off mid-word.
 - **More air:** bigger gaps/padding on columns and cards throughout the board.
 - Files: `fmcns_navigator.html` only (board CSS block, archDrawBoard/
   archBoardCardHtml, archView persistence, two data-src notes). No server change.
+
+# Queue task, 2026-08-23 — Close the loop on picked world ideas
+
+Implemented `plans/world-ideas-close-the-loop.md` (dev agent, worktree branch).
+Four pieces, all building on the IDEA-PROOF feature from `0c26e70`:
+
+- **Amber ✨ N badge on finished cards.** One grouped query in
+  inspireLanding.gapCountsByPrompt() (server_only/not_landed, fix not queued —
+  never not_checked), attached as `idea_gaps` per prompt row in GET /prompts;
+  flowQueueRow renders `.q-idea-gap` next to the status pill with a plain-English
+  tooltip. Click behaviour unchanged (opens the card).
+- **Leftover sweep after ships.** queue-runner.js: after publishing, fires
+  sweepLeftoverIdeas() (not awaited, fully wrapped): two OLDEST unsettled ranges,
+  skipping the range just checked; diffs against RUNNER_REPO; same model ladder via
+  extracted ideaCallModel(); POSTs verdicts; abandons quietly when the model does
+  not answer. IDEA_CHECK_DISABLED respected.
+- **Clickable queued-fix rows.** Ideas-dropped tab's "Already queued to be
+  finished" rows now open their paused task card (same select-from-qPrompts +
+  renderFlow mechanism as sibling rows; switches to the All tab so the card is
+  actually visible).
+- **One-time nudge on rise from zero.** recordRunnerResult's verdict fold-back now
+  calls notifyGapRise() (inspireLanding.js): app_kv baseline, notifies only on
+  prev==0 && now>0 via NOTIFY_WEBHOOK_URL ({text} POST, [recap] console fallback),
+  fully wrapped.
+
+**Bug found and fixed en route:** since the feature first shipped (`559e326`),
+runIdeaLandingPass read `.ideas` straight off the raw fetch Response returned by
+api() — always undefined — so the per-task ideas check silently NEVER ran and no
+verdict ever rode back on a result POST. Only the server-side reachability recheck
+was actually working. Fixed by reading the body (`res.ok ? res.json()`). This is
+why the sweep + nudge wiring above matters: the ship-path half of the loop had
+never once executed.
+
+Not done here: pushing/deploying (agent worktree rule), browser sanity pass.

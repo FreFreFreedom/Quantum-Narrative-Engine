@@ -1507,10 +1507,16 @@ export function recordRunnerResult(taskId, {
   });
   // Fold each idea's verdict back onto its own row, so the audit and the card read
   // from one place. Never allowed to fail the result POST — a lost verdict costs a
-  // line on a card; a thrown one would lose the whole finished task.
+  // line on a card; a thrown one would lose the whole finished task. The nudge that
+  // follows obeys the same rule: it speaks only when unusable ideas RISE out of a
+  // clean slate (services/inspireLanding.js owns the rules), and a lost or thrown
+  // nudge costs nothing but the line.
   if (ship?.ideas?.items?.length) {
     import('./inspireLanding.js')
-      .then((m) => { for (const it of ship.ideas.items) if (it?.id) m.recordVerdict(it.id, { verdict: it.verdict, note: it.note }); })
+      .then(async (m) => {
+        for (const it of ship.ideas.items) if (it?.id) m.recordVerdict(it.id, { verdict: it.verdict, note: it.note });
+        await m.notifyGapRise();
+      })
       .catch((e) => console.error('world-idea verdicts not stored —', e.message));
   }
 
