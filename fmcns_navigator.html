@@ -7501,6 +7501,26 @@ async function loadAiSettings() {
   }
 }
 
+// The Coding-tasks row's model list. Spend-free only — free, or the flat Go
+// subscription — the same rule the server enforces (isSpendFree, providers/index.js),
+// so nothing offered here can be refused on save. Built by a function rather than
+// inline because the dropdown has to be refilled when the engine changes, and when the
+// model list arrives late.
+function aiQueueModelOptions(selected) {
+  const models = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/'));
+  const auto = `<option value="">Auto</option>`;
+  // An empty list is not the same as "nothing chosen", and used to look identical to it.
+  if (!models.length) return auto + `<option value="" disabled>(no OpenCode models found)</option>`;
+  const opts = models.map(m =>
+    `<option value="${m.id}"${m.id === selected ? ' selected' : ''}>`
+    + `${m.free ? '🆓 ' : ''}${m.name && m.name !== m.id ? m.name + ' — ' : ''}${m.id}</option>`).join('');
+  // A stored model that is no longer offered keeps its place, so opening this panel
+  // can never quietly replace a choice it cannot display.
+  const missing = selected && !models.some(m => m.id === selected)
+    ? `<option value="${selected}" selected>${selected}</option>` : '';
+  return auto + opts + missing;
+}
+
 function aiModelOptions(provider, selected) {
   if (provider === 'opencode') {
     const models = qProviders.opencode?.models || [];
@@ -7629,13 +7649,7 @@ function renderAiSettings() {
   const qd = aiSettings.queue || {};
   const qdProvider = qd.defaultProvider || '';
   const qdModel = qd.defaultModel || '';
-  // Only models that cost nothing to run — free, or on the flat Go subscription. A
-  // pay-per-use model must never become the standing default; the server refuses one
-  // anyway, so offering it would only produce a save that silently does nothing.
-  const qdModels = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/'));
-  const qdModelOpts = `<option value="">Auto</option>` + qdModels.map(m =>
-    `<option value="${m.id}"${m.id === qdModel ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.name && m.name !== m.id ? m.name + ' — ' : ''}${m.id}</option>`).join('')
-    + (qdModel && !qdModels.some(m => m.id === qdModel) ? `<option value="${qdModel}" selected>${qdModel}</option>` : '');
+  const qdModelOpts = aiQueueModelOptions(qdModel);
   const queueDefaultRow = `
     <tr class="ai-row-queue">
       <td><div class="ai-feature-name">Coding tasks</div><div class="ai-feature-note">The queue — what actually writes the code</div></td>
@@ -7683,9 +7697,18 @@ function renderAiSettings() {
   `;
 
   const qpSel = document.getElementById('aiQueueProvider');
-  if (qpSel) qpSel.onchange = () => {
+  if (qpSel) qpSel.onchange = async () => {
     const ms = document.getElementById('aiQueueModel');
-    if (ms) { ms.disabled = qpSel.value !== 'opencode'; if (ms.disabled) ms.value = ''; }
+    if (!ms) return;
+    if (qpSel.value !== 'opencode') { ms.disabled = true; ms.value = ''; return; }
+    ms.innerHTML = aiQueueModelOptions(ms.value);
+    ms.disabled = false;
+    // Still nothing to offer: ask the server rather than leaving a dropdown that says
+    // only "Auto" and never recovers.
+    if (!(qProviders.opencode?.models || []).length) {
+      await loadProviders().catch(() => null);
+      ms.innerHTML = aiQueueModelOptions(ms.value);
+    }
   };
 
   host.querySelectorAll('.ai-provider-sel').forEach(sel => {
