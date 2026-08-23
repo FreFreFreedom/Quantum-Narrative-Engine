@@ -493,6 +493,14 @@ function initSchema(db) {
   // free daily allowance is never drained by one small task. Editable in the
   // Queue panel; resets at UTC midnight.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN side_call_budget INTEGER NOT NULL DEFAULT 30`); } catch {}
+  // The engine and model NEW queue tasks start on, set once in AI Settings instead of
+  // per task. Empty = the old behaviour (provider chosen from the task's size, model
+  // from the free floor). A model named here must be spend-free — free, or on the flat
+  // Go subscription — and is re-checked on save; the per-task Model dropdown still
+  // overrides it. Before this, nothing in the AI Settings panel reached the queue at
+  // all: every setting there feeds the text helpers only (found 2026-08-23).
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_default_provider TEXT NOT NULL DEFAULT ''`); } catch {}
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_default_model TEXT NOT NULL DEFAULT ''`); } catch {}
   // One-time migration flag: "Suggestions de Claude" used to generate in
   // French (workSuggestions.js's prompts were literally written in French).
   // Once fixed, the old French-language cached rows in work_suggestions need

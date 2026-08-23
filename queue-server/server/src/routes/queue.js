@@ -50,10 +50,16 @@ export function queueRoutes() {
     res.json(getAiSettings());
   });
 
-  router.put('/ai-settings', (req, res) => {
+  router.put('/ai-settings', asyncHandler(async (req, res) => {
     const { defaults, policy, queue, intel, studioPersona } = req.body || {};
+    // Warm the model-discovery cache first: the queue-default model is checked against
+    // it (isSpendFree), and a cold cache would refuse a perfectly good free model.
+    // Cached for 5 minutes, so this costs nothing on a normal save.
+    if (queue && typeof queue.defaultModel === 'string' && queue.defaultModel.trim()) {
+      await listOpenCodeModels().catch(() => null);
+    }
     res.json(updateAiSettings({ defaults, policy, queue, intel, studioPersona }));
-  });
+  }));
 
   router.get('/prompts', (req, res) => {
     const space = req.query.space || 'fmcns';

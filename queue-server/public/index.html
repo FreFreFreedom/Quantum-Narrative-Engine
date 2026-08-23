@@ -6036,7 +6036,9 @@ function initMap() {
   document.getElementById('mapResetBtn').onclick = mapResetZoom;
   // NavCtrl for map: pan/zoom/pinch/keyboard on the SVG.
   NavCtrl(svg, mapViewport, applyMapTransform, {
-    minScale: 0.5, maxScale: 6, step: 1.15, keyPan: 120,
+    minScale: 0.5, maxScale: 6, step: 1.06, keyPan: 34,
+    momentumMode: 'release',
+    momentum: !REDUCED_MOTION,
     fit: () => { mapViewport.x = 0; mapViewport.y = 0; mapViewport.scale = 1; applyMapTransform(); },
     fixedViewBox: true,
   });
@@ -7345,6 +7347,22 @@ function qModelsForProvider(providerVal) {
   if (providerVal === 'ai-router') return qProviders.aiRouter?.models || [];
   return [];
 }
+// Spends money to run? Free models cost nothing and the Go plan is a flat
+// subscription; every other OpenCode model (gpt-5, claude-*, deepseek-v4-pro) bills
+// per token. Those are shown but not selectable — the runner refuses them anyway
+// (isSpendFree in providers/index.js), and greying them out explains why rather than
+// hiding them. AI Router models are left alone: they are a deliberate, separate lane.
+function qModelIsMetered(m, providerVal) {
+  if (providerVal !== 'opencode') return false;
+  return !(m.free || String(m.id).startsWith('opencode-go/'));
+}
+function qModelOptionHtml(m, providerVal, selectedId) {
+  const metered = qModelIsMetered(m, providerVal);
+  const label = `${m.free ? '🆓 ' : ''}${m.name || m.id}${metered ? ' 💳 (bills per use)' : ''}`;
+  const sel = m.id === selectedId ? ' selected' : '';
+  return `<option value="${m.id}"${sel}${metered ? ' disabled' : ''}>${label}</option>`;
+}
+
 // Agent roster (GET /api/travaux/agents): who can take a task. Each agent runs in
 // its own worktree; two agents can implement in parallel (dev1, dev2 by default).
 let qAgents = [];
@@ -7403,7 +7421,7 @@ function qProviderUi() {
       // curated chain) — the user never has to choose. A picked model sticks.
       const autoOpt = '<option value="">🤖 Auto (system default)</option>';
       modelSel.innerHTML = models.length
-        ? autoOpt + models.map(m => `<option value="${m.id}">${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('')
+        ? autoOpt + models.map(m => qModelOptionHtml(m, val, null)).join('')
         : autoOpt + `<option value="">${err ? 'unavailable — ' + err : '(no models)'}</option>`;
       if (prev && [...modelSel.options].some(o => o.value === prev)) modelSel.value = prev;
       else modelSel.value = '';
@@ -7582,6 +7600,29 @@ function renderAiSettings() {
         <td><select class="ai-model-sel">${aiModelOptions(provider, cur.model)}</select></td>
       </tr>`;
   }).join('');
+  // The one row here that governs actual coding work rather than text. Everything
+  // else on this panel feeds the helper features; until 2026-08-23 nothing on it
+  // reached the task queue at all, which made a deliberate choice here look ignored.
+  const qd = aiSettings.queue || {};
+  const qdProvider = qd.defaultProvider || '';
+  const qdModel = qd.defaultModel || '';
+  // Only models that cost nothing to run — free, or on the flat Go subscription. A
+  // pay-per-use model must never become the standing default; the server refuses one
+  // anyway, so offering it would only produce a save that silently does nothing.
+  const qdModels = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/'));
+  const qdModelOpts = `<option value="">Auto</option>` + qdModels.map(m =>
+    `<option value="${m.id}"${m.id === qdModel ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('')
+    + (qdModel && !qdModels.some(m => m.id === qdModel) ? `<option value="${qdModel}" selected>${qdModel}</option>` : '');
+  const queueDefaultRow = `
+    <div class="ai-policy-row" title="The engine and model every new coding task starts on. Choosing a model on the task itself still wins.">
+      <label style="font-size:11px;color:var(--c-ink-3);">Task queue runs on:</label>
+      <select id="aiQueueProvider">
+        <option value=""${qdProvider === '' ? ' selected' : ''}>Auto</option>
+        <option value="claude-code"${qdProvider === 'claude-code' ? ' selected' : ''}>Claude — main account</option>
+        <option value="opencode"${qdProvider === 'opencode' ? ' selected' : ''}>OpenCode</option>
+      </select>
+      <select id="aiQueueModel"${qdProvider === 'opencode' ? '' : ' disabled'}>${qdModelOpts}</select>
+    </div>`;
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
     .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
@@ -7597,6 +7638,7 @@ function renderAiSettings() {
         <option value="manual_only"${aiSettings.policy === 'manual_only' ? ' selected' : ''}>Never switch — wait for quota to reset</option>
       </select>
     </div>
+    ${queueDefaultRow}
     <table class="ai-feature-table">
       <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -7615,6 +7657,12 @@ function renderAiSettings() {
     <span class="ai-savemsg" id="aiSaveMsg"></span>
     ${renderFreeProvidersSection()}
   `;
+
+  const qpSel = document.getElementById('aiQueueProvider');
+  if (qpSel) qpSel.onchange = () => {
+    const ms = document.getElementById('aiQueueModel');
+    if (ms) { ms.disabled = qpSel.value !== 'opencode'; if (ms.disabled) ms.value = ''; }
+  };
 
   host.querySelectorAll('.ai-provider-sel').forEach(sel => {
     sel.onchange = () => {
@@ -7647,6 +7695,15 @@ function renderAiSettings() {
         msg.style.color = '#b23a2f';
         return;
       }
+    }
+    // The row wins over the same keys inside Advanced JSON, which shows the stored
+    // queue object verbatim and would otherwise write back the old value.
+    const qpEl = document.getElementById('aiQueueProvider');
+    const qmEl = document.getElementById('aiQueueModel');
+    if (qpEl) {
+      queue = queue || {};
+      queue.defaultProvider = qpEl.value;
+      queue.defaultModel = (qpEl.value === 'opencode' && qmEl) ? qmEl.value : '';
     }
     btn.disabled = true; msg.textContent = '';
     try {
@@ -10155,8 +10212,7 @@ ${switchable ? `
     const provSel = document.getElementById('qDetailProvider');
     const modelSel = document.getElementById('qDetailModel');
     modelSel.innerHTML = '<option value="">— pick one —</option>' +
-      qModelsForProvider(provVal).map(m =>
-        `<option value="${m.id}"${m.id === p.provider_model ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('');
+      qModelsForProvider(provVal).map(m => qModelOptionHtml(m, provVal, p.provider_model)).join('');
     const commitPatch = async (patch) => {
       try {
         await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', patch);
@@ -13045,7 +13101,9 @@ function attachArchNav() {
   if (!container || container._navAttached) return;
   container._navAttached = true;
   NavCtrl(container, archMapCam, applyArchMapCam, {
-    minScale: 0.18, maxScale: 8, step: 1.15, keyPan: 80,
+    minScale: 0.18, maxScale: 8, step: 1.06, keyPan: 34,
+    momentumMode: 'release',
+    momentum: !REDUCED_MOTION,
     fit: fitArchMap,
     home: fitArchMap,
     fixedViewBox: true,

@@ -158,3 +158,28 @@ export async function getDefaultAiRouterModel() {
   if (models.length) return models[0].id;
   throw new Error('no AI Router free models available (check API keys)');
 }
+
+// ─── Spend guard ──────────────────────────────────────────────────────────────
+// A model the queue is allowed to run without spending money. Two kinds qualify:
+// free ones (cost 0 in AND 0 out — the flag computed in opencode.js:249, which is
+// the only reliable test; the "*-free" suffix is not, see the comment there), and
+// the flat OpenCode Go subscription. Everything else bills per use: the Zen hosted
+// models (opencode/gpt-5, opencode/claude-*, opencode/deepseek-v4-pro) and every
+// ai-router / OpenAI-direct id. Those must never run automatically, and — Antoine's
+// standing rule — must never be fallen back onto either.
+//
+// The rule already existed in prose twice (the CURATED_GO_CHAIN comment above, and
+// billingGuard.js); this is it as a function, so the queue's model picks can be
+// checked against it instead of against a prefix regex that happens to let the
+// paid Zen ids through.
+//
+// Unknown id + no live list = refused. Erring towards "don't run it" is right here:
+// the cost of a wrong no is one task falling back to a free model.
+export function isSpendFree(modelId, liveModels) {
+  const id = String(modelId || '').trim();
+  if (!id) return false;
+  if (id.startsWith('opencode-go/')) return true;
+  const live = Array.isArray(liveModels) ? liveModels : (discoveryCache.out?.models || []);
+  const hit = live.find((m) => m.id === id);
+  return hit ? hit.free === true : false;
+}

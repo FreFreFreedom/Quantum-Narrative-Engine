@@ -33,7 +33,7 @@ import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import {
-  CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels,
+  CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels, isSpendFree,
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
@@ -669,6 +669,13 @@ function runOnce({ task, model, cwd }) {
     let toolInFlight = false;
     const capMs = attemptCapFor(task);
     let stderrTail = '';
+    // The last provider error we managed to classify, kept for the whole run. It used
+    // to be recomputed from stderrTail at close, which lost it two ways: the tail only
+    // keeps the last few KB, and the live scan below stopped looking once the model had
+    // produced output. Losing it matters because r.fatal is what marks a whole lane
+    // dead — without it the runner benches one model and then walks the other nine on
+    // the same exhausted subscription to be told the same thing nine times.
+    let fatalSeen = null;
     let pending = [];
     let settled = false;
     const startedAt = Date.now();
@@ -781,10 +788,14 @@ function runOnce({ task, model, cwd }) {
     // once rather than sitting out the 90-second clock for a failure we can
     // already name.
     child.stderr.on('data', (d) => {
-      stderrTail = (stderrTail + d.toString('utf8')).slice(-4000);
-      if (settled || sawRealOutput) return;
+      stderrTail = (stderrTail + d.toString('utf8')).slice(-20000);
+      if (settled) return;
       const fatal = classifyProviderError(stderrTail);
-      if (fatal) finish('model-bad', { why: fatal.why, fatal: fatal.kind });
+      if (fatal) fatalSeen = fatal;
+      // Bailing out early is only right BEFORE the model has produced anything. Once it
+      // has, the run may still finish usefully, so the classification is just remembered
+      // and applied at close.
+      if (fatal && !sawRealOutput) finish('model-bad', { why: fatal.why, fatal: fatal.kind });
     });
 
     child.on('error', (e) => finish('model-bad', { why: `could not start (${e.message})` }));
@@ -793,16 +804,21 @@ function runOnce({ task, model, cwd }) {
       if (settled) return;
       // A recognisable quota/billing message anywhere → rotate immediately
       // rather than reporting a failure to the user.
+      const fatal = fatalSeen || classifyProviderError(`${text}\n${errorMessage}\n${stderrTail}`);
+      if (fatal) return finish('model-bad', { why: fatal.why, fatal: fatal.kind });
       const limit = detectLimit(`${text}\n${errorMessage}\n${stderrTail}`);
-      if (limit) return finish('model-bad', { why: 'hit its usage limit' });
+      if (limit) return finish('model-bad', { why: 'hit its usage limit', fatal: 'quota' });
       // Exited without ever producing a parsed event: the model never really
       // engaged. Treat as a bad model, not a failed task.
       if (!sawRealOutput) {
         return finish('model-bad', { why: `exited (code ${code}) without producing anything` });
       }
-      if (code === 0) return finish('done');
+      // Exit 0 is not proof of success: opencode reports a provider refusal as an error
+      // event and still exits clean, which used to be recorded as a finished task. The
+      // Claude path a screen below has always had this guard; this is the same one.
+      if (code === 0 && !errorMessage) return finish('done');
       // It did real work then failed — that's about the task, not the model.
-      return finish('gave-up', { why: `exited with code ${code}`, });
+      return finish('gave-up', { why: errorMessage || `exited with code ${code}` });
     });
   });
 }
@@ -951,17 +967,28 @@ async function runTask(task) {
   // nothing — the row value was decorative (found 2026-08-22). Front-of-chain, not
   // sole-model, is deliberate: the pick still passes the isQuarantined filter and the
   // dead-lane skip below, so a benched pick or an exhausted plan degrades to the
-  // normal chain instead of failing the task outright. Only the two opencode lanes
-  // are accepted — third-party direct-billed prefixes (google/*, alibaba/*) must
-  // never auto-run, same rule as the server's (providers/index.js).
+  // normal chain instead of failing the task outright. The pick is accepted only if
+  // it costs nothing to run — free, or on the flat Go subscription (isSpendFree in
+  // providers/index.js). Anything metered is refused rather than run: a pay-per-use
+  // model must never execute a task, and must never be a fallback either.
   const picked = (task.provider_model || '').trim();
-  if (picked && /^opencode(-go)?\//.test(picked)) {
-    const at = chain.indexOf(picked);
-    if (at !== -1) chain.splice(at, 1);
-    chain.unshift(picked);
-    console.log(dim(`  Model picked for this task: ${picked}`));
-  } else if (picked) {
-    console.log(yellow(`  Ignoring the picked model ${picked} — not an OpenCode lane.`));
+  // Why the pick was not used, in plain words — surfaced on the card at the end so a
+  // refused choice is never silent (it used to be: the report named whatever ran and
+  // nothing said the pick had been turned down).
+  let pickNote = null;
+  if (picked) {
+    if (!isSpendFree(picked)) {
+      // Bills per use. Never run, never fallen back onto — Antoine's standing rule.
+      // The old test here was a /^opencode(-go)?\// regex, which let every Zen
+      // pay-per-token id through (opencode/gpt-5, opencode/claude-*, deepseek-v4-pro).
+      pickNote = `${picked} bills per use, so it was not run.`;
+      console.log(yellow(`  Not running ${picked} — it bills per use. Using the free models instead.`));
+    } else {
+      const at = chain.indexOf(picked);
+      if (at !== -1) chain.splice(at, 1);
+      chain.unshift(picked);
+      console.log(dim(`  Model picked for this task: ${picked}`));
+    }
   }
   // Priority lane: a task queued for Claude tries the Claude Code CLI FIRST, then
   // falls through to the existing opencode chain (Go, then free) if Claude can't or
@@ -1028,7 +1055,7 @@ async function runTask(task) {
       continue; // straight to the next model — no waiting
     }
 
-    const status = r.outcome === 'done' ? 'done' : 'blocked';
+    let status = r.outcome === 'done' ? 'done' : 'blocked';
     let report = r.outcome === 'done'
       ? (r.text || '(finished without a report)')
       : `${r.text || ''}\n\n(stopped: ${r.why})`.trim();
@@ -1037,6 +1064,16 @@ async function runTask(task) {
     // and a $0.10 cap against Claude's notional figure would permanently block the
     // task from ever running again. The figure is still shown — in the report and
     // in the Slack ping — it just isn't counted as money spent.
+    // The pick, when it was not the model that ran. Silence here is what made a
+    // refused choice look like the app ignoring it: the card named the model that ran
+    // and nothing said the chosen one had been turned down, or why.
+    if (picked && model !== picked) {
+      const why = pickNote
+        || (reasons.find((x) => x.startsWith(`${picked}: `)) || '').slice(picked.length + 2)
+        || 'it was unavailable';
+      const whyTxt = /[.!?]$/.test(why.trim()) ? why.trim() : `${why.trim()}.`;
+      report = `You picked ${picked}. It couldn't run — ${whyTxt} Ran on ${model} instead.\n\n${report}`;
+    }
     if (isClaude && r.cost) {
       report += `\n\n---\nRan on Claude ${claudeModelOf(model)} — drew about $${r.cost.toFixed(2)} worth of the subscription (covered by the plan, not billed).`;
     }
@@ -1057,6 +1094,15 @@ async function runTask(task) {
     // runner already makes, exactly like the ship checks do — no new endpoint, no
     // second round trip, and the server has the findings before it decides whether
     // to auto-ship.
+    // "Done" with nothing to show is not done. An implement task that finishes clean
+    // but leaves no change means the model answered instead of building — reporting it
+    // as done files an empty result and closes the task for good, so it goes back as
+    // blocked and gets another run. Question mode legitimately produces no diff.
+    if (status === 'done' && task.mode !== 'question' && ship && !ship.committed && ship.reason === 'nothing_changed') {
+      status = 'blocked';
+      report = `${report}\n\n(stopped: it finished without changing any file — nothing was built.)`.trim();
+      console.log(yellow('  Nothing was changed — reporting this as blocked, not done.'));
+    }
     if (ship?.committed) ship.review = await runReviewPass({ wt, ship, task });
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,

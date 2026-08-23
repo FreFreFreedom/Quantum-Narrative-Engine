@@ -34,7 +34,7 @@ import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pick
 import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan, tierForTask } from './taskPlanner.js';
 import { gatherRepoFacts } from './repoProbe.js';
-import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday } from './ai/text.js';
+import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday, queueDefaultEngine } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { eagerCardLine, clearCardLine } from './cardLines.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
@@ -154,7 +154,13 @@ export async function createPrompt({
   //     Claude → OpenCode Go → free, see scripts/queue-runner.js).
   // An explicit provider from the caller (the composer's picker) always wins.
   const requestedProvider = ['opencode', 'ai-router', 'claude-code'].includes(provider) ? provider : null;
-  const useProvider = requestedProvider || (tier === 'mini' ? 'opencode' : 'claude-code');
+  // The standing choice from AI Settings sits between the two: a per-task pick still
+  // wins, and with nothing set anywhere the tier heuristic above applies as before.
+  // Until 2026-08-23 that panel reached nothing in the queue at all.
+  const queueDefaults = queueDefaultEngine();
+  const useProvider = requestedProvider
+    || (queueDefaults.provider === 'opencode' || queueDefaults.provider === 'claude-code' ? queueDefaults.provider : null)
+    || (tier === 'mini' ? 'opencode' : 'claude-code');
   // Preset → Claude model (fast=haiku, standard=sonnet, deep=opus). 'auto' resolves
   // from the tier heuristic instead of asking a model to judge it: opus is reserved
   // for genuinely deep work, so an ordinary task cannot quietly cost 5× what it
@@ -189,6 +195,9 @@ export async function createPrompt({
   }
   const chained = !!(same_context || useParent);
   let useModel = provider_model || null;
+  // The standing model from AI Settings, used only when this task didn't name one.
+  // It was validated as spend-free when saved; re-checked at dispatch by the runner.
+  if (!useModel && useProvider === 'opencode' && queueDefaults.model) useModel = queueDefaults.model;
   if (useProvider === 'opencode' && !useModel) {
     // No model chosen — remember the best available default at creation time, so
     // the sync execution path never has to discover it lazily. Free-only plan:
