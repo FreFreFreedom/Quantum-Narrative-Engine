@@ -584,6 +584,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    the toolbar "Threads"/"Attached" buttons remain to bring it back. */
 .room-threads.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
 .room-cards.collapsed { width:0; min-width:0; padding-left:0; padding-right:0; border-left-color:transparent; }
+/* Peeked: hovering the toolbar's cards button floats the panel over the
+   conversation instead of widening the row — the side rail's rule, that a hover
+   must never reflow what is under the mouse, applies here too. Clicking pins it
+   back into the row (that is .collapsed coming off), so the temporary state and
+   the kept one live in two different classes and can never fight. */
+.room-cards.collapsed.peek { position:absolute; top:0; right:0; bottom:0; z-index:8;
+  width:290px; min-width:0; max-width:92vw; padding:14px;
+  border-left-color:var(--c-border); box-shadow:var(--sh-md); }
 .room-side-acts { display:flex; align-items:center; gap:1px; margin-left:auto; flex:none; }
 .room-side-head .uicon { flex:none; }
 .room-collapse-btn { opacity:.65; }
@@ -606,6 +614,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .room-toolbar { gap:8px; }
 .room-toolbar .arch-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .room-toolacts { display:flex; align-items:center; gap:2px; flex:none; }
+/* Kept open by a click, so the button stays lit; a hover-peek deliberately does
+   not, or there would be no way to tell the two apart. */
+.room-toolacts .uicon[aria-expanded="true"] { color:var(--c-ink); }
 .room-renamebox { flex:1; min-width:0; padding:4px 8px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); background:var(--c-surface); color:var(--c-ink); font-family:inherit; font-size:13px; font-weight:600; }
 /* The conversation itself is painted by studioEmbed() — the same markup a card's
    box gets. Only the frame changes: no rule above it, and the log takes every
@@ -1642,7 +1653,7 @@ button:active { transform: translateY(1px) scale(.99); }
     box-shadow:var(--sh-md); transition:transform var(--t-med) var(--ease); }
   .room-threads { left:0; width:250px; max-width:80vw; transform:translateX(-100%); }
   .room-cards { right:0; width:300px; max-width:92vw; transform:translateX(100%); }
-  .room-threads.open, .room-cards.open { transform:none; }
+  .room-threads.open, .room-cards.open, .room-cards.peek { transform:none; }
 }
 /* Chip rows are single-line flex today. Given no room they compress their chips
    into unreadable stubs rather than taking a second line. */
@@ -1720,6 +1731,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-nodes" viewBox="0 0 16 16"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="7" cy="12.4" r="2"/><path d="M5.7 5.3 10.3 5M11.2 7.8 8.3 10.6M5.4 5.9l1.1 4.6"/></symbol>
   <symbol id="ic-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.9 8h12.2"/><path d="M8 1.8c1.7 1.7 2.6 3.8 2.6 6.2S9.7 12.5 8 14.2C6.3 12.5 5.4 10.4 5.4 8S6.3 3.5 8 1.8z"/></symbol>
   <symbol id="ic-layers" viewBox="0 0 16 16"><path d="M8 1.8 14 5 8 8.2 2 5z"/><path d="m2 8.4 6 3.2 6-3.2"/><path d="m2 11.6 6 3.2 6-3.2"/></symbol>
+  <symbol id="ic-cards" viewBox="0 0 16 16"><path d="M5.4 4.6V3.6a1.4 1.4 0 0 1 1.4-1.4h5.6a1.4 1.4 0 0 1 1.4 1.4v5.6a1.4 1.4 0 0 1-1.4 1.4H11"/><rect x="2.2" y="4.6" width="8.8" height="9.2" rx="1.4"/></symbol>
   <symbol id="ic-chevron-left" viewBox="0 0 16 16"><path d="M10 3.5 5.5 8 10 12.5"/></symbol>
   <symbol id="ic-chevron-right" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></symbol>
 </defs></svg>
@@ -2099,7 +2111,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-toolacts">
             <button type="button" class="uicon" id="roomRenameBtn" title="Rename this thread" aria-label="Rename this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-pencil"/></svg></button>
-            <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg></button>
+            <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg></button>
             <button type="button" class="uicon is-danger" id="roomDeleteBtn" title="Delete this thread" aria-label="Delete this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-trash"/></svg></button>
           </span>
         </div>
@@ -6653,8 +6665,51 @@ function initRoom() {
   // column to nothing (the .collapsed class) instead of sliding an overlay.
   const threads = document.getElementById('roomThreads');
   const cards = document.getElementById('roomCards');
+  const cardsBtn = document.getElementById('roomCardsBtn');
   const isRoomNarrow = () => window.matchMedia('(max-width: 819px)').matches;
+  // The attached panel answers to the same two gestures as the filters and the
+  // details panels over in Content: hovering its button peeks it open, clicking
+  // keeps it open (or shut) until clicked again. The two are held in two
+  // different classes — .peek for the hover, .collapsed/.open for the click — so
+  // they cannot fight: what a click opened, the mouse leaving can never take
+  // away, and a peek never survives a click either way.
+  const ROOM_PEEK_MS = 320;
+  let cardsPeekTimer = null;
+  // "Kept open" is not the same question on the two layouts: wide, the panel is a
+  // column that is open unless collapsed; narrow, it is an overlay that is shut
+  // unless slid in.
+  const cardsAreKept = () => isRoomNarrow() ? cards.classList.contains('open') : !cards.classList.contains('collapsed');
+  const syncCardsBtn = () => {
+    if (!cardsBtn) return;
+    const on = cardsAreKept();
+    cardsBtn.setAttribute('aria-expanded', String(on));
+    cardsBtn.title = on ? 'Hide the attached cards' : 'Attached cards';
+  };
+  const stopPeekTimer = () => { clearTimeout(cardsPeekTimer); cardsPeekTimer = null; };
+  const dropPeek = () => { stopPeekTimer(); cards.classList.remove('peek'); };
+  const peekCards = () => {
+    stopPeekTimer();
+    // Nothing to peek at when it is already being kept open, and nothing to show
+    // at all when there is no thread selected (the button is disabled then).
+    if (cardsAreKept() || (cardsBtn && cardsBtn.disabled)) return;
+    if (isRoomNarrow()) threads.classList.remove('open'); // the two overlays never share the screen
+    cards.classList.add('peek');
+  };
+  const unpeekSoon = () => {
+    if (!cards.classList.contains('peek')) return;
+    stopPeekTimer();
+    cardsPeekTimer = setTimeout(() => {
+      cardsPeekTimer = null;
+      // Still in use — the pointer went into the panel or back onto its button, or
+      // something inside has focus — so wait another beat rather than snatching
+      // away a half-typed filter box.
+      if (cards.matches(':hover') || cards.contains(document.activeElement)
+          || (cardsBtn && cardsBtn.matches(':hover'))) { unpeekSoon(); return; }
+      cards.classList.remove('peek');
+    }, ROOM_PEEK_MS);
+  };
   const toggleZone = (el) => {
+    dropPeek();
     const other = el === threads ? cards : threads;
     if (isRoomNarrow()) {
       const was = el.classList.contains('open');
@@ -6665,23 +6720,56 @@ function initRoom() {
       el.classList.remove('open');
       el.classList.toggle('collapsed');
     }
+    syncCardsBtn();
   };
   document.getElementById('roomThreadsBtn').onclick = (e) => { e.stopPropagation(); toggleZone(threads); };
-  document.getElementById('roomCardsBtn').onclick = (e) => { e.stopPropagation(); toggleZone(cards); };
+  if (cardsBtn) {
+    cardsBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleZone(cards);
+      // A mouse click has to let go of the button: the focus it would leave behind
+      // holds the peek open over the panel it just shut. Keyboard activation
+      // (e.detail === 0) keeps its place, as it does on the rail.
+      if (e.detail) cardsBtn.blur();
+    };
+    cardsBtn.addEventListener('mouseenter', peekCards);
+    cardsBtn.addEventListener('mouseleave', unpeekSoon);
+    cardsBtn.addEventListener('focus', peekCards);
+    cardsBtn.addEventListener('blur', unpeekSoon);
+  }
+  // Reaching from the button into the panel must not close it on the way.
+  cards.addEventListener('mouseenter', stopPeekTimer);
+  cards.addEventListener('mouseleave', unpeekSoon);
+  cards.addEventListener('focusin', stopPeekTimer);
+  cards.addEventListener('focusout', unpeekSoon);
   const thColl = document.getElementById('roomThreadsCollapse');
   if (thColl) thColl.onclick = () => { threads.classList.remove('open'); threads.classList.toggle('collapsed'); };
   const caColl = document.getElementById('roomCardsCollapse');
-  if (caColl) caColl.onclick = () => { cards.classList.remove('open'); cards.classList.toggle('collapsed'); };
+  if (caColl) caColl.onclick = () => {
+    cards.classList.remove('open');
+    // Mid-peek the panel is already shut underneath, so letting go of the peek IS
+    // the collapse — toggling would pin it open instead of closing it.
+    if (cards.classList.contains('peek')) dropPeek();
+    else cards.classList.toggle('collapsed');
+    syncCardsBtn();
+  };
   document.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
-    if (e.key === 'Escape' && !typing) { threads.classList.remove('open', 'collapsed'); cards.classList.remove('open', 'collapsed'); }
+    if (e.key === 'Escape' && !typing) {
+      dropPeek();
+      threads.classList.remove('open', 'collapsed'); cards.classList.remove('open', 'collapsed');
+      syncCardsBtn();
+    }
   });
   // Crossing the wide/narrow boundary clears states that no longer apply, so a
   // stuck overlay or a collapsed column never lingers across a resize.
   window.addEventListener('resize', () => {
+    dropPeek();
     if (isRoomNarrow()) { threads.classList.remove('collapsed'); cards.classList.remove('collapsed'); }
     else { threads.classList.remove('open'); cards.classList.remove('open'); }
+    syncCardsBtn();
   });
+  syncCardsBtn();
 }
 
 async function loadRoom() {
@@ -6770,6 +6858,9 @@ function renderRoomHead() {
   if (rename) rename.disabled = !t;
   const cardsBtn = document.getElementById('roomCardsBtn');
   if (cardsBtn) cardsBtn.disabled = !t;
+  // A disabled button never gets the mouseleave that would end a peek, so losing
+  // the thread has to end it here instead.
+  if (!t) { const cardsEl = document.getElementById('roomCards'); if (cardsEl) cardsEl.classList.remove('peek'); }
   const delBtn = document.getElementById('roomDeleteBtn');
   if (delBtn) delBtn.disabled = !t;
   if (!t) roomEndRename();
