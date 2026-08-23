@@ -52,7 +52,7 @@ export function readKnowledgeDoc(db, title, offset = 0, length = 20000) {
   };
 }
 
-function uniqueTitle(db, base) {
+export function uniqueTitle(db, base) {
   let title = base;
   let n = 2;
   while (db.prepare(`SELECT 1 FROM knowledge_docs WHERE title=?`).get(title)) {

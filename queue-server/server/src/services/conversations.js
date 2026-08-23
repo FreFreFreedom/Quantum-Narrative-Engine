@@ -29,7 +29,7 @@ import { projectMapBlock } from './projectMap.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
-import { createKnowledgeNote } from './knowledgeDocs.js';
+import { createKnowledgeNote, uniqueTitle } from './knowledgeDocs.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
@@ -65,6 +65,41 @@ export function listFiles() {
     const status = (/^([A-Z ]+? \d{4}-\d{2}-\d{2})/.exec(r.description || '') || [])[1] || '';
     return { id, title: id, status };
   });
+}
+
+// Attach a file to a conversation. The client has already extracted the file's
+// text (never send raw bytes here — see plans/files-in-the-room.md's "a file
+// never rides in the prompt" rule) and computed its own sha; this only persists
+// it. Same-named upload gets a numbered suffix via uniqueTitle(), never an
+// overwrite — a previous file's content must never be silently destroyed.
+export function attachFile(convoId, { filename, mimeType, text, bytes, sha } = {}) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const body = String(text || '').trim();
+  if (!body) return { error: 'text_required', message: 'A file needs extracted text.' };
+
+  const rawName = String(filename || 'uploaded file').trim();
+  const nameNoExt = rawName.replace(/\.[^/.]+$/, '') || 'uploaded file';
+  const base = `File: ${nameNoExt}`.slice(0, 160);
+  const finalTitle = uniqueTitle(db, base);
+  const id = finalTitle.replace(/^File: /, '');
+  const today = new Date().toISOString().slice(0, 10);
+  const description = `UPLOADED ${today} — ${rawName}, ${Number(bytes) || body.length} bytes${sha ? `, sha ${String(sha).slice(0, 12)}` : ''}`;
+
+  db.prepare(`
+    INSERT INTO knowledge_docs (id, title, description, content, updated_at)
+    VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  `).run(randomUUID(), finalTitle, description, body);
+
+  db.prepare(
+    `INSERT INTO convo_subjects (convo_id, subject_type, subject_id, is_primary, subject_hint) VALUES (?,?,?,0,?)`,
+  ).run(convo.id, 'file', id, '');
+
+  db.prepare(`UPDATE convos SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(convo.id);
+  broadcastAll('convos:updated', { convoId: convo.id });
+
+  return { id, title: id, status: 'UPLOADED' };
 }
 
 const CONVO_HISTORY_WINDOW = 16;

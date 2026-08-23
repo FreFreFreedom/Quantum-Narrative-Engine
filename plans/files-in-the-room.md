@@ -2,7 +2,20 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-23 |
+| **DONE** | 2026-08-23 |
+
+**Shipped twice.** A first pass landed as `2bf7400` and reported itself live, but never
+worked: the drop zone had no click handler at all (the "browse" text was inert), and the
+server route referenced `db`/`randomUUID`/`broadcastAll` without importing any of them, so
+every drag-drop upload threw inside an unawaited callback and just hung — no PDF text
+extraction was ever built either, so even a working upload would have stored raw
+mis-decoded bytes. Fixed for real in the follow-up: click-to-browse now opens a real file
+picker; text is extracted client-side (`.md`/`.txt` directly, `.pdf` via a vendored
+`pdfjs-dist` in `queue-server/public/vendor/`) and POSTed as JSON, never raw bytes; the
+backend moved into `services/conversations.js#attachFile()` using `knowledgeDocs.js`'s
+`uniqueTitle()` so a same-named upload gets a numbered suffix instead of overwriting the
+earlier file. `.doc`/`.docx` were dropped — no viable client-side extraction path exists for
+either and they were never in this plan's scope.
 
 Split out of [one-chat-many-minds.md](one-chat-many-minds.md) (Part 5). Independent of that
 plan's other six parts — do not start them.

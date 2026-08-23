@@ -2195,8 +2195,9 @@ button:active { transform: translateY(1px) scale(.99); }
           </span>
           <div id="roomDropZone" class="room-dropzone">
             <p>Drag & drop a file here</p>
-            <p class="room-drop-instr">or browse attached picker</p>
+            <p class="room-drop-instr">or click to browse</p>
           </div>
+          <input type="file" id="roomFileInput" hidden accept=".md,.txt,.pdf">
         </div>
         <div id="roomAttachPick" hidden>
           <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
@@ -7350,10 +7351,99 @@ async function roomLoadPickSources() {
   if (roomPickOpen) renderRoomPick();
 }
 
-// ── Drag & drop file upload ──────────────────────────────────────────────────
+// ── Room file upload — drag-drop or click-to-browse ──────────────────────────
+// A file never rides raw into the prompt or the DB (plans/files-in-the-room.md):
+// text is extracted right here in the browser, and only the extracted text is
+// POSTed as JSON. .pdf goes through a vendored pdf.js (queue-server/public/vendor,
+// never a CDN); .md/.txt are read directly. No library can turn .doc/.docx into
+// text client-side, so they're not offered.
+const ROOM_FILE_MAX_CHARS = 400000;
+let pdfjsLoadPromise = null;
+function loadPdfjs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (pdfjsLoadPromise) return pdfjsLoadPromise;
+  pdfjsLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = API_BASE + '/vendor/pdf.min.js';
+    s.onload = async () => {
+      try {
+        const workerText = await (await fetch(API_BASE + '/vendor/pdf.worker.min.js')).text();
+        const blobUrl = URL.createObjectURL(new Blob([workerText], { type: 'text/javascript' }));
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = blobUrl;
+        resolve(window.pdfjsLib);
+      } catch (err) { reject(err); }
+    };
+    s.onerror = () => reject(new Error('could not load the PDF reader'));
+    document.head.appendChild(s);
+  });
+  return pdfjsLoadPromise;
+}
+
+async function extractPdfText(file) {
+  const pdfjsLib = await loadPdfjs();
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  const pages = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((it) => it.str).join(' '));
+  }
+  return pages.join('\n\n').trim();
+}
+
+function roomDropZoneReset() {
+  roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or click to browse</p>`;
+}
+function roomDropZoneSay(msg, isNote, holdMs) {
+  roomDropZone.innerHTML = isNote ? `<p class="room-note">${msg}</p>` : `<p>${msg}</p>`;
+  setTimeout(roomDropZoneReset, holdMs || 2500);
+}
+
+async function roomUploadFile(file) {
+  if (!file) return;
+  if (!roomSel) return roomDropZoneSay('No conversation selected', true);
+  const ext = `.${file.name.split('.').pop() || ''}`.toLowerCase();
+  const allowedTypes = ['.md', '.txt', '.pdf'];
+  if (!allowedTypes.includes(ext)) return roomDropZoneSay(`Unsupported file type: ${ext}`, true);
+
+  roomDropZone.innerHTML = `<p>Reading "${file.name}"…</p>`;
+  let text = '';
+  try {
+    text = ext === '.pdf' ? await extractPdfText(file) : await file.text();
+  } catch (err) {
+    return roomDropZoneSay(`Could not read file: ${err.message}`, true, 3000);
+  }
+  if (!text) return roomDropZoneSay('No readable text found in this file', true, 3000);
+  let truncated = false;
+  if (text.length > ROOM_FILE_MAX_CHARS) { text = text.slice(0, ROOM_FILE_MAX_CHARS); truncated = true; }
+
+  let sha = '';
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    sha = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {}
+
+  try {
+    await apiWrite(`/api/convos/${roomSel}/files`, 'POST', {
+      filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha,
+    });
+    roomLoadPickSources().then(() => renderRoomPick());
+    roomDropZoneSay(`File "${file.name}" uploaded${truncated ? ' (truncated)' : ''}`);
+  } catch (err) {
+    roomDropZoneSay(`Upload failed: ${err.message}`, true, 3000);
+  }
+}
+
 const roomDropZone = document.getElementById('roomDropZone');
-if (roomDropZone) {
-  const allowedTypes = ['.md', '.txt', '.pdf', '.doc', '.docx'];
+const roomFileInput = document.getElementById('roomFileInput');
+if (roomDropZone && roomFileInput) {
+  roomDropZone.addEventListener('click', () => roomFileInput.click());
+  roomFileInput.addEventListener('change', () => {
+    const file = roomFileInput.files?.[0];
+    roomFileInput.value = '';
+    if (file) roomUploadFile(file);
+  });
   roomDropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     roomDropZone.classList.add('room-dropzone--over');
@@ -7361,54 +7451,11 @@ if (roomDropZone) {
   roomDropZone.addEventListener('dragleave', () => {
     roomDropZone.classList.remove('room-dropzone--over');
   });
-  roomDropZone.addEventListener('drop', async (e) => {
+  roomDropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     roomDropZone.classList.remove('room-dropzone--over');
-    const files = e.dataTransfer?.files || [];
-    if (!files.length) return;
-    const file = files[0];
-    if (!roomSel) {
-      roomDropZone.innerHTML = `<p class="room-note">No conversation selected</p>`;
-      setTimeout(() => {
-        roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
-      }, 2000);
-      return;
-    }
-    const ext = `.${file.name.split('.').pop() || ''}`;
-    if (!allowedTypes.includes(ext.toLowerCase())) {
-      roomDropZone.innerHTML = `<p class="room-note">Unsupported file type: ${ext}</p>`;
-      setTimeout(() => {
-        roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
-      }, 2000);
-      return;
-    }
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const resp = await fetch(API_BASE + `/api/convos/${roomSel}/files`, {
-        method: 'POST',
-        headers: { Authorization: 'Bearer ' + TOKEN },
-        body: formData,
-      });
-      const data = await resp.json();
-      if (resp.ok) {
-        roomLoadPickSources().then(() => renderRoomPick());
-        roomDropZone.innerHTML = `<p>File "${file.name}" uploaded</p>`;
-        setTimeout(() => {
-          roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
-        }, 2000);
-      } else {
-        roomDropZone.innerHTML = `<p class="room-note">Upload failed: ${data.error || 'unknown'}</p>`;
-        setTimeout(() => {
-          roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
-        }, 3000);
-      }
-    } catch (err) {
-      roomDropZone.innerHTML = `<p class="room-note">Upload error: ${err.message}</p>`;
-      setTimeout(() => {
-        roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or browse attached picker</p>`;
-      }, 3000);
-    }
+    const file = e.dataTransfer?.files?.[0];
+    if (file) roomUploadFile(file);
   });
 }
 
