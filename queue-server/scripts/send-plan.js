@@ -36,21 +36,24 @@ const APP_URL = (process.env.APP_URL || QUEUE_URL).replace(/\/$/, '');
 
 // ─── Arguments ────────────────────────────────────────────────────────────────
 
-const argv = process.argv.slice(2);
-const flag = (name) => argv.includes(`--${name}`);
-function opt(name) {
-  const i = argv.indexOf(`--${name}`);
-  return i >= 0 ? argv[i + 1] : null;
-}
-const DRY = flag('dry-run');
-const PARK = flag('park');
-const RAW = flag('raw');
-const AGAIN = flag('again');
-const PRESET = opt('preset');
-const TITLE = opt('title');
-// Everything that is not a flag or a flag's value is the plan path.
-const OPT_VALUES = new Set([PRESET, TITLE].filter(Boolean));
-const positional = argv.filter((a) => !a.startsWith('--') && !OPT_VALUES.has(a));
+// ─── Arguments ────────────────────────────────────────────────────────────────
+ 
+ const argv = process.argv.slice(2);
+ const flag = (name) => argv.includes(`--${name}`);
+ function opt(name) {
+   const i = argv.indexOf(`--${name}`);
+   return i >= 0 ? argv[i + 1] : null;
+ }
+ const DRY = flag('dry-run');
+ const PARK = flag('park');
+ const RAW = flag('raw');
+ const AGAIN = flag('again');
+  const TITLE = opt('title');
+  const PRESET = opt('preset');
+  const GROUP = flag('group');
+ // Everything that is not a flag or a flag's value is the plan path.
+ const OPT_VALUES = new Set([PRESET, GROUP].filter(Boolean));
+ const positional = argv.filter((a) => !a.startsWith('--') && !OPT_VALUES.has(a));
 
 function die(msg) {
   console.error(`\n${msg}`);
@@ -92,13 +95,21 @@ function derivedTitle() {
 const title = derivedTitle();
 
 // The full plan IS the brief — it was written to be self-contained (plans/README.md).
-// The lead line adds the one thing the text cannot carry: where the same plan lives in
-// the repo, so the agent can re-read it rather than work from a paste.
-const body = [
-  `Implement the plan below. It was written and approved in a terminal session, and the same text is committed at \`${repoRelative}\` — read it there if you need the file itself.`,
-  '',
-  planText,
-].join('\n');
+ // The lead line adds the one thing the text cannot carry: where the same plan lives in
+ // the repo, so the agent can re-read it rather than work from a paste.
+ const body = [
+   `Implement the plan below. It was written and approved in a terminal session, and the same text is committed at \`${repoRelative}\` — read it there if you need the file itself.`,
+   '',
+   planText,
+ ].join('\n');
+
+// ─── Group umbrella logic ──────────────────────────────────────────────────
+// --group "<title>" files this plan as a part of that umbrella, creating the
+// umbrella if no group with that title exists yet in the space. The resolution
+// happens inside main() once we know whether this is a dry run, because the
+// group row must not be created (or the plan sent) before that decision.
+let umbrellaTitle = GROUP ? (opt('group') || '') : null;
+let groupId = null;
 
 // ─── Talking to the app ───────────────────────────────────────────────────────
 
@@ -156,15 +167,58 @@ const payload = {
   ...(PARK ? { status: 'paused' } : {}),
 };
 
+// Resolve (create or reuse) the umbrella group this plan's part goes under.
+// Returns the group id, or null when --group was not given.
+async function resolveGroup() {
+  const { prompts = [] } = await get(`/api/travaux/prompts?space=fmcns`);
+  const existing = prompts.find((p) => p.is_group === 1 && String(p.title || '').trim() === umbrellaTitle);
+  if (existing) {
+    console.log(`Using existing group "${umbrellaTitle}" (id=${existing.id}) as umbrella.`);
+    return existing.id;
+  }
+  const { status, json } = await post('/api/travaux/prompts', {
+    // The umbrella title is its own summary; opening the card explains the whole plan.
+    prompt: umbrellaTitle,
+    title: umbrellaTitle,
+    mode: 'implement',
+    preset: 'deep',
+    space: 'fmcns',
+    plan_source: 'skip',
+    status: 'paused',
+    is_group: true,
+  });
+  if (status !== 201) {
+    die(`Failed to create group umbrella (${status}): ${json.error || 'unknown error'}`);
+  }
+  console.log(`Created group umbrella "${umbrellaTitle}" (id=${json.id}).`);
+  return json.id;
+}
+
+// How many parts currently sit under an umbrella (for the plain-style report).
+async function countParts(gid) {
+  const { prompts = [] } = await get(`/api/travaux/prompts?space=fmcns`);
+  return prompts.filter((p) => p.parent_prompt_id === gid).length;
+}
+
 async function main() {
   console.log(`Plan   : ${repoRelative}  (${planText.length.toLocaleString()} characters)`);
   console.log(`Title  : ${title}`);
   console.log(`Model  : ${PRESET ? `${PRESET} (forced)` : 'auto — judged from the plan\'s size'}`);
   console.log(`Ideas  : ${RAW ? 'no world-look (--raw)' : 'world-look runs; ideas wait on the card'}`);
   console.log(`Arrives: ${PARK ? 'parked — waits for you to start it' : 'queued — starts on its own'}`);
+  if (umbrellaTitle) console.log(`Umbrella: part of "${umbrellaTitle}"`);
   console.log(`Queue  : ${QUEUE_URL}`);
 
   if (DRY) {
+    // Show the group decision without touching the app. The umbrella is NOT created
+    // and the plan part is NOT sent — --dry-run creates nothing.
+    if (umbrellaTitle) {
+      console.log(`\n--- Group umbrella decision (dry run) ---`);
+      console.log(`Would file this plan under the umbrella "${umbrellaTitle}".`);
+      console.log(`If no group with that title exists yet, one would be created (paused, no world-look).`);
+      console.log(`The plan part would carry parent_prompt_id of that group.`);
+      console.log(`Nothing was created or modified.`);
+    }
     console.log('\n--- payload (not sent) ---');
     console.log(JSON.stringify({ ...payload, prompt: `${body.slice(0, 300)}…` }, null, 2));
     console.log(`\nDry run — nothing was sent to ${QUEUE_URL}.`);
@@ -189,12 +243,22 @@ async function main() {
     }
   }
 
+  // File under an umbrella first, so the part carries parent_prompt_id on creation.
+  if (umbrellaTitle) {
+    groupId = await resolveGroup();
+    payload.parent_prompt_id = groupId;
+  }
+
   const { status, json } = await post('/api/travaux/prompts', payload);
   if (status !== 201) {
     die(`The app refused it (${status}): ${json.error || 'unknown error'}`);
   }
 
   console.log(`\n✓ In the queue — task ${json.id}`);
+  if (groupId) {
+    const n = await countParts(groupId);
+    console.log(`  Under umbrella "${umbrellaTitle}" — it now has ${n} part${n === 1 ? '' : 's'}.`);
+  }
   console.log(`  ${APP_URL}/#travaux`);
 
   // Whether it will ACTUALLY move. A queued task with no runner attached looks exactly

@@ -144,7 +144,7 @@ export async function createPrompt({
   created_by = null, suggestion_id = null, status = 'queued', priority = false, space = 'fmcns',
   component_id = null, provider = null, provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
-  convo_id = null, thought_id = null, inspiration = null,
+  convo_id = null, thought_id = null, inspiration = null, is_group = false,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -186,6 +186,12 @@ export async function createPrompt({
   const given = String(title || '').trim();
   const label = given || heuristicTitle(text);
   const initial = status === 'paused' ? 'paused' : 'queued';
+  // Group umbrellas are never dispatched — they stay paused and skip the world-look.
+  const isGroup = is_group === 1;
+  const effectiveStatus = isGroup ? 'paused' : initial;
+  const effectivePlanSource = isGroup ? 'skip' : plan_source;
+  const effectivePlanPending = isGroup ? 0 : undefined;
+  const effectiveInspireState = isGroup ? 'skipped' : null;
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
   // Agent assignment (plan Part 1): NULL falls back to dev1 at dispatch time.
   const useAgentKey = String(agent_key || '').trim() || null;
@@ -284,6 +290,9 @@ export async function createPrompt({
     }
   }
   const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (!willInspire ? 'skipped' : 'pending');
+  // Group umbrellas stay paused, skip the world-look, and have no plan draft.
+  const finalPlanPending = isGroup ? 0 : (willDraft ? 1 : 0);
+  const finalInspireState = isGroup ? 'skipped' : preState;
   // Why the world-look was skipped, shown on the card (free-only plan): mini tasks skip
   // it; the budget skip is set by startInspiration itself. The old wording promised "the
   // plan runs instantly", which is now wrong in a way that matters — a mini task has no
@@ -297,12 +306,12 @@ export async function createPrompt({
   // onAgentTaskFinalized's "retry one tier stronger" valve).
   const resolved = useProvider === 'claude-code' ? usePreset : null;
 
-  db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error)
+db.prepare(`
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
+  `).run(id, label, text, isGroup ? 'paused' : initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    (willDraft || plan_source === 'own') ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
+    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, is_group === 1 ? 1 : 0);
 
   // Every idea that arrived with the card gets its own durable row, so the audit
   // can ask later whether it actually got built. inspire_picks_json above is the
@@ -337,6 +346,29 @@ export async function createPrompt({
   // The lazy route (POST /prompts/:id/summarize) still fills them in on first
   // open and caches them on the row, so nothing is lost except the double spend.
   return getPrompt(id);
+}
+
+// ─── Group umbrella ──────────────────────────────────────────────────────────
+// One row that owns several ordinary tasks (a plan filed in parts). It is NOT a
+// new status — SQLite cannot ALTER the work_prompts.status CHECK in place — so it
+// is an ordinary row flagged is_group=1, parked at 'paused' so advanceQueue() (and
+// moveToFront) never hand it to an agent. Its parts each keep their own start
+// button; the umbrella only collapses them into one card in the Flow.
+export function createGroup({ title = '', prompt = '', space = 'fmcns' } = {}) {
+  // prompt holds the plan's own summary (the umbrella's description), so opening
+  // the card explains the whole plan. A group must not trigger a world-look of
+  // its own — its parts each get one — so plan_source='skip' and inspire_state
+  // is skipped via createPrompt's group branch.
+  return createPrompt({
+    title: String(title || '').trim(),
+    prompt: String(prompt || title || '').trim(),
+    space,
+    mode: 'implement',
+    preset: 'deep',
+    status: 'paused',
+    plan_source: 'skip',
+    is_group: true,
+  });
 }
 
 // Background continuation for the plan-first drafting stage: the row already
@@ -1234,6 +1266,10 @@ function eagerSummarize(id) {
 export function updatePrompt(id, patch) {
   let row = getPrompt(id);
   if (!row) return null;
+  if (patch.status !== undefined && row.is_group === 1) {
+    console.warn(`updatePrompt refused status change on group row ${id} — groups cannot have their status changed`);
+    return row;
+  }
   if (patch.status !== undefined || patch.position !== undefined) row = reclaimPending(row) || row;
   const sets = [];
   const vals = [];
@@ -1298,6 +1334,11 @@ export function pausePrompt(id) {
 export function deletePrompt(id) {
   const row = getPrompt(id);
   if (!row) return false;
+  if (row.is_group === 1) {
+    // When a group is deleted, clear parent_prompt_id on all its parts so they
+    // remain visible in the Flow without an umbrella (they become ordinary items).
+    db.prepare(`UPDATE work_prompts SET parent_prompt_id=NULL WHERE deleted_at IS NULL AND parent_prompt_id=?`).run(id);
+  }
   const wasPending = isPending(row);
   if (wasPending) reclaimPending(row);
   db.prepare(`UPDATE work_prompts SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
@@ -1326,6 +1367,12 @@ export function reorderPrompts(ids) {
 export function moveToFront(id) {
   const target = getPrompt(id);
   if (!target) return null;
+  // A group umbrella must never be dispatched to an agent — it exists only to
+  // collect its parts in one card, and its status stays 'paused'. Refuse.
+  if (target.is_group === 1) {
+    console.warn(`moveToFront refused on group row ${id} — groups are umbrellas, not dispatchable tasks`);
+    return target;
+  }
   reclaimPending(target);
   const row = db.prepare(`SELECT MIN(position) AS m FROM work_prompts WHERE deleted_at IS NULL AND status='queued' AND space=?`).get(target.space);
   db.prepare(`UPDATE work_prompts SET position=?, status='queued', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND status IN ('queued','paused')`)
