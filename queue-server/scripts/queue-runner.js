@@ -86,6 +86,45 @@ function attemptCapFor(task) {
   return Number(process.env.ATTEMPT_CAP_MS) || Number(task?.attempt_cap_ms) || ATTEMPT_CAP_FALLBACK_MS;
 }
 
+// How long a task may run without writing a single file before the runner says so.
+// This is NOT a kill. A plan that says "read knowledgeDocs.js's header first" spends
+// a long time reading before it writes a line, and killing on that would invent a new
+// way to strand good work — the exact failure shipStateForBlocked exists to avoid.
+// It is the missing SENTENCE.
+//
+// The three limits below all measure whether the model is TALKING. None of them asks
+// whether it has BUILT anything, and files are counted exactly once, in commitWork, at
+// the very end. So a model that emits something every couple of minutes reads as
+// perfectly healthy for the whole attempt cap while producing nothing at all. On
+// 2026-08-23 a task did that for 47 minutes and the only way to find out was to open
+// its worktree by hand.
+const NOTHING_WRITTEN_MS = Number(process.env.NOTHING_WRITTEN_MS || 20 * 60_000);
+
+// Asks "has it built anything yet?" — once a minute at most, and only until it has an
+// answer. `probe` is a parameter purely so the self-test can drive this without a model:
+// it returns git's porcelain output as a STRING, where '' means clean and null means the
+// git command itself failed. Those two must never be conflated — a failed probe is not
+// evidence of anything, the same rule shipStateForBlocked follows. (gitIn's { lines }
+// form collapses both to [], which is why this one does not use it.)
+function makeIdleWriteWatch({ branch, cwd, startedAt, probe }) {
+  // No branch means either question mode — where cwd is the MAIN checkout, which is
+  // nearly always dirty, so its files are not this task's output — or the temp-dir
+  // fallback, which is not a git repo at all. commitWork guards the same way.
+  const ask = probe || (() => gitIn(cwd, ['status', '--porcelain']));
+  let lastCheck = 0, done = !branch;
+  return function check(now) {
+    if (done) return null;
+    if (now - startedAt < NOTHING_WRITTEN_MS) return null;
+    if (lastCheck && now - lastCheck < 60_000) return null;
+    lastCheck = now;
+    const dirt = ask();
+    if (dirt === null) return null;          // git failed: no conclusion, ask again later
+    if (dirt !== '') { done = true; return null; }   // it has written something — stop asking
+    done = true;                             // say it once, then leave the run alone
+    return `has written no files in ${Math.round((now - startedAt) / 60_000)} min — it may still be reading, or it may be going nowhere`;
+  };
+}
+
 // The three time limits, in one place, so the two lanes below cannot drift apart.
 // Returns null while the attempt is healthy, or the outcome that ends it.
 //   'model-bad' → this model looks broken: quarantine it and rotate to the next.
@@ -689,7 +728,7 @@ function startHelperLane() {
 //   'model-bad'   this model failed — quarantine it and try the next one
 //   'gave-up'     ran but couldn't finish (cap hit) — report blocked, don't rotate
 //   'cancelled'   the server said this task is no longer running
-function runOnce({ task, model, cwd }) {
+function runOnce({ task, model, cwd, branch }) {
   return new Promise((done) => {
     const bin = resolveBin();
     // --print-logs is essential, not diagnostic noise. Without it opencode
@@ -773,6 +812,7 @@ function runOnce({ task, model, cwd }) {
       } catch { /* transient network — keep working, retry next tick */ }
     }, STREAM_FLUSH_MS);
 
+    const idleWrite = makeIdleWriteWatch({ branch, cwd, startedAt });
     const watchdog = setInterval(() => {
       const now = Date.now();
       // Quiet heartbeat — only fires when nothing has actually been printed
@@ -783,6 +823,11 @@ function runOnce({ task, model, cwd }) {
         lastPrintAt = now;
         if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
         console.log(dim(progressLine({ now, startedAt, sawRealOutput, lastRealOutputAt, capMs })));
+        const idle = idleWrite(now);
+        if (idle) {
+          console.log(yellow(`  ⚠ ${idle}`));
+          desktopNotify({ head: `Still nothing built — ${task.title || 'a task'}`, body: idle });
+        }
       }
       const verdict = watchdogVerdict({ now, startedAt, sawRealOutput, lastRealOutputAt, toolInFlight, capMs });
       if (verdict) return finish(verdict.outcome, { why: verdict.why });
@@ -884,7 +929,7 @@ function runOnce({ task, model, cwd }) {
 // process and its event shape differ (Claude's stream-json vs opencode's json).
 // Parsing is reused from the app's own provider module so there is one definition
 // of "what a Claude transcript event means".
-function runClaudeOnce({ task, model, effort, cwd }) {
+function runClaudeOnce({ task, model, effort, cwd, branch }) {
   return new Promise((done) => {
     const bin = claudeCli.resolveBin();
     const args = ['-p', '--output-format', 'stream-json', '--verbose'];
@@ -938,12 +983,18 @@ function runClaudeOnce({ task, model, effort, cwd }) {
       } catch { /* transient network — retry next tick */ }
     }, STREAM_FLUSH_MS);
 
+    const idleWrite = makeIdleWriteWatch({ branch, cwd, startedAt });
     const watchdog = setInterval(() => {
       const now = Date.now();
       if (now - lastPrintAt > PROGRESS_MS) {
         lastPrintAt = now;
         if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
         console.log(dim(progressLine({ now, startedAt, sawRealOutput, lastRealOutputAt, capMs })));
+        const idle = idleWrite(now);
+        if (idle) {
+          console.log(yellow(`  ⚠ ${idle}`));
+          desktopNotify({ head: `Still nothing built — ${task.title || 'a task'}`, body: idle });
+        }
       }
       const verdict = watchdogVerdict({ now, startedAt, sawRealOutput, lastRealOutputAt, toolInFlight, capMs });
       if (verdict) return finish(verdict.outcome, { why: verdict.why });
@@ -1094,8 +1145,8 @@ async function runTask(task) {
     const isClaude = laneOf(model) === 'claude';
     console.log(`  ${dim('→')} ${bold(isClaude ? `Claude (${claudeModelOf(model)})` : model)}`);
     const r = isClaude
-      ? await runClaudeOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path })
-      : await runOnce({ task, model, cwd: wt.path });
+      ? await runClaudeOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path, branch: wt.branch })
+      : await runOnce({ task, model, cwd: wt.path, branch: wt.branch });
 
     if (r.outcome === 'cancelled') { console.log(dim('  (cancelled server-side)')); return; }
 
@@ -1830,7 +1881,9 @@ async function main() {
         await new Promise((s) => setTimeout(s, 30_000));
       }
     } catch (e) {
-      console.error('Queue unreachable —', e.message);
+      // Timestamped because this file has no rotation: without the time, a failure
+      // from hours ago reads as one happening right now. It did exactly that today.
+      console.error(`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] Queue unreachable —`, e.message);
     }
 
     if (!claimed) {
