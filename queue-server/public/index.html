@@ -162,6 +162,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .legend .swatch.e { border-top:2.5px dashed #8b6fb0; }
 .legend .swatch.b { border-top:2px dotted #4f9d7a; }
 .legend .dotswatch { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+/* The Landscape view's "parked" mark, in legend form: the same hollow circle the
+   canvas draws for an entity that has no themes to be placed by. */
+.legend .dotswatch.hollow { background:var(--c-stage); box-shadow:inset 0 0 0 1.5px var(--c-ink-4); }
 .right { width:360px; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; flex-shrink:0; }
 .right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .note { font-size:12px; line-height:1.5; margin:8px 0; font-style:italic; color:var(--c-ink-2); }
@@ -1822,10 +1825,11 @@ button:active { transform: translateY(1px) scale(.99); }
     </button>
   </div>
   <div class="mid">
-    <div class="graph-controls" data-src="Content navigator → graph view/color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near initGraph()/setContentView()">
+    <div class="graph-controls" data-src="Content navigator → view switcher (Graph · Landscape · List) + color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near initGraph()/setContentView() — Graph and Landscape are two layouts of the SAME canvas and the same pool (activeEntities()), so the switcher only changes how the pool is laid out; the bridge/show-all controls are hidden in Landscape because it draws no edges at all">
       <button type="button" class="uicon narrow-only" id="leftRailBtn" title="Filters" aria-label="Show or hide the filters"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
       <span class="ctrl-label">View</span>
       <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
+      <button class="ctrlbtn" id="viewLandscapeBtn">Landscape</button>
       <button class="ctrlbtn" id="viewListBtn">List</button>
       <span class="ctrl-sep"></span>
       <span class="ctrl-label">Color by</span>
@@ -1842,7 +1846,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
     <div class="scopebar" id="scopeBar" aria-label="What the view is narrowed to" data-src="Content navigator → scope breadcrumb | fmcns_navigator.html: scopeTrail()/renderScopeBar()/scopeGoTo() — ego view, cluster, theme cluster and search, and the way back out of each"></div>
-    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | backend: GET /api/ontology/entities, /api/ontology/clusters">
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | ALSO the Landscape view (the embedding map), which is this same canvas, renderer and camera laid out by MEANING instead of by connection — no edges are drawn at all, nearness IS the statement: landscapeBuild() gives every entity a sparse vector over the 106 theme communities (each tag's community, weighted by how rare that community is) plus the tags at least two entities share, takes cosine similarity, and keeps the top LS_K neighbours as invisible forceLink springs; installLayoutForces('landscape') swaps the graph's forces for those springs; an entity with no themes at all is parked honestly on an outer ring at its roman-numeral cluster's anchor (landscapeGeometry()), drawn hollow and named by the same cluster-region pass. The matrix is cached per active entity set in LS and never recomputed on a redraw | backend: GET /api/ontology/entities, /api/ontology/clusters, /api/ontology/tag-communities (services/tagCommunities.js)">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
       <div id="graphLive" class="sr-only" aria-live="polite"></div>
@@ -2463,23 +2467,39 @@ function renderPatternList() {
 }
 document.getElementById('search').addEventListener('input', () => refreshView());
 
-// Graph ⇄ List. Both are driven by exactly the same filter state (activeEntities), so
-// switching never changes WHAT you're looking at, only how it's laid out.
+// Graph ⇄ Landscape ⇄ List. All three are driven by exactly the same filter state
+// (activeEntities), so switching never changes WHAT you're looking at, only how it's
+// laid out. Graph and Landscape are the SAME canvas, the same renderer and the same
+// camera — only the forces behind the positions differ (see installLayoutForces), which
+// is why switching between them is a rebuild rather than a second stage.
 function setContentView(v) {
+  const wasLandscape = landscapeOn();
   contentView = v;
+  const onCanvas = isCanvasView();
   document.getElementById('viewGraphBtn').classList.toggle('active', v === 'graph');
+  document.getElementById('viewLandscapeBtn').classList.toggle('active', v === 'landscape');
   document.getElementById('viewListBtn').classList.toggle('active', v === 'list');
-  document.querySelector('.graph-stage').style.display = v === 'graph' ? '' : 'none';
+  document.querySelector('.graph-stage').style.display = onCanvas ? '' : 'none';
   document.getElementById('listStage').style.display = v === 'list' ? 'flex' : 'none';
-  // Colour-mode and bridge buttons only mean something on the canvas.
-  document.querySelectorAll('[data-color], #toggleBridges, #toggleShowAll, #resetBtn')
+  // Colour-mode and the camera reset mean something on either canvas layout.
+  document.querySelectorAll('[data-color], #resetBtn')
+    .forEach(b => { b.style.display = onCanvas ? '' : 'none'; });
+  // Bridges and show-all are edge controls, and the landscape has no edges to show.
+  document.querySelectorAll('#toggleBridges, #toggleShowAll')
     .forEach(b => { b.style.display = v === 'graph' ? '' : 'none'; });
   document.querySelectorAll('.ctrl-label').forEach(l => {
-    if (l.textContent === 'Color by') l.style.display = v === 'graph' ? '' : 'none';
+    if (l.textContent === 'Color by') l.style.display = onCanvas ? '' : 'none';
   });
   refreshView();
+  // The pool is the same size across a Graph/Landscape switch, so the auto-fit rule
+  // (noteGraphPoolChanged) sees no reason to move — but the picture is completely
+  // different and the old camera frames the wrong part of it. Frame it explicitly, and
+  // ONLY then: coming back from List to the layout you left keeps the camera you left
+  // it with, exactly as it always has.
+  if (onCanvas && wasLandscape !== landscapeOn()) reframeGraph();
 }
 document.getElementById('viewGraphBtn').onclick = () => setContentView('graph');
+document.getElementById('viewLandscapeBtn').onclick = () => setContentView('landscape');
 document.getElementById('viewListBtn').onclick = () => setContentView('list');
 
 document.getElementById('axisSelect').addEventListener('change', (e) => {
@@ -2663,6 +2683,201 @@ function centroidFor(e) {
 // line. Three or more members get a real region — the convex hull of where those nodes
 // actually are.
 function zoneRadius() { return activeClusterCodes.length <= 1 ? 260 : 150; }
+
+// ---------- Landscape: the other half of the graph ----------
+// The node-link graph answers "what is connected to what". It cannot answer "what
+// belongs near what", because 738 edges over 400 nodes have no geography. The
+// Landscape is the same pool with the edges taken away and the POSITION made to carry
+// the meaning: two entities that share themes sit together, two with nothing in common
+// sit far apart, and there is nothing else on the stage to read.
+//
+// WHY NOT RAW TAGS, which is the obvious way to do this and the way the parent plan
+// first specified. Measured against the live corpus: 641 distinct tags over 413
+// entities, and 582 of those tags are carried by exactly ONE entity. Over 90% of the
+// vocabulary connects nothing, so nearly every pairwise cosine similarity would be
+// zero and the layout would be an even cloud. Rarity weighting makes that worse, not
+// better — it puts the most weight on precisely the tags that connect nothing.
+//
+// The signal is one level up and the app already computes it: the 106 theme
+// communities (GET /api/ontology/tag-communities), which are built from tag
+// CO-OCCURRENCE and are therefore exactly the collapse of that sparse vocabulary into
+// something dense. Every entity's tags land in one or two of them.
+//
+// So the vector has two parts, and it needs both:
+//
+//   • one dimension per COMMUNITY, weighted by how rare that community is across the
+//     pool. This is the backbone, and it is where rarity weighting genuinely belongs
+//     (a community touching 38 entities says little; one touching 4 says a lot).
+//   • one dimension per tag SHARED BY AT LEAST TWO entities in the pool — 59 of the
+//     641, but 44% of all tag occurrences. Communities alone are too coarse on their
+//     own: 118 of the 214 tagged entities have all their tags inside a single
+//     community, so a community-only vector makes every one of them identical and
+//     the map collapses into a handful of points with no inside. The shared tags are
+//     what give a community an interior. Tags nobody else carries are dropped
+//     outright rather than rarity-weighted — they can only distort the norm.
+//
+// Cosine between those vectors, top LS_K neighbours per entity become invisible
+// forceLink springs, and d3-force does the rest. No new dependency, no model call,
+// no cost — it is arithmetic over data already in the page.
+const LS_TAG_W = 0.7;        // a shared tag's pull, relative to a community's
+const LS_K = 8;              // springs per entity. Every pair would be ~23,000 links for no gain.
+const LS_LINK_MIN = 30;      // spring length at similarity 1
+const LS_LINK_SPAN = 170;    // ...growing to LS_LINK_MIN + this at similarity 0
+const LS_PARK_ZONE_R = 60;   // fallback region radius for a parking arc of 1–2 entities
+
+// The computed landscape for one active entity set. Rebuilt only when that set
+// changes: the full matrix over 214 entities is ~2,300 pair accumulations through the
+// inverted index — trivial once, wasteful on every redraw. paintGraph() never touches
+// any of this.
+let LS = { sig: null, placed: new Set(), links: [], nbr: new Map(), deg: new Map() };
+let LS_GEO = { cx: GVBW / 2, cy: GVBH / 2, fieldR: 110, parkR: 200, codes: [], anchors: {} };
+
+function landscapeOn() { return contentView === 'landscape'; }
+// Graph and Landscape are two layouts of one canvas; List is the only view that isn't.
+function isCanvasView() { return contentView === 'graph' || contentView === 'landscape'; }
+
+// The vector for one entity, as a Map of dimension -> weight, already L2-normalised so
+// a dot product IS the cosine. Returns null for an entity with no usable tag at all —
+// those are the ones that get parked rather than placed.
+function landscapeVectors(pool) {
+  const T2C = TAG_COMMUNITIES.tagCommunity || {};
+  const tagged = pool.filter(e => (e.tags || []).length);
+  const N = tagged.length || 1;
+  const tagDf = new Map(), comDf = new Map();
+  tagged.forEach(e => {
+    const seen = new Set();
+    new Set(e.tags).forEach(t => {
+      tagDf.set(t, (tagDf.get(t) || 0) + 1);
+      const c = T2C[t];
+      if (c) seen.add(c);
+    });
+    seen.forEach(c => comDf.set(c, (comDf.get(c) || 0) + 1));
+  });
+  const vecs = new Map();
+  tagged.forEach(e => {
+    const v = new Map(), counts = new Map();
+    const tags = new Set(e.tags);
+    tags.forEach(t => { const c = T2C[t]; if (c) counts.set(c, (counts.get(c) || 0) + 1); });
+    // Sublinear in the count: three tags from one community say more than one tag
+    // does, but not three times as much.
+    counts.forEach((n, c) => v.set('c' + c, (1 + Math.log(n)) * Math.log(1 + N / comDf.get(c))));
+    tags.forEach(t => { const df = tagDf.get(t); if (df > 1) v.set('t' + t, LS_TAG_W * Math.log(1 + N / df)); });
+    let s2 = 0;
+    v.forEach(w => { s2 += w * w; });
+    const norm = Math.sqrt(s2);
+    if (!norm) return;                       // tags, but none of them in any community
+    v.forEach((w, k) => v.set(k, w / norm));
+    vecs.set(e.id, v);
+  });
+  return vecs;
+}
+
+// Where each kind of entity is pulled to. The placed ones share one centre and are
+// arranged inside it by the springs; the parked ones get an anchor on an outer ring,
+// one arc per roman-numeral cluster.
+//
+// The field radius is an ESTIMATE of how much room the springs will take, not a
+// boundary — nothing clamps a node. It only has to be a safe over-estimate, so that
+// the parking ring lands outside the field instead of through it. Measured against the
+// live corpus with these force constants, the settled field reaches ~465 units at 214
+// entities and ~400 at 100; 60 + 34*sqrt(n) stays above that at every size tried.
+function landscapeGeometry(pool, placed) {
+  const cx = GVBW / 2, cy = GVBH / 2;
+  const parked = pool.filter(e => !placed.has(e.id));
+  const fieldR = Math.max(110, Math.min(700, 60 + 34 * Math.sqrt(placed.size)));
+  const codes = CLUSTER_ORDER_ALL.filter(c => parked.some(e => clusterCodeOf(e) === c));
+  // Two things set the ring's radius, and it has to satisfy both: it must clear the
+  // field, and it must be long enough round for every cluster's clump to have its own
+  // arc. Without the second term, filtering down to nothing-but-untagged entities put
+  // twelve overlapping clumps on a short ring and the arcs read as one smear.
+  const perArc = 40 * Math.sqrt(parked.length / Math.max(1, codes.length)); // measured clump radius
+  const arcFit = codes.length > 1 ? perArc * codes.length / Math.PI : 0;
+  const parkR = Math.max(fieldR + 90 + 3 * Math.sqrt(parked.length), arcFit);
+  const anchors = {};
+  codes.forEach((code, i) => {
+    const a = (i / codes.length) * Math.PI * 2 - Math.PI / 2;
+    anchors[code] = { x: cx + Math.cos(a) * parkR, y: cy + Math.sin(a) * parkR };
+  });
+  return { cx, cy, fieldR, parkR, codes, anchors };
+}
+
+// Cache key: the exact active id set (plus the community index, which is fetched once
+// at boot but can be empty on an older backend). Toggling Bridges or re-running a
+// layout with the same pool is a cache hit and costs nothing.
+function landscapeSig(pool) {
+  return pool.length + ':' + (TAG_COMMUNITIES.communities || []).length + ':' + pool.map(e => e.id).join(',');
+}
+
+function landscapeBuild(pool) {
+  const sig = landscapeSig(pool);
+  if (LS.sig === sig) return LS;
+  const vecs = landscapeVectors(pool);
+  const placed = new Set(vecs.keys());
+
+  // Cosine through an INVERTED INDEX rather than every pair: two entities can only
+  // have a non-zero similarity if they share a dimension, so only entities that meet
+  // in some dimension are ever compared. On the live corpus that is ~2,300 additions
+  // instead of ~23,000 comparisons, and it scales with the sharing rather than the
+  // square of the pool.
+  const inv = new Map();
+  vecs.forEach((v, id) => v.forEach((w, k) => {
+    let arr = inv.get(k);
+    if (!arr) inv.set(k, arr = []);
+    arr.push(id);
+  }));
+  const dots = new Map();
+  inv.forEach((ids, k) => {
+    if (ids.length < 2) return;
+    for (let i = 0; i < ids.length; i++) {
+      const a = ids[i], wa = vecs.get(a).get(k);
+      for (let j = i + 1; j < ids.length; j++) {
+        const b = ids[j], w = wa * vecs.get(b).get(k);
+        let ma = dots.get(a); if (!ma) dots.set(a, ma = new Map());
+        let mb = dots.get(b); if (!mb) dots.set(b, mb = new Map());
+        ma.set(b, (ma.get(b) || 0) + w);
+        mb.set(a, (mb.get(a) || 0) + w);
+      }
+    }
+  });
+
+  // Top-k per entity, unioned into undirected springs. THESE ARE NEVER DRAWN — they
+  // exist only so d3-force has something to pull with.
+  const nbr = new Map(), pairs = new Map();
+  dots.forEach((m, id) => {
+    const top = [...m].sort((a, b) => b[1] - a[1]).slice(0, LS_K);
+    nbr.set(id, new Set(top.map(t => t[0])));
+    top.forEach(([o, sim]) => {
+      const a = id < o ? id : o, b = id < o ? o : id;
+      const key = a + '>' + b;
+      if (!pairs.has(key)) pairs.set(key, { a, b, sim });
+    });
+  });
+  // d3's forceLink normally divides a link's strength by the lower degree of its two
+  // ends, which is what stops a well-connected node being torn apart by twenty springs
+  // at once. Setting strength() explicitly throws that away, so the same normalisation
+  // is computed here and folded back in.
+  const deg = new Map();
+  pairs.forEach(p => { deg.set(p.a, (deg.get(p.a) || 0) + 1); deg.set(p.b, (deg.get(p.b) || 0) + 1); });
+  const links = [...pairs.values()].map(p => ({
+    a: p.a, b: p.b, sim: p.sim,
+    norm: 1 / Math.max(1, Math.min(deg.get(p.a), deg.get(p.b))),
+  }));
+
+  LS = { sig, placed, links, nbr, deg };
+  LS_GEO = landscapeGeometry(pool, placed);
+  return LS;
+}
+
+// The landscape's own answer to "what is related to this?" — its nearest neighbours by
+// similarity, which is what the hover highlight should say in a view whose whole
+// subject is similarity. In the graph the same question is answered by the edges.
+function relatedSet(id) {
+  if (!id) return null;
+  if (!landscapeOn()) return neighborSet(id);
+  const set = new Set([id]);
+  (LS.nbr.get(id) || []).forEach(o => { if (byId[o]) set.add(o); });
+  return set;
+}
 
 // Type and source filters are built from whatever the backend actually reports (see
 // /api/ontology/facets), not a hardcoded list of three checkboxes — so a new kind of
@@ -2875,7 +3090,7 @@ function exitEgo() {
 // the reheated layout has settled where it is really going (the same two-step
 // resetGraphView() uses).
 function reframeGraph() {
-  if (contentView !== 'graph') return;
+  if (!isCanvasView()) return;
   fitVisibleNodes();
   gPendingFit = true;
   scheduleAutoFitCheck(300);
@@ -2970,7 +3185,7 @@ let contentView = 'graph';
 
 function refreshView() {
   syncFiltersActive();
-  if (contentView === 'graph') layoutAndDraw();
+  if (isCanvasView()) layoutAndDraw();
   else { pruneEgoStack(); renderScopeBar(); renderList(); renderPatternList(); }
 }
 
@@ -3163,6 +3378,9 @@ function computeEdges(pool) {
 function buildGraph() {
   const pool = activeEntities();
   computeCentroids(pool);
+  // In Landscape the pool's geography is computed first (cached per entity set), because
+  // it decides where a NEW node is seeded and whether it is placed or parked.
+  const ls = landscapeOn() ? landscapeBuild(pool) : null;
   // Positions carry over. A node that was already on screen keeps its exact x/y/vx/vy,
   // so toggling Bridges or changing a type filter makes the survivors SLIDE to their new
   // places under the simulation instead of being re-scattered from scratch every time.
@@ -3172,10 +3390,19 @@ function buildGraph() {
   nodes = pool.map(e => {
     const prev = byId[e.id];
     const carried = prev && Number.isFinite(prev.x) && Number.isFinite(prev.y);
-    const c = centroidFor(e);
     const n = { ...e, degree:0, big:false };
-    n.x  = carried ? prev.x  : c.x + (Math.random()-.5)*70;
-    n.y  = carried ? prev.y  : c.y + (Math.random()-.5)*70;
+    // Parked: it has no tag in any theme community, so no similarity can place it and
+    // nothing may pretend otherwise. Its roman-numeral cluster is the one thing it does
+    // have, so that is where it goes — on the ring outside the field, drawn hollow.
+    n.parked = !!ls && !ls.placed.has(e.id);
+    const anchor = ls
+      ? (n.parked ? (LS_GEO.anchors[clusterCodeOf(e)] || { x: LS_GEO.cx, y: LS_GEO.cy }) : { x: LS_GEO.cx, y: LS_GEO.cy })
+      : centroidFor(e);
+    // Cached on the node so the layout's pull accessors are a field read, and so the
+    // renderer and the physics can never disagree about where a parked node belongs.
+    n.lsx = anchor.x; n.lsy = anchor.y;
+    n.x  = carried ? prev.x  : anchor.x + (Math.random()-.5)*70;
+    n.y  = carried ? prev.y  : anchor.y + (Math.random()-.5)*70;
     n.vx = carried && Number.isFinite(prev.vx) ? prev.vx : 0;
     n.vy = carried && Number.isFinite(prev.vy) ? prev.vy : 0;
     // A pinned node stays pinned across a rebuild (nothing sets fx/fy yet — dragging is
@@ -3185,54 +3412,101 @@ function buildGraph() {
     return n;
   });
   nodes.forEach(n => byId[n.id]=n);
-  edges = computeEdges(pool);
-  // Degree per node, used to decide which labels earn a permanent spot.
-  edges.forEach(e => { if(byId[e.a]) byId[e.a].degree++; if(byId[e.b]) byId[e.b].degree++; });
+  if (ls) {
+    // The landscape has NO edges — not hidden ones, none. Everything downstream that
+    // reads `edges` (the edge pass, edgeAt(), edgeVisible()) therefore falls silent on
+    // an empty array rather than needing a second code path.
+    edges = [];
+    // "Degree" still means how connected a node is, it just means it in this view's own
+    // terms: how many entities it resembles. Same job — size, and which labels stand.
+    nodes.forEach(n => { n.degree = ls.deg.get(n.id) || 0; });
+    // Fresh link objects every rebuild: forceLink REWRITES source/target from an id
+    // into a node reference, so handing it the cached array would corrupt the cache.
+    links = ls.links.map(l => ({ source: l.a, target: l.b, sim: l.sim, norm: l.norm }));
+  } else {
+    edges = computeEdges(pool);
+    // Degree per node, used to decide which labels earn a permanent spot.
+    edges.forEach(e => { if(byId[e.a]) byId[e.a].degree++; if(byId[e.b]) byId[e.b].degree++; });
+    // The simulation's own copy of the connections: plain {source,target} ids for d3 to
+    // rewrite into node references, leaving `edges` untouched. See the note on `links`.
+    links = edges.map(e => ({ source: e.a, target: e.b, type: e.type, edge: e }));
+  }
   const byDegree = nodes.slice().sort((a,b)=>b.degree-a.degree);
   const topN = Math.max(6, Math.round(nodes.length*0.15));
   byDegree.slice(0, topN).forEach(n => { if (n.degree>0) n.big = true; });
   graphEpoch++; // invalidates the memoised spotlight — see graphSpotlight()
-  // The simulation's own copy of the connections: plain {source,target} ids for d3 to
-  // rewrite into node references, leaving `edges` untouched. See the note on `links`.
-  links = edges.map(e => ({ source: e.a, target: e.b, type: e.type, edge: e }));
   runLayout();
   noteGraphPoolChanged(); // a dramatically different pool earns a re-fit once it settles
 }
 
-// One simulation for the life of the page. Built on the first call, re-pointed at the
-// current nodes/links afterwards — re-pointing also re-reads every force's accessor,
-// which is how the centroid pull picks up the new CLUSTER_CENTROIDS computed above.
+// One simulation for the life of the page — and for BOTH canvas layouts. Built on the
+// first call, re-pointed at the current nodes/links afterwards; re-pointing also
+// re-reads every force's accessor, which is how the centroid pull picks up the new
+// CLUSTER_CENTROIDS computed above. Switching Graph ⇄ Landscape swaps the five forces
+// out and leaves everything else — the nodes, the camera, the renderer, the pins — in
+// place, so the picture MORPHS from one layout into the other.
+let _layoutMode = null;
 function runLayout() {
-  if (!sim) {
-    sim = d3.forceSimulation(nodes)
-      // Repulsion. Capped at 700 world units so a node on the far side of the canvas
-      // isn't still pushing on this one — that global shove is what used to compress
-      // every cluster toward the middle.
-      .force('charge', d3.forceManyBody().strength(-160).theta(0.9).distanceMax(700))
-      // Connections pull, at a distance that says what kind of connection it is: a
-      // shared author is tight, a shared pattern looser, a continuum bridge long and
-      // weak so cross-scale echoes hint at a relationship without dragging the two
-      // clusters into each other.
-      .force('link', d3.forceLink(links).id(d => d.id)
-        .distance(e => e.type === 'diag' ? 70 : e.type === 'ent' ? 110 : 190)
-        .strength(e => e.type === 'bridge' ? 0.04 : 0.35))
-      // The force the old loop never had: nothing may sit on top of anything else.
-      .force('collide', d3.forceCollide(d => nodeRadius(d) + 4).iterations(2))
-      // Weak pull toward this node's own cluster centroid — the same job the old
-      // hand-written centroid term did, keeping clusters legible as regions.
-      .force('cx', d3.forceX(d => centroidFor(d).x).strength(0.05))
-      .force('cy', d3.forceY(d => centroidFor(d).y).strength(0.05))
-      .on('tick', onSimTick);
-  } else {
-    // sim.nodes() re-initialises every force against the new array, which re-reads the
-    // collide radius and both centroid accessors. Only the link force keeps its own
-    // list, so that one is handed over explicitly.
-    sim.nodes(nodes);
-    sim.force('link').links(links);
-  }
-  // Enough energy to rearrange, not enough to throw the surviving layout away.
+  const mode = landscapeOn() ? 'landscape' : 'graph';
+  if (!sim) sim = d3.forceSimulation(nodes).on('tick', onSimTick);
+  // sim.nodes() re-initialises every force against the new array, which re-reads the
+  // collide radius and both centroid accessors. Only the link force keeps its own
+  // list, so that one is handed over explicitly.
+  else sim.nodes(nodes);
+  // `swapped` deliberately excludes the very first build: that one installs the graph's
+  // forces for the first time and must still open on 0.6, exactly as it always has.
+  const swapped = _layoutMode !== null && mode !== _layoutMode;
+  if (mode !== _layoutMode) { installLayoutForces(mode); _layoutMode = mode; }
+  else sim.force('link').links(links);
   _gQuad = null; // positions just changed wholesale — see nodeAt()
-  sim.alpha(0.6).restart();
+  // Enough energy to rearrange, not enough to throw the surviving layout away — except
+  // on a layout change, which is a genuinely new picture and needs the energy to reach it.
+  sim.alpha(swapped ? 0.9 : 0.6).restart();
+}
+
+// The two force sets, side by side. Everything a layout needs is here and nowhere else,
+// so neither can quietly inherit a force belonging to the other.
+function installLayoutForces(mode) {
+  if (mode === 'landscape') {
+    sim
+      // Softer than the graph's, because the springs here are far more numerous and a
+      // -160 shove would blow the field out past the parking ring.
+      .force('charge', d3.forceManyBody().strength(-80).theta(0.9).distanceMax(600))
+      // The whole layout, in three lines. The springs are the top-k similarity
+      // neighbours and NOTHING EVER DRAWS THEM: the more alike two entities are, the
+      // shorter the spring between them and the harder it pulls, so similarity turns
+      // straight into distance. `norm` is forceLink's own degree normalisation, which
+      // setting strength() explicitly would otherwise discard (see landscapeBuild).
+      .force('link', d3.forceLink(links).id(d => d.id)
+        .distance(l => LS_LINK_MIN + (1 - l.sim) * LS_LINK_SPAN)
+        .strength(l => (0.3 + 0.7 * l.sim) * l.norm))
+      .force('collide', d3.forceCollide(d => nodeRadius(d) + 3).iterations(2))
+      // Two different jobs from one pair of forces: a weak tug keeps the placed field
+      // from drifting apart under repulsion, while a much firmer one holds each parked
+      // entity in its cluster's arc on the outer ring, where it visibly is not part of
+      // the landscape proper.
+      .force('cx', d3.forceX(d => d.lsx).strength(d => d.parked ? 0.16 : 0.06))
+      .force('cy', d3.forceY(d => d.lsy).strength(d => d.parked ? 0.16 : 0.06));
+    return;
+  }
+  sim
+    // Repulsion. Capped at 700 world units so a node on the far side of the canvas
+    // isn't still pushing on this one — that global shove is what used to compress
+    // every cluster toward the middle.
+    .force('charge', d3.forceManyBody().strength(-160).theta(0.9).distanceMax(700))
+    // Connections pull, at a distance that says what kind of connection it is: a
+    // shared author is tight, a shared pattern looser, a continuum bridge long and
+    // weak so cross-scale echoes hint at a relationship without dragging the two
+    // clusters into each other.
+    .force('link', d3.forceLink(links).id(d => d.id)
+      .distance(e => e.type === 'diag' ? 70 : e.type === 'ent' ? 110 : 190)
+      .strength(e => e.type === 'bridge' ? 0.04 : 0.35))
+    // The force the old loop never had: nothing may sit on top of anything else.
+    .force('collide', d3.forceCollide(d => nodeRadius(d) + 4).iterations(2))
+    // Weak pull toward this node's own cluster centroid — the same job the old
+    // hand-written centroid term did, keeping clusters legible as regions.
+    .force('cx', d3.forceX(d => centroidFor(d).x).strength(0.05))
+    .force('cy', d3.forceY(d => centroidFor(d).y).strength(0.05));
 }
 
 // Every tick moves every node, so the hit-test index is thrown away and rebuilt lazily
@@ -3586,7 +3860,10 @@ function graphSpotlight() {
   if (activeEdge) spotlight = clusterForEdge(activeEdge);
   else if (focusedTag) spotlight = new Set(nodes.filter(n => (n.tags||[]).includes(focusedTag)).map(n => n.id));
   else if (axisMode) spotlight = new Set(nodes.filter(n => n.continuum && n.continuum[colorMode] !== undefined).map(n => n.id));
-  else spotlight = neighborSet(hoveredId || focusedId);
+  // Landscape answers this with its own nearest neighbours instead of the graph's
+  // edges (relatedSet) — in a view whose entire subject is similarity, lighting up
+  // edge-neighbours would be answering the other view's question.
+  else spotlight = relatedSet(hoveredId || focusedId);
   // A deliberately clicked pattern (tag chip, edge, or axis color mode) fades the rest
   // of the graph harder than a passing hover does — the point is to isolate the pattern,
   // not just nudge attention toward it.
@@ -3897,21 +4174,29 @@ function traceBlob(ctx, pts, radius) {
 // circle, plus `top`, the world point the cluster's name is set above. Computed once per
 // frame and used by both the region pass and the label pass, so the name always sits on
 // the shape actually drawn.
+// In Landscape the same pass draws something different, from the same code: the regions
+// are the PARKING ARCS, one per cluster of entities that had no themes to be placed by.
+// Nothing is drawn around the field itself — the field's geography is thematic, not
+// cluster-shaped, and drawing cluster hulls over it would say something untrue. So the
+// hulls and their names become the label on the ring: this is where the entities the
+// map could not place are kept, and which cluster each one belongs to.
 function clusterRegions() {
+  const ls = landscapeOn();
   const members = new Map();
   nodes.forEach(n => {
     if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) return;
+    if (ls && !n.parked) return;
     const code = clusterCodeOf(n);
     if (code === 'other') return;
     let arr = members.get(code);
     if (!arr) members.set(code, arr = []);
     arr.push({ x: n.x, y: n.y });
   });
-  const zoneR = zoneRadius();
+  const zoneR = ls ? LS_PARK_ZONE_R : zoneRadius();
   const out = [];
-  activeClusterCodes.forEach(code => {
+  (ls ? LS_GEO.codes : activeClusterCodes).forEach(code => {
     if (code === 'other') return;
-    const c = CLUSTER_CENTROIDS[code];
+    const c = ls ? LS_GEO.anchors[code] : CLUSTER_CENTROIDS[code];
     const own = members.get(code) || [];
     if (own.length >= 3) {
       const hull = convexHull(own);
@@ -4106,17 +4391,24 @@ function paintGraph() {
       ctx.lineWidth = 1.6; ctx.strokeStyle = bgC;
       ctx.beginPath(); ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2); ctx.stroke();
     }
+    // Landscape only: an entity with no themes could not be placed by similarity, so it
+    // is parked on the ring by its cluster instead — and it is drawn HOLLOW to say so at
+    // every zoom. Nothing on this map may look placed when it was only put somewhere.
+    const parked = !!n.parked;
     ctx.globalAlpha = alpha;
     ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = gPaint(nodeColor(n), inkC);
+    ctx.fillStyle = parked ? stageC : gPaint(nodeColor(n), inkC);
     ctx.fill();
     // 3b. The near band puts the real thing on the node: a film's poster, a country's
     // flag, clipped into the circle just drawn (see paintNodeImagery). The alpha is the
     // band weight, so it CROSS-FADES in over the ~200ms handover rather than popping the
     // instant the wheel crosses 2.5x, and the fill underneath is what shows through until
     // an image arrives. Off-screen nodes are skipped before anything is requested.
+    // ...but never over a parked node: a poster filling the circle would paint over the
+    // one mark that says this entity is not really placed. (The landscape's own imagery
+    // is the next fragment's business.)
     let imaged = false;
-    if (bw.near > 0.01 && nodeInView(n)) {
+    if (bw.near > 0.01 && !parked && nodeInView(n)) {
       imaged = paintNodeImagery(ctx, n, r, alpha * bw.near);
       // paintNodeImagery restores the clip but the current path is not part of that
       // state, so the ring below is re-traced rather than assumed.
@@ -4130,8 +4422,11 @@ function paintGraph() {
     // ...and a touch wider over an image, so a poster cannot bleed into the edges
     // running behind it. Interpolated on the band weight so the ring does not jump a
     // width halfway through the cross-fade.
-    ctx.lineWidth = (focused ? 2.5 : (imaged ? 1 + 0.6 * bw.near : 1)) / (s || 1);
-    ctx.strokeStyle = focused ? inkC : stageC;
+    // A parked node inverts the rule: the ring carries its colour and the fill is empty,
+    // so the same palette still says which cluster it belongs to while the shape says it
+    // was never placed. A hairline would vanish, so it is drawn a little heavier.
+    ctx.lineWidth = (focused ? 2.5 : parked ? 1.6 : (imaged ? 1 + 0.6 * bw.near : 1)) / (s || 1);
+    ctx.strokeStyle = focused ? inkC : (parked ? gPaint(nodeColor(n), inkC) : stageC);
     ctx.stroke();
     // Dropped by a drag and therefore PINNED: the simulation no longer moves it. The
     // dashed ring is the only thing that says so, so it has to be visible without
@@ -4299,7 +4594,7 @@ function announceGraph(text) {
 function kbRing() {
   const anchor = focusedId && byId[focusedId] ? focusedId : null;
   let ids = null;
-  if (anchor) ids = [...neighborSet(anchor)].filter(id => id !== anchor && byId[id]);
+  if (anchor) ids = [...relatedSet(anchor)].filter(id => id !== anchor && byId[id]);
   if (!ids || !ids.length) ids = nodes.map(n => n.id);
   return ids.sort((a, b) => String(byId[a].name || '').localeCompare(String(byId[b].name || '')));
 }
@@ -4476,7 +4771,12 @@ function layoutAndDraw(){
   const info = document.getElementById('graphInfo');
   // Used to be rewritten inside every one of the 170 per-frame rebuilds; the counts
   // only change when the graph is rebuilt, so it is set here instead.
-  if (info) info.textContent = nodes.length+' nodes, '+edges.length+' connections total';
+  if (info) {
+    const parkedN = landscapeOn() ? nodes.filter(n => n.parked).length : 0;
+    info.textContent = landscapeOn()
+      ? nodes.length + ' entities, ' + (nodes.length - parkedN) + ' placed by theme, ' + parkedN + ' parked by cluster'
+      : nodes.length + ' nodes, ' + edges.length + ' connections total';
+  }
   requestRender();
   renderLegend();
   renderPatternList();
@@ -4487,10 +4787,19 @@ function renderLegend(){
   // fire before the ontology has loaded — so bail rather than throw on a half-built page.
   const box = document.getElementById('legend');
   if (!box) return;
-  let html = '<div class="section-label">Connections</div>';
-  html += '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div>';
-  html += '<div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div>';
-  html += '<div class="row"><span class="swatch b"></span> Continuum bridge (cross-scale echo)</div>';
+  // The landscape has no connections to key, so the first block says what the two node
+  // shapes mean instead — which is the one thing about this view that is not self-evident.
+  let html;
+  if (landscapeOn()) {
+    html = '<div class="section-label">Placement</div>';
+    html += '<div class="row"><span class="dotswatch" style="background:var(--c-ink-4)"></span> Placed by shared themes</div>';
+    html += '<div class="row"><span class="dotswatch hollow"></span> No themes — parked by cluster</div>';
+  } else {
+    html = '<div class="section-label">Connections</div>';
+    html += '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div>';
+    html += '<div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div>';
+    html += '<div class="row"><span class="swatch b"></span> Continuum bridge (cross-scale echo)</div>';
+  }
   html += '<div class="section-label">Color key — ' + (colorMode==='type'?'entity type':colorMode==='cluster'?'cluster':(AXES[colorMode]?AXES[colorMode].name:colorMode)) + '</div>';
   if (colorMode === 'type') {
     Object.entries(TYPE_COLORS).forEach(([t,c]) => { html += `<div class="row"><span class="dotswatch" style="background:${c}"></span> ${t}</div>`; });
