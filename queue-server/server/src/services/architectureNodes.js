@@ -31,6 +31,20 @@ const STATUS_LEVELS = ['Concept', 'Designed', 'Prototype', 'Working', 'Validated
 export const WITNESS_KINDS = ['file', 'symbol', 'route', 'table', 'query'];
 export const LIFECYCLE_STATES = ['concept', 'planned', 'building', 'live', 'retired'];
 
+// The only two states a person owns, and therefore the only two the lifecycle board
+// is allowed to write (plan an-architecture-that-knows-what-it-is §5, fragment
+// plans/fragments/13-architecture-lifecycle-board.md). `planned` and `building` come
+// from a queued/running task tagged to the node; `live` (and `retired` after a
+// witness that used to pass stops passing) comes from the witness checker. Letting a
+// drag set one of those would let the board silently overwrite something the app
+// worked out for itself, which is the one thing the board must never do.
+export const MANUAL_LIFECYCLE_STATES = ['concept', 'retired'];
+
+const LIFECYCLE_DERIVED = {
+  error: 'lifecycle_derived',
+  message: 'The app works this one out for itself — from a task waiting or running on it, or from its proof being found in the code. Only Concept and Retired can be set by hand.',
+};
+
 // Plain-English because it reaches Antoine through the API and the UI (AGENTS.md).
 const WITNESS_REQUIRED = {
   error: 'witness_required',
@@ -207,9 +221,21 @@ export function updateNode(db, id, input) {
   // about a different thing. The checker (next fragment) re-answers it.
   const witnessChanged = !!witness
     && (witness.kind !== row.witness_kind || witness.value !== row.witness_value);
+  // A move on the lifecycle board. Refused, rather than quietly ignored, whenever
+  // the node's CURRENT state is one the app derived — including the case where a
+  // task was queued on it between the board being drawn and the card being dropped.
+  const derivedNow = taskLifecycles(db).get(id);
+  let lifecycle = LIFECYCLE_STATES.includes(row.lifecycle) ? row.lifecycle : 'concept';
+  if (input.lifecycle !== undefined) {
+    const want = String(input.lifecycle || '');
+    if (!MANUAL_LIFECYCLE_STATES.includes(want)) return { ...LIFECYCLE_DERIVED };
+    const effective = effectiveLifecycle(lifecycle, derivedNow);
+    if (effective !== want && !MANUAL_LIFECYCLE_STATES.includes(effective)) return { ...LIFECYCLE_DERIVED };
+    lifecycle = want;
+  }
   db.prepare(`
     UPDATE architecture_nodes SET territory=?, name=?, what=?, why=?, next=?, depends_json=?,
-      status=?, provenance=?, witness_kind=?, witness_value=?,
+      status=?, provenance=?, lifecycle=?, witness_kind=?, witness_value=?,
       witness_ok=CASE WHEN ? THEN NULL ELSE witness_ok END,
       witness_checked_at=CASE WHEN ? THEN NULL ELSE witness_checked_at END,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
@@ -217,13 +243,12 @@ export function updateNode(db, id, input) {
     input.what !== undefined ? input.what : row.what,
     input.why !== undefined ? input.why : row.why,
     input.next !== undefined ? input.next : row.next,
-    JSON.stringify(depends), status, provenance,
+    JSON.stringify(depends), status, provenance, lifecycle,
     witness ? witness.kind : row.witness_kind,
     witness ? witness.value : row.witness_value,
     witnessChanged ? 1 : 0, witnessChanged ? 1 : 0, id);
-  const derived = taskLifecycles(db);
   const node = rowToNode(db.prepare(`SELECT * FROM architecture_nodes WHERE id=?`).get(id));
-  node.lifecycle = effectiveLifecycle(node.lifecycle, derived.get(node.id));
+  node.lifecycle = effectiveLifecycle(node.lifecycle, derivedNow);
   return { node };
 }
 

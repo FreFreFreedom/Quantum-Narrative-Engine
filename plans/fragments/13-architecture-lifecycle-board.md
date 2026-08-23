@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED 2026-08-22 |
+| **Status** | DONE 2026-08-22 — Board is the fourth layout in the Graph inner tab; the 25 built components now appear on both the Board and the Map, derived from `GET /api/architecture/components` on every read and never written into `architecture_nodes`. **One correction, same shape as fragment 12’s:** the brief says all 25 enter as Live, but `observation-layer` and `pattern-engine` compute to status `Concept` with text that says "not built as its own layer" — a computed status is proof either way, so those two sit in Concept and the other 23 in Live. |
 | **Parent plan** | `plans/an-architecture-that-knows-what-it-is.md` |
 | **Part of** | the fragment chain in `plans/fragments/` — run in filename order |
 
