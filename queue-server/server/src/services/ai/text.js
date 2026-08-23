@@ -115,10 +115,19 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
   if (defaultsPatch) {
     for (const [feature, val] of Object.entries(defaultsPatch)) {
       if (!FEATURES.includes(feature)) continue;
-      // Free-first platform policy (plan self-aware-platform.md Part 1): an
-      // unspecified default is the opencode free lane, never Claude. Claude is
-      // only ever reached by an explicit per-feature or per-task choice.
-      nextDefaults[feature] = { provider: val?.provider || 'opencode', model: val?.model || null };
+      // Second-account-first policy (2026-08-22, Antoine): an unspecified default is
+      // the SECOND Claude subscription -- the smaller bank, with no other job. It walks
+      // to the main account on its own when it runs dry (see runAttempt's claude-side
+      // branch) and only then to the free lane, so the small bank is spent first.
+      //
+      // A provider this panel has never heard of is KEPT, not replaced. The settings
+      // modal can only render three backends, so the Idea Studio's stored
+      // openai/gpt-4.1 matched no <option>, the browser showed the first one, and one
+      // Save silently overwrote a whole plan's deliverable. Anything the platform
+      // recognises survives a round-trip through a screen that cannot display it.
+      const askedProvider = val?.provider;
+      const keptProvider = askedProvider && isKnownProvider(askedProvider) ? askedProvider : 'claude-side';
+      nextDefaults[feature] = { provider: keptProvider, model: val?.model || null };
     }
   }
   const nextPolicy = policy === 'manual_only' ? 'manual_only' : (policy === 'auto_free' ? 'auto_free' : current.policy);
@@ -154,31 +163,44 @@ export function autoShipEnabled() {
   return !!loadAiSettings().queue?.autoShip;
 }
 
-// One-time policy migration (plan self-aware-platform.md Part 1): flip any
-// per-feature default still pointed at the Claude subscription to the free-first
-// opencode lane. Natural idempotence: after the first run no entry says
-// 'claude-code' anymore, so re-runs are no-ops. Doesn't touch per-task picks —
-// those are stored on the task itself.
-export function migrateFreeFirstDefaults() {
-  if (!db) return { changed: 0 };
-  const row = db.prepare(`SELECT defaults_json FROM ai_settings WHERE id='global'`).get();
-  if (!row) return { changed: 0 };
+// One-time policy migration (2026-08-22, Antoine): every feature starts on the
+// SECOND Claude subscription. Two accounts pay for this app; the second one has the
+// smaller bank and no other job, while the first also pays for the coding queue and
+// for terminal sessions. So the small bank is spent to the bottom first and the big
+// one is the fallback -- which is the reverse of what the app did.
+//
+// This REPLACES migrateFreeFirstDefaults(), which flipped 'claude-code' to
+// 'opencode' on every single boot. That is why choosing the main account in the
+// settings panel never stuck: the choice saved, then a migration undid it overnight.
+//
+// Flag-guarded, so it runs once, ever. A provider that is neither of the two lanes
+// being moved is LEFT ALONE -- the Idea Studio's openai/gpt-4.1 is a deliberate pick
+// (it carries the 4x prompt-caching discount that took three plans to prove), and a
+// migration must not be the thing that quietly undoes it.
+export function migrateSecondAccountFirst() {
+  if (!db) return { changed: 0, skipped: true };
+  const row = db.prepare(`SELECT defaults_json, second_account_first_done FROM ai_settings WHERE id='global'`).get();
+  if (!row) return { changed: 0, skipped: true };
+  if (row.second_account_first_done) return { changed: 0, skipped: true };
   let defaults = {};
-  try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: 0 }; }
+  try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: 0, skipped: true }; }
   let changed = 0;
   for (const f of FEATURES) {
     const d = defaults[f];
-    if (d && d.provider === 'claude-code') {
-      defaults[f] = { provider: 'opencode', model: null };
+    // An absent entry needs no rewrite: generateText() already reads claude-side as
+    // the default. Only the two lanes this policy moves are touched.
+    if (d && (d.provider === 'opencode' || d.provider === 'claude-code')) {
+      // 'haiku', not null: getFallbackChain() already substitutes haiku for a
+      // model-less claude-side primary, so writing it makes the stored row say what
+      // the code was going to do anyway.
+      defaults[f] = { provider: 'claude-side', model: 'haiku' };
       changed++;
     }
   }
-  if (changed) {
-    db.prepare(`UPDATE ai_settings SET defaults_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-      .run(JSON.stringify(defaults));
-  }
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, second_account_first_done=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(defaults));
   refreshAiSettings();
-  return { changed };
+  return { changed, skipped: false };
 }
 
 // ─── Stall memory ────────────────────────────────────────────────────────────
@@ -331,9 +353,24 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
       }
       if (spent) router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
     }
+    // Don't knock on a door already known to be shut. Without this the chain paid a
+    // full helper wait (up to 120s) to be told again what the ledger already said, on
+    // every single call until the window reset -- which is exactly the stall this
+    // ladder exists to avoid.
+    if (router.isExhausted('claude-code', m || '')) {
+      return { error: 'claude_both_accounts_failed', message: `second account: ${sideWhy} | main account: out of its five-hour window` };
+    }
     const main = await ask('main');
     if (main?.text) return { text: main.text, via: 'claude-main' };
-    return { error: 'claude_both_accounts_failed', message: `second account: ${sideWhy} | main account: ${main?.message || main?.error || 'no answer'}` };
+    const mainWhy = main?.message || main?.error || 'no answer';
+    // Remember the big account's ceiling too. One detection spares every later
+    // feature the same wait; resolveResetWindow() gives both subscriptions the same
+    // five-hour window. A silence is deliberately NOT recorded here, for the reason
+    // given above about the second account: a hiccup is not a ceiling.
+    if (detectQuotaLimit('claude-code', mainWhy)) {
+      router.recordExhaustion({ providerId: 'claude-code', model: m, detectedBy: 'text', errText: mainWhy, scope: 'session' });
+    }
+    return { error: 'claude_both_accounts_failed', message: `second account: ${sideWhy} | main account: ${mainWhy}` };
   }
   if (p === 'opencode') {
     const mod = getProviderModule('opencode');
@@ -409,7 +446,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // free lane (never the Claude subscription, which is opt-in per feature/task).
   // An explicit `model` passed by the caller (tier-driven picks, e.g. deep-tier
   // uses the strongest free model) takes priority over the feature default.
-  const providerId = featureDefaults.provider || 'opencode';
+  const providerId = featureDefaults.provider || 'claude-side';
   let model = explicitModel || featureDefaults.model || null;
   // A caller's explicit model is a free-lane model id (the chat picks a fast free
   // one before it knows where the feature is pointed). If the feature has since
@@ -751,7 +788,7 @@ export async function generateTextStream({
 }) {
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
-  const providerId = featureDefaults.provider || 'opencode';
+  const providerId = featureDefaults.provider || 'claude-side';
   const model = (explicitModel && explicitModelUsableBy(providerId, explicitModel))
     ? explicitModel
     : (featureDefaults.model || null);

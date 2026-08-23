@@ -504,6 +504,13 @@ function initSchema(db) {
   // tree, so it is soft-deleted once, ever (bootstrapData.js). Flag-guarded rather
   // than a standing rule so a node Antoine deliberately names "test" later is his.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN arch_test_node_cleaned INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // One-time flag for the second-account-first migration (ai/text.js
+  // #migrateSecondAccountFirst). Flag-guarded rather than naturally idempotent on
+  // purpose: its predecessor rewrote 'claude-code' back to 'opencode' on EVERY boot,
+  // so a main-account pick made in the settings panel silently reverted overnight and
+  // looked like the panel not saving. A migration that keeps running is not a
+  // migration, it is a standing rule -- and this one must not be.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN second_account_first_done INTEGER NOT NULL DEFAULT 0`); } catch {}
   // Monthly ceiling on the ONE paid lane in the app: gpt-4o for Idea Studio
   // conversations (see services/billingGuard.js and services/openaiSpend.js).
   // Unlike every other budget here, going over does not degrade an optional

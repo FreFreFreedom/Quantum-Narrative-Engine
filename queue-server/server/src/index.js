@@ -45,7 +45,7 @@ import { bindTagCommunitiesDb, buildTagCommunities } from './services/tagCommuni
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
 import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
-import { bindAiTextDb, migrateFreeFirstDefaults } from './services/ai/text.js';
+import { bindAiTextDb, migrateSecondAccountFirst } from './services/ai/text.js';
 import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
@@ -100,12 +100,14 @@ bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
 bindTagCommunitiesDb(db);
 
-// Free-first platform policy (plan self-aware-platform.md Part 1): one-time
-// migration of per-feature defaults away from the Claude subscription. Idempotent.
+// Second-account-first policy (2026-08-22): one-time migration of per-feature
+// defaults onto the SECOND Claude subscription, so the smaller bank is spent before
+// the one that also pays for the coding queue. Flag-guarded in the DB -- its
+// predecessor ran on every boot and undid the settings panel's own choices.
 try {
-  const migrated = migrateFreeFirstDefaults();
-  if (migrated.changed) console.log(`Free-first policy: flipped ${migrated.changed} feature default(s) off Claude.`);
-} catch (e) { console.error('Free-first defaults migration failed:', e.message); }
+  const migrated = migrateSecondAccountFirst();
+  if (!migrated.skipped) console.log(`Second-account-first policy: moved ${migrated.changed} feature default(s) onto the second Claude account.`);
+} catch (e) { console.error('Second-account-first migration failed:', e.message); }
 
 // Repopulate ontology + knowledge data on every boot. Not because the DB is wiped —
 // production keeps it on a volume (CLAUDE.md, "Production data IS durable") — but so a

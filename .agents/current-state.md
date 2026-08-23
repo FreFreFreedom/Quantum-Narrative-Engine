@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-22T18:59:52.553Z
+Generated: 2026-08-23T01:11:15.922Z
 
 ## Components
 
@@ -9,7 +9,7 @@ Generated: 2026-08-22T18:59:52.553Z
 - semantic-layer · Working · next: Full corpus grounded, shared tag vocabulary enforced
 - analogical-layer · Prototype · next: Server-side pattern-instance graph, computed once and cached instead of recomputed per client
 - pattern-engine · Concept · next: One formally defined, named pattern as a proof of concept (structure, not just a tag)
-- graphrag · Prototype · next: Static community detection over the existing tag/continuum data
+- graphrag · Prototype · next: Subgraph retrieval wired into the embedded chat assistant as a real tool
 - scale-echo · Prototype · next: Scale-aware weighting (distance in scale, not just axis value)
 - integration-continuum · Working · next: A third axis once cluster III is archive-grounded
 - thread-click · Working · next: Shared click-through across one unified app’s modes — largely true now that Content and Map share one renderer
@@ -55,8 +55,8 @@ Generated: 2026-08-22T18:59:52.553Z
 - multi-agent-development-team — **~70% DONE · roster outstanding**
 - self-aware-platform — **Parts 1–6 DONE · 2 loose ends**
 - suggestions-that-keep-up-with-the-code — **DONE** — all four parts; `npm run ship:facts` proves the saving. Two checks (live probe transport, runner-offline) were left to the deploy
-- an-architecture-that-knows-what-it-is — **PLANNED** 2026-08-22 — backend sent to the queue; the packed map waits on the graph renderer
-- a-map-of-what-belongs-together — **PLANNED** 2026-08-22 — waits on the graph renderer it inherits
+- an-architecture-that-knows-what-it-is — **DONE** 2026-08-22 — all five sections shipped: backend (witness, lifecycle, umbrellas), the packed map as the third layout (fragment 12), and the lifecycle board as the fourth plus the merge with the 25 built components (fragment 13). The board is five columns (`Concept · Planned · Building · Live · Retired`); only Concept and Retired can be dragged, because every other column is something the app derived. The built components are folded into both Board and Map **at read time** — never copied into `architecture_nodes`, which was the whole point. **Three measured corrections** live in the fragment briefs: the umbrellas endpoint already returns a `d3.pack`-ready hierarchy; colour must carry `status` (populated) not `lifecycle` (uniformly `concept`, because not one of the 79 nodes has a witness); and two of the 25 built components compute to `Concept` — their own live check says they are not there — so they enter Concept, not Live.
+- a-map-of-what-belongs-together — **IN PROGRESS** 2026-08-22 — fragment 14 (the layout and the plumbing) **DONE**: Landscape is the third Content view, laid out by cosine similarity over the theme communities **plus the 59 tags more than one entity carries** — the brief's community-only vector had to be corrected, because 118 of the 214 tagged entities live entirely inside one community and would all have had the same vector. Measured: same-community pairs sit 74 units apart, unrelated pairs 388 — 5.2x. The 199 untagged entities are parked on an outer ring by roman-numeral cluster and drawn hollow, never mixed into the field. Fragment 15 (the look — community regions, labels, posters, the continuum overlay) is still to run.
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
 - tasks-start-without-waiting — DONE 2026-08-21. §6 (fanning the world-look out concurrently) deliberately **NOT** done — off the critical path once the gate went, and it risks benching the free lane; the analysis is kept in the plan
 - send-a-plan-from-the-terminal — DONE 2026-08-21
