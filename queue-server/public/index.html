@@ -1203,8 +1203,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .q-inspire-toolbar { display:flex; align-items:center; gap:8px; margin:2px 0 8px; flex-wrap:wrap; }
 .q-inspire-shelf { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-3); margin:12px 0 4px; }
 .q-inspire-shelf.q-inspire-bold { color:#8a5a1e; }
-.q-inspire-note { font-size:10px; color:var(--c-ink-4); margin-bottom:6px; }
-.q-inspire-note-active { color:var(--c-brand); font-weight:600; }
 .world-r { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .q-inspire-wrap { margin:4px 0 8px; }
 .nb-world { margin:2px 0 6px 14px; padding:8px 10px; border:1px solid var(--c-border-2); border-radius:10px; background:var(--c-surface); animation:fmcnsRise .24s var(--ease); }
@@ -10857,7 +10855,6 @@ function qInspireFullHtml(p, data) {
   return `
     <div class="q-inspire-toolbar">
       <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="${qEsc(applyMeta.title)}">${applyMeta.label}</button>
-      <span class="q-inspire-note">Not convinced by one of them? Use the ↻ next to its tag — it swaps that one idea and leaves the rest alone.</span>
     </div>
     ${legend}
     ${worldPartsHtml(report, { applied, sel, facts, scope: 'task:' + p.id })}`;
@@ -11195,14 +11192,10 @@ function flowWorldPanelHtml(source, id) {
       : ((e.report.review?.removed?.length || 0) > 0
         ? `<div class="q-inspire-legend">Ideas the quick check doubted stay in the list, with its reason under them — pick any of them anyway.</div>`
         : '');
-    return `<div class="q-inspire-toolbar">
-      ${sel.size ? `<span class="q-inspire-note q-inspire-note-active">✓ ${sel.size} picked — included automatically when you press the button below to queue or build this.</span>` : `<span class="q-inspire-note">Pick ideas here — they'll be included automatically when you press the button below to queue or build this.</span>`}
-      <span class="q-inspire-note">Not convinced by one of them? The ↻ next to its tag swaps that one idea and leaves the rest alone.</span>
-    </div>${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id })}`;
+    return `${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id })}`;
   }
   return `<div class="tv-empty">
     <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
-    <div class="q-inspire-note" style="margin-top:8px;">What already exists, and what could be bold — before anything is queued.</div>
   </div>`;
 }
 // Panel for the expanded suggestion/seed card. Re-renders in place after picks
