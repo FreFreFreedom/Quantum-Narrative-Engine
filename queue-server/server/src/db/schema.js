@@ -65,7 +65,7 @@ function initSchema(db) {
       position REAL NOT NULL DEFAULT 0,
       same_context INTEGER NOT NULL DEFAULT 0,
       mode TEXT NOT NULL DEFAULT 'implement' CHECK(mode IN ('implement','question')),
-      preset TEXT NOT NULL DEFAULT 'deep',
+      preset TEXT NOT NULL DEFAULT 'standard',
       agent_task_id TEXT,
       session_id TEXT,
       suggestion_id TEXT,

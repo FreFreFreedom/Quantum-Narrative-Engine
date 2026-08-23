@@ -28,7 +28,7 @@ import {
   updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage, stopTask,
   MAX_CONCURRENT_WRITERS, OOM_KILL_MARKER,
 } from './taskRunner.js';
-import { resolvePreset, escalate } from './modelPolicy.js';
+import { resolvePreset, escalate, capTier } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
 import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pickTaskModel, pickFastFreeModel } from './providers/index.js';
 import { listAgents, pickAgentFor } from './agents.js';
@@ -180,8 +180,11 @@ export async function createPrompt({
   // from the tier heuristic instead of asking a model to judge it: opus is reserved
   // for genuinely deep work, so an ordinary task cannot quietly cost 5× what it
   // should. Only claude-code uses presets (the other lanes carry a model id).
-  const TIER_PRESET = { mini: 'fast', standard: 'standard', deep: 'deep' };
-  const usePreset = ['fast', 'standard', 'deep'].includes(preset) ? preset : (TIER_PRESET[tier] || 'standard');
+  // capTier enforces the never-deep ceiling (modelPolicy.js MAX_TIER): a big task maps
+  // to standard now, not deep, and an explicit preset:'deep' from any caller is clamped
+  // on the way in so the stored row tells the truth about what will actually run.
+  const TIER_PRESET = { mini: 'fast', standard: 'standard', deep: 'standard' };
+  const usePreset = capTier(['fast', 'standard', 'deep'].includes(preset) ? preset : (TIER_PRESET[tier] || 'standard'));
   const id = randomUUID();
   const given = String(title || '').trim();
   const label = given || heuristicTitle(text);
@@ -370,7 +373,7 @@ export function createGroup({ title = '', prompt = '', space = 'fmcns' } = {}) {
     prompt: String(prompt || title || '').trim(),
     space,
     mode: 'implement',
-    preset: 'deep',
+    preset: 'standard',
     status: 'paused',
     plan_source: 'skip',
     is_group: true,

@@ -19,6 +19,23 @@ import { generateText } from './ai/text.js';
 
 const TIERS = ['fast', 'standard', 'deep'];
 
+// THE CEILING. Antoine's standing instruction, 2026-08-23: never deep, anywhere Claude
+// is plugged in, on either account. Standard — sonnet at medium effort — is the most any
+// task gets, and 'fast' (haiku, low) is still fine when a task plainly does not need
+// medium. He should never have to set this per task, so it lives here as policy rather
+// than as a choice on a form.
+//
+// Deep is not removed from TIERS: old rows in work_prompts still carry preset='deep',
+// and the escalate() valve below still needs an ordered list to walk. Instead every road
+// to it is capped — and as a last safety net PRESETS.deep in taskRunner.js now maps to
+// sonnet/medium too, so even a stored 'deep' cannot reach opus.
+export const MAX_TIER = 'standard';
+export function capTier(tier) {
+  const i = TIERS.indexOf(tier);
+  if (i === -1) return MAX_TIER;
+  return i > TIERS.indexOf(MAX_TIER) ? MAX_TIER : tier;
+}
+
 // Above this, a task is long enough that it MIGHT be genuinely big — the only case
 // worth paying a judge to think about. Everything at or under it is standard, decided
 // here for free.
@@ -63,13 +80,13 @@ function parseJudgeReply(text) {
 // downgrade a task to fast nor promote it to the expensive model by accident.
 export async function resolvePreset({ mode, prompt }) {
   const guess = deterministicGuess({ mode, prompt });
-  if (guess) return guess;
+  if (guess) return capTier(guess);
 
   try {
     const out = await generateText({ prompt: JUDGE_PROMPT(mode, prompt), feature: 'judge', maxTokens: 20, label: 'modelPolicy:judge' });
     if (out.error) return 'standard';
     const tier = parseJudgeReply(out.text);
-    return tier || 'standard';
+    return capTier(tier || 'standard');
   } catch {
     return 'standard';
   }
@@ -78,10 +95,14 @@ export async function resolvePreset({ mode, prompt }) {
 // Escalation valve, and now the main road to 'deep': after an auto-resolved task comes
 // back blocked, the next run tries one tier up rather than repeating the same
 // (apparently insufficient) tier. Depth reached this way is a response to evidence.
+// NOTE: this no longer reaches 'deep' — MAX_TIER caps it at standard. So the valve now
+// only ever promotes fast → standard, and a task that comes back blocked ON standard is
+// retried on standard rather than escalating. That is deliberate: a task failing at
+// standard is something to tell Antoine about, not something to quietly spend opus on.
 export function escalate(tier) {
   const i = TIERS.indexOf(tier);
   if (i === -1) return 'standard';
-  return TIERS[Math.min(i + 1, TIERS.length - 1)];
+  return capTier(TIERS[Math.min(i + 1, TIERS.length - 1)]);
 }
 
 export { TIERS };

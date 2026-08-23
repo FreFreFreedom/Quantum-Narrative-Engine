@@ -105,10 +105,17 @@ const BREVITY_INSTRUCTION = [
   'in the body of your reply ABOVE the summary section, never inside it.',
 ].join('');
 
+// THE SAFETY NET for the never-deep rule (see MAX_TIER in modelPolicy.js). 'deep' is
+// kept as a key because rows in work_prompts still carry it, but it now resolves to the
+// SAME model and effort as standard. So no path — an old row, a hand-written API call, a
+// stale cached judge reply — can reach opus or high effort any more, whether or not it
+// went through capTier() first. Deleting the key instead would silently fall through to
+// PRESETS.standard via presetFor(), which is the same outcome by accident rather than on
+// purpose; this says it.
 export const PRESETS = {
   fast: { model: 'haiku', effort: 'low', label: 'Fast' },
   standard: { model: 'sonnet', effort: 'medium', label: 'Standard' },
-  deep: { model: 'opus', effort: 'high', label: 'Deep' },
+  deep: { model: 'sonnet', effort: 'medium', label: 'Standard' },
 };
 export function presetFor(key) { return PRESETS[key] || PRESETS.standard; }
 
@@ -1274,7 +1281,7 @@ export function buildTaskPrompt(next) {
 }
 
 export function enqueueAgentTask({
-  title, description, kind = 'queue', mode = 'implement', model = 'opus', effort = 'high',
+  title, description, kind = 'queue', mode = 'implement', model = 'sonnet', effort = 'medium',
   priority = 0, author = '', work_prompt_id = null, resume_session_id = null,
   provider = 'claude-code', provider_model = null, agent_key = null,
   worktree_path = null, branch = null,

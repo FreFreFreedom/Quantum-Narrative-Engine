@@ -114,7 +114,7 @@ export async function promoteIdea(id, { userId = 'antoine', prompt = null, inspi
     title: idea.title,
     prompt: body,
     mode: 'implement',
-    preset: 'deep',
+    preset: 'standard',
     status: 'paused', // set aside — nothing launches until the user starts it
     created_by: userId,
     // Carry the seed's tree node onto the task. Without this the task landed with

@@ -44,7 +44,7 @@ export function createAgent(fields = {}) {
   `).run(
     key, label, fields.emoji || null, role, String(fields.persona || ''),
     fields.brief_file || null, provider, fields.provider_model || null,
-    ['fast', 'standard', 'deep', 'auto'].includes(fields.preset) ? fields.preset : 'standard',
+    ['fast', 'standard', 'auto'].includes(fields.preset) ? fields.preset : 'standard',
     String(fields.tools || 'Bash,Read,Write,Edit,Glob,Grep'),
     String(fields.path_allow || '["**"]'), String(fields.path_deny || '[]'),
     maxParallel, fields.enabled === false ? 0 : 1, fields.paused ? 1 : 0,
@@ -66,7 +66,7 @@ export function updateAgent(key, patch = {}) {
     if (k === 'max_parallel') v = Math.max(1, Math.min(4, parseInt(v, 10) || 1));
     if (k === 'provider' && !PROVIDERS.includes(v)) continue;
     if (k === 'role' && !ROLES.includes(v)) continue;
-    if (k === 'preset' && !['fast', 'standard', 'deep', 'auto'].includes(v)) continue;
+    if (k === 'preset' && !['fast', 'standard', 'auto'].includes(v)) continue;  // never deep — modelPolicy.js MAX_TIER
     sets.push(`${k}=?`);
     vals.push(v);
   }

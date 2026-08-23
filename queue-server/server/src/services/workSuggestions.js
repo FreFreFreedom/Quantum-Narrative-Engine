@@ -111,7 +111,7 @@ export async function acceptSuggestion(id, { editedPrompt = null, editedTitle = 
     title: editedTitle || s.title,
     prompt: editedPrompt || s.prompt,
     mode: 'implement',
-    preset: 'deep',
+    preset: 'standard',
     status: 'paused', // sits aside — nothing runs automatically from a suggestion
     suggestion_id: s.id,
     created_by: 'antoine',

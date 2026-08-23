@@ -22,7 +22,8 @@
     "docs:sync": "node scripts/sync-docs.js",
     "idea:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/idealanded-selftest.js",
     "ideas:audit": "node scripts/ideas-audit.js",
-    "ending:selftest": "node scripts/ending-selftest.js"
+    "ending:selftest": "node scripts/ending-selftest.js",
+    "never-deep:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/never-deep-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",

@@ -507,7 +507,7 @@ async function acceptThought(db, id, { editedTitle = null, editedPrompt = null }
     title: editedTitle || t.title,
     prompt: draft.trim(),
     mode: 'implement',
-    preset: 'deep',
+    preset: 'standard',
     status: 'paused', // the human gate: nothing runs automatically
     created_by: 'antoine',
     thought_id: t.id,
