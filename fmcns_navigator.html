@@ -2234,6 +2234,47 @@ button:active { transform: translateY(1px) scale(.99); }
 </script>
 
 <script>
+// ---------- Selecting text is not clicking ----------
+// Nearly every card in this app is clickable as a whole block, so dragging the mouse across
+// a card's text to copy it used to land as a click on the card: the card opened or closed,
+// its contents were re-rendered, and the selection went with them. There was no way to copy
+// what a card said.
+//
+// One guard, first in the capture phase, instead of an early-return in each of the ~20 card
+// handlers — those are re-wired on every render across five views, so the next new card
+// would forget it.
+//
+// A click is cancelled only when the pointer moved AND text is actually selected. Both
+// halves are load-bearing: selection alone would kill "select something, then click a card",
+// and movement alone would kill any drag that legitimately ends in a click.
+let selDragOrigin = null;
+let mouseDragging = false;
+document.addEventListener('mousedown', (ev) => {
+  selDragOrigin = { x: ev.clientX, y: ev.clientY };
+  mouseDragging = true;
+}, true);
+document.addEventListener('mouseup', () => { mouseDragging = false; }, true);
+
+function dragSelectedText(ev) {
+  if (!selDragOrigin) return false;
+  if (Math.hypot(ev.clientX - selDragOrigin.x, ev.clientY - selDragOrigin.y) <= 5) return false;
+  // A text field keeps its own selection and its own drag behaviour — leave it alone.
+  const t = ev.target;
+  if (t && t.closest && t.closest('input, textarea, select, option, [contenteditable="true"]')) return false;
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false;
+  return sel.toString().trim().length > 0;
+}
+
+document.addEventListener('click', (ev) => {
+  if (!dragSelectedText(ev)) return;
+  // stopImmediatePropagation, not stopPropagation: the clamped-line expander further down is
+  // also a document-level capture listener, and stopPropagation does not stop a listener on
+  // the same node.
+  ev.stopImmediatePropagation();
+  ev.preventDefault();
+}, true);
+
 // One queue, one database. This used to swing to http://localhost:3000 whenever
 // the file was opened from disk — which silently showed a DIFFERENT queue (the
 // local dev server keeps its own DB) while the runner was working the Railway
@@ -6199,6 +6240,9 @@ function closeDetailsSoon() {
   clearTimeout(detailsCloseTimer);
   detailsCloseTimer = setTimeout(() => {
     detailsCloseTimer = null;
+    // Mid-selection, the panel stays put: dragging text out of it used to fold it away
+    // while you were still selecting. Wait for the button to come up, then re-check.
+    if (mouseDragging) { closeDetailsSoon(); return; }
     // A subject still selected, the mouse still on it, or a button inside it still
     // focused all keep it open — the same three reprieves the filters panel gives.
     if (detailsWanted() || right.contains(document.activeElement) || right.matches(':hover')) return;
@@ -6298,6 +6342,8 @@ function closeFiltersSoon() {
   clearTimeout(filtersCloseTimer);
   filtersCloseTimer = setTimeout(() => {
     filtersCloseTimer = null;
+    // Mid-selection, the panel stays put — same reprieve as the details panel.
+    if (mouseDragging) { closeFiltersSoon(); return; }
     // Still in use, so wait another beat rather than closing on it. An open native
     // <select> counts: its list is drawn outside the panel, so the mouse has
     // already "left" by the time you pick an option.
