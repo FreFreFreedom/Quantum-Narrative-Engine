@@ -50,6 +50,13 @@ export function conversationsRoutes() {
     res.json({ convos: convos.listOpenConvos(req.query.limit) });
   });
 
+  // GET /api/convos/plans — the plan backlog mirrored into the knowledge store,
+  // as a light list ({id, title, status}) for the Room's attach picker. Titles
+  // and statuses only; the picker must not download 400-line plans to draw a list.
+  router.get('/plans', (req, res) => {
+    res.json({ plans: convos.listPlans() });
+  });
+
   // POST /api/convos/open — start one. No subject to pick: it gets a synthetic
   // one, and cards are attached afterwards (or never).
   router.post('/open', (req, res) => {

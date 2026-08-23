@@ -397,6 +397,46 @@ function worldPickBody(pick) {
   ].filter(Boolean).join('\n');
 }
 
+// ─── 'plan' — a plan from the backlog (plans/*.md, mirrored into the knowledge
+// store under the `Plan: ` prefix). See plans/plans-in-the-room.md. The plan's
+// whole text is readable slice-by-slice via read_knowledge_doc — describe() must
+// only ever fold a SUMMARY into the prompt, never the full file, or a 400-line
+// plan would add tens of thousands of tokens to every turn of the thread.
+const PLAN_TITLE_PREFIX = 'Plan: ';
+
+registerSubject('plan', {
+  label: 'Plan',
+  load: (db, id) => {
+    if (!db) return null;
+    const row = db.prepare(`SELECT * FROM knowledge_docs WHERE title=?`).get(PLAN_TITLE_PREFIX + id);
+    if (!row) return null;
+    return { id, title: PLAN_TITLE_PREFIX + id, content: row.content, description: row.description };
+  },
+  title: (db, id) => {
+    const row = db?.prepare(`SELECT description FROM knowledge_docs WHERE title=?`).get(PLAN_TITLE_PREFIX + id);
+    // The description leads with "STATUS date — …", which is the most useful
+    // one-line label for a plan in the Attached panel.
+    return row?.description || id;
+  },
+  describe: (subject) => {
+    const statusMatch = /^([A-Z ]+? \d{4}-\d{2}-\d{2})/.exec(subject.description || '');
+    const status = statusMatch ? statusMatch[1] : '';
+    const summary = String(subject.content || '').replace(/\s+/g, ' ').trim().slice(0, 1500);
+    const lines = [];
+    lines.push(`This is a PLAN from the project's plan backlog (plans/*.md).`);
+    if (status) lines.push(`Status: ${status}.`);
+    lines.push(`Opening (first ~1500 characters of the plan, because the whole thing is long):`);
+    lines.push(summary);
+    lines.push(`The full plan is readable with the read_knowledge_doc tool under the title "${PLAN_TITLE_PREFIX}${subject.id}", in slices — ask for a specific section rather than pulling the whole file at once.`);
+    return lines.join('\n');
+  },
+  handoff: () => {
+    // Nothing owns a plan the way a seed owns its task row — the link lives on
+    // the conversation row. No owner-row back-reference needed.
+    return;
+  },
+});
+
 function worldPickOneLine(pick) {
   const src = pick.kind === 'open' ? pick.why_fits : pick.kind === 'hidden' ? (pick.what || pick.lesson) : pick.vision;
   return `${worldPickTitle(pick)} — ${String(src || '').replace(/\s+/g, ' ').slice(0, 160)}`;
