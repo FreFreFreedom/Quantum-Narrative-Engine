@@ -1092,6 +1092,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ai-feature-table select { font-size:11px; padding:4px 6px; border:1px solid var(--c-border-2); border-radius:5px; }
 .ai-feature-name { font-weight:600; }
 .ai-feature-note { font-size:10px; color:var(--c-ink-4); }
+.ai-weight { width:34px; padding-right:0 !important; white-space:nowrap; }
+.ai-dots { font-size:8px; letter-spacing:1px; color:var(--c-ink-4); }
+.ai-row-queue td { background:var(--c-bg-2, rgba(127,127,127,.06)); }
+.ai-row-queue .ai-feature-name { color:var(--c-accent, inherit); }
 .ai-savebtn { margin-top:16px; padding:8px 16px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12px; font-weight:600; cursor:pointer; }
 .ai-adv { margin-top:14px; font-size:11.5px; color:var(--c-ink-2); }
 .ai-adv summary { cursor:pointer; color:var(--c-ink-2); }
@@ -7458,18 +7462,22 @@ function qProviderUi() {
 // Every feature the server can route (FEATURES in services/ai/text.js). Five of
 // these used to be missing here, which meant they could only ever be changed
 // through the API — so where they ran was invisible from the app itself.
+// Ordered heaviest first — how much work each one asks a model to do, which is also
+// roughly how much it matters. The coding queue sits above them all as its own row;
+// cache warm-up at the bottom runs by itself and nobody waits for it. `weight` drives
+// the three dots in the first column (3 = long, tool-using work; 1 = a short call).
 const AI_FEATURES = [
-  { key: 'quick', label: 'Quick reads', note: 'Book picks, tag lenses, pattern explanations' },
-  { key: 'build', label: 'Suggestions', note: 'Work-suggestion and architecture-node engines' },
-  { key: 'judge', label: 'Model judge', note: 'Picks how much depth an auto-speed task needs' },
-  { key: 'summary', label: 'Task summaries', note: 'Plain-language recap once a queued task finishes' },
-  { key: 'warmup', label: 'Cache warm-up', note: 'Pre-generates book picks/lenses right after boot' },
-  { key: 'reply', label: 'Chat on a task card', note: 'Answers your questions about a task — reads the code first' },
-  { key: 'inspire', label: 'What the world does', note: 'The outside-world look attached to each task and idea' },
-  { key: 'studio', label: 'Idea Studio', note: 'Turning a rough idea into something buildable' },
-  { key: 'plan_draft', label: 'Plan drafts', note: 'The first draft of how a task should be done' },
-  { key: 'treesync', label: 'Tree sorting', note: 'Files the codebase into the right part of the tree' },
-  { key: 'umbrellas', label: 'Tree grouping', note: 'Re-groups the map of the app into categories it earns' },
+  { key: 'studio', weight: 3, label: 'Idea Studio', note: 'Turning a rough idea into something buildable' },
+  { key: 'plan_draft', weight: 3, label: 'Plan drafts', note: 'The first draft of how a task should be done' },
+  { key: 'reply', weight: 3, label: 'Chat on a task card', note: 'Answers your questions about a task — reads the code first' },
+  { key: 'inspire', weight: 2, label: 'What the world does', note: 'The outside-world look attached to each task and idea' },
+  { key: 'build', weight: 2, label: 'Suggestions', note: 'Work-suggestion and architecture-node engines' },
+  { key: 'quick', weight: 2, label: 'Quick reads', note: 'Book picks, tag lenses, pattern explanations' },
+  { key: 'umbrellas', weight: 2, label: 'Tree grouping', note: 'Re-groups the map of the app into categories it earns' },
+  { key: 'summary', weight: 1, label: 'Task summaries', note: 'Plain-language recap once a queued task finishes' },
+  { key: 'treesync', weight: 1, label: 'Tree sorting', note: 'Files the codebase into the right part of the tree' },
+  { key: 'judge', weight: 1, label: 'Model judge', note: 'Picks how much depth an auto-speed task needs' },
+  { key: 'warmup', weight: 1, label: 'Cache warm-up', note: 'Pre-generates book picks/lenses right after boot' },
 ];
 const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
 let aiSettings = null;
@@ -7491,11 +7499,34 @@ async function loadAiSettings() {
   }
 }
 
+// How much a job costs to run, as three dots — the table is ordered by it, so the
+// column is a reminder of the order rather than new information.
+function aiWeightDots(w) {
+  const n = w === 3 ? 3 : w === 2 ? 2 : 1;
+  return `<span class="ai-dots">${'●'.repeat(n)}${'○'.repeat(3 - n)}</span>`;
+}
+function aiWeightTitle(w) {
+  return w === 3 ? 'Heavy — long, tool-using work' : w === 2 ? 'Medium' : 'Light — one short call';
+}
+
 function aiModelOptions(provider, selected) {
   if (provider === 'opencode') {
     const models = qProviders.opencode?.models || [];
     if (!models.length) return `<option value="">(no OpenCode models found)</option>`;
-    return models.map(m => `<option value="${m.id}"${m.id === selected ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.id}</option>`).join('');
+    // Show the model's real name, not just its id. "Ox Alpha Free (Unlimited)" was in
+    // this list all along as opencode/x-preview-f-free, which is unfindable — the ids
+    // and the names OpenCode advertises often have nothing in common. The id stays,
+    // after the name, because it is what the runner logs and what the card shows.
+    // Metered models are shown but not selectable, the same rule as the queue's own
+    // dropdowns: nothing here may quietly bill per token. A model already stored stays
+    // selectable, so opening this screen can never silently change an existing choice.
+    return models.map(m => {
+      const metered = !(m.free || String(m.id).startsWith('opencode-go/'));
+      const off = metered && m.id !== selected;
+      const name = m.name && m.name !== m.id ? `${m.name} — ` : '';
+      return `<option value="${m.id}"${m.id === selected ? ' selected' : ''}${off ? ' disabled' : ''}>`
+        + `${m.free ? '🆓 ' : ''}${name}${m.id}${metered ? ' 💳 (bills per use)' : ''}</option>`;
+    }).join('');
   }
   // The three Claude tiers, but ONLY for the two Claude lanes. A stored provider this
   // panel cannot show (the Idea Studio's openai/gpt-4.1) used to land here and be
@@ -7588,6 +7619,7 @@ function renderAiSettings() {
       : `<option value="${provider}" selected>${provider} (set outside this panel)</option>`;
     return `
       <tr data-feature="${f.key}">
+        <td class="ai-weight" title="${aiWeightTitle(f.weight)}">${aiWeightDots(f.weight)}</td>
         <td><div class="ai-feature-name">${f.label}</div><div class="ai-feature-note">${f.note}</div></td>
         <td>
           <select class="ai-provider-sel">
@@ -7611,18 +7643,21 @@ function renderAiSettings() {
   // anyway, so offering it would only produce a save that silently does nothing.
   const qdModels = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/'));
   const qdModelOpts = `<option value="">Auto</option>` + qdModels.map(m =>
-    `<option value="${m.id}"${m.id === qdModel ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.name || m.id}</option>`).join('')
+    `<option value="${m.id}"${m.id === qdModel ? ' selected' : ''}>${m.free ? '🆓 ' : ''}${m.name && m.name !== m.id ? m.name + ' — ' : ''}${m.id}</option>`).join('')
     + (qdModel && !qdModels.some(m => m.id === qdModel) ? `<option value="${qdModel}" selected>${qdModel}</option>` : '');
   const queueDefaultRow = `
-    <div class="ai-policy-row" title="The engine and model every new coding task starts on. Choosing a model on the task itself still wins.">
-      <label style="font-size:11px;color:var(--c-ink-3);">Task queue runs on:</label>
-      <select id="aiQueueProvider">
-        <option value=""${qdProvider === '' ? ' selected' : ''}>Auto</option>
-        <option value="claude-code"${qdProvider === 'claude-code' ? ' selected' : ''}>Claude — main account</option>
-        <option value="opencode"${qdProvider === 'opencode' ? ' selected' : ''}>OpenCode</option>
-      </select>
-      <select id="aiQueueModel"${qdProvider === 'opencode' ? '' : ' disabled'}>${qdModelOpts}</select>
-    </div>`;
+    <tr class="ai-row-queue">
+      <td class="ai-weight" title="Heaviest — this is the coding work itself">${aiWeightDots(3)}</td>
+      <td><div class="ai-feature-name">Coding tasks</div><div class="ai-feature-note">The queue — what actually writes the code</div></td>
+      <td>
+        <select id="aiQueueProvider">
+          <option value=""${qdProvider === '' ? ' selected' : ''}>Auto</option>
+          <option value="claude-code"${qdProvider === 'claude-code' ? ' selected' : ''}>Claude — main account</option>
+          <option value="opencode"${qdProvider === 'opencode' ? ' selected' : ''}>OpenCode</option>
+        </select>
+      </td>
+      <td><select id="aiQueueModel"${qdProvider === 'opencode' ? '' : ' disabled'}>${qdModelOpts}</select></td>
+    </tr>`;
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
     .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
@@ -7638,10 +7673,9 @@ function renderAiSettings() {
         <option value="manual_only"${aiSettings.policy === 'manual_only' ? ' selected' : ''}>Never switch — wait for quota to reset</option>
       </select>
     </div>
-    ${queueDefaultRow}
     <table class="ai-feature-table">
-      <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
-      <tbody>${rows}</tbody>
+      <thead><tr><th></th><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
+      <tbody>${queueDefaultRow}${rows}</tbody>
     </table>
     <div class="ai-fp-sub" style="margin-top:6px;">Everything starts on your <strong>second</strong> Claude subscription &mdash; the smaller bank, spent first on purpose. When it runs out for the next few hours the same question is asked again on your <strong>main</strong> account, and only if that is out too does it drop to a free model. Second-account jobs run on your Mac, so the runner has to be on; if its token isn&rsquo;t set they go straight to the main account. Coding tasks always stay on the main account.</div>
     <details class="ai-voice">
