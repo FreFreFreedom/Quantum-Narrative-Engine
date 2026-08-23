@@ -1470,27 +1470,40 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 
 /* ---------- Lifecycle board (Concept · Planned · Building · Live · Retired) ---- */
 /* Deliberately plain (plan §5): this is the view for working through things, the
-   Map is the view for understanding the shape. Five equal columns that scroll
+   Map is the view for understanding the shape. Five columns that scroll
    independently, one card per component, nothing else. Every colour is a variable
-   so both themes come for free — the board is DOM, not canvas. */
-.arch-boardwrap { position:absolute; inset:0; overflow:hidden; display:flex; gap:10px; padding:14px 16px 76px; }
-.arch-bcol { flex:1 1 0; min-width:0; display:flex; flex-direction:column; border:1px solid var(--c-border); border-radius:8px; background:var(--c-surface); }
+   so both themes come for free — the board is DOM, not canvas.
+   Columns fold to slim rails so Concept and Live keep the width (a derived
+   column auto-folds while empty; any click on a header overrides and sticks). */
+.arch-boardwrap { position:absolute; inset:0; overflow:hidden; display:flex; gap:12px; padding:14px 16px 76px; }
+.arch-bcol { flex:1 1 0; min-width:0; display:flex; flex-direction:column; border:1px solid var(--c-border); border-radius:8px; background:var(--c-surface); transition:flex-basis .18s ease; }
 .arch-bcol.is-drop { border-color:var(--c-ink-4); background:var(--c-surface-2); }
 .arch-bcol.is-derived { background:transparent; border-style:dashed; }
-.arch-bcol-head { display:flex; align-items:baseline; gap:7px; padding:8px 10px 7px; border-bottom:1px solid var(--c-border); }
-.arch-bcol-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-2); }
-.arch-bcol-count { font-size:10px; color:var(--c-ink-4); margin-left:auto; }
-.arch-bcol-body { flex:1; overflow:auto; padding:6px; display:flex; flex-direction:column; gap:4px; }
-.arch-bcard { display:flex; align-items:center; gap:6px; padding:6px 7px; border-radius:6px; border:1px solid var(--c-border); background:var(--c-surface); cursor:pointer; min-width:0; transition:background .12s ease, border-color .12s ease; }
+.arch-bcol.is-folded { flex:0 0 38px; cursor:pointer; }
+.arch-bcol-head { display:flex; align-items:center; gap:8px; padding:9px 11px; border-bottom:1px solid var(--c-border); cursor:pointer; user-select:none; min-height:34px; }
+.arch-bcol-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-2); }
+.arch-bcol-count { font-size:10px; color:var(--c-ink-4); margin-left:auto; font-family:monospace; }
+.arch-bcol-chevron { font-size:9px; color:var(--c-ink-4); width:10px; text-align:center; flex-shrink:0; }
+.arch-bcol.is-folded .arch-bcol-head { flex-direction:column; justify-content:flex-start; gap:7px; height:100%; padding:11px 0; border-bottom:none; }
+.arch-bcol.is-folded .arch-bcol-title { writing-mode:vertical-rl; transform:rotate(180deg); white-space:nowrap; }
+.arch-bcol.is-folded .arch-bcol-count { margin-left:0; }
+.arch-bcol-body { flex:1; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:5px; }
+.arch-bcol.is-folded .arch-bcol-body { display:none; }
+.arch-bcard { display:block; padding:8px 9px 7px; border-radius:6px; border:1px solid var(--c-border); border-left-width:3px; background:var(--c-surface); cursor:pointer; min-width:0; transition:background .12s ease, border-color .12s ease, opacity .18s ease; }
 .arch-bcard:hover { background:var(--c-surface-2); }
 .arch-bcard.selected { box-shadow:inset 0 0 0 1px var(--c-ink-4); background:var(--c-surface-2); }
 .arch-bcard.is-drag { opacity:.45; }
 .arch-bcard[draggable="true"] { cursor:grab; }
-/* The one visual distinction between a built component (derived from real queries,
-   read-only) and a planted idea: a solid bar on the leading edge. */
-.arch-bcard.is-built { border-left:3px solid var(--c-brand); }
-.arch-bcard.is-spec { border-left:3px dashed var(--c-violet); }
-.arch-bcard-name { font-size:11.5px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* The leading edge carries the TERRITORY colour (inline style from
+   archBoardCardHtml), matching every other architecture view. The old edge-bar
+   signals moved rather than stacking on it: a built part rests quiet — the same
+   instinct as lc-live in the tree and checklist — and a speculative idea wears
+   a dashed violet outline plus its ✦ mark. Hover or selection restores both. */
+.arch-bcard.is-built { opacity:.55; }
+.arch-bcard.is-spec { outline:1px dashed var(--c-violet); outline-offset:-1px; }
+.arch-bcard.is-built:hover, .arch-bcard.is-built.selected, .arch-bcard.is-built:focus-within { opacity:1; }
+.arch-bcard-name { font-size:11.5px; font-weight:600; line-height:1.35; min-width:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.arch-bcard-meta { display:flex; align-items:center; gap:6px; margin-top:3px; min-height:17px; }
 .arch-bcard-status { font-size:9.5px; color:var(--c-ink-4); flex-shrink:0; }
 .arch-bcard .card-actions { margin:0; padding:0; border-top:none; flex:none; gap:0; }
 .arch-bcard:hover .card-actions, .arch-bcard .card-actions:focus-within { opacity:1; }
@@ -1924,7 +1937,7 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
   <div class="ws-shell">
-    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage() with four layouts — Checklist (archDrawChecklist()), Tech Tree (archDrawTree()), Map (a zoomable d3.pack() circle-packing on #archMapCanvas: paintArchMap()/requestArchMapRender(), umbrella grouping from GET /api/architecture/umbrellas, colour = status ramp, area = nodes beneath, click-to-zoom via archMapTap()/archMapFitTo(), umbrellas past PRESSURE_LIMIT ringed) and Board (the lifecycle board: archDrawBoard()/archBoardCell()/archSetLifecycle(), five columns Concept · Planned · Building · Live · Retired, drag between Concept and Retired only, derived columns read-only). Map and Board both fold the app’s 25 built parts in beside the planted ideas (archMapHierarchyRoot()/archMapComponents(), status from GET /api/architecture/components) without ever writing them into architecture_nodes — one picture, still one source of truth per fact. initBlocks() into #tvBodyBlocks | backend: services/architecture.js (NOW_COMPUTERS), services/umbrellas.js (PRESSURE_LIMIT), services/architectureNodes.js (MANUAL_LIFECYCLE_STATES), services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
+    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage() with four layouts — Checklist (archDrawChecklist()), Tech Tree (archDrawTree()), Map (a zoomable d3.pack() circle-packing on #archMapCanvas: paintArchMap()/requestArchMapRender(), umbrella grouping from GET /api/architecture/umbrellas, colour = status ramp, area = nodes beneath, click-to-zoom via archMapTap()/archMapFitTo(), umbrellas past PRESSURE_LIMIT ringed) and Board (the lifecycle board: archDrawBoard()/archBoardCell()/archSetLifecycle(), five columns Concept · Planned · Building · Live · Retired, drag between Concept and Retired only, derived columns read-only, columns fold to slim rails — empty derived ones auto-fold, header clicks stick). Map and Board both fold the app’s 25 built parts in beside the planted ideas (archMapHierarchyRoot()/archMapComponents(), status from GET /api/architecture/components) without ever writing them into architecture_nodes — one picture, still one source of truth per fact. initBlocks() into #tvBodyBlocks | backend: services/architecture.js (NOW_COMPUTERS), services/umbrellas.js (PRESSURE_LIMIT), services/architectureNodes.js (MANUAL_LIFECYCLE_STATES), services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
       <div class="arch-inner-tabs">
         <button class="active" data-arch-tab="graph">Graph</button>
         <button data-arch-tab="blocks">Building blocks</button>
@@ -13455,6 +13468,10 @@ async function askArchGraph() {
 let archFocus = null;
 let archCollapsed = new Set();
 let archStatusFilter = 'all';
+// Board layout: columns whose folded/open state was chosen by hand (id -> bool).
+// Only explicit choices live here — an empty derived column folds by itself, and
+// a click on any header writes its opposite here so it sticks across visits.
+let archBoardFold = new Map();
 // The status filter is deliberately NOT persisted — only the collapsed
 // territories are. A filter is a temporary "show me just these" action, but
 // persisting it meant one click on "Built" months ago silently hid (and, with
@@ -13463,9 +13480,10 @@ let archStatusFilter = 'all';
 try {
   const v = JSON.parse(localStorage.getItem('fmcns.archView') || '{}');
   if (Array.isArray(v.collapsed)) archCollapsed = new Set(v.collapsed);
+  if (Array.isArray(v.boardFold)) archBoardFold = new Map(v.boardFold);
 } catch (e) {}
 function saveArchView() {
-  try { localStorage.setItem('fmcns.archView', JSON.stringify({ collapsed: [...archCollapsed] })); } catch (e) {}
+  try { localStorage.setItem('fmcns.archView', JSON.stringify({ collapsed: [...archCollapsed], boardFold: [...archBoardFold] })); } catch (e) {}
 }
 
 // The current pool of components: everything, or just one focused territory.
@@ -13936,10 +13954,12 @@ function archBoardCardHtml(c, cell) {
   const movable = !cell.why && !!c._stored;
   const cls = ['arch-bcard', cell.built && 'is-built', spec && 'is-spec', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
   const title = [c.name, cell.why].filter(Boolean).join(' — ');
-  return `<div class="${cls}" data-bcard="${c.id}" ${movable ? 'draggable="true"' : ''} title="${qEsc(title)}">
+  // The edge bar is the component's territory, the same palette the tree,
+  // checklist and chips use — so one colour means one thing everywhere.
+  const bar = TERRITORY_COLORS[c.territory] || 'var(--c-border)';
+  return `<div class="${cls}" data-bcard="${c.id}" ${movable ? 'draggable="true"' : ''} style="border-left-color:${bar}" title="${qEsc(title)}">
       <span class="arch-bcard-name">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
-      <span class="arch-bcard-status">${qEsc(c.status || 'Concept')}</span>
-      ${archCardActions(c)}
+      <div class="arch-bcard-meta"><span class="arch-bcard-status">${qEsc(c.status || 'Concept')}</span>${archCardActions(c)}</div>
     </div>`;
 }
 
@@ -13958,10 +13978,14 @@ function archDrawBoard() {
   const order = (a, b) => (a.cell.built ? 1 : 0) - (b.cell.built ? 1 : 0) || a.c.name.localeCompare(b.c.name);
   host.innerHTML = ARCH_BOARD_COLUMNS.map(col => {
     const items = cols[col.id].sort(order);
-    return `<div class="arch-bcol${col.manual ? '' : ' is-derived'}" data-bcol="${col.id}">
-      <div class="arch-bcol-head" title="${qEsc(col.note)}">
+    // A derived column with nothing in it folds itself away until the app has
+    // something to put there; a hand click (archBoardFold) always wins over that.
+    const folded = archBoardFold.has(col.id) ? archBoardFold.get(col.id) : (!col.manual && items.length === 0);
+    return `<div class="arch-bcol${col.manual ? '' : ' is-derived'}${folded ? ' is-folded' : ''}" data-bcol="${col.id}">
+      <div class="arch-bcol-head" title="${qEsc(col.note)} — click to ${folded ? 'unfold' : 'fold'}.">
         <span class="arch-bcol-title">${qEsc(col.label)}</span>
         <span class="arch-bcol-count">${items.length}</span>
+        <span class="arch-bcol-chevron">${folded ? '▸' : '▾'}</span>
       </div>
       <div class="arch-bcol-body">
         ${items.length ? items.map(it => archBoardCardHtml(it.c, it.cell)).join('') : '<div class="arch-bcol-empty">—</div>'}
@@ -14006,6 +14030,16 @@ function archDrawBoard() {
       _archBoardDragId = null;
       if (id) archSetLifecycle(id, state);
     });
+  });
+  // Every header — folded rail or open column — toggles its column, and the
+  // choice is remembered: it overrides the empty-derived auto-fold for good.
+  host.querySelectorAll('[data-bcol]').forEach(colEl => {
+    colEl.querySelector('.arch-bcol-head').onclick = () => {
+      const id = colEl.getAttribute('data-bcol');
+      archBoardFold.set(id, !colEl.classList.contains('is-folded'));
+      saveArchView();
+      archDrawBoard();
+    };
   });
   archWireCardBtns(host);
 }
@@ -14598,7 +14632,7 @@ function renderArchStage() {
     </div>
     ${archLayout === 'techtree' ? `<div class="arch-scrollwrap" id="archTreeHost"></div>`
       : archLayout === 'map' ? `<div class="arch-mapwrap" id="archMapHost"><canvas id="archMapCanvas" role="img" aria-label="Circle-packed map of the architecture, grouped into umbrellas"></canvas><div class="arch-mapnote" id="archMapNote"></div></div>`
-      : archLayout === 'board' ? `<div class="arch-boardwrap" id="archBoardHost" data-src="CORE ARCHITECTURE → graph zone → Board layout: the lifecycle board (Concept · Planned · Building · Live · Retired), planted ideas and the app's own built parts on one board | fmcns_navigator.html: archDrawBoard()/archBoardCell()/archSetLifecycle(), ARCH_BOARD_COLUMNS — manual drag between Concept and Retired only, derived columns read-only with a tooltip saying what proved them; built components enter from their live-computed status and are never written to architecture_nodes | backend: PATCH /api/architecture/nodes/:id { lifecycle } (services/architectureNodes.js#updateNode, MANUAL_LIFECYCLE_STATES), GET /api/architecture/components (services/architecture.js NOW_COMPUTERS)"></div>`
+      : archLayout === 'board' ? `<div class="arch-boardwrap" id="archBoardHost" data-src="CORE ARCHITECTURE → graph zone → Board layout: the lifecycle board (Concept · Planned · Building · Live · Retired), planted ideas and the app's own built parts on one board. Columns fold to slim rails so the busy ones keep the width — a derived column auto-folds while empty, any header click overrides and is remembered (fmcns.archView.boardFold). Cards are two-line (name wraps, status on its own quiet line) with the TERRITORY palette on the leading edge; built rests at .55 opacity, speculative wears a dashed violet outline + ✦ | fmcns_navigator.html: archDrawBoard()/archBoardCell()/archSetLifecycle(), ARCH_BOARD_COLUMNS — manual drag between Concept and Retired only, derived columns read-only with a tooltip saying what proved them; built components enter from their live-computed status and are never written to architecture_nodes | backend: PATCH /api/architecture/nodes/:id { lifecycle } (services/architectureNodes.js#updateNode, MANUAL_LIFECYCLE_STATES), GET /api/architecture/components (services/architecture.js NOW_COMPUTERS)"></div>`
       : `<div class="arch-scrollwrap" id="archListHost"></div>`}
     <div class="arch-ask" id="archAsk">
       <div class="arch-ask-inputrow">

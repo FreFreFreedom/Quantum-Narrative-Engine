@@ -1693,3 +1693,26 @@ parses clean, served-index ↔ master checksums match (480e6de7…). Pushed to
   exercised; on Railway the hosted free model answers in ~2-3s normally.
 
 Pushed to `main` (deployed). Local 3000 server still needs Antoine's restart.
+
+# Live session, 2026-08-23 — Board layout made readable
+
+Antoine's feedback: the Architecture → Graph → **Board** lifecycle view was too
+cramped and cut component names off mid-word.
+
+- **Foldable columns.** Any column folds to a slim labelled rail (vertical title +
+  count + ▸); click its header or rail to flip it. A derived column auto-folds
+  while empty (Planned/Building usually), so Concept and Live keep nearly all the
+  width. Manual columns (Concept/Retired — the drop targets) always start open.
+  Explicit clicks persist in `fmcns.archView.boardFold` alongside the existing
+  `collapsed` set; they override the auto-fold for good.
+- **Full names visible.** Cards are two-line now: the name wraps up to two lines
+  (-webkit-line-clamp) instead of one ellipsised row; the status word sits on its
+  own quiet line under it. Hover tooltip unchanged (full name + why).
+- **Territory colour on cards.** The card's leading edge bar now carries
+  `TERRITORY_COLORS[territory]`, same palette as tree/checklist/chips. The old
+  edge-bar signals moved rather than stacking: built rests at .55 opacity (same
+  instinct as `lc-live` elsewhere, restored on hover/selection), speculative keeps
+  ✦ and gains a dashed violet outline.
+- **More air:** bigger gaps/padding on columns and cards throughout the board.
+- Files: `fmcns_navigator.html` only (board CSS block, archDrawBoard/
+  archBoardCardHtml, archView persistence, two data-src notes). No server change.
