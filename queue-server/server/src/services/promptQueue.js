@@ -187,7 +187,13 @@ export async function createPrompt({
   const label = given || heuristicTitle(text);
   const initial = status === 'paused' ? 'paused' : 'queued';
   // Group umbrellas are never dispatched — they stay paused and skip the world-look.
-  const isGroup = is_group === 1;
+  // Normalised ONCE, here, because the strict form shipped the whole umbrella feature
+  // inert on 2026-08-23: createGroup() passes `true`, every check compared `=== 1`, and
+  // `true === 1` is false — so no umbrella was ever stored as one, and none of the guards
+  // that stop a group being handed to an agent could fire. A JSON body can carry any of
+  // true / 1 / "1". The read-side guards elsewhere keep comparing `=== 1` on purpose:
+  // they read the column back, and SQLite always returns it as an integer.
+  const isGroup = is_group === true || is_group === 1 || is_group === '1';
   const effectiveStatus = isGroup ? 'paused' : initial;
   const effectivePlanSource = isGroup ? 'skip' : plan_source;
   const effectivePlanPending = isGroup ? 0 : undefined;
@@ -311,7 +317,7 @@ db.prepare(`
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, isGroup ? 'paused' : initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, is_group === 1 ? 1 : 0);
+    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0);
 
   // Every idea that arrived with the card gets its own durable row, so the audit
   // can ask later whether it actually got built. inspire_picks_json above is the
