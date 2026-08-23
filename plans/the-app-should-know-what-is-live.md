@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-22 |
+| **DONE** | 2026-08-22 — shipped from the queue as `e30f948`, on `origin/develop`. The `--is-ancestor` test is factored out of `git-ship.js` and reachable by the idle runner (`queue-runner.js:1306`), with the adjacent holes closed in `gitJobs.js`, `worker.js`, `reviewRunner.js` and `quotaScheduler.js`. Corrected 2026-08-22: this header still said PLANNED after the work landed — the same lie the plan exists to fix, told about the plan itself. |
 
 ## Context
 
