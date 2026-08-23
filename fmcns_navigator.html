@@ -4864,7 +4864,7 @@ function renderLegend(){
 // back via applyFn so it can re-render nodes/labels at the new zoom.
 function NavCtrl(container, state, applyFn, opts = {}) {
   const minScale = opts.minScale ?? 0.2, maxScale = opts.maxScale ?? 8,
-    step = opts.step ?? 1.03, keyPan = opts.keyPan ?? 80, onZoom = opts.onZoom ?? null,
+    step = opts.step ?? 1.03, keyPan = opts.keyPan ?? 34, onZoom = opts.onZoom ?? null,
     // A key press is one deliberate act and has to move the view visibly; a wheel
     // notch is one of dozens. They cannot share a step.
     keyStep = opts.keyStep ?? 1.25,
@@ -5059,7 +5059,10 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   container.tabIndex = container.tabIndex >= 0 ? container.tabIndex : 0;
   container.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-    const stepPx = keyPan;
+    // Small enough that one press is a nudge, not a jump — the key repeat turns held
+    // arrows into a smooth glide, which is what makes a small step the right one.
+    // Shift is the big stride for crossing the view deliberately.
+    const stepPx = keyPan * (e.shiftKey ? 4 : 1);
     if (e.key === 'ArrowLeft') { e.preventDefault(); panBy(stepPx, 0); if (onZoom) onZoom(); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); panBy(-stepPx, 0); if (onZoom) onZoom(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); panBy(0, stepPx); if (onZoom) onZoom(); }
@@ -5145,7 +5148,7 @@ function setupZoomPan(){
   // The label reveal used to be debounced 120ms behind a zoom because each reveal
   // meant a full DOM rebuild. A repaint is cheap, so labels now follow the zoom live.
   _cnNav = NavCtrl(cv, camera, applyCamera, {
-    minScale: GRAPH_MIN_SCALE, maxScale: GRAPH_MAX_SCALE, step: 1.06, keyPan: 90,
+    minScale: GRAPH_MIN_SCALE, maxScale: GRAPH_MAX_SCALE, step: 1.06, keyPan: 34,
     onZoom: requestRender,
     home: () => frameWholeWorld(),
     // F frames the nodes; 0 (home) still snaps back to the whole-world framing, which
