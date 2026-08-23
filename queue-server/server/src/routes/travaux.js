@@ -6,6 +6,7 @@ import * as suggestions from '../services/workSuggestions.js';
 import { TERRITORY_IDS } from '../services/ai/appModel.js';
 import * as ideas from '../services/workIdeas.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import * as landing from '../services/inspireLanding.js';
 
 export function travauxRoutes() {
   const router = Router();
@@ -145,6 +146,53 @@ export function travauxRoutes() {
     if (out.error) return res.status(400).json(out);
     res.json(out);
   });
+
+  // ── Did the world ideas he picked actually get built? ──────────────────────
+  // The list, grouped. Free: reading rows and, unless ?recheck=0, re-asking the one
+  // question that stays true only if it is re-asked — can he reach it from the app
+  // as the app stands right now. No model, no git, no cost.
+  // Answers from what is stored, always, and starts the refresh behind it. Nothing on
+  // this path reads a file or awaits anything: the night this shipped, awaiting the
+  // recheck here took the whole app down, /api/health included. The list is the
+  // load-bearing part and a refresh that lands on the next look is soon enough.
+  router.get('/ideas-landed/audit', (req, res) => {
+    res.json(landing.auditSummary());
+    if (req.query.recheck !== '0') landing.kickReachabilityRecheck();
+  });
+
+  // What was picked on one card, for the card itself to show.
+  router.get('/ideas-landed/for/:promptId', (req, res) => {
+    const rows = landing.listForPrompt(req.params.promptId)
+      .map((r) => ({ ...r, line: landing.verdictLine(r) }));
+    res.json({ ideas: rows });
+  });
+
+  // What the terminal audit needs to settle the ideas that were picked before a
+  // witness was ever drafted for them: their own words, and the commit range of the
+  // task that was supposed to build them. The diff itself only exists on the Mac.
+  router.get('/ideas-landed/unsettled', (req, res) => {
+    res.json({ tasks: landing.unsettledByTask() });
+  });
+
+  // The answers coming back. One verdict per idea; anything unrecognised is stored as
+  // 'not_checked', so a confused reply can never turn into an accusation.
+  router.post('/ideas-landed/verdicts', (req, res) => {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    let n = 0;
+    for (const it of items) {
+      if (!it || !it.id) continue;
+      if (landing.recordVerdict(it.id, { verdict: it.verdict, note: it.note || null })) n++;
+    }
+    res.json({ recorded: n });
+  });
+
+  // The one button. Queues the missing half as a paused follow-up carrying the same
+  // idea, so its own check closes the loop when it ships.
+  router.post('/ideas-landed/:id/fix', asyncHandler(async (req, res) => {
+    const out = await landing.queueFix(req.params.id);
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    res.json(out);
+  }));
 
   return router;
 }

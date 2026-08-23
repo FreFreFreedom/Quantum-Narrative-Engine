@@ -40,6 +40,7 @@ import { eagerCardLine, clearCardLine } from './cardLines.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
 import { conciseQuestionPayload, conciseResult } from '../lib/concise.js';
 import { syncFromTask } from './treeSync.js';
+import { recordApplied, attachWitnesses, pickTextFrom, listForPrompt as listAppliedFor, recordFixPrompt as recordFixPromptFor } from './inspireLanding.js';
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const NOTIFY_WEBHOOK_URL = process.env.NOTIFY_WEBHOOK_URL || '';
@@ -289,6 +290,21 @@ export async function createPrompt({
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
     (willDraft || plan_source === 'own') ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
 
+  // Every idea that arrived with the card gets its own durable row, so the audit
+  // can ask later whether it actually got built. inspire_picks_json above is the
+  // card's own copy; it is destroyed whenever a rewrite sweep replaces the report.
+  if (preInsp) {
+    for (const a of preInsp.applied) {
+      recordApplied({
+        prompt_id: id, report_id: preInsp.report.id,
+        part_index: a.part_index, pick_index: a.pick_index,
+        pick_kind: a.kind, pick_name: a.name,
+        pick_text: pickTextFrom(preInsp.report.id, a.part_index, a.pick_index),
+        how: 'at_creation',
+      });
+    }
+  }
+
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
   if (willInspire && !preInsp) {
@@ -391,6 +407,9 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
       ${parentId ? 'parent_prompt_id=?, same_context=1,' : ''}
       plan_pending=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(finalTitle, finalPrompt, resolved, ...(parentId ? [parentId] : []), id);
+  // Same free witness as the applyInspiration path: when the ideas travelled with the
+  // card from the start, the very first draft is where their proof comes from.
+  if (draft?.ideaProofs?.length) attachWitnesses(id, draft.ideaProofs);
   if (contextNote) addMessage(id, { role: 'agent', text: contextNote });
   if (changedNote) addMessage(id, { role: 'agent', text: `Part of this looks already done — ${changedNote}. The brief covers what is left.` });
 
@@ -675,6 +694,22 @@ export async function applyInspiration(id, { picks = [] } = {}) {
       return { ...row, error: 'steer_failed' };
     }
     addMessage(id, { role: 'user', text: steerText });
+    // The hole this closes: until now this branch wrote nothing structured at all —
+    // inspire_picks_json is untouched and the state never becomes 'applied', so an
+    // idea picked while the card was running left only the message above and was
+    // invisible to every later question about what was applied.
+    for (const a of applied) {
+      recordApplied({
+        prompt_id: id, report_id: report.id,
+        part_index: a.part_index, pick_index: a.pick_index,
+        pick_kind: a.kind, pick_name: a.name,
+        pick_text: pickTextFrom(report.id, a.part_index, a.pick_index),
+        how: 'steer',
+        // No plan draft runs on this path, so nothing writes a real witness. A
+        // guessed one may confirm an idea landed; it may never conclude it did not.
+        witness_source: 'guessed',
+      });
+    }
     db.prepare(`UPDATE work_prompts SET inspire_sel_json='[]' WHERE id=?`).run(id);
     broadcast();
     return { ...getPrompt(id), steered: true };
@@ -694,6 +729,21 @@ export async function applyInspiration(id, { picks = [] } = {}) {
       space: row.space,
       inspiration: { report_id: report.id, picks: applied.map((a) => ({ part_index: a.part_index, pick_index: a.pick_index })) },
     });
+    // createPrompt already recorded these against the follow-up card (how:
+    // 'at_creation'). What is added here is the back-pointer on the ORIGINAL card,
+    // so it can say "you queued the rest of it" instead of going on asking.
+    for (const a of applied) {
+      recordApplied({
+        prompt_id: row.id, report_id: report.id,
+        part_index: a.part_index, pick_index: a.pick_index,
+        pick_kind: a.kind, pick_name: a.name,
+        pick_text: pickTextFrom(report.id, a.part_index, a.pick_index),
+        how: 'followup', witness_source: 'guessed',
+      });
+      const back = listAppliedFor(row.id).find(r =>
+        r.part_index === a.part_index && r.pick_index === a.pick_index && r.report_id === report.id);
+      if (back) recordFixPromptFor(back.id, created.id);
+    }
     db.prepare(`UPDATE work_prompts SET inspire_sel_json='[]' WHERE id=?`).run(id);
     broadcast();
     return { ...created, followup: true };
@@ -703,11 +753,23 @@ export async function applyInspiration(id, { picks = [] } = {}) {
     UPDATE work_prompts SET inspire_picks_json=?, inspire_state='applied', inspire_sel_json='[]',
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
   `).run(JSON.stringify(applied), id);
+  for (const a of applied) {
+    recordApplied({
+      prompt_id: id, report_id: report.id,
+      part_index: a.part_index, pick_index: a.pick_index,
+      pick_kind: a.kind, pick_name: a.name,
+      pick_text: pickTextFrom(report.id, a.part_index, a.pick_index),
+      how: 'plan',
+    });
+  }
   const draft = await draftPlan({ title: row.title, prompt: row.raw_prompt || row.prompt, mode: row.mode, inspiration: digest });
   if (draft) {
     db.prepare(`
       UPDATE work_prompts SET title=?, prompt=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
     `).run(draft.title, draft.brief, id);
+    // The one place a real witness comes from. It rides on the draft call that was
+    // going to happen anyway, so proving the idea costs nothing extra.
+    if (draft.ideaProofs && draft.ideaProofs.length) attachWitnesses(id, draft.ideaProofs);
   }
   broadcast();
   return getPrompt(id);
@@ -1815,6 +1877,7 @@ async function answerInspireQuestion(row, text, userId) {
     db.prepare(`
       UPDATE work_prompts SET title=?, prompt=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
     `).run(draft.title, draft.brief, row.id);
+    if (draft.ideaProofs?.length) attachWitnesses(row.id, draft.ideaProofs);
   }
   broadcast();
   if (fresh.status === 'queued') advanceQueue();

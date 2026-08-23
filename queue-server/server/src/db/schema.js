@@ -348,6 +348,13 @@ function initSchema(db) {
   // the world before there was one — see reviewRunner.js#judgeTask.
   try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_review TEXT`); } catch {}
 
+  // What became of the world ideas Antoine ticked onto this task, as JSON:
+  // {ran, items:[{part_index, pick_index, verdict, note}], error}. Produced on the
+  // Mac beside ship_review (services/ideaLanded.js) and riding back on the same
+  // result POST. NULL means no check ran, and must read exactly like the world
+  // before there was one — never as "the idea was not built".
+  try { db.exec(`ALTER TABLE agent_tasks ADD COLUMN ship_ideas TEXT`); } catch {}
+
   // The agent roster, as data (plan Part 1). Created here BEFORE agent_tasks
   // because node:sqlite enforces foreign keys by default — the REFERENCES above
   // needs the table to exist. Seeded with the roster rows in step 3
@@ -1210,6 +1217,47 @@ export function initDiscoverySchema(db) {
       PRIMARY KEY (report_id, part_index, pick_index)
     )
   `);
+
+  // ─── One row per world idea Antoine actually applied to a card ───────────────
+  // Until this table existed there was no durable record of an applied idea at
+  // all, only two columns on the card that three separate things could destroy:
+  //   - the running/steer path never wrote them (promptQueue.js applyInspiration),
+  //     so an idea picked mid-flight left nothing but a chat message;
+  //   - the follow-up path wrote them onto the NEW card, not the one they came from;
+  //   - rewriteWorldLooks nulls inspire_picks_json when it replaces a report
+  //     (codeDiscovery.js), erasing the history outright.
+  //
+  // pick_text is the load-bearing column: a SNAPSHOT of what the idea said, taken
+  // at the moment it was applied. A pick has no id — its identity is its position
+  // inside a report — so the text is the only thing a rewrite sweep cannot reach.
+  //
+  // verdict is deliberately four-valued. 'not_checked' is not a failure and must
+  // never be shown as one: it is what every broken path produces (no model, a
+  // truncated diff, the runner off, a guessed witness that missed).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inspire_applications (
+      id TEXT PRIMARY KEY,
+      prompt_id TEXT NOT NULL,
+      report_id TEXT NOT NULL,
+      part_index INTEGER NOT NULL,
+      pick_index INTEGER NOT NULL,
+      pick_kind TEXT,
+      pick_name TEXT,
+      pick_text TEXT,
+      how TEXT NOT NULL,
+      witness_kind TEXT,
+      witness_value TEXT,
+      witness_source TEXT,
+      needs_ui INTEGER,
+      verdict TEXT,
+      verdict_note TEXT,
+      checked_at TEXT,
+      fix_prompt_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_inspire_app_prompt ON inspire_applications(prompt_id)`); } catch {}
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_inspire_app_key ON inspire_applications(prompt_id, report_id, part_index, pick_index)`); } catch {}
 }
 
 // ─── Idea Studio conversations (plan "universal-conversations-core-architecture") ──
