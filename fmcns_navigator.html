@@ -167,7 +167,22 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* The Landscape view's "parked" mark, in legend form: the same hollow circle the
    canvas draws for an entity that has no themes to be placed by. */
 .legend .dotswatch.hollow { background:var(--c-stage); box-shadow:inset 0 0 0 1.5px var(--c-ink-4); }
-.right { width:360px; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; padding:14px; flex-shrink:0; }
+.right { --details-w:360px; position:relative; width:var(--details-w); border-left:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; display:flex; flex-direction:column; min-height:0; }
+.right-inner { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:14px; }
+.right-head { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+/* Same bargain as the filters panel: the word IS the pin, and one dot says which
+   state it is in. Hollow = it slides away on its own; filled = held open. */
+.right-head-title { font-family:inherit; border:none; background:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); transition:color var(--t-fast) var(--ease); }
+.right-head-title:hover { color:var(--c-ink-2); }
+.right.pinned .right-head-title { color:var(--c-ink-2); }
+.right-head-title::after { content:''; width:5px; height:5px; border-radius:50%; border:1px solid currentColor; }
+.right.pinned .right-head-title::after { background:var(--c-accent); border-color:var(--c-accent); }
+/* The 44px face the collapsed panel leaves behind, on the right edge. Drawn at
+   every width but only shown by the min-width:821px block. */
+.right-spine { display:none; position:absolute; top:0; right:0; bottom:0; width:44px; flex-direction:column; align-items:center; gap:9px; padding:13px 0; border:none; background:none; color:var(--c-ink-4); cursor:pointer; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.right-spine:hover { color:var(--c-ink-2); }
+.right-spine .ic { width:16px; height:16px; flex:none; display:block; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+.right-spine-word { writing-mode:vertical-rl; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }
 .right h2 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); margin:0 0 8px; }
 .note { font-size:12px; line-height:1.5; margin:8px 0; font-style:italic; color:var(--c-ink-2); }
 .tagrow { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0; }
@@ -1582,7 +1597,7 @@ button:active { transform: translateY(1px) scale(.99); }
   .railbar.pinned { width:52px; }
   .railbar.pinned .rail-inner { box-shadow:var(--sh-md); }
   .left { --filters-w:190px; }
-  .right { width:300px; }
+  .right { --details-w:300px; }
   .map-sidepanel { width:260px; }
   /* Core Architecture (Phase B1): the detail pane permanently ate 330px of
      graph width on every screen size. Below tablet width it becomes an
@@ -1595,7 +1610,8 @@ button:active { transform: translateY(1px) scale(.99); }
 @media (max-width: 600px) {
   .left { --filters-w:150px; }
   .left-inner { padding:10px; }
-  .right { width:240px; padding:10px; }
+  .right { --details-w:240px; }
+  .right-inner { padding:10px; }
   .map-sidepanel { width:210px; padding:10px; }
   .ctrlbtn, .core-hbtn { padding:var(--sp-1) var(--sp-2); }
 }
@@ -1612,10 +1628,11 @@ button:active { transform: translateY(1px) scale(.99); }
   .left, .right, .map-sidepanel {
     position:absolute; top:0; bottom:0; z-index:8;
     box-shadow:var(--sh-md); transition:transform var(--t-med) var(--ease); }
-  .right, .map-sidepanel { padding:14px; }
+  .map-sidepanel { padding:14px; }
+  .right-inner { padding:14px; }
   .left { left:0; --filters-w:230px; width:var(--filters-w); max-width:80vw; transform:translateX(-100%); }
   .left-inner { padding:14px; }
-  .right { right:0; width:320px; max-width:92vw; transform:translateX(100%); }
+  .right { right:0; --details-w:320px; width:var(--details-w); max-width:92vw; transform:translateX(100%); }
   .map-sidepanel { right:0; width:300px; max-width:92vw; transform:translateX(100%); }
   .left.open, .right.open, .map-sidepanel.open { transform:none; }
   /* The room's two side zones, same treatment: the conversation keeps the full
@@ -1659,6 +1676,18 @@ button:active { transform: translateY(1px) scale(.99); }
   .left.is-open:not(.pinned) .left-inner { box-shadow:var(--sh-md); }
   .left.is-open .left-spine { opacity:0; pointer-events:none; }
   .left.pinned { width:var(--filters-w); }
+  /* The detail panel, same deal from the other side — and with one extra source of
+     "open": something being selected. There is nothing to read when nothing is
+     picked, so an empty selection lets it fold away by itself (syncRightPanelOpen). */
+  .right { width:44px; z-index:9; transition:width var(--t-med) var(--ease); }
+  .right-inner { position:absolute; top:0; right:0; bottom:0; width:44px; background:var(--c-bg);
+    border-left:1px solid var(--c-border); opacity:0; pointer-events:none;
+    transition:width var(--t-med) var(--ease), opacity var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease); }
+  .right-spine { display:flex; }
+  .right.is-open .right-inner { width:var(--details-w); opacity:1; pointer-events:auto; }
+  .right.is-open:not(.pinned) .right-inner { box-shadow:var(--sh-md); }
+  .right.is-open .right-spine { opacity:0; pointer-events:none; }
+  .right.pinned { width:var(--details-w); }
 }
 </style>
 </head>
@@ -1855,7 +1884,16 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
   <div class="right">
-    <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
+    <div class="right-inner">
+      <div class="right-head">
+        <button type="button" class="right-head-title" id="detailsPin" aria-pressed="false" title="Keep the details open (or press \ )">Details</button>
+      </div>
+      <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
+    </div>
+    <button type="button" class="right-spine" id="detailsSpine" title="Details — keep them open (or press \ )" aria-label="Details">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg>
+      <span class="right-spine-word">Details</span>
+    </button>
   </div>
 </div>
 <div id="coreApp" data-src="CORE ARCHITECTURE tab | fmcns_navigator.html: coreApp shell (slim header + three-zone workspace), initCore()/switchCoreView()/renderWorkspace() | backend: services/architecture.js, services/promptQueue.js, routes/travaux.js, services/claudeUsage.js">
@@ -2273,6 +2311,7 @@ async function boot() {
     // filters panel the user keeps open never flashes collapsed on load.
     applyFiltersPinned(filtersArePinned());
     initFilterPanel();
+    initDetailPanel();
     initNarrowPanels();
     document.getElementById('appShell').style.display = 'flex';
     renderFacets();
@@ -4826,6 +4865,9 @@ function renderLegend(){
 function NavCtrl(container, state, applyFn, opts = {}) {
   const minScale = opts.minScale ?? 0.2, maxScale = opts.maxScale ?? 8,
     step = opts.step ?? 1.03, keyPan = opts.keyPan ?? 80, onZoom = opts.onZoom ?? null,
+    // A key press is one deliberate act and has to move the view visibly; a wheel
+    // notch is one of dozens. They cannot share a step.
+    keyStep = opts.keyStep ?? 1.25,
     fitFn = opts.fit ?? null, fixedViewBox = opts.fixedViewBox ?? true,
     momentumEnabled = opts.momentum ?? true, dragThreshold = opts.dragThreshold ?? 8,
     // 'live' (the default, i.e. what Map mode and the Architecture graph keep doing)
@@ -4947,8 +4989,20 @@ function NavCtrl(container, state, applyFn, opts = {}) {
   container.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!drag.moved && Math.hypot(dx, dy) > dragThreshold) { drag.moved = true; if (drag.pan) container.classList.add('nav-panning'); }
-    if (drag.moved && drag.pan) panBy(dx, dy);
+    if (!drag.moved && Math.hypot(dx, dy) > dragThreshold) {
+      drag.moved = true;
+      if (drag.pan) container.classList.add('nav-panning');
+      // Re-anchor the origin the instant the gesture is recognised, so the view does
+      // not jump by the threshold distance the moment it engages.
+      drag.sx = state.x - dx; drag.sy = state.y - dy;
+    }
+    // ABSOLUTE, not relative. This used to call panBy(dx, dy) — but dx/dy are measured
+    // from where the gesture STARTED and drag.x is never advanced, so every pointermove
+    // added the whole accumulated distance again. Ten events into a 40px drag the view
+    // had travelled hundreds of pixels, which is why dragging felt violently
+    // oversensitive rather than merely fast. sx/sy were already being captured on
+    // pointerdown for exactly this; nothing was reading them.
+    if (drag.moved && drag.pan) { state.x = drag.sx + dx; state.y = drag.sy + dy; applyFn(); }
   });
   const endDrag = () => {
     if (drag) {
@@ -5010,8 +5064,13 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     else if (e.key === 'ArrowRight') { e.preventDefault(); panBy(-stepPx, 0); if (onZoom) onZoom(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); panBy(0, stepPx); if (onZoom) onZoom(); }
     else if (e.key === 'ArrowDown') { e.preventDefault(); panBy(0, -stepPx); if (onZoom) onZoom(); }
-    else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomAt(step, state.x + container.clientWidth / 2, state.y + container.clientHeight / 2); if (onZoom) onZoom(); applyFn(); }
-    else if (e.key === '-') { e.preventDefault(); zoomAt(1 / step, state.x + container.clientWidth / 2, state.y + container.clientHeight / 2); if (onZoom) onZoom(); applyFn(); }
+    // zoomAt() takes a point in STAGE coordinates, so the middle of the view is
+    // (clientWidth/2, clientHeight/2). It used to be handed state.x + clientWidth/2,
+    // which is a world offset added to a screen distance — so every keypress zoomed
+    // about a point somewhere off screen and the graph slid sideways as it grew.
+    // And keyStep, not step: one wheel notch of 1.06 is nothing to press a key for.
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomAt(keyStep, container.clientWidth / 2, container.clientHeight / 2); if (onZoom) onZoom(); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomAt(1 / keyStep, container.clientWidth / 2, container.clientHeight / 2); if (onZoom) onZoom(); }
     else if (e.key === '0') { e.preventDefault(); if (homeFn) homeFn(); else { state.x = 0; state.y = 0; state.scale = 1; } applyFn(); if (onZoom) onZoom(); }
     else if (e.key.toLowerCase() === 'f' && fitFn) { e.preventDefault(); fitFn(); if (onZoom) onZoom(); }
   });
@@ -5858,16 +5917,81 @@ function initRail() {
     }
   });
 }
-// The right panel has nothing to show once there's no entity, edge, or cluster
-// selected — so an empty selection collapses it via the same .open class the
-// narrow-window rail button below toggles manually, instead of a parallel
-// mechanism. Call this right after any assignment to focusedId/focusedEdge/
-// activeCluster so the panel never falls out of sync with what it's showing.
-function syncRightPanelOpen() {
-  const right = document.querySelector('#app .right');
+// ---------- The detail panel ----------
+// The mirror of the filters panel on the other side, with one extra source of
+// "open": a selection. There is nothing to read when nothing is picked, so an
+// empty selection lets the panel fold back to its spine on its own — and picking
+// something opens it again without a click. Hover peeks it, and clicking the word
+// "Details" pins it for good, exactly as on the left.
+// Call syncRightPanelOpen() right after any assignment to focusedId/focusedEdge/
+// activeCluster so the panel never falls out of sync with what it is showing.
+const DETAILS_PIN_KEY = 'fmcns.detailsPinned';
+let detailsCloseTimer = null;
+function detailPanel() { return document.querySelector('#app .right'); }
+function detailsHaveSubject() { return !!(focusedId || focusedEdge || activeCluster); }
+function openDetails() {
+  clearTimeout(detailsCloseTimer); detailsCloseTimer = null;
+  const right = detailPanel();
+  if (right) right.classList.add('is-open');
+}
+function closeDetailsSoon() {
+  const right = detailPanel();
+  if (!right || right.classList.contains('pinned')) return;
+  clearTimeout(detailsCloseTimer);
+  detailsCloseTimer = setTimeout(() => {
+    detailsCloseTimer = null;
+    // A subject still selected, the mouse still on it, or a button inside it still
+    // focused all keep it open — the same three reprieves the filters panel gives.
+    if (detailsHaveSubject() || right.contains(document.activeElement) || right.matches(':hover')) return;
+    right.classList.remove('is-open');
+  }, FILTERS_CLOSE_MS);
+}
+function applyDetailsPinned(on) {
+  const right = detailPanel();
   if (!right) return;
-  if (focusedId || focusedEdge || activeCluster) right.classList.add('open');
-  else right.classList.remove('open');
+  right.classList.toggle('pinned', on);
+  if (on) openDetails(); else closeDetailsSoon();
+  const pin = document.getElementById('detailsPin');
+  if (pin) {
+    pin.setAttribute('aria-pressed', String(on));
+    pin.title = on ? 'Let the details slide away again' : 'Keep the details open (or press \\ )';
+  }
+}
+function syncRightPanelOpen() {
+  const right = detailPanel();
+  if (!right) return;
+  // .open is the narrow-window overlay (the button in the graph bar); .is-open is
+  // the collapsed-to-a-spine behaviour above 820px. Both follow the selection.
+  right.classList.toggle('open', detailsHaveSubject());
+  if (detailsHaveSubject()) openDetails(); else closeDetailsSoon();
+}
+function initDetailPanel() {
+  const right = detailPanel();
+  if (!right) return;
+  const setPin = (on) => {
+    applyDetailsPinned(on);
+    try { localStorage.setItem(DETAILS_PIN_KEY, on ? '1' : '0'); } catch (e) {}
+  };
+  right.addEventListener('mouseenter', openDetails);
+  right.addEventListener('mouseleave', closeDetailsSoon);
+  right.addEventListener('focusin', openDetails);
+  right.addEventListener('focusout', closeDetailsSoon);
+  const spine = document.getElementById('detailsSpine');
+  if (spine) spine.onclick = () => setPin(true);
+  const pin = document.getElementById('detailsPin');
+  // e.detail is 0 for keyboard activation, which must keep its place; a mouse click
+  // has to let go, or the focus it leaves behind holds the panel open.
+  if (pin) pin.onclick = (e) => { setPin(!right.classList.contains('pinned')); if (e.detail) pin.blur(); };
+  let on = false;
+  try { on = localStorage.getItem(DETAILS_PIN_KEY) === '1'; } catch (e) {}
+  applyDetailsPinned(on);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && right.contains(document.activeElement)) { document.activeElement.blur(); return; }
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    // '\' pins the details, after the rail's '[' and the filters' ']'.
+    if (e.key === '\\') { e.preventDefault(); setPin(!right.classList.contains('pinned')); }
+  });
 }
 // ---------- The filters panel ----------
 // Collapsed to a 44px spine unless you reach for it, on the same two-states-one-
