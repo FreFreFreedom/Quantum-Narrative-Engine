@@ -2135,10 +2135,16 @@ button:active { transform: translateY(1px) scale(.99); }
                   </select>
                 </label>
               </div>
-              <div class="q-row">
+<div class="q-row">
                 <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Starts at once — no world-look, no plan draft. For small tasks.">
                   <input type="checkbox" id="qRunRaw">
                   Run raw — skip inspiration &amp; planning (fastest)
+                </label>
+              </div>
+              <div class="q-row">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="I'll run this task myself in OpenCode, not the automated runner">
+                  <input type="checkbox" id="qManualRun">
+                  I'll run this myself in OpenCode
                 </label>
               </div>
               <div class="q-row">
@@ -6739,6 +6745,21 @@ function initCore() {
     document.querySelectorAll('[data-core-tab]').forEach(b => { b.onclick = () => switchCoreView(b.getAttribute('data-core-tab')); });
     document.getElementById('qAddBtn').onclick = () => qAddPrompt(false);
     document.getElementById('qSetAsideBtn').onclick = () => qAddPrompt(true);
+    // "I'll run this myself in OpenCode" — hides the provider/model pickers
+    // because the task will be run manually in a terminal, not by the runner.
+    document.getElementById('qManualRun').onchange = function() {
+      const prov = document.getElementById('qProvider');
+      const model = document.getElementById('qOpenModel');
+      const prevDisplay = this.dataset.prevProvDisplay || '';
+      if (this.checked) {
+        this.dataset.prevProvDisplay = prov.style.display || '';
+        prov.style.display = 'none';
+        model.style.display = 'none';
+      } else {
+        prov.style.display = this.dataset.prevProvDisplay || '';
+        model.style.display = this.dataset.prevProvDisplay || '';
+      }
+    };
     // Event delegation for flow type tabs - handles dynamically rendered buttons
     const flowTypeBtns = document.getElementById('flowTypeBtns');
     if (flowTypeBtns) {
@@ -10596,6 +10617,7 @@ async function qAddPrompt(asPaused) {
   const btn = document.getElementById('qAddBtn');
   btn.disabled = true; btn.textContent = asPaused ? 'Setting aside…' : 'Adding…';
   const provider = document.getElementById('qProvider').value;
+  const manualRun = document.getElementById('qManualRun').checked;
   const isOpen = provider === 'opencode';
   const isAiRouter = provider === 'ai-router';
   const usesModelPicker = isOpen || isAiRouter;
@@ -10625,10 +10647,21 @@ async function qAddPrompt(asPaused) {
       // plan_source:'skip' already means "no drafted plan" server-side, and
       // promptQueue.js now also treats it as "skip inspiration" for the same reason.
       plan_source: document.getElementById('qRunRaw').checked ? 'skip' : 'auto',
+      // "I'll run this myself in OpenCode" — excludes this task from the
+      // automated runner's advanceQueue() selection.
+      manual_run: manualRun ? 1 : 0,
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
     document.getElementById('qRunRaw').checked = false;
+    document.getElementById('qManualRun').checked = false;
+    // Restore provider/model visibility if manual run was checked
+    {
+      const prov = document.getElementById('qProvider');
+      const model = document.getElementById('qOpenModel');
+      const prev = document.getElementById('qManualRun').dataset.prevProvDisplay;
+      if (prev !== undefined) { prov.style.display = prev; model.style.display = prev; }
+    }
     document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x.getAttribute('data-pl') === 'last'));
     await qLoad();
   } catch (e) {

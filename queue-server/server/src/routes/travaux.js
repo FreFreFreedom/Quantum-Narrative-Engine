@@ -194,5 +194,19 @@ export function travauxRoutes() {
     res.json(out);
   }));
 
+  // ── Manual complete (oc ship) ─────────────────────────────────────────────
+  // Called by `oc ship` from inside an `oc task` worktree after pushing the branch.
+  // Creates the same kind of review row the automated flow does, so the existing
+  // ship pipeline (review pass, publish, "Put it back") takes over unchanged.
+  router.post('/prompts/:id/manual-complete', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { branch, head_sha } = req.body || {};
+    if (!branch) return res.status(400).json({ error: 'branch is required' });
+    const queue = await import('../services/promptQueue.js');
+    const result = await queue.manualComplete(id, { branch, head_sha });
+    if (!result.ok) return res.status(500).json({ error: result.error });
+    res.json({ ok: true, review_id: result.review_id, status: result.status });
+  }));
+
   return router;
 }

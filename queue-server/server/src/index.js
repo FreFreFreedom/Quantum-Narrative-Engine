@@ -46,7 +46,7 @@ import { bindTagCommunitiesDb, buildTagCommunities } from './services/tagCommuni
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
 import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
-import { bindAiTextDb, migrateSecondAccountFirst } from './services/ai/text.js';
+import { bindAiTextDb, migrateSecondAccountFirst, migratePlanDraftModel } from './services/ai/text.js';
 import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
@@ -121,6 +121,13 @@ try {
   const migrated = migrateSecondAccountFirst();
   if (!migrated.skipped) console.log(`Second-account-first policy: moved ${migrated.changed} feature default(s) onto the second Claude account.`);
 } catch (e) { console.error('Second-account-first migration failed:', e.message); }
+
+// Point the plan_draft feature at Claude Code / Sonnet (plan "opencode-terminals-as-a-second-lane", Part 5).
+// Flag-guarded, runs once, ever.
+try {
+  const planMigrated = migratePlanDraftModel();
+  if (!planMigrated.skipped && planMigrated.changed) console.log('Plan-draft model: updated to claude-code/sonnet.');
+} catch (e) { console.error('Plan-draft migration failed:', e.message); }
 
 // Repopulate ontology + knowledge data on every boot. Not because the DB is wiped —
 // production keeps it on a volume (CLAUDE.md, "Production data IS durable") — but so a

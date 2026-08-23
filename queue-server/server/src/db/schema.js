@@ -197,6 +197,7 @@ function initSchema(db) {
   // 'deep' (big builds — full plan on the strongest free model). Judged by a
   // zero-cost heuristic at creation; drives model + plan-speed choices only.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN task_tier TEXT NOT NULL DEFAULT 'standard'`); } catch {}
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN manual_run INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (
@@ -537,6 +538,7 @@ function initSchema(db) {
   // looked like the panel not saving. A migration that keeps running is not a
   // migration, it is a standing rule -- and this one must not be.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN second_account_first_done INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN plan_draft_model_migrated INTEGER NOT NULL DEFAULT 0`); } catch {}
   // Monthly ceiling on the ONE paid lane in the app: gpt-4o for Idea Studio
   // conversations (see services/billingGuard.js and services/openaiSpend.js).
   // Unlike every other budget here, going over does not degrade an optional

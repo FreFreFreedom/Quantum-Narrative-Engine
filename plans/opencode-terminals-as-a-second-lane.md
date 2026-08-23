@@ -4,6 +4,22 @@
 |---|---|
 | **PLANNED** | 2026-08-23 |
 
+**2026-08-23 — implementation attempt found broken, crash bugs fixed, not yet verified
+end-to-end.** Parts 0-5 were coded (uncommitted) in this working directory, but three
+pieces would have failed the moment they actually ran: `oc ship`'s server-side handler and
+the app's own plan-file auto-save both used `require(...)` inside code that only supports
+`import` (an immediate crash / a silently-caught, silently-failing write — the same "looks
+shipped, does nothing" trap `files-in-the-room.md` hit), and the git commit/push helpers
+built shell commands by string interpolation instead of passing arguments as an array — a
+plan title with a quote or a `$` in it could have broken out into another shell command.
+All four are now fixed (`generateTextDirect`-style dynamic import instead of `require`,
+`execFileSync` with an argument array instead of `execSync` with a string, the missing
+`existsSync` import added, `~/bin/oc`'s one broken `${...}` line changed to `$(...)`).
+**Not done yet**: nobody has actually run the Part 2-4 loop for real — create a
+`manual_run` task, `oc task <id>` in a real terminal, edit something, `oc ship` it, and
+watch it land in the review pipeline like an automated task would. Do that before calling
+this DONE.
+
 ## Context
 
 Started as one bug: `.claude/worktrees/opencode` — the folder Antoine's `oc qne` opens —

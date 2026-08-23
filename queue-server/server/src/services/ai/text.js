@@ -229,6 +229,33 @@ export function migrateSecondAccountFirst() {
   return { changed, skipped: false };
 }
 
+// One-time migration: point the plan_draft feature at Claude Code / Sonnet,
+// matching the never-deep ceiling already shipped for execution. The free
+// OpenCode lane was the default before this; Sonnet at normal effort is the
+// closest honest match for "medium effort" plan drafting (generateText has no
+// effort parameter on this path — effort is a taskRunner.js PRESETS concept).
+// Flag-guarded, runs once, ever.
+export function migratePlanDraftModel() {
+  if (!db) return { changed: false, skipped: true };
+  const row = db.prepare(`SELECT defaults_json, plan_draft_model_migrated FROM ai_settings WHERE id='global'`).get();
+  if (!row) return { changed: false, skipped: true };
+  if (row.plan_draft_model_migrated) return { changed: false, skipped: true };
+  let defaults = {};
+  try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: false, skipped: true }; }
+  const current = defaults.plan_draft;
+  // Only migrate if unset or still on the old opencode default
+  if (current && current.provider === 'claude-code' && current.model === 'sonnet') {
+    db.prepare(`UPDATE ai_settings SET plan_draft_model_migrated=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`).run();
+    refreshAiSettings();
+    return { changed: false, skipped: true };
+  }
+  defaults.plan_draft = { provider: 'claude-code', model: 'sonnet' };
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, plan_draft_model_migrated=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(defaults));
+  refreshAiSettings();
+  return { changed: true, skipped: false };
+}
+
 // ─── Stall memory ────────────────────────────────────────────────────────────
 // A free model that answered nothing at all inside the timeout is not
 // quota-exhausted (the router's ledger, which needs a reset window, would be the

@@ -145,6 +145,7 @@ export async function createPrompt({
   component_id = null, provider = null, provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null, thought_id = null, inspiration = null, is_group = false,
+  manual_run = 0,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -1443,7 +1444,7 @@ export function advanceQueue() {
 
   const slots = getMaxParallelQuestions() - runningQuestions;
   if (slots > 0) {
-    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND plan_pending=0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
+    const questions = db.prepare(`${SELECT()} AND status='queued' AND mode='question' AND same_context=0 AND plan_pending=0 AND manual_run = 0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at LIMIT ?`).all(slots);
     for (const q of questions) {
       const agentKey = q.agent_key || pickAgentFor(q, runningByAgent) || 'dev1';
       started.push(startPrompt(q, { agentKey }));
@@ -1471,7 +1472,7 @@ export function advanceQueue() {
   // Still held here, deliberately: plan_pending (the brief is being written, so there is
   // nothing final to run yet) and pending_question (it waits for the owner, never starts
   // on its own).
-  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND pending_question IS NULL AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
+  const queuedImpl = db.prepare(`${SELECT()} AND status='queued' AND space='fmcns' AND (mode!='question' OR same_context=1) AND plan_pending=0 AND pending_question IS NULL AND manual_run = 0 AND (resume_after IS NULL OR resume_after <= strftime('%Y-%m-%dT%H:%M:%fZ','now')) ORDER BY position, created_at`).all();
   for (const next of queuedImpl) {
     if (runningImpl.length + started.length >= MAX_CONCURRENT_WRITERS) break;
     // Auto-assign (plan "auto devs"): no agent picked → least-loaded enabled
@@ -2258,4 +2259,39 @@ export function initPromptQueue() {
     try { advanceQueue(); } catch (e) { console.error('queue: startup advance failed —', e.message); }
   }, 3000);
   timer.unref?.();
+}
+
+// ─── Manual complete (oc ship) ───────────────────────────────────────────────
+// Called by the POST /prompts/:id/manual-complete route. Creates an agent_tasks
+// row for a manually-finished task, then feeds it into the review pipeline so
+// the existing ship flow (review pass, publish, "Put it back") takes over.
+export async function manualComplete(promptId, { branch, head_sha = null } = {}) {
+  if (!db || !branch) return { ok: false, error: 'db not ready or branch missing' };
+  const row = getPrompt(promptId);
+  if (!row) return { ok: false, error: 'prompt not found' };
+
+  // Check if an agent_tasks row already exists for this prompt (e.g. if it was
+  // started by the runner and then completed manually). If so, reuse it.
+  let task = db.prepare(`SELECT * FROM agent_tasks WHERE work_prompt_id=? AND status='done' ORDER BY completed_at DESC LIMIT 1`).get(promptId);
+
+  if (!task) {
+    const taskId = randomUUID();
+    db.prepare(`INSERT INTO agent_tasks (id, kind, mode, title, status, branch, head_sha, work_prompt_id, completed_at) VALUES (?, 'queue', 'implement', ?, 'done', ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`)
+      .run(taskId, row.title || 'Manual run', branch, head_sha || null, promptId);
+    task = db.prepare(`SELECT * FROM agent_tasks WHERE id=?`).get(taskId);
+  } else {
+    db.prepare(`UPDATE agent_tasks SET branch=?, head_sha=?, status='done', completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+      .run(branch, head_sha || null, task.id);
+    task = db.prepare(`SELECT * FROM agent_tasks WHERE id=?`).get(task.id);
+  }
+
+  if (!task) return { ok: false, error: 'could not create task record' };
+
+  // Dynamic import: reviewRunner.js imports getPrompt from this same file, so a
+  // static import here would be circular (same reason onAgentTaskFinalized uses one).
+  const { createReviewForTask } = await import('./reviewRunner.js');
+  const review = createReviewForTask(task);
+  if (!review) return { ok: false, error: 'review creation failed' };
+
+  return { ok: true, review_id: review.id, status: review.status };
 }

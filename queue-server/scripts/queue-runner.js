@@ -1657,6 +1657,28 @@ function tidyWorktrees() {
     if (gitIn(RUNNER_REPO, ['worktree', 'remove', '--force', path]) !== null) removed++;
   }
 
+  // ─── Backstop pass: clean up any non-queue, non-ship worktrees that have gone stale.
+  //    This handles the case where the runner was restarted and a manual oc-* worktree
+  //    was left from a prior session. Same guards: skip if dirty, otherwise merge--
+  //    ff-only into origin/develop. Only log; never block the runner start.
+  for (const line of gitIn(RUNNER_REPO, ['worktree', 'list', '--porcelain'], { lines: true }) || []) {
+    if (!line.startsWith('worktree ')) continue;
+    const path = line.slice('worktree '.length);
+    const name = path.split('/').pop();
+    if (/^queue-[0-9a-f]{8}$/.test(name)) continue;     // already handled above
+    if (/^ship$/.test(name)) continue;                   // the persistent ship tree
+    if (/^oc-[a-z0-9-]+$/.test(name)) continue;         // manual oc worktrees — same guards apply
+    if (gitIn(path, ['status', '--porcelain'])) continue; // dirty — leave well enough alone
+
+    const head = gitIn(path, ['rev-parse', 'HEAD']);
+    const merged = head && gitIn(path, ['merge-base', '--is-ancestor', head, `origin/${TRUNK}`]) !== null;
+    let old = false;
+    try { old = Date.now() - statSync(path).mtimeMs > 7 * 24 * 3600 * 1000; } catch { continue; }
+    if (!merged && !old) continue;
+
+    if (gitIn(RUNNER_REPO, ['worktree', 'remove', '--force', path]) !== null) removed++;
+  }
+
   // Delete the branch too, once its work is safely on the trunk AND it has had a
   // grace period. Until 2026-08-19 branches were kept forever "just in case", which
   // is how 22 of them accumulated — every one holding work that was already in

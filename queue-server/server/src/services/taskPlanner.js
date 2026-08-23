@@ -6,6 +6,9 @@
 // raw text on any failure so a drafting problem never blocks the queue.
 
 import { generateText } from './ai/text.js';
+import { join } from 'node:path';
+import fs, { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 // Zero-cost task tiering (free-only plan §193): judge a task's size from its
 // own text — what a mini-tier can't possibly be must drift up, never the
@@ -176,6 +179,43 @@ function parseDraft(text) {
 // owner's answer to a rare quick-check question about the world-look ideas.
 // `fast` (free-only plan): mini-tier drafts skip the world-look and use the
 // short draft — one quick call, for tiny tasks whose plan cannot need nuance.
+function slugify(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'task';
+}
+
+function writePlanFile(planText, title) {
+  const slug = slugify(title);
+  const plansDir = join(process.cwd(), 'plans');
+  const planPath = join(plansDir, `${slug}.md`);
+  const heading = title ? `# ${title}` : '# Untitled plan';
+  const content = [
+    heading,
+    '',
+    planText,
+    '',
+    '**Status:** PLANNED ' + new Date().toISOString().split('T')[0] + ' — draft.',
+  ].join('\n');
+  try {
+    if (!existsSync(plansDir)) fs.mkdirSync(plansDir, { recursive: true });
+    fs.writeFileSync(planPath, content, 'utf8');
+    // execFileSync with an argument array — never a shell string — so a title
+    // containing quotes, `$`, or backticks can't break out into another command.
+    const cwd = process.cwd();
+    execFileSync('git', ['-C', cwd, 'add', `plans/${slug}.md`], { stdio: 'pipe' });
+    execFileSync('git', ['-C', cwd, 'commit', '-m', title || 'Draft plan'], { stdio: 'pipe' });
+    execFileSync('git', ['-C', cwd, 'push', 'origin', 'develop'], { stdio: 'pipe' });
+    console.log(`Plan written to ${planPath} and pushed to develop.`);
+    return planPath;
+  } catch (e) {
+    console.error(`Failed to write plan file or push: ${e.message}`);
+    return null;
+  }
+}
+
 export async function draftPlan({ title = '', prompt, mode = 'implement', inspiration = null, ownerNote = null, fast = false, repoFacts = null }) {
   const text = String(prompt || '').trim();
   if (!text) return null;
@@ -210,7 +250,10 @@ export async function draftPlan({ title = '', prompt, mode = 'implement', inspir
       claudeLastResort: true,
     });
     if (!result?.text) return null;
-    return parseDraft(result.text);
+    const draft = parseDraft(result.text);
+    // Write the drafted plan to disk and push to trunk, so worktrees can see it.
+    writePlanFile(draft, title);
+    return draft;
   } catch (e) {
     console.error('taskPlanner: draftPlan failed —', e.message);
     return null;

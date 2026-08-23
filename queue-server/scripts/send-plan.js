@@ -28,13 +28,31 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve, basename } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..', '..');                       // queue-server/scripts -> repo root
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
 const APP_URL = (process.env.APP_URL || QUEUE_URL).replace(/\/$/, '');
 
-// ─── Arguments ────────────────────────────────────────────────────────────────
+// ─── Git helpers ──────────────────────────────────────────────────────────────
+// execFileSync with an argument array, never a shell string — a plan title
+// containing quotes, `$`, or backticks can't break out into another command.
+function gitAdd(file) {
+  try { execFileSync('git', ['-C', REPO, 'add', file], { stdio: 'pipe' }); } catch (e) {
+    die(`git add failed: ${e.message}`);
+  }
+}
+function gitCommit(message) {
+  try { execFileSync('git', ['-C', REPO, 'commit', '-m', message], { stdio: 'pipe' }); } catch (e) {
+    die(`git commit failed: ${e.message}`);
+  }
+}
+function gitPush() {
+  try { execFileSync('git', ['-C', REPO, 'push', 'origin', 'develop'], { stdio: 'pipe' }); } catch (e) {
+    die(`git push failed: ${e.message}`);
+  }
+}
 
 // ─── Arguments ────────────────────────────────────────────────────────────────
  
@@ -248,6 +266,14 @@ async function main() {
     groupId = await resolveGroup();
     payload.parent_prompt_id = groupId;
   }
+
+  // ─── Plan-first: commit the plan file to the trunk before posting the task.
+  // This makes the plan visible to worktrees (automated or manual). Fail loudly
+  // and do not POST if anything goes wrong — a task pointing at a plan nobody
+  // can reach is worse than no task.
+  gitAdd(repoRelative);
+  gitCommit(title);
+  gitPush();
 
   const { status, json } = await post('/api/travaux/prompts', payload);
   if (status !== 201) {
