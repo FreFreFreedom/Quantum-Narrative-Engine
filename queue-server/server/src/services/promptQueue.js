@@ -93,6 +93,20 @@ function frontPosition(space) {
   return (row?.m ?? 1) - 1;
 }
 
+// Front of the PARKED group, which is a different thing from the front of the queue.
+// listPrompts orders by status group first and only then by position, so a paused
+// row's position competes with other paused rows and with nothing else — putting a
+// new one below the smallest paused position cannot disturb the queued order.
+//
+// Why the front and not the back: a parked task is one Antoine has to come back and
+// press start on, so the one he just filed is the one he is looking for. The old
+// nextPosition() buried each new arrival under everything he had already decided not
+// to run yet. Asked for 2026-08-23.
+function frontParkedPosition(space) {
+  const row = db.prepare(`SELECT MIN(position) AS m FROM work_prompts WHERE deleted_at IS NULL AND status='paused' AND space=?`).get(space);
+  return (row?.m ?? 1) - 1;
+}
+
 function broadcast() { broadcastAll('travaux:prompts:updated', {}); }
 
 // Providers whose task model is picked directly (provider_model), not resolved
@@ -286,7 +300,7 @@ export async function createPrompt({
   db.prepare(`
     INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : nextPosition(inSpace), chained ? 1 : 0,
+  `).run(id, label, text, initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
     (willDraft || plan_source === 'own') ? text : null, plan_source, willDraft ? 1 : 0, convo_id, thought_id, preState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote);
 

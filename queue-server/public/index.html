@@ -1166,6 +1166,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .flow-filterchip .ctrlbtn { margin-left:auto; }
 .q-unread-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--c-violet); margin-left:6px; vertical-align:middle; }
 .q-title-inline { flex:1; min-width:0; border:1px solid transparent; border-radius:4px; padding:2px 4px; font-size:12px; font-weight:600; font-family:inherit; color:var(--c-ink); background:transparent; }
+.q-title-inline.unread { font-weight:800; }
 .q-title-inline:hover { border-color:var(--c-border-2); background:var(--c-surface); }
 .q-title-inline:focus { border-color:var(--c-accent); background:var(--c-surface); outline:none; }
 .q-ahead { color:var(--c-ink-4); font-size:10.5px; font-style:italic; }
@@ -8434,8 +8435,16 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const canRerun = ['done', 'blocked', 'cancelled'].includes(p.status);
   const shipReady = !!(p.ship && ['ready', 'needs_fix', 'put_back'].includes(p.ship.state) && p.ship.review_id);
   const isLive = !!(p.ship && p.ship.state === 'live');
+  // A parked task Antoine has not opened yet. The dot and the bold title are the
+  // same two marks finished-but-unread items already carry (.uc-title.unread +
+  // .q-unread-dot) — reused rather than invented, so "not looked at yet" reads the
+  // same everywhere. Reorderable rows render their title as an <input> for inline
+  // rename, which is why the dot goes beside it instead of inside it. Opening the
+  // card clears seen_at through the POST that already exists. Asked for 2026-08-23.
+  const fresh = p.status === 'paused' && !p.seen_at;
   const titleHtml = reorderable
-    ? `<input class="q-title-inline" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
+    ? `<input class="q-title-inline${fresh ? ' unread' : ''}" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
+      + (fresh ? '<span class="q-unread-dot" title="New — you have not opened this one yet"></span>' : '')
     : `<span class="uc-title${unread ? ' unread' : ''}" title="${qEscAttr(p.title || '')}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
 
   // The one thing to press, in the order the situation demands it: answer the
