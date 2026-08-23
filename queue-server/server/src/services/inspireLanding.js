@@ -161,6 +161,38 @@ export function unresolvedForPrompt(prompt_id) {
   return listForPrompt(prompt_id).filter(r => r.verdict === 'server_only' || r.verdict === 'not_landed');
 }
 
+// How many unusable ideas each card carries, in ONE grouped query — this feeds the
+// amber ✨ badge the Flow puts on a finished card, and that endpoint runs on every
+// poll, so the count must never be one query per card. Same shape as the audit's
+// needs_work: proven not usable AND no follow-up queued yet (once the fix is queued
+// the card is handled, and an amber mark would only say "look here" twice).
+// Returns { prompt_id: count }; a missing key simply means zero.
+export function gapCountsByPrompt() {
+  if (!db) return {};
+  try {
+    const rows = db.prepare(`
+      SELECT prompt_id, COUNT(*) AS n
+      FROM inspire_applications
+      WHERE verdict IN ('server_only','not_landed') AND fix_prompt_id IS NULL
+      GROUP BY prompt_id
+    `).all();
+    return Object.fromEntries(rows.map(r => [r.prompt_id, Number(r.n) || 0]));
+  } catch { return {}; }
+}
+
+// The same gaps as one number, for the rise-from-zero notification: how many picked
+// ideas are sitting unusable with nothing queued to finish them.
+export function countUnfinishedGaps() {
+  if (!db) return 0;
+  try {
+    const row = db.prepare(`
+      SELECT COUNT(*) AS n FROM inspire_applications
+      WHERE verdict IN ('server_only','not_landed') AND fix_prompt_id IS NULL
+    `).get();
+    return Number(row?.n) || 0;
+  } catch { return 0; }
+}
+
 // ─── Saying it in a way that is worth reading ────────────────────────────────
 // One sentence, no jargon, no internal names. The idea's own name is the subject,
 // because that is the thing he recognises.
@@ -407,6 +439,55 @@ export function auditSummary() {
     landed: withLine.filter(r => r.verdict === 'landed'),
     not_checked: withLine.filter(r => !r.verdict || r.verdict === 'not_checked'),
   };
+}
+
+// ─── The nudge ───────────────────────────────────────────────────────────────
+// One notification, and only at the moment unusable ideas appear out of a clean
+// slate: previous count zero, now above it. While the number stays high nothing
+// is sent — the amber badges and the Ideas-dropped list already carry the standing
+// state, and repeating it would only teach him to ignore it. When the count
+// returns to zero the stored value resets with it, so a later rise notifies again.
+//
+// The previous count lives in app_kv, the same small key/value store
+// reachability.js caches its write-up in. A missing value means no baseline yet:
+// one is recorded silently, so turning this on never fires for an old backlog.
+// The whole thing is wrapped by its caller's contract: a lost nudge costs a line,
+// a thrown one must never delay or fail anything that matters.
+const GAP_COUNT_KEY = 'idea_gap_prev_count';
+
+export async function notifyGapRise() {
+  try {
+    const now = countUnfinishedGaps();
+    let prev = null;
+    try {
+      const row = db.prepare(`SELECT value FROM app_kv WHERE key=?`).get(GAP_COUNT_KEY);
+      if (row) prev = Number(JSON.parse(row.value));
+    } catch { prev = null; }
+    gapCountStore(now);
+    if (prev == null || !Number.isFinite(prev)) return;   // first look: baseline only
+    if (!(prev === 0 && now > 0)) return;                 // only a rise from zero speaks
+    const text = now === 1
+      ? 'Heads-up — a world idea you picked isn\'t usable yet · Core → Flow → Ideas dropped'
+      : `Heads-up — ${now} world ideas you picked aren't usable yet · Core → Flow → Ideas dropped`;
+    const url = process.env.NOTIFY_WEBHOOK_URL || '';
+    if (!url) { console.log(`[recap] ${text}`); return; }
+    const resp = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!resp.ok) console.error(`world-idea nudge not sent — webhook HTTP ${resp.status}`);
+  } catch (e) {
+    console.error('world-idea nudge skipped —', e.message);
+  }
+}
+
+function gapCountStore(n) {
+  try {
+    db.prepare(`INSERT INTO app_kv (key, value) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value,
+        updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')`)
+      .run(GAP_COUNT_KEY, JSON.stringify(n));
+  } catch { /* the count still works unrecorded */ }
 }
 
 // ─── "Finish it" ─────────────────────────────────────────────────────────────

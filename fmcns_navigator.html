@@ -902,6 +902,13 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .upill.is-ask   { background:var(--c-violet-tint);  color:var(--c-violet); }
 .upill.is-done  { background:var(--c-success-tint); color:var(--c-ink-2); }
 .upill.is-block { background:var(--c-danger-tint);  color:var(--c-danger); }
+/* A picked world idea that did not end up usable — the amber ✨ N on a finished
+   card's head line (flowQueueRow). Same pill shape as .upill on purpose; its own
+   class so a gap is never mistaken for a status. Both themes come from variables. */
+.q-idea-gap { display:inline-flex; align-items:center; gap:3px; flex:none;
+              padding:1px 7px; border-radius:10px; font-size:var(--fs-xs);
+              font-weight:var(--fw-medium); white-space:nowrap;
+              background:var(--c-warn-tint); color:var(--c-warn); cursor:inherit; }
 /* ---------- One chip ----------
    Which part of the app this touches, or what kind of thing it is. The app had
    eight classes drawing this same small rounded label at four sizes; they are all
@@ -2021,7 +2028,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="tv-body" id="tvBodyMind"></div>
       </div>
     </div>
-    <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done) + the New-prompt composer | fmcns_navigator.html: renderFlow(), qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js">
+    <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done; finished cards carry an amber ✨ N badge when a picked world idea isn't usable yet) + the New-prompt composer | fmcns_navigator.html: renderFlow(), flowQueueRow() idea-gap badge, qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js (idea_gaps), services/inspireLanding.js">
       <div id="corePaneFlow" class="core-pane" data-src="CORE ARCHITECTURE → Flow | fmcns_navigator.html: renderFlow() into #tvBodyFlow, item detail into the right zone | backend: services/promptQueue.js, services/suggestions.js, services/workIdeas.js">
 <div class="tv-toolbar">
         <div class="tv-toolbar-top">
@@ -2119,7 +2126,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="flow-runner-banner" style="font-size:12px;color:var(--c-ink-4);">
           <div id="qRunnerState" style="display:none;"></div>
         </div>
-        <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list | fmcns_navigator.html: renderFlow()"></div>
+        <div class="tv-body" id="tvBodyFlow" data-src="CORE ARCHITECTURE → Flow → the aggregated list (finished cards: amber ✨ idea-gap badge; Ideas-dropped tab: queued-fix rows open their task) | fmcns_navigator.html: renderFlow(), flowQueueRow(), renderLandedFlow()/wireNbLanded()"></div>
       </div>
     </div>
     <div class="ws-room" id="wsRoom" data-src="CORE ARCHITECTURE → Room: the roaming conversations (threads | the conversation | the attached cards) | fmcns_navigator.html: initRoom()/loadRoom()/renderRoom(), painted by studioEmbed() | backend: /api/convos/open, /api/convos/:id/subjects, /api/convos/:id/rename, services/conversations.js">
@@ -8463,11 +8470,20 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   // line about what it did. They said the same thing twice, so the result wins —
   // once the work exists, what happened is the more useful of the two.
   const resultHtml = finished ? qResultLineHtml(p) : '';
+  // A picked world idea that did not end up usable, marked on the finished card
+  // itself — before this you had to open the card or the Ideas-dropped list to know.
+  // Amber on purpose: attention, not alarm. Only PROVEN gaps light it (the server
+  // never counts 'not_checked' — a missing answer is not a finding). The normal
+  // click opens the card, where the details already are.
+  const ideaGap = finished && Number(p.idea_gaps) > 0
+    ? `<span class="q-idea-gap" title="A world idea you picked isn't usable yet — open this card">✨ ${Number(p.idea_gaps)}</span>`
+    : '';
   return `
   <div class="uc uc--row${sel ? ' is-sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="uc-head">
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
       ${titleHtml}
+      ${ideaGap}
       ${taskPillHtml(p, st)}
       ${cardActs(primary, menu)}
     </div>
@@ -12635,11 +12651,34 @@ function renderLandedFlow() {
 
 function landedQueuedHtml(queued) {
   if (!queued || !queued.length) return '';
+  // Each row carries its follow-up task's id, and is clickable because of it —
+  // the pointer and hover come free from .uc--row, same as every sibling row.
   return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">Already queued to be finished</span></div>`
-    + queued.map(r => `<div class="uc uc--row"><div class="uc-head"><span class="uc-title">${qEsc(r.pick_name || '')}</span></div></div>`).join('');
+    + queued.map(r => `<div class="uc uc--row"${r.fix_prompt_id ? ` data-qfix="${qEscAttr(r.fix_prompt_id)}"` : ''}><div class="uc-head"><span class="uc-title">${qEsc(r.pick_name || '')}</span></div></div>`).join('');
 }
 
 function wireNbLanded(host) {
+  // A queued-fix row opens that paused task's card. Same mechanism the
+  // neighbouring Flow rows use to open a task — select it out of the loaded list,
+  // mark it seen, re-render — with one difference forced by where it sits: this is
+  // the Ideas-dropped tab, and the opened card lives under All/Parked, so the tab
+  // switches too or the click would visibly do nothing.
+  host.querySelectorAll('.uc[data-qfix]').forEach(el => {
+    el.onclick = async () => {
+      const id = el.getAttribute('data-qfix');
+      let p = qPrompts.find(x => x.id === id);
+      if (!p) { try { await qLoad(); } catch {} p = qPrompts.find(x => x.id === id); }
+      if (!p) return;
+      if (!p.seen_at) {
+        p.seen_at = '1';
+        apiWrite(`/api/travaux/prompts/${id}/seen`, 'POST').catch(() => {});
+      }
+      qSelected = p;
+      flowSideSel = null;
+      flowType = 'all';
+      renderFlow();
+    };
+  });
   host.querySelectorAll('[data-landed-fix]').forEach(b => {
     b.onclick = async (e) => {
       e.stopPropagation();
