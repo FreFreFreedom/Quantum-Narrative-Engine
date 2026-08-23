@@ -945,6 +945,24 @@ async function runTask(task) {
   rule();
   console.log(bold(cyan(`▶ ${task.title || task.id}`)));
   const chain = await modelChain();
+  // An explicit per-task model pick is honoured, by moving it to the front of the
+  // chain rather than replacing it. Until now this runner built its chain and never
+  // looked at task.provider_model at all, so choosing a model in the app changed
+  // nothing — the row value was decorative (found 2026-08-22). Front-of-chain, not
+  // sole-model, is deliberate: the pick still passes the isQuarantined filter and the
+  // dead-lane skip below, so a benched pick or an exhausted plan degrades to the
+  // normal chain instead of failing the task outright. Only the two opencode lanes
+  // are accepted — third-party direct-billed prefixes (google/*, alibaba/*) must
+  // never auto-run, same rule as the server's (providers/index.js).
+  const picked = (task.provider_model || '').trim();
+  if (picked && /^opencode(-go)?\//.test(picked)) {
+    const at = chain.indexOf(picked);
+    if (at !== -1) chain.splice(at, 1);
+    chain.unshift(picked);
+    console.log(dim(`  Model picked for this task: ${picked}`));
+  } else if (picked) {
+    console.log(yellow(`  Ignoring the picked model ${picked} — not an OpenCode lane.`));
+  }
   // Priority lane: a task queued for Claude tries the Claude Code CLI FIRST, then
   // falls through to the existing opencode chain (Go, then free) if Claude can't or
   // shouldn't run it. claudeGate() is what keeps that from being wasteful — see the
