@@ -803,14 +803,28 @@ export async function backfillInspirationReviews() {
 // included) instead of making them wait. Idempotent: tasks with a report or an
 // in-flight pass are skipped; refreshInspiration() dedups an already-running pass
 // via `_inspiring`. Reuses the free-model-first seam; never throws.
+//
+// Two subtleties that both earned their keep (2026-08-22, after done tasks sat
+// permanently shelf-less):
+//   • 'skipped' rows are INCLUDED when the skip was written by the daily-budget
+//     gate in startInspiration (its error text is the marker). That gate promises
+//     "re-opens at UTC midnight" — without this arm the sweep never went back,
+//     and the promise was a lie. A human's own "Start without inspiration"
+//     writes inspire_error=NULL, so those stay respected.
+//   • The order is shuffled: oldest-first meant the same handful of ancient
+//     always-failing rows occupied the whole LIMIT every sweep, starving every
+//     newer task behind them.
 export async function autoWorldLookTasks({ limit = 16 } = {}) {
   const rows = db.prepare(`
     SELECT id, title, raw_prompt, prompt
     FROM work_prompts
     WHERE mode='implement' AND deleted_at IS NULL
-      AND (inspire_state IS NULL OR inspire_state IN ('off','failed'))
       AND inspire_report_id IS NULL
-    ORDER BY created_at ASC
+      AND (
+        inspire_state IS NULL OR inspire_state IN ('off','failed')
+        OR (inspire_state = 'skipped' AND inspire_error LIKE 'Daily helper budget%')
+      )
+    ORDER BY RANDOM()
     LIMIT ?
   `).all(limit);
   let ran = 0, skipped = 0, failed = 0;

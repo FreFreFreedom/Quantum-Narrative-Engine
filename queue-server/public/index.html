@@ -7973,6 +7973,33 @@ async function qLoad() {
       if (changed && !qTypingGuard() && !qChatPending) qRenderDetail(fresh);
     }
   }
+  qWarmInspireShelves();
+}
+
+// Shelves pre-warm. The world-ideas panel used to fetch only when a card was
+// opened, so every fresh page load opened on "Loading shelves…" — worst for done
+// tasks, which are exactly the ones you browse. Now each list load quietly
+// fetches every task's already-researched shelves in small staggered batches.
+// Each fetch is a local read on the server (no model calls), but it is still one
+// request per task, hence the batches; the once-a-minute gate keeps the 4s poll
+// from rescanning constantly, and qFetchInspire's busy-guard makes this race-free
+// against a click on the same card.
+let _qInspireWarmAt = 0;
+function qWarmInspireShelves() {
+  if (Date.now() - _qInspireWarmAt < 60000) return;
+  _qInspireWarmAt = Date.now();
+  const need = qPrompts.filter(p => p.mode === 'implement' && p.inspire_report_id)
+    .filter(p => {
+      const c = qInspireCache[p.id];
+      return !c || c.state !== p.inspire_state || c.report_id !== p.inspire_report_id;
+    });
+  let i = 0;
+  const batch = () => {
+    for (const p of need.slice(i, i + 4)) qFetchInspire(p);
+    i += 4;
+    if (i < need.length) setTimeout(batch, 800);
+  };
+  batch();
 }
 
 function qReorderableIds() {
