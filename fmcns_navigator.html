@@ -1436,6 +1436,40 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .arch-list-status { font-size:10px; color:var(--c-ink-4); flex-shrink:0; }
 .arch-list-empty { font-size:12px; color:var(--c-ink-4); padding:20px 4px; }
 
+/* ---------- Lifecycle board (Concept · Planned · Building · Live · Retired) ---- */
+/* Deliberately plain (plan §5): this is the view for working through things, the
+   Map is the view for understanding the shape. Five equal columns that scroll
+   independently, one card per component, nothing else. Every colour is a variable
+   so both themes come for free — the board is DOM, not canvas. */
+.arch-boardwrap { position:absolute; inset:0; overflow:hidden; display:flex; gap:10px; padding:14px 16px 76px; }
+.arch-bcol { flex:1 1 0; min-width:0; display:flex; flex-direction:column; border:1px solid var(--c-border); border-radius:8px; background:var(--c-surface); }
+.arch-bcol.is-drop { border-color:var(--c-ink-4); background:var(--c-surface-2); }
+.arch-bcol.is-derived { background:transparent; border-style:dashed; }
+.arch-bcol-head { display:flex; align-items:baseline; gap:7px; padding:8px 10px 7px; border-bottom:1px solid var(--c-border); }
+.arch-bcol-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-2); }
+.arch-bcol-count { font-size:10px; color:var(--c-ink-4); margin-left:auto; }
+.arch-bcol-body { flex:1; overflow:auto; padding:6px; display:flex; flex-direction:column; gap:4px; }
+.arch-bcard { display:flex; align-items:center; gap:6px; padding:6px 7px; border-radius:6px; border:1px solid var(--c-border); background:var(--c-surface); cursor:pointer; min-width:0; transition:background .12s ease, border-color .12s ease; }
+.arch-bcard:hover { background:var(--c-surface-2); }
+.arch-bcard.selected { box-shadow:inset 0 0 0 1px var(--c-ink-4); background:var(--c-surface-2); }
+.arch-bcard.is-drag { opacity:.45; }
+.arch-bcard[draggable="true"] { cursor:grab; }
+/* The one visual distinction between a built component (derived from real queries,
+   read-only) and a planted idea: a solid bar on the leading edge. */
+.arch-bcard.is-built { border-left:3px solid var(--c-brand); }
+.arch-bcard.is-spec { border-left:3px dashed var(--c-violet); }
+.arch-bcard-name { font-size:11.5px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.arch-bcard-status { font-size:9.5px; color:var(--c-ink-4); flex-shrink:0; }
+.arch-bcard .card-actions { margin:0; padding:0; border-top:none; flex:none; gap:0; }
+.arch-bcard:hover .card-actions, .arch-bcard .card-actions:focus-within { opacity:1; }
+.arch-bcard .cardbtn { width:21px; height:21px; }
+.arch-bcard .cardbtn .ic { width:12px; height:12px; }
+.arch-bcol-empty { font-size:10.5px; color:var(--c-ink-4); padding:8px 4px; }
+/* Bottom-RIGHT, not left: the Ask bar is absolutely positioned bottom-left over
+   this same stage, and the Board draws no zoom buttons, so the right corner is the
+   one that is free. */
+.arch-boardnote { position:absolute; right:16px; bottom:16px; max-width:46%; font-size:10.5px; color:var(--c-warn); text-align:right; }
+
 .tt-specnote { border-left:3px solid var(--c-violet); padding-left:10px; font-size:11.5px; color:var(--c-ink-3); line-height:1.6; }
 .tt-specnote a { color:var(--c-violet); cursor:pointer; text-decoration:underline; }
 .arch-specbtn { width:100%; padding:8px 12px; border-style:dashed; border-color:var(--c-violet); background:var(--c-violet-tint-2); color:var(--c-violet); font-size:12px; font-weight:600; margin-top:10px; }
@@ -1831,7 +1865,7 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
   <div class="ws-shell">
-    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage() with three layouts — Checklist (archDrawChecklist()), Tech Tree (archDrawTree()) and Map, a zoomable d3.pack() circle-packing on #archMapCanvas (paintArchMap()/requestArchMapRender(), umbrella grouping from GET /api/architecture/umbrellas, colour = status ramp, area = nodes beneath, click-to-zoom via archMapTap()/archMapFitTo()); initBlocks() into #tvBodyBlocks | backend: services/architecture.js, services/umbrellas.js, services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
+    <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage() with four layouts — Checklist (archDrawChecklist()), Tech Tree (archDrawTree()), Map (a zoomable d3.pack() circle-packing on #archMapCanvas: paintArchMap()/requestArchMapRender(), umbrella grouping from GET /api/architecture/umbrellas, colour = status ramp, area = nodes beneath, click-to-zoom via archMapTap()/archMapFitTo(), umbrellas past PRESSURE_LIMIT ringed) and Board (the lifecycle board: archDrawBoard()/archBoardCell()/archSetLifecycle(), five columns Concept · Planned · Building · Live · Retired, drag between Concept and Retired only, derived columns read-only). Map and Board both fold the app’s 25 built parts in beside the planted ideas (archMapHierarchyRoot()/archMapComponents(), status from GET /api/architecture/components) without ever writing them into architecture_nodes — one picture, still one source of truth per fact. initBlocks() into #tvBodyBlocks | backend: services/architecture.js (NOW_COMPUTERS), services/umbrellas.js (PRESSURE_LIMIT), services/architectureNodes.js (MANUAL_LIFECYCLE_STATES), services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
       <div class="arch-inner-tabs">
         <button class="active" data-arch-tab="graph">Graph</button>
         <button data-arch-tab="blocks">Building blocks</button>
@@ -1844,6 +1878,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button class="active" data-arch-layout="list" title="Compact checklist grouped by territory — best for tracking progress">Checklist</button>
             <button data-arch-layout="techtree" title="Dependency columns by build order — shows what unlocks what">Tech Tree</button>
             <button data-arch-layout="map" title="Circle-packed groups — click a group to zoom into it">Map</button>
+            <button data-arch-layout="board" title="Concept → Planned → Building → Live → Retired. Drag a Concept or Retired card between those two columns; the rest the app fills in itself.">Board</button>
           </span>
           <span class="arch-statusseg arch-segdivider" role="group" aria-label="Status filter">
             <button class="active" data-arch-status="all" title="Show everything">All</button>
@@ -12487,6 +12522,7 @@ function archRedrawCurrent() {
   // The map is a canvas whose picture is a pure function of the camera and the data,
   // so "redraw" is a repaint — rebuilding it would throw away the zoom and the fly.
   if (archLayout === 'map') { requestArchMapRender(); return; }
+  if (archLayout === 'board') { archDrawBoard(); return; }
   // archDrawTree writes a fresh SVG at natural size, so the current zoom has to be
   // re-applied or every redraw (an edges toggle, a filter change) silently resets it.
   if (archLayout === 'techtree') { archDrawTree(); applyArchTransform(); }
@@ -12798,6 +12834,186 @@ function archDrawChecklist() {
 }
 
 
+// ---------- Lifecycle board: Concept · Planned · Building · Live · Retired ----------
+// Plan: an-architecture-that-knows-what-it-is.md §5, fragment
+// plans/fragments/13-architecture-lifecycle-board.md.
+//
+// Deliberately plain. The Map is the view for understanding the shape of the tree;
+// this is the view for working through it, so it is five columns of one-line cards
+// and nothing else.
+//
+// It is also the place where the app stops keeping TWO accounts of itself. Until
+// now the 79 planted ideas (architecture_nodes) and the 25 built parts (the trunk,
+// whose status is computed live from real DB queries in NOW_COMPUTERS) were shown
+// in different places, so "what is this app" had two answers and neither was whole.
+// Both are on this board, and both are on the Map. The built parts are NOT written
+// into architecture_nodes — they are derived on every read, and copying them into
+// the table would recreate exactly the two-sources-of-truth bug this removes.
+//
+// One correction to the fragment brief, the same shape as the two fragment 12 made
+// and for the same reason — the data contradicts the plan and the data wins. The
+// brief says all 25 built components enter as Live. Two of them do not exist: the
+// live computation for `observation-layer` and `pattern-engine` returns status
+// Concept and text that says, in so many words, "not built as its own layer". A
+// computed status is proof either way, so those two sit in Concept, where they are
+// telling the truth, and the other 23 sit in Live. Nothing is asserted here that a
+// real query did not say.
+const ARCH_BOARD_COLUMNS = [
+  { id: 'concept',  label: 'Concept',  manual: true,  note: 'Nothing has started on it yet. Drop a card here to bring it back.' },
+  { id: 'planned',  label: 'Planned',  manual: false, note: 'The app fills this in: a task for it is waiting in the queue.' },
+  { id: 'building', label: 'Building', manual: false, note: 'The app fills this in: a task for it is running right now.' },
+  { id: 'live',     label: 'Live',     manual: false, note: 'The app fills this in: its proof was found in the code, or it is a built part whose state comes from a real query.' },
+  { id: 'retired',  label: 'Retired',  manual: true,  note: 'Was built and is not there any more — or you moved it here yourself.' },
+];
+
+// A built component's own live-computed status IS its proof, so that status decides
+// its column: Prototype and up is running code, Concept is the computation saying it
+// does not exist yet.
+function archComponentLifecycle(c) {
+  return ARCH_STAGE_ORDER.indexOf(c.status || 'Concept') >= 2 ? 'live' : 'concept';
+}
+
+// Where a card sits, and — when the app worked that out rather than being told —
+// the one line that says what proved it. A non-empty `why` is what makes a card
+// read-only: `why` and "cannot be dragged" are the same fact, never two.
+function archBoardCell(c) {
+  const when = (t) => (t ? new Date(t).toLocaleDateString() : '');
+  if (!c._stored) {
+    // A trunk component can also have a stored row of its own (loadArchNodes merges
+    // onto the trunk object without flagging it `_stored`), and if a task is on it
+    // right now that is the more useful thing to say than "built". Still read-only:
+    // a task running is derived too.
+    if (c.lifecycle === 'planned')  return { state: 'planned',  built: true, why: 'A task for this is waiting in the queue.' };
+    if (c.lifecycle === 'building') return { state: 'building', built: true, why: 'A task for this is running right now.' };
+    const state = archComponentLifecycle(c);
+    const seen = when(c.last_verified_at);
+    return {
+      state,
+      built: true,
+      why: state === 'live'
+        ? `Built part of the app — ${c.status || 'Working'} by its own live check${seen ? `, last run ${seen}` : ''}.`
+        : `Built parts are checked live, and this check says it is not there yet${seen ? ` (last run ${seen})` : ''}.`,
+    };
+  }
+  const state = ARCH_BOARD_COLUMNS.some(k => k.id === c.lifecycle) ? c.lifecycle : 'concept';
+  const proof = `${witnessKindLabel(c.witness_kind) || 'proof'} ${c.witness_value || ''}`.trim();
+  if (state === 'planned')  return { state, why: 'A task for this is waiting in the queue.' };
+  if (state === 'building') return { state, why: 'A task for this is running right now.' };
+  if (state === 'live')     return { state, why: `Its ${proof} was found in the code${c.witness_first_ok_at ? `, first on ${when(c.witness_first_ok_at)}` : ''}.` };
+  // Retired two ways: the checker retired it (a proof that used to pass stopped
+  // passing), or a hand moved it here. Only the second one can be moved back.
+  if (state === 'retired' && c.witness_ok === false && c.witness_first_ok_at) {
+    return { state, why: `Its ${proof} used to be there and is not any more.` };
+  }
+  return { state, why: '' };
+}
+
+let _archBoardDragId = null;
+let _archBoardNote = '';
+
+function archBoardCardHtml(c, cell) {
+  const spec = c.provenance === 'speculative';
+  const movable = !cell.why && !!c._stored;
+  const cls = ['arch-bcard', cell.built && 'is-built', spec && 'is-spec', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
+  const title = [c.name, cell.why].filter(Boolean).join(' — ');
+  return `<div class="${cls}" data-bcard="${c.id}" ${movable ? 'draggable="true"' : ''} title="${qEsc(title)}">
+      <span class="arch-bcard-name">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
+      <span class="arch-bcard-status">${qEsc(c.status || 'Concept')}</span>
+      ${archCardActions(c)}
+    </div>`;
+}
+
+function archDrawBoard() {
+  const host = document.getElementById('archBoardHost');
+  if (!host) return;
+  const pool = archPool().filter(c => !archFilteredOff(c));
+  const cols = {};
+  ARCH_BOARD_COLUMNS.forEach(k => { cols[k.id] = []; });
+  pool.forEach(c => {
+    const cell = archBoardCell(c);
+    (cols[cell.state] || cols.concept).push({ c, cell });
+  });
+  // Planted ideas above the built substrate, then alphabetical. Same instinct as
+  // the rest of the tab: the frontier reads first, what is already there sits under it.
+  const order = (a, b) => (a.cell.built ? 1 : 0) - (b.cell.built ? 1 : 0) || a.c.name.localeCompare(b.c.name);
+  host.innerHTML = ARCH_BOARD_COLUMNS.map(col => {
+    const items = cols[col.id].sort(order);
+    return `<div class="arch-bcol${col.manual ? '' : ' is-derived'}" data-bcol="${col.id}">
+      <div class="arch-bcol-head" title="${qEsc(col.note)}">
+        <span class="arch-bcol-title">${qEsc(col.label)}</span>
+        <span class="arch-bcol-count">${items.length}</span>
+      </div>
+      <div class="arch-bcol-body">
+        ${items.length ? items.map(it => archBoardCardHtml(it.c, it.cell)).join('') : '<div class="arch-bcol-empty">—</div>'}
+      </div>
+    </div>`;
+  }).join('') + (_archBoardNote ? `<div class="arch-boardnote">${qEsc(_archBoardNote)}</div>` : '');
+
+  host.querySelectorAll('[data-bcard]').forEach(card => {
+    const id = card.getAttribute('data-bcard');
+    card.onclick = (e) => { if (e.target.closest('.cardbtn')) return; selectArchNode(id); };
+    if (card.getAttribute('draggable') !== 'true') return;
+    card.addEventListener('dragstart', (e) => {
+      _archBoardDragId = id;
+      card.classList.add('is-drag');
+      try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
+    });
+    card.addEventListener('dragend', () => { _archBoardDragId = null; card.classList.remove('is-drag'); });
+  });
+  // Only the two columns a person owns accept a drop. A derived column never lights
+  // up, so a drag that would overwrite something the app worked out has nowhere to land.
+  host.querySelectorAll('[data-bcol]').forEach(colEl => {
+    const state = colEl.getAttribute('data-bcol');
+    const col = ARCH_BOARD_COLUMNS.find(k => k.id === state);
+    if (!col || !col.manual) return;
+    colEl.addEventListener('dragover', (e) => {
+      if (!_archBoardDragId) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
+      colEl.classList.add('is-drop');
+    });
+    // dragleave also fires when the cursor crosses onto a card INSIDE the column, so
+    // the highlight has to check it is really leaving before dropping it — otherwise
+    // the whole column flickers as you move over its contents.
+    colEl.addEventListener('dragleave', (e) => {
+      if (e.relatedTarget && colEl.contains(e.relatedTarget)) return;
+      colEl.classList.remove('is-drop');
+    });
+    colEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      colEl.classList.remove('is-drop');
+      const id = _archBoardDragId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+      _archBoardDragId = null;
+      if (id) archSetLifecycle(id, state);
+    });
+  });
+  archWireCardBtns(host);
+}
+
+// The board's one write. Optimistic, so the card lands where it was dropped, and
+// rolled straight back if the server refuses — which it does whenever the state it
+// would overwrite turns out to be derived after all (a task queued on the node in
+// the moment between the board being drawn and the card being dropped).
+async function archSetLifecycle(id, state) {
+  const c = ARCH_BY_ID[id];
+  if (!c || !c._stored || c.lifecycle === state) return;
+  const prev = c.lifecycle;
+  c.lifecycle = state;
+  _archBoardNote = '';
+  archDrawBoard();
+  try {
+    const out = await apiWrite(`/api/architecture/nodes/${id}`, 'PATCH', { lifecycle: state });
+    if (out && out.node && out.node.lifecycle) c.lifecycle = out.node.lifecycle;
+  } catch (e) {
+    c.lifecycle = prev;
+    _archBoardNote = e.message === 'lifecycle_derived'
+      ? 'The app decides that one for itself — a task on it, or its proof in the code.'
+      : 'Could not save that move.';
+  }
+  archDrawBoard();
+  if (archSelected === id) renderArchDetail(id);
+}
+
 // ---------- Map layout: the zoomable circle-packed map ----------
 // Plan: an-architecture-that-knows-what-it-is.md §4, fragment
 // plans/fragments/12-architecture-packed-map.md.
@@ -12879,14 +13095,69 @@ function requestArchMapRender() {
 async function archMapLoad(force) {
   if (archMapLoading) return;
   // Already loaded: re-packing would also re-fit, which would throw away the camera
-  // on every re-render. Only build if there is no packing yet.
-  if (archMapData && !force) { if (!archMapRoot) archMapBuild(); else requestArchMapRender(); return; }
+  // on every re-render. Only build if there is no packing yet — or if the built set
+  // folded into it has actually changed (which happens once, when the component
+  // statuses land after a Map-first page load).
+  if (archMapData && !force) {
+    if (!archMapRoot || _archMapCompSig !== archMapCompSig()) archMapBuild();
+    else requestArchMapRender();
+    return;
+  }
   archMapLoading = true; archMapErr = null;
   requestArchMapRender();
   try { archMapData = await api('/api/architecture/umbrellas'); }
   catch (e) { archMapErr = (e && e.message) || 'could not load'; }
   archMapLoading = false;
   archMapBuild();
+}
+
+// The app's own built parts, folded into the umbrella hierarchy on every build
+// (fragment 13). They are NOT rows in architecture_nodes and must never be written
+// there: they are derived on every read from real DB queries, and copying them into
+// the table would put the same fact in two places — which is the bug this merge
+// exists to remove. So the merge happens here, in the drawing, and nowhere else.
+//
+// It is also what finally gives the Map real mass at the solid end of its status
+// ramp: until now every circle on it was a Concept idea.
+function archMapComponents() {
+  return ARCH_DATA.filter(c => !c._stored && !c.proposed);
+}
+// Cheap signature of the built set, so a build that lands before the component fetch
+// does (Map opened straight from a cold page) is rebuilt once when the statuses
+// arrive — and never rebuilt after that, since re-packing also re-fits the camera.
+function archMapCompSig() {
+  return archMapComponents().map(c => c.id + ':' + (c.status || '')).join('|');
+}
+let _archMapCompSig = null;
+
+// Where a built part lands: the umbrella already holding the most ideas of that
+// component's territory — the same majority-territory reasoning archMapUmbrellaColor()
+// uses in the other direction, deterministic and needing no new field. Components
+// whose territory nothing else shares go to the smallest umbrella, so the leftovers
+// spread instead of piling into one group.
+function archMapHierarchyRoot() {
+  const root = archMapData && archMapData.root;
+  if (!root || !(root.children || []).length) return null;
+  const groups = root.children.map(g => ({ ...g, children: (g.children || []).slice() }));
+  const terrCount = groups.map(g => {
+    const t = {};
+    (g.children || []).forEach(ch => { if (ch.territory) t[ch.territory] = (t[ch.territory] || 0) + 1; });
+    return t;
+  });
+  archMapComponents().forEach(c => {
+    let pick = 0, best = -Infinity;
+    groups.forEach((g, i) => {
+      const score = (terrCount[i][c.territory] || 0) * 1000 - g.children.length;
+      if (score > best) { best = score; pick = i; }
+    });
+    groups[pick].children.push({
+      id: c.id, name: c.name, value: 1, status: c.status || 'Concept',
+      territory: c.territory, provenance: 'canon', component: true,
+      summary: c.summary || '', what: c.what || '',
+    });
+    terrCount[pick][c.territory] = (terrCount[pick][c.territory] || 0) + 1;
+  });
+  return { ...root, children: groups };
 }
 
 // d3.pack() over the hierarchy as it arrives. Leaves carry value 1, so a circle's
@@ -12897,7 +13168,8 @@ function archMapBuild() {
   archMapRoot = archMapNodes = archMapFocusNode = null;
   _archMapFitted = false;
   _archMapTerrCache.clear();
-  const root = archMapData && archMapData.root;
+  const root = archMapHierarchyRoot();
+  _archMapCompSig = archMapCompSig();
   if (root && (root.children || []).length) {
     const h = d3.hierarchy(root)
       .sum(d => (d.children && d.children.length) ? 0 : (d.value || 1))
@@ -13050,10 +13322,14 @@ function archMapMove(ev) {
   if (id === archMapHover) return; // same circle — nothing to repaint or re-title
   archMapHover = id;
   const c = hit && hit.depth >= 2 ? ARCH_BY_ID[hit.data.id] : null;
+  // Leaf: what it is and what proved it (the board's own sentence, so the two views
+  // never drift apart). Umbrella: how much it holds, and whether that is over the limit.
+  const note = c ? (archBoardCell(c).why || archLifecycleNote(c)) : '';
   _archMapCv.title = hit
     ? (hit.depth >= 2
-        ? hit.data.name + ' · ' + (hit.data.status || 'Concept') + (c && archLifecycleNote(c) ? ' — ' + archLifecycleNote(c) : '')
-        : hit.data.name + ' · ' + hit.value + ' component' + (hit.value === 1 ? '' : 's'))
+        ? hit.data.name + ' · ' + (hit.data.status || 'Concept') + (note ? ' — ' + note : '')
+        : hit.data.name + ' · ' + hit.value + ' component' + (hit.value === 1 ? '' : 's')
+            + (hit.data.over_pressure ? ` — over its limit of ${hit.data.pressure_limit || 7}` : ''))
     : '';
   requestArchMapRender();
 }
@@ -13101,6 +13377,16 @@ function paintArchMap() {
     ctx.fillStyle = col; ctx.fill();
     ctx.globalAlpha = focused ? 0.9 : 0.42;
     ctx.strokeStyle = col; ctx.lineWidth = (focused ? 2.4 : 1.4) / s; ctx.stroke();
+    // The pressure rule, surfaced and nothing more (umbrellas.js PRESSURE_LIMIT = 7,
+    // returned per umbrella as `over_pressure`). A second ring just outside the
+    // group: it is holding more than it can carry. Whether it splits or something
+    // inside it retires is Antoine's call, never the app's — so there is no action here.
+    if (u.data.over_pressure) {
+      ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 4 / s, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.2 / s;
+      ctx.setLineDash([5 / s, 4 / s]); ctx.stroke(); ctx.setLineDash([]);
+    }
   });
 
   // 2. Leaves, shaded by status. Retired is drawn hollow — it was built and is not
@@ -13128,6 +13414,14 @@ function paintArchMap() {
       // the faint end of the ramp sits close to the umbrella wash behind it.
       ctx.globalAlpha = dim ? 0.12 : (dark ? 0.34 : 0.6);
       ctx.strokeStyle = dark ? '#0c1017' : '#ffffff'; ctx.lineWidth = 1.2 / s; ctx.stroke();
+      // A built part of the app rather than a planted idea: drawn as a ring, not a
+      // disc. One distinction, no legend — a donut next to a dot is unmistakable at
+      // any zoom, and it reuses the ground colour so both themes come for free.
+      if (n.data.component) {
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 0.42, 0, Math.PI * 2);
+        ctx.globalAlpha = dim ? 0.18 : 1;
+        ctx.fillStyle = dark ? '#0c1017' : '#ffffff'; ctx.fill();
+      }
     }
     // A proposed node is not part of the tree yet — dashed, the same signal the
     // other two layouts already use for it.
@@ -13284,6 +13578,7 @@ function renderArchStage() {
     </div>
     ${archLayout === 'techtree' ? `<div class="arch-scrollwrap" id="archTreeHost"></div>`
       : archLayout === 'map' ? `<div class="arch-mapwrap" id="archMapHost"><canvas id="archMapCanvas" role="img" aria-label="Circle-packed map of the architecture, grouped into umbrellas"></canvas><div class="arch-mapnote" id="archMapNote"></div></div>`
+      : archLayout === 'board' ? `<div class="arch-boardwrap" id="archBoardHost" data-src="CORE ARCHITECTURE → graph zone → Board layout: the lifecycle board (Concept · Planned · Building · Live · Retired), planted ideas and the app's own built parts on one board | fmcns_navigator.html: archDrawBoard()/archBoardCell()/archSetLifecycle(), ARCH_BOARD_COLUMNS — manual drag between Concept and Retired only, derived columns read-only with a tooltip saying what proved them; built components enter from their live-computed status and are never written to architecture_nodes | backend: PATCH /api/architecture/nodes/:id { lifecycle } (services/architectureNodes.js#updateNode, MANUAL_LIFECYCLE_STATES), GET /api/architecture/components (services/architecture.js NOW_COMPUTERS)"></div>`
       : `<div class="arch-scrollwrap" id="archListHost"></div>`}
     <div class="arch-ask" id="archAsk">
       <div class="arch-ask-inputrow">
@@ -13344,6 +13639,9 @@ function renderArchStage() {
   });
   if (archLayout === 'techtree') { archDrawTree(); return; }
   if (archLayout === 'map') { archMapEnter(); return; }
+  // A refused move says so once. A full stage render (layout switch, filter change)
+  // is a new question, so the line does not follow you around.
+  if (archLayout === 'board') { _archBoardNote = ''; archDrawBoard(); return; }
   archDrawChecklist(); // default to list
   // (Removed a call to attachNav() here: it is a const declared inside
   // initArchNav(), so from this top-level function it threw a ReferenceError on
@@ -13502,9 +13800,14 @@ function renderArchDetail(id) {
   if (!c) { host.innerHTML = '<h2>Component</h2><div class="empty">Click a component to inspect it.</div>'; return; }
   const verified = qShipWhen(c.last_verified_at);
   const terr = TERRITORIES.find(t=>t.id===c.territory);
+  // The same cell the lifecycle board puts this on, so the two surfaces can never
+  // disagree about where a thing is. Built parts of the app have no stored
+  // `lifecycle` of their own — theirs comes from the live status computation — which
+  // is why this asks archBoardCell() rather than reading the field.
+  const cell = archBoardCell(c);
   let html = `<h2 class="arch-detail-head">Component<button id="archDetailClose" class="arch-detail-close" title="Close this panel" aria-label="Close component panel">✕</button></h2>
     <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
-    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[c.lifecycle] ? ` · ${LIFECYCLE_LABELS[c.lifecycle]}` : ''}</div>`;
+    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEsc(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
   html += `<div class="arch-field"><div class="arch-field-label">What</div>${clampHtml(c.what, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(c.why, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
