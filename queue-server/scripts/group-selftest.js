@@ -73,5 +73,19 @@ check('POST /prompts/group awaits createGroup',
 check('POST /prompts/group refuses to report success without a row',
   /if \(!row\?\.id\) return res\.status\(500\)/.test(routeSrc), true);
 
+console.log('\n— the INSERT is arithmetically sound —');
+// THE THIRD BUG, and by far the worst: the umbrella commit added `is_group` to the column
+// list and a value to .run(), but never added a `?` to VALUES. 31 columns, 30 placeholders,
+// so EVERY createPrompt threw — the queue could not accept a single new task for four
+// hours, and it looked like a silent no-op because the one route that creates a group did
+// not await the rejection. Counting is cheap; discovering this by hand was not.
+const insert = /INSERT INTO work_prompts \(([^)]*)\)\s*\n\s*VALUES \(([^)]*)\)/.exec(src);
+check('the work_prompts INSERT was found', !!insert, true);
+if (insert) {
+  const columns = insert[1].split(',').length;
+  const placeholders = (insert[2].match(/\?/g) || []).length;
+  check(`INSERT columns (${columns}) === placeholders (${placeholders})`, columns === placeholders, true);
+}
+
 console.log(failed ? `\n${failed} check(s) failed\n` : '\nall checks passed\n');
 process.exit(failed ? 1 : 0);
