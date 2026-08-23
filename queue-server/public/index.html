@@ -5384,7 +5384,7 @@ function setupZoomPan(){
   // The label reveal used to be debounced 120ms behind a zoom because each reveal
   // meant a full DOM rebuild. A repaint is cheap, so labels now follow the zoom live.
   _cnNav = NavCtrl(cv, camera, applyCamera, {
-    minScale: GRAPH_MIN_SCALE, maxScale: GRAPH_MAX_SCALE, step: 1.06, keyPan: 34,
+    minScale: GRAPH_MIN_SCALE, maxScale: GRAPH_MAX_SCALE, step: 1.04, keyPan: 22,
     onZoom: requestRender,
     home: () => frameWholeWorld(),
     // F frames the nodes; 0 (home) still snaps back to the whole-world framing, which
@@ -6036,7 +6036,7 @@ function initMap() {
   document.getElementById('mapResetBtn').onclick = mapResetZoom;
   // NavCtrl for map: pan/zoom/pinch/keyboard on the SVG.
   NavCtrl(svg, mapViewport, applyMapTransform, {
-    minScale: 0.5, maxScale: 6, step: 1.06, keyPan: 34,
+    minScale: 0.5, maxScale: 6, step: 1.04, keyPan: 22,
     momentumMode: 'release',
     momentum: !REDUCED_MOTION,
     fit: () => { mapViewport.x = 0; mapViewport.y = 0; mapViewport.scale = 1; applyMapTransform(); },
@@ -13101,7 +13101,7 @@ function attachArchNav() {
   if (!container || container._navAttached) return;
   container._navAttached = true;
   NavCtrl(container, archMapCam, applyArchMapCam, {
-    minScale: 0.18, maxScale: 8, step: 1.06, keyPan: 34,
+    minScale: 0.18, maxScale: 8, step: 1.04, keyPan: 22,
     momentumMode: 'release',
     momentum: !REDUCED_MOTION,
     fit: fitArchMap,
