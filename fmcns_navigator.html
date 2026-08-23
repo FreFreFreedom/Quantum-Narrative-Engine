@@ -1635,7 +1635,10 @@ button:active { transform: translateY(1px) scale(.99); }
    its own view's control bar (.narrow-only). Nothing here touches a width above
    820px: at full size the layout is the one that works. ---------- */
 @media (max-width: 820px) {
-  .narrow-only { display:inline-flex; }
+  .narrow-only { display:inline-flex; position:relative; z-index:9; }
+  /* Only the filters symbol lands on top of anything: it sits in the same top-left
+     corner as the panel's own "Filters" word, which steps aside for it. */
+  .left.open .left-head { padding-left:26px; }
   .left, .right, .map-sidepanel {
     position:absolute; top:0; bottom:0; z-index:8;
     box-shadow:var(--sh-md); transition:transform var(--t-med) var(--ease); }
@@ -1865,7 +1868,7 @@ button:active { transform: translateY(1px) scale(.99); }
   </div>
   <div class="mid">
     <div class="graph-controls" data-src="Content navigator → view switcher (Graph · Landscape · List) + color-by/bridge controls | fmcns_navigator.html: graph-controls handlers near initGraph()/setContentView() — Graph and Landscape are two layouts of the SAME canvas and the same pool (activeEntities()), so the switcher only changes how the pool is laid out; the bridge/show-all controls are hidden in Landscape because it draws no edges at all">
-      <button type="button" class="uicon narrow-only" id="leftRailBtn" title="Filters" aria-label="Show or hide the filters"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
+      <button type="button" class="uicon narrow-only" id="leftRailBtn" title="Filters" aria-label="Show or hide the filters" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
       <span class="ctrl-label">View</span>
       <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
       <button class="ctrlbtn" id="viewLandscapeBtn" title="The same entities with no links drawn — placed so ones sharing themes sit near each other">Landscape</button>
@@ -1882,7 +1885,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)">🎬 Enrich all films</button>
       <span id="enrichStatus" style="font-size:10.5px;color:var(--c-ink-4);"></span>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
-      <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
+      <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
     <div class="scopebar" id="scopeBar" aria-label="What the view is narrowed to" data-src="Content navigator → scope breadcrumb | fmcns_navigator.html: scopeTrail()/renderScopeBar()/scopeGoTo() — ego view, cluster, theme cluster and search, and the way back out of each"></div>
     <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | ALSO the Landscape view (the embedding map), which is this same canvas, renderer and camera laid out by MEANING instead of by connection — no edges are drawn at all, nearness IS the statement: landscapeBuild() gives every entity a sparse vector over the 106 theme communities (each tag's community, weighted by how rare that community is) plus the tags at least two entities share, takes cosine similarity, and keeps the top LS_K neighbours as invisible forceLink springs; installLayoutForces('landscape') swaps the graph's forces for those springs; an entity with no themes at all is parked honestly on an outer ring at its roman-numeral cluster's anchor (landscapeGeometry()), drawn hollow and named by the same cluster-region pass. The matrix is cached per active entity set in LS and never recomputed on a redraw | backend: GET /api/ontology/entities, /api/ontology/clusters, /api/ontology/tag-communities (services/tagCommunities.js)">
@@ -2159,7 +2162,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <g id="mapworldg"></g>
         <g id="mapdetailg"></g>
       </svg>
-      <div class="map-controls"><button class="ctrlbtn" id="mapResetBtn">Reset zoom</button><button type="button" class="uicon narrow-only" id="mapPanelBtn" title="Countries" aria-label="Show or hide the country panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg></button></div>
+      <div class="map-controls"><button class="ctrlbtn" id="mapResetBtn">Reset zoom</button><button type="button" class="uicon narrow-only" id="mapPanelBtn" title="Countries" aria-label="Show or hide the country panel" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg></button></div>
       <div class="map-legend">
         <div class="map-legend-title" id="mapLegendTitle">Integration Continuum</div>
         <div class="map-legend-bar"></div>
@@ -6181,8 +6184,12 @@ function syncRightPanelOpen() {
   const right = detailPanel();
   if (!right) return;
   // .open is the narrow-window overlay (the button in the graph bar); .is-open is
-  // the collapsed-to-a-spine behaviour above 820px. Both follow the selection.
-  right.classList.toggle('open', detailsHaveSubject());
+  // the collapsed-to-a-spine behaviour above 820px. Both follow the selection —
+  // except that a narrow-window panel clicked open stays open regardless: the
+  // click said "keep this", and the selection clearing must not overrule it.
+  if (detailsHaveSubject()) right.classList.add('open');
+  else if (!narrowPanelLocked(right)) right.classList.remove('open');
+  narrowPanelsSync();
   if (detailsHaveSubject()) openDetails(); else closeDetailsSoon();
 }
 function initDetailPanel() {
@@ -6314,26 +6321,105 @@ function syncFiltersActive() {
 }
 // Content's two rails and Map's country panel become overlays on a narrow window
 // (see the 820px block in the stylesheet). Each needs a way back, so each has a
-// symbol in its own view's control bar. Opening one closes the other, and a click
-// on the stage or the Escape key closes them — the same escape route initRail()
-// gives the side rail. Above 820px the symbols are not drawn and the .open class
-// means nothing, so this costs the full-width layout nothing.
+// symbol in its own view's control bar — and each symbol works the way the side
+// rail and the filters spine already do at full width: the mouse alone peeks the
+// panel out, a click locks it open, a second click lets go. A click on the stage
+// or the Escape key closes everything — the same escape route initRail() gives
+// the side rail. Above 820px the symbols are not drawn and the .open class means
+// nothing, so this costs the full-width layout nothing.
+const NARROW_PEEK_MS = FILTERS_CLOSE_MS;
+// Locked = clicked open. Kept on the panel itself so syncRightPanelOpen() can see
+// it: a detail panel someone deliberately locked must not be folded away by the
+// selection changing underneath it.
+function narrowPanelLocked(el) { return !!el && el.dataset.narrowLock === '1'; }
+let narrowPanelsSync = () => {};
 function initNarrowPanels() {
-  const panels = ['#app .left', '#app .right', '#mapApp .map-sidepanel']
-    .map(sel => document.querySelector(sel)).filter(Boolean);
-  const closeAll = () => panels.forEach(el => el.classList.remove('open'));
-  const toggle = (el) => {
-    const wasOpen = el.classList.contains('open');
-    closeAll();
-    if (!wasOpen) el.classList.add('open');
+  // A peek closes on its own; each panel says what, apart from the mouse and the
+  // focus, still counts as "in use". Only the detail panel has such a thing: a
+  // selection to read (the same reprieve closeDetailsSoon() gives at full width).
+  const wired = [
+    ['leftRailBtn', '#app .left', null],
+    ['rightRailBtn', '#app .right', () => detailsHaveSubject()],
+    ['mapPanelBtn', '#mapApp .map-sidepanel', null],
+  ].map(([btnId, sel, keep]) => ({
+    btn: document.getElementById(btnId), panel: document.querySelector(sel), keep, timer: null,
+  })).filter(o => o.btn && o.panel);
+  const sync = () => wired.forEach(o =>
+    o.btn.setAttribute('aria-expanded', String(o.panel.classList.contains('open'))));
+  narrowPanelsSync = sync;
+  const shut = (o) => {
+    clearTimeout(o.timer); o.timer = null;
+    o.panel.classList.remove('open');
+    delete o.panel.dataset.narrowLock;
   };
-  [['leftRailBtn', '#app .left'], ['rightRailBtn', '#app .right'], ['mapPanelBtn', '#mapApp .map-sidepanel']]
-    .forEach(([btnId, sel]) => {
-      const btn = document.getElementById(btnId);
-      const panel = document.querySelector(sel);
-      if (!btn || !panel) return;
-      btn.onclick = (e) => { e.stopPropagation(); toggle(panel); btn.blur(); };
-    });
+  const closeAll = () => { wired.forEach(shut); sync(); };
+  // No hover to peek with on a touch screen — and :hover stays stuck on whatever
+  // was tapped last, which would leave a panel that never closes — so there the
+  // symbols stay the plain click-toggle they have always been.
+  const canHover = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  const peekOpen = (o) => {
+    clearTimeout(o.timer); o.timer = null;
+    // A panel locked open on the other side is not in the way, so only the ones
+    // merely peeking give way to a new peek.
+    wired.forEach(x => { if (x !== o && !narrowPanelLocked(x.panel)) shut(x); });
+    o.panel.classList.add('open');
+    sync();
+  };
+  const peekShutSoon = (o) => {
+    if (!o.panel.classList.contains('open')) return;
+    clearTimeout(o.timer);
+    o.timer = setTimeout(() => {
+      o.timer = null;
+      if (narrowPanelLocked(o.panel)) return;
+      // Still on the symbol, on the panel it opened, holding focus inside it, or
+      // showing something that was picked on purpose: all mean "wait another beat".
+      if (o.btn.matches(':hover') || o.panel.matches(':hover')
+        || document.activeElement === o.btn || o.panel.contains(document.activeElement)
+        || (o.keep && o.keep())) return;
+      o.panel.classList.remove('open');
+      sync();
+    }, NARROW_PEEK_MS);
+  };
+  wired.forEach((o) => {
+    if (canHover) {
+      o.btn.addEventListener('mouseenter', () => peekOpen(o));
+      o.btn.addEventListener('mouseleave', () => peekShutSoon(o));
+      // Tab onto the symbol and the panel opens itself, or the keyboard could
+      // reach controls nobody can see.
+      o.btn.addEventListener('focus', () => peekOpen(o));
+      o.btn.addEventListener('blur', () => peekShutSoon(o));
+      // The open panel slides over the symbol that opened it, so once the mouse
+      // has crossed onto the panel the panel's own hover is what holds the peek.
+      o.panel.addEventListener('mouseenter', () => { if (o.panel.classList.contains('open')) peekOpen(o); });
+      o.panel.addEventListener('mouseleave', () => peekShutSoon(o));
+      o.panel.addEventListener('focusout', () => peekShutSoon(o));
+    }
+    o.btn.onclick = (e) => {
+      e.stopPropagation();
+      if (!canHover) {
+        const wasOpen = o.panel.classList.contains('open');
+        wired.forEach(shut);
+        if (!wasOpen) o.panel.classList.add('open');
+        sync(); o.btn.blur();
+        return;
+      }
+      if (narrowPanelLocked(o.panel)) {
+        // Letting go does not slam it shut under the mouse still resting on it —
+        // it goes back to being a peek, exactly as unpinning does at full width.
+        delete o.panel.dataset.narrowLock;
+        peekShutSoon(o);
+      } else {
+        wired.forEach(x => { if (x !== o) shut(x); });
+        clearTimeout(o.timer); o.timer = null;
+        o.panel.classList.add('open');
+        o.panel.dataset.narrowLock = '1';
+      }
+      sync();
+      // e.detail is 0 for keyboard activation, which must keep its place; a mouse
+      // click has to let go, or the focus left behind holds the panel open.
+      if (e.detail) o.btn.blur();
+    };
+  });
   // The stage closes an overlay so it can never trap you. The list view is left
   // out on purpose: there a click IS the selection, and closing the detail panel
   // on the way would hide the thing just picked.
@@ -6343,6 +6429,7 @@ function initNarrowPanels() {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
     if (e.key === 'Escape' && !typing) closeAll();
   });
+  sync();
 }
 // Pause queue / Server / AI Settings + the usage bars. Called from boot().
 function initRailControls() {
