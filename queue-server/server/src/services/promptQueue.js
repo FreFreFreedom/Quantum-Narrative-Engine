@@ -2226,6 +2226,11 @@ async function sendRecap(prompt, task, { stopped = false } = {}) {
   // a restart, a chain with nothing left to run — reached only NOTIFY_WEBHOOK_URL,
   // and with that unset it reached a log line. On 2026-08-23 that is exactly how a
   // blocked task went unnoticed. A broadcast costs nothing and cannot fail the task.
+  // NOTE (2026-08-23): no client subscribes to this. fmcns_navigator.html has no
+  // WebSocket at all — the Dispatch Queue deliberately polls every 4s — so the app
+  // learns about an ending from qLoad's own diff (qAnnounceEndings), not from here.
+  // Kept because it costs nothing and is the right shape for a client that does
+  // connect; do not assume the UI depends on it.
   try {
     broadcastAll('task:ended', {
       id: prompt.id,

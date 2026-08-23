@@ -919,6 +919,13 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
               padding:1px 7px; border-radius:10px; font-size:var(--fs-xs);
               font-weight:var(--fw-medium); white-space:nowrap;
               background:var(--c-warn-tint); color:var(--c-warn); cursor:inherit; }
+/* Finished and built nothing — on the card's own head line, so you never have to open
+   a card to learn it did no work. Same pill shape as .q-idea-gap; danger rather than
+   warn, because this is not "look at this later", it is "this did not happen". */
+.q-nothing-built { display:inline-flex; align-items:center; gap:3px; flex:none;
+              padding:1px 7px; border-radius:10px; font-size:var(--fs-xs);
+              font-weight:var(--fw-medium); white-space:nowrap;
+              background:var(--c-danger-tint); color:var(--c-danger); cursor:inherit; }
 /* ---------- One chip ----------
    Which part of the app this touches, or what kind of thing it is. The app had
    eight classes drawing this same small rounded label at four sizes; they are all
@@ -7920,6 +7927,85 @@ async function qRefreshRunnerState() {
   }
 }
 
+// ── Task endings, and the only place this app notices one ──────────────────────
+// There is no WebSocket here by design (see the note at the top of the queue section:
+// it polls, "simplicity over infra"). So promptQueue.js's broadcastAll('task:ended')
+// reaches no client at all, and qLoad's own diff is the only signal the frontend ever
+// gets that a task finished. That is what these read. Nothing in here may throw — the
+// poll is how the entire queue works, and an ending nobody can announce is still an
+// ending that has to be recorded.
+const Q_ENDED_STATUSES = ['done', 'blocked', 'cancelled'];
+const qEndedSeen = new Set();
+let qEndedSeeded = false;   // the first poll seeds silently; see qAnnounceEndings
+let qNotifyAsked = false;   // ask for permission once, ever, and only with news to give
+
+// The plain sentence, preferred in this order: the one the server already wrote for
+// this cause (blockedWords in promptQueue.js), then the shape of the ending, then the
+// agent's own result line. Never a status code — "blocked" is not a sentence.
+function qEndedBody(p) {
+  if (p.blocked_why) return String(p.blocked_why);
+  if (p.status === 'cancelled') return 'Stopped before it finished.';
+  if (p.status === 'blocked') return 'Stopped part-way.';
+  if (p.ship && p.ship.state === 'nothing_changed') return 'Finished — but nothing was built.';
+  return String(p.result_line || 'Finished.').slice(0, 180);
+}
+
+function qAnnounceEndings(nextList) {
+  try {
+    const finished = (nextList || []).filter(p => Q_ENDED_STATUSES.includes(p.status));
+    // The first successful poll records what is already over WITHOUT announcing it.
+    // Without this, opening the app fires one notification per task that ever finished.
+    if (!qEndedSeeded) {
+      finished.forEach(p => qEndedSeen.add(p.id));
+      qEndedSeeded = true;
+      return;
+    }
+    const fresh = finished.filter(p => !qEndedSeen.has(p.id));
+    if (!fresh.length) return;
+    // Mark them announced before trying to announce. A card that arrives bold with its
+    // unread dot is the fallback, and it works whether or not the notification does —
+    // so a failed notification must not queue itself up to retry on the next poll.
+    fresh.forEach(p => qEndedSeen.add(p.id));
+    if (typeof Notification === 'undefined') return;      // no API: the dot is the answer
+    if (Notification.permission === 'granted') { fresh.forEach(qNotifyEnded); return; }
+    if (Notification.permission === 'denied') return;     // a refusal is an answer; never ask twice
+    // Ask only now, at the first real ending — never on page load, which is the ask
+    // everybody denies.
+    if (qNotifyAsked) return;
+    qNotifyAsked = true;
+    Promise.resolve(Notification.requestPermission())
+      .then(state => { if (state === 'granted') fresh.forEach(qNotifyEnded); })
+      .catch(() => {});
+  } catch (e) { /* never let an announcement break the poll */ }
+}
+
+function qNotifyEnded(p) {
+  try {
+    const stopped = p.status !== 'done';
+    const n = new Notification(`${stopped ? 'Stopped' : 'Done'} — ${p.title || 'a task'}`, {
+      body: qEndedBody(p),
+      tag: `fmcns-task-${p.id}`,   // the browser replaces a repeat rather than stacking it
+    });
+    n.onclick = () => {
+      // Land on the card itself, not just the tab — the next thing you want is what
+      // happened, and that is inside it.
+      try {
+        window.focus();
+        setMode('core');
+        switchCoreView('flow');
+        flowSideSel = null;
+        qSelected = qPrompts.find(x => x.id === p.id) || null;
+        if (qSelected && !qSelected.seen_at) {
+          qSelected.seen_at = '1';
+          apiWrite(`/api/travaux/prompts/${p.id}/seen`, 'POST').catch(() => {});
+        }
+        renderFlow();
+      } catch (e) {}
+      n.close();
+    };
+  } catch (e) {}
+}
+
 async function qLoad() {
   let data;
   try {
@@ -7960,6 +8046,9 @@ async function qLoad() {
   const sig = JSON.stringify({ paused: data.queue_paused, prompts: sigPrompts });
   const changed = sig !== qLastSig;
   qLastSig = sig;
+  // Announce before qPrompts is overwritten — this is the one moment the frontend can
+  // see that a task has just ended.
+  qAnnounceEndings(nextPrompts);
   qPrompts = nextPrompts;
   qPaused = !!data.queue_paused;
   const badge = document.getElementById('queuePauseBadge');
@@ -8500,12 +8589,21 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const ideaGap = finished && Number(p.idea_gaps) > 0
     ? `<span class="q-idea-gap" title="A world idea you picked isn't usable yet — open this card">✨ ${Number(p.idea_gaps)}</span>`
     : '';
+  // Finished, and it changed no file. Read the explicit state ONLY: the server sets
+  // 'nothing_changed' when it actually measured the diff, and shipStateForBlocked()
+  // returns null when nothing was measured at all — so an absent p.ship means "we do
+  // not know", never "nothing was built". Inferring this from an absence would put a
+  // false accusation on a card, which is worse than saying nothing.
+  const nothingBuilt = (p.ship && p.ship.state === 'nothing_changed')
+    ? '<span class="q-nothing-built" title="It finished without changing any file — nothing was built">⚠ nothing built</span>'
+    : '';
   return `
   <div class="uc uc--row${sel ? ' is-sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="uc-head">
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
       ${titleHtml}
       ${ideaGap}
+      ${nothingBuilt}
       ${taskPillHtml(p, st)}
       ${cardActs(primary, menu)}
     </div>
@@ -10495,6 +10593,19 @@ function qRenderDetail(p) {
   // Only worth its tinted box when it actually says something — with the repeated
   // status row gone this would otherwise open the panel with an empty box.
   const primaryHint = p.status === 'paused' ? qPrimaryHintHtml(p) : '';
+  // A stopped task used to open with "Purpose" — what it was *supposed* to do — which
+  // is exactly the wrong first sentence when it did not do it. For blocked and
+  // cancelled only, what happened goes first and the field below is relabelled.
+  // qResultLineHtml returns '' when the agent left no result_line, so blocked_why has
+  // to be able to carry this on its own; and if there is neither, the box is not drawn
+  // rather than opening the panel with an empty heading.
+  const stopped = p.status === 'blocked' || p.status === 'cancelled';
+  const outcomeBits = !stopped ? '' : [
+    qResultLineHtml(p),
+    p.blocked_why ? `<div class="q-result${p.status === 'blocked' ? ' blocked' : ''}">${qEsc(p.blocked_why)}</div>` : '',
+  ].filter(Boolean).join('');
+  const outcomeHtml = outcomeBits ? `
+    <div class="arch-field"><div class="arch-field-label">What happened</div><div class="arch-field-body">${outcomeBits}</div></div>` : '';
   // A frozen preparation step is invisible from the status pill alone — it just
   // reads as "still working". This says it plainly, once, at the top, and works
   // for the plan-draft case too (the world-look panel below only exists for
@@ -10522,7 +10633,8 @@ function qRenderDetail(p) {
     <div class="q-primary-action">
       <div class="q-primary-hint" id="qPrimaryHint">${primaryHint}</div>
     </div>` : ''}
-    <div class="arch-field"><div class="arch-field-label">Purpose</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
+    ${outcomeHtml}
+    <div class="arch-field"><div class="arch-field-label">${stopped ? 'What it was meant to do' : 'Purpose'}</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
       <div class="arch-field-label">Inspired by — the world's ideas <button class="ctrlbtn" id="qAddWorldIdeaBtn" style="font-size:11px;padding:2px 8px;margin-left:8px;" title="Add your own bold idea to this task's world-look">✨ Add world idea</button></div>
