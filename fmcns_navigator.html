@@ -1215,6 +1215,12 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .q-inspire-desc.clamped { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .q-inspire-card.sel, .q-inspire-card.q-inspire-sel { border-color:var(--c-accent); background:color-mix(in srgb, var(--c-accent) 7%, var(--c-surface)); }
 .q-inspire-card.q-inspire-applied { border-color:#4f9d7a; }
+/* A picked idea that is not usable yet: the sentence, and the one button that fixes
+   it. Amber rather than red — the change did go live, this is the half that did not. */
+.q-landed-row { display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:7px 10px; margin:4px 0; font-size:12px; border-radius:6px;
+  background:rgba(184,134,11,0.09); border-left:3px solid #b8860b; }
+.q-landed-row > span { flex:1; min-width:0; }
 /* Quick check (review) markers: removed picks, alternative groups, best pick */
 .q-inspire-card.q-inspire-removed { opacity:.55; }
 .q-inspire-reason { font-style:italic; color:var(--c-ink-3); }
@@ -10261,6 +10267,55 @@ function qWirePrimaryHint(container) {
   };
 }
 
+// ─── "You picked that idea — is it actually usable?" ──────────────────────────
+// A world idea is never handed to the coding agent word for word: it is summarised,
+// given to a planning model, and rewritten into a brief. Nothing used to look again
+// after that, so an idea could evaporate, or get half built — the server side working
+// with nothing in the app calling it, which from here means the feature is not there.
+//
+// This block only ever appears when there is something to do. An idea that landed says
+// nothing, and one that could not be checked says nothing either: not knowing is not a
+// finding, and a list that pads itself with unknowns is a list you stop reading.
+async function qLandedFill(promptId) {
+  const host = document.getElementById('qLandedHost');
+  if (!host) return;
+  let rows = [];
+  try { rows = (await api(`/api/travaux/ideas-landed/for/${promptId}`)).ideas || []; }
+  catch (e) { return; }
+  const show = rows.filter(r => r.line);
+  // The panel may have been re-rendered or closed while the fetch was in the air.
+  const live = document.getElementById('qLandedHost');
+  if (!live || !show.length) { if (live) live.innerHTML = ''; return; }
+  live.innerHTML = `
+    <div class="arch-field">
+      <div class="arch-field-label">Ideas you picked</div>
+      ${show.map(r => `
+        <div class="q-landed-row">
+          <span>${qEsc(r.line)}</span>
+          ${r.fix_prompt_id ? '' : ubtnHtml('Finish it', 'landed-fix', r.id, 'is-primary', 'Queue the missing half as its own task')}
+        </div>`).join('')}
+    </div>`;
+}
+
+// Wired here rather than through qCardDispatch: this button lives inside the open
+// panel, not on a card, and it needs the panel to redraw itself afterwards.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest && e.target.closest('.q-landed-row [data-act="landed-fix"]');
+  if (!btn) return;
+  e.preventDefault();
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Queueing…';
+  try {
+    const out = await apiWrite(`/api/travaux/ideas-landed/${btn.dataset.id}/fix`, 'POST');
+    await qLoad();
+    if (qSelected && qSelected.id) qLandedFill(qSelected.id);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = was;
+    alert('Could not queue it: ' + err.message);
+  }
+});
+
 function qRenderDetail(p) {
   const host = document.getElementById('flowExpanded');
   if (!host) return;
@@ -10306,6 +10361,7 @@ function qRenderDetail(p) {
       <div class="arch-field-label">Inspired by — the world's ideas <button class="ctrlbtn" id="qAddWorldIdeaBtn" style="font-size:11px;padding:2px 8px;margin-left:8px;" title="Add your own bold idea to this task's world-look">✨ Add world idea</button></div>
       <div id="qInspireHost">${qInspireHtml(p)}</div>
     </div>` : ''}
+    ${p.mode === 'implement' ? '<div id="qLandedHost"></div>' : ''}
     <details class="q-fullprompt"><summary>Show full prompt</summary><div class="arch-field-body">${qEsc(p.prompt)}</div></details>
     ${p.raw_prompt && p.raw_prompt !== p.prompt ? `
     <div class="arch-field">
@@ -10339,6 +10395,8 @@ function qRenderDetail(p) {
     };
   }
 
+
+  qLandedFill(p.id);
 
   qRenderThread(p.id, messages);
 
@@ -12477,6 +12535,64 @@ async function nbLoadUnplanted() {
   renderNotbuilt();
 }
 
+// ─── "The ideas you picked, and whether they are actually usable" ─────────────
+// The same question as the section below, asked of one specific thing: a world idea
+// you ticked onto a card. Those never reach the coding agent word for word — they are
+// summarised, handed to a planning model, and rewritten into a brief — so an idea can
+// quietly evaporate, or get half built.
+//
+// Free to ask. The server answers it by reading its own routes and its own interface,
+// not by calling a model, which is why it can be re-asked on every look and stays true
+// as the app changes.
+let nbLanded = null, nbLandedBusy = false;
+
+async function nbLoadLanded() {
+  if (nbLandedBusy) return;
+  nbLandedBusy = true;
+  try { nbLanded = await api('/api/travaux/ideas-landed/audit'); }
+  catch (e) { nbLanded = nbLanded || null; }
+  finally { nbLandedBusy = false; }
+  renderNotbuilt();
+}
+
+function nbLandedSectionHtml() {
+  if (!nbLanded) return '';
+  let items = nbLanded.needs_work || [];
+  const q = nbSearch.trim().toLowerCase();
+  if (q) items = items.filter(it => [it.pick_name, it.line, it.prompt_title].join(' ').toLowerCase().includes(q));
+  if (!items.length) return '';
+  return `<div class="tv-toolbar-top" style="margin-top:18px;"><span class="arch-title" style="font-size:13px;">💡 Ideas you picked that aren't usable yet</span></div>
+    ${items.map(it => `
+      <div class="uc uc--row">
+        <div class="uc-head">
+          <span class="uc-title" title="${qEscAttr(it.line || '')}">${qEsc(it.pick_name || 'An idea you picked')}</span>
+          ${it.prompt_title ? `<span class="nb-terr">${qEsc(it.prompt_title)}</span>` : ''}
+          ${cardActs(ubtnRaw('Finish it', `data-landed-fix="${qEscAttr(it.id)}"`, 'is-primary', 'Queues the missing half as its own task. What is already built is left alone.'), null)}
+        </div>
+        <div class="nb-what">${qEsc(it.line || '')}</div>
+      </div>
+    `).join('')}`;
+}
+
+function wireNbLanded(host) {
+  host.querySelectorAll('[data-landed-fix]').forEach(b => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      b.disabled = true;
+      const was = b.textContent;
+      b.textContent = 'Queueing…';
+      try {
+        await apiWrite(`/api/travaux/ideas-landed/${b.dataset.landedFix}/fix`, 'POST');
+        nbLandedBusy = false;
+        await nbLoadLanded();
+      } catch (err) {
+        b.disabled = false; b.textContent = was;
+        alert('Could not queue it: ' + err.message);
+      }
+    };
+  });
+}
+
 // ─── "Built, but you can't use it yet" ────────────────────────────────────────
 // Work that landed on the server and really is finished there, but that the
 // interface never calls — so from where you sit the feature does not exist. The
@@ -12694,6 +12810,7 @@ function renderNotbuiltFlow() {
     loadNbConvos();
     nbLoadUnplanted();
     nbLoadUnreachable();
+    nbLoadLanded();
   }
   renderNotbuilt();
   // The open world-look panel: one lookup after a reload, then poll while a
@@ -12734,7 +12851,8 @@ function renderNotbuilt() {
   }
   if (!items.length) {
     host.innerHTML = '<div class="nb-empty">Nothing here — everything matching is either built or filtered out.</div>'
-      + nbUnreachableSectionHtml() + nbUnplantedSectionHtml();
+      + nbLandedSectionHtml() + nbUnreachableSectionHtml() + nbUnplantedSectionHtml();
+    wireNbLanded(host);
     wireNbUnreachable(host);
     wireNbUnplanted(host);
     return;
@@ -12800,9 +12918,11 @@ function renderNotbuilt() {
     </div>
     ${nbWorldOpen === c.id ? `<div class="nb-world" data-nbworldpanel="${c.id}">${whatText ? `<div class="arch-field"><div class="arch-field-label">What it is</div><div class="arch-field-body">${qEsc(whatText)}</div></div>` : ''}${flowWorldPanelHtml('component', c.id)}<div data-nbstudio="${c.id}"></div></div>` : ''}`;
   });
+  html += nbLandedSectionHtml();
   html += nbUnreachableSectionHtml();
   html += nbUnplantedSectionHtml();
   host.innerHTML = html;
+  wireNbLanded(host);
   wireNbUnreachable(host);
   wireNbUnplanted(host);
   // Tap anywhere on the card (except its own buttons/links) to expand the

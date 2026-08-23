@@ -6,6 +6,7 @@ import * as suggestions from '../services/workSuggestions.js';
 import { TERRITORY_IDS } from '../services/ai/appModel.js';
 import * as ideas from '../services/workIdeas.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import * as landing from '../services/inspireLanding.js';
 
 export function travauxRoutes() {
   const router = Router();
@@ -145,6 +146,33 @@ export function travauxRoutes() {
     if (out.error) return res.status(400).json(out);
     res.json(out);
   });
+
+  // ── Did the world ideas he picked actually get built? ──────────────────────
+  // The list, grouped. Free: reading rows and, unless ?recheck=0, re-asking the one
+  // question that stays true only if it is re-asked — can he reach it from the app
+  // as the app stands right now. No model, no git, no cost.
+  router.get('/ideas-landed/audit', asyncHandler(async (req, res) => {
+    if (req.query.recheck !== '0') {
+      try { await landing.auditReachability(); }
+      catch (e) { /* the list is worth more than the refresh; show what is stored */ }
+    }
+    res.json(landing.auditSummary());
+  }));
+
+  // What was picked on one card, for the card itself to show.
+  router.get('/ideas-landed/for/:promptId', (req, res) => {
+    const rows = landing.listForPrompt(req.params.promptId)
+      .map((r) => ({ ...r, line: landing.verdictLine(r) }));
+    res.json({ ideas: rows });
+  });
+
+  // The one button. Queues the missing half as a paused follow-up carrying the same
+  // idea, so its own check closes the loop when it ships.
+  router.post('/ideas-landed/:id/fix', asyncHandler(async (req, res) => {
+    const out = await landing.queueFix(req.params.id);
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    res.json(out);
+  }));
 
   return router;
 }

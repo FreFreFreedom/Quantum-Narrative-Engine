@@ -21,11 +21,13 @@ import { Router } from 'express';
 import {
   claimNextTask, recordRunnerStream, recordRunnerResult,
   noteRunnerPoll, runnerStatus, releaseStaleClaims, isLocalExecution, noteRunnerUsage,
+  findAgentTask,
 } from '../services/taskRunner.js';
 import * as queue from '../services/promptQueue.js';
 import { claimHelperJob, recordHelperResult } from '../services/ai/text.js';
 import { claimGitJob, recordGitJobResult, noteGitJobHeartbeat, strandedReviews } from '../services/gitJobs.js';
 import { markReviewLive } from '../services/reviewRunner.js';
+import { listForPrompt as listAppliedIdeas } from '../services/inspireLanding.js';
 
 export function workerRoutes() {
   const router = Router();
@@ -57,6 +59,19 @@ export function workerRoutes() {
     const task = claimNextTask({ runnerId });
     if (!task) return res.json({ none: true });
     res.json({ task });
+  });
+
+  // The world ideas Antoine ticked onto this task, with the witness the plan pass
+  // drafted for each. The runner asks for these right before it checks whether they
+  // actually landed — it needs the diff, which only exists on the Mac, and the
+  // witnesses, which only exist here.
+  //
+  // Registered ahead of /worker/:id/* so 'ideas' can never be read as a task id.
+  router.get('/worker/:id/ideas', (req, res) => {
+    const task = findAgentTask(req.params.id);
+    const promptId = task?.work_prompt_id || null;
+    if (!promptId) return res.json({ ideas: [] });
+    res.json({ ideas: listAppliedIdeas(promptId) });
   });
 
   // Registered before the /worker/:id/* routes so 'helper' can never be read as

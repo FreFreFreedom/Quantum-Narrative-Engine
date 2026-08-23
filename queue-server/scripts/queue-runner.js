@@ -41,6 +41,7 @@ import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
+import { runIdeaLanding as ideaLandingPass } from '../server/src/services/ideaLanded.js';
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk } from './git-ship.js';
 
@@ -1104,6 +1105,7 @@ async function runTask(task) {
       console.log(yellow('  Nothing was changed — reporting this as blocked, not done.'));
     }
     if (ship?.committed) ship.review = await runReviewPass({ wt, ship, task });
+    if (ship?.committed) ship.ideas = await runIdeaLandingPass({ wt, ship, task });
     await api(`/worker/${task.id}/result`, {
       status, result: report, session_id: r.sessionId, model, tried_models: tried,
       cost_usd: isClaude ? null : (r.cost || null), tokens_in: r.usage?.tokens_in ?? null, tokens_out: r.usage?.tokens_out ?? null,
@@ -1324,6 +1326,63 @@ async function runReviewPass({ wt, ship, task }) {
     // Belt to the module's own braces. A review must never be able to strand a
     // finished task, so every failure here is the same as not having run one.
     console.log(dim(`  review skipped — ${e.message}`));
+    return null;
+  }
+}
+
+// ─── Did the ideas he picked actually get built? ──────────────────────────────
+// Runs here for the same reason the review does: this is the only machine with both
+// the diff and a Claude subscription. Two of its three layers are free — the diff
+// grep and the "does the interface name it" check — and only what those cannot settle
+// costs one model call for the whole task.
+//
+// Everything about it is optional. No ideas, no witnesses, no model, no answer: all of
+// them end the same way as never having run, because a check that can accuse a task of
+// not building something it did build is worse than no check at all.
+async function runIdeaLandingPass({ wt, ship, task }) {
+  if (process.env.IDEA_CHECK_DISABLED === '1') return null;
+  try {
+    const got = await api(`/worker/${task.id}/ideas`, undefined, { method: 'GET' }).catch(() => null);
+    const ideas = got?.ideas || [];
+    if (!ideas.length) return null;
+
+    const out = await ideaLandingPass({
+      root: wt.path,
+      baseSha: ship.base_sha,
+      headSha: ship.head_sha,
+      files: ship.files_changed,
+      ideas,
+      callModel: async (prompt) => {
+        const ask = (onSide) => claudeCli.runToolless({
+          prompt, model: REVIEW_MODEL, timeoutMs: REVIEW_TIMEOUT_MS, cwd: wt.path,
+          env: claudeCli.spawnEnv(onSide ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}),
+        });
+        const side = Boolean(SIDE_TOKEN);
+        let r = await ask(side);
+        if (side && (!r || r.code !== 0)) {
+          const why = String(r?.text || r?.error || `exit ${r?.code}`);
+          if (claudeCli.detectLimit(why) || /no response|timed out|timeout/i.test(why)) r = await ask(false);
+        }
+        if (!r || r.code !== 0) throw new Error(String(r?.text || r?.error || `exit ${r?.code}`).slice(0, 200));
+        return r.text || '';
+      },
+    });
+    if (!out?.ran) {
+      console.log(dim(`  world ideas not checked — ${out?.error || 'unavailable'}`));
+      return out || null;
+    }
+    const half = out.items.filter(i => i.verdict === 'server_only').length;
+    const missing = out.items.filter(i => i.verdict === 'not_landed').length;
+    const unknown = out.items.filter(i => i.verdict === 'not_checked').length;
+    const parts = [];
+    if (half) parts.push(yellow(`${half} built with no way to use it`));
+    if (missing) parts.push(red(`${missing} not in what was built`));
+    if (unknown) parts.push(dim(`${unknown} could not be checked`));
+    if (!parts.length) parts.push(green('all of them landed'));
+    console.log(`  world ideas (${out.items.length}) — ${parts.join(', ')}${out.model_ran ? dim(' (one model call)') : dim(' (free)')}`);
+    return out;
+  } catch (e) {
+    console.log(dim(`  world ideas not checked — ${e.message}`));
     return null;
   }
 }
