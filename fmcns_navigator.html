@@ -11875,10 +11875,32 @@ async function runBkIdeaSearch() {
   const btn = document.getElementById('bkSearchBtn');
   const status = document.getElementById('bkIdeaStatus');
   btn.disabled = true; btn.textContent = 'Searching…';
-  status.textContent = 'Running GitHub search + Claude — this can take a couple of minutes for multi-part ideas.';
+  status.textContent = '';
   try {
-    const report = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: ideaText });
-    if (report.error) throw new Error(report.message || report.error);
+    const start = await apiWrite('/api/discovery/ideas', 'POST', { idea_text: ideaText });
+    if (start.started === false) {
+      // Already running for this idea.
+      status.textContent = 'Already searching — please wait.';
+      btn.disabled = false; btn.textContent = 'Search';
+      return;
+    }
+    const key = start.key;
+    // Poll until the AI pipeline finishes (≈3 s per poll, up to ~3 min).
+    let report = null;
+    let attempts = 0;
+    while (attempts < 60) {
+      await new Promise(r => setTimeout(r, 3000));
+      const s = await api('/api/discovery/ideas/status?key=' + key);
+      if (s.status === 'done') {
+        report = s.report;
+        break;
+      } else if (s.status === 'failed') {
+        throw new Error(s.error || 'search failed');
+      }
+      // running: keep looping
+      attempts++;
+    }
+    if (!report) throw new Error('timed out waiting for search');
     bkOpenReport = report;
     bkReports = null;
     status.textContent = '';

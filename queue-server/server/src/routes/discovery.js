@@ -9,6 +9,13 @@ import {
 } from '../services/codeDiscovery.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
+// ── In‑flight idea‑search tracker ──────────────────────────────────────
+// Keeps track of idea‑box searches that have been started but not yet
+// reported back to the caller.  The first poll that receives a result
+// deletes the entry, so the map stays small.
+// Each value is { status: 'pending'|'done'|'failed', report|error }.
+const ideaSearchPromises = new Map();
+
 export function discoveryRoutes(db) {
   const router = Router();
 
@@ -31,11 +38,56 @@ export function discoveryRoutes(db) {
     res.json(out);
   });
 
-  // Explicit user click only — the 2-pass AI pipeline never runs on page load.
   router.post('/ideas', asyncHandler(async (req, res) => {
-    const out = await runIdeaSearch(db, req.body || {});
-    if (out.error) return res.status(502).json(out);
-    res.json(out);
+    const ideaText = String(req.body?.idea_text || '').trim();
+    if (!ideaText) return res.status(400).json({ error: 'idea_text required' });
+    // Hash the idea text to use as a stable key (first 100 chars base64).
+    const key = btoa(ideaText.substring(0, 100));
+    // If an idea search is already running for this key, short‑circuit.
+    if (ideaSearchPromises.has(key)) {
+      return res.status(202).json({ started: false, running: true, key });
+    }
+    // Initialise a controller that the poll endpoint will read.
+    const controller = {
+      status: 'pending',
+      report: null,
+      error: null,
+    };
+    ideaSearchPromises.set(key, controller);
+    // Fire the full AI pipeline, but do NOT await it here — the response is
+    // already sent above.  When the pipeline finishes it will update the
+    // controller and the caller can poll for the result.
+    runIdeaSearch(db, { idea_text: ideaText })
+      .then((report) => {
+        controller.status = 'done';
+        controller.report = report;
+      })
+      .catch((e) => {
+        controller.status = 'failed';
+        controller.error = e.message || e.error;
+      });
+    res.status(202).json({ started: true, key });
+  }));
+
+  // Poll for the result of an idea‑box search that was started with
+  // POST /api/discovery/ideas.  Returns the stored report when ready,
+  // or { status: 'running' } while the AI pipeline is still working.
+  router.get('/ideas/status', asyncHandler(async (req, res) => {
+    const key = String(req.query.key || '');
+    if (!key) return res.status(400).json({ error: 'key required' });
+    const controller = ideaSearchPromises.get(key);
+    if (!controller) return res.status(404).json({ error: 'unknown key' });
+    if (controller.status === 'done') {
+      // First poll that has the result: delete the entry so the map stays small.
+      ideaSearchPromises.delete(key);
+      return res.json(controller.report);
+    }
+    if (controller.status === 'failed') {
+      ideaSearchPromises.delete(key);
+      return res.json({ error: controller.error });
+    }
+    // Still running.
+    res.json({ status: 'running' });
   }));
 
   router.get('/reports', (req, res) => {
