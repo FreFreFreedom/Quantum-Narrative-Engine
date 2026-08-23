@@ -1827,17 +1827,17 @@ button:active { transform: translateY(1px) scale(.99); }
       <button type="button" class="uicon narrow-only" id="leftRailBtn" title="Filters" aria-label="Show or hide the filters"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
       <span class="ctrl-label">View</span>
       <button class="ctrlbtn active" id="viewGraphBtn">Graph</button>
-      <button class="ctrlbtn" id="viewLandscapeBtn">Landscape</button>
+      <button class="ctrlbtn" id="viewLandscapeBtn" title="The same entities with no links drawn — placed so ones sharing themes sit near each other">Landscape</button>
       <button class="ctrlbtn" id="viewListBtn">List</button>
       <span class="ctrl-sep"></span>
       <span class="ctrl-label">Color by</span>
       <button class="ctrlbtn active" data-color="type">Type</button>
       <button class="ctrlbtn" data-color="cluster">Cluster</button>
-      <button class="ctrlbtn" data-color="guilt_as_engine">Guilt-as-Engine</button>
-      <button class="ctrlbtn" data-color="possession_sovereignty">Possession/Sovereignty</button>
-      <button class="ctrlbtn" id="toggleBridges">Bridges: on</button>
-      <button class="ctrlbtn" id="toggleShowAll">Show all connections</button>
-      <button class="ctrlbtn" id="resetBtn">Reset view</button>
+      <button class="ctrlbtn" data-color="guilt_as_engine" title="Colour each entity by where it sits on the guilt-as-engine axis. Unscored ones stay grey">Guilt-as-Engine</button>
+      <button class="ctrlbtn" data-color="possession_sovereignty" title="Colour each entity by where it sits on the possession/sovereignty axis. Unscored ones stay grey">Possession/Sovereignty</button>
+      <button class="ctrlbtn" id="toggleBridges" title="Green dotted links between two different kinds of thing — a character and a film, say — that score almost the same on a continuum axis">Bridges: on</button>
+      <button class="ctrlbtn" id="toggleShowAll" title="Draw every link at once, instead of only the ones touching whatever you are hovering or have selected">Show all connections</button>
+      <button class="ctrlbtn" id="resetBtn" title="Back to the whole graph, centred — clears the zoom, the pan and any ego scope">Reset view</button>
       <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)">🎬 Enrich all films</button>
       <span id="enrichStatus" style="font-size:10.5px;color:var(--c-ink-4);"></span>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
