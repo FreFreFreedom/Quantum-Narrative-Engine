@@ -1092,8 +1092,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ai-feature-table select { font-size:11px; padding:4px 6px; border:1px solid var(--c-border-2); border-radius:5px; }
 .ai-feature-name { font-weight:600; }
 .ai-feature-note { font-size:10px; color:var(--c-ink-4); }
-.ai-weight { width:34px; padding-right:0 !important; white-space:nowrap; }
-.ai-dots { font-size:8px; letter-spacing:1px; color:var(--c-ink-4); }
 .ai-row-queue td { background:var(--c-bg-2, rgba(127,127,127,.06)); }
 .ai-row-queue .ai-feature-name { color:var(--c-accent, inherit); }
 .ai-savebtn { margin-top:16px; padding:8px 16px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12px; font-weight:600; cursor:pointer; }
@@ -7463,21 +7461,20 @@ function qProviderUi() {
 // these used to be missing here, which meant they could only ever be changed
 // through the API — so where they ran was invisible from the app itself.
 // Ordered heaviest first — how much work each one asks a model to do, which is also
-// roughly how much it matters. The coding queue sits above them all as its own row;
-// cache warm-up at the bottom runs by itself and nobody waits for it. `weight` drives
-// the three dots in the first column (3 = long, tool-using work; 1 = a short call).
+// roughly how much it matters. The coding queue is the row above them all; cache
+// warm-up at the bottom runs by itself and nobody waits for it.
 const AI_FEATURES = [
-  { key: 'studio', weight: 3, label: 'Idea Studio', note: 'Turning a rough idea into something buildable' },
-  { key: 'plan_draft', weight: 3, label: 'Plan drafts', note: 'The first draft of how a task should be done' },
-  { key: 'reply', weight: 3, label: 'Chat on a task card', note: 'Answers your questions about a task — reads the code first' },
-  { key: 'inspire', weight: 2, label: 'What the world does', note: 'The outside-world look attached to each task and idea' },
-  { key: 'build', weight: 2, label: 'Suggestions', note: 'Work-suggestion and architecture-node engines' },
-  { key: 'quick', weight: 2, label: 'Quick reads', note: 'Book picks, tag lenses, pattern explanations' },
-  { key: 'umbrellas', weight: 2, label: 'Tree grouping', note: 'Re-groups the map of the app into categories it earns' },
-  { key: 'summary', weight: 1, label: 'Task summaries', note: 'Plain-language recap once a queued task finishes' },
-  { key: 'treesync', weight: 1, label: 'Tree sorting', note: 'Files the codebase into the right part of the tree' },
-  { key: 'judge', weight: 1, label: 'Model judge', note: 'Picks how much depth an auto-speed task needs' },
-  { key: 'warmup', weight: 1, label: 'Cache warm-up', note: 'Pre-generates book picks/lenses right after boot' },
+  { key: 'studio', label: 'Idea Studio', note: 'Turning a rough idea into something buildable' },
+  { key: 'plan_draft', label: 'Plan drafts', note: 'The first draft of how a task should be done' },
+  { key: 'reply', label: 'Chat on a task card', note: 'Answers your questions about a task — reads the code first' },
+  { key: 'inspire', label: 'What the world does', note: 'The outside-world look attached to each task and idea' },
+  { key: 'build', label: 'Suggestions', note: 'Work-suggestion and architecture-node engines' },
+  { key: 'quick', label: 'Quick reads', note: 'Book picks, tag lenses, pattern explanations' },
+  { key: 'umbrellas', label: 'Tree grouping', note: 'Re-groups the map of the app into categories it earns' },
+  { key: 'summary', label: 'Task summaries', note: 'Plain-language recap once a queued task finishes' },
+  { key: 'treesync', label: 'Tree sorting', note: 'Files the codebase into the right part of the tree' },
+  { key: 'judge', label: 'Model judge', note: 'Picks how much depth an auto-speed task needs' },
+  { key: 'warmup', label: 'Cache warm-up', note: 'Pre-generates book picks/lenses right after boot' },
 ];
 const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
 let aiSettings = null;
@@ -7497,16 +7494,6 @@ async function loadAiSettings() {
   } catch (e) {
     host.innerHTML = `<div class="q-err">Could not load AI settings: ${e.message}</div>`;
   }
-}
-
-// How much a job costs to run, as three dots — the table is ordered by it, so the
-// column is a reminder of the order rather than new information.
-function aiWeightDots(w) {
-  const n = w === 3 ? 3 : w === 2 ? 2 : 1;
-  return `<span class="ai-dots">${'●'.repeat(n)}${'○'.repeat(3 - n)}</span>`;
-}
-function aiWeightTitle(w) {
-  return w === 3 ? 'Heavy — long, tool-using work' : w === 2 ? 'Medium' : 'Light — one short call';
 }
 
 function aiModelOptions(provider, selected) {
@@ -7619,7 +7606,6 @@ function renderAiSettings() {
       : `<option value="${provider}" selected>${provider} (set outside this panel)</option>`;
     return `
       <tr data-feature="${f.key}">
-        <td class="ai-weight" title="${aiWeightTitle(f.weight)}">${aiWeightDots(f.weight)}</td>
         <td><div class="ai-feature-name">${f.label}</div><div class="ai-feature-note">${f.note}</div></td>
         <td>
           <select class="ai-provider-sel">
@@ -7647,7 +7633,6 @@ function renderAiSettings() {
     + (qdModel && !qdModels.some(m => m.id === qdModel) ? `<option value="${qdModel}" selected>${qdModel}</option>` : '');
   const queueDefaultRow = `
     <tr class="ai-row-queue">
-      <td class="ai-weight" title="Heaviest — this is the coding work itself">${aiWeightDots(3)}</td>
       <td><div class="ai-feature-name">Coding tasks</div><div class="ai-feature-note">The queue — what actually writes the code</div></td>
       <td>
         <select id="aiQueueProvider">
@@ -7674,7 +7659,7 @@ function renderAiSettings() {
       </select>
     </div>
     <table class="ai-feature-table">
-      <thead><tr><th></th><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
+      <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
       <tbody>${queueDefaultRow}${rows}</tbody>
     </table>
     <div class="ai-fp-sub" style="margin-top:6px;">Everything starts on your <strong>second</strong> Claude subscription &mdash; the smaller bank, spent first on purpose. When it runs out for the next few hours the same question is asked again on your <strong>main</strong> account, and only if that is out too does it drop to a free model. Second-account jobs run on your Mac, so the runner has to be on; if its token isn&rsquo;t set they go straight to the main account. Coding tasks always stay on the main account.</div>
