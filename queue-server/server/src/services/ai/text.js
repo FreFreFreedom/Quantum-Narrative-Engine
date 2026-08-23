@@ -332,11 +332,20 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
       tools: helperTools, waitMs: helperWaitMs, account,
     });
     let sideWhy = null;
-    if (router.isExhausted('claude-side', m || '')) {
+    // A benched account whose reset time is only a GUESS gets tried again every 20
+    // minutes rather than believed (router.mayProbe). The guess always errs late, and
+    // for this account late means leaving unspent exactly the credit that the
+    // second-account-first policy exists to spend first.
+    const sideBenched = router.isExhausted('claude-side', m || '');
+    const sideProbe = sideBenched && router.mayProbe('claude-side', m || '');
+    if (sideBenched && !sideProbe) {
       sideWhy = 'second account is out of its five-hour window';
     } else {
       const r = await ask('side');
-      if (r?.text) return { text: r.text, via: 'claude-side' };
+      if (r?.text) {
+        if (sideBenched) router.clearExhaustion('claude-side', m || '');
+        return { text: r.text, via: 'claude-side' };
+      }
       sideWhy = r?.message || r?.error || 'no answer';
       const spent = detectQuotaLimit('claude-side', sideWhy);
       // A small plan close to its ceiling does not always SAY so — it goes quiet and
@@ -351,23 +360,32 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
         // next rather than spending the big account on a hiccup.
         return { error: r?.error || 'claude_side_failed', message: sideWhy };
       }
-      if (spent) router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
+      // Don't re-record on a failed probe: it would stamp a fresh now+5h over a window
+      // that is already running, so every probe would push the guessed return further
+      // away and the panel's "resets in Xm" would creep instead of counting down.
+      if (spent && !sideBenched) router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
     }
     // Don't knock on a door already known to be shut. Without this the chain paid a
     // full helper wait (up to 120s) to be told again what the ledger already said, on
     // every single call until the window reset -- which is exactly the stall this
-    // ladder exists to avoid.
-    if (router.isExhausted('claude-code', m || '')) {
+    // ladder exists to avoid. Same probe allowance as above: a guessed window is
+    // re-tested every 20 minutes rather than trusted.
+    const mainBenched = router.isExhausted('claude-code', m || '');
+    const mainProbe = mainBenched && router.mayProbe('claude-code', m || '');
+    if (mainBenched && !mainProbe) {
       return { error: 'claude_both_accounts_failed', message: `second account: ${sideWhy} | main account: out of its five-hour window` };
     }
     const main = await ask('main');
-    if (main?.text) return { text: main.text, via: 'claude-main' };
+    if (main?.text) {
+      if (mainBenched) router.clearExhaustion('claude-code', m || '');
+      return { text: main.text, via: 'claude-main' };
+    }
     const mainWhy = main?.message || main?.error || 'no answer';
     // Remember the big account's ceiling too. One detection spares every later
     // feature the same wait; resolveResetWindow() gives both subscriptions the same
     // five-hour window. A silence is deliberately NOT recorded here, for the reason
     // given above about the second account: a hiccup is not a ceiling.
-    if (detectQuotaLimit('claude-code', mainWhy)) {
+    if (detectQuotaLimit('claude-code', mainWhy) && !mainBenched) {
       router.recordExhaustion({ providerId: 'claude-code', model: m, detectedBy: 'text', errText: mainWhy, scope: 'session' });
     }
     return { error: 'claude_both_accounts_failed', message: `second account: ${sideWhy} | main account: ${mainWhy}` };

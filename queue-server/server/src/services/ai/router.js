@@ -60,6 +60,51 @@ export function recordExhaustion({ providerId, model = '', detectedBy = 'text', 
   return { resetsAt, known, source, id };
 }
 
+// ─── Early probe ─────────────────────────────────────────────────────────────
+// An INFERRED reset time is a guess, and it always errs LATE. A Claude
+// subscription's five-hour window starts at your first call in the block, not at
+// the moment the app happened to bump into the ceiling — so if it notices four
+// hours in, resolveResetWindow() benches the account for five hours MORE and it
+// sits idle long after it has genuinely come back. For the second subscription
+// that is the exact credit the second-account-first policy exists to spend.
+//
+// So rather than trust a guess, re-try it now and then: a refused call is free and
+// tells the truth, and a successful one clears the bench immediately. A reset time
+// that came from a real source (resets_known = 1) is trusted as-is and never
+// probed — there is nothing to second-guess.
+const PROBE_INTERVAL_MS = 20 * 60_000;
+const lastProbe = new Map();
+
+// NOTE: this STAMPS on the way out, so it hands out at most one probe per window
+// per 20 minutes. Call it only where the probe is actually about to be made.
+export function mayProbe(providerId, model = '') {
+  if (!db) return false;
+  const row = db.prepare(`SELECT exhausted, resets_known FROM provider_quota_state WHERE provider_id=? AND model=?`).get(providerId, model || '');
+  if (!row || !row.exhausted) return false;
+  if (row.resets_known) return false;
+  const key = `${providerId}:${model || ''}`;
+  if (Date.now() - (lastProbe.get(key) || 0) < PROBE_INTERVAL_MS) return false;
+  lastProbe.set(key, Date.now());
+  return true;
+}
+
+// A probe answered: the window is over, whatever the guess said. Same shape as
+// clearExpired()'s per-row work, so the ledger row is closed too.
+export function clearExhaustion(providerId, model = '') {
+  if (!db) return false;
+  const row = db.prepare(`SELECT * FROM provider_quota_state WHERE provider_id=? AND model=? AND exhausted=1`).get(providerId, model || '');
+  if (!row) return false;
+  const now = nowIso();
+  db.prepare(`UPDATE provider_quota_state SET exhausted=0, updated_at=? WHERE provider_id=? AND model=?`).run(now, providerId, model || '');
+  if (row.last_event_id) {
+    try { db.prepare(`UPDATE provider_quota_ledger SET cleared_at=? WHERE id=?`).run(now, row.last_event_id); } catch {}
+  }
+  lastProbe.delete(`${providerId}:${model || ''}`);
+  console.log(`[router] ${providerId}${model ? ':' + model : ''} answered a probe — back early (guess said ${row.resets_at})`);
+  mirrorCooldown();
+  return true;
+}
+
 // Clear every state row whose reset window has passed. Called by quotaScheduler
 // on its tick; also safe to call opportunistically (e.g. before pickChain).
 export function clearExpired() {
