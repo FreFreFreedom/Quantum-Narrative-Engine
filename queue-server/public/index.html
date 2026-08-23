@@ -1101,7 +1101,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ai-feature-note { font-size:10px; color:var(--c-ink-4); }
 .ai-row-queue td { background:var(--c-bg-2, rgba(127,127,127,.06)); }
 .ai-row-queue .ai-feature-name { color:var(--c-accent, inherit); }
-.ai-savebtn { margin-top:16px; padding:8px 16px; border-radius:6px; border:none; background:var(--c-ink-solid); color:var(--c-on-solid); font-size:12px; font-weight:600; cursor:pointer; }
 .ai-adv { margin-top:14px; font-size:11.5px; color:var(--c-ink-2); }
 .ai-adv summary { cursor:pointer; color:var(--c-ink-2); }
 .ai-adv textarea { margin-top:6px; font-family:ui-monospace, Menlo, monospace; font-size:11px; min-height:90px; }
@@ -1111,9 +1110,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ai-voice summary { cursor:pointer; color:var(--c-ink-2); font-size:11.5px; }
 .ai-voice textarea { margin-top:8px; width:100%; min-height:170px; font-family:inherit; font-size:12px; line-height:1.55; resize:vertical; }
 .ai-voice-note { margin-top:6px; font-size:11px; color:var(--c-ink-4); line-height:1.5; }
-.ai-savebtn:hover { background:var(--c-ink-solid-2); }
-.ai-savebtn:disabled { background:var(--c-border-3); cursor:default; }
-.ai-savemsg { font-size:11px; color:var(--c-brand); margin-left:10px; }
+.ai-savemsg { display:block; margin-top:10px; font-size:11px; color:var(--c-brand); min-height:14px; }
 .ai-fp-section { margin-top:26px; padding-top:16px; border-top:1px solid var(--c-border); }
 .ai-fp-title { font-size:12px; font-weight:600; margin-bottom:2px; }
 .ai-fp-sub { font-size:10.5px; color:var(--c-ink-4); margin-bottom:10px; }
@@ -7698,7 +7695,6 @@ function renderAiSettings() {
       <summary>Advanced (JSON)</summary>
       <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
     </details>
-    <button class="ai-savebtn" id="aiSaveBtn">Save</button>
     <span class="ai-savemsg" id="aiSaveMsg"></span>
     ${renderFreeProvidersSection()}
   `;
@@ -7726,8 +7722,13 @@ function renderAiSettings() {
     };
   });
 
-  document.getElementById('aiSaveBtn').onclick = async () => {
-    const btn = document.getElementById('aiSaveBtn');
+  // Saving happens by itself now: every control writes as you change it, and the Save
+  // button is gone. It was the whole bug — a panel that looked settled but had recorded
+  // nothing, because a button below the fold had not been pressed.
+  let saveBusy = false, saveAgain = false;
+  const aiSaveSettings = async () => {
+    if (saveBusy) { saveAgain = true; return; }   // dropdowns are easy to click twice
+    saveBusy = true;
     const msg = document.getElementById('aiSaveMsg');
     const defaults = {};
     host.querySelectorAll('tr[data-feature]').forEach(tr => {
@@ -7737,21 +7738,19 @@ function renderAiSettings() {
       };
     });
     const policy = document.getElementById('aiPolicySel').value;
-    let queue = null, intel = null;
+    let queue = null, intel = null, advBad = false;
     const advEl = document.getElementById('aiAdvJson');
     if (advEl) {
+      // A typo in this box used to block the whole panel from saving. Now it only costs
+      // the keys that live in it — every dropdown still writes.
       try {
         const adv = JSON.parse(advEl.value);
         queue = adv.queue || {};
         intel = adv.intel || {};
-      } catch (e) {
-        msg.textContent = 'Advanced JSON is not valid — fix it or leave it unchanged.';
-        msg.style.color = '#b23a2f';
-        return;
-      }
+      } catch (e) { advBad = true; }
     }
-    // The row wins over the same keys inside Advanced JSON, which shows the stored
-    // queue object verbatim and would otherwise write back the old value.
+    // The Coding-tasks row wins over the same keys inside Advanced JSON, which shows the
+    // stored queue object verbatim and would otherwise write back the old value.
     const qpEl = document.getElementById('aiQueueProvider');
     const qmEl = document.getElementById('aiQueueModel');
     if (qpEl) {
@@ -7759,20 +7758,32 @@ function renderAiSettings() {
       queue.defaultProvider = qpEl.value;
       queue.defaultModel = (qpEl.value === 'opencode' && qmEl) ? qmEl.value : '';
     }
-    btn.disabled = true; msg.textContent = '';
     try {
       const personaEl = document.getElementById('aiStudioPersona');
       const studioPersona = personaEl ? personaEl.value : undefined;
       aiSettings = await apiWrite('/api/travaux/ai-settings', 'PUT', { defaults, policy, queue, intel, studioPersona });
-      msg.textContent = 'Saved.';
-      setTimeout(() => { if (msg.textContent === 'Saved.') msg.textContent = ''; }, 3000);
+      if (msg) {
+        msg.style.color = advBad ? '#b23a2f' : '';
+        msg.textContent = advBad ? 'Saved — but the Advanced JSON is not valid, so that part was left alone.' : 'Saved';
+        if (!advBad) setTimeout(() => { if (msg.textContent === 'Saved') msg.textContent = ''; }, 2000);
+      }
     } catch (e) {
-      msg.textContent = 'Could not save: ' + e.message;
-      msg.style.color = '#b23a2f';
+      if (msg) { msg.textContent = 'Could not save: ' + e.message; msg.style.color = '#b23a2f'; }
     } finally {
-      btn.disabled = false;
+      saveBusy = false;
+      if (saveAgain) { saveAgain = false; aiSaveSettings(); }   // last change wins
     }
   };
+
+  // Debounced, so picking an engine and then its model is one write, not two.
+  let saveTimer = null;
+  const aiSaveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(aiSaveSettings, 400); };
+  host.querySelectorAll('select').forEach(sel => sel.addEventListener('change', aiSaveSoon));
+  // Per keystroke would be wrong for free text; when you click away is right.
+  ['aiStudioPersona', 'aiAdvJson'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', aiSaveSettings);
+  });
 }
 
 function startQueuePolling() {
