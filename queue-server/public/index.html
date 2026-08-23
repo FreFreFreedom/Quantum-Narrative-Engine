@@ -7688,7 +7688,9 @@ function renderAiSettings() {
       <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
       <tbody>${queueDefaultRow}${rows}</tbody>
     </table>
-    <div class="ai-fp-sub" style="margin-top:6px;">Everything starts on your <strong>second</strong> Claude subscription &mdash; the smaller bank, spent first on purpose. When it runs out for the next few hours the same question is asked again on your <strong>main</strong> account, and only if that is out too does it drop to a free model. Second-account jobs run on your Mac, so the runner has to be on; if its token isn&rsquo;t set they go straight to the main account. Coding tasks always stay on the main account.</div>
+    ${cd['claude-side']?.active
+      ? `<div class="usage-alert" style="margin-top:6px;">2nd Claude account: quota exhausted</div>`
+      : `<div class="ai-fp-sub" style="margin-top:6px;">Everything starts on your <strong>second</strong> Claude subscription &mdash; the smaller bank, spent first on purpose. When it runs out for the next few hours the same question is asked again on your <strong>main</strong> account, and only if that is out too does it drop to a free model. Second-account jobs run on your Mac, so the runner has to be on; if its token isn&rsquo;t set they go straight to the main account. Coding tasks always stay on the main account.</div>`}
     <details class="ai-voice">
       <summary>How Idea Studio thinks</summary>
       <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" placeholder="Leave empty to use the built-in voice.">${qEsc(aiSettings.studioPersona || '')}</textarea>
