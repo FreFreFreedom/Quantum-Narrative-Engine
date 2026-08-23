@@ -20,7 +20,7 @@ import { ontologyRoutes } from './routes/ontology.js';
 import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
-import { migrateOntology, seedKnowledge, seedArchitectureHistory, cleanupFrenchSuggestions, cleanupTestArchNode } from './services/bootstrapData.js';
+import { migrateOntology, seedKnowledge, seedPlans, seedArchitectureHistory, cleanupFrenchSuggestions, cleanupTestArchNode } from './services/bootstrapData.js';
 import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
@@ -129,10 +129,11 @@ try {
 try {
   const ontologyResult = migrateOntology(db);
   const knowledgeResult = seedKnowledge(db);
+  const plansResult = seedPlans(db);
   const architectureHistoryResult = seedArchitectureHistory(db);
   const suggestionsRelangResult = cleanupFrenchSuggestions(db);
   const testNodeResult = cleanupTestArchNode(db);
-  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult, architectureHistoryResult, suggestionsRelangResult, testNodeResult }));
+  console.log('Bootstrap:', JSON.stringify({ ontologyResult, knowledgeResult, plansResult, architectureHistoryResult, suggestionsRelangResult, testNodeResult }));
 } catch (e) {
   console.error('Bootstrap data load failed:', e.message);
 }

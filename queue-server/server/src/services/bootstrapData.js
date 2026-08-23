@@ -118,6 +118,58 @@ export function seedKnowledge(db) {
   return { docs: count };
 }
 
+// ─── Plans mirrored into project-docs/plans/ (see scripts/sync-docs.js) ──────
+// Plans are real DB rows of knowledge_docs, namespaced with a `Plan: ` prefix so
+// they can never collide with either the seeded reference docs or a `Note: `
+// (knowledgeDocs.js#RESERVED_TITLES). Unlike notes these are mirrors of files,
+// not user content, so rows whose source file is gone get pruned — a deleted
+// plan must not linger forever in the knowledge store.
+const PLAN_PREFIX = 'Plan: ';
+
+// A plan's own header table is its authority for status:
+//   | **PLANNED** | 2026-08-23 |
+// Every plan in this folder carries it, and it must agree with plans/README.md.
+// A plan with no parseable header yields an empty status rather than a crash.
+function parsePlanStatus(content) {
+  const m = /^\|\s*\*\*(PLANNED|DONE|CANCELLED|IN PROGRESS|PAUSED)\*\*\s*\|\s*([0-9-]+)/im.exec(content);
+  if (!m) return '';
+  return `${m[1].toUpperCase()} ${m[2]}`;
+}
+
+export function seedPlans(db) {
+  const plansDir = resolve(__dirname, '../../../project-docs/plans');
+  if (!existsSync(plansDir)) return { skipped: true };
+  let count = 0;
+  const seededTitles = [];
+  for (const file of readdirSync(plansDir)) {
+    if (!file.endsWith('.md')) continue;
+    const content = readFileSync(resolve(plansDir, file), 'utf8');
+    const id = file.replace(/\.md$/, '');
+    const title = PLAN_PREFIX + id;
+    const status = parsePlanStatus(content);
+    const opening = content.replace(/\s+/g, ' ').trim().slice(0, 200);
+    const description = status
+      ? `${status} — ${opening}`
+      : opening;
+    db.prepare(`
+      INSERT INTO knowledge_docs (id, title, description, content, updated_at)
+      VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(title) DO UPDATE SET description=excluded.description, content=excluded.content, updated_at=excluded.updated_at
+    `).run(randomUUID(), title, description.slice(0, 400), content);
+    seededTitles.push(title);
+    count++;
+  }
+  // Prune rows that were mirrors but whose source file is gone — scoped strictly
+  // to the prefix so no note or seeded reference doc is ever touched.
+  const placeholders = seededTitles.map(() => '?').join(',');
+  const whereNotIn = seededTitles.length
+    ? ` AND title NOT IN (${placeholders})`
+    : '';
+  const del = db.prepare(`DELETE FROM knowledge_docs WHERE title LIKE ? ESCAPE '\\'${whereNotIn}`)
+    .run(PLAN_PREFIX.replace(/\\/g, '\\\\') + '%', ...seededTitles);
+  return { plans: count, pruned: del.changes };
+}
+
 // ─── Architecture Navigator: component → commit mapping (manual, appended over
 // time — going forward only, see architecture.js header) ────────────────────────
 import { seedComponentCommits } from './architecture.js';

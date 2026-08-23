@@ -37,6 +37,21 @@ import './subjectContext.js';
 let db = null;
 export function bindConversationsDb(database) { db = database; }
 
+// Plans live in knowledge_docs under the `Plan: ` prefix (seeded by
+// bootstrapData.js#seedPlans from the project-docs/plans/ mirror). This returns
+// just {id, title, status} so a picker can draw a list without downloading the
+// 400-line files. `id` is the plan's basename; `status` is parsed back out of the
+// description (which seeds as "STATUS date — …"). See plans/plans-in-the-room.md.
+export function listPlans() {
+  if (!db) return [];
+  const rows = db.prepare(`SELECT title, description FROM knowledge_docs WHERE title LIKE ? ESCAPE '\\' ORDER BY title`).all('Plan: %');
+  return rows.map((r) => {
+    const id = r.title.replace(/^Plan: /, '');
+    const status = (/^([A-Z ]+? \d{4}-\d{2}-\d{2})/.exec(r.description || '') || [])[1] || '';
+    return { id, title: id, status };
+  });
+}
+
 const CONVO_HISTORY_WINDOW = 16;
 // The chat turn is the one you sit and wait for, so it runs on the fast tier by
 // default; /plan and the rewrites keep the stronger model, because those produce

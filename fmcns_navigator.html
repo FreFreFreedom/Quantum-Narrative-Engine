@@ -6848,7 +6848,7 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // The picker's own copies of the two lists the Flow owns. Fetched here rather
 // than by calling loadSuggestions(), which also kicks off a world-look sync per
 // suggestion — work the picker has no use for.
-let roomPickIdeas = null, roomPickSuggestions = null;
+let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null;
 const ROOM_SEL_KEY = 'fmcns_room_thread';
 
 function initRoom() {
@@ -7310,13 +7310,15 @@ async function roomDetach(type, id) {
 // they are not a registered subject type, so attaching one would need a backend
 // change, which this view does not make.
 async function roomLoadPickSources() {
-  if (roomPickIdeas && roomPickSuggestions) return;
-  const [ideas, sgs] = await Promise.all([
+  if (roomPickIdeas && roomPickSuggestions && roomPickPlans) return;
+  const [ideas, sgs, plans] = await Promise.all([
     api('/api/travaux/ideas').catch(() => null),
     api('/api/travaux/suggestions').catch(() => null),
+    api('/api/convos/plans').catch(() => null),
   ]);
   roomPickIdeas = (ideas && ideas.ideas) || [];
   roomPickSuggestions = (sgs && sgs.suggestions) || [];
+  roomPickPlans = (plans && plans.plans) || [];
   if (roomPickOpen) renderRoomPick();
 }
 
@@ -7324,6 +7326,7 @@ function roomPickRows() {
   const rows = [];
   (roomPickIdeas || tvIdeas || []).forEach(i => rows.push({ type: 'seed', label: 'Seed', id: i.id, title: i.title || i.id }));
   (roomPickSuggestions || tvSuggestions || []).forEach(s => rows.push({ type: 'suggestion', label: 'Suggestion', id: s.id, title: s.title || s.id }));
+  (roomPickPlans || []).forEach(p => rows.push({ type: 'plan', label: 'Plan', id: p.id, title: `${p.id} — ${p.status || 'UNKNOWN'}` }));
   (qPrompts || []).forEach(p => rows.push({ type: 'task', label: 'Task', id: p.id, title: p.title || p.prompt || p.id }));
   (typeof ARCH_DATA !== 'undefined' ? ARCH_DATA : []).forEach(c => rows.push({
     // Tech-tree pieces (`_stored`) are real DB rows; the rest live in this file,
