@@ -185,6 +185,29 @@ console.log('\n── Every broken path is identical to not running ────
   ok(verdictOf(out) === 'not_landed', 'a complete diff may conclude absence');
 }
 
+console.log('\n── Recovering the ideas steered onto a running card ────────');
+
+{
+  const { chosenFromDigest } = await import('../server/src/services/inspireLanding.js');
+  const digest = [
+    'SHELF 3 — BOLD IDEAS (may not exist anywhere yet — design targets, not dependencies):',
+    '- Context-Aware Foreshadow: Hover teases the next layer. Possible because: ... (CHOSEN)',
+    '- Delta-Only Reveal: A card expands to show solely the missing pieces.',
+    'SHELF 1 — OPEN SOURCE (real, verifiable projects):',
+    '- mui/material-ui (93000★): Its Collapse animates height. Use: reuse the collapse. (CHOSEN)',
+  ].join('\n');
+  const got = chosenFromDigest(digest);
+  ok(got.length === 2, 'only the ideas he ticked come back', `got ${got.length}`);
+  ok(got[0].name === 'Context-Aware Foreshadow', 'named for the idea, not the shelf heading above it', got[0].name);
+  ok(got[1].name === 'mui/material-ui', 'a repo keeps its name and loses the star count', got[1].name);
+  ok(!got.some(g => /SHELF/.test(g.name || '')), 'a shelf heading can never become an idea name');
+
+  const none = chosenFromDigest('SHELF 3 — BOLD IDEAS:\n- Something nobody ticked: ...');
+  ok(none.length === 1 && none[0].name === 'Ideas sent while it was running',
+    'nothing ticked → one honest unnamed row, not a row named after a heading', none[0].name);
+  ok(chosenFromDigest('').length === 0, 'an empty digest yields nothing at all');
+}
+
 console.log('\n── It may not stop a change going live ─────────────────────');
 
 {

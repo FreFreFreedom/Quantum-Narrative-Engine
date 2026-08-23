@@ -247,9 +247,28 @@ function getKey(prompt_id, report_id, part_index, pick_index) {
   } catch { return null; }
 }
 
-function firstLine(text) {
-  const t = String(text || '').split('\n').map(s => s.trim()).find(Boolean) || '';
-  return t.replace(/^[-*•]\s*/, '').slice(0, 120) || null;
+// The ideas he actually ticked, out of a steer digest. inspirationDigestFor marks each
+// chosen one '(CHOSEN)' and writes it as its own '- Name: description' line under a
+// SHELF heading, so both the name and the choice are recoverable exactly.
+//
+// Falls back to the whole digest as one unnamed row when nothing is marked -- an older
+// digest, or a format that has since changed. Better one honest row saying "ideas were
+// sent here" than a confident row named after a heading.
+export function chosenFromDigest(digest) {
+  const lines = String(digest || '').split('\n').map((l) => l.trim());
+  const out = [];
+  for (const line of lines) {
+    if (!line.startsWith('- ')) continue;
+    if (!/\(CHOSEN\)\s*$/.test(line)) continue;
+    const body = line.slice(2).replace(/\s*\(CHOSEN\)\s*$/, '').trim();
+    // 'owner/repo (93000*): what it does'  or  'Idea Name: what it does'
+    const split = body.indexOf(':');
+    const name = (split > 0 ? body.slice(0, split) : body).replace(/\s*\([^)]*\)\s*$/, '').trim();
+    out.push({ name: name.slice(0, 120) || null, text: body.slice(0, 1200) });
+  }
+  if (out.length) return out;
+  const any = String(digest || '').trim();
+  return any ? [{ name: 'Ideas sent while it was running', text: any.slice(0, 1200) }] : [];
 }
 
 // The snapshot. Read once, at record time, so a later rewrite of the report cannot
