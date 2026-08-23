@@ -4,6 +4,7 @@
 //   node scripts/ideas-audit.js            # the list
 //   node scripts/ideas-audit.js --all      # include the ones that landed fine
 //   node scripts/ideas-audit.js --fix N    # queue the missing half of item N
+//   node scripts/ideas-audit.js --deep     # settle the ones the free checks cannot
 //   QUEUE_URL=http://localhost:3000 node scripts/ideas-audit.js
 //
 // Why this exists. An idea you pick is never handed to the coding agent verbatim — it
@@ -12,11 +13,18 @@
 // or get half built: the server side working and nothing in the app calling it, which
 // from your side means the feature does not exist.
 //
-// This costs nothing to run. The question it asks — can you reach this from the app as
+// --deep is the only part that costs anything, and it is bounded and one-off. Ideas
+// picked before this feature existed have no witness to look for, so the free layers
+// correctly say "could not be checked" and stop. --deep reads the actual diff of the
+// task that was meant to build each one and asks the model once per TASK, not per idea.
+// It runs from here rather than from the server because the diffs only exist on the Mac.
+//
+// The rest costs nothing to run. The question it asks — can you reach this from the app as
 // the app stands right now — is answered by reading the deployed code, not by a model.
 // The app answers the same question in its own screen; this is the terminal door to it.
 
 import { readFileSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -26,6 +34,7 @@ const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-pr
 
 const argv = process.argv.slice(2);
 const showAll = argv.includes('--all');
+const deep = argv.includes('--deep');
 const fixAt = argv.includes('--fix') ? Number(argv[argv.indexOf('--fix') + 1]) : null;
 
 const paint = (c, s) => (process.stdout.isTTY ? `\x1b[${c}m${s}\x1b[0m` : s);
@@ -55,15 +64,70 @@ async function login(password) {
   if (!r.ok) die(`Could not sign in (${r.status}) — check ADMIN_PASSWORD.`);
   token = (await r.json()).token;
 }
-async function call(path, { method = 'GET' } = {}) {
-  const r = await fetch(`${QUEUE_URL}${path}`, { method, headers: { Authorization: `Bearer ${token}` } });
+async function call(path, { method = 'GET', body } = {}) {
+  const r = await fetch(`${QUEUE_URL}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
   if (!r.ok) die(`${method} ${path} failed (${r.status}).`);
   return r.json();
+}
+
+// ─── --deep: settle what the free layers could not ────────────────────────────
+async function runDeep() {
+  const { tasks } = await call('/api/travaux/ideas-landed/unsettled');
+  if (!tasks.length) {
+    console.log(green('\nNothing left that needs a closer look.\n'));
+    return;
+  }
+  const total = tasks.reduce((n, t) => n + t.ideas.length, 0);
+  console.log(`\nReading the actual changes for ${total} idea(s) across ${tasks.length} task(s). One model call per task.\n`);
+
+  const mod = await import('../server/src/services/ideaLanded.js');
+  const claude = await import('../server/src/services/providers/claudeCode.js');
+  const SIDE = process.env.CLAUDE_SIDE_OAUTH_TOKEN || null;
+
+  let settled = 0, gaps = 0;
+  for (const t of tasks) {
+    const label = (t.prompt_title || t.head_sha.slice(0, 8)).slice(0, 60);
+    const diff = mod.buildDiff(REPO, t.base_sha, t.head_sha);
+    // A commit the Mac does not have is not evidence of anything — say so and move on.
+    if (!diff.text) { console.log(dim(`  · ${label} — the changes are not on this machine, skipped`)); continue; }
+
+    let text = '';
+    try {
+      const ask = (onSide) => claude.runToolless({
+        prompt: mod.landingPrompt(diff.text, t.ideas),
+        model: process.env.REVIEW_MODEL || 'sonnet',
+        timeoutMs: 180_000, cwd: REPO,
+        env: claude.spawnEnv(onSide && SIDE ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE } : {}),
+      });
+      let r = await ask(Boolean(SIDE));
+      if (SIDE && (!r || r.code !== 0)) r = await ask(false);
+      if (!r || r.code !== 0) throw new Error(String(r?.text || r?.error || `exit ${r?.code}`).slice(0, 120));
+      text = r.text || '';
+    } catch (e) {
+      console.log(yellow(`  · ${label} — could not ask: ${e.message}`));
+      continue;
+    }
+
+    const parsed = mod.parseLanding(text, t.ideas.length);
+    if (!parsed) { console.log(yellow(`  · ${label} — the answer could not be read, leaving it unchecked`)); continue; }
+    const items = t.ideas.map((idea, i) => ({ id: idea.id, verdict: parsed[i].verdict, note: parsed[i].note }));
+    await call('/api/travaux/ideas-landed/verdicts', { method: 'POST', body: { items } });
+    settled += items.filter(i => i.verdict !== 'not_checked').length;
+    gaps += items.filter(i => i.verdict === 'server_only' || i.verdict === 'not_landed').length;
+    console.log(`  · ${label} — ${items.map(i => i.verdict).join(', ')}`);
+  }
+  console.log(`\n${settled} settled, ${gaps} needing work.\n`);
 }
 
 const password = adminPassword();
 if (!password) die('No ADMIN_PASSWORD found (env or queue-server/.env).');
 await login(password);
+
+if (deep) await runDeep();
 
 const audit = await call('/api/travaux/ideas-landed/audit');
 
@@ -102,6 +166,7 @@ if (audit.queued_fix.length) {
 // that pads itself with unknowns is a list you learn to skip.
 if (audit.not_checked.length) {
   console.log(dim(`Could not be checked (${audit.not_checked.length}) — no proof to look for, not evidence of anything`));
+  if (!deep) console.log(dim(`  Read the actual changes to settle these:  npm run ideas:audit -- --deep`));
   if (showAll) audit.not_checked.forEach((r) => console.log(dim(`     · ${r.pick_name || '(unnamed)'}`)));
   console.log('');
 }

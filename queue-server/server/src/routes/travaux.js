@@ -166,6 +166,25 @@ export function travauxRoutes() {
     res.json({ ideas: rows });
   });
 
+  // What the terminal audit needs to settle the ideas that were picked before a
+  // witness was ever drafted for them: their own words, and the commit range of the
+  // task that was supposed to build them. The diff itself only exists on the Mac.
+  router.get('/ideas-landed/unsettled', (req, res) => {
+    res.json({ tasks: landing.unsettledByTask() });
+  });
+
+  // The answers coming back. One verdict per idea; anything unrecognised is stored as
+  // 'not_checked', so a confused reply can never turn into an accusation.
+  router.post('/ideas-landed/verdicts', (req, res) => {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    let n = 0;
+    for (const it of items) {
+      if (!it || !it.id) continue;
+      if (landing.recordVerdict(it.id, { verdict: it.verdict, note: it.note || null })) n++;
+    }
+    res.json({ recorded: n });
+  });
+
   // The one button. Queues the missing half as a paused follow-up carrying the same
   // idea, so its own check closes the loop when it ships.
   router.post('/ideas-landed/:id/fix', asyncHandler(async (req, res) => {

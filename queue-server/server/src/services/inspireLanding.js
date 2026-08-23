@@ -299,6 +299,39 @@ export async function auditReachability() {
   return { checked, server_only: serverOnly, landed };
 }
 
+// The historical ideas: picked before a witness was ever drafted for them, so the free
+// layers have nothing to look for and correctly say so. What they DO have is a finished
+// task with a real commit range, and that lives on the Mac. This hands the terminal
+// audit exactly what it needs to settle them — the idea's own words, and where to find
+// the diff. One entry per TASK, so the model is asked once per task, never per idea.
+export function unsettledByTask() {
+  if (!db) return [];
+  let rows;
+  try {
+    rows = db.prepare(`
+      SELECT a.id, a.prompt_id, a.pick_name, a.pick_text, a.witness_value,
+             t.base_sha, t.head_sha, t.ship_files, p.title AS prompt_title
+      FROM inspire_applications a
+      JOIN work_prompts p ON p.id = a.prompt_id
+      LEFT JOIN agent_tasks t ON t.work_prompt_id = a.prompt_id AND t.head_sha IS NOT NULL
+      WHERE (a.verdict IS NULL OR a.verdict = 'not_checked') AND a.fix_prompt_id IS NULL
+      ORDER BY a.created_at ASC
+    `).all();
+  } catch { return []; }
+  const byTask = new Map();
+  for (const r of rows) {
+    // No commit means nothing was ever shipped for this card — there is no diff to
+    // read, so this is genuinely unanswerable and must stay unanswered.
+    if (!r.head_sha) continue;
+    const key = `${r.base_sha || ''}..${r.head_sha}`;
+    if (!byTask.has(key)) {
+      byTask.set(key, { base_sha: r.base_sha, head_sha: r.head_sha, prompt_title: r.prompt_title, ideas: [] });
+    }
+    byTask.get(key).ideas.push({ id: r.id, pick_name: r.pick_name, pick_text: r.pick_text, witness_value: r.witness_value });
+  }
+  return [...byTask.values()];
+}
+
 // The whole picture, grouped the way it should be read: what needs doing first, what
 // is fine, and — kept separate and never counted as a problem — what could not be
 // checked at all.
