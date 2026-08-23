@@ -7,7 +7,8 @@
 (function () {
   var t = null;
   try { t = localStorage.getItem('fmcns-theme'); } catch (e) {}
-  if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  var sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (!t || t === 'auto') t = sysDark ? 'dark' : 'light';
   document.documentElement.classList.add(t);
 })();
 </script>
@@ -16567,18 +16568,52 @@ document.addEventListener('keydown', (e) => {
 (function () {
   var btn = document.getElementById('themeToggleBtn');
   if (!btn) return;
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  var MODES = ['light', 'dark', 'auto'];
+  var GLYPH = { light: '☀️', dark: '🌙', auto: '🌗' };
+  var TITLE = {
+    light: 'Theme: light — click for dark',
+    dark: 'Theme: dark — click to match your Mac',
+    auto: 'Theme: matches your Mac — click for light'
+  };
+  function stored() {
+    try { return localStorage.getItem('fmcns-theme'); } catch (e) { return null; }
+  }
+  function save(mode) {
+    try { localStorage.setItem('fmcns-theme', mode); } catch (e) {}
+  }
+  function apply(mode) {
+    var resolved = (mode === 'auto') ? (mq.matches ? 'dark' : 'light') : mode;
+    var el = document.documentElement;
+    el.classList.remove('dark', 'light');
+    el.classList.add(resolved);
+  }
   function refresh() {
-    var dark = document.documentElement.classList.contains('dark');
     // The button carries a symbol AND a label in the rail, so only the symbol
-    // span is rewritten — btn.textContent would delete the label with it.
+    // span may be rewritten — btn.textContent would delete the label with it.
+    var mode = stored();
+    if (MODES.indexOf(mode) === -1) mode = 'auto';
     var glyph = btn.querySelector('.rail-ic-glyph') || btn;
-    glyph.textContent = dark ? '☀️' : '🌙';
+    glyph.textContent = GLYPH[mode];
+    btn.title = TITLE[mode];
+    btn.setAttribute('aria-label', TITLE[mode]);
   }
   btn.addEventListener('click', function () {
-    var dark = document.documentElement.classList.toggle('dark');
-    try { localStorage.setItem('fmcns-theme', dark ? 'dark' : 'light'); } catch (e) {}
+    var mode = stored();
+    if (MODES.indexOf(mode) === -1) mode = 'auto';
+    var next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+    save(next);
+    apply(next);
     refresh();
   });
+  function onSystemChange() {
+    var mode = stored();
+    if (!mode || mode === 'auto') apply('auto');
+  }
+  if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onSystemChange);
+  else if (typeof mq.addListener === 'function') mq.addListener(onSystemChange);
+  var initial = stored();
+  apply(MODES.indexOf(initial) === -1 ? 'auto' : initial);
   refresh();
 })();
 </script>
