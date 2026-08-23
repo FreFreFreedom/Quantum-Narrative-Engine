@@ -104,25 +104,7 @@ If an INSPIRATION FROM THE WORLD section is present:
 - Bold ideas there are DESIGN TARGETS: make the plan reach for them instead of watering them down, while staying honest about what can fit in one task.
 - Never invent packages, projects or products beyond what is given there or already known to exist.
 
-If the INSPIRATION section contains a "CHOSEN BY THE OWNER" list, then AFTER the brief add
-one line per chosen idea, in the same order they are listed, in exactly this format:
-
-IDEA-PROOF <n>: kind=<file|symbol|route|table|query> value=<the single thing to look for> ui=<yes|no>
-
-This is how the app later proves the idea was really built. So:
-- value must be ONE concrete, greppable thing the finished work will contain — a file path,
-  a function or constant name, an API route like /api/foo/:id, or a table name. Not a
-  sentence, not a description, not a list.
-- ui=yes means the idea is not finished until something in the interface actually uses it.
-  Answer yes for anything the owner is meant to see, press or read. Answer no only for work
-  that genuinely has no interface half, such as an internal refactor or a background job.
-Write these lines only when there are chosen ideas, and never more than one per idea.
-
 Write for the coding agent, not for a human reader. If the raw request is already clear and complete, keep the brief short rather than padding it. Do not ask questions — if something is genuinely unresolvable, say so as a note inside the brief rather than leaving it out.`;
-
-// The same five the tech tree's witnesses use (services/witnessCheck.js) — one
-// vocabulary for "how could the app prove this exists", not two.
-const WITNESS_KINDS = ['file', 'symbol', 'route', 'table', 'query'];
 
 function parseDraft(text) {
   const raw = String(text || '');
@@ -143,30 +125,7 @@ function parseDraft(text) {
   // The STILL NEEDED line sits above BRIEF, so it is not inside the brief text —
   // but a model that repeats it inside the brief should not leak it to the agent.
   const cleanBrief = brief.replace(/^STILL NEEDED:.*$/im, '').trim() || brief;
-
-  // One witness per world idea the owner chose — how the app can later prove the idea
-  // was actually built, rather than trusting that it survived being rewritten into a
-  // brief. Free: this rides on a call that was happening anyway. Absent or malformed
-  // means the free layers cannot decide, which reads as "not checked" downstream and
-  // never as "not built".
-  const ideaProofs = [];
-  for (const m of raw.matchAll(/^IDEA-PROOF\s*(\d+)?\s*:\s*(.+)$/gim)) {
-    const body = m[2] || '';
-    const kind = (body.match(/\bkind\s*=\s*([a-z]+)/i) || [])[1];
-    const value = (body.match(/\bvalue\s*=\s*(.+?)(?=\s+ui\s*=|$)/i) || [])[1];
-    const ui = (body.match(/\bui\s*=\s*(yes|no|true|false)/i) || [])[1];
-    if (!value) continue;
-    ideaProofs.push({
-      kind: WITNESS_KINDS.includes(String(kind || '').toLowerCase()) ? String(kind).toLowerCase() : null,
-      value: value.trim().replace(/^['\"`]|['\"`]$/g, '').slice(0, 300),
-      ui: /^(yes|true)$/i.test(ui || ''),
-    });
-  }
-
-  // The proof lines sit after the brief, so strip them before the agent ever reads it —
-  // they are instructions to the app, not to the coding agent.
-  const finalBrief = cleanBrief.replace(/^IDEA-PROOF\s*\d*\s*:.*$/gim, '').trim() || cleanBrief;
-  return { title, brief: finalBrief, stillNeeded, stillWhy, ideaProofs };
+  return { title, brief: cleanBrief, stillNeeded, stillWhy };
 }
 
 // → { title, brief } | null. Never throws — a failure here must fall back to the

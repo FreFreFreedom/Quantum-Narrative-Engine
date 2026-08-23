@@ -1496,24 +1496,12 @@ export function recordRunnerResult(taskId, {
     // The reviewer's verdict on the code itself, from the same POST. Kept as the
     // runner sent it; judging it is reviewRunner.js's job, not this one's.
     ship_review: ship?.review ? JSON.stringify(ship.review) : (task.ship_review || null),
-    // What became of the world ideas he ticked onto this task. Same treatment as
-    // ship_review: stored exactly as the runner sent it, judged elsewhere.
-    ship_ideas: ship?.ideas ? JSON.stringify(ship.ideas) : (task.ship_ideas || null),
     cost_usd: Number.isFinite(cost_usd) && cost_usd > 0 ? cost_usd : task.cost_usd,
     tokens_in: tokens_in ?? task.tokens_in, tokens_out: tokens_out ?? task.tokens_out,
     run_state: pending_question?.question ? 'awaiting_input' : 'idle',
     completed_at: new Date().toISOString(), heartbeat_at: new Date().toISOString(),
     claimed_by: null, claimed_at: null,
   });
-  // Fold each idea's verdict back onto its own row, so the audit and the card read
-  // from one place. Never allowed to fail the result POST — a lost verdict costs a
-  // line on a card; a thrown one would lose the whole finished task.
-  if (ship?.ideas?.items?.length) {
-    import('./inspireLanding.js')
-      .then((m) => { for (const it of ship.ideas.items) if (it?.id) m.recordVerdict(it.id, { verdict: it.verdict, note: it.note }); })
-      .catch((e) => console.error('world-idea verdicts not stored —', e.message));
-  }
-
   if (finalTask) broadcastTask(finalTask);
   console.log(`[taskRunner] task ${taskId} reported by runner — status=${finalStatus} model=${model || '?'}`);
   runCostSoFar.delete(taskId);

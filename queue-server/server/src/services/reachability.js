@@ -77,30 +77,6 @@ function routeRegex(fullPath) {
   return new RegExp(escaped);
 }
 
-// Does the interface actually name this thing? The one question behind "built on the
-// server, but you can't get at it from the app" -- exported so services/ideaLanded.js
-// asks it through the same tolerant matcher findUnreachable() uses, rather than
-// growing a second, subtly different copy of it.
-//
-// Two shapes are accepted, because a world idea's witness may be either:
-//   - a route ('/api/foo/:id')  -> routeRegex(), which already survives template
-//     holes, string concatenation and a literal id in place of the parameter;
-//   - anything else (a function or symbol name) -> a plain substring match, since
-//     that is all the frontend can meaningfully be said to "name".
-// Returns null, never false, when there is no frontend to read: not knowing and
-// knowing it is absent are different answers and only one of them is a finding.
-export function isReachedByFrontend(pathOrSymbol, frontendText = null) {
-  const needle = String(pathOrSymbol || '').trim();
-  if (!needle) return null;
-  let front = frontendText;
-  if (front == null) {
-    try { front = readFileSync(FRONTEND, 'utf8'); } catch { return null; }
-  }
-  if (!front) return null;
-  if (needle.startsWith('/')) return routeRegex(needle).test(front);
-  return front.includes(needle);
-}
-
 export function listApiSurface() {
   const prefixes = mountPrefixes();
   const surface = [];

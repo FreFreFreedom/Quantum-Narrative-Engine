@@ -159,10 +159,7 @@ export function createReviewForTask(task) {
 // two cheap checks it already ran on the files), ship_files, ship_insertions,
 // ship_deletions, ship_skip_reason. Scope is judged here because it needs the
 // agent's allow/deny rules out of the database, and needs nothing else.
-// Exported for scripts/idealanded-selftest.js, which asserts the one property that
-// must never quietly change: the ideas check may not alter whether a change is
-// allowed to go live. A rule nothing can test is a rule that will be broken.
-export function judgeTask(task) {
+function judgeTask(task) {
   const files = parseJsonOr(task.ship_files, []);
   const runnerChecks = parseJsonOr(task.ship_checks, null);
   const insertions = Number(task.ship_insertions) || 0;
@@ -190,17 +187,6 @@ export function judgeTask(task) {
   // for anything that finished before this existed, and for the in-container path
   // that reports no ship facts at all — so it must change nothing.
   const review = parseJsonOr(task.ship_review, null);
-  // What became of the picked world ideas (services/ideaLanded.js, run by the runner
-  // beside the review). Absent is the normal state for every task that finished before
-  // this existed, and it must read exactly as it did then: nothing.
-  const ideasPass = parseJsonOr(task.ship_ideas, null);
-  const ideaItems = Array.isArray(ideasPass?.items) ? ideasPass.items : [];
-  // 'not_checked' is not a finding. It is the absence of an answer, and showing it as
-  // a problem is how a list stops being worth reading.
-  const ideaGaps = ideaItems.filter((i) => i && (i.verdict === 'server_only' || i.verdict === 'not_landed'));
-  const ideasCheck = ideasPass?.ran
-    ? { ok: ideaGaps.length === 0, detail: ideaGaps.length ? `${ideaGaps.length} of ${ideaItems.length} not usable yet` : 'all of them landed', items: ideaItems }
-    : { ok: true, detail: 'not checked' };
   const findings = Array.isArray(review?.findings) ? review.findings : [];
   // Only the two named cases can block (a secret committed, a login check
   // removed). Everything else the reviewer says is a note that travels with the
@@ -221,12 +207,6 @@ export function judgeTask(task) {
           security_ran: Boolean(review.security_ran),
         }
       : { ok: true, detail: review?.error || 'not reviewed' },
-    // Sixth check, and DELIBERATELY not part of the `ok` conjunction below: did the
-    // world ideas he ticked onto this task actually get built, and can he reach them?
-    // It reaches him through `concerns`, the same path the reviewer's non-blocking
-    // findings take — which ships the change and shows the note. Only two findings
-    // may ever stop a publish and neither of them is this one.
-    ideas: ideasCheck,
   };
 
   const failed = shipCheckMessage({ syntax: checks.syntax, html: checks.html });
@@ -238,14 +218,6 @@ export function judgeTask(task) {
   // ones first. Non-blocking ones appear there too and the change still ships:
   // seeing them is the point, waiting on them is not.
   concerns.push(...concernLines(findings));
-  // The half-built idea, said the way he would say it. Never prefixed "Held back" —
-  // it is not held back, it went live, and there is a button to finish it.
-  for (const gap of ideaGaps) {
-    const name = gap.pick_name || 'an idea you picked';
-    concerns.push(gap.verdict === 'server_only'
-      ? `The idea "${name}" is on the server, but there is no way to use it in the app yet.`
-      : `The idea "${name}" does not appear in what was built.`);
-  }
 
   const ok = checks.syntax.ok && checks.html.ok && checks.scope.ok && blocking.length === 0;
   return {

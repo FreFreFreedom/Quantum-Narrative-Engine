@@ -35,7 +35,6 @@ import { workerRoutes } from './routes/worker.js';
 import { reviewsRoutes } from './routes/reviews.js';
 import { bindWorkSuggestionsDb, classifyUnplacedSuggestions } from './services/workSuggestions.js';
 import { bindWorkIdeasDb } from './services/workIdeas.js';
-import { bindInspireLandingDb, backfillApplications } from './services/inspireLanding.js';
 import { bindCardLinesDb } from './services/cardLines.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
@@ -88,7 +87,6 @@ bindTaskDb(db);
 bindAgentsDb(db);
 bindWorkSuggestionsDb(db);
 bindWorkIdeasDb(db);
-bindInspireLandingDb(db);
 bindCardLinesDb(db);
 bindReviewsDb(db);
 bindGitJobsDb(db);
@@ -101,17 +99,6 @@ bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
 bindTagCommunitiesDb(db);
-
-// Recover the history of which world ideas were applied to which card. Free, no
-// model, idempotent — and it reaches two things nothing else could: cards whose
-// inspire_picks_json a rewrite sweep already nulled, and every idea ever picked on a
-// RUNNING card, which the steer path recorded nowhere but a chat message.
-try {
-  const filled = backfillApplications();
-  if (filled.picks || filled.steers) {
-    console.log(`World ideas: recovered ${filled.picks} applied pick(s) and ${filled.steers} steered idea(s) into inspire_applications.`);
-  }
-} catch (e) { console.error('World-idea backfill failed:', e.message); }
 
 // Second-account-first policy (2026-08-22): one-time migration of per-feature
 // defaults onto the SECOND Claude subscription, so the smaller bank is spent before
