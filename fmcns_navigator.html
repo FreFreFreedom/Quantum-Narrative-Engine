@@ -2652,7 +2652,7 @@ let nodes=[], edges=[];
 // Bumped on every rebuild. The only thing that needs it is the spotlight memo, which
 // uses it as a cheap stand-in for "the pool or the filters changed".
 let graphEpoch=0;
-let focusedId=null, hoveredId=null, bridgesOn=true, showAllConnections=false;
+let focusedId=null, hoveredId=null, hoveredRegionId=null, bridgesOn=true, showAllConnections=false;
 const camera={x:0,y:0,scale:1};
 
 // The layout is a real d3-force simulation now, not the hand-rolled runSim() loop that
@@ -2761,6 +2761,122 @@ const LS_K = 8;              // springs per entity. Every pair would be ~23,000 
 const LS_LINK_MIN = 30;      // spring length at similarity 1
 const LS_LINK_SPAN = 170;    // ...growing to LS_LINK_MIN + this at similarity 0
 const LS_PARK_ZONE_R = 60;   // fallback region radius for a parking arc of 1–2 entities
+
+// ---------- Landscape community regions ("the countries") ----------
+// Fragment 15: the convex hulls of where each theme community's placed members sit are
+// the landscape's countries — drawn with the SAME convexHull()/expandPolygon()/traceBlob()
+// the graph's cluster regions use (no second implementation). Only the substantial
+// communities get a region; the other 90+ are single points or small co-occurrence blobs
+// whose hull would be noise, the opposite of the goal.
+//
+// THRESHOLD — chosen by looking at the live corpus (data-seed/tag_communities.json against
+// fmcns_ontology.json): of 106 communities, 101 carry at least one entity (204 tagged
+// entities total), and membership is extremely skewed — the largest holds 38, then a long
+// tail down to many singletons. There is a clean gap between 6 and the next value (4), so
+// 6 is the cut that yields the readable "countries" (13 of them) without drawing every
+// minor cluster. LS_REGION_MIN_SHOWN keeps a heavily filtered pool from going blank: if
+// fewer than that many communities clear 6, the floor drops to include the largest ones,
+// but never below 4 (a 3-member hull is a sliver, not a place).
+const LS_REGION_MIN_MEMBERS = 6;
+const LS_REGION_MIN_SHOWN = 8;
+// A landscape entity is a uniform dot, not a degree-sized one — size would lie about a
+// similarity map. Constant in SCREEN pixels at the far/mid bands; in the near band it
+// grows just enough to hold a poster (still screen-constant, so it does not balloon).
+const LS_DOT_PX = 3.2;
+
+// Cycle the settled cluster palette so a region's hue needs no new colour invented — the
+// palette is hand-tuned and must not change. Object.values() is read at draw time so it
+// follows the light/dark flip automatically (CLUSTER_COLORS is mutated in place).
+function regionPalette() { return Object.values(CLUSTER_COLORS); }
+
+// The regions for this frame, cached so the hover hit-test can read them without
+// recomputing the hulls. Empty outside Landscape.
+let _lsComRegions = [];
+
+// Point-in-polygon (ray cast) for region hover. `poly` is the expanded hull (world space).
+function pointInPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+    if (((yi > pt.y) !== (yj > pt.y)) && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+// Build the landscape's community regions from the CURRENT placed nodes. A node belongs to
+// every community any of its tags maps to (TAG_COMMUNITIES.tagCommunity), so a node can sit
+// in several regions — that is the whole point (territories overlap at their borders).
+function landscapeCommunityRegions() {
+  if (!landscapeOn()) return [];
+  const T2C = TAG_COMMUNITIES.tagCommunity || {};
+  const comById = TAG_COMMUNITIES.byId || {};
+  const members = new Map(); // community id -> [{x,y,node}]
+  nodes.forEach(n => {
+    if (n.parked || !Number.isFinite(n.x) || !Number.isFinite(n.y)) return;
+    const tags = n.tags || [];
+    if (!tags.length) return;
+    const set = new Set();
+    tags.forEach(t => { const c = T2C[t]; if (c) set.add(c); });
+    set.forEach(cid => {
+      let arr = members.get(cid);
+      if (!arr) members.set(cid, arr = []);
+      arr.push({ x: n.x, y: n.y, node: n });
+    });
+  });
+  const counts = [];
+  members.forEach((arr, cid) => counts.push({ cid, n: arr.length }));
+  counts.sort((a, b) => b.n - a.n);
+  let thr = LS_REGION_MIN_MEMBERS;
+  if (counts.length && counts.filter(c => c.n >= thr).length < LS_REGION_MIN_SHOWN) {
+    const k = Math.min(LS_REGION_MIN_SHOWN, counts.length);
+    thr = Math.max(4, counts[k - 1].n);
+  }
+  const palette = regionPalette();
+  const isAxis = colorMode === 'guilt_as_engine' || colorMode === 'possession_sovereignty';
+  const out = [];
+  counts.forEach(({ cid, n }) => {
+    if (n < thr || n < 3) return; // below the bar, or too few points for a real shape
+    const arr = members.get(cid);
+    const hull = convexHull(arr.map(p => ({ x: p.x, y: p.y })));
+    if (hull.length < 3) return;
+    const pts = expandPolygon(hull, HULL_PAD);
+    let top = pts[0];
+    pts.forEach(p => { if (p.y < top.y) top = p; });
+    let cx = 0, cy = 0;
+    arr.forEach(p => { cx += p.x; cy += p.y; });
+    cx /= arr.length; cy /= arr.length;
+    // The member nearest the centroid is the "dense centre" the mid band labels.
+    let nearest = arr[0].node, best = Infinity;
+    arr.forEach(p => {
+      const d = (p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy);
+      if (d < best) { best = d; nearest = p.node; }
+    });
+    // Colour: the continuum overlay (a real colour-mode axis) tints the region by the
+    // MEAN score of its scored members. Unscored members are excluded from the mean, and
+    // a territory with none scored reads NEUTRAL grey — never the mid-range colour, so
+    // "not measured here" cannot be mistaken for "right in the middle".
+    let color;
+    if (isAxis) {
+      let sum = 0, cnt = 0;
+      arr.forEach(p => {
+        const v = p.node.continuum && p.node.continuum[colorMode];
+        if (typeof v === 'number') { sum += v; cnt++; }
+      });
+      color = cnt ? continuumColor(sum / cnt) : '#c9c3b8';
+    } else {
+      color = palette[out.length % palette.length];
+    }
+    out.push({
+      id: cid,
+      name: (comById[cid] && comById[cid].name) || cid,
+      members: arr.map(p => p.node),
+      centroid: { x: cx, y: cy },
+      nearest, pts, top, color,
+    });
+  });
+  _lsComRegions = out;
+  return out;
+}
 
 // The computed landscape for one active entity set. Rebuilt only when that set
 // changes: the full matrix over 214 entities is ~2,300 pair accumulations through the
@@ -3661,6 +3777,13 @@ const BAND_FADE_MS = 200;
 let _bandCur = -1, _bandFrom = null, _bandFadeStart = 0;
 let _bandW = { far: 1, mid: 0, near: 0, fading: false };
 
+// Canvas animation is invisible to the global reduced-motion CSS block (line 80 only
+// touches CSS transitions/animations), so the two canvas motions this view owns have to
+// be switched off here in JS: the band cross-fade (updateBands) and NavCtrl's momentum
+// glide. prefers-reduced-motion is read once at load — the camera, bands and layout all
+// still work, just without the fades.
+const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
 // Which band a scale belongs to, with hysteresis: LEAVING a band costs 6% more zoom than
 // entering it did, so a scale parked exactly on 0.6 cannot oscillate between two bands
 // (and re-trigger a fade) on every rounding wobble of the wheel.
@@ -3687,6 +3810,7 @@ function updateBands() {
     _bandFadeStart = gNow();
   }
   let t = _bandFrom ? (gNow() - _bandFadeStart) / BAND_FADE_MS : 1;
+  if (REDUCED_MOTION) t = 1; // no cross-fade: snap straight to the target band's weights
   if (t >= 1) { t = 1; _bandFrom = null; }
   const e = t * t * (3 - 2 * t); // smoothstep: the fade has no visible start or stop
   const w = [0, 0, 0];
@@ -3929,6 +4053,17 @@ function drawnRadius(n, far, farDot) {
   const full = nodeRadius(n);
   const dot = n.id === focusedId ? farDot * 1.8 : farDot;
   return full + (dot - full) * far;
+}
+// Landscape nodes are deliberately uniform — a similarity map must not encode degree as
+// size, or the geography lies. `near` is the band weight (0 in far/mid, 1 in near): the
+// dot stays a constant screen size until the near band, where it grows just enough to
+// frame a poster, still screen-constant so it never balloons with zoom.
+function landscapeNodeRadius(n, s, near) {
+  const dot = LS_DOT_PX / (s || 1);
+  const poster = (n.type === 'country' ? 9 : 11) / (s || 1);
+  let r = dot + (poster - dot) * near;
+  if (n.id === focusedId) r += 2 / (s || 1);
+  return r;
 }
 
 // ---------- Node imagery: posters and flags in the near band ----------
@@ -4353,8 +4488,12 @@ function paintGraph() {
   // else sits on top. In the far band the regions ARE the picture and come forward; in
   // the near bands they retreat to the orientation wash they have always been. Only the
   // alpha moves — every colour is exactly the one CLUSTER_COLORS already held.
-  const regionFill = 0.06 + 0.045 * bw.far;
-  const regionLine = 0.18 + 0.16 * bw.far;
+  const lsFlag = landscapeOn();
+  // In Landscape the regions are the point at EVERY zoom, so their alpha is held steady
+  // instead of fading with the band — the far band's fill boost would make them strobe
+  // against the entities as you wheel.
+  const regionFill = lsFlag ? 0.09 : (0.06 + 0.045 * bw.far);
+  const regionLine = lsFlag ? 0.22 : (0.18 + 0.16 * bw.far);
   const regions = clusterRegions();
   regions.forEach(rg => {
     const col = gPaint(CLUSTER_COLORS[rg.code] || 'var(--c-border-3)', '#c8bfae');
@@ -4369,6 +4508,24 @@ function paintGraph() {
     ctx.fill();
     // The outline is what makes it read as a region and not a smudge, so it stays a
     // hairline at every zoom — hence 1 SCREEN pixel divided back out of the world scale.
+    ctx.globalAlpha = regionLine;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1 / (s || 1);
+    ctx.stroke();
+  });
+  // 1b. The landscape's community regions — its "countries". Same hull/colour pipeline as
+  // above (clusterRegions draws the parking arcs); these are the theme territories. Only
+  // the substantial communities qualify (landscapeCommunityRegions()), and their colour is
+  // the cluster palette cycled, or the continuum overlay when a colour-mode axis is active.
+  const communityRegs = lsFlag ? landscapeCommunityRegions() : [];
+  const regionCentreIds = new Set();
+  communityRegs.forEach(rg => {
+    if (rg.nearest) regionCentreIds.add(rg.nearest.id);
+    const col = gPaint(rg.color, '#89806f');
+    ctx.fillStyle = col;
+    traceBlob(ctx, rg.pts, HULL_ROUND);
+    ctx.globalAlpha = regionFill;
+    ctx.fill();
     ctx.globalAlpha = regionLine;
     ctx.strokeStyle = col;
     ctx.lineWidth = 1 / (s || 1);
@@ -4417,13 +4574,15 @@ function paintGraph() {
   nodes.forEach(n => {
     const dimmed = spotlight && !spotlight.has(n.id);
     const alpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
-    const r = drawnRadius(n, bw.far, farDot), focused = n.id === focusedId;
+    // Landscape draws every entity as a uniform dot (no degree sizing); it only swells in
+    // the near band to make room for a poster. The graph keeps its degree-sized nodes.
+    const r = lsFlag ? landscapeNodeRadius(n, s, bw.near) : drawnRadius(n, bw.far, farDot), focused = n.id === focusedId;
     // The old markup put an invisible larger hit-circle under every node, and the
     // `.gnode circle` rule stroked that too — so a faint --c-bg ring at r+7 is part of
     // how the graph looks today, not an accident of the hit-testing. Kept for the two
     // near bands, faded out for the far one: 7 world units is 2 screen px at 0.3x, where
     // the ring stops being breathing room and starts fusing the map into one smear.
-    if (bw.far < 1) {
+    if (!lsFlag && bw.far < 1) {
       ctx.globalAlpha = alpha * (1 - bw.far);
       ctx.lineWidth = 1.6; ctx.strokeStyle = bgC;
       ctx.beginPath(); ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2); ctx.stroke();
@@ -4518,6 +4677,29 @@ function paintGraph() {
     if (bw.far > 0) drawLabel(ctx, LBL_ZONE_FAR, txt, p.x, y, 0.9 * bw.far, col, haloC);
   });
 
+  // 4a-ii. Landscape community-region names. The territory's full name reads like
+  // "desire as exposure / erotic power inversion / ...", far too long for the map — so
+  // the on-map label is its first segment (the part before the first " / "), and the
+  // FULL name is held for hover (see setupGraphPointer's region hit-test, which swaps it
+  // in when the pointer is over the region). Reuses the same collision box as everything
+  // above, so a region name can never sit on a cluster name or another region's name.
+  // Steady in every band: the territories are the picture at all zooms.
+  communityRegs.forEach(rg => {
+    const short = (rg.name.split(' / ')[0] || rg.name).trim();
+    const hovered = hoveredRegionId === rg.id;
+    const txt = hovered ? rg.name : truncate(short, 28);
+    const p = wToS(rg.top.x, rg.top.y);
+    if (p.x < -260 || p.x > gW + 260 || p.y < -80 || p.y > gH + 90) return;
+    const half = labelWidth(ctx, LBL_ZONE_FAR, txt) / 2 + 5;
+    let y = p.y - 8;
+    if (!space.take({ x0: p.x - half, x1: p.x + half, y0: y - 14, y1: y + 5 })) {
+      y -= 17;
+      if (!space.take({ x0: p.x - half, x1: p.x + half, y0: y - 14, y1: y + 5 })) return;
+    }
+    const col = gPaint(rg.color, '#89806f');
+    drawLabel(ctx, LBL_ZONE_FAR, txt, p.x, y, hovered ? 1 : 0.92, col, haloC);
+  });
+
   // 4b. Node labels, in priority order — the focused node, then its neighbours (the
   // spotlight), then by degree, with last frame's winners holding their place by half a
   // rank point so a settling layout does not make them blink. Anything off-stage is
@@ -4544,10 +4726,22 @@ function paintGraph() {
     const half = labelWidth(ctx, f, txt) / 2 + 3;
     // The gap is measured in screen pixels off the node's on-screen edge — a world-unit
     // gap would collapse into the dot as you zoom out.
-    const y = c.p.y + drawnRadius(n, bw.far, farDot) * s + 10;
+    const rForLabel = lsFlag ? landscapeNodeRadius(n, s, bw.near) : drawnRadius(n, bw.far, farDot);
+    const y = c.p.y + rForLabel * s + 10;
     if (!space.take({ x0: c.p.x - half, x1: c.p.x + half, y0: y - f.px * 0.85, y1: y + f.px * 0.3 })) continue;
+    // Landscape semantic zoom: the far band is regions and their names ONLY — no entity
+    // labels at all. The mid band labels just the entity nearest each region's centre
+    // (band weight bw.mid); the near band labels everything (bw.near). Both weights
+    // cross-fade, so the three views appear without a hard switch. Whatever the pointer
+    // or spotlight is on stays labelled whatever the zoom, so you never lose your place.
+    let bandA = 1;
+    if (lsFlag) {
+      const onThis = focused || (spotlight && spotlight.has(n.id));
+      bandA = onThis ? 1 : (regionCentreIds.has(n.id) ? bw.mid : bw.near);
+      if (bandA < 0.02) continue;
+    }
     const dimmed = spotlight && !spotlight.has(n.id);
-    drawLabel(ctx, f, txt, c.p.x, y, c.w * (dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1), inkC, haloC);
+    drawLabel(ctx, f, txt, c.p.x, y, c.w * bandA * (dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1), inkC, haloC);
     placed.add(n.id);
   }
   _lblPlaced = placed;
@@ -4659,12 +4853,19 @@ function setupGraphPointer() {
     const e = n ? null : edgeAt(w.x, w.y, spotlight);
     const nid = n ? n.id : null;
     const ek = e ? edgeKey(e) : null;
+    // Landscape: a pointer over a community region (and not over a node) shows that
+    // region's FULL name on the map — the short first-segment is what is drawn normally.
+    let rid = null;
+    if (!nid && landscapeOn() && _lsComRegions.length) {
+      for (const rg of _lsComRegions) { if (pointInPoly(w, rg.pts)) { rid = rg.id; break; } }
+    }
     c.classList.toggle('is-hit', !!(n || e));
-    if (nid === hoveredId && ek === (hoveredEdge ? edgeKey(hoveredEdge) : null)) return;
+    if (nid === hoveredId && ek === (hoveredEdge ? edgeKey(hoveredEdge) : null) && rid === hoveredRegionId) return;
     // No debounce: hover is a state change plus one repaint, so there is no DOM to be
     // torn down mid-gesture and nothing left for a click to race against.
     hoveredId = nid;
     hoveredEdge = e;
+    hoveredRegionId = rid;
     kbCursorId = null; // the mouse has taken over the highlight
     requestRender();
   };
@@ -4703,7 +4904,7 @@ function setupGraphPointer() {
     // Pointer capture means this should not fire mid-drag, but if it ever does the
     // simulation must not be left running warm with a phantom node held down.
     releaseNode();
-    if (hoveredId || hoveredEdge) { hoveredId = null; hoveredEdge = null; kbCursorId = null; requestRender(); }
+    if (hoveredId || hoveredEdge || hoveredRegionId) { hoveredId = null; hoveredEdge = null; hoveredRegionId = null; kbCursorId = null; requestRender(); }
   });
   // Double-click does two jobs, and which one depends on the node: a node you have
   // PINNED by dragging it is released (that was this handler's only job before), and
@@ -4831,6 +5032,8 @@ function renderLegend(){
     html = '<div class="section-label">Placement</div>';
     html += '<div class="row"><span class="dotswatch" style="background:var(--c-ink-4)"></span> Placed by shared themes</div>';
     html += '<div class="row"><span class="dotswatch hollow"></span> No themes — parked by cluster</div>';
+    html += '<div class="section-label">Regions</div>';
+    html += '<div class="row"><span class="dotswatch" style="background:var(--c-ink-4)"></span> Theme territory — its label names it</div>';
   } else {
     html = '<div class="section-label">Connections</div>';
     html += '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div>';
@@ -5155,6 +5358,8 @@ function setupZoomPan(){
     // is the closest thing this camera has to "100%".
     fit: () => { fitVisibleNodes(); requestRender(); },
     momentumMode: 'release',
+    // Reduced motion: no glide after a fling. The camera still pans/zooms, just 1:1.
+    momentum: !REDUCED_MOTION,
     fixedViewBox: true,
     shouldPan: graphShouldPan,
     onTap: graphTap,
