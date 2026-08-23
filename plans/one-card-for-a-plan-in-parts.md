@@ -2,7 +2,22 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-23 |
+| **DONE** | 2026-08-23 |
+
+**Shipped 2026-08-23 as `1e79af04`, and it was inert.** Two bugs, both found by using it
+rather than by reading the report it filed:
+
+1. `createGroup()` passed `is_group: true` while `createPrompt` compared `is_group === 1`.
+   `true === 1` is false, so every umbrella was stored as an ordinary task — no collapsing in
+   the Flow, and none of the three guards that stop a group being handed to an agent. Fixed
+   in `f0068ae`; `npm run group:selftest` now asserts it, and reads the real source so a
+   revert fails the test.
+2. `POST /prompts/group` did not `await` the async create, so it serialised a pending Promise:
+   HTTP 201, a body of `{}`, and any failure inside became an unhandled rejection. Two probes
+   against production returned 201 and created nothing. Fixed in `1047fe1`.
+
+The rendering half — one card, `N of N done`, parts folded inside with their own start
+buttons — shipped correctly and was only ever waiting on a group row that actually existed.
 
 Medium-sized, and it pays for itself the moment the next multi-part plan is filed. No AI
 calls, no new model spend — this is queue bookkeeping and one renderer.

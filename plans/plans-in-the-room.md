@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-23 |
+| **DONE** | 2026-08-23 |
 
 Small and self-contained. Split out of [one-chat-many-minds.md](one-chat-many-minds.md)
 (Part 7) because it needs none of that plan's other six parts, and because it is what
