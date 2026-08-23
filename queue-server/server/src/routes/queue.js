@@ -7,6 +7,7 @@ import { findAgentTask, execOutputBytes, getExecTimeoutMinutes, isLocalExecution
 import { latestReviewForPrompt } from '../services/reviewRunner.js';
 import { shipStateFor } from '../services/gitJobs.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
+import { feedCompletedToRecommender } from '../services/workSuggestions.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 export function queueRoutes() {
@@ -141,10 +142,22 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  // Hand to the Hive. Deleting a finished card is the moment the work is declared
+  // over, so that is where the ledger of labelled examples gets fed — the "Clear done"
+  // button this used to hang off was removed in 4142889 and left the whole backend
+  // (work_completed_examples, buildContextDigest, suggestionStaleReason) starved.
+  // Must run BEFORE deletePrompt sets deleted_at, since the feed reads work_prompts by
+  // id. INSERT OR IGNORE + the unique index on prompt_id make it idempotent, and a
+  // failed feed must never stop the delete.
   router.delete('/prompts/:id', (req, res) => {
+    const row = queue.getPrompt(req.params.id);
+    let fed = 0;
+    if (row && ['done', 'cancelled'].includes(row.status)) {
+      try { fed = feedCompletedToRecommender([row.id]).fed || 0; } catch {}
+    }
     const ok = queue.deletePrompt(req.params.id);
     if (!ok) return res.status(404).json({ error: 'not_found' });
-    res.json({ ok: true });
+    res.json({ ok: true, fed });
   });
 
   router.post('/prompts/reorder', (req, res) => {
