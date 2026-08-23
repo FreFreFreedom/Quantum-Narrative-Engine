@@ -211,10 +211,11 @@ export function backfillApplications() {
     }
   } catch { /* the live paths still record; a failed backfill only shortens the audit */ }
 
-  // The steer path. There is no position to recover -- the message holds the digest,
-  // not the indices -- so these rows are anchored on the report with part/pick -1 and
-  // carry the digest as their text. A negative position can never collide with a real
-  // one, and it is honest: we know the idea was sent, not where it sat.
+  // The steer path. The message holds the digest, not the pick positions, so these rows
+  // sit at negative indices -- a value a real position can never take. What CAN be
+  // recovered exactly is which ideas he chose: the digest marks them (CHOSEN), each on
+  // its own '- Name: what it does' line. So one row per chosen idea, named for the
+  // idea rather than for the shelf heading that happened to sit above it.
   try {
     const msgs = db.prepare(`
       SELECT m.prompt_id, m.text, p.inspire_report_id
@@ -223,15 +224,28 @@ export function backfillApplications() {
       WHERE m.text LIKE ? AND p.inspire_report_id IS NOT NULL
     `).all(STEER_PREFIX + '%');
     for (const m of msgs) {
-      if (getKey(m.prompt_id, m.inspire_report_id, -1, -1)) continue;
       const digest = String(m.text || '').slice(STEER_PREFIX.length).trim();
-      recordApplied({
-        prompt_id: m.prompt_id, report_id: m.inspire_report_id,
-        part_index: -1, pick_index: -1,
-        pick_name: firstLine(digest), pick_text: digest,
-        how: 'steer', witness_source: 'guessed',
+      const chosen = chosenFromDigest(digest);
+      // The first version of this backfill stored the whole digest as one row and named
+      // it after its first line -- a shelf heading, not an idea. Clear that row so the
+      // real ideas can take its place; nothing else ever writes at this position.
+      // COALESCE, not `IS NOT 'landed'`: that spelling is rejected by some SQLite
+      // builds, and this block sits inside a catch, so it would fail in silence.
+      const stale = getKey(m.prompt_id, m.inspire_report_id, -1, -1);
+      const staleRow = stale ? getById(stale.id) : null;
+      if (staleRow && chosen.length && staleRow.pick_name !== chosen[0].name) {
+        try { db.prepare(`DELETE FROM inspire_applications WHERE id=? AND COALESCE(verdict,'') <> 'landed'`).run(stale.id); } catch {}
+      }
+      chosen.forEach((c, i) => {
+        if (getKey(m.prompt_id, m.inspire_report_id, -1, -(i + 1))) return;
+        recordApplied({
+          prompt_id: m.prompt_id, report_id: m.inspire_report_id,
+          part_index: -1, pick_index: -(i + 1),
+          pick_name: c.name, pick_text: c.text,
+          how: 'steer', witness_source: 'guessed',
+        });
+        steers++;
       });
-      steers++;
     }
   } catch { /* same */ }
 
