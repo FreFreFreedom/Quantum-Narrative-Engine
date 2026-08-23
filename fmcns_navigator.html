@@ -7485,7 +7485,12 @@ async function loadAiSettings() {
   try {
     const [settings, , freeProviders] = await Promise.all([
       api('/api/travaux/ai-settings'),
-      qProviders.opencode ? Promise.resolve() : loadProviders(),
+      // Test the model LIST, not the key: qProviders is initialised with an empty
+      // opencode object, so `qProviders.opencode` has always been truthy and this
+      // never fetched anything. Opening AI Settings before the Queue tab therefore
+      // showed "OpenCode unreachable" and an empty model dropdown on a perfectly
+      // healthy install (found 2026-08-23).
+      qProviders.opencode?.models?.length ? Promise.resolve() : loadProviders(),
       api('/api/travaux/free-providers').catch(() => null),
     ]);
     aiSettings = settings;
