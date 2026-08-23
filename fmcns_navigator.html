@@ -6949,7 +6949,11 @@ function initRoom() {
     // Mid-peek the panel is already shut underneath, so letting go of the peek IS
     // the collapse — toggling would pin it open instead of closing it.
     if (z.panel.classList.contains('peek')) dropPeek(z);
-    else z.panel.classList.toggle('collapsed');
+    // Narrow, the panel is an overlay whose only state is .open — letting go of
+    // it IS the collapse. Adding the wide-window .collapsed on top would leave a
+    // zero-width panel behind, and the next hover-peek would slide in onto
+    // nothing at all.
+    else if (!isRoomNarrow()) z.panel.classList.toggle('collapsed');
     syncZoneBtns();
   };
   const thColl = document.getElementById('roomThreadsCollapse');
