@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED 2026-08-22 |
+| **Status** | DONE 2026-08-22 — **Landscape** is the third Content view, on the same canvas, renderer and camera as the graph; only the forces differ (`installLayoutForces`). **One correction to the brief, measured:** a community-only vector is too coarse to lay anything out — 118 of the 214 tagged entities have all their tags inside a single community, so every one of them gets an identical unit vector and the map collapses into ~106 coincident points. The shipped vector is communities (rarity-weighted, the backbone) **plus the 59 tags that at least two entities carry** (44% of all tag occurrences), which is what gives a community an interior. Tags nobody else carries are dropped outright rather than rarity-weighted. Measured on the live corpus with the shipped code: mean distance 74 units between entities sharing a theme community vs 388 between entities sharing nothing — **5.2x**. 214 placed by theme, 199 parked on the cluster ring, no overlap between the two. |
 | **Parent plan** | `plans/a-map-of-what-belongs-together.md` |
 | **Part of** | the fragment chain in `plans/fragments/` — run in filename order |
 
