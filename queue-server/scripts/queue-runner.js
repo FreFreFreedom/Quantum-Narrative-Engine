@@ -981,7 +981,7 @@ async function runTask(task) {
       // Bills per use. Never run, never fallen back onto — Antoine's standing rule.
       // The old test here was a /^opencode(-go)?\// regex, which let every Zen
       // pay-per-token id through (opencode/gpt-5, opencode/claude-*, deepseek-v4-pro).
-      pickNote = `${picked} bills per use, so it was not run.`;
+      pickNote = 'it bills per use, so it was not run.';
       console.log(yellow(`  Not running ${picked} — it bills per use. Using the free models instead.`));
     } else {
       const at = chain.indexOf(picked);
