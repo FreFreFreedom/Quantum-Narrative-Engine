@@ -5,8 +5,13 @@
 // decision here — the same free-first shape modelPolicy.js uses for Dispatch
 // Queue tasks. A tiny judge call breaks the one real tie (app-signal vs
 // brainstorm-signal), and the expensive/risky path (dispatching a real coding
-// task) is made IMPOSSIBLE for the judge: only the deterministic soundsLikeTask()
-// heuristic, plus the owner's own click, may ever produce `implement`.
+// task) is made IMPOSSIBLE for the judge to produce out of nothing: `implement`
+// only ever comes from the deterministic soundsLikeTask() heuristic — checked
+// against either the current message, or (via soundsLikeConfirmation) a short
+// reply confirming a build-shaped assistant turn right before it — plus the
+// owner's own click. The one judge that touches this path (judgeConfirmsBuild)
+// is gated behind soundsLikeTask(lastAssistantText) already being true, so it
+// can only classify a confirmation, never invent a build request on its own.
 //
 // resolveTurn() returns { intent, lane, repoFacts, why }:
 //   intent     one of: forced | about_app | code_read | implement | brainstorm
@@ -58,6 +63,35 @@ function soundsLikeTask(text) {
   if (!t || t.length > 220) return false;
   const markers = ['fix', 'change', 'remove', 'make it ', 'get it working', "doesn't work", 'does not work', 'broken', 'bug', 'update the ', 'the button', 'the page', 'when i click', 'the header', 'the flow', 'the queue', 'the graph', 'the tab ', 'add a ', 'add an ', 'add the ', 'build a ', 'create a ', 'implement'];
   return markers.some((m) => t.indexOf(m) !== -1);
+}
+
+// A short reply that only means something read against the turn before it — "do it",
+// "go ahead", "can you perform this" don't carry any task-shaped words of their own.
+function soundsLikeConfirmation(text) {
+  const t = (text || '').trim().toLowerCase();
+  if (!t || t.length > 80) return false;
+  return /^(yes|yeah|yep|sure|ok|okay|do it|go ahead|please do|let'?s do it|do that|can you (do|perform|implement|build) (this|that|it))\b/.test(t);
+}
+
+// Confirmation-judge: only ever consulted when soundsLikeTask(lastAssistantText) is
+// already true (see resolveTurn step 3) — it may classify the CURRENT short reply as
+// confirming or not, never independently produce `implement` on its own signal.
+// Same shape as judgeAppVsBrainstorm: tiny prompt, tiny maxTokens, fail-safe default.
+async function judgeConfirmsBuild(text, priorText) {
+  const prompt = [
+    'The previous assistant message proposed a concrete change to make. Does this next',
+    'user message mean "yes, go ahead and build that"? Reply with EXACTLY one word: yes',
+    'or no. If unsure, answer no.\n\n',
+    `Assistant said:\n${String(priorText || '').slice(0, 800)}\n\n`,
+    `User replied:\n${String(text || '').slice(0, 200)}`,
+  ].join('');
+  try {
+    const out = await generateText({ prompt, feature: 'judge', maxTokens: 10, label: 'turnRouter:confirm' });
+    if (out.error) return false;
+    return /\byes\b/i.test(String(out.text || '').trim());
+  } catch {
+    return false;
+  }
 }
 
 // Pull a few significant words out of a phrase-only about_app question so the
@@ -171,6 +205,25 @@ export async function resolveTurn({ convoId, text, lastAssistantText } = {}) {
   //    it. The judge above can never return it, so a confused message is safe.
   if (soundsLikeTask(trimmed)) {
     return { intent: 'implement', lane: null, repoFacts: null, why: 'soundsLikeTask -> implement (no dispatch)' };
+  }
+
+  // A confirmation of a build the assistant's own last turn already described. Still
+  // only ever reached via soundsLikeTask — just checked against the OTHER message this
+  // time — so the "only this heuristic may produce implement" rule (see file header)
+  // still holds; nothing new can invent implement out of nothing.
+  if (soundsLikeConfirmation(trimmed) && soundsLikeTask(lastAssistantText || '')) {
+    return { intent: 'implement', lane: null, repoFacts: null, why: 'confirmation of a prior build-shaped reply -> implement (no dispatch)' };
+  }
+
+  // Narrow judge fallback: a short reply that doesn't match soundsLikeConfirmation's
+  // keyword list, but follows a build-shaped assistant turn. Gated behind
+  // soundsLikeTask(lastAssistantText) already being true, so the judge can only
+  // classify this reply as confirming or not — never an independent path to implement.
+  if (!soundsLikeTask(trimmed) && soundsLikeTask(lastAssistantText || '') && trimmed.length <= 80) {
+    const confirmed = await judgeConfirmsBuild(trimmed, lastAssistantText);
+    if (confirmed) {
+      return { intent: 'implement', lane: null, repoFacts: null, why: 'judge: short reply confirms the prior build-shaped turn -> implement (no dispatch)' };
+    }
   }
 
   // 4. brainstorm — everything else, including anything we were unsure about. The
