@@ -1219,6 +1219,16 @@ export function findReportBySource(db, source, source_id) {
   return row ? getReport(db, row.id) : null;
 }
 
+// Every world-look round attached to an item, newest first — unlike
+// findReportBySource above (single latest row), used where old rounds should
+// stay visible instead of being silently replaced by the next background look
+// (plan "room-sidebar-fixes", Room Ideas accumulation).
+export function listReportsBySource(db, source, source_id) {
+  if (!source || !source_id) return [];
+  const rows = db.prepare(`SELECT id FROM discovery_reports WHERE source=? AND source_id=? ORDER BY created_at DESC`).all(source, source_id);
+  return rows.map(r => getReport(db, r.id)).filter(Boolean);
+}
+
 // ─── Shared in-flight guard + background sweeper ─────────────────────────────
 // One look per item at a time, anywhere it is triggered from (the section
 // panels' routes OR the background sweep) — the GET endpoint reports it, and

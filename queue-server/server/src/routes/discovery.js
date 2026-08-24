@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import {
   listQueries, getResults, recordFeedback, runIdeaSearch, listReports, getReport, findReportBySource,
+  listReportsBySource,
   isWorldLookRunning, runWorldLookGuarded, plant, plantProject, listUnplantedBoldPicks, CURATED_QUERIES,
   addCustomBoldPick, rewriteWorldLooks, staleWorldLooks, WORLD_LOOK_GEN,
   updatePickInPlace, appendPicks, updatePartFraming, removeConvoPicks, swapOnePick,
@@ -144,6 +145,15 @@ export function discoveryRoutes(db) {
     const { source, source_id } = req.query;
     if (!source || !source_id) return res.status(400).json({ error: 'source and source_id are required' });
     const key = { source: String(source), source_id: String(source_id) };
+    // `all=1` is only meaningful for source=convo — the Room accumulates every
+    // world-look round instead of only ever showing the latest one (plan
+    // "room-sidebar-fixes"). Every other caller keeps today's single-report shape.
+    if (req.query.all === '1') {
+      return res.json({
+        reports: listReportsBySource(db, key.source, key.source_id),
+        running: isWorldLookRunning(key.source, key.source_id),
+      });
+    }
     res.json({
       report: findReportBySource(db, key.source, key.source_id),
       running: isWorldLookRunning(key.source, key.source_id),
