@@ -72,6 +72,10 @@ memory every lane reads. That is the build.
 
 ## Part 1 — The shared memory (build first; everything else leans on it)
 
+**SPLIT OUT to [room-shared-memory.md](room-shared-memory.md) and sent to the queue
+2026-08-24.** That file is the executable version; what follows is the summary. Do not
+implement this section — implement that plan.
+
 One global memory about you, read by the Room, the in-card Idea Studio, and every lane.
 
 ### Storage — `server/src/db/schema.js`
@@ -373,6 +377,15 @@ becomes attachable in the Room like any other.
 - No `codingRank` field — the explorer confirmed it does not exist in this repo despite
   appearing in older notes. Ranking is `freeRank` (`opencode.js:298`) and
   `MODEL_TIER_ORDER` (`claudeCode.js:87`).
+- No Mem0, LiteLLM, or any other external memory/gateway library (checked 2026-08-24) —
+  both assume a separate always-on service and, for Mem0, per-call embedding cost; this
+  app's free-first router and the `mind_facts` design above already fit a single-user app
+  better and cost nothing extra.
+- No Gemini file-digest call — Part 5 already solves the 1500-char-preview problem for
+  free (full text extracted in-browser, read on demand via a tool), so a paid summarizing
+  call adds nothing.
+- No auto draft→review→deploy automation here — that is the Dispatch Queue/OpenCode
+  pipeline, a different subsystem; Antoine's standing call is to keep `oc ship` manual.
 
 ## Verification
 
