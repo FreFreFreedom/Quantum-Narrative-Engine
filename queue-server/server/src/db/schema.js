@@ -904,14 +904,24 @@ export function initKnowledgeSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
+  // outline_json (plan "deep-document-extraction"): the PDF outline/bookmarks
+  // the browser pulled via pdfjs getOutline() at upload time, as
+  // [{title, charStart}, ...] — lets planChunks() split by real document
+  // structure instead of only fixed windows. Null/absent for non-PDF uploads
+  // and for docs uploaded before this column existed; docExtraction.js falls
+  // back to heuristic heading detection in that case.
+  try { db.exec(`ALTER TABLE knowledge_docs ADD COLUMN outline_json TEXT`); } catch {}
 }
 
-// ─── Section-by-section PDF extraction (plan "pdf-section-extraction") ────────
+// ─── Section-by-section PDF extraction (plan "pdf-section-extraction",
+// deepened by "deep-document-extraction") ──────────────────────────────────
 // A huge PDF already lands whole in knowledge_docs via the Room's file upload
-// (see attachFile above). This table is the resumable plan of fixed-size
-// windows over that one row's content: one row per window, walked forward by
+// (see attachFile above). This table is the resumable plan of reading units
+// over that one row's content — one row per unit, walked forward by
 // services/docExtraction.js#runExtractionSweep, with a human confirm/reject
-// step per row before anything counts as read.
+// step per row before anything counts as read. Units are structure-aware
+// (real document sections, subdivided if oversized) when an outline or
+// detectable headings exist, falling back to fixed windows otherwise.
 export function initDocExtractionSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS doc_extractions (
@@ -930,6 +940,12 @@ export function initDocExtractionSchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_doc_extractions_convo ON doc_extractions(convo_id, knowledge_doc_title, chunk_index)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_doc_extractions_status ON doc_extractions(convo_id, status)`); } catch {}
+  // section_title/granularity (plan "deep-document-extraction"): which real
+  // section this unit came from (null for plain fixed windows) and whether it
+  // is a whole 'section', a 'subsection' (an oversized section split further),
+  // or a fixed 'window' (no structure detected at all).
+  try { db.exec(`ALTER TABLE doc_extractions ADD COLUMN section_title TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE doc_extractions ADD COLUMN granularity TEXT NOT NULL DEFAULT 'window'`); } catch {}
 }
 
 // ─── Book recommendations, cached per entity ────────────────────────────────────

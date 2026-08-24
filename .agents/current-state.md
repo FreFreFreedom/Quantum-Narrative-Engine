@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-24T22:52:04.481Z
+Generated: 2026-08-24T23:07:19.453Z
 
 ## Components
 
@@ -39,6 +39,7 @@ Generated: 2026-08-24T22:52:04.481Z
 ## Plan backlog
 
 - chat-model-picker — **PLANNED** 2026-08-24
+- deep-document-extraction — **PLANNED** 2026-08-24
 - opencode-terminals-as-a-second-lane — **PLANNED** 2026-08-23
 - room-shared-memory — **DONE** 2026-08-23 — shipped via `oc ship`; fixed two real bugs found by using it for real (`manualComplete` never updated the card's own status, and the new Mind panel's `loadMind`/`renderMind` collided with the Architecture tab's pre-existing functions of the same name)
 - room-turn-router — **PLANNED** 2026-08-23

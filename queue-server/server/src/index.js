@@ -146,12 +146,14 @@ try {
   if (!planMigrated.skipped && planMigrated.changed) console.log('Plan-draft model: updated to claude-code/sonnet.');
 } catch (e) { console.error('Plan-draft migration failed:', e.message); }
 
-// Pin the doc-extraction feature at Google AI Studio / Gemini Flash Lite (plan
-// "pdf-section-extraction"), so the section-by-section PDF sweep is guaranteed
-// free rather than free-by-default. Flag-guarded, runs once, ever.
+// Pin the doc-extraction feature at Google AI Studio / Gemini Flash (plan
+// "deep-document-extraction", was Flash Lite under "pdf-section-extraction"),
+// so the section-by-section document sweep is guaranteed free rather than
+// free-by-default. Flag-guarded, but re-checks the stored model even once the
+// flag is set so an already-migrated install still moves up to Flash.
 try {
   const docExtractionMigrated = migrateDocExtractionModel();
-  if (!docExtractionMigrated.skipped && docExtractionMigrated.changed) console.log('Doc-extraction model: pinned to google-ai-studio/gemini-flash-lite-latest.');
+  if (!docExtractionMigrated.skipped && docExtractionMigrated.changed) console.log('Doc-extraction model: pinned to google-ai-studio/gemini-flash-latest.');
 } catch (e) { console.error('Doc-extraction migration failed:', e.message); }
 
 // Repopulate ontology + knowledge data on every boot. Not because the DB is wiped —

@@ -75,7 +75,12 @@ export function listFiles() {
 // never rides in the prompt" rule) and computed its own sha; this only persists
 // it. Same-named upload gets a numbered suffix via uniqueTitle(), never an
 // overwrite — a previous file's content must never be silently destroyed.
-export function attachFile(convoId, { filename, mimeType, text, bytes, sha } = {}) {
+// outline (plan "deep-document-extraction"): the PDF outline/bookmarks the
+// browser pulled via pdfjs getOutline() at upload time, as
+// [{title, charStart}, ...]. Optional — non-PDF uploads and PDFs with no
+// bookmarks send nothing, and docExtraction.js falls back to heuristic
+// heading detection in that case.
+export function attachFile(convoId, { filename, mimeType, text, bytes, sha, outline } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -89,11 +94,19 @@ export function attachFile(convoId, { filename, mimeType, text, bytes, sha } = {
   const id = finalTitle.replace(/^File: /, '');
   const today = new Date().toISOString().slice(0, 10);
   const description = `UPLOADED ${today} — ${rawName}, ${Number(bytes) || body.length} bytes${sha ? `, sha ${String(sha).slice(0, 12)}` : ''}`;
+  let outlineJson = null;
+  if (Array.isArray(outline) && outline.length) {
+    const clean = outline
+      .filter((o) => o && Number.isFinite(o.charStart) && o.charStart >= 0 && o.charStart < body.length)
+      .map((o) => ({ title: String(o.title || '').trim().slice(0, 200), charStart: Math.floor(o.charStart) }))
+      .slice(0, 2000); // a bookmark list runs away only on a malformed PDF; this is a safety cap, not an expected ceiling
+    if (clean.length) outlineJson = JSON.stringify(clean);
+  }
 
   db.prepare(`
-    INSERT INTO knowledge_docs (id, title, description, content, updated_at)
-    VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-  `).run(randomUUID(), finalTitle, description, body);
+    INSERT INTO knowledge_docs (id, title, description, content, outline_json, updated_at)
+    VALUES (?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  `).run(randomUUID(), finalTitle, description, body, outlineJson);
 
   db.prepare(
     `INSERT INTO convo_subjects (convo_id, subject_type, subject_id, is_primary, subject_hint) VALUES (?,?,?,0,?)`,
