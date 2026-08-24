@@ -34,7 +34,6 @@ export function openDb() {
   initOntologySchema(db);
   initChatSchema(db);
   initKnowledgeSchema(db);
-  initDocExtractionSchema(db);
   initBooksSchema(db);
   initArchitectureSchema(db);
   initTagLensSchema(db);
@@ -551,10 +550,6 @@ function initSchema(db) {
   // migration, it is a standing rule -- and this one must not be.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN second_account_first_done INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN plan_draft_model_migrated INTEGER NOT NULL DEFAULT 0`); } catch {}
-  // One-time flag pinning the doc-extraction feature (plan
-  // "pdf-section-extraction") at Google AI Studio's Gemini Flash Lite, so the
-  // per-section sweep over a huge PDF is guaranteed free rather than free-by-default.
-  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN doc_extraction_model_migrated INTEGER NOT NULL DEFAULT 0`); } catch {}
   // Monthly ceiling on the ONE paid lane in the app: gpt-4o for Idea Studio
   // conversations (see services/billingGuard.js and services/openaiSpend.js).
   // Unlike every other budget here, going over does not degrade an optional
@@ -904,32 +899,6 @@ export function initKnowledgeSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     )
   `);
-}
-
-// ─── Section-by-section PDF extraction (plan "pdf-section-extraction") ────────
-// A huge PDF already lands whole in knowledge_docs via the Room's file upload
-// (see attachFile above). This table is the resumable plan of fixed-size
-// windows over that one row's content: one row per window, walked forward by
-// services/docExtraction.js#runExtractionSweep, with a human confirm/reject
-// step per row before anything counts as read.
-export function initDocExtractionSchema(db) {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS doc_extractions (
-      id TEXT PRIMARY KEY,
-      convo_id TEXT NOT NULL,
-      knowledge_doc_title TEXT NOT NULL,
-      chunk_index INTEGER NOT NULL,
-      char_start INTEGER NOT NULL,
-      char_end INTEGER NOT NULL,
-      extracted_text TEXT,
-      status TEXT NOT NULL DEFAULT 'pending',
-      reviewer_note TEXT,
-      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    )
-  `);
-  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_doc_extractions_convo ON doc_extractions(convo_id, knowledge_doc_title, chunk_index)`); } catch {}
-  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_doc_extractions_status ON doc_extractions(convo_id, status)`); } catch {}
 }
 
 // ─── Book recommendations, cached per entity ────────────────────────────────────

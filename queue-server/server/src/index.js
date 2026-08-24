@@ -46,13 +46,12 @@ import { bindTagCommunitiesDb, buildTagCommunities } from './services/tagCommuni
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
 import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
-import { bindAiTextDb, migrateSecondAccountFirst, migratePlanDraftModel, migrateDocExtractionModel } from './services/ai/text.js';
+import { bindAiTextDb, migrateSecondAccountFirst, migratePlanDraftModel } from './services/ai/text.js';
 import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
-import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
 import { bindMindDb } from './services/mind.js';
 import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
@@ -115,7 +114,6 @@ bindOpenAiSpendDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
-bindDocExtractionDb(db);
 bindMindDb(db);
 bindTagCommunitiesDb(db);
 
@@ -145,14 +143,6 @@ try {
   const planMigrated = migratePlanDraftModel();
   if (!planMigrated.skipped && planMigrated.changed) console.log('Plan-draft model: updated to claude-code/sonnet.');
 } catch (e) { console.error('Plan-draft migration failed:', e.message); }
-
-// Pin the doc-extraction feature at Google AI Studio / Gemini Flash Lite (plan
-// "pdf-section-extraction"), so the section-by-section PDF sweep is guaranteed
-// free rather than free-by-default. Flag-guarded, runs once, ever.
-try {
-  const docExtractionMigrated = migrateDocExtractionModel();
-  if (!docExtractionMigrated.skipped && docExtractionMigrated.changed) console.log('Doc-extraction model: pinned to google-ai-studio/gemini-flash-lite-latest.');
-} catch (e) { console.error('Doc-extraction migration failed:', e.message); }
 
 // Repopulate ontology + knowledge data on every boot. Not because the DB is wiped —
 // production keeps it on a volume (CLAUDE.md, "Production data IS durable") — but so a

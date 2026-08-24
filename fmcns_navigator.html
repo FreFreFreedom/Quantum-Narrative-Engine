@@ -2311,12 +2311,6 @@ button:active { transform: translateY(1px) scale(.99); }
           <div id="roomMindList"></div>
           <div id="roomMindNote" class="room-note"></div>
         </div>
-        <div class="room-extract" id="roomExtract">
-          <div class="room-side-head">
-            <h2>Extraction</h2>
-          </div>
-          <div id="roomExtractHost"></div>
-        </div>
         <div class="room-ideas" id="roomIdeas">
           <div class="room-side-head">
             <h2>Ideas</h2>
@@ -7331,10 +7325,6 @@ function initRoom() {
   // "room-sidebar-fixes", ideas accumulation + multi-select).
   const ideasHost = document.getElementById('roomIdeasHost');
   if (ideasHost) ideasHost.addEventListener('click', roomIdeasHostClick);
-  // Extraction panel clicks (Confirm/Reject) — one delegated handler, since
-  // renderRoomExtract() redraws the host from scratch on every state change.
-  const extractHost = document.getElementById('roomExtractHost');
-  if (extractHost) extractHost.addEventListener('click', roomExtractHostClick);
   // Background world-look ideas for this thread (plan "room-world-ideas"). The
   // backend triggers the look itself after each turn; this just polls while one
   // is running, the same way the Flow view's own poll loop drives flowWorldPoll
@@ -7346,15 +7336,6 @@ function initRoom() {
       if (Date.now() - roomIdeasStartedAt > 240000) { roomIdeasRunning = false; renderRoomIdeas(); return; }
       loadRoomIdeas();
     }, 6000);
-  }
-  // Extraction sweep poll — same shape as the Ideas poll above: only while a
-  // sweep is actually running for the open thread, no websocket for this
-  // feature by design (plans/pdf-section-extraction.md).
-  if (!roomExtractTimer) {
-    roomExtractTimer = setInterval(() => {
-      if (coreView !== 'room' || !roomSel || !roomExtractStatus || !roomExtractStatus.running) return;
-      loadRoomExtract();
-    }, 5000);
   }
 }
 
@@ -7376,7 +7357,6 @@ async function loadRoom() {
   if (roomSel) loadRoomSubjects();
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
   loadRoomIdeas();
-  loadRoomExtract();
 }
 
 async function loadRoomSubjects() {
@@ -7545,15 +7525,11 @@ function renderRoomCards() {
     + `<div class="uc-head">`
     + `<span class="room-cardlabel">${qEsc(s.label || s.subject_type)}</span>`
     + `<span class="uc-title" title="${qEscAttr(roomCardTitle(s))}">${qEsc(roomCardTitle(s))}</span>`
-    + (s.subject_type === 'file' ? `<button type="button" class="uicon" data-room-extract-start="${qEscAttr(s.subject_id)}" title="Read this file section by section" aria-label="Read this file section by section"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg></button>` : '')
     + `<span class="uc-acts"><button type="button" class="uicon" data-room-detach-type="${qEscAttr(s.subject_type)}" data-room-detach-id="${qEscAttr(s.subject_id)}" title="Take this card off" aria-label="Take this card off">`
     + `<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button></span>`
     + `</div></div>`).join('');
   host.querySelectorAll('[data-room-detach-id]').forEach(b => {
     b.onclick = () => roomDetach(b.getAttribute('data-room-detach-type'), b.getAttribute('data-room-detach-id'));
-  });
-  host.querySelectorAll('[data-room-extract-start]').forEach(b => {
-    b.onclick = () => roomExtractStart(b.getAttribute('data-room-extract-start'));
   });
   const pick = document.getElementById('roomAttachPick');
   if (pick) pick.hidden = !roomPickOpen;
@@ -7818,78 +7794,6 @@ function roomUseIdea(text, { raw = false } = {}) {
   window.studioLend.send(e, raw ? text : 'Idea: ' + text, renderRoomConvo, () => loadRoom());
 }
 
-// ── Section-by-section PDF extraction (plan "pdf-section-extraction") ────────
-// A huge attached PDF is read in fixed-size windows on the backend
-// (services/docExtraction.js); this just starts the sweep, polls its counts
-// while running (same idea as the Ideas panel above — no websocket for this,
-// by design), and shows one card per section awaiting Confirm/Reject.
-let roomExtractStatus = null;   // { running, total, pending, extracted, confirmed, rejected }
-let roomExtractChunks = [];     // rows with status='extracted', awaiting review
-let roomExtractTimer = null;
-
-function roomExtractDocTitle(fileId) { return 'File: ' + fileId; }
-
-async function roomExtractStart(fileId) {
-  if (!roomSel || !fileId) return;
-  try {
-    await apiWrite(`/api/convos/${encodeURIComponent(roomSel)}/extract/start`, 'POST', {
-      knowledgeDocTitle: roomExtractDocTitle(fileId),
-    });
-  } catch (e) { /* status poll below reflects whatever actually happened */ }
-  loadRoomExtract();
-}
-
-async function loadRoomExtract() {
-  const want = roomSel;
-  if (!want) { roomExtractStatus = null; roomExtractChunks = []; renderRoomExtract(); return; }
-  try {
-    const status = await api(`/api/convos/${encodeURIComponent(want)}/extract/status`);
-    if (roomSel !== want) return;
-    roomExtractStatus = status;
-    roomExtractChunks = status && status.extracted ? (await api(`/api/convos/${encodeURIComponent(want)}/extract/chunks?status=extracted`)).chunks || [] : [];
-  } catch (e) {
-    if (roomSel === want) { roomExtractStatus = null; roomExtractChunks = []; }
-  }
-  renderRoomExtract();
-}
-
-async function roomExtractConfirm(chunkId) {
-  if (!roomSel || !chunkId) return;
-  try { await apiWrite(`/api/convos/${encodeURIComponent(roomSel)}/extract/chunks/${encodeURIComponent(chunkId)}/confirm`, 'POST', {}); } catch (e) {}
-  loadRoomExtract();
-}
-
-async function roomExtractReject(chunkId) {
-  if (!roomSel || !chunkId) return;
-  try { await apiWrite(`/api/convos/${encodeURIComponent(roomSel)}/extract/chunks/${encodeURIComponent(chunkId)}/reject`, 'POST', {}); } catch (e) {}
-  loadRoomExtract();
-}
-
-function renderRoomExtract() {
-  const host = document.getElementById('roomExtractHost');
-  if (!host) return;
-  const st = roomExtractStatus;
-  if (!roomSel || !st || !st.total) { host.innerHTML = ''; return; }
-  const read = st.extracted + st.confirmed + st.rejected;
-  const progress = `<div class="tv-empty" style="text-align:left;">${st.running ? '📖' : '✅'} Read ${read} of ${st.total} section${st.total === 1 ? '' : 's'}${st.running ? ' — still going…' : ''}</div>`;
-  const cards = roomExtractChunks.map((c) => `<div class="uc uc--row" data-room-extract-chunk="${qEscAttr(c.id)}">
-    <div class="uc-head"><span class="room-cardlabel">Section ${c.chunk_index}</span><span class="uc-title">chars ${c.char_start}–${c.char_end}</span></div>
-    <div class="uc-body" style="white-space:pre-wrap;">${qEsc(c.extracted_text || '')}</div>
-    <div class="uc-acts" style="display:flex;gap:6px;">
-      <button type="button" class="ubtn ubtn--pill is-primary" data-room-extract-confirm="${qEscAttr(c.id)}">Confirm</button>
-      <button type="button" class="ubtn ubtn--pill" data-room-extract-reject="${qEscAttr(c.id)}">Reject</button>
-    </div>
-  </div>`).join('');
-  host.innerHTML = progress + cards;
-}
-
-function roomExtractHostClick(ev) {
-  const confirmBtn = ev.target.closest('[data-room-extract-confirm]');
-  if (confirmBtn) { roomExtractConfirm(confirmBtn.getAttribute('data-room-extract-confirm')); return; }
-  const rejectBtn = ev.target.closest('[data-room-extract-reject]');
-  if (rejectBtn) { roomExtractReject(rejectBtn.getAttribute('data-room-extract-reject')); return; }
-}
-
 function roomSelect(id) {
   if (!id || id === roomSel) return;
   roomSel = id;
@@ -7901,14 +7805,12 @@ function roomSelect(id) {
   // Reset before renderRoom() paints, so the outgoing thread's rounds never flash
   // under the newly-selected one while loadRoomIdeas() is still in flight.
   roomIdeasReports = []; roomIdeasRunning = false; roomIdeasOpen = new Set();
-  roomExtractStatus = null; roomExtractChunks = [];
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');
   roomZonesSync();
   renderRoom();
   loadRoomSubjects();
   loadRoomIdeas();
-  loadRoomExtract();
 }
 
 async function roomNewThread() {
@@ -8023,7 +7925,7 @@ async function roomLoadPickSources() {
 // POSTed as JSON. .pdf goes through a vendored pdf.js (queue-server/public/vendor,
 // never a CDN); .md/.txt are read directly. No library can turn .doc/.docx into
 // text client-side, so they're not offered.
-const ROOM_FILE_MAX_CHARS = 3000000;
+const ROOM_FILE_MAX_CHARS = 400000;
 let pdfjsLoadPromise = null;
 function loadPdfjs() {
   if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
