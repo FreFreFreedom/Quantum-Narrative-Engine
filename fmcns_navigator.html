@@ -898,6 +898,31 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
            background:transparent; }
 .uc--row:hover { background:var(--c-surface-2); border-color:var(--c-border); }
  .uc--row.is-sel { box-shadow:none; background:var(--c-surface-2); }
+/* Done list only: a separated, two-line card instead of a flat divided row — unread
+   work stays a block of green cards, read work recedes. Everything below is scoped
+   to .uc--fin on purpose; .uc/.uc-head/.uc-title/.q-result/.stage-strip/.uc-details
+   are shared with ~10 other renderers and must not move for them. */
+.uc--fin { border:1px solid var(--c-border); border-radius:var(--r-md); margin-bottom:6px;
+           border-bottom:1px solid var(--c-border); padding:7px 10px; background:var(--c-surface); }
+.uc--fin.is-unread { background:var(--c-success-tint); border-color:var(--c-accent); }
+.uc--fin.is-unread .uc-title { color:var(--c-ink); font-weight:600; }
+.uc--fin:not(.is-unread) { background:var(--c-surface); border-color:var(--c-border); }
+.uc--fin:not(.is-unread) .uc-title { color:var(--c-ink-3); }
+.uc--fin:not(.is-unread) .q-result { color:var(--c-ink-4); }
+.q-seen-mark { display:inline-block; width:7px; height:7px; border-radius:50%; flex:none; background:transparent; }
+.uc--fin.is-unread .q-seen-mark { background:var(--c-accent); }
+.uc-when { font-size:var(--fs-xs); color:var(--c-ink-4); flex:none; white-space:nowrap; }
+.uc--fin .q-result { background:transparent; padding:0; border-radius:0; }
+.uc--fin .q-result.clamped { -webkit-line-clamp:1; }
+.uc--fin .q-result.blocked.clamped { -webkit-line-clamp:2; }
+.uc--fin:not(.is-sel) .stage-strip, .uc--fin:not(.is-sel) .uc-details { display:none; }
+/* .uc--row:hover/.is-sel paint a flat background — reasserted here (higher
+   specificity via the extra class) so the green tint survives hover/selection
+   instead of being replaced by the plain-row wash. */
+.uc--fin.is-unread:hover { background:var(--c-success-tint); border-color:var(--c-accent); }
+.uc--fin:not(.is-unread):hover { background:var(--c-surface-2); border-color:var(--c-border); }
+.uc--fin.is-unread.is-sel { background:var(--c-success-tint); }
+.uc--fin.is-sel:not(.is-unread) { background:var(--c-surface-2); }
  /* Umbrella group card in the Flow: collapses a plan's parts into one line with a
     progress count. No start button — each part keeps its own, shown when expanded.
     The chevron toggles the fold; the whole row is the click target too. */
@@ -920,7 +945,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uc-head { display:flex; align-items:center; gap:var(--sp-2); min-width:0; }
 .uc-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
             white-space:nowrap; font-size:var(--fs-base); font-weight:var(--fw-medium); }
-.uc-title.unread { font-weight:700; }
 .uc-acts { display:flex; align-items:center; gap:var(--sp-1); flex:none; }
 .uc-num { flex:none; min-width:16px; font-size:var(--fs-md); font-weight:800; color:var(--c-warn); }
 .uc-sum { font-size:var(--fs-sm); color:var(--c-ink-3); line-height:1.45; margin:var(--sp-1) 0 0; }
@@ -8973,7 +8997,13 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   const titleHtml = reorderable
     ? `<input class="q-title-inline${fresh ? ' unread' : ''}" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
       + (fresh ? '<span class="q-unread-dot" title="New — you have not opened this one yet"></span>' : '')
-    : `<span class="uc-title${unread ? ' unread' : ''}" title="${qEscAttr(p.title || '')}">${qEsc(p.title || '(untitled)')}${unread ? '<span class="q-unread-dot" title="Not read yet"></span>' : ''}</span>`;
+    : `<span class="uc-title" title="${qEscAttr(p.title || '')}">${qEsc(p.title || '(untitled)')}</span>`;
+  // A finished card carries a small dot in a fixed left gutter instead — always
+  // rendered so the title never shifts when a card is read (see .q-seen-mark).
+  const seenMarkHtml = finished
+    ? `<span class="q-seen-mark"${unread ? ' title="Not read yet"' : ''}></span>` : '';
+  const whenHtml = finished
+    ? `<span class="uc-when">${qEsc(qShipWhen(p.completed_at || p.created_at))}</span>` : '';
 
   // The one thing to press, in the order the situation demands it: answer the
   // question, stop the run, get a parked task moving (that is the stage's own
@@ -9024,13 +9054,16 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ? '<span class="q-nothing-built" title="It finished without changing any file — nothing was built">⚠ nothing built</span>'
     : '';
   return `
-  <div class="uc uc--row${sel ? ' is-sel' : ''}${state ? ' state-' + state : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
+  <div class="uc uc--row${sel ? ' is-sel' : ''}${state ? ' state-' + state : ''}${finished ? ' uc--fin' : ''}${unread ? ' is-unread' : ''}" data-qid="${p.id}"${reorderable ? ' draggable="true"' : ''}>
     <div class="uc-head">
+      ${seenMarkHtml}
       ${reorderable ? '<span class="q-drag-handle" title="Drag to reorder">⠿</span>' : ''}
+      ${finished ? taskPillHtml(p, st, true) : ''}
       ${titleHtml}
       ${ideaGap}
       ${nothingBuilt}
-      ${taskPillHtml(p, st)}
+      ${finished ? '' : taskPillHtml(p, st)}
+      ${whenHtml}
       ${cardActs(primary, menu)}
     </div>
     ${resultHtml ? '' : cardLineHtml('task', p.id, p.summary_line, p.raw_prompt || p.prompt, 'uc-sum', sel)}
@@ -9257,9 +9290,10 @@ function cardPillHtml(kind, o) {
 // it also gives the step count and the next move — so the pill now appears only
 // when it says something the strip does not, like "Ideas ready" sitting above
 // "Waiting its turn".
-function taskPillHtml(p, st) {
+function taskPillHtml(p, st, force) {
   const pill = cardPill('task', p);
   if (!pill) return '';
+  if (force) return pillHtml(pill);
   const a = (pill.text || '').trim().toLowerCase();
   const b = (st && st.label || '').trim().toLowerCase();
   if (a && b && (b.includes(a) || a.includes(b))) return '';
