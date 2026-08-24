@@ -693,6 +693,8 @@ The brief must:
 - Name specific files or areas of the codebase likely involved, if inferable — do not invent files.
 - State a clear, checkable definition of done.
 - Note anything the request implies is out of scope.
+- Restate any standing preference or constraint this conversation relied on that would not be obvious from the goal alone (e.g. "never deep/opus", "free lane only") — the coding agent starts cold and has not seen this conversation.
+- For each attached document, pull its relevant substance directly into the brief instead of only naming it — quote or summarize the parts the task actually needs. Exception: an attached repo file the coding agent can open itself (a path under plans/ or elsewhere in the codebase) — for those, name the exact path instead of inlining its content.
 
 Write for the coding agent, not for a human reader. Be concise.`;
 
@@ -1510,10 +1512,14 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   if (cmd) {
     const slash = cmd[1].toLowerCase();
     if (slash === 'plan') return requestPlan(convoId);
-    if (slash === 'handoff') return handoffToQueue(convoId);
+    if (slash === 'handoff') {
+      const hm = trimmed.match(/^\/handoff(?:\s+(claude|opencode))\b/i);
+      const engine = hm ? (hm[1].toLowerCase() === 'claude' ? 'claude-code' : 'opencode') : null;
+      return handoffToQueue(convoId, { engine });
+    }
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|opencode <question> — force this one turn onto that lane.\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
+        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|opencode <question> — force this one turn onto that lane.\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
       };
     }
     if (slash === 'seed') return runSaveSeedTurn(convoId);
@@ -1574,7 +1580,7 @@ export async function requestPlan(convoId) {
   return runPlanTurn(convo.id, convo.created_by || 'antoine');
 }
 
-export async function handoffToQueue(convoId, { title = null, prompt = null } = {}) {
+export async function handoffToQueue(convoId, { title = null, prompt = null, engine = null } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -1605,6 +1611,7 @@ export async function handoffToQueue(convoId, { title = null, prompt = null } = 
     plan_source: 'own',
     created_by: convo.created_by || 'antoine',
     convo_id: convoId,
+    provider: engine || null,
   });
 
   const promptId = created.id;
