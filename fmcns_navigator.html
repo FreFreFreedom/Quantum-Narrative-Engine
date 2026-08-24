@@ -9231,7 +9231,7 @@ function flowMatches(parts) {
 // renders again on the next tick.
 function qTypingGuard() {
   const ae = document.activeElement;
-  return !!(ae && ae.closest && ae.closest('#flowExpanded, .q-title-inline, #nbSearch'));
+  return !!(ae && ae.closest && ae.closest('#flowExpanded, .q-title-inline, #nbSearch, #queuePanel'));
 }
 
 // Save/restore field values across an expanded-card re-render, so a poll that
@@ -16486,6 +16486,7 @@ function renderQueuePanel() {
   const running = qPrompts.filter(p => p.status === 'running' && !qIsAsking(p));
   const queued = qPrompts.filter(p => p.status === 'queued');
 
+  const snap = qSnapInputs(body);
   body.innerHTML = `
     <div class="qp-composer">
       <textarea id="qpText" placeholder="Describe the task…"></textarea>
@@ -16527,6 +16528,7 @@ function renderQueuePanel() {
       queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span>${i > 0 ? iconBtn('top', 'Move it to the front of the queue and start it sooner', 'first', p.id) : ''}</div>`).join(''),
       'Queue is empty — add a task above.')}
   `;
+  qRestoreInputs(body, snap);
 
   // Cards are rendered in the same order as `asking`, so pair them up by index rather
   // than matching data-qid strings against possibly-non-string ids.
