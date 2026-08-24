@@ -234,8 +234,8 @@ export function conversationsRoutes() {
   // extracted the text (a file never rides raw into the prompt or the DB — see
   // plans/files-in-the-room.md), so this is a plain JSON body, not multipart.
   router.post('/:id/files', asyncHandler(async (req, res) => {
-    const { filename, mimeType, text, bytes, sha } = req.body || {};
-    const out = convos.attachFile(req.params.id, { filename, mimeType, text, bytes, sha });
+    const { filename, mimeType, text, bytes, sha, outline } = req.body || {};
+    const out = convos.attachFile(req.params.id, { filename, mimeType, text, bytes, sha, outline });
     if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
     res.json(out);
   }));

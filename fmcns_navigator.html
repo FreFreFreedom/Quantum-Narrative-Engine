@@ -7883,14 +7883,27 @@ function renderRoomExtract() {
   const read = st.extracted + st.confirmed + st.rejected;
   const progress = `<div class="tv-empty" style="text-align:left;">${st.running ? '📖' : '✅'} Read ${read} of ${st.total} section${st.total === 1 ? '' : 's'}${st.running ? ' — still going…' : ''}</div>`;
   const cards = roomExtractChunks.map((c) => `<div class="uc uc--row" data-room-extract-chunk="${qEscAttr(c.id)}">
-    <div class="uc-head"><span class="room-cardlabel">Section ${c.chunk_index}</span><span class="uc-title">chars ${c.char_start}–${c.char_end}</span></div>
+    <div class="uc-head"><span class="room-cardlabel">Section ${c.chunk_index}</span><span class="uc-title">${c.section_title ? qEsc(c.section_title) : `chars ${c.char_start}–${c.char_end}`}</span></div>
     <div class="uc-body" style="white-space:pre-wrap;">${qEsc(c.extracted_text || '')}</div>
     <div class="uc-acts" style="display:flex;gap:6px;">
       <button type="button" class="ubtn ubtn--pill is-primary" data-room-extract-confirm="${qEscAttr(c.id)}">Confirm</button>
       <button type="button" class="ubtn ubtn--pill" data-room-extract-reject="${qEscAttr(c.id)}">Reject</button>
     </div>
   </div>`).join('');
-  host.innerHTML = progress + cards;
+  // Consolidated digest (plan "deep-document-extraction" §6) — written by the
+  // second Claude account once every section has been read. Shown as its own
+  // block, separate from the per-section cards above.
+  const digests = (st.digests || []).map((d) => {
+    if (d.ready) {
+      return `<div class="uc uc--row">
+        <div class="uc-head"><span class="room-cardlabel">Digest</span><span class="uc-title">${qEsc(d.knowledge_doc_title)}</span></div>
+        <div class="uc-body" style="white-space:pre-wrap;">${qEsc(d.text || '')}</div>
+      </div>`;
+    }
+    if (d.running) return `<div class="tv-empty" style="text-align:left;">🖋️ Writing the consolidated digest for "${qEsc(d.knowledge_doc_title)}"…</div>`;
+    return '';
+  }).join('');
+  host.innerHTML = progress + cards + digests;
 }
 
 function roomExtractHostClick(ev) {
@@ -8055,17 +8068,52 @@ function loadPdfjs() {
   return pdfjsLoadPromise;
 }
 
+// Walks the outline tree pdfjs hands back from getOutline(), resolving each
+// entry's destination to a page index and then to the char offset that page's
+// text starts at in the joined string extractPdfText() builds — so the
+// backend's structure-aware splitter (docExtraction.js#planUnits) can split by
+// real section instead of only fixed windows (plan "deep-document-extraction").
+// Best-effort: any entry whose destination can't be resolved is just dropped,
+// never thrown — a partial outline is strictly better than none, and the
+// backend already falls back to heuristic heading detection when this comes
+// back empty.
+async function pdfOutlineToCharOffsets(doc, items, pageCharStarts, depth, out) {
+  for (const item of items) {
+    try {
+      let dest = item.dest;
+      if (typeof dest === 'string') dest = await doc.getDestination(dest);
+      if (Array.isArray(dest)) {
+        const pageIndex = await doc.getPageIndex(dest[0]);
+        if (Number.isFinite(pageIndex) && pageCharStarts[pageIndex] != null) {
+          out.push({ title: item.title || '', charStart: pageCharStarts[pageIndex] });
+        }
+      }
+    } catch (e) { /* unresolvable entry — skip it, not fatal */ }
+    if (item.items?.length) await pdfOutlineToCharOffsets(doc, item.items, pageCharStarts, depth + 1, out);
+  }
+  return out;
+}
+
 async function extractPdfText(file) {
   const pdfjsLib = await loadPdfjs();
   const buf = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buf }).promise;
   const pages = [];
+  const pageCharStarts = [0];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
-    pages.push(content.items.map((it) => it.str).join(' '));
+    const pageText = content.items.map((it) => it.str).join(' ');
+    pages.push(pageText);
+    pageCharStarts.push(pageCharStarts[pageCharStarts.length - 1] + pageText.length + 2); // +2 for the '\n\n' join below
   }
-  return pages.join('\n\n').trim();
+  const text = pages.join('\n\n').trim();
+  let outline = [];
+  try {
+    const rawOutline = await doc.getOutline();
+    if (rawOutline?.length) outline = await pdfOutlineToCharOffsets(doc, rawOutline, pageCharStarts, 0, []);
+  } catch (e) { /* no outline in this PDF — the backend's heuristic picks up the slack */ }
+  return { text, outline };
 }
 
 // The dropzone collapsed from a two-line text block to a single icon (plan
@@ -8092,14 +8140,19 @@ async function roomUploadFile(file) {
 
   roomDropZoneSay(`Reading "${file.name}"…`, false, 60000);
   let text = '';
+  let outline = [];
   try {
-    text = ext === '.pdf' ? await extractPdfText(file) : await file.text();
+    if (ext === '.pdf') { const out = await extractPdfText(file); text = out.text; outline = out.outline || []; }
+    else text = await file.text();
   } catch (err) {
     return roomDropZoneSay(`Could not read file: ${err.message}`, true, 3000);
   }
   if (!text) return roomDropZoneSay('No readable text found in this file', true, 3000);
   let truncated = false;
-  if (text.length > ROOM_FILE_MAX_CHARS) { text = text.slice(0, ROOM_FILE_MAX_CHARS); truncated = true; }
+  if (text.length > ROOM_FILE_MAX_CHARS) {
+    text = text.slice(0, ROOM_FILE_MAX_CHARS); truncated = true;
+    outline = outline.filter((o) => o.charStart < ROOM_FILE_MAX_CHARS);
+  }
 
   let sha = '';
   try {
@@ -8109,7 +8162,7 @@ async function roomUploadFile(file) {
 
   try {
     await apiWrite(`/api/convos/${roomSel}/files`, 'POST', {
-      filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha,
+      filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha, outline,
     });
     roomLoadPickSources().then(() => renderRoomPick());
     roomDropZoneSay(`File "${file.name}" uploaded${truncated ? ' (truncated)' : ''}`);

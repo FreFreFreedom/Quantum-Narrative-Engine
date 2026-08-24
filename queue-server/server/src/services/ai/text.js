@@ -256,22 +256,30 @@ export function migratePlanDraftModel() {
   return { changed: true, skipped: false };
 }
 
-// One-time migration (plan "pdf-section-extraction"): pin the doc-extraction
-// feature at Google AI Studio's Gemini Flash Lite -- a huge free-tier context
-// window, and explicitly free rather than free-by-default (an unconfigured
-// feature would otherwise start on the claude-side subscription). If
-// GOOGLE_AI_STUDIO_API_KEY is not set, this pick simply cannot be reached and
-// generateText() falls through to its ordinary free catalogue tail -- it does
-// not crash, it just doesn't run on Gemini until the key exists.
-// Flag-guarded, runs once, ever, same shape as migratePlanDraftModel.
+// One-time migration (plan "pdf-section-extraction", updated by
+// "deep-document-extraction"): pin the doc-extraction feature at Google AI
+// Studio's Gemini Flash -- free, stronger and with a larger context window
+// than the Flash Lite tier this used to point at, which matters once sections
+// carry the app-context map and retrieved notebook docs alongside the text.
+// Explicitly free rather than free-by-default (an unconfigured feature would
+// otherwise start on the claude-side subscription). If GOOGLE_AI_STUDIO_API_KEY
+// is not set, this pick simply cannot be reached and generateText() falls
+// through to its ordinary free catalogue tail -- it does not crash, it just
+// doesn't run on Gemini until the key exists.
+// Flag-guarded, runs once, ever, same shape as migratePlanDraftModel. Re-runs
+// once more (the guard column is reused, not renamed) to move anyone already
+// migrated onto flash-lite up to the stronger model.
 export function migrateDocExtractionModel() {
   if (!db) return { changed: false, skipped: true };
   const row = db.prepare(`SELECT defaults_json, doc_extraction_model_migrated FROM ai_settings WHERE id='global'`).get();
   if (!row) return { changed: false, skipped: true };
-  if (row.doc_extraction_model_migrated) return { changed: false, skipped: true };
   let defaults = {};
   try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: false, skipped: true }; }
-  defaults['doc-extraction'] = { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest' };
+  const current = defaults['doc-extraction'];
+  if (row.doc_extraction_model_migrated && current?.model === 'gemini-flash-latest') {
+    return { changed: false, skipped: true };
+  }
+  defaults['doc-extraction'] = { provider: 'google-ai-studio', model: 'gemini-flash-latest' };
   db.prepare(`UPDATE ai_settings SET defaults_json=?, doc_extraction_model_migrated=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
     .run(JSON.stringify(defaults));
   refreshAiSettings();
