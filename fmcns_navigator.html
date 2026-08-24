@@ -699,6 +699,10 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .room-mind-row .uicon { flex:none; opacity:.5; padding:1px 3px; }
 .room-mind-row:hover .uicon { opacity:1; }
 .room-mind-edit { flex:1; min-width:0; font:inherit; font-size:12.5px; padding:3px 5px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); background:var(--c-surface); color:var(--c-ink); }
+/* Background world-look ideas about the app's own codebase, keyed to this
+   conversation (plan "room-world-ideas") — the same ✨ cards suggestions and
+   ideas already get, drawn with the same worldPartsHtml() used everywhere else. */
+.room-ideas { width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; }
 .room-cardfilter { margin-bottom:8px; }
 .room-cardfilter .searchbox { margin-bottom:6px; }
 .room-chiprow { display:flex; flex-wrap:wrap; gap:5px; }
@@ -1330,6 +1334,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .wl-detail { margin:3px 0 5px 26px; }
 .wl-detail .sg-rationale { margin-bottom:3px; }
 .wl-row.q-inspire-removed { opacity:1; }
+/* Room-only: drops the idea's full text into the chat (plan "room-world-ideas"). */
+.wl-use { margin:2px 0 4px 26px; font-size:11px; padding:3px 8px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); background:var(--c-surface); color:var(--c-ink-2); cursor:pointer; font-family:inherit; }
+.wl-use:hover { color:var(--c-accent); border-color:var(--c-accent); }
 /* Talking to one idea: the 💬 that opens the studio on it, the chips that say a
    conversation has already changed it, and the kept original underneath. */
 .wl-chip { flex-shrink:0; font-size:9px; text-transform:uppercase; letter-spacing:.04em; border-radius:8px; padding:1px 6px; background:var(--c-success-tint); color:var(--c-brand); }
@@ -2264,6 +2271,12 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div id="roomMindList"></div>
         <div id="roomMindNote" class="room-note"></div>
+      </div>
+      <div class="room-ideas" id="roomIdeas">
+        <div class="room-side-head">
+          <h2>Ideas</h2>
+        </div>
+        <div id="roomIdeasHost"></div>
       </div>
     </div>
   </div>
@@ -6999,6 +7012,7 @@ function switchCoreView(v) {
 // subject of a roaming thread is `type: 'open'` with a synthetic uuid, which is
 // what studioEmbed is handed.
 let roomThreads = [], roomSel = null, roomSubjects = [], roomMax = 6;
+let roomIdeasTimer = null;
 let roomInited = false, roomPickOpen = false, roomPickQ = '';
 // Set by initRoom(). Anything that opens or shuts a side zone from outside that
 // function calls it, so the toolbar buttons never claim a state they no longer hold.
@@ -7173,6 +7187,17 @@ function initRoom() {
   if (mindAdd) mindAdd.onclick = roomAddFact;
   const mindInput = document.getElementById('roomMindInput');
   if (mindInput) mindInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); roomAddFact(); } };
+  // Background world-look ideas for this thread (plan "room-world-ideas"). The
+  // backend triggers the look itself after each turn; this just polls while one
+  // is running, the same way the Flow view's own poll loop drives flowWorldPoll
+  // for suggestion/seed cards — the Room has no such loop of its own, so it gets
+  // this one, scoped to whichever thread is open.
+  if (!roomIdeasTimer) {
+    roomIdeasTimer = setInterval(() => {
+      if (coreView !== 'room' || !roomSel) return;
+      flowWorldPoll('convo', roomSel).then(renderRoomIdeas);
+    }, 6000);
+  }
 }
 
 async function loadRoom() {
@@ -7192,6 +7217,7 @@ async function loadRoom() {
   renderRoom();
   if (roomSel) loadRoomSubjects();
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
+  if (roomSel) flowWorldSync('convo', roomSel).then(renderRoomIdeas);
 }
 
 async function loadRoomSubjects() {
@@ -7213,6 +7239,7 @@ function renderRoom() {
   renderRoomHead();
   renderRoomConvo();
   renderRoomCards();
+  renderRoomIdeas();
 }
 
 // A roaming thread's own synthetic 'open' row is the room itself, not a card, so
@@ -7454,6 +7481,42 @@ function roomBeginEditFact(el) {
 // window events it lands here. Local mutations already refetch directly.
 window.addEventListener('mind:updated', () => { loadRoomMind(); });
 
+// ── Background world-look ideas for this thread (plan "room-world-ideas") ─────
+// Same three-shelf world-look every suggestion/seed already gets, keyed to this
+// Room conversation instead — the backend triggers it itself after each turn
+// (services/conversations.js#roomWorldLook); this only draws whatever is there,
+// through the same flowWorldEntry/worldPartsHtml machinery those cards use.
+function renderRoomIdeas() {
+  const host = document.getElementById('roomIdeasHost');
+  if (!host) return;
+  if (!roomSel) { host.innerHTML = ''; return; }
+  flowWorldRender('convo', roomSel, host, roomIdeaTextSeed(), null, { useIdea: true, onUseIdea: roomUseIdea });
+}
+
+// Fallback text for the manual "✨ Look at the world" button (idle state) — the
+// same windowed transcript the backend itself builds from, so a look started by
+// hand asks about the same thing the automatic one would.
+function roomIdeaTextSeed() {
+  const t = roomThreads.find((x) => x.id === roomSel) || null;
+  if (!t || !window.studioLend) return '';
+  const e = window.studioLend.entry('open', t.subject_id);
+  const msgs = (e && e.msgs) || [];
+  return msgs.filter((m) => m.kind === 'chat')
+    .map((m) => (m.role === 'user' ? 'OWNER: ' : 'YOU: ') + m.text)
+    .slice(-16).join('\n\n');
+}
+
+// "use this idea" (Antoine's addition on top of the source plan): drops the
+// idea's full text into the chat as a plain message, through the Room's own
+// send path — no intent flag, so turnRouter.js classifies it exactly like
+// anything else typed into the box.
+function roomUseIdea(text) {
+  const t = roomThreads.find((x) => x.id === roomSel) || null;
+  if (!t || !window.studioLend || !text) return;
+  const e = window.studioLend.entry('open', t.subject_id);
+  window.studioLend.send(e, 'Idea: ' + text, renderRoomConvo, () => loadRoom());
+}
+
 function roomSelect(id) {
   if (!id || id === roomSel) return;
   roomSel = id;
@@ -7467,6 +7530,7 @@ function roomSelect(id) {
   roomZonesSync();
   renderRoom();
   loadRoomSubjects();
+  flowWorldSync('convo', id).then(renderRoomIdeas);
 }
 
 async function roomNewThread() {
@@ -11310,6 +11374,26 @@ function worldDetailHtml(pick) {
     (pick.how_fmcns ? r("How we'd get there first:", pick.how_fmcns) : '');
 }
 
+// Plain-text version of an idea, for the Room's "use this idea" button (plan
+// "room-world-ideas") — the whole idea, not just its title, so the model sees
+// the same thing a person reading the card would.
+function worldIdeaFullText(pick) {
+  const title = worldPickTitle(pick);
+  const lead = worldLeadField(pick).text || '';
+  const lines = [title, lead];
+  if (pick.kind === 'open') {
+    if (pick.use) lines.push("How we'd use it: " + pick.use);
+    if (pick.repo) lines.push('github.com/' + pick.repo);
+  } else if (pick.kind === 'hidden') {
+    if (pick.lesson) lines.push('What we can learn: ' + pick.lesson);
+    if (pick.use) lines.push('What we could do even better: ' + pick.use);
+  } else {
+    if (pick.why_possible) lines.push("Why it's doable: " + pick.why_possible);
+    if (pick.how_fmcns) lines.push("How we'd get there first: " + pick.how_fmcns);
+  }
+  return lines.filter(Boolean).join('\n');
+}
+
 // ── Ideas from a world-look ──────────────────────────────────────────────────
 // These used to carry a 💬 of their own, which opened a window on that one idea.
 // The rule now is one box per card, and the card's box is the place to talk — an
@@ -11348,7 +11432,7 @@ window.refreshWorldPanels = function (report) {
 // One idea, one row. Keeps the .q-inspire-card class and the data-partidx /
 // data-pickidx attributes the existing pick handlers look for with closest(),
 // so nothing downstream needs rewiring.
-function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, reportId = '', inGroup = false }) {
+function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, reportId = '', inGroup = false, useIdea = false }) {
   const key = pi + ':' + i;
   const isApplied = applied.has(key);
   const isSel = sel.has(key);
@@ -11381,6 +11465,12 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
   const swapBtn = swapKey && !isApplied && !pick.developed_at
     ? `<button class="wl-swap${swapping ? ' busy' : swapFailed ? ' failed' : ''}" data-worldswap="${qEscAttr(swapKey)}" aria-label="Swap this idea for a fresh one" title="${qEscAttr(swapTitle)}"${swapping ? ' disabled' : ''}>↻</button>`
     : '';
+  // Room-only affordance (plan "room-world-ideas"): drops the idea's full text into
+  // the chat as a plain message, so it can be talked over with full context instead
+  // of just a title. Never rendered elsewhere — useIdea is opt-in per caller.
+  const useBtn = useIdea
+    ? `<button type="button" class="wl-use" data-action="worldlook-use" title="Drop this idea into the chat, in full, so you can question it there">💬 use this idea</button>`
+    : '';
   return `
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
       ${worldFitBar(key, facts, isApplied)}
@@ -11397,6 +11487,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
       ${line ? `<div class="wl-line${isOpen ? ' open' : ''}" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
       ${removed ? `<div class="wl-line wl-reason" title="Only the quick check's opinion — the idea stays in the list and you can pick it.">The quick check wasn't sure: ${qEsc(removed)}</div>` : ''}
       <div class="wl-detail" ${isOpen ? '' : 'hidden'}>${worldDetailHtml(pick)}${worldOriginalHtml(pick)}</div>
+      ${useBtn}
     </div>`;
 }
 
@@ -11404,7 +11495,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
 // applied = picks already baked into a plan; sel = picks ticked right now;
 // facts = the review lookup (removed / substitute groups / our pick);
 // scope = which panel this is, so open rows don't leak between panels.
-function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = null, pickAction = 'inspire-pick', scope = '' } = {}) {
+function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = null, pickAction = 'inspire-pick', scope = '', useIdea = false } = {}) {
   return report.parts.map((part, pi) => {
     const desc = String(part.description || '');
     const descHtml = desc.length > 220
@@ -11416,7 +11507,7 @@ function worldPartsHtml(report, { applied = new Set(), sel = new Set(), facts = 
     const header = report.parts.length > 1
       ? `<div class="q-inspire-part"><b>${pi + 1}. ${qEsc(part.name || 'Part')}</b> ${reframed} ${descHtml}</div>`
       : `<div class="q-inspire-part">${reframed}${descHtml}</div>`;
-    const opts = { applied, sel, facts, pickAction, scope, reportId: report.id || '' };
+    const opts = { applied, sel, facts, pickAction, scope, reportId: report.id || '', useIdea };
     const groups = new Map();
     const loose = [];
     (part.picks || []).forEach((pick, i) => {
@@ -11896,7 +11987,7 @@ async function flowWorldWait(source, id) {
   }
   if (e.state === 'pending') { e.state = 'failed'; e.error = 'The look took too long — try again.'; }
 }
-function flowWorldPanelHtml(source, id) {
+function flowWorldPanelHtml(source, id, { useIdea = false } = {}) {
   const e = flowWorldEntry(source, id);
   if (e.state === 'pending') {
     return `<div class="tv-empty">🔭 Looking at the world — real projects, hidden products, bold ideas. This takes a minute or two.</div>`;
@@ -11912,7 +12003,7 @@ function flowWorldPanelHtml(source, id) {
       : ((e.report.review?.removed?.length || 0) > 0
         ? `<div class="q-inspire-legend">Ideas the quick check doubted stay in the list, with its reason under them — pick any of them anyway.</div>`
         : '');
-    return `${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id })}`;
+    return `${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id, useIdea })}`;
   }
   return `<div class="tv-empty">
     <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
@@ -11943,15 +12034,15 @@ function flowUpdatePickTitle(source, id, act, base) {
   btn.setAttribute('aria-label', label);
 }
 
-function flowWorldRender(source, id, host, ideaText, onChange) {
+function flowWorldRender(source, id, host, ideaText, onChange, { useIdea = false, onUseIdea = null } = {}) {
   if (!host) return;
-  host.innerHTML = flowWorldPanelHtml(source, id);
+  host.innerHTML = flowWorldPanelHtml(source, id, { useIdea });
   const e = flowWorldEntry(source, id);
   host.querySelectorAll('[data-action="flowworld-start"]').forEach(b => {
     b.onclick = async () => {
       b.disabled = true;
       await flowWorldStart(source, id, ideaText);
-      flowWorldRender(source, id, host, ideaText, onChange);
+      flowWorldRender(source, id, host, ideaText, onChange, { useIdea, onUseIdea });
       if (onChange) onChange();
     };
   });
@@ -11961,10 +12052,25 @@ function flowWorldRender(source, id, host, ideaText, onChange) {
       const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
       const facts = qInspireReviewFacts(e.report?.review);
       applyInspireToggle(e.sel, key, facts);
-      flowWorldRender(source, id, host, ideaText, onChange);
+      flowWorldRender(source, id, host, ideaText, onChange, { useIdea, onUseIdea });
       if (onChange) onChange();
     };
   });
+  // Room-only: drops the idea's full text into the chat (plan "room-world-ideas").
+  // No intent flag is set — this is an ordinary message, classified by
+  // turnRouter.js exactly like anything else typed into the Room.
+  if (useIdea && onUseIdea) {
+    host.querySelectorAll('[data-action="worldlook-use"]').forEach(b => {
+      b.onclick = () => {
+        const card = b.closest('.q-inspire-card');
+        if (!card) return;
+        const pi = Number(card.getAttribute('data-partidx'));
+        const ii = Number(card.getAttribute('data-pickidx'));
+        const pick = e.report?.parts?.[pi]?.picks?.[ii];
+        if (pick) onUseIdea(worldIdeaFullText(pick));
+      };
+    });
+  }
 }
 
 async function qReply(id, text, placement = 'front') {

@@ -1378,6 +1378,12 @@ export function initConversationsSchema(db) {
   // conversation's turns the fact-harvest job has already read, so it never
   // re-reads turns it has already processed.
   try { db.exec(`ALTER TABLE convos ADD COLUMN mind_seen_turns INTEGER DEFAULT 0`); } catch {}
+
+  // The world-look watermark (plan "room-world-ideas"): how many of this
+  // conversation's turns the background world-look pass has already seen, so a
+  // Room conversation with no new turns since the last check doesn't re-trigger
+  // a look. Same idea as mind_seen_turns above, for a different fire-and-forget job.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN world_look_seen_turns INTEGER DEFAULT 0`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────
