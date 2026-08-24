@@ -24,6 +24,7 @@ import {
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextStream, studioPersonaText } from './ai/text.js';
+import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
 import { getComponents } from './architecture.js';
 import { projectMapBlock } from './projectMap.js';
 import { listSuggestions } from './workSuggestions.js';
@@ -31,6 +32,7 @@ import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, uniqueTitle } from './knowledgeDocs.js';
 import { mindBlock, harvest as harvestMind } from './mind.js';
+import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
@@ -754,7 +756,7 @@ function transcriptOf(convo, msgs, windowSize) {
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
 // same thing — a second copy of this assembly would drift.
-function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false }) {
+function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
   // ORDER MATTERS, TWICE OVER, AND EACH HALF FIXES A REAL FAILURE. A later
@@ -787,6 +789,14 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     // prefix and roughly quadruple the token cost of every turn. See
     // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
     mindBlock(),
+    // Repo facts (the Room's turn router) ride in the SAME cache-safe region as
+    // memory — right after mindBlock(), before the transcript and voice. They are
+    // free (gathered by git, not a model) and variable per turn, but variable
+    // material after the project map is exactly what the cache is built to absorb;
+    // putting them ahead of the map would break the prefix and quadruple cost.
+    repoFacts
+      ? `\n=== REPO FACTS (read from the checkout just now — trust these over your own recollection) ===\n${repoFacts}\nTreat any file not listed as EXIST above as non-existent. Do not name a file you have not been told exists.`
+      : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
     depth ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
@@ -827,20 +837,36 @@ function saveAssistantTurn(convoId, text, meta = null) {
 // tokens arrive as they are produced, a longer answer costs patience nothing. The
 // brevity instruction is relaxed to match — a cramped ceiling and a "keep it very
 // short" order were solving the same vanished problem.
-async function runChatTurnStreaming(convoId, userId, onToken) {
+// Plain-English notice when a turn had to fall back because the Mac runner that
+// answers repo questions was offline. Never let the model invent file names.
+function noticeFor(turn, existingNotice) {
+  if (turn?.noticeReason !== 'no_runner') return existingNotice || null;
+  const base = "I couldn't check the code just now (the Mac runner is offline), so this is a guess, not a looked-up answer.";
+  return existingNotice ? `${base} ${existingNotice}` : base;
+}
+
+// The streaming turn, now laned. `turn` is the resolveTurn() decision; its
+// feature/model drive the generation, and repoFacts (if any) ride in the prompt.
+async function runChatTurnStreaming(convoId, userId, onToken, turn) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null });
   // Instrumentation for the prompt-caching plan (2026-08-21): the map's own
   // length, so a short/empty map inside the container shows up as an obvious
   // number instead of a guess. Cheap — projectMapBlock() just returns the
   // string already held in memory.
   const mapChars = projectMapBlock().length;
   const result = await generateTextStream({
-    prompt, feature: 'studio', label: 'conversations:chat',
+    prompt,
+    // The router's lane: a brainstorm/forced turn points at 'studio' (which may be
+    // the paid openai lane, with the monthly cap + notice handled inside
+    // generateTextStream); an about_app turn points at the cheap 'summary' lane.
+    feature: turn?.lane?.feature || 'studio',
+    model: turn?.lane?.model || null,
+    label: 'conversations:chat',
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
     // turn gets them: it is the one that answers a question, and the one whose
     // prompt now claims it can look things up.
@@ -851,7 +877,7 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
     // Neither is a budget constraint — an answer only costs what it actually
     // uses, so a high ceiling on a short answer costs nothing. This is headroom
     // for the times a question genuinely needs it, not a target.
-    model: CONVO_CHAT_MODEL, maxTokens: 4000,
+    maxTokens: 4000,
     allowLongOutput: true, timeoutMs: 150_000, onToken,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
@@ -863,34 +889,164 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
     },
   });
   if (result.error) return result;
-  saveAssistantTurn(convoId, result.text, result.notice ? { notice: result.notice } : null);
+  const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
+  const notice = noticeFor(turn, result.notice);
+  saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
-  return { text: result.text, via: result.via, notice: result.notice || null };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice };
 }
 
-async function runChatTurn(convoId, userId) {
+// The non-streaming twin. Reached only when the client does not ask for NDJSON,
+// so it uses generateTextStream without a token callback — that still honours the
+// paid-lane cap and notice, and is the single code path.
+async function runChatTurn(convoId, userId, turn) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, tools: true });
-  const result = await generateText({
-    // 450, not 1400: nothing is streamed, so the wait is the whole answer being
-    // written before you see any of it. Cutting the ceiling cuts the wait roughly
-    // in proportion. The brevity line above stops it reading as a truncation.
-    prompt, model: CONVO_CHAT_MODEL, maxTokens: 450,
-    feature: 'studio', label: 'conversations:chat',
-    allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000,
-    tools: studioTools(), dispatchTool: studioDispatch,
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: false, repoFacts: turn?.repoFacts || null });
+  const result = await generateTextStream({
+    prompt,
+    feature: turn?.lane?.feature || 'studio',
+    model: turn?.lane?.model || null,
+    maxTokens: 4000,
+    label: 'conversations:chat',
+    allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
   });
   if (result.error) return result;
-  saveAssistantTurn(convoId, result.text);
+  const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
+  const notice = noticeFor(turn, result.notice);
+  saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
-  return { text: result.text, via: result.via };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice };
+}
+
+// code_read — a read-only helper job on the runner (claude, with Read/Grep/Glob),
+// not an answer from facts alone. The reply lands as a normal turn, tagged 'claude'.
+async function runCodeReadTurn(convoId, turn) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const ctx = await convoContext(convo);
+  if (ctx.error) return { error: ctx.error };
+
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: false, repoFacts: turn?.repoFacts || null });
+  const result = await generateText({
+    prompt, feature: turn?.lane?.feature || 'studio', model: turn?.lane?.model || null,
+    maxTokens: 4000, label: 'conversations:chat-coderead',
+    allowLongOutput: true, timeoutMs: 180_000,
+    // Read-only: it may check the code, never touch it. The runner answers on the
+    // second account and falls back to main on its own (see ai/text.js#runAttempt).
+    helperTools: turn?.lane?.helperTools || 'Read,Grep,Glob', helperWaitMs: 180_000,
+  });
+  if (result.error) return result;
+  saveAssistantTurn(convoId, result.text, { lane: 'claude', intent: 'code_read' });
+  maybeAutoTitleConvo(convo);
+  harvestMind(convoId);
+  return { text: result.text, via: result.via, laneTag: 'claude', intent: 'code_read' };
+}
+
+// implement — propose, never dispatch. A model call is deliberately NOT made here
+// for the build itself; the owner's click decides. The reply is a proposal plus
+// three buttons the frontend draws (Send to Claude Code / OpenCode / Just talk).
+async function runImplementProposal(convoId, turn) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const text = "That sounds like something to build rather than just to talk through. Want me to queue it as a task for the coding agent?";
+  saveAssistantTurn(convoId, text, { lane: 'implement', intent: 'implement' });
+  maybeAutoTitleConvo(convo);
+  return { text, intent: 'implement', laneTag: 'implement' };
+}
+
+// ── Slash commands added by the turn router (Part 3) ──────────────────────────
+// /check — take the last assistant answer, re-examine it on a DIFFERENT lane with
+// fresh repo facts, and report problems. Tagged with both lanes.
+// /second — re-answer the last user question on a second lane, shown beside the first.
+function parseMsgMeta(meta) {
+  if (!meta) return {};
+  try { return typeof meta === 'string' ? JSON.parse(meta) : meta; } catch { return {}; }
+}
+function lastUserText(convoId) {
+  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat');
+  for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === 'user') return msgs[i].text;
+  return null;
+}
+function lastAssistantMsg(convoId) {
+  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat');
+  for (let i = msgs.length - 1; i >= 0; i--) if (m.role === 'assistant') return msgs[i];
+  return null;
+}
+
+// Pick the checking/second lane: opposite of the one that answered last.
+// gpt-4.1 <-> claude; git/opencode check on gpt-4.1.
+function otherLane(originalTag) {
+  if (originalTag === 'gpt-4.1') return { feature: 'reply', tag: 'claude' };
+  return { feature: 'studio', tag: 'gpt-4.1' };
+}
+
+async function runCheckTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const last = lastAssistantMsg(convoId);
+  const userQ = lastUserText(convoId);
+  if (!last) return { text: 'There is no answer here yet to check — send a message first.', intent: 'check', laneTag: 'claude' };
+
+  const originalTag = parseMsgMeta(last.meta).lane || 'gpt-4.1';
+  const lane = otherLane(originalTag);
+
+  const ctx = await convoContext(convo);
+  if (ctx.error) return { error: ctx.error };
+
+  let repoFacts = '';
+  try {
+    const c = extractCandidates(`${last.text}\n${userQ || ''}`);
+    const f = await runRepoProbe({ request: c, waitMs: 20_000, label: 'room-check-probe' });
+    repoFacts = formatRepoFacts(f);
+  } catch { repoFacts = ''; }
+
+  const prompt = buildTurnPrompt({
+    convo, ctx, brevity: false, tools: false, repoFacts,
+    instruction: `The conversation above ends with an answer from another lane (${originalTag}). Re-examine it critically using the repo facts and your own judgement: point out anything wrong, overclaimed, missing, or unsafe — files it names that may not exist, suggestions that would break something, or anything it got backwards. If it is sound, say so plainly. Plain English, no jargon, no file names you have not been told exist.`,
+  });
+  const result = await generateTextStream({
+    prompt, feature: lane.feature, model: null, maxTokens: 4000,
+    label: 'conversations:check', allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId,
+  });
+  if (result.error) return result;
+  const laneTag = tagFromVia(result.via, lane.tag);
+  saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'check', checked: originalTag });
+  maybeAutoTitleConvo(convo);
+  harvestMind(convoId);
+  return { text: result.text, via: result.via, laneTag, intent: 'check', checked: originalTag };
+}
+
+async function runSecondTurn(convoId) {
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const userQ = lastUserText(convoId);
+  if (!userQ) return { text: 'There is no question here yet to answer twice — send a message first.', intent: 'second', laneTag: 'gpt-4.1' };
+  const last = lastAssistantMsg(convoId);
+  const originalTag = parseMsgMeta(last?.meta).lane || 'gpt-4.1';
+  const lane = otherLane(originalTag);
+
+  const ctx = await convoContext(convo);
+  if (ctx.error) return { error: ctx.error };
+
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
+  const result = await generateTextStream({
+    prompt, feature: lane.feature, model: null, maxTokens: 4000,
+    label: 'conversations:second', allowLongOutput: true, timeoutMs: 150_000,
+    tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId,
+  });
+  if (result.error) return result;
+  const laneTag = tagFromVia(result.via, lane.tag);
+  saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'second', answered: originalTag });
+  maybeAutoTitleConvo(convo);
+  harvestMind(convoId);
+  return { text: result.text, via: result.via, laneTag, intent: 'second', answered: originalTag };
 }
 
 async function runPlanTurn(convoId, userId) {
@@ -1326,7 +1482,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     if (slash === 'handoff') return handoffToQueue(convoId);
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /help — this list.\n\nOtherwise just type — I\'ll answer from the subject context + live project data, looking things up when I need to.',
+        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff — queue the plan as a paused task in the Dispatch Queue (idempotent).\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|opencode <question> — force this one turn onto that lane.\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
       };
     }
     if (slash === 'seed') return runSaveSeedTurn(convoId);
@@ -1335,6 +1491,8 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     if (slash === 'fold') return runFoldTurn(convoId);
     if (slash === 'more') return runMoreIdeasTurn(convoId);
     if (slash === 'reframe') return runReframeTurn(convoId);
+    if (slash === 'check') return runCheckTurn(convoId);
+    if (slash === 'second') return runSecondTurn(convoId);
     if (slash === 'grill-me') {
       // interrogation mode: a single turn where the model asks questions only
       const ctx = await convoContext(convo);
@@ -1348,16 +1506,33 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
       saveAssistantTurn(convoId, result.text);
       return { text: result.text, via: result.via };
     }
+    // /ask (and any other text) falls through to the ordinary path, where the
+    // turn router recognises it as a forced lane and routes accordingly.
   }
 
-  // Ordinary user turn: persist, then run one model turn.
+  // Resolve the lane BEFORE any model cost. The router is free and deterministic
+  // except for one tiny tie-break judge call; it never dispatches a coding task
+  // (that is the owner's click, on an implement proposal).
+  const turn = await resolveTurn({ convoId, text: trimmed, lastAssistantText: lastUserText(convoId) });
+
+  // implement: propose, do not dispatch. The frontend draws the three buttons.
+  if (turn.intent === 'implement') return runImplementProposal(convoId, turn);
+  // code_read: a read-only helper job on the runner, not a facts-only answer.
+  if (turn.intent === 'code_read') return runCodeReadTurn(convoId, turn);
+
+  // Persist the user turn for every non-command message. For a forced /ask, store
+  // the cleaned question so the model context is not polluted by the "/ask gpt"
+  // prefix — the lane is chosen by the router, not by the words in the prompt.
+  const sendText = turn.intent === 'forced' ? (turn.lane.forcedQuestion || trimmed) : trimmed;
   const mid = randomUUID();
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
-    .run(mid, convoId, 'user', 'chat', trimmed);
+    .run(mid, convoId, 'user', 'chat', sendText);
   const out = onToken
-    ? await runChatTurnStreaming(convoId, userId, onToken)
-    : await runChatTurn(convoId, userId);
+    ? await runChatTurnStreaming(convoId, userId, onToken, turn)
+    : await runChatTurn(convoId, userId, turn);
   if (out.error) return out;
+  out.laneTag = out.laneTag || turn.lane?.tag || null;
+  out.intent = turn.intent;
   return out;
 }
 

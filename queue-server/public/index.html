@@ -787,8 +787,15 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .se-cmd { background:none; border:none; padding:1px 0; cursor:pointer; font-family:inherit; font-size:11px; color:var(--c-ink-4); }
 .se-cmd:hover:not(:disabled) { color:var(--c-ink); text-decoration:underline; }
 .se-cmd:disabled { opacity:.4; cursor:default; }
-.se-dot { font-size:11px; color:var(--c-ink-5); }
-.se-cost { display:block; font-size:10px; color:var(--c-ink-4); margin-top:6px; }
+ .se-dot { font-size:11px; color:var(--c-ink-5); }
+ .se-cost { display:block; font-size:10px; color:var(--c-ink-4); margin-top:6px; }
+ /* Lane tag on an assistant message: which model/lookup answered. Clickable to
+    re-ask on a different lane. */
+ .se-lane { display:inline-block; margin-left:6px; padding:0 5px; font-size:9px; letter-spacing:.04em; text-transform:none; color:var(--c-brand); border:1px solid var(--c-border); border-radius:7px; cursor:pointer; vertical-align:middle; }
+ .se-lane:hover { border-color:var(--c-brand); text-decoration:underline; }
+ .se-implement { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px 0; }
+ .se-implement .se-cmd { border:1px solid var(--c-border); border-radius:7px; padding:2px 8px; }
+ .se-implement .se-cmd:hover:not(:disabled) { border-color:var(--c-brand); text-decoration:none; }
 /* The architecture panel is a fixed 330px column at every window size, so its log
    is shortened by where it lives rather than by a viewport breakpoint. */
 .ws-archdetail .se-log { max-height:240px; }
@@ -16598,6 +16605,27 @@ document.addEventListener('keydown', (e) => {
   // rather than looked up, because the same conversation can be on screen in two
   // places at once and each place redraws itself its own way.
 
+  // The server stores per-turn routing facts (which lane answered, the intent)
+  // in convo_messages.meta as a JSON string. Pull them onto the message object so
+  // logHtml can show the lane tag and the implement-proposal buttons.
+  function safeParseJson(s){
+    try { return typeof s === 'string' ? JSON.parse(s) : s; } catch (err) { return null; }
+  }
+  function normalizeMsgs(arr){
+    return (arr || []).map(function(m){
+      var out = { role: m.role, kind: m.kind, text: m.text };
+      var meta = m.meta ? safeParseJson(m.meta) : null;
+      if (meta) {
+        if (meta.lane) out.laneTag = meta.lane;
+        if (meta.intent) out.intent = meta.intent;
+        if (meta.notice) out.notice = meta.notice;
+        if (meta.checked) out.checked = meta.checked;
+        if (meta.answered) out.answered = meta.answered;
+      }
+      return out;
+    });
+  }
+
   function fetchConvo(e, repaint){
     if(e.loading || e.loaded) return Promise.resolve();
     e.loading = true; e.err = '';
@@ -16610,7 +16638,7 @@ document.addEventListener('keydown', (e) => {
         e.convoId = data.convo.id;
         e.title = data.convo.title || e.title;
         e.promptId = data.convo.work_prompt_id || null;
-        e.msgs = data.messages || [];
+        e.msgs = normalizeMsgs(data.messages);
         e.acts = data.acts || [];
         e.edits = data.edits || [];
         e.loaded = true;
@@ -16657,7 +16685,7 @@ document.addEventListener('keydown', (e) => {
             : 'Sent — the plan is now a task, set aside in the Dispatch Queue for you to approve.' });
           if(onDone) onDone();
         } else if(d.text){
-          e.msgs.push({ role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text });
+          e.msgs.push({ role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
           // A roaming thread can pick up its title from this very turn (the first
           // exchange), so the list needs to come back the same way /fold or
           // /handoff already trigger it — every other subject type keeps its own
@@ -16761,7 +16789,7 @@ document.addEventListener('keydown', (e) => {
           var arrived = msgs.filter(function(m){ return m.role === 'assistant'; }).length;
           var had = e.msgs.slice(0, sentAt).filter(function(m){ return m.role === 'assistant'; }).length;
           if(arrived > had){
-            e.msgs = msgs;
+            e.msgs = normalizeMsgs(msgs);
             e.promptId = (data.convo && data.convo.work_prompt_id) || e.promptId;
             if(repaint) repaint();
             return;
@@ -17016,12 +17044,57 @@ document.addEventListener('keydown', (e) => {
       a.onclick = function(ev){ ev.preventDefault(); jumpToQueueItem(a.getAttribute('data-se-jump')); };
     });
     var retry = log.querySelector('[data-se-retry]');
-    if(retry) retry.onclick = function(ev){
+    if (retry) retry.onclick = function(ev){
       ev.stopPropagation();
       e.err = '';
       fetchConvo(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); });
       fillEmbed(host, e, opts);
     };
+
+    // Repaint helper bound to this host (fillEmbed is called with host/e/opts but
+    // no repaint of its own, so rebuild from those).
+    var repaintHere = function(){ if(host.isConnected) fillEmbed(host, e, opts); };
+
+    // Lane tag -> re-ask the last question on a different lane. The router's
+    // forced path does the rest; this is just the typed /ask, triggered by click.
+    log.querySelectorAll('.se-lane').forEach(function(a){
+      a.onclick = function(ev){
+        ev.stopPropagation();
+        if (e.busy) return;
+        var from = a.getAttribute('data-lane');
+        var nextLane = from === 'gpt-4.1' ? 'claude' : (from === 'claude' ? 'opencode' : 'gpt-4.1');
+        var q = lastUserTextIn(e);
+        if (!q) return;
+        sendTurn(e, '/ask ' + nextLane + ' ' + q, repaintHere, opts.onDone);
+      };
+    });
+
+    // Implement proposal: hand the request to the Dispatch Queue, or keep talking.
+    log.querySelectorAll('.implement-btn').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if (e.busy) return;
+        var kind = b.getAttribute('data-impl');
+        var q = lastUserTextIn(e) || '';
+        if (kind === 'talk') {
+          if (q) sendTurn(e, '/ask brainstorm ' + q, repaintHere, opts.onDone);
+          return;
+        }
+        var title = (q.slice(0, 80) || 'Room task').trim();
+        b.disabled = true; b.textContent = 'Sending…';
+        apiWrite('/api/travaux/prompts', 'POST', {
+          title: title, prompt: q, mode: 'implement', preset: 'standard',
+          provider: kind, status: 'paused', space: 'fmcns'
+        }).then(function(){
+          e.note = 'Sent to the Dispatch Queue (set aside) on ' + (kind === 'claude-code' ? 'Claude Code' : 'OpenCode') + '.';
+          repaintHere();
+        }).catch(function(err){
+          b.disabled = false; b.textContent = kind === 'claude-code' ? 'Send to Claude Code' : 'Send to OpenCode';
+          e.note = 'Could not send: ' + (err && err.message ? err.message : err);
+          repaintHere();
+        });
+      };
+    });
 
     var box = host.querySelector('.se-input');
     if(box && document.activeElement !== box && box.value !== (e.draft || '')){
@@ -17072,6 +17145,13 @@ document.addEventListener('keydown', (e) => {
 
   function dot(){ var s = document.createElement('span'); s.className = 'se-dot'; s.textContent = '·'; return s; }
 
+  // The most recent user message in the thread — the question a lane tag or an
+  // implement proposal is answering, used to re-ask or to queue the task.
+  function lastUserTextIn(e){
+    for (var i = e.msgs.length - 1; i >= 0; i--) if (e.msgs[i].role === 'user') return e.msgs[i].text || '';
+    return '';
+  }
+
   function logHtml(e){
     var html = '';
     if(e.err) return '<div class="se-note err">' + qEsc(e.err)
@@ -17087,11 +17167,29 @@ document.addEventListener('keydown', (e) => {
     e.msgs.forEach(function(m){
       var plan = m.kind === 'plan';
       var you = m.role === 'user';
-      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '">'
-           +  '<div class="se-who">' + (you ? 'You' : plan ? 'Plan' : 'Studio') + '</div>'
+      var tag = (!you && !plan && m.laneTag) ? m.laneTag : '';
+      if (tag && m.checked) tag = tag + ' ↻ ' + m.checked;
+      else if (tag && m.answered) tag = tag + ' ·2nd';
+      var who = you ? 'You' : plan ? 'Plan' : 'Studio';
+      // The lane tag: clickable. 'git' means a free repo lookup with no model; the
+      // others are the model that answered. Clicking re-asks the last question on
+      // a different lane (the router's forced path, triggered from here).
+      var tagHtml = tag
+        ? ' <span class="se-lane" data-lane="' + qEsc(tag) + '" title="Answered on the ' + qEsc(tag) + ' lane — click to re-ask on a different lane.">' + qEsc(tag) + '</span>'
+        : '';
+      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
+           +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body">' + fmtBody(m.text) + '</div>')
            +  '</div>';
+      // An implement proposal shows three ways forward instead of free text.
+      if (!you && m.intent === 'implement') {
+        html += '<div class="se-implement">'
+             +  '<button type="button" class="se-cmd implement-btn" data-impl="claude-code">Send to Claude Code</button>'
+             +  '<button type="button" class="se-cmd implement-btn" data-impl="opencode">Send to OpenCode</button>'
+             +  '<button type="button" class="se-cmd implement-btn" data-impl="talk">Just talk about it</button>'
+             +  '</div>';
+      }
     });
     if(e.busy){
       // Once tokens are arriving, they ARE the waiting indicator — the answer
