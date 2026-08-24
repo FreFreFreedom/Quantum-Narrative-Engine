@@ -314,7 +314,7 @@ function detectQuotaLimit(providerId, text) {
 }
 
 // Get the fallback chain for a feature
-async function getFallbackChain(feature, providerId, model) {
+async function getFallbackChain(feature, providerId, model, { noOpencodeBackup = false } = {}) {
   const cap = getProviderCapability(providerId);
   if (!cap) return [];
 
@@ -333,6 +333,12 @@ async function getFallbackChain(feature, providerId, model) {
       if (m !== model) chain.push({ provider: providerId, model: m });
     }
   }
+
+  // A caller-named provider (the manual model picker, plan "chat-model-picker")
+  // gets NO automatic opencode backup either — same reasoning as the catalogue
+  // tail being skipped in generateText: Antoine picked this lane specifically,
+  // and a quiet swap to a different provider on failure would defeat the point.
+  if (noOpencodeBackup) return chain;
 
   // If quota policy allows auto-free, add the opencode lane as backup: the
   // free floor (the opencode default for side passes), never the paid
@@ -374,7 +380,7 @@ async function getFallbackChain(feature, providerId, model) {
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -402,10 +408,31 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // spent. So a limit hit here is remembered (so the next call doesn't wait on a
   // door that is shut) and the same question is asked again on the main account.
   if (p === 'claude-side') {
-    const ask = (account) => runHelperJob({
+    const ask = (acct) => runHelperJob({
       prompt: helperTools ? prompt : toollessPrompt, feature, maxTokens, label, model: m,
-      tools: helperTools, waitMs: helperWaitMs, account,
+      tools: helperTools, waitMs: helperWaitMs, account: acct,
     });
+    // An explicit account pick (the manual model-picker's "Claude (main)" lane
+    // routed through claude-side, or a caller that wants ONLY the main account)
+    // asks that account alone — no side-then-main dance, since the caller already
+    // named the account it wants.
+    if (account === 'main') {
+      const mainBenched0 = router.isExhausted('claude-code', m || '');
+      const mainProbe0 = mainBenched0 && router.mayProbe('claude-code', m || '');
+      if (mainBenched0 && !mainProbe0) {
+        return { error: 'claude_main_exhausted', message: 'main account is out of its five-hour window' };
+      }
+      const main0 = await ask('main');
+      if (main0?.text) {
+        if (mainBenched0) router.clearExhaustion('claude-code', m || '');
+        return { text: main0.text, via: 'claude-main' };
+      }
+      const mainWhy0 = main0?.message || main0?.error || 'no answer';
+      if (detectQuotaLimit('claude-code', mainWhy0) && !mainBenched0) {
+        router.recordExhaustion({ providerId: 'claude-code', model: m, detectedBy: 'text', errText: mainWhy0, scope: 'session' });
+      }
+      return { error: 'claude_main_failed', message: mainWhy0 };
+    }
     let sideWhy = null;
     // A benched account whose reset time is only a GUESS gets tried again every 20
     // minutes rather than believed (router.mayProbe). The guess always errs late, and
@@ -415,6 +442,9 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
     const sideProbe = sideBenched && router.mayProbe('claude-side', m || '');
     if (sideBenched && !sideProbe) {
       sideWhy = 'second account is out of its five-hour window';
+      // An explicit "second account only" pick does not fall through to main just
+      // because the ledger guesses the window is still shut — say so and stop.
+      if (account === 'side') return { error: 'claude_side_exhausted', message: sideWhy };
     } else {
       const r = await ask('side');
       if (r?.text) {
@@ -430,6 +460,13 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
       // silence like a spent window for the purpose of asking the main account,
       // but do NOT bench the second account for it — a hiccup is not a ceiling.
       const wentQuiet = /no response|timed out|timeout/i.test(sideWhy);
+      // An explicit "second account only" pick stops here either way: Antoine
+      // picked that account specifically, so a quiet swap to the shared main
+      // account would defeat the point of picking the small bank at all.
+      if (account === 'side') {
+        if (spent && !sideBenched) router.recordExhaustion({ providerId: 'claude-side', model: m, detectedBy: 'text', errText: sideWhy, scope: 'session' });
+        return { error: r?.error || 'claude_side_failed', message: sideWhy };
+      }
       if (!spent && !wentQuiet) {
         // An ordinary failure, not a spent window. Let the chain decide what is
         // next rather than spending the big account on a hiccup.
@@ -532,27 +569,33 @@ async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens,
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
+  // A caller-named provider (the Room's manual model picker, or the /ask forced
+  // lanes) wins outright over the feature's configured default — that is the
+  // whole point of an explicit pick. See plan "chat-model-picker".
+  const hasExplicitProvider = !!(explicitProvider && isKnownProvider(explicitProvider));
   // Free-first platform policy: an unconfigured feature runs on the opencode
   // free lane (never the Claude subscription, which is opt-in per feature/task).
   // An explicit `model` passed by the caller (tier-driven picks, e.g. deep-tier
   // uses the strongest free model) takes priority over the feature default.
-  const providerId = featureDefaults.provider || 'claude-side';
-  let model = explicitModel || featureDefaults.model || null;
+  const providerId = hasExplicitProvider ? explicitProvider : (featureDefaults.provider || 'claude-side');
+  let model = explicitModel || (hasExplicitProvider ? null : featureDefaults.model || null);
   // A caller's explicit model is a free-lane model id (the chat picks a fast free
   // one before it knows where the feature is pointed). If the feature has since
   // been aimed at a Claude subscription, that id names nothing there — so it is
   // dropped in favour of the configured model rather than passed on to produce a
-  // provider/model pair that cannot exist.
-  if (explicitModel && (providerId === 'claude-side' || providerId === 'claude-code')) {
+  // provider/model pair that cannot exist. Skipped when the provider itself is an
+  // explicit pick: there the model was chosen FOR that provider, not inherited
+  // from a different one.
+  if (!hasExplicitProvider && explicitModel && (providerId === 'claude-side' || providerId === 'claude-code')) {
     const cap = getProviderCapability(providerId);
     if (cap && !cap.cliModels.includes(explicitModel)) model = featureDefaults.model || null;
   }
   // Same reasoning for a catalogue provider, which had no such guard: a Claude
   // model id handed to Groq or OpenAI is a guaranteed model_not_found.
-  if (explicitModel && getProviderCatalog(providerId) && !explicitModelUsableBy(providerId, explicitModel)) {
+  if (!hasExplicitProvider && explicitModel && getProviderCatalog(providerId) && !explicitModelUsableBy(providerId, explicitModel)) {
     model = featureDefaults.model || null;
   }
 
@@ -564,13 +607,17 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // — the outcome this whole arrangement exists to avoid.
   const primaryUsable = isKnownProvider(providerId)
     && (providerId === 'claude-side' || !router.isExhausted(providerId, model || ''));
-  const primaryChain = primaryUsable ? await getFallbackChain(feature, providerId, model) : [];
+  const primaryChain = primaryUsable ? await getFallbackChain(feature, providerId, model, { noOpencodeBackup: hasExplicitProvider }) : [];
 
   // Catalogue tail: every free model with a key present, sorted by codingRank
   // descending, skipping anything the ledger currently marks exhausted. This is
   // the "always be able to run a model" guarantee — router.js is the single
   // source of truth for what's live, shared by the queue and chat too.
-  const { chain: catalogueChain } = policy === 'auto_free'
+  // An explicit provider pick gets NO cross-provider fallback tail: Antoine chose
+  // that lane on purpose, and quietly answering from a different one would defeat
+  // the point of picking it (same reasoning as the account-only guards in
+  // runAttempt's claude-side branch, above).
+  const { chain: catalogueChain } = (policy === 'auto_free' && !hasExplicitProvider)
     ? router.pickChain({ exclude: primaryChain.map((a) => ({ provider: a.provider, model: a.model })) })
     : { chain: [] };
 
@@ -606,7 +653,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, account: p === providerId ? explicitAccount : null });
     attempted += 1;
 
     if (result?.text) {
@@ -875,21 +922,25 @@ function explicitModelUsableBy(providerId, model) {
 // the paid lane or carries a notice.
 export async function generateTextStream({
   prompt, feature, maxTokens = 800, label = 'ai-text-stream', model: explicitModel = null,
+  provider: explicitProvider = null, account: explicitAccount = null,
   timeoutMs = 90_000, allowLongOutput = false, onToken = null, onUsage = null,
   tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP,
   cacheKey = null,
 }) {
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
-  const providerId = featureDefaults.provider || 'claude-side';
-  const model = (explicitModel && explicitModelUsableBy(providerId, explicitModel))
-    ? explicitModel
-    : (featureDefaults.model || null);
+  // Same override rule as generateText: a caller-named provider (the Room's
+  // manual model picker) wins over the feature's configured default.
+  const hasExplicitProvider = !!(explicitProvider && isKnownProvider(explicitProvider));
+  const providerId = hasExplicitProvider ? explicitProvider : (featureDefaults.provider || 'claude-side');
+  const model = hasExplicitProvider
+    ? (explicitModel || null)
+    : ((explicitModel && explicitModelUsableBy(providerId, explicitModel)) ? explicitModel : (featureDefaults.model || null));
 
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: explicitModel, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }

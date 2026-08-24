@@ -25,16 +25,21 @@ import { generateText } from './ai/text.js';
 import { runRepoProbe } from './ai/text.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 
-// The lanes. `feature` is the ai_settings feature key (its configured provider /
-// model supplies the real backend); `tag` is the display label. An explicit
-// `model` here would be an override — we leave it null so the owner's AI Settings
-// pick for that feature wins (the whole point of the per-feature config).
+// The lanes. `feature` is the ai_settings feature key, used only as a label for
+// generateText's per-feature cost/cooldown bookkeeping — the real backend is
+// pinned by `provider` (and `account` for the two Claude subscriptions), which
+// generateText/generateTextStream now honour directly (plan "chat-model-picker")
+// instead of resolving the provider from the feature's AI Settings default.
+// `tag` is the display label shown on the message.
 const FORCED_LANES = {
-  gpt: { feature: 'studio', model: null, tag: 'gpt-4.1' },
-  claude: { feature: 'studio', model: null, tag: 'claude' },
-  opencode: { feature: 'studio', model: null, tag: 'opencode' },
+  gpt: { feature: 'studio', provider: 'google-ai-studio', model: null, account: null, tag: 'gemini' },
+  claude: { feature: 'studio', provider: 'claude-code', model: null, account: null, tag: 'claude' },
+  second: { feature: 'studio', provider: 'claude-side', model: null, account: null, tag: 'claude (2nd)' },
+  'claude-side': { feature: 'studio', provider: 'claude-side', model: null, account: null, tag: 'claude (2nd)' },
+  opencode: { feature: 'studio', provider: 'opencode', model: null, account: null, tag: 'opencode' },
   // Internal: the "Just talk about it" button re-asks on the brainstorm lane
-  // without re-triggering implement. Not advertised in /help.
+  // without re-triggering implement. Not advertised in /help. Left unpinned
+  // (no provider) so it keeps riding whatever 'studio' is configured to today.
   brainstorm: { feature: 'studio', model: null, tag: 'gpt-4.1' },
 };
 
@@ -140,12 +145,12 @@ function brainstormIntent(why, noticeReason = null) {
 }
 
 // ─── Public entry ───────────────────────────────────────────────────────────
-export async function resolveTurn({ convoId, text, lastAssistantText } = {}) {
+export async function resolveTurn({ convoId, text, lastAssistantText, override = null } = {}) {
   const raw = String(text || '');
   const trimmed = raw.trim();
 
   // 1. forced — a typed /ask, straight to one lane, everything else skipped.
-  const fm = trimmed.match(/^\/ask\s+(gpt|claude|opencode|brainstorm)\b[:\s]*([\s\S]*)$/i);
+  const fm = trimmed.match(/^\/ask\s+(gpt|claude|second|claude-side|opencode|brainstorm)\b[:\s]*([\s\S]*)$/i);
   if (fm) {
     const key = fm[1].toLowerCase();
     const question = fm[2].trim() || trimmed;
@@ -154,6 +159,25 @@ export async function resolveTurn({ convoId, text, lastAssistantText } = {}) {
       lane: { ...FORCED_LANES[key], forcedQuestion: question },
       repoFacts: null,
       why: `forced to ${key}`,
+    };
+  }
+
+  // 1b. the sticky per-conversation manual model picker (plan "chat-model-picker").
+  // Only applies when there is no slash-command in this message — the /ask forced
+  // lane above and any structured slash command always win over the sticky pick.
+  if (override?.provider) {
+    return {
+      intent: 'forced',
+      lane: {
+        feature: 'studio',
+        provider: override.provider,
+        model: override.model || null,
+        account: override.account || null,
+        tag: override.tag || override.provider,
+        forcedQuestion: trimmed,
+      },
+      repoFacts: null,
+      why: `sticky override -> ${override.provider}`,
     };
   }
 
