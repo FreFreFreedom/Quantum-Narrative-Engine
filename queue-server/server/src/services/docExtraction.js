@@ -310,6 +310,19 @@ TEXT:
 ${sliceText}${relBlock}`;
 }
 
+// Detaching a document from the Room must stop its reading immediately: this
+// wipes every row for that document (pending/extracted/confirmed/rejected),
+// which both clears the extraction box right away and — combined with the
+// existence-check at the top of the sweep loop below — stops the background
+// reader from calling the model on rows that no longer exist. The confirmed
+// summary Note is untouched on purpose (kept; re-attach starts a fresh read).
+export function cancelExtraction({ convoId, knowledgeDocTitle } = {}) {
+  if (!db) return { error: 'no_db' };
+  if (!convoId || !knowledgeDocTitle) return { error: 'missing_args' };
+  const out = db.prepare(`DELETE FROM doc_extractions WHERE convo_id=? AND knowledge_doc_title=?`).run(convoId, knowledgeDocTitle);
+  return { cancelled: out.changes || 0 };
+}
+
 const _sweepRunning = new Set();
 export function isSweepRunning(convoId) { return _sweepRunning.has(convoId); }
 
@@ -331,6 +344,11 @@ export async function runExtractionSweep({ convoId, limit = 1000, onProgress = n
     let done = 0, failed = 0;
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      // The row may have been deleted (document detached from the Room) since
+      // this batch was fetched — skip it rather than calling the model on a
+      // reading unit that no longer exists. This is the actual fix for the
+      // "detach doesn't stop the reading" bug.
+      if (!db.prepare(`SELECT 1 FROM doc_extractions WHERE id=?`).get(row.id)) continue;
       if (onProgress) onProgress({ chunkId: row.id, index: row.chunk_index, total, state: 'running' });
       try {
         const slice = readKnowledgeDoc(db, row.knowledge_doc_title, row.char_start, row.char_end - row.char_start);

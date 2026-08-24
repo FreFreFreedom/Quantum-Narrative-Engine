@@ -141,6 +141,11 @@ export function conversationsRoutes() {
   router.delete('/:id/subjects/:type/:subjectId', (req, res) => {
     const out = convos.detachSubject(req.params.id, req.params.type, req.params.subjectId);
     if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    // Detaching a file must stop its background reading immediately — see
+    // plans/cancel-extraction-on-detach.md.
+    if (req.params.type === 'file') {
+      docExtraction.cancelExtraction({ convoId: req.params.id, knowledgeDocTitle: 'File: ' + req.params.subjectId });
+    }
     res.json(out);
   });
 
@@ -281,6 +286,17 @@ export function conversationsRoutes() {
   router.post('/:id/extract/chunks/:chunkId/reject', (req, res) => {
     const out = docExtraction.rejectChunk(req.params.chunkId, req.body?.reviewer_note);
     if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
+  // POST /api/convos/:id/extract/cancel — stop reading a document explicitly
+  // (the detach route above already calls this internally for file detaches;
+  // this exists for completeness — see plans/cancel-extraction-on-detach.md).
+  router.post('/:id/extract/cancel', (req, res) => {
+    const knowledgeDocTitle = req.body?.knowledgeDocTitle;
+    if (!knowledgeDocTitle) return res.status(400).json({ error: 'knowledge_doc_title_required' });
+    const out = docExtraction.cancelExtraction({ convoId: req.params.id, knowledgeDocTitle });
+    if (out.error) return res.status(400).json(out);
     res.json(out);
   });
 
