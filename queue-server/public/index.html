@@ -7875,13 +7875,25 @@ async function roomExtractReject(chunkId) {
   loadRoomExtract();
 }
 
+async function roomExtractClearAll() {
+  if (!roomSel) return;
+  if (!confirm('Clear every section awaiting review? This dismisses them all at once.')) return;
+  try { await apiWrite(`/api/convos/${encodeURIComponent(roomSel)}/extract/clear`, 'POST', {}); } catch (e) {}
+  loadRoomExtract();
+}
+
 function renderRoomExtract() {
   const host = document.getElementById('roomExtractHost');
   if (!host) return;
   const st = roomExtractStatus;
   if (!roomSel || !st || !st.total) { host.innerHTML = ''; return; }
   const read = st.extracted + st.confirmed + st.rejected;
-  const progress = `<div class="tv-empty" style="text-align:left;">${st.running ? '📖' : '✅'} Read ${read} of ${st.total} section${st.total === 1 ? '' : 's'}${st.running ? ' — still going…' : ''}</div>`;
+  const clearBtn = roomExtractChunks.length > 0
+    ? `<button type="button" class="ubtn ubtn--pill" data-room-extract-clear style="margin-left:8px;">Clear all</button>`
+    : '';
+  const progress = `<div class="tv-empty" style="text-align:left;display:flex;align-items:center;gap:6px;">
+    <span>${st.running ? '📖' : '✅'} Read ${read} of ${st.total} section${st.total === 1 ? '' : 's'}${st.running ? ' — still going…' : ''}</span>${clearBtn}
+  </div>`;
   const cards = roomExtractChunks.map((c) => `<div class="uc uc--row" data-room-extract-chunk="${qEscAttr(c.id)}">
     <div class="uc-head"><span class="room-cardlabel">Section ${c.chunk_index}</span><span class="uc-title">${c.section_title ? qEsc(c.section_title) : `chars ${c.char_start}–${c.char_end}`}</span></div>
     <div class="uc-body" style="white-space:pre-wrap;">${qEsc(c.extracted_text || '')}</div>
@@ -7911,6 +7923,8 @@ function roomExtractHostClick(ev) {
   if (confirmBtn) { roomExtractConfirm(confirmBtn.getAttribute('data-room-extract-confirm')); return; }
   const rejectBtn = ev.target.closest('[data-room-extract-reject]');
   if (rejectBtn) { roomExtractReject(rejectBtn.getAttribute('data-room-extract-reject')); return; }
+  const clearBtn = ev.target.closest('[data-room-extract-clear]');
+  if (clearBtn) { roomExtractClearAll(); return; }
 }
 
 function roomSelect(id) {

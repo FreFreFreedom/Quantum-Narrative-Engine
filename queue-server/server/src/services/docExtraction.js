@@ -24,7 +24,7 @@ export function bindDocExtractionDb(database) { db = database; }
 const DEFAULT_CHUNK_CHARS = 25000;   // fixed-window fallback size, when no structure is detected at all
 const MAX_SECTION_CHARS = 16000;     // a detected section larger than this is subdivided further
 const SWEEP_DELAY_MS = 2500;         // between-unit pause — respects Gemini's free-tier rate limit; no speed cap otherwise
-const SECTION_MAX_TOKENS = 7000;     // Gemini Flash's practical output ceiling; a deep section gets real room to answer
+const SECTION_MAX_TOKENS = 1600;     // concise per-section notes: real room for a dense section, but the model can't ramble
 const DOC_EXTRACTION_MODEL = 'gemini-flash-latest';
 
 function docTotalChars(title) {
@@ -293,18 +293,17 @@ function buildExtractionPrompt(sliceText, {
 
   return `${appContext}
 
-You are reading one ${whereabouts} of a much larger document, as part of a thorough, deep read — take your time and be exhaustive.
+You are reading one ${whereabouts} of a larger document. Be concise — the owner wants short, high-signal notes, not a transcript.
 
-Extract the following as labeled fields. Quote the specific sentence or closely paraphrase it where it matters — keep numbers, names, thresholds and conditions exactly as stated. Do not invent or infer anything not actually written in this text. If a field is genuinely empty for this section, write "None." for it rather than manufacturing filler.
+Capture only what is concrete and worth keeping, as 4–8 short bullets. Quote the specific figure, name, or phrase where it matters; keep numbers and conditions exact. Do not invent or infer anything not actually written. If the section carries nothing worth noting, reply exactly: "Nothing here."
 
-MECHANICS / RULES / REQUIREMENTS: concrete platform mechanics, rules, or requirements actually stated.
-KEY IDEAS / INSIGHTS: the substantive ideas and insights this section makes.
-THEMES: the themes or mental models at play.
-SUBJECTS / TOPICS: what subjects/topics this section covers.
-CONCEPTS / ENTITIES / TERMINOLOGY: named concepts, entities, or terms introduced or used here.
-OPEN QUESTIONS / TENSIONS: unresolved questions, tensions, or contradictions raised.
-LOOSE / UNCONNECTED IDEAS: anything that seems tangential, half-formed, or unrelated to the rest — capture it anyway, without censoring; the owner is the one who judges what's worth keeping.
-RELEVANCE TO OUR APP: whether and how this connects to the application described above — or say plainly if it doesn't.
+Prioritise, in this order:
+- RELATIONSHIP DYNAMICS & PATTERNS: how people, roles, or parts interact; recurring patterns, tensions, or feedback loops.
+- SELF-SIMILAR / FRACTAL PATTERNS: ways the same structure recurs at different scales or recurs throughout the document.
+- MECHANICS / RULES / REQUIREMENTS: concrete mechanics, rules, or requirements actually stated.
+- KEY IDEAS / INSIGHTS: the substantive idea or decision this section makes.
+- THEMES: the mental models or themes at play.
+Skip narration, filler, summaries, and restating what the document is.
 
 TEXT:
 ${sliceText}${relBlock}`;
@@ -434,6 +433,16 @@ export function rejectChunk(chunkId, reviewerNote = '') {
   db.prepare(`UPDATE doc_extractions SET status='rejected', reviewer_note=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
     .run(String(reviewerNote || '').slice(0, 2000), chunkId);
   return { id: chunkId, status: 'rejected' };
+}
+
+// Bulk dismiss: every section still awaiting review for this convo is marked
+// rejected at once, so the owner can clear a long feedback list without
+// clicking Reject on each card (see the "Clear all" button in the Room panel).
+export function rejectAllExtracted({ convoId } = {}) {
+  if (!db) return { error: 'no_db' };
+  if (!convoId) return { error: 'missing_args' };
+  const out = db.prepare(`UPDATE doc_extractions SET status='rejected', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE convo_id=? AND status='extracted'`).run(convoId);
+  return { cleared: out.changes || 0 };
 }
 
 // ─── Final digest (plan §6) ───────────────────────────────────────────────────

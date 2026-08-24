@@ -300,6 +300,14 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // POST /api/convos/:id/extract/clear — reject every section still awaiting
+  // review in one call (the Room panel's "Clear all" button).
+  router.post('/:id/extract/clear', (req, res) => {
+    const out = docExtraction.rejectAllExtracted({ convoId: req.params.id });
+    if (out.error) return res.status(out.error === 'missing_args' ? 400 : 400).json(out);
+    res.json(out);
+  });
+
   // POST /api/convos/:id/reset — fold conversation into a recap, clear messages.
   router.post('/:id/reset', (req, res) => {
     const out = convos.resetConvoContext(req.params.id);
