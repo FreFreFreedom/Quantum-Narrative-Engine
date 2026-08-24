@@ -159,6 +159,10 @@ climbs into the injected slice by itself.
 
 ## Part 2 — The router (one chat, many lanes)
 
+**SPLIT OUT (together with Part 3) to [room-turn-router.md](room-turn-router.md) and
+sent to the queue 2026-08-23.** That file is the executable version; what follows is the
+summary. Do not implement this section — implement that plan.
+
 ### New service — `server/src/services/turnRouter.js`
 
 `resolveTurn({ convoId, text, lastAssistantText })` → `{ intent, lane, repoFacts, why }`.
@@ -209,6 +213,9 @@ talk about it**.
 ---
 
 ## Part 3 — Letting them argue, on purpose
+
+**SPLIT OUT (together with Part 2) to [room-turn-router.md](room-turn-router.md) and
+sent to the queue 2026-08-23.** Do not implement this section — implement that plan.
 
 The valuable version of "models talking to each other" is one model criticising
 another's answer with the code in front of it. Each such move is a real extra call, so
