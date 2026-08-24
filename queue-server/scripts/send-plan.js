@@ -126,6 +126,10 @@ const title = derivedTitle();
  // the repo, so the agent can re-read it rather than work from a paste.
  const body = [
    `Implement the plan below. It was written and approved in a terminal session, and the same text is committed at \`${repoRelative}\` — read it there if you need the file itself.`,
+   ...(MANUAL ? [
+     '',
+     'When you are completely done — all changes committed, nothing left to verify — ship yourself: run `oc ship <task-id>` in a shell, where `<task-id>` is your current branch name with the `oc/` prefix stripped (see `git rev-parse --abbrev-ref HEAD`). That pushes your branch and hands it to the review/publish pipeline, so only do it once the work is actually finished.',
+   ] : []),
    '',
    planText,
  ].join('\n');

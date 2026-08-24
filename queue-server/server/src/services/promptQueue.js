@@ -2287,6 +2287,17 @@ export async function manualComplete(promptId, { branch, head_sha = null } = {})
 
   if (!task) return { ok: false, error: 'could not create task record' };
 
+  // Without this the card never leaves 'paused' — a manual task's own row is
+  // otherwise untouched by anything in this function, so it sat on "Parked"
+  // forever even after a real oc ship succeeded (found 2026-08-23).
+  db.prepare(`
+    UPDATE work_prompts SET status='done', agent_task_id=?,
+      completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    WHERE id=?
+  `).run(task.id, promptId);
+  addMessage(promptId, { role: 'agent', text: 'Shipped manually via `oc ship`.', agentTaskId: task.id });
+  broadcast();
+
   // Dynamic import: reviewRunner.js imports getPrompt from this same file, so a
   // static import here would be circular (same reason onAgentTaskFinalized uses one).
   const { createReviewForTask } = await import('./reviewRunner.js');
