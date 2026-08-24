@@ -41,6 +41,7 @@ export function openDb() {
   initBookDetailSchema(db);
   initDiscoverySchema(db);
   initConversationsSchema(db);
+  initMindSchema(db);
   initFilmEnrichmentSchema(db);
   return db;
 }
@@ -1362,6 +1363,38 @@ export function initConversationsSchema(db) {
   // constraint and SQLite cannot alter one, and these rows must stay kind='chat'
   // so the conversation keeps remembering them in its turn window.
   try { db.exec(`ALTER TABLE convo_messages ADD COLUMN meta TEXT`); } catch {}
+
+  // The memory watermark (plan "room-shared-memory"): how many of this
+  // conversation's turns the fact-harvest job has already read, so it never
+  // re-reads turns it has already processed.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN mind_seen_turns INTEGER DEFAULT 0`); } catch {}
+}
+
+// ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────
+// One small, cheap, plain-text memory table. Any feature (the Room, the Idea
+// Studio, another lane) can read from and write to it, so a fact stated once is
+// known forever — no embeddings, no vector DB, no external memory service.
+// "Forgetting" a fact means active=0, NEVER DELETE, so an accidental forget is
+// recoverable by flipping the flag back.
+export function initMindSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS mind_facts (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,        -- 'about' | 'taste' | 'decision' | 'project' | 'person' | 'style'
+      text TEXT NOT NULL,        -- one fact, one row, plain English, <= 240 chars
+      detail TEXT,               -- longer body; NEVER injected into a prompt directly
+      weight REAL DEFAULT 1,
+      source_convo_id TEXT,
+      source_note TEXT,
+      hits INTEGER DEFAULT 0,
+      last_used_at TEXT,
+      created_at TEXT,
+      updated_at TEXT,
+      superseded_by TEXT,
+      active INTEGER DEFAULT 1
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_mind_facts_active ON mind_facts(active, kind)`); } catch {}
 }
 
 // ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────

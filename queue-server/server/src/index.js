@@ -52,6 +52,8 @@ import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaSched
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
+import { mindRoutes } from './routes/mind.js';
+import { bindMindDb } from './services/mind.js';
 import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
 import { errorHandler } from './lib/asyncHandler.js';
 
@@ -100,6 +102,7 @@ bindOpenAiSpendDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
+bindMindDb(db);
 bindTagCommunitiesDb(db);
 
 // Recover the history of which world ideas were applied to which card. Free, no
@@ -324,6 +327,7 @@ app.use('/api/architecture', requireAuth, architectureRoutes(db));
 app.use('/api/architecture/intel', requireAuth, intelRoutes(db));
 app.use('/api/discovery', requireAuth, discoveryRoutes(db));
 app.use('/api/convos', requireAuth, conversationsRoutes());
+app.use('/api/mind', requireAuth, mindRoutes());
 
 // Serve the single-file frontend app (fmcns_navigator.html, copied to
 // public/index.html) at the root address, so the whole app lives at one URL.

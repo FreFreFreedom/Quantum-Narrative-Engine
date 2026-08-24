@@ -30,6 +30,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, uniqueTitle } from './knowledgeDocs.js';
+import { mindBlock, harvest as harvestMind } from './mind.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
@@ -780,6 +781,12 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     includeProjectContext ? projectMapBlock() : '',
     subjectSystemPrompt(ctx.contextText, { depth, mode: ctx.mode || 'single', tools }),
     includeProjectContext ? liveListsBlock() : '',
+    // Load-bearing position: immediately AFTER liveListsBlock(), which already
+    // varies per turn and sits outside the cached prefix (projectMapBlock +
+    // subjectSystemPrompt). Memory ahead of the project map would break the cache
+    // prefix and roughly quadruple the token cost of every turn. See
+    // plans/room-shared-memory.md §3 and conversation-voice-and-project-map.md.
+    mindBlock(),
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
     depth ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
@@ -858,6 +865,7 @@ async function runChatTurnStreaming(convoId, userId, onToken) {
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text, result.notice ? { notice: result.notice } : null);
   maybeAutoTitleConvo(convo);
+  harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   return { text: result.text, via: result.via, notice: result.notice || null };
 }
 
@@ -881,6 +889,7 @@ async function runChatTurn(convoId, userId) {
   if (result.error) return result;
   saveAssistantTurn(convoId, result.text);
   maybeAutoTitleConvo(convo);
+  harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   return { text: result.text, via: result.via };
 }
 
