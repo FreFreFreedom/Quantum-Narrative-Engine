@@ -155,7 +155,7 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
     // Empty string is a real value: it clears the setting.
     if (typeof queue.defaultProvider === 'string') {
       const p = queue.defaultProvider.trim();
-      if (p === '' || p === 'claude-code' || p === 'opencode') nextQueue.defaultProvider = p;
+      if (p === '' || p === 'claude-code' || p === 'opencode' || p === 'claude-side') nextQueue.defaultProvider = p;
     }
     if (typeof queue.defaultModel === 'string') {
       const m = queue.defaultModel.trim();

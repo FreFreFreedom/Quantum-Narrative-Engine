@@ -145,12 +145,11 @@ export async function createPrompt({
   component_id = null, provider = null, provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null, thought_id = null, inspiration = null, is_group = false,
-  manual_run = 0, account = 'main',
+  manual_run = 0, account = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
   if (!isValidModelId(provider_model)) throw new Error('invalid provider_model');
-  if (!['main', 'side'].includes(account)) account = 'main';
   // Task tier (free-only plan): zero-cost size judgment made once at creation —
   // it selects the plan speed and the right free model. Mini tasks are tiny
   // and instant; standard is the everyday lane; deep gets the strongest model
@@ -177,7 +176,12 @@ export async function createPrompt({
   const queueDefaults = queueDefaultEngine();
   const useProvider = requestedProvider
     || (queueDefaults.provider === 'opencode' || queueDefaults.provider === 'claude-code' ? queueDefaults.provider : null)
+    || (queueDefaults.provider === 'claude-side' ? 'claude-code' : null)
     || (tier === 'mini' ? 'opencode' : 'claude-code');
+  // A per-task account (the card's own dropdown) always wins; with nothing passed,
+  // the AI Settings "Coding tasks" default decides which subscription a new task starts on.
+  const queueDefaultAccount = queueDefaults.provider === 'claude-side' ? 'side' : 'main';
+  const useAccount = ['main', 'side'].includes(account) ? account : queueDefaultAccount;
   // Preset → Claude model (fast=haiku, standard=sonnet, deep=opus). 'auto' resolves
   // from the tier heuristic instead of asking a model to judge it: opus is reserved
   // for genuinely deep work, so an ordinary task cannot quietly cost 5× what it
@@ -322,7 +326,7 @@ export async function createPrompt({
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, isGroup ? 'paused' : initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, account);
+    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, useAccount);
 
   // Every idea that arrived with the card gets its own durable row, so the audit
   // can ask later whether it actually got built. inspire_picks_json above is the
