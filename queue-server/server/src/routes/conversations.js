@@ -3,6 +3,7 @@
 // and the subject registry in services/subjectContext.js.
 import { Router } from 'express';
 import * as convos from '../services/conversations.js';
+import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 function isConvoError(out) {
@@ -204,6 +205,50 @@ export function conversationsRoutes() {
     if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
     res.json(out);
   }));
+
+  // ─── Section-by-section PDF extraction (plan "pdf-section-extraction") ─────
+  // POST /api/convos/:id/extract/start — plan this doc's chunks (idempotent) and
+  // fire the sweep in the background; returns immediately, same shape as the
+  // world-look's runWorldLookGuarded callers.
+  router.post('/:id/extract/start', (req, res) => {
+    const convoId = req.params.id;
+    const knowledgeDocTitle = req.body?.knowledgeDocTitle;
+    if (!knowledgeDocTitle) return res.status(400).json({ error: 'knowledge_doc_title_required' });
+    const planned = docExtraction.planChunks({ convoId, knowledgeDocTitle });
+    if (planned.error) return res.status(planned.error === 'not_found' ? 404 : 400).json(planned);
+    // No websocket message for this — same as the world-look sweep, the
+    // frontend polls GET .../extract/status instead (plan's explicit choice).
+    docExtraction.startExtractionSweep({ convoId });
+    res.json({ started: true, ...planned });
+  });
+
+  // GET /api/convos/:id/extract/status — counts for the "Read N of M sections" line.
+  router.get('/:id/extract/status', (req, res) => {
+    res.json(docExtraction.extractionStatus(req.params.id));
+  });
+
+  // GET /api/convos/:id/extract/chunks?status=extracted — rows awaiting review
+  // (or confirmed/rejected, for a status filter later).
+  router.get('/:id/extract/chunks', (req, res) => {
+    const status = String(req.query.status || 'extracted');
+    res.json({ chunks: docExtraction.listChunks(req.params.id, status) });
+  });
+
+  // POST /api/convos/:id/extract/chunks/:chunkId/confirm — freeze this section's
+  // reading and append it into the running "confirmed findings" note.
+  router.post('/:id/extract/chunks/:chunkId/confirm', (req, res) => {
+    const out = docExtraction.confirmChunk(req.params.chunkId);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
+
+  // POST /api/convos/:id/extract/chunks/:chunkId/reject — mark this section
+  // wrong; capturing the note is manual re-work for now (see plan's out-of-scope).
+  router.post('/:id/extract/chunks/:chunkId/reject', (req, res) => {
+    const out = docExtraction.rejectChunk(req.params.chunkId, req.body?.reviewer_note);
+    if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
+    res.json(out);
+  });
 
   // POST /api/convos/:id/reset — fold conversation into a recap, clear messages.
   router.post('/:id/reset', (req, res) => {
