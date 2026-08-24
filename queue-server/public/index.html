@@ -586,7 +586,13 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
 .room-threads { width:250px; min-width:220px; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
-.room-cards { width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+.room-cards { position:relative; width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+/* Drag handle for the resizable width (plan "room-sidebar-fixes") — a thin strip
+   over the panel's left border, hidden while the panel is collapsed since there
+   is nothing to resize then. */
+.room-cards-resize { position:absolute; top:0; left:-3px; bottom:0; width:6px; cursor:col-resize; z-index:2; }
+.room-cards-resize:hover, .room-cards-resize.is-dragging { background:var(--c-border-2); }
+.room-cards.collapsed .room-cards-resize { display:none; }
 /* Collapsed on a wide window: the inline column shrinks to nothing so the
    conversation takes the room. The panel only ever holds a thin gap now, and
    the toolbar "Threads"/"Attached" buttons remain to bring it back. */
@@ -604,22 +610,19 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
   width:290px; min-width:0; max-width:92vw; padding:14px;
   border-left-color:var(--c-border); box-shadow:var(--sh-md); }
 .room-side-acts { display:flex; align-items:center; gap:1px; margin-left:auto; flex:none; }
+/* A single icon button now, not a two-line text block — the block used to sit in
+   the same header row as the title, the count and three other icons and did not
+   fit a 290px column, wrapping and reading as clutter under "Attached". Drag-drop
+   itself now targets the whole panel (#roomCards), not just this button — see the
+   .room-cards--over rule below and the listeners moved in JS. */
 .room-dropzone {
   flex:none;
-  margin-left:6px;
-  padding:6px 10px;
-  border:1px dashed var(--c-border);
-  border-radius:6px;
-  background:var(--c-bg);
+  border:none;
+  background:none;
   color:var(--c-ink);
-  font-size:11px;
-  transition:border-color var(--t-fast), background var(--t-fast);
   cursor:pointer;
 }
-.room-dropzone:hover { border-color:var(--c-ink); }
-.room-dropzone--over { border-color:var(--c-ink); background:var(--c-bg-2); }
-.room-dropzone p { margin:0; }
-.room-dropzone .room-drop-instr { font-size:10px; opacity:.6; }
+.room-cards--over { outline:2px dashed var(--c-ink); outline-offset:-2px; background:var(--c-bg-2); }
 .room-side-head .uicon { flex:none; }
 .room-collapse-btn { opacity:.65; }
 .room-collapse-btn:hover { opacity:1; }
@@ -691,6 +694,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    in the right column, beside Attached. No explanatory text — a list of facts
    with a ✕ and an edit affordance is self-explanatory. */
 .room-mind { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
+/* Collapsed by default (plan "room-sidebar-fixes") — everything but the head
+   is hidden, and the choice is remembered per browser (ROOM_MIND_COLLAPSE_KEY). */
+.room-mind.collapsed > *:not(.room-side-head) { display:none; }
 .room-remember { display:flex; gap:6px; margin-bottom:8px; }
 .room-remember .searchbox { flex:1; min-width:0; }
 .room-mind-row { display:flex; align-items:flex-start; gap:6px; padding:5px 0; border-bottom:1px solid var(--c-border); }
@@ -703,6 +709,16 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    conversation (plan "room-world-ideas") — the same ✨ cards suggestions and
    ideas already get, drawn with the same worldPartsHtml() used everywhere else. */
 .room-ideas { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
+/* Scoped to the Room only — .wl-title elsewhere (suggestion/seed cards) keeps its
+   app-wide single-line ellipsis; this column is narrow enough that truncating a
+   long idea title there cuts off nearly all of it. */
+.room-ideas .wl-title { white-space:normal; overflow:visible; text-overflow:clip; }
+.room-idea-round { border:1px solid var(--c-border); border-radius:8px; margin-bottom:8px; overflow:hidden; }
+.room-idea-round-head { display:flex; align-items:center; gap:6px; width:100%; padding:6px 8px; background:none; border:none; font:inherit; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); cursor:pointer; text-align:left; }
+.room-idea-round-head:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.room-idea-round-head .ic { width:12px; height:12px; flex:none; }
+.room-idea-round-body { padding:0 8px 8px; }
+.room-idea-usegroup { margin-bottom:8px; }
 .room-cardfilter { margin-bottom:8px; }
 .room-cardfilter .searchbox { margin-bottom:6px; }
 .room-chiprow { display:flex; flex-wrap:wrap; gap:5px; }
@@ -1864,6 +1880,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-cards" viewBox="0 0 16 16"><path d="M5.4 4.6V3.6a1.4 1.4 0 0 1 1.4-1.4h5.6a1.4 1.4 0 0 1 1.4 1.4v5.6a1.4 1.4 0 0 1-1.4 1.4H11"/><rect x="2.2" y="4.6" width="8.8" height="9.2" rx="1.4"/></symbol>
   <symbol id="ic-chevron-left" viewBox="0 0 16 16"><path d="M10 3.5 5.5 8 10 12.5"/></symbol>
   <symbol id="ic-chevron-right" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></symbol>
+  <symbol id="ic-upload" viewBox="0 0 16 16"><path d="M8 11.4V3.2"/><path d="M4.6 6.6 8 3.2l3.4 3.4"/><path d="M3 12.4v.8a1.4 1.4 0 0 0 1.4 1.4h7.2a1.4 1.4 0 0 0 1.4-1.4v-.8"/></symbol>
 </defs></svg>
 
 <div id="loginGate" class="loginbox">
@@ -2260,6 +2277,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-convo" id="roomConvo"></div>
       </div>
       <div class="room-cards" id="roomCards">
+        <div class="room-cards-resize" id="roomCardsResize" title="Drag to resize"></div>
         <div class="room-side-head">
           <h2>Attached</h2>
           <span class="room-cap" id="roomCardCount"></span>
@@ -2267,10 +2285,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
             <button type="button" class="uicon room-collapse-btn" id="roomCardsCollapse" title="Collapse the attached panel" aria-label="Collapse the attached panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg></button>
           </span>
-          <div id="roomDropZone" class="room-dropzone">
-            <p>Drag & drop a file here</p>
-            <p class="room-drop-instr">or click to browse</p>
-          </div>
+          <button type="button" id="roomDropZone" class="uicon room-dropzone" title="Drag a file here, or click to browse" aria-label="Attach a file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button>
           <input type="file" id="roomFileInput" hidden accept=".md,.txt,.pdf">
         </div>
         <div id="roomAttachPick" hidden>
@@ -2287,6 +2302,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <div class="room-side-head">
             <h2>Mind</h2>
             <span class="room-cap" id="roomMindCount"></span>
+            <button type="button" class="uicon room-collapse-btn" id="roomMindCollapse" title="Expand the Mind panel" aria-label="Expand the Mind panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-down"/></svg></button>
           </div>
           <div class="room-remember">
             <input class="searchbox" id="roomMindInput" placeholder="Remember a fact…" maxlength="240" autocomplete="off">
@@ -7051,6 +7067,22 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // suggestion — work the picker has no use for.
 let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null;
 const ROOM_SEL_KEY = 'fmcns_room_thread';
+const ROOM_MIND_COLLAPSE_KEY = 'fmcns_room_mind_collapsed';
+const ROOM_CARDS_WIDTH_KEY = 'fmcns_room_cards_width';
+const ROOM_CARDS_MIN_W = 250, ROOM_CARDS_MAX_W = 480;
+// Applies the saved custom width, or lets the CSS default/collapsed/narrow rules
+// take over — an inline style would otherwise outrank .room-cards.collapsed's own
+// width:0 (plan "room-sidebar-fixes"), so this clears it whenever the panel is
+// collapsed or the layout is the narrow overlay one, which has its own fixed width.
+function applyRoomCardsWidth() {
+  const panel = document.getElementById('roomCards');
+  if (!panel) return;
+  const narrow = window.matchMedia('(max-width: 819px)').matches;
+  if (narrow || panel.classList.contains('collapsed')) { panel.style.width = ''; return; }
+  let saved = null;
+  try { saved = Number(localStorage.getItem(ROOM_CARDS_WIDTH_KEY)); } catch (e) {}
+  panel.style.width = (saved && saved >= ROOM_CARDS_MIN_W && saved <= ROOM_CARDS_MAX_W) ? saved + 'px' : '';
+}
 
 function initRoom() {
   if (roomInited) return;
@@ -7092,11 +7124,13 @@ function initRoom() {
   // click — so they cannot fight: what a click opened, the mouse leaving can
   // never take away, and a peek never survives a click either way.
   const ROOM_PEEK_MS = 320;
+  const caColl = document.getElementById('roomCardsCollapse');
   const zones = [
     { panel: threads, btn: document.getElementById('roomThreadsBtn'),
       keptTitle: 'Hide the thread list', shutTitle: 'Threads', timer: null },
-    { panel: cards, btn: document.getElementById('roomCardsBtn'),
-      keptTitle: 'Hide the attached cards', shutTitle: 'Attached cards', timer: null },
+    { panel: cards, btn: document.getElementById('roomCardsBtn'), chevron: caColl,
+      keptTitle: 'Hide the attached cards', shutTitle: 'Attached cards',
+      chevronKeptTitle: 'Collapse the attached panel', chevronShutTitle: 'Expand the attached panel', timer: null },
   ].filter(z => z.panel && z.btn);
   const zoneOf = (panel) => zones.find(z => z.panel === panel) || null;
   // "Kept open" is not the same question on the two layouts: wide, the panel is a
@@ -7107,6 +7141,17 @@ function initRoom() {
     const on = zoneIsKept(z);
     z.btn.setAttribute('aria-expanded', String(on));
     z.btn.title = on ? z.keptTitle : z.shutTitle;
+    // The toolbar button above already gets this treatment, but the in-panel
+    // chevron used to say "Collapse the attached panel" forever, even once
+    // collapsed — clicking it again looked like a dead end (plan
+    // "room-sidebar-fixes"). Flip its title and direction along with the toolbar.
+    if (z.chevron) {
+      z.chevron.title = on ? z.chevronKeptTitle : z.chevronShutTitle;
+      z.chevron.setAttribute('aria-label', z.chevron.title);
+      const use = z.chevron.querySelector('use');
+      if (use) use.setAttribute('href', on ? '#ic-chevron-right' : '#ic-chevron-left');
+    }
+    if (z.panel === cards) applyRoomCardsWidth();
   });
   roomZonesSync = syncZoneBtns;
   const stopPeekTimer = (z) => { clearTimeout(z.timer); z.timer = null; };
@@ -7187,7 +7232,6 @@ function initRoom() {
   };
   const thColl = document.getElementById('roomThreadsCollapse');
   if (thColl) thColl.onclick = () => collapseZone(zoneOf(threads));
-  const caColl = document.getElementById('roomCardsCollapse');
   if (caColl) caColl.onclick = () => collapseZone(zoneOf(cards));
   document.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
@@ -7206,11 +7250,70 @@ function initRoom() {
     syncZoneBtns();
   });
   syncZoneBtns();
+  // Resizable width (plan "room-sidebar-fixes"): a drag handle on the panel's own
+  // left border. Only meaningful in the wide, inline-column layout — the narrow
+  // breakpoint gives the panel a fixed overlay width of its own.
+  const resizeHandle = document.getElementById('roomCardsResize');
+  if (resizeHandle) {
+    let dragging = false, startX = 0, startW = 0;
+    resizeHandle.addEventListener('mousedown', (e) => {
+      if (isRoomNarrow() || cards.classList.contains('collapsed')) return;
+      dragging = true;
+      startX = e.clientX;
+      startW = cards.getBoundingClientRect().width;
+      resizeHandle.classList.add('is-dragging');
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      // The panel sits on the right edge, with the handle on its left border, so
+      // dragging left (a shrinking clientX) grows it.
+      const w = Math.min(ROOM_CARDS_MAX_W, Math.max(ROOM_CARDS_MIN_W, startW - (e.clientX - startX)));
+      cards.style.width = w + 'px';
+    });
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      resizeHandle.classList.remove('is-dragging');
+      document.body.style.userSelect = '';
+      try { localStorage.setItem(ROOM_CARDS_WIDTH_KEY, String(Math.round(cards.getBoundingClientRect().width))); } catch (e) {}
+    });
+  }
+  applyRoomCardsWidth();
+  // Mind starts collapsed (plan "room-sidebar-fixes"): no collapse control of its
+  // own existed before, so it was always fully expanded in an already-crowded
+  // column. The choice is remembered per browser, same pattern as ROOM_SEL_KEY.
+  const mindPanel = document.getElementById('roomMind');
+  const mindColl = document.getElementById('roomMindCollapse');
+  if (mindPanel && mindColl) {
+    let mindCollapsed = true;
+    try { const saved = localStorage.getItem(ROOM_MIND_COLLAPSE_KEY); if (saved !== null) mindCollapsed = saved === '1'; } catch (e) {}
+    const applyMindCollapse = () => {
+      mindPanel.classList.toggle('collapsed', mindCollapsed);
+      mindColl.title = mindCollapsed ? 'Expand the Mind panel' : 'Collapse the Mind panel';
+      mindColl.setAttribute('aria-label', mindColl.title);
+      const use = mindColl.querySelector('use');
+      if (use) use.setAttribute('href', mindCollapsed ? '#ic-down' : '#ic-up');
+    };
+    applyMindCollapse();
+    mindColl.onclick = () => {
+      mindCollapsed = !mindCollapsed;
+      try { localStorage.setItem(ROOM_MIND_COLLAPSE_KEY, mindCollapsed ? '1' : '0'); } catch (e) {}
+      applyMindCollapse();
+    };
+  }
   // The Room's shared memory (plan "room-shared-memory").
   const mindAdd = document.getElementById('roomMindAdd');
   if (mindAdd) mindAdd.onclick = roomAddFact;
   const mindInput = document.getElementById('roomMindInput');
   if (mindInput) mindInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); roomAddFact(); } };
+  // Ideas panel clicks (round disclosure, per-idea pick, per-idea "use this idea",
+  // group "use N selected") — one delegated handler for the whole host, since
+  // renderRoomIdeas() redraws it from scratch on every state change (plan
+  // "room-sidebar-fixes", ideas accumulation + multi-select).
+  const ideasHost = document.getElementById('roomIdeasHost');
+  if (ideasHost) ideasHost.addEventListener('click', roomIdeasHostClick);
   // Background world-look ideas for this thread (plan "room-world-ideas"). The
   // backend triggers the look itself after each turn; this just polls while one
   // is running, the same way the Flow view's own poll loop drives flowWorldPoll
@@ -7218,8 +7321,9 @@ function initRoom() {
   // this one, scoped to whichever thread is open.
   if (!roomIdeasTimer) {
     roomIdeasTimer = setInterval(() => {
-      if (coreView !== 'room' || !roomSel) return;
-      flowWorldPoll('convo', roomSel).then(renderRoomIdeas);
+      if (coreView !== 'room' || !roomSel || !roomIdeasRunning) return;
+      if (Date.now() - roomIdeasStartedAt > 240000) { roomIdeasRunning = false; renderRoomIdeas(); return; }
+      loadRoomIdeas();
     }, 6000);
   }
 }
@@ -7241,7 +7345,7 @@ async function loadRoom() {
   renderRoom();
   if (roomSel) loadRoomSubjects();
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
-  if (roomSel) flowWorldSync('convo', roomSel).then(renderRoomIdeas);
+  loadRoomIdeas();
 }
 
 async function loadRoomSubjects() {
@@ -7508,13 +7612,150 @@ window.addEventListener('mind:updated', () => { loadRoomMind(); });
 // ── Background world-look ideas for this thread (plan "room-world-ideas") ─────
 // Same three-shelf world-look every suggestion/seed already gets, keyed to this
 // Room conversation instead — the backend triggers it itself after each turn
-// (services/conversations.js#roomWorldLook); this only draws whatever is there,
-// through the same flowWorldEntry/worldPartsHtml machinery those cards use.
+// (services/conversations.js#roomWorldLook). Unlike every other world-look
+// surface, the Room keeps every round instead of only ever showing the latest —
+// each background re-run used to silently replace what was on screen, even
+// though the older rounds were still sitting in the database the whole time
+// (plan "room-sidebar-fixes"). This reads through GET .../world-look?all=1
+// (routes/discovery.js), not the single-report flowWorldEntry machinery the
+// other sections use, and draws every round with the same worldPartsHtml() they
+// all share.
+let roomIdeasReports = [];       // every round for this thread, newest first
+let roomIdeasRunning = false;
+let roomIdeasStartedAt = 0;
+let roomIdeasOpen = new Set();   // report ids currently expanded
+const roomIdeaSel = {};          // reportId -> [{part_index,pick_index}, ...] ticked in that round
+function roomIdeaSelFor(id) { return roomIdeaSel[id] || (roomIdeaSel[id] = []); }
+
+async function loadRoomIdeas() {
+  const want = roomSel;
+  if (!want) { roomIdeasReports = []; roomIdeasRunning = false; renderRoomIdeas(); return; }
+  try {
+    const data = await api(`/api/discovery/world-look?source=convo&source_id=${encodeURIComponent(want)}&all=1`);
+    if (roomSel !== want) return; // a different thread was picked while this was in flight
+    roomIdeasReports = data.reports || [];
+    roomIdeasRunning = !!data.running;
+    roomIdeasStartedAt = roomIdeasRunning ? (roomIdeasStartedAt || Date.now()) : 0;
+    // The newest round opens by default; older ones stay however the user last
+    // left them (collapsed the first time they appear).
+    if (roomIdeasReports[0]) roomIdeasOpen.add(roomIdeasReports[0].id);
+  } catch (e) { if (roomSel === want) { roomIdeasReports = []; roomIdeasRunning = false; } }
+  renderRoomIdeas();
+}
+
+// The manual "✨ Look at the world" button. The 202 this posts to comes back
+// immediately — the pass itself runs in the background — so this just flips to
+// the "looking" state and lets loadRoomIdeas()/the poll timer pick up the result.
+async function roomIdeasStart() {
+  if (roomIdeasRunning || !roomSel) return;
+  roomIdeasRunning = true; roomIdeasStartedAt = Date.now();
+  renderRoomIdeas();
+  try { await apiWrite('/api/discovery/world-look', 'POST', { source: 'convo', source_id: roomSel, idea_text: roomIdeaTextSeed() }); }
+  catch (e) { /* the poll settles it back to idle once isWorldLookRunning drops */ }
+  loadRoomIdeas();
+}
+
 function renderRoomIdeas() {
   const host = document.getElementById('roomIdeasHost');
   if (!host) return;
   if (!roomSel) { host.innerHTML = ''; return; }
-  flowWorldRender('convo', roomSel, host, roomIdeaTextSeed(), null, { useIdea: true, onUseIdea: roomUseIdea });
+  if (roomIdeasRunning) {
+    host.innerHTML = `<div class="tv-empty">🔭 Looking at the world — real projects, hidden products, bold ideas. This takes a minute or two.</div>`;
+    return;
+  }
+  if (!roomIdeasReports.length) {
+    host.innerHTML = `<div class="tv-empty">
+      <button type="button" class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
+    </div>`;
+    return;
+  }
+  host.innerHTML = roomIdeasReports.map((report, idx) => roomIdeaRoundHtml(report, idx)).join('');
+}
+
+// One collapsible block per world-look round — newest expanded, older ones
+// collapsed by default. Reuses worldPartsHtml() exactly as every other
+// world-look surface does; only the per-round selection state (for the group
+// "use N selected ideas" button) and the round header are new.
+function roomIdeaRoundHtml(report, idx) {
+  const isOpen = roomIdeasOpen.has(report.id);
+  const selList = roomIdeaSelFor(report.id);
+  const sel = new Set(selList.map(x => x.part_index + ':' + x.pick_index));
+  const when = report.created_at ? new Date(report.created_at).toLocaleString() : '';
+  const label = idx === 0 ? ('Latest' + (when ? ' — ' + when : '')) : (when || `Round ${idx + 1}`);
+  let body = '';
+  if (isOpen) {
+    const facts = qInspireReviewFacts(report.review);
+    const groupBtn = selList.length
+      ? `<button type="button" class="ctrlbtn room-idea-usegroup" data-room-idea-usegroup="${qEscAttr(report.id)}">Use ${selList.length} selected idea${selList.length === 1 ? '' : 's'}</button>`
+      : '';
+    body = groupBtn + worldPartsHtml(report, { sel, facts, pickAction: 'room-idea-pick', scope: 'room-idea:' + report.id, useIdea: true });
+  }
+  return `<div class="room-idea-round${isOpen ? ' is-open' : ''}" data-room-idea-round="${qEscAttr(report.id)}">
+    <button type="button" class="room-idea-round-head" data-room-idea-toggle="${qEscAttr(report.id)}">
+      <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="${isOpen ? '#ic-up' : '#ic-down'}"/></svg>
+      <span>${qEsc(label)}</span>
+    </button>
+    ${isOpen ? `<div class="room-idea-round-body">${body}</div>` : ''}
+  </div>`;
+}
+
+// One delegated handler for the whole Ideas host (wired once in initRoom) —
+// renderRoomIdeas() redraws the host from scratch on every state change, so a
+// per-row handler would only ever survive one render.
+function roomIdeasHostClick(ev) {
+  const toggle = ev.target.closest('[data-room-idea-toggle]');
+  if (toggle) {
+    const id = toggle.getAttribute('data-room-idea-toggle');
+    if (roomIdeasOpen.has(id)) roomIdeasOpen.delete(id); else roomIdeasOpen.add(id);
+    renderRoomIdeas();
+    return;
+  }
+  const startBtn = ev.target.closest('[data-action="flowworld-start"]');
+  if (startBtn) { roomIdeasStart(); return; }
+  const round = ev.target.closest('[data-room-idea-round]');
+  const reportId = round && round.getAttribute('data-room-idea-round');
+  const report = reportId ? roomIdeasReports.find(r => r.id === reportId) : null;
+  const pickBtn = ev.target.closest('[data-action="room-idea-pick"]');
+  if (pickBtn && report) {
+    const card = pickBtn.closest('.q-inspire-card');
+    if (!card) return;
+    const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
+    const facts = qInspireReviewFacts(report.review);
+    applyInspireToggle(roomIdeaSelFor(reportId), key, facts);
+    renderRoomIdeas();
+    return;
+  }
+  const useBtn = ev.target.closest('[data-action="worldlook-use"]');
+  if (useBtn && report) {
+    const card = useBtn.closest('.q-inspire-card');
+    if (!card) return;
+    const pick = report.parts?.[Number(card.getAttribute('data-partidx'))]?.picks?.[Number(card.getAttribute('data-pickidx'))];
+    if (pick) roomUseIdea(worldIdeaFullText(pick));
+    return;
+  }
+  const groupBtn = ev.target.closest('[data-room-idea-usegroup]');
+  if (groupBtn) roomUseIdeaGroup(groupBtn.getAttribute('data-room-idea-usegroup'));
+}
+
+// Antoine's addition mid-plan: select several ideas in one round and ask the
+// Room to weigh them against each other, instead of dropping each one in on its
+// own with no framing. Reuses the same wl-mark selection mechanism the "pick one
+// / add if you want" boxes already use elsewhere (applyInspireToggle) rather
+// than building a new one.
+function roomUseIdeaGroup(reportId) {
+  const report = roomIdeasReports.find(r => r.id === reportId);
+  const sel = roomIdeaSelFor(reportId);
+  if (!report || !sel.length) return;
+  const texts = sel.map((key, n) => {
+    const pick = report.parts?.[key.part_index]?.picks?.[key.pick_index];
+    return pick ? `Idea ${n + 1}:\n${worldIdeaFullText(pick)}` : '';
+  }).filter(Boolean);
+  if (!texts.length) return;
+  const message = texts.join('\n\n---\n\n')
+    + '\n\n---\n\nCompare these ideas: do they work well together (synergy), do they overlap or substitute for each other, and which fits this app best?';
+  roomUseIdea(message, { raw: true });
+  roomIdeaSel[reportId] = [];
+  renderRoomIdeas();
 }
 
 // Fallback text for the manual "✨ Look at the world" button (idle state) — the
@@ -7533,12 +7774,13 @@ function roomIdeaTextSeed() {
 // "use this idea" (Antoine's addition on top of the source plan): drops the
 // idea's full text into the chat as a plain message, through the Room's own
 // send path — no intent flag, so turnRouter.js classifies it exactly like
-// anything else typed into the box.
-function roomUseIdea(text) {
+// anything else typed into the box. `raw` skips the "Idea: " prefix for the
+// group-compare message above, which already frames itself.
+function roomUseIdea(text, { raw = false } = {}) {
   const t = roomThreads.find((x) => x.id === roomSel) || null;
   if (!t || !window.studioLend || !text) return;
   const e = window.studioLend.entry('open', t.subject_id);
-  window.studioLend.send(e, 'Idea: ' + text, renderRoomConvo, () => loadRoom());
+  window.studioLend.send(e, raw ? text : 'Idea: ' + text, renderRoomConvo, () => loadRoom());
 }
 
 function roomSelect(id) {
@@ -7549,12 +7791,15 @@ function roomSelect(id) {
   roomPickOpen = false; roomPickQ = '';
   roomCardQ = ''; roomCardTypes = new Set();
   roomNote = ''; roomNoteErr = false;
+  // Reset before renderRoom() paints, so the outgoing thread's rounds never flash
+  // under the newly-selected one while loadRoomIdeas() is still in flight.
+  roomIdeasReports = []; roomIdeasRunning = false; roomIdeasOpen = new Set();
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');
   roomZonesSync();
   renderRoom();
   loadRoomSubjects();
-  flowWorldSync('convo', id).then(renderRoomIdeas);
+  loadRoomIdeas();
 }
 
 async function roomNewThread() {
@@ -7704,12 +7949,19 @@ async function extractPdfText(file) {
   return pages.join('\n\n').trim();
 }
 
-function roomDropZoneReset() {
-  roomDropZone.innerHTML = `<p>Drag & drop a file here</p><p class="room-drop-instr">or click to browse</p>`;
-}
+// The dropzone collapsed from a two-line text block to a single icon (plan
+// "room-sidebar-fixes"), so its own status messages now ride on the panel's
+// existing note line (#roomCardsNote / roomNote) instead of replacing the icon
+// with text — that block was exactly the clutter being fixed.
 function roomDropZoneSay(msg, isNote, holdMs) {
-  roomDropZone.innerHTML = isNote ? `<p class="room-note">${msg}</p>` : `<p>${msg}</p>`;
-  setTimeout(roomDropZoneReset, holdMs || 2500);
+  roomNote = msg; roomNoteErr = !!isNote;
+  const note = document.getElementById('roomCardsNote');
+  if (note) { note.textContent = roomNote; note.className = 'room-note' + (roomNoteErr ? ' err' : ''); }
+  setTimeout(() => {
+    if (roomNote !== msg) return; // superseded by a later message already
+    roomNote = ''; roomNoteErr = false;
+    renderRoomCards();
+  }, holdMs || 2500);
 }
 
 async function roomUploadFile(file) {
@@ -7719,7 +7971,7 @@ async function roomUploadFile(file) {
   const allowedTypes = ['.md', '.txt', '.pdf'];
   if (!allowedTypes.includes(ext)) return roomDropZoneSay(`Unsupported file type: ${ext}`, true);
 
-  roomDropZone.innerHTML = `<p>Reading "${file.name}"…</p>`;
+  roomDropZoneSay(`Reading "${file.name}"…`, false, 60000);
   let text = '';
   try {
     text = ext === '.pdf' ? await extractPdfText(file) : await file.text();
@@ -7749,6 +8001,7 @@ async function roomUploadFile(file) {
 
 const roomDropZone = document.getElementById('roomDropZone');
 const roomFileInput = document.getElementById('roomFileInput');
+const roomCardsPanel = document.getElementById('roomCards');
 if (roomDropZone && roomFileInput) {
   roomDropZone.addEventListener('click', () => roomFileInput.click());
   roomFileInput.addEventListener('change', () => {
@@ -7756,16 +8009,29 @@ if (roomDropZone && roomFileInput) {
     roomFileInput.value = '';
     if (file) roomUploadFile(file);
   });
-  roomDropZone.addEventListener('dragover', (e) => {
+}
+// Drag-and-drop targets the whole panel, not just the small icon button — the
+// icon only has to handle the click-to-browse case now (plan
+// "room-sidebar-fixes"). The highlight class moved to match. dragenter/dragleave
+// bubble from every child the pointer crosses, so a plain enter/leave pair would
+// flicker the highlight on and off as it moves over the rows inside the panel —
+// a depth counter keeps it lit until the pointer has actually left the panel.
+if (roomCardsPanel && roomFileInput) {
+  let roomCardsDragDepth = 0;
+  roomCardsPanel.addEventListener('dragenter', (e) => {
     e.preventDefault();
-    roomDropZone.classList.add('room-dropzone--over');
+    roomCardsDragDepth++;
+    roomCardsPanel.classList.add('room-cards--over');
   });
-  roomDropZone.addEventListener('dragleave', () => {
-    roomDropZone.classList.remove('room-dropzone--over');
+  roomCardsPanel.addEventListener('dragover', (e) => { e.preventDefault(); });
+  roomCardsPanel.addEventListener('dragleave', () => {
+    roomCardsDragDepth = Math.max(0, roomCardsDragDepth - 1);
+    if (roomCardsDragDepth === 0) roomCardsPanel.classList.remove('room-cards--over');
   });
-  roomDropZone.addEventListener('drop', (e) => {
+  roomCardsPanel.addEventListener('drop', (e) => {
     e.preventDefault();
-    roomDropZone.classList.remove('room-dropzone--over');
+    roomCardsDragDepth = 0;
+    roomCardsPanel.classList.remove('room-cards--over');
     const file = e.dataTransfer?.files?.[0];
     if (file) roomUploadFile(file);
   });
@@ -11461,6 +11727,11 @@ window.refreshWorldPanels = function (report) {
   // rebuilds the Flow list. Both guard on a missing host, so this is free when the
   // tab is not on screen.
   if (touchedFlow) { scheduleFlowRender(); renderNotbuilt(); }
+  // The Room's Ideas panel holds its own array of rounds (plan
+  // "room-sidebar-fixes") rather than one flowWorld entry, so a swap done inside
+  // it needs its own patch-in-place here too.
+  const ri = roomIdeasReports.findIndex((r) => r.id === report.id);
+  if (ri >= 0) { roomIdeasReports[ri] = report; renderRoomIdeas(); }
 };
 
 // One idea, one row. Keeps the .q-inspire-card class and the data-partidx /
