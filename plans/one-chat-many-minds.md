@@ -260,6 +260,9 @@ Room-shaped door.
 
 ## Part 5 — Files in the Room
 
+**SPLIT OUT to [files-in-the-room.md](files-in-the-room.md), and DONE** (2026-08-23,
+fixed once — see that file's own header). Never marked here at the time.
+
 The rule: **a file never rides in the prompt.**
 
 - Vendor a PDF text extractor into `queue-server/public/vendor/`, served locally, never
@@ -283,6 +286,10 @@ The rule: **a file never rides in the prompt.**
 ---
 
 ## Part 6 — Engine choice on handoff (small)
+
+**SPLIT OUT to [room-handoff-engine-choice.md](room-handoff-engine-choice.md)** (2026-08-24)
+— corrects two things below against the current code (engine choice already exists on a
+different, casual button path; the "queue agent reads knowledge_docs" claim is false).
 
 `createPrompt()` (`promptQueue.js:128`) already takes `provider`, and an explicit
 provider already wins over the AI-Settings default (`:157-164`).
