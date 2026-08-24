@@ -8891,9 +8891,9 @@ function qProviderLabel(p) {
     const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
     base = `Claude Code · ${presetLabel}`;
   }
-  // A task set to run on the second Claude account is surfaced in plain words, so a
-  // coding task that ran (or will run) on the wrong account is never a silent surprise.
-  return p.account === 'side' ? `${base} · 2nd account` : base;
+  // Always named, not just flagged when non-default — "no account shown" used to
+  // read as a gap when a task was simply on the (unlabeled) main account.
+  return `${base} · ${p.account === 'side' ? '2nd account' : 'main account'}`;
 }
 
 // Which models this task actually went through. The runner walks the Go chain
