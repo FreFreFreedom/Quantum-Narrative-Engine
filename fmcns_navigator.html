@@ -687,6 +687,18 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .room-picktitle { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .room-note { font-size:11.5px; color:var(--c-ink-4); margin-top:6px; }
 .room-note.err { color:var(--c-danger); }
+/* The Room's long-term memory (plan "room-shared-memory"): a flat list of facts
+   in the right column, beside Attached. No explanatory text — a list of facts
+   with a ✕ and an edit affordance is self-explanatory. */
+.room-mind { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
+.room-remember { display:flex; gap:6px; margin-bottom:8px; }
+.room-remember .searchbox { flex:1; min-width:0; }
+.room-mind-row { display:flex; align-items:flex-start; gap:6px; padding:5px 0; border-bottom:1px solid var(--c-border); }
+.room-mind-row:last-child { border-bottom:none; }
+.room-mind-text { flex:1; min-width:0; font-size:12.5px; line-height:1.45; color:var(--c-ink-2); cursor:text; }
+.room-mind-row .uicon { flex:none; opacity:.5; padding:1px 3px; }
+.room-mind-row:hover .uicon { opacity:1; }
+.room-mind-edit { flex:1; min-width:0; font:inherit; font-size:12.5px; padding:3px 5px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); background:var(--c-surface); color:var(--c-ink); }
 .room-cardfilter { margin-bottom:8px; }
 .room-cardfilter .searchbox { margin-bottom:6px; }
 .room-chiprow { display:flex; flex-wrap:wrap; gap:5px; }
@@ -2215,6 +2227,18 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div id="roomCardList"></div>
         <div id="roomCardsNote" class="room-note"></div>
+      </div>
+      <div class="room-mind" id="roomMind">
+        <div class="room-side-head">
+          <h2>Mind</h2>
+          <span class="room-cap" id="roomMindCount"></span>
+        </div>
+        <div class="room-remember">
+          <input class="searchbox" id="roomMindInput" placeholder="Remember a fact…" maxlength="240" autocomplete="off">
+          <button type="button" class="ubtn ubtn--pill" id="roomMindAdd">Remember</button>
+        </div>
+        <div id="roomMindList"></div>
+        <div id="roomMindNote" class="room-note"></div>
       </div>
     </div>
   </div>
@@ -7053,6 +7077,11 @@ function initRoom() {
     syncZoneBtns();
   });
   syncZoneBtns();
+  // The Room's shared memory (plan "room-shared-memory").
+  const mindAdd = document.getElementById('roomMindAdd');
+  if (mindAdd) mindAdd.onclick = roomAddFact;
+  const mindInput = document.getElementById('roomMindInput');
+  if (mindInput) mindInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); roomAddFact(); } };
 }
 
 async function loadRoom() {
@@ -7071,6 +7100,7 @@ async function loadRoom() {
   }
   renderRoom();
   if (roomSel) loadRoomSubjects();
+  loadMind(); // refresh the Room's shared memory whenever the room is shown
 }
 
 async function loadRoomSubjects() {
@@ -7250,6 +7280,88 @@ function renderRoomCards() {
   const note = document.getElementById('roomCardsNote');
   if (note) { note.textContent = roomNote; note.className = 'room-note' + (roomNoteErr ? ' err' : ''); }
 }
+
+// ── The Room's shared memory (plan "room-shared-memory") ───────────────────────
+// A flat list of facts kept across every thread. Add directly with Remember; the
+// harvest job also fills it from conversation turns. Detail is never shown inline
+// — it lives for the model's recall tool, not for display density.
+let roomMind = [];
+let _mindNote = '';
+
+async function loadMind() {
+  try {
+    const r = await api('/api/mind');
+    roomMind = (r && r.facts) || [];
+  } catch (e) { roomMind = []; }
+  renderMind();
+}
+
+function renderMind() {
+  const list = document.getElementById('roomMindList');
+  const count = document.getElementById('roomMindCount');
+  if (!list) return;
+  if (count) count.textContent = roomMind.length ? String(roomMind.length) : '';
+  if (!roomMind.length) { list.innerHTML = ''; }
+  else {
+    list.innerHTML = roomMind.map((f) => {
+      const kind = f.kind ? `<span class="room-picklabel">${qEsc(f.kind)}</span> ` : '';
+      return `<div class="room-mind-row" data-mind-id="${qEscAttr(f.id)}">`
+        + `<div class="room-mind-text" data-mind-edit="${qEscAttr(f.id)}" title="Click to edit">${kind}${qEsc(f.text)}</div>`
+        + `<button type="button" class="uicon" data-mind-forget="${qEscAttr(f.id)}" title="Forget this fact" aria-label="Forget this fact"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button>`
+        + `</div>`;
+    }).join('');
+    list.querySelectorAll('[data-mind-forget]').forEach((b) => { b.onclick = () => roomForgetFact(b.getAttribute('data-mind-forget')); });
+    list.querySelectorAll('[data-mind-edit]').forEach((el) => { el.onclick = () => roomBeginEditFact(el); });
+  }
+  const note = document.getElementById('roomMindNote');
+  if (note) { note.textContent = _mindNote; note.className = 'room-note' + (_mindNote && _mindNote.indexOf('Could') !== -1 ? ' err' : ''); }
+}
+
+async function roomAddFact() {
+  const input = document.getElementById('roomMindInput');
+  const text = input ? input.value.trim() : '';
+  if (!text) return;
+  try {
+    await apiWrite('/api/mind', 'POST', { text });
+    if (input) input.value = '';
+    _mindNote = '';
+    await loadMind();
+  } catch (e) {
+    _mindNote = (e && e.message === 'duplicate') ? 'That fact is already remembered.' : 'Could not save that fact.';
+    renderMind();
+  }
+}
+
+async function roomForgetFact(id) {
+  try { await apiWrite('/api/mind/' + encodeURIComponent(id), 'DELETE'); await loadMind(); } catch (e) {}
+}
+
+function roomBeginEditFact(el) {
+  const id = el.getAttribute('data-mind-edit');
+  const f = roomMind.find((x) => x.id === id);
+  if (!f) return;
+  const input = document.createElement('input');
+  input.className = 'room-mind-edit';
+  input.value = f.text;
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  const commit = async () => {
+    const v = input.value.trim();
+    if (v && v !== f.text) { try { await apiWrite('/api/mind/' + encodeURIComponent(id), 'PATCH', { text: v }); } catch (e) {} }
+    await loadMind();
+  };
+  input.onblur = commit;
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    else if (e.key === 'Escape') { e.preventDefault(); loadMind(); }
+  };
+}
+
+// Real-time refresh if the memory changes elsewhere (the harvest job, another
+// tab). The backend broadcasts `mind:updated`; if a realtime channel is wired to
+// window events it lands here. Local mutations already refetch directly.
+window.addEventListener('mind:updated', () => { loadMind(); });
 
 function roomSelect(id) {
   if (!id || id === roomSel) return;

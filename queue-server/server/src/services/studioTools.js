@@ -23,6 +23,7 @@ import * as q from './ontologyQuery.js';
 import { getComponents } from './architecture.js';
 import { listNodes } from './architectureNodes.js';
 import { listKnowledgeDocs, readKnowledgeDoc } from './knowledgeDocs.js';
+import { recallFacts } from './mind.js';
 
 export const STUDIO_TOOLS = [
   {
@@ -114,6 +115,18 @@ export const STUDIO_TOOLS = [
     input_schema: {
       type: 'object',
       properties: { status: { type: 'string' }, limit: { type: 'integer' } },
+    },
+  },
+  {
+    name: 'recall_memory',
+    description: "Recall a specific fact about the owner from his long-term memory — standing preferences, decisions and the reason behind them, people, constraints. Use this when a question depends on something he may have said before. The most relevant facts are already in the prompt; this reaches the longer tail of older or lower-ranked facts.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'What to recall, e.g. "preferred model" or "why we switched X"' },
+        limit: { type: 'integer', description: 'Max facts to return. Default 5.' },
+      },
+      required: ['query'],
     },
   },
 ];
@@ -211,6 +224,11 @@ export function dispatchStudioTool(db, name, input) {
       ).all({ status, limit }).map((r) => ({
         ...r, summary: r.summary ? String(r.summary).slice(0, 220) : null,
       }));
+    }
+    case 'recall_memory': {
+      const query = String(args.query || '').trim();
+      if (!query) return { error: 'query_required' };
+      return { facts: recallFacts(query, Math.min(Number(args.limit) || 5, 20)) };
     }
     default:
       return { error: `unknown tool: ${name}` };
