@@ -60,7 +60,12 @@ const BRAINSTORM_PHRASE = /\b(what if|imagine|i wonder|how about|dream|story|poe
 // ONLY thing that may ever produce `implement` — the judge below is barred from it.
 function soundsLikeTask(text) {
   const t = (text || '').trim().toLowerCase();
-  if (!t || t.length > 220) return false;
+  // No length cap: a long dictated message ("...so can you just remove them from
+  // there...") was being silently dropped past 220 chars even though it plainly
+  // named a marker. The cost of a false positive here is just a discardable
+  // proposal (Send to Claude Code/OpenCode/Just talk about it), never a dispatch —
+  // far cheaper than missing a real request. Found in real use, 2026-08-24.
+  if (!t) return false;
   const markers = ['fix', 'change', 'remove', 'make it ', 'get it working', "doesn't work", 'does not work', 'broken', 'bug', 'update the ', 'the button', 'the page', 'when i click', 'the header', 'the flow', 'the queue', 'the graph', 'the tab ', 'add a ', 'add an ', 'add the ', 'build a ', 'create a ', 'implement'];
   return markers.some((m) => t.indexOf(m) !== -1);
 }

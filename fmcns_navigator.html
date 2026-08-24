@@ -16414,7 +16414,10 @@ document.addEventListener('keydown', (e) => {
   // for the coding agent → offer to hand it to the New task tab. Never auto-sends.
   function soundsLikeTask(text) {
     var t = (text || '').trim().toLowerCase();
-    if (!t || t.length > 220) return false;
+    // No length cap — see turnRouter.js#soundsLikeTask for why (a long dictated
+    // message was being silently dropped; a false positive here only costs a
+    // discardable proposal, never an actual dispatch).
+    if (!t) return false;
     var markers = ['fix', 'change', 'remove', 'make it ', 'get it working', "doesn't work", 'does not work', 'broken', 'bug', 'update the ', 'the button', 'the page', 'when i click', 'the header', 'the flow', 'the queue', 'the graph', 'the tab ', 'add a ', 'add an ', 'add the ', 'build a ', 'create a ', 'implement'];
     return markers.some(function (m) { return t.indexOf(m) !== -1; });
   }
