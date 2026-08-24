@@ -8,6 +8,7 @@
 //   node scripts/send-plan.js plans/my-plan.md --preset standard
 //   node scripts/send-plan.js plans/my-plan.md --title "..."
 //   node scripts/send-plan.js plans/my-plan.md --again      # allow a duplicate title on purpose
+//   node scripts/send-plan.js plans/my-plan.md --manual     # invisible to the automated runner — run it yourself with `oc task <id>`
 //   QUEUE_URL=http://localhost:3000 node scripts/send-plan.js plans/my-plan.md
 //
 // Why this exists. A plan deliberated in a terminal session had nowhere to go: the only
@@ -66,6 +67,10 @@ function gitPush() {
  const PARK = flag('park');
  const RAW = flag('raw');
  const AGAIN = flag('again');
+ // --manual: this task is invisible to the automated runner entirely (advanceQueue()'s
+ // selection queries exclude manual_run=1 rows) — for a plan you intend to run yourself
+ // with `oc task <id>`, so the runner can never grab it out from under you.
+ const MANUAL = flag('manual');
   const TITLE = opt('title');
   const PRESET = opt('preset');
   const GROUP = flag('group');
@@ -183,6 +188,7 @@ const payload = {
   // 'own' = keep this plan, still look at the world. 'skip' = run it raw, right now.
   plan_source: RAW ? 'skip' : 'own',
   ...(PARK ? { status: 'paused' } : {}),
+  ...(MANUAL ? { manual_run: 1 } : {}),
 };
 
 // Resolve (create or reuse) the umbrella group this plan's part goes under.
@@ -286,6 +292,10 @@ async function main() {
     console.log(`  Under umbrella "${umbrellaTitle}" — it now has ${n} part${n === 1 ? '' : 's'}.`);
   }
   console.log(`  ${APP_URL}/#travaux`);
+  if (MANUAL) {
+    console.log(`  Marked manual — the automated runner will not touch it. Paste this in a new terminal:`);
+    console.log(`    oc task ${json.id}`);
+  }
 
   // Whether it will ACTUALLY move. A queued task with no runner attached looks exactly
   // like a stuck one, so say it out loud rather than leaving it to be discovered.
