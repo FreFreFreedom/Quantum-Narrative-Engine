@@ -7100,7 +7100,7 @@ async function loadRoom() {
   }
   renderRoom();
   if (roomSel) loadRoomSubjects();
-  loadMind(); // refresh the Room's shared memory whenever the room is shown
+  loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
 }
 
 async function loadRoomSubjects() {
@@ -7288,15 +7288,15 @@ function renderRoomCards() {
 let roomMind = [];
 let _mindNote = '';
 
-async function loadMind() {
+async function loadRoomMind() {
   try {
     const r = await api('/api/mind');
     roomMind = (r && r.facts) || [];
   } catch (e) { roomMind = []; }
-  renderMind();
+  renderRoomMind();
 }
 
-function renderMind() {
+function renderRoomMind() {
   const list = document.getElementById('roomMindList');
   const count = document.getElementById('roomMindCount');
   if (!list) return;
@@ -7325,15 +7325,15 @@ async function roomAddFact() {
     await apiWrite('/api/mind', 'POST', { text });
     if (input) input.value = '';
     _mindNote = '';
-    await loadMind();
+    await loadRoomMind();
   } catch (e) {
     _mindNote = (e && e.message === 'duplicate') ? 'That fact is already remembered.' : 'Could not save that fact.';
-    renderMind();
+    renderRoomMind();
   }
 }
 
 async function roomForgetFact(id) {
-  try { await apiWrite('/api/mind/' + encodeURIComponent(id), 'DELETE'); await loadMind(); } catch (e) {}
+  try { await apiWrite('/api/mind/' + encodeURIComponent(id), 'DELETE'); await loadRoomMind(); } catch (e) {}
 }
 
 function roomBeginEditFact(el) {
@@ -7349,19 +7349,19 @@ function roomBeginEditFact(el) {
   const commit = async () => {
     const v = input.value.trim();
     if (v && v !== f.text) { try { await apiWrite('/api/mind/' + encodeURIComponent(id), 'PATCH', { text: v }); } catch (e) {} }
-    await loadMind();
+    await loadRoomMind();
   };
   input.onblur = commit;
   input.onkeydown = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    else if (e.key === 'Escape') { e.preventDefault(); loadMind(); }
+    else if (e.key === 'Escape') { e.preventDefault(); loadRoomMind(); }
   };
 }
 
 // Real-time refresh if the memory changes elsewhere (the harvest job, another
 // tab). The backend broadcasts `mind:updated`; if a realtime channel is wired to
 // window events it lands here. Local mutations already refetch directly.
-window.addEventListener('mind:updated', () => { loadMind(); });
+window.addEventListener('mind:updated', () => { loadRoomMind(); });
 
 function roomSelect(id) {
   if (!id || id === roomSel) return;
