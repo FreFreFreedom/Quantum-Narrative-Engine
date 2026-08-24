@@ -253,12 +253,10 @@ export function conversationsRoutes() {
     const convoId = req.params.id;
     const knowledgeDocTitle = req.body?.knowledgeDocTitle;
     if (!knowledgeDocTitle) return res.status(400).json({ error: 'knowledge_doc_title_required' });
-    // Full reset: a fresh Start always re-reads from section 1, wiping any
-    // prior run (including confirmed sections) for this document. Never wipe
-    // mid-sweep, or we'd kill an in-flight read.
-    if (!docExtraction.isSweepRunning(convoId)) {
-      docExtraction.cancelExtraction({ convoId, knowledgeDocTitle });
-    }
+    // Full reset: always stop any in-flight read and wipe every prior section
+    // for this conversation, then plan this document from scratch (section 1) —
+    // even if a previous read is still running.
+    docExtraction.resetExtraction({ convoId });
     const planned = docExtraction.planChunks({ convoId, knowledgeDocTitle });
     if (planned.error) return res.status(planned.error === 'not_found' ? 404 : 400).json(planned);
     // No websocket message for this — same as the world-look sweep, the

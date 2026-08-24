@@ -322,6 +322,19 @@ export function cancelExtraction({ convoId, knowledgeDocTitle } = {}) {
   return { cancelled: out.changes || 0 };
 }
 
+// Full reset used by "Start extraction": stop any in-flight read for this
+// conversation AND wipe every prior section (all documents), so a fresh Start
+// always begins at section 1 — even if a previous read is still running. The
+// running loop's per-row existence check makes it exit cleanly on its own once
+// its rows are gone; clearing the flag here lets the new sweep start at once.
+export function resetExtraction({ convoId } = {}) {
+  if (!db) return { error: 'no_db' };
+  if (!convoId) return { error: 'missing_args' };
+  const out = db.prepare(`DELETE FROM doc_extractions WHERE convo_id=?`).run(convoId);
+  _sweepRunning.delete(convoId);
+  return { reset: out.changes || 0 };
+}
+
 const _sweepRunning = new Set();
 export function isSweepRunning(convoId) { return _sweepRunning.has(convoId); }
 
