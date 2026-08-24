@@ -45,7 +45,11 @@ function gitAdd(file) {
   }
 }
 function gitCommit(message) {
-  try { execFileSync('git', ['-C', REPO, 'commit', '-m', message], { stdio: 'pipe' }); } catch (e) {
+  try {
+    execFileSync('git', ['-C', REPO, 'commit', '-m', message], { stdio: 'pipe' });
+  } catch (e) {
+    // Nothing to commit is fine — the plan may already have been committed by hand.
+    if (/nothing to commit/i.test(e.stdout?.toString() || '')) return;
     die(`git commit failed: ${e.message}`);
   }
 }
