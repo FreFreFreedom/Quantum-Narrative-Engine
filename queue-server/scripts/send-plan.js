@@ -10,6 +10,7 @@
 //   node scripts/send-plan.js plans/my-plan.md --title "..."
 //   node scripts/send-plan.js plans/my-plan.md --again      # allow a duplicate title on purpose
 //   node scripts/send-plan.js plans/my-plan.md --manual     # invisible to the automated runner — run it yourself with `oc task <id>`
+//   node scripts/send-plan.js plans/my-plan.md --preview    # never auto-ships — the agent runs `oc preview <id>` and a human decides
 //   QUEUE_URL=http://localhost:3000 node scripts/send-plan.js plans/my-plan.md
 //
 // Why this exists. A plan deliberated in a terminal session had nowhere to go: the only
@@ -76,6 +77,13 @@ function gitPush() {
  // selection queries exclude manual_run=1 rows) — for a plan you intend to run yourself
  // with `oc task <id>`, so the runner can never grab it out from under you.
  const MANUAL = flag('manual');
+ // --preview: this task's ship state never auto-advances past 'previewing' — see
+ // preview_required in the payload below and services/gitJobs.js /routes/queue.js for
+ // how that shows on the card. The agent runs `oc preview <id>` when done instead of
+ // shipping itself; a human looks at the working feature in a browser and presses
+ // Deploy or Discard. Meant for an unproven engine or model on a real feature, where
+ // you want a look before anything goes live.
+ const PREVIEW = flag('preview');
   const TITLE = opt('title');
   const PRESET = opt('preset');
   const ACCOUNT = opt('account');
@@ -131,7 +139,21 @@ const title = derivedTitle();
  // the repo, so the agent can re-read it rather than work from a paste.
  const body = [
    `Implement the plan below. It was written and approved in a terminal session, and the same text is committed at \`${repoRelative}\` — read it there if you need the file itself.`,
-   ...(MANUAL ? [
+   '',
+   'Before you consider this finished: re-read this plan\'s own "How to verify" section'
+     + ' one more time and actually do each item in it — do not just recall having done'
+     + ' something similar earlier. If an item can\'t be done (e.g. it requires a live'
+     + ' browser you don\'t have), say so explicitly in your summary instead of silently'
+     + ' skipping it.',
+   ...(PREVIEW ? [
+     '',
+     'When you are completely done — all changes committed, nothing left to verify — run'
+       + ' `oc preview <task-id>` in a shell, where `<task-id>` is your current branch name'
+       + ' with the `oc/` prefix stripped (see `git rev-parse --abbrev-ref HEAD`), instead of'
+       + ' shipping yourself. That starts a local preview server and stops there — do NOT'
+       + ' run `oc ship`. A human will look at the working feature in a browser and decide'
+       + ' whether to ship it.',
+   ] : MANUAL ? [
      '',
      'When you are completely done — all changes committed, nothing left to verify — ship yourself: run `oc ship <task-id>` in a shell, where `<task-id>` is your current branch name with the `oc/` prefix stripped (see `git rev-parse --abbrev-ref HEAD`). That pushes your branch and hands it to the review/publish pipeline, so only do it once the work is actually finished.',
    ] : []),
@@ -202,6 +224,7 @@ const payload = {
   plan_source: RAW ? 'skip' : 'own',
   ...(PARK ? { status: 'paused' } : {}),
   ...(MANUAL ? { manual_run: 1 } : {}),
+  ...(PREVIEW ? { preview_required: 1 } : {}),
   ...(ACCOUNT ? { account: ACCOUNT } : {}),
 };
 
@@ -245,6 +268,7 @@ async function main() {
   console.log(`Account: ${ACCOUNT ? `${ACCOUNT} (forced)` : 'main — the subscription the queue uses by default'}`);
   console.log(`Ideas  : ${RAW ? 'no world-look (--raw)' : 'world-look runs; ideas wait on the card'}`);
   console.log(`Arrives: ${PARK ? 'parked — waits for you to start it' : 'queued — starts on its own'}`);
+  console.log(`Ships  : ${PREVIEW ? 'never on its own — waits for a local preview + Deploy' : 'normally, once reviewed'}`);
   if (umbrellaTitle) console.log(`Umbrella: part of "${umbrellaTitle}"`);
   console.log(`Queue  : ${QUEUE_URL}`);
 
@@ -310,6 +334,10 @@ async function main() {
   if (MANUAL) {
     console.log(`  Marked manual — the automated runner will not touch it. Paste this in a new terminal:`);
     console.log(`    oc task ${json.id}`);
+  }
+  if (PREVIEW) {
+    console.log(`  Marked preview-required — it will never ship on its own. Once the work is done, run:`);
+    console.log(`    oc preview ${json.id}`);
   }
 
   // Whether it will ACTUALLY move. A queued task with no runner attached looks exactly

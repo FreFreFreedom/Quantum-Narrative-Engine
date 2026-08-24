@@ -1791,6 +1791,17 @@ button:active { transform: translateY(1px) scale(.99); }
 </style>
 </head>
 <body>
+<!-- Local preview bar (plan "local-preview-and-deploy"): hidden by default, shown
+     only when this page is being served by an `oc preview <task-id>` server —
+     see initPreviewBar() below, which asks GET /api/health whether it's running in
+     preview mode. Fixed, above everything else, always visible while it's on. -->
+<div id="previewBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;align-items:center;gap:12px;background:#1f2430;color:#fff;padding:10px 16px;font:14px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);">
+  <span style="font-weight:600;white-space:nowrap;">Local preview</span>
+  <span id="previewBarTitle" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  <span id="previewBarMsg" style="color:#f2c94c;font-size:12px;white-space:nowrap;"></span>
+  <button id="previewBarDeploy" style="background:#4f9d7a;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;">Deploy</button>
+  <button id="previewBarDiscard" style="background:#b23a2f;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;">Discard</button>
+</div>
 <!-- ---------- Card-action icon sprite ----------
      One 16x16 line-drawn symbol per card action. Every path is stroked with
      currentColor and no fill, so a button just sets `color:` and the icon
@@ -2391,10 +2402,19 @@ document.addEventListener('change', (ev) => {
 // One queue, one database. This used to swing to http://localhost:3000 whenever
 // the file was opened from disk — which silently showed a DIFFERENT queue (the
 // local dev server keeps its own DB) while the runner was working the Railway
-// one. Production is the real backend; localStorage.fmcns_api_base is the
-// deliberate escape hatch for local development.
+// one. Production is the real backend; localStorage.fmcns_api_base is still the
+// manual escape hatch for local development (it wins over everything below).
+//
+// Below that: when this PAGE ITSELF is being served from localhost/127.0.0.1
+// (a local preview server, `npm start` in queue-server/), talk to whatever
+// server is actually serving the page instead of the deployed one — that is
+// the whole point of a local preview. This is safe against the old bug above:
+// a file:// URL has an EMPTY location.hostname, not 'localhost', so opening
+// the file directly from disk still defaults to production exactly as before.
 const API_BASE = localStorage.getItem('fmcns_api_base')
-  || 'https://quantum-narrative-engine-production.up.railway.app';
+  || ((location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? ''
+    : 'https://quantum-narrative-engine-production.up.railway.app');
 let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
 let ENTITIES = [], CLUSTERS = {}, AXES = {};
 let ENRICHMENTS = {}; // entity_id -> tmdb_enrichments row (merged into entities as e.enrichment)
@@ -2423,6 +2443,52 @@ async function apiWrite(path, method, body) {
   if (!resp.ok) throw new Error(data && data.error ? data.error : `HTTP ${resp.status}`);
   return data;
 }
+
+// Local preview bar (plan "local-preview-and-deploy"): runs unconditionally, even
+// before login — GET /api/health needs no auth, and knowing a preview is running
+// is worth showing right away. Only ever true when THIS page is being served by
+// `oc preview <task-id>` (see routes/localPreview.js); on production it's always
+// { preview: null } and this is a no-op.
+async function initPreviewBar() {
+  let data;
+  try {
+    const resp = await fetch(API_BASE + '/api/health');
+    data = await resp.json();
+  } catch { return; }
+  if (!data || !data.preview) return;
+
+  const bar = document.getElementById('previewBar');
+  const titleEl = document.getElementById('previewBarTitle');
+  const msgEl = document.getElementById('previewBarMsg');
+  const deployBtn = document.getElementById('previewBarDeploy');
+  const discardBtn = document.getElementById('previewBarDiscard');
+  titleEl.textContent = data.preview.title
+    ? `Previewing: ${data.preview.title}`
+    : `Previewing task ${data.preview.taskId}`;
+  bar.style.display = 'flex';
+  // Push the real app shell down so the fixed bar never covers it.
+  document.body.style.paddingTop = (bar.offsetHeight || 46) + 'px';
+
+  async function runAction(path, busyText) {
+    deployBtn.disabled = true; discardBtn.disabled = true;
+    msgEl.textContent = busyText;
+    try {
+      const result = await apiWrite(path, 'POST', {});
+      if (!result.ok) {
+        msgEl.textContent = result.error || 'That did not work.';
+        deployBtn.disabled = false; discardBtn.disabled = false;
+        return;
+      }
+      msgEl.textContent = 'Done — this preview server is stopping now.';
+    } catch (e) {
+      msgEl.textContent = e.message === 'unauthorized' ? 'Log in first, then try again.' : e.message;
+      deployBtn.disabled = false; discardBtn.disabled = false;
+    }
+  }
+  deployBtn.onclick = () => runAction('/api/local/deploy-preview', 'Pushing and shipping…');
+  discardBtn.onclick = () => runAction('/api/local/discard-preview', 'Throwing this preview away…');
+}
+initPreviewBar();
 
 // Shared by the main login form and the chat widget's own login box — both POST
 // the same password to the same endpoint; only what happens after a successful
@@ -8706,6 +8772,7 @@ const Q_SHIP_STYLE = {
   put_back:       { text: 'Put back',             color: 'var(--c-ink-3)' },
   nothing_changed:{ text: 'Nothing changed',      color: 'var(--c-ink-3)' },
   legacy:         { text: 'Not published',       color: 'var(--c-ink-3)' },
+  previewing:     { text: 'Previewing locally',   color: 'var(--c-accent)' },
 };
 
 function qShipLine(p) {
@@ -9081,6 +9148,12 @@ function cardPill(kind, o) {
 function taskPill(p) {
   const ship = p.ship || {};
   if (p.pending_question && p.pending_question.question) return { text: 'Needs you', cls: 'is-ask' };
+  // preview_required overrides every other status word except a live question —
+  // this flag's whole point is that the task never auto-ships, so the pill says so
+  // honestly the whole time it's waiting (queued, running, parked — not only once a
+  // preview happens to be running), the same way "Ideas ready" sits above "Waiting
+  // its turn" below.
+  if (ship.state === 'previewing') return { text: 'Previewing locally', cls: 'is-ask', title: ship.message || '' };
   if (p.status === 'running') return { text: Q_RUN_STATE_LABELS[p.run_state] || p.run_state || 'running', cls: 'is-run' };
   if (p.plan_pending) return qStageStuck(p)
     ? { text: 'Stuck getting ready', cls: 'is-block', title: 'This step stopped part-way (the server restarted while it was running). Open the task to reset it.' }
