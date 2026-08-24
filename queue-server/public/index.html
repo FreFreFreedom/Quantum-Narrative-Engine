@@ -702,7 +702,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* Background world-look ideas about the app's own codebase, keyed to this
    conversation (plan "room-world-ideas") — the same ✨ cards suggestions and
    ideas already get, drawn with the same worldPartsHtml() used everywhere else. */
-.room-ideas { width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; }
+.room-ideas { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
 .room-cardfilter { margin-bottom:8px; }
 .room-cardfilter .searchbox { margin-bottom:6px; }
 .room-chiprow { display:flex; flex-wrap:wrap; gap:5px; }
@@ -2259,24 +2259,24 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div id="roomCardList"></div>
         <div id="roomCardsNote" class="room-note"></div>
-      </div>
-      <div class="room-mind" id="roomMind">
-        <div class="room-side-head">
-          <h2>Mind</h2>
-          <span class="room-cap" id="roomMindCount"></span>
+        <div class="room-mind" id="roomMind">
+          <div class="room-side-head">
+            <h2>Mind</h2>
+            <span class="room-cap" id="roomMindCount"></span>
+          </div>
+          <div class="room-remember">
+            <input class="searchbox" id="roomMindInput" placeholder="Remember a fact…" maxlength="240" autocomplete="off">
+            <button type="button" class="ubtn ubtn--pill" id="roomMindAdd">Remember</button>
+          </div>
+          <div id="roomMindList"></div>
+          <div id="roomMindNote" class="room-note"></div>
         </div>
-        <div class="room-remember">
-          <input class="searchbox" id="roomMindInput" placeholder="Remember a fact…" maxlength="240" autocomplete="off">
-          <button type="button" class="ubtn ubtn--pill" id="roomMindAdd">Remember</button>
+        <div class="room-ideas" id="roomIdeas">
+          <div class="room-side-head">
+            <h2>Ideas</h2>
+          </div>
+          <div id="roomIdeasHost"></div>
         </div>
-        <div id="roomMindList"></div>
-        <div id="roomMindNote" class="room-note"></div>
-      </div>
-      <div class="room-ideas" id="roomIdeas">
-        <div class="room-side-head">
-          <h2>Ideas</h2>
-        </div>
-        <div id="roomIdeasHost"></div>
       </div>
     </div>
   </div>
