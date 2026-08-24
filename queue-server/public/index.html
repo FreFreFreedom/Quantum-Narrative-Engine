@@ -2153,6 +2153,13 @@ button:active { transform: translateY(1px) scale(.99); }
                     <option value="">(loading models…)</option>
                   </select>
                 </label>
+                <label title="Which Claude account runs this task's coding session. The Second account is the one used for chat, reviews and the world-look — handy for keeping a heavy coding task off the main subscription.">
+                  Account
+                  <select id="qAccount">
+                    <option value="main" selected>Main (subscription)</option>
+                    <option value="side">Second</option>
+                  </select>
+                </label>
               </div>
 <div class="q-row">
                 <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Starts at once — no world-look, no plan draft. For small tasks.">
@@ -2369,6 +2376,17 @@ document.addEventListener('click', (ev) => {
   ev.stopImmediatePropagation();
   ev.preventDefault();
 }, true);
+
+// Change handler for the in-card "Account" picker (Main / Second). A parked or queued
+// task can be switched to the other Claude account without leaving the card; PATCHed the
+// same way the other per-task fields are. Delegated because the rows re-render on every poll.
+document.addEventListener('change', (ev) => {
+  const sel = ev.target.closest && ev.target.closest('.q-account-sel');
+  if (!sel) return;
+  const id = sel.getAttribute('data-id');
+  const val = sel.value;
+  if (id && val) apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { account: val }).catch(() => {});
+});
 
 // One queue, one database. This used to swing to http://localhost:3000 whenever
 // the file was opened from disk — which silently showed a DIFFERENT queue (the
@@ -8650,6 +8668,7 @@ function qDetailsHtml(p, busy, ahead) {
   const finished = !Q_ACTIVE_STATUSES.includes(p.status);
   const rows = [
     `<div class="q-item-meta"><span>${qAgentLabel(p)} · ${p.mode === 'question' ? 'Question' : 'Implement'} · ${qProviderLabel(p)}</span>${qMemoryBadge(p)}${qStopAfterBadge(p)}</div>`,
+    (p.status === 'queued' || p.status === 'paused') ? `<div class="q-item-meta"><span>Account: <select class="q-account-sel" data-id="${p.id}"><option value="main"${p.account !== 'side' ? ' selected' : ''}>Main</option><option value="side"${p.account === 'side' ? ' selected' : ''}>Second</option></select></span></div>` : '',
     p.status === 'queued' && busy ? `<div class="q-item-meta"><span class="q-ahead">Not started — ${ahead} task${ahead === 1 ? '' : 's'} ahead, still editable.</span></div>` : '',
     p.status === 'running' ? qRunStateLine(p) : '',
     finished ? qCostLine(p) : '',
@@ -8729,16 +8748,20 @@ function qShipWhen(iso) {
 // (provider_model is the concrete model the user picked), 'Claude Code · <tier
 // label>' for claude-code rows (the preset, or the auto-resolved tier).
 function qProviderLabel(p) {
+  let base;
   if ((p.provider || 'claude-code') === 'opencode') {
     // What actually ran (run_model) beats what was requested; Auto when neither.
     const model = p.run_model || p.provider_model || null;
-    return `OpenCode${model ? ' · ' + model : ' · 🤖 Auto'}`;
+    base = `OpenCode${model ? ' · ' + model : ' · 🤖 Auto'}`;
+  } else if ((p.provider || 'claude-code') === 'ai-router') {
+    base = `AI Router${p.provider_model ? ' · ' + p.provider_model : ' · 🤖 Auto'}`;
+  } else {
+    const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
+    base = `Claude Code · ${presetLabel}`;
   }
-  if ((p.provider || 'claude-code') === 'ai-router') {
-    return `AI Router${p.provider_model ? ' · ' + p.provider_model : ' · 🤖 Auto'}`;
-  }
-  const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
-  return `Claude Code · ${presetLabel}`;
+  // A task set to run on the second Claude account is surfaced in plain words, so a
+  // coding task that ran (or will run) on the wrong account is never a silent surprise.
+  return p.account === 'side' ? `${base} · 2nd account` : base;
 }
 
 // Which models this task actually went through. The runner walks the Go chain
@@ -10761,6 +10784,7 @@ async function qAddPrompt(asPaused) {
       space: 'fmcns',
       provider,
       provider_model: usesModelPicker ? (modelSel.value || null) : null, // '' = Auto → server system default
+      account: document.getElementById('qAccount').value || 'main', // '' = Main
       agent_key: document.getElementById('qAgent').value || null, // '' = Auto
       // "Run raw": skip the automatic world-look + plan-draft passes entirely —
       // plan_source:'skip' already means "no drafted plan" server-side, and

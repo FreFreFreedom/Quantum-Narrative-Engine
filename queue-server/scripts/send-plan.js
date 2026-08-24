@@ -6,6 +6,7 @@
 //   node scripts/send-plan.js plans/my-plan.md --raw        # no world-look, no wait — dispatch now
 //   node scripts/send-plan.js plans/my-plan.md --dry-run    # print what would be sent, send nothing
 //   node scripts/send-plan.js plans/my-plan.md --preset standard
+//   node scripts/send-plan.js plans/my-plan.md --account side
 //   node scripts/send-plan.js plans/my-plan.md --title "..."
 //   node scripts/send-plan.js plans/my-plan.md --again      # allow a duplicate title on purpose
 //   node scripts/send-plan.js plans/my-plan.md --manual     # invisible to the automated runner — run it yourself with `oc task <id>`
@@ -77,6 +78,7 @@ function gitPush() {
  const MANUAL = flag('manual');
   const TITLE = opt('title');
   const PRESET = opt('preset');
+  const ACCOUNT = opt('account');
   const GROUP = flag('group');
  // Everything that is not a flag or a flag's value is the plan path.
  const OPT_VALUES = new Set([PRESET, GROUP].filter(Boolean));
@@ -92,6 +94,9 @@ if (!positional.length) {
 }
 if (PRESET && !['fast', 'standard', 'deep'].includes(PRESET)) {
   die(`--preset must be fast, standard or deep (got "${PRESET}").`);
+}
+if (ACCOUNT && !['main', 'side'].includes(ACCOUNT)) {
+  die(`--account must be main or side (got "${ACCOUNT}").`);
 }
 
 const planPath = resolve(REPO, positional[0]);
@@ -197,6 +202,7 @@ const payload = {
   plan_source: RAW ? 'skip' : 'own',
   ...(PARK ? { status: 'paused' } : {}),
   ...(MANUAL ? { manual_run: 1 } : {}),
+  ...(ACCOUNT ? { account: ACCOUNT } : {}),
 };
 
 // Resolve (create or reuse) the umbrella group this plan's part goes under.
@@ -236,6 +242,7 @@ async function main() {
   console.log(`Plan   : ${repoRelative}  (${planText.length.toLocaleString()} characters)`);
   console.log(`Title  : ${title}`);
   console.log(`Model  : ${PRESET ? `${PRESET} (forced)` : 'auto — judged from the plan\'s size'}`);
+  console.log(`Account: ${ACCOUNT ? `${ACCOUNT} (forced)` : 'main — the subscription the queue uses by default'}`);
   console.log(`Ideas  : ${RAW ? 'no world-look (--raw)' : 'world-look runs; ideas wait on the card'}`);
   console.log(`Arrives: ${PARK ? 'parked — waits for you to start it' : 'queued — starts on its own'}`);
   if (umbrellaTitle) console.log(`Umbrella: part of "${umbrellaTitle}"`);
