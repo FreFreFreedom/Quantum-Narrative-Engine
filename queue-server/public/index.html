@@ -696,8 +696,15 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    with a ✕ and an edit affordance is self-explanatory. */
 .room-mind { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
 /* Collapsed by default (plan "room-sidebar-fixes") — everything but the head
-   is hidden, and the choice is remembered per browser (ROOM_MIND_COLLAPSE_KEY). */
-.room-mind.collapsed > *:not(.room-side-head) { display:none; }
+   is hidden, and the choice is remembered per browser (ROOM_MIND_COLLAPSE_KEY).
+   Every sub-section of the Attached column (Attached itself, Mind, Extraction,
+   Ideas) shares this same collapse rule so each can be shut independently of
+   the others and of the whole panel (roomCardsCollapse, a separate control). */
+.room-mind.collapsed > *:not(.room-side-head),
+.room-attached.collapsed > *:not(.room-side-head),
+.room-extract.collapsed > *:not(.room-side-head),
+.room-ideas.collapsed > *:not(.room-side-head) { display:none; }
+.room-extract { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
 .room-remember { display:flex; gap:6px; margin-bottom:8px; }
 .room-remember .searchbox { flex:1; min-width:0; }
 .room-mind-row { display:flex; align-items:flex-start; gap:6px; padding:5px 0; border-bottom:1px solid var(--c-border); }
@@ -2288,26 +2295,29 @@ button:active { transform: translateY(1px) scale(.99); }
       </div>
       <div class="room-cards" id="roomCards">
         <div class="room-cards-resize" id="roomCardsResize" title="Drag to resize"></div>
-        <div class="room-side-head">
-          <h2>Attached</h2>
-          <span class="room-cap" id="roomCardCount"></span>
-          <span class="room-side-acts">
-            <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
-            <button type="button" class="uicon room-collapse-btn" id="roomCardsCollapse" title="Collapse the attached panel" aria-label="Collapse the attached panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg></button>
-          </span>
-          <button type="button" id="roomDropZone" class="uicon room-dropzone" title="Drag a file here, or click to browse" aria-label="Attach a file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button>
-          <input type="file" id="roomFileInput" hidden accept=".md,.txt,.pdf">
+        <div class="room-attached" id="roomAttached">
+          <div class="room-side-head">
+            <h2>Attached</h2>
+            <span class="room-cap" id="roomCardCount"></span>
+            <span class="room-side-acts">
+              <button type="button" class="uicon" id="roomAttachBtn" title="Attach a card to this thread" aria-label="Attach a card to this thread">＋</button>
+              <button type="button" class="uicon room-collapse-btn" id="roomAttachedCollapse" title="Collapse the Attached panel" aria-label="Collapse the Attached panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-up"/></svg></button>
+              <button type="button" class="uicon room-collapse-btn" id="roomCardsCollapse" title="Collapse the attached panel" aria-label="Collapse the attached panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-right"/></svg></button>
+            </span>
+            <button type="button" id="roomDropZone" class="uicon room-dropzone" title="Drag a file here, or click to browse" aria-label="Attach a file"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-upload"/></svg></button>
+            <input type="file" id="roomFileInput" hidden accept=".md,.txt,.pdf">
+          </div>
+          <div id="roomAttachPick" hidden>
+            <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
+            <div id="roomPickList" class="room-picklist"></div>
+          </div>
+          <div id="roomCardFilter" class="room-cardfilter" hidden>
+            <input class="searchbox" id="roomCardSearch" placeholder="Filter attached…" autocomplete="off">
+            <div id="roomCardTypes" class="room-chiprow"></div>
+          </div>
+          <div id="roomCardList"></div>
+          <div id="roomCardsNote" class="room-note"></div>
         </div>
-        <div id="roomAttachPick" hidden>
-          <input class="searchbox" id="roomPickSearch" placeholder="Find a card…" autocomplete="off">
-          <div id="roomPickList" class="room-picklist"></div>
-        </div>
-        <div id="roomCardFilter" class="room-cardfilter" hidden>
-          <input class="searchbox" id="roomCardSearch" placeholder="Filter attached…" autocomplete="off">
-          <div id="roomCardTypes" class="room-chiprow"></div>
-        </div>
-        <div id="roomCardList"></div>
-        <div id="roomCardsNote" class="room-note"></div>
         <div class="room-mind" id="roomMind">
           <div class="room-side-head">
             <h2>Mind</h2>
@@ -2324,12 +2334,14 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-extract" id="roomExtract">
           <div class="room-side-head">
             <h2>Extraction</h2>
+            <button type="button" class="uicon room-collapse-btn" id="roomExtractCollapse" title="Collapse the Extraction panel" aria-label="Collapse the Extraction panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-up"/></svg></button>
           </div>
           <div id="roomExtractHost"></div>
         </div>
         <div class="room-ideas" id="roomIdeas">
           <div class="room-side-head">
             <h2>Ideas</h2>
+            <button type="button" class="uicon room-collapse-btn" id="roomIdeasCollapse" title="Collapse the Ideas panel" aria-label="Collapse the Ideas panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-up"/></svg></button>
           </div>
           <div id="roomIdeasHost"></div>
         </div>
@@ -7095,6 +7107,9 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null;
 const ROOM_SEL_KEY = 'fmcns_room_thread';
 const ROOM_MIND_COLLAPSE_KEY = 'fmcns_room_mind_collapsed';
+const ROOM_ATTACHED_COLLAPSE_KEY = 'fmcns_room_attached_collapsed';
+const ROOM_EXTRACT_COLLAPSE_KEY = 'fmcns_room_extract_collapsed';
+const ROOM_IDEAS_COLLAPSE_KEY = 'fmcns_room_ideas_collapsed';
 const ROOM_CARDS_WIDTH_KEY = 'fmcns_room_cards_width';
 const ROOM_CARDS_MIN_W = 250, ROOM_CARDS_MAX_W = 480;
 // Applies the saved custom width, or lets the CSS default/collapsed/narrow rules
@@ -7313,28 +7328,35 @@ function initRoom() {
     });
   }
   applyRoomCardsWidth();
-  // Mind starts collapsed (plan "room-sidebar-fixes"): no collapse control of its
-  // own existed before, so it was always fully expanded in an already-crowded
-  // column. The choice is remembered per browser, same pattern as ROOM_SEL_KEY.
-  const mindPanel = document.getElementById('roomMind');
-  const mindColl = document.getElementById('roomMindCollapse');
-  if (mindPanel && mindColl) {
-    let mindCollapsed = true;
-    try { const saved = localStorage.getItem(ROOM_MIND_COLLAPSE_KEY); if (saved !== null) mindCollapsed = saved === '1'; } catch (e) {}
-    const applyMindCollapse = () => {
-      mindPanel.classList.toggle('collapsed', mindCollapsed);
-      mindColl.title = mindCollapsed ? 'Expand the Mind panel' : 'Collapse the Mind panel';
-      mindColl.setAttribute('aria-label', mindColl.title);
-      const use = mindColl.querySelector('use');
-      if (use) use.setAttribute('href', mindCollapsed ? '#ic-down' : '#ic-up');
+  // Every sub-section stacked in the Attached column — Attached itself, Mind,
+  // Extraction, Ideas — can be shut on its own, independent of the others and of
+  // the whole panel (roomCardsCollapse). The choice is remembered per browser,
+  // same pattern as ROOM_SEL_KEY. Mind used to be the only one of these (plan
+  // "room-sidebar-fixes", defaulting shut since it was always fully expanded in
+  // an already-crowded column); the rest default open since nothing collapsed
+  // them before.
+  const wireRoomSectionCollapse = (panel, btn, key, label, defaultCollapsed) => {
+    if (!panel || !btn) return;
+    let collapsed = defaultCollapsed;
+    try { const saved = localStorage.getItem(key); if (saved !== null) collapsed = saved === '1'; } catch (e) {}
+    const apply = () => {
+      panel.classList.toggle('collapsed', collapsed);
+      btn.title = collapsed ? `Expand the ${label} panel` : `Collapse the ${label} panel`;
+      btn.setAttribute('aria-label', btn.title);
+      const use = btn.querySelector('use');
+      if (use) use.setAttribute('href', collapsed ? '#ic-down' : '#ic-up');
     };
-    applyMindCollapse();
-    mindColl.onclick = () => {
-      mindCollapsed = !mindCollapsed;
-      try { localStorage.setItem(ROOM_MIND_COLLAPSE_KEY, mindCollapsed ? '1' : '0'); } catch (e) {}
-      applyMindCollapse();
+    apply();
+    btn.onclick = () => {
+      collapsed = !collapsed;
+      try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch (e) {}
+      apply();
     };
-  }
+  };
+  wireRoomSectionCollapse(document.getElementById('roomMind'), document.getElementById('roomMindCollapse'), ROOM_MIND_COLLAPSE_KEY, 'Mind', true);
+  wireRoomSectionCollapse(document.getElementById('roomAttached'), document.getElementById('roomAttachedCollapse'), ROOM_ATTACHED_COLLAPSE_KEY, 'Attached', false);
+  wireRoomSectionCollapse(document.getElementById('roomExtract'), document.getElementById('roomExtractCollapse'), ROOM_EXTRACT_COLLAPSE_KEY, 'Extraction', false);
+  wireRoomSectionCollapse(document.getElementById('roomIdeas'), document.getElementById('roomIdeasCollapse'), ROOM_IDEAS_COLLAPSE_KEY, 'Ideas', false);
   // The Room's shared memory (plan "room-shared-memory").
   const mindAdd = document.getElementById('roomMindAdd');
   if (mindAdd) mindAdd.onclick = roomAddFact;
