@@ -204,6 +204,11 @@ function initSchema(db) {
   // Lets one Dispatch Queue task be handed to the second account instead of the main one —
   // the same per-account choice the helper-job path already has, extended to coding tasks.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN account TEXT NOT NULL DEFAULT 'main' CHECK(account IN ('main','side'))`); } catch {}
+  // Opt-in gate (plan "local-preview-and-deploy"): when set, this task's ship state
+  // never auto-advances past 'previewing' on its own — it waits for a human to run
+  // `oc preview <task-id>`, look at the working feature in a real browser, and press
+  // Deploy. See services/gitJobs.js / routes/queue.js for where the state is derived.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN preview_required INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

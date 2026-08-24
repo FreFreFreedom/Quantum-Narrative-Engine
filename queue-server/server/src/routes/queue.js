@@ -112,10 +112,27 @@ export function queueRoutes() {
         // A blocked task has no review to read, so it falls back to the runner's own
         // measurements (services/gitJobs.js#shipStateForBlocked) — which is how a card
         // can finally say "nothing was built" instead of showing nothing at all.
-        ship: p.status === 'done' || p.status === 'blocked'
-          ? (shipStateFor(latestReviewForPrompt(p.id), { runnerConnected })
-             || (p.status === 'blocked' ? shipStateForBlocked(task) : null))
-          : null,
+        //
+        // preview_required overrides all of that, in every status, for as long as no
+        // review exists yet: this flag's whole point is that the task never auto-ships,
+        // so the card must say so honestly the entire time it's waiting, not only once
+        // a preview happens to be running (plan "local-preview-and-deploy"). The moment
+        // a review row exists (Deploy called manual-complete), the normal states above
+        // take back over.
+        ship: (() => {
+          const normal = p.status === 'done' || p.status === 'blocked'
+            ? (shipStateFor(latestReviewForPrompt(p.id), { runnerConnected })
+               || (p.status === 'blocked' ? shipStateForBlocked(task) : null))
+            : null;
+          if (p.preview_required && p.status !== 'cancelled' && !(normal && normal.review_id)) {
+            return {
+              review_id: null, merge_commit: null, files: 0, insertions: 0, deletions: 0, at: null, notes: [],
+              state: 'previewing',
+              message: 'Waiting for a local preview before this ships — run `oc preview` and press Deploy when it looks right.',
+            };
+          }
+          return normal;
+        })(),
         // Why it blocked, and the same thing in words. Only ever set from what the
         // runner reported — an unlabelled failure stays unlabelled rather than being
         // guessed at from the report text.

@@ -73,10 +73,14 @@ JWT_SECRET=dev ADMIN_PASSWORD=dev CLAUDE_BIN=/tmp/mock-claude.sh AGENT_CWD=/tmp 
 ```
 
 The frontend has no dev server — `fmcns_navigator.html` is opened directly in a
-browser and calls the **deployed** Railway backend (see below), not localhost.
-There is currently no local-backend toggle in the frontend, so testing a backend
-change against the UI means deploying it (or temporarily editing the hardcoded
-`API_BASE/FMCNS_CHAT_SERVER` constants in the HTML file).
+browser and calls the **deployed** Railway backend by default (see below), not
+localhost. `API_BASE`/`FMCNS_CHAT_SERVER` resolve at load time: opening the file
+directly still defaults to production (a `file://` page has no `location.hostname`),
+but when the page is instead *served* by a local server on `localhost`/`127.0.0.1` —
+e.g. `npm start` in `queue-server/`, or `oc preview <task-id>` (see "Local preview +
+Deploy" below) — it talks same-origin to whatever is serving it, no edit needed.
+`localStorage.fmcns_api_base` still overrides everything else if you need to point at
+some other backend by hand.
 
 ## Backend architecture (`queue-server/`)
 
@@ -239,6 +243,20 @@ The Dispatch Queue also ships on its own: the local runner commits a finished
 task's work and `queue-server/scripts/git-ship.js` pushes the trunk from the Mac,
 with an "undo" path behind the app's **Put it back**
 button. See AGENTS.md "Git rules" before changing any of it.
+
+### Local preview + Deploy (opt-in third path)
+
+A task created with `preview_required: 1` (send-plan.js's `--preview` flag) never
+auto-ships, even once finished — its card honestly says "Previewing locally" the
+whole time it's waiting. Once the agent has committed its work in `oc task <id>`'s
+worktree, run `~/bin/oc preview <id>`: it starts a throwaway local server (its own
+empty SQLite file, a free port from 3100 up) and prints a `localhost` URL (also sent
+to Slack). Opening that URL shows the real app, talking to itself instead of
+production, with a fixed bar at the top naming the task and offering **Deploy**
+(pushes the branch and hands off to production's normal review/ship pipeline, then
+stops the preview server) or **Discard** (throws the preview away, nothing shipped).
+Backed by `server/src/routes/localPreview.js`, mounted only when the server is
+started with `PREVIEW_TASK_ID` set — never on a normal boot.
 
 ## Credit/cost efficiency
 

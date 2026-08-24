@@ -56,6 +56,7 @@ import { mindRoutes } from './routes/mind.js';
 import { bindMindDb } from './services/mind.js';
 import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
 import { errorHandler } from './lib/asyncHandler.js';
+import { localPreviewRoutes, fetchPreviewTaskTitle } from './routes/localPreview.js';
 
 process.on('unhandledRejection', (e) => console.error('Unhandled rejection (server stayed up):', e));
 process.on('uncaughtException', (e) => console.error('Uncaught exception (server stayed up):', e));
@@ -76,6 +77,17 @@ for (const sig of ['SIGTERM', 'SIGINT']) {
 
 const PORT = process.env.PORT || 8080;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+// Local-preview mode (`oc preview <task-id>`, plan "local-preview-and-deploy"): set
+// only by that command, never on a normal boot (dev or Railway). Its presence is
+// what turns on the Deploy/Discard bar's routes below and what the frontend's boot
+// check uses to show that bar at all.
+const PREVIEW_TASK_ID = process.env.PREVIEW_TASK_ID || null;
+const PREVIEW_BRANCH = process.env.PREVIEW_BRANCH || null;
+let previewTaskTitle = null;
+if (PREVIEW_TASK_ID) {
+  fetchPreviewTaskTitle(PREVIEW_TASK_ID).then((title) => { previewTaskTitle = title; });
+}
 
 const volumeMount = process.env.RAILWAY_VOLUME_MOUNT_PATH;
 const onVolume = (p) => !!volumeMount && p.startsWith(volumeMount);
@@ -249,7 +261,12 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '25mb' })); // PDFs come through as base64 in the chat payload
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'fmcns-queue-server', time: new Date().toISOString() });
+  res.json({
+    ok: true, service: 'fmcns-queue-server', time: new Date().toISOString(),
+    preview: PREVIEW_TASK_ID
+      ? { taskId: PREVIEW_TASK_ID, branch: PREVIEW_BRANCH, title: previewTaskTitle }
+      : null,
+  });
 });
 
 // Unlimited login attempts previously meant the shared password could be brute-forced
@@ -280,6 +297,12 @@ function timingSafeEqualStrings(a, b) {
   return crypto.timingSafeEqual(ah, bh);
 }
 
+// Local-preview-only, and only registered when this process was started as one
+// (`oc preview <task-id>` sets PREVIEW_TASK_ID) — never mounted on a normal boot,
+// dev or Railway. See routes/localPreview.js.
+if (PREVIEW_TASK_ID) {
+  app.use('/api/local', requireAuth, localPreviewRoutes({ taskId: PREVIEW_TASK_ID, branch: PREVIEW_BRANCH }));
+}
 app.use('/api/travaux', requireAuth, workerRoutes());
 app.use('/api/travaux', requireAuth, queueRoutes());
 app.use('/api/travaux', requireAuth, agentsRoutes());

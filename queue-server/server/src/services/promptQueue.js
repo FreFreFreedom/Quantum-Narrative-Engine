@@ -145,7 +145,7 @@ export async function createPrompt({
   component_id = null, provider = null, provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null, thought_id = null, inspiration = null, is_group = false,
-  manual_run = 0, account = null,
+  manual_run = 0, account = null, preview_required = 0,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -322,11 +322,11 @@ export async function createPrompt({
   const resolved = useProvider === 'claude-code' ? usePreset : null;
 
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group, manual_run, account)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group, manual_run, account, preview_required)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, isGroup ? 'paused' : initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, useAccount);
+    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, useAccount, preview_required ? 1 : 0);
 
   // Every idea that arrived with the card gets its own durable row, so the audit
   // can ask later whether it actually got built. inspire_picks_json above is the
