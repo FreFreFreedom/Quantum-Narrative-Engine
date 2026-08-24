@@ -19,7 +19,7 @@ import {
   registerSubject, subjectSpec, buildSubjectContext, parseWorldPickId,
 } from './subjectContext.js';
 import {
-  getReport, updatePickInPlace, appendPicks, updatePartFraming,
+  getReport, updatePickInPlace, appendPicks, updatePartFraming, runWorldLookGuarded,
 } from './codeDiscovery.js';
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
@@ -752,6 +752,32 @@ function transcriptOf(convo, msgs, windowSize) {
   return lines.join('\n\n');
 }
 
+// Background world-look for a Room conversation (plan "room-world-ideas"):
+// the same ✨ world-look pass suggestions and ideas already get, keyed to this
+// convo instead. Fire-and-forget, mirrors harvestMind's watermark above it —
+// no-ops if nothing has been said since the last look, and the watermark is
+// advanced as soon as the pass is kicked off rather than when it finishes, so
+// a slow or failed look never leaves the convo re-triggering forever.
+const _worldLookInFlight = new Set();
+export function roomWorldLook(convoId) {
+  if (!convoId || _worldLookInFlight.has(convoId)) return;
+  const convo = getConvo(convoId);
+  if (!convo) return;
+  const seen = convo.world_look_seen_turns || 0;
+  const turns = convo.turns || 0;
+  if (turns <= seen) return;
+
+  _worldLookInFlight.add(convoId);
+  db.prepare(`UPDATE convos SET world_look_seen_turns=? WHERE id=?`).run(turns, convoId);
+  setImmediate(async () => {
+    try {
+      const ideaText = transcriptOf(convo, listMessages(convoId), CONVO_HISTORY_WINDOW);
+      if (ideaText) await runWorldLookGuarded(db, { idea_text: ideaText, source: 'convo', source_id: convoId });
+    } catch (e) { console.error('[room] world-look failed:', e?.message || e); }
+    finally { _worldLookInFlight.delete(convoId); }
+  });
+}
+
 // One turn against the routed lane (AI Settings decides which; the Claude
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
@@ -894,6 +920,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice };
 }
 
@@ -922,6 +949,7 @@ async function runChatTurn(convoId, userId, turn) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
+  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice };
 }
 
@@ -946,6 +974,7 @@ async function runCodeReadTurn(convoId, turn) {
   saveAssistantTurn(convoId, result.text, { lane: 'claude', intent: 'code_read' });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   return { text: result.text, via: result.via, laneTag: 'claude', intent: 'code_read' };
 }
 
@@ -1020,6 +1049,7 @@ async function runCheckTurn(convoId) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'check', checked: originalTag });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   return { text: result.text, via: result.via, laneTag, intent: 'check', checked: originalTag };
 }
 
@@ -1046,6 +1076,7 @@ async function runSecondTurn(convoId) {
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: 'second', answered: originalTag });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
+  roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   return { text: result.text, via: result.via, laneTag, intent: 'second', answered: originalTag };
 }
 
