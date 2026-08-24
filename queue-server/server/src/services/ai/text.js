@@ -92,7 +92,7 @@ export function studioPersonaText() { return loadAiSettings().studioPersona || '
 // 'reply' is the chat on a task card. It was missing here for as long as the chat
 // existed, which meant no per-feature choice could ever reach it: an unlisted
 // feature falls through to the free lane below no matter what the settings say.
-const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply', 'umbrellas'];
+const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply', 'umbrellas', 'doc-extraction'];
 
 // Read-only snapshot for the AI Settings panel: per-feature defaults, the global
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
@@ -251,6 +251,28 @@ export function migratePlanDraftModel() {
   }
   defaults.plan_draft = { provider: 'claude-code', model: 'sonnet' };
   db.prepare(`UPDATE ai_settings SET defaults_json=?, plan_draft_model_migrated=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(defaults));
+  refreshAiSettings();
+  return { changed: true, skipped: false };
+}
+
+// One-time migration (plan "pdf-section-extraction"): pin the doc-extraction
+// feature at Google AI Studio's Gemini Flash Lite -- a huge free-tier context
+// window, and explicitly free rather than free-by-default (an unconfigured
+// feature would otherwise start on the claude-side subscription). If
+// GOOGLE_AI_STUDIO_API_KEY is not set, this pick simply cannot be reached and
+// generateText() falls through to its ordinary free catalogue tail -- it does
+// not crash, it just doesn't run on Gemini until the key exists.
+// Flag-guarded, runs once, ever, same shape as migratePlanDraftModel.
+export function migrateDocExtractionModel() {
+  if (!db) return { changed: false, skipped: true };
+  const row = db.prepare(`SELECT defaults_json, doc_extraction_model_migrated FROM ai_settings WHERE id='global'`).get();
+  if (!row) return { changed: false, skipped: true };
+  if (row.doc_extraction_model_migrated) return { changed: false, skipped: true };
+  let defaults = {};
+  try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: false, skipped: true }; }
+  defaults['doc-extraction'] = { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest' };
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, doc_extraction_model_migrated=1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
     .run(JSON.stringify(defaults));
   refreshAiSettings();
   return { changed: true, skipped: false };
