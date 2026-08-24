@@ -8009,6 +8009,10 @@ async function roomDetach(type, id) {
       + encodeURIComponent(type) + '/' + encodeURIComponent(id), 'DELETE');
     roomSubjects = out.subjects || roomSubjects;
     roomNote = ''; roomNoteErr = false;
+    // The server has already stopped this document's reading (see
+    // plans/cancel-extraction-on-detach.md) — clear the box now instead of
+    // waiting for the next poll, so it doesn't keep saying "reading".
+    if (type === 'file') { roomExtractStatus = null; roomExtractChunks = []; renderRoomExtract(); }
   } catch (e) {
     const code = String(e && e.message || '');
     roomNote = code === 'cannot_detach_primary'
