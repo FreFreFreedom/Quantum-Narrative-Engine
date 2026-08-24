@@ -7126,11 +7126,16 @@ function initRoom() {
   document.getElementById('roomAttachBtn').onclick = () => {
     roomPickOpen = !roomPickOpen;
     roomNote = ''; roomNoteErr = false;
-    renderRoomCards();
     if (roomPickOpen) {
+      // Drop the cached source lists so the picker always re-fetches — otherwise
+      // a file uploaded moments ago (or a newly queued task) would be missing.
+      roomPickIdeas = roomPickSuggestions = roomPickPlans = roomPickFiles = null;
+      renderRoomCards();
       roomLoadPickSources();
       const s = document.getElementById('roomPickSearch');
       if (s) s.focus();
+    } else {
+      renderRoomCards();
     }
   };
   const search = document.getElementById('roomPickSearch');
@@ -8182,7 +8187,13 @@ async function roomUploadFile(file) {
     await apiWrite(`/api/convos/${roomSel}/files`, 'POST', {
       filename: file.name, mimeType: file.type || '', text, bytes: file.size, sha, outline,
     });
-    roomLoadPickSources().then(() => renderRoomPick());
+    // The upload attaches the file as a subject server-side, but the UI caches
+    // both the attached-card list and the picker's source lists — refresh them
+    // so the file shows up in "Attached" immediately and is offered by the picker.
+    roomPickFiles = null;
+    await loadRoomSubjects();
+    await roomLoadPickSources();
+    renderRoomPick();
     roomDropZoneSay(`File "${file.name}" uploaded${truncated ? ' (truncated)' : ''}`);
   } catch (err) {
     roomDropZoneSay(`Upload failed: ${err.message}`, true, 3000);
