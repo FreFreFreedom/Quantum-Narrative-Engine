@@ -435,13 +435,15 @@ export function rejectChunk(chunkId, reviewerNote = '') {
   return { id: chunkId, status: 'rejected' };
 }
 
-// Bulk dismiss: every section still awaiting review for this convo is marked
-// rejected at once, so the owner can clear a long feedback list without
-// clicking Reject on each card (see the "Clear all" button in the Room panel).
+// Bulk clear: every section still awaiting review for this convo is deleted at
+// once, so the owner can empty a long feedback list without clicking Reject on
+// each card (see the "Clear all" button in the Room panel). Deleting — not just
+// marking rejected — so the list actually empties and a later Start re-plans
+// from scratch.
 export function rejectAllExtracted({ convoId } = {}) {
   if (!db) return { error: 'no_db' };
   if (!convoId) return { error: 'missing_args' };
-  const out = db.prepare(`UPDATE doc_extractions SET status='rejected', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE convo_id=? AND status='extracted'`).run(convoId);
+  const out = db.prepare(`DELETE FROM doc_extractions WHERE convo_id=? AND status='extracted'`).run(convoId);
   return { cleared: out.changes || 0 };
 }
 
