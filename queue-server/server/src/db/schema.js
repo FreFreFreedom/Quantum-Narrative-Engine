@@ -199,6 +199,11 @@ function initSchema(db) {
   // zero-cost heuristic at creation; drives model + plan-speed choices only.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN task_tier TEXT NOT NULL DEFAULT 'standard'`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN manual_run INTEGER NOT NULL DEFAULT 0`); } catch {}
+  // Which Claude account runs this task's coding session: 'main' (the subscription
+  // the queue uses by default) or 'side' (the second Claude account, CLAUDE_SIDE_OAUTH_TOKEN).
+  // Lets one Dispatch Queue task be handed to the second account instead of the main one —
+  // the same per-account choice the helper-job path already has, extended to coding tasks.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN account TEXT NOT NULL DEFAULT 'main' CHECK(account IN ('main','side'))`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS work_prompt_messages (

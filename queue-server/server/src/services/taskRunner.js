@@ -1046,7 +1046,7 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
   drainLog();
 }
 
-function runDetachedExecution(taskId, prompt, { model = null, effort = null, tools = EXEC_TOOLS, resumeSessionId = null, lane = 'exec', provider = 'claude-code', providerModel = null, question = false, cwd = null } = {}) {
+function runDetachedExecution(taskId, prompt, { model = null, effort = null, tools = EXEC_TOOLS, resumeSessionId = null, lane = 'exec', provider = 'claude-code', providerModel = null, question = false, cwd = null, account = 'main' } = {}) {
   const LOG = EXEC_LOG(taskId);
   const CODE = EXEC_CODE(taskId);
   const PROMPT = EXEC_PROMPT(taskId);
@@ -1086,6 +1086,16 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
     ? prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model, effort, tools, resumeSessionId })
     : prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model: providerModel || model, sessionId: resumeSessionId, question });
 
+  // A coding task can request the SECOND Claude account (work_prompts.account='side').
+  // Hand that account's OAuth token to the spawned CLI via the provider's spawnEnv
+  // helper (same mechanism the helper-job path already uses). For the claude-code
+  // provider this swaps CLAUDE_CODE_OAUTH_TOKEN; other providers don't use that token
+  // so the choice is simply inert there — matching the helper paths' behaviour.
+  const sideToken = process.env.CLAUDE_SIDE_OAUTH_TOKEN || '';
+  const accountEnv = (provider === 'claude-code' && account === 'side' && sideToken)
+    ? { CLAUDE_CODE_OAUTH_TOKEN: sideToken }
+    : {};
+
   // Detached execution: on Linux (Railway) `setsid --fork` starts a new session so
   // a platform restart can't kill an in-flight execution or lose its result — the
   // result is read back off durable .log/.code files, never the child's stdout pipe
@@ -1098,7 +1108,7 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
 
   const base = {
     cwd: execCwd,
-    env: prov.spawnEnv({ ERP_AGENT_TASK_ID: taskId }),
+    env: prov.spawnEnv({ ERP_AGENT_TASK_ID: taskId, ...accountEnv }),
     detached: true,
     stdio: 'ignore',
   };
@@ -1153,9 +1163,17 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   if (lane === 'question') _questionRuns.add(next.id);
   else addWriterRun(next.agent_key || 'dev1', next.id);
 
-  const provider = next.provider || 'opencode';
+   const provider = next.provider || 'opencode';
   let model = next.model || 'sonnet';
   let effort = next.effort;
+  // Which Claude account runs this task's coding session ('main' | 'side'), from
+  // the queue row. Consumed by runDetachedExecution to swap CLAUDE_CODE_OAUTH_TOKEN
+  // for the second account when requested.
+  const account = accountOf(next);
+  if (provider === 'claude-code' && account === 'side' && !process.env.CLAUDE_SIDE_OAUTH_TOKEN) {
+    failEarly(next, '(this task is set to run on the second Claude account, but CLAUDE_SIDE_OAUTH_TOKEN is not set on this runner — it was not run to avoid using the main account by mistake. Set the token, or switch the task back to the main account.)');
+    return;
+  }
   if (provider === 'opencode') {
     // OpenCode ignores preset tiers — the user picked a concrete model
     // (provider_model). Resolve a default lazily only if none was stored.
@@ -1253,7 +1271,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
     model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
     resumeSessionId: next.resume_session_id || null, lane,
     provider, providerModel: (provider === 'opencode' || provider === 'ai-router') ? model : null, question: isQuestion,
-    cwd: execCwd,
+    cwd: execCwd, account,
   });
 }
 
@@ -1401,6 +1419,10 @@ export function claimNextTask({ runnerId = 'local' } = {}) {
     // Size tier, from the queue row (work_prompts.task_tier). The runner's Claude
     // credit gate uses it to keep tiny work off the subscription entirely.
     task_tier: taskTier(task),
+    // Which Claude account should run this task's coding session: 'main' (default)
+    // or 'side' (the second Claude account). Carried from work_prompts.account so the
+    // Mac runner can hand this task's spawned CLI the right CLAUDE_CODE_OAUTH_TOKEN.
+    account: accountOf(task),
     // How long the runner lets this one attempt run before it saves the work and
     // reports blocked. Resolved here rather than in the runner so the kill and the
     // UI's "N of M min" line can never disagree (routes/queue.js reads the same
@@ -1428,6 +1450,16 @@ function taskTier(task) {
   try {
     return db.prepare(`SELECT task_tier FROM work_prompts WHERE id=?`).get(task.work_prompt_id)?.task_tier || null;
   } catch { return null; }
+}
+
+// Which Claude account this task's coding session should run on ('main' | 'side'),
+// read from the queue row. Lives beside taskTier() because only the claim payload
+// needs it, and both join the same work_prompts row by work_prompt_id.
+function accountOf(task) {
+  if (!db || !task?.work_prompt_id) return 'main';
+  try {
+    return db.prepare(`SELECT account FROM work_prompts WHERE id=?`).get(task.work_prompt_id)?.account || 'main';
+  } catch { return 'main'; }
 }
 
 // Live progress from the runner: transcript chunks plus proof of life. Chunks go

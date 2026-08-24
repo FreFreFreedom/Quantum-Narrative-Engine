@@ -931,6 +931,20 @@ function runOnce({ task, model, cwd, branch }) {
 // of "what a Claude transcript event means".
 function runClaudeOnce({ task, model, effort, cwd, branch }) {
   return new Promise((done) => {
+    // A coding task can request the SECOND Claude account (work_prompts.account='side').
+    // If so, hand that account's OAuth token to the spawned CLI. If the second account
+    // is not configured on this runner, fail LOUDLY rather than silently falling back to
+    // the main account and burning its quota by mistake — cost discipline (CLAUDE.md).
+    const onSide = task.account === 'side';
+    if (onSide && !SIDE_TOKEN) {
+      done({
+        outcome: 'blocked',
+        text: 'This task was set to run on the second Claude account, but CLAUDE_SIDE_OAUTH_TOKEN is not set on this runner. It was NOT run, so the main account was not used by mistake. Set the token on the runner, or switch the task back to the main account.',
+        blockedReason: 'second account not configured on this runner',
+      });
+      return;
+    }
+
     const bin = claudeCli.resolveBin();
     const args = ['-p', '--output-format', 'stream-json', '--verbose'];
     if (model) args.push('--model', model);
@@ -940,8 +954,10 @@ function runClaudeOnce({ task, model, effort, cwd, branch }) {
 
     // spawnEnv() strips ANTHROPIC_API_KEY — with it set the CLI silently bills
     // per-token against the API instead of using the subscription, which is the
-    // single most expensive mistake available here.
-    const child = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: claudeCli.spawnEnv() });
+    // single most expensive mistake available here. When onSide, it additionally
+    // swaps CLAUDE_CODE_OAUTH_TOKEN for the second account's token.
+    if (onSide) console.log(dim(`  (running this task on the SECOND Claude account)`));
+    const child = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: claudeCli.spawnEnv(onSide ? { CLAUDE_CODE_OAUTH_TOKEN: SIDE_TOKEN } : {}) });
     child.stdin.write(task.prompt);
     child.stdin.end();
 
@@ -1212,13 +1228,13 @@ async function runTask(task) {
     // but leaves no change means the model answered instead of building — reporting it
     // as done files an empty result and closes the task for good, so it goes back as
     // blocked and gets another run. Question mode legitimately produces no diff.
-    let blockedReason = null;
+    let blockedReason = r.blockedReason || null;
     if (status === 'done' && task.mode !== 'question' && ship && !ship.committed && ship.reason === 'nothing_changed') {
       status = 'blocked';
       blockedReason = 'nothing_changed';
       report = `${report}\n\n(stopped: it finished without changing any file — nothing was built.)`.trim();
       console.log(yellow('  Nothing was changed — reporting this as blocked, not done.'));
-    } else if (status !== 'done') {
+    } else if (status !== 'done' && !blockedReason) {
       // It ran and did not finish: a timeout, a cap, or the agent giving up. Told
       // apart from "never ran" because only one of the two retries by itself.
       blockedReason = 'timeout';

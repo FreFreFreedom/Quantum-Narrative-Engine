@@ -145,11 +145,12 @@ export async function createPrompt({
   component_id = null, provider = null, provider_model = null, agent_key = null,
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null, thought_id = null, inspiration = null, is_group = false,
-  manual_run = 0,
+  manual_run = 0, account = 'main',
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
   if (!isValidModelId(provider_model)) throw new Error('invalid provider_model');
+  if (!['main', 'side'].includes(account)) account = 'main';
   // Task tier (free-only plan): zero-cost size judgment made once at creation —
   // it selects the plan speed and the right free model. Mini tasks are tiny
   // and instant; standard is the everyday lane; deep gets the strongest model
@@ -316,12 +317,12 @@ export async function createPrompt({
   // onAgentTaskFinalized's "retry one tier stronger" valve).
   const resolved = useProvider === 'claude-code' ? usePreset : null;
 
-db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group, manual_run)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  db.prepare(`
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group, manual_run, account)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, isGroup ? 'paused' : initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0);
+    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, account);
 
   // Every idea that arrived with the card gets its own durable row, so the audit
   // can ask later whether it actually got built. inspire_picks_json above is the
@@ -1175,7 +1176,7 @@ export async function backfillPlan(id) {
 
 // run_model is editable ONLY so unfinished tasks can shed a stale "ran with"
 // label from an earlier attempt — the queue overwrites it at the next dispatch.
-const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'run_model', 'agent_key', 'parent_prompt_id', 'strategy', 'summary'];
+const EDITABLE =['title', 'prompt', 'mode', 'preset', 'same_context', 'status', 'position', 'stop_after', 'provider', 'provider_model', 'run_model', 'agent_key', 'parent_prompt_id', 'strategy', 'summary', 'account'];
 
 // provider_model/run_model reach a shell command string (taskRunner.js's spawned
 // CLI invocation) — buildRunCommand shell-quotes every value it interpolates, so
@@ -1288,6 +1289,7 @@ export function updatePrompt(id, patch) {
     if (k === 'status' && !['queued', 'paused', 'cancelled'].includes(v)) continue;
     if (k === 'status' && row.status === 'running') continue;
     if (k === 'provider' && !['claude-code', 'opencode', 'ai-router'].includes(v)) continue;
+    if (k === 'account' && !['main', 'side'].includes(v)) continue;
     if ((k === 'provider_model' || k === 'run_model') && !isValidModelId(v)) continue;
     if (k === 'title') {
       const given = String(v ?? '').trim();
