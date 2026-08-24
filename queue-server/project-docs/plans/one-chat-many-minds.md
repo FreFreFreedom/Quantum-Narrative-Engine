@@ -234,6 +234,10 @@ All three are just `resolveTurn` overrides plus the existing slash dispatch in
 
 ## Part 4 — Ideas beside the Room
 
+**SPLIT OUT to [room-world-ideas.md](room-world-ideas.md)** (2026-08-24) — same treatment
+as Parts 1 and 2/3 before it. Also adds a "use this idea" button (drops the idea's text
+into the chat as a plain message, no intent change) on top of what's described below.
+
 The world-look already produces exactly the recommendations you want; it just has no
 Room-shaped door.
 

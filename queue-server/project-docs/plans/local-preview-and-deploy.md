@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-23 |
+| **DONE** | 2026-08-24 |
 
 Implements the approved design at
 [`docs/superpowers/specs/2026-08-23-local-preview-deploy-design.md`](../docs/superpowers/specs/2026-08-23-local-preview-deploy-design.md).
