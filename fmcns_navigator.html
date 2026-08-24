@@ -101,13 +101,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
   margin:calc(-1 * var(--pad)) calc(-1 * var(--pad)) 10px; padding:6px var(--pad);
   background:var(--c-bg); border-bottom:1px solid var(--c-border); }
 .right-head { justify-content:flex-end; }
-/* The symbol IS the pin, and one dot on it says which state it is in: hollow = it
-   slides away on its own, filled = held open. */
-.panel-pin { position:relative; }
-.panel-pin::after { content:''; position:absolute; right:1px; bottom:1px; width:5px; height:5px;
-  border-radius:50%; border:1px solid currentColor; }
-.left.pinned .panel-pin, .right.pinned .panel-pin { color:var(--c-ink-2); }
-.left.pinned .panel-pin::after, .right.pinned .panel-pin::after { background:var(--c-accent); border-color:var(--c-accent); }
+/* The symbol IS the pin, and held-open is a state of the button, not a mark beside
+   it: the symbol goes accent and the button takes the matching soft wash. Same
+   tint-plus-colour pairing as .echo-kind (:249), same "this one is on" idea as
+   .rail-item.active (:288). */
+.left.pinned .panel-pin, .right.pinned .panel-pin {
+  background:var(--c-success-tint); color:var(--c-accent); }
+.left.pinned .panel-pin:hover, .right.pinned .panel-pin:hover {
+  background:var(--c-success-tint); color:var(--c-accent); }
 /* The 44px face the collapsed panel leaves behind. Drawn at every width but only
    shown by the min-width:821px block, since below that the panel is an overlay
    with its own button in the graph toolbar. */
@@ -2045,7 +2046,6 @@ button:active { transform: translateY(1px) scale(.99); }
     <div class="right-inner">
       <div class="right-head">
         <button type="button" class="uicon panel-pin" id="detailsPin" aria-pressed="false" title="Keep the details open (or press \ )" aria-label="Keep the details open"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
-        <button type="button" class="uicon" id="detailsClose" title="Close the details" aria-label="Close the details"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button>
       </div>
       <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
     </div>
@@ -5256,6 +5256,9 @@ function setupGraphPointer() {
       // all the way out, however many levels deep you walked. The breadcrumb is how you
       // step back one level.
       if (egoStack.length) { ev.preventDefault(); exitEgo(); return; }
+      // Same staging as the ego scope above: the panel goes away first and the node stays
+      // picked. A second Escape then clears the selection.
+      if (dismissDetails()) { ev.preventDefault(); return; }
       const had = kbCursorId || focusedId || focusedEdge || hoveredId;
       kbCursorId = null; hoveredId = null; hoveredEdge = null; focusedId = null; focusedEdge = null;
       if (had) { ev.preventDefault(); announceGraph('Selection cleared'); syncRightPanelOpen(); requestRender(); }
@@ -6493,6 +6496,25 @@ function applyDetailsPinned(on) {
     pin.title = on ? 'Let the details slide away again' : 'Keep the details open (or press \\ )';
   }
 }
+// Escape puts the panel away without giving up the node — the reason detailsDismissed still
+// exists now that there is no close symbol to press. Returns whether it did anything, so a
+// caller can decide whether to keep handling the key.
+function dismissDetails() {
+  const right = detailPanel();
+  if (!right) return false;
+  if (!right.classList.contains('is-open') && !right.classList.contains('open')) return false;
+  detailsDismissed = true;
+  if (right.classList.contains('pinned')) {
+    right.classList.remove('pinned');
+    try { localStorage.setItem(DETAILS_PIN_KEY, '0'); } catch (e) {}
+    const pin = document.getElementById('detailsPin');
+    if (pin) { pin.setAttribute('aria-pressed', 'false'); pin.title = 'Keep the details open (or press \\ )'; }
+  }
+  right.classList.remove('is-open', 'open');
+  delete right.dataset.narrowLock;
+  narrowPanelsSync();
+  return true;
+}
 function syncRightPanelOpen() {
   const right = detailPanel();
   if (!right) return;
@@ -6521,17 +6543,6 @@ function initDetailPanel() {
   right.addEventListener('focusout', closeDetailsSoon);
   const spine = document.getElementById('detailsSpine');
   if (spine) spine.onclick = () => setPin(true);
-  const closeBtn = document.getElementById('detailsClose');
-  if (closeBtn) closeBtn.onclick = (e) => {
-    detailsDismissed = true;
-    if (right.classList.contains('pinned')) setPin(false);
-    right.classList.remove('is-open', 'open');
-    delete right.dataset.narrowLock;
-    narrowPanelsSync();
-    // The focus it would leave behind is one of the three things that hold the panel
-    // open, so a mouse click has to let go — the same reason the pin blurs itself.
-    if (e.detail) closeBtn.blur();
-  };
   const pin = document.getElementById('detailsPin');
   // e.detail is 0 for keyboard activation, which must keep its place; a mouse click
   // has to let go, or the focus it leaves behind holds the panel open.
@@ -6540,7 +6551,7 @@ function initDetailPanel() {
   try { on = localStorage.getItem(DETAILS_PIN_KEY) === '1'; } catch (e) {}
   applyDetailsPinned(on);
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && right.contains(document.activeElement)) { document.activeElement.blur(); return; }
+    if (e.key === 'Escape' && right.contains(document.activeElement)) { document.activeElement.blur(); dismissDetails(); return; }
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
     if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
     // '\' pins the details, after the rail's '[' and the filters' ']'.
