@@ -8,6 +8,7 @@ import { latestReviewForPrompt } from '../services/reviewRunner.js';
 import { shipStateFor, shipStateForBlocked } from '../services/gitJobs.js';
 import { gapCountsByPrompt } from '../services/inspireLanding.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
+import { getProviderCatalog } from '../services/ai/catalog.js';
 import { feedCompletedToRecommender } from '../services/workSuggestions.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -26,10 +27,19 @@ export function queueRoutes() {
     let aiRouterModels = [];
     let aiRouterError = null;
     try { aiRouterModels = listAiRouterModels(); } catch (e) { aiRouterError = e.message; }
+    // Google AI Studio's curated model list (the manual model picker, plan
+    // "chat-model-picker") — straight from the same catalogue ai/text.js resolves
+    // providers/models against, so the picker can never offer an id the backend
+    // would reject. Available only once the key is actually set.
+    const googleCatalog = getProviderCatalog('google-ai-studio');
     res.json({
       claude: {
         available: !!(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.CLAUDE_BIN),
         bin: resolveClaudeBin(),
+        // The second Claude subscription (plan "chat-model-picker"): a helper-job
+        // lane reachable only when its own token is present on the Mac runner, not
+        // via CLAUDE_CODE_OAUTH_TOKEN (that is the main account's token).
+        secondAccountAvailable: !!process.env.CLAUDE_SIDE_OAUTH_TOKEN,
       },
       opencode: {
         available: discovery.models.length > 0 || !discovery.error,
@@ -41,6 +51,10 @@ export function queueRoutes() {
         available: aiRouterModels.length > 0,
         models: aiRouterModels,
         error: aiRouterError,
+      },
+      google: {
+        available: !!process.env.GOOGLE_AI_STUDIO_API_KEY,
+        models: googleCatalog ? googleCatalog.models.map((m) => ({ id: m.id, codingRank: m.codingRank })) : [],
       },
     });
   });

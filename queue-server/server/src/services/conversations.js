@@ -179,6 +179,40 @@ export function getConvo(id) {
   return db.prepare(`SELECT * FROM convos WHERE id=? AND deleted_at IS NULL`).get(id) || null;
 }
 
+// ─── Manual model picker (plan "chat-model-picker") ─────────────────────────
+// A sticky per-conversation override of the automatic turn router: once set, every
+// message in this conversation runs on that lane until it is cleared back to Auto.
+
+const OVERRIDE_TAGS = {
+  'claude-code': 'claude',
+  'claude-side': 'claude (2nd)',
+  opencode: 'opencode',
+  'google-ai-studio': 'gemini',
+};
+
+export function getChatLane(convoId) {
+  const row = db?.prepare(`SELECT chat_override FROM convos WHERE id=?`).get(convoId);
+  if (!row?.chat_override) return null;
+  try {
+    const parsed = JSON.parse(row.chat_override);
+    if (!parsed?.provider) return null;
+    return { provider: parsed.provider, model: parsed.model || null, account: parsed.account || null, tag: OVERRIDE_TAGS[parsed.provider] || parsed.provider };
+  } catch { return null; }
+}
+
+// override = { provider, model?, account? }, or null/falsy to clear (back to Auto).
+export function setChatLane(convoId, override) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  const json = override?.provider
+    ? JSON.stringify({ provider: override.provider, model: override.model || null, account: override.account || null })
+    : null;
+  db.prepare(`UPDATE convos SET chat_override=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(json, convoId);
+  broadcastAll('convos:updated', { convoId });
+  return getChatLane(convoId);
+}
+
 export function findConvo(subjectType, subjectId) {
   if (!db) return null;
   return db.prepare(`SELECT * FROM convos WHERE subject_type=? AND subject_id=? AND deleted_at IS NULL`).get(subjectType, subjectId) || null;
@@ -894,6 +928,8 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn) {
     // generateTextStream); an about_app turn points at the cheap 'summary' lane.
     feature: turn?.lane?.feature || 'studio',
     model: turn?.lane?.model || null,
+    provider: turn?.lane?.provider || null,
+    account: turn?.lane?.account || null,
     label: 'conversations:chat',
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
     // turn gets them: it is the one that answers a question, and the one whose
@@ -940,6 +976,8 @@ async function runChatTurn(convoId, userId, turn) {
     prompt,
     feature: turn?.lane?.feature || 'studio',
     model: turn?.lane?.model || null,
+    provider: turn?.lane?.provider || null,
+    account: turn?.lane?.account || null,
     maxTokens: 4000,
     label: 'conversations:chat',
     allowLongOutput: true, timeoutMs: 150_000,
@@ -1500,12 +1538,19 @@ Respond with ONLY this JSON object and nothing else:
 // onToken, when supplied by the route, turns the ordinary text turn into a
 // streamed one. Slash commands stay non-streamed: they are structured actions
 // (plan, handoff, fold) whose value is the finished artefact, not the typing.
-export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null } = {}) {
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, override = undefined } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const trimmed = String(text || '').trim();
   if (!trimmed) return { error: 'empty' };
+
+  // Sticky lane (plan "chat-model-picker"): a caller with no opinion on the lane
+  // (override left undefined) reads whatever this conversation is pinned to —
+  // that's what makes a picked lane persist across sends without resending it
+  // every time. A caller that explicitly passes override (even null, to mean
+  // "just this once, Auto") is respected as-is.
+  const effectiveOverride = override !== undefined ? override : getChatLane(convoId);
 
   // Commands — handled before any model cost.
   const cmd = trimmed.match(/^\/([a-z-]+)/i);
@@ -1519,7 +1564,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
     }
     if (slash === 'help') {
       return {
-        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|opencode <question> — force this one turn onto that lane.\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
+        text: 'Available commands:\n  /grill-me — I ask you sharp clarifying questions, one at a time.\n  /seed — save what we arrived at as an idea card in your notebook.\n  /note — write it down as a document the whole app can read afterwards.\n  /plan — turn this conversation into a coder brief (TITLE + BRIEF).\n  /handoff claude|opencode — queue the plan as a paused task in the Dispatch Queue (idempotent); name an engine to pick it, or leave it off for the default.\n  /compare — compare the ideas attached to this subject.\n  /fold — (world ideas) rewrite this idea with what we worked out here.\n  /more — (world ideas) propose new ideas from where this conversation went.\n  /reframe — (world ideas) rewrite the question these ideas answer.\n  /ask gpt|claude|second|opencode <question> — force this one turn onto that lane (gpt = Google Gemini, second = your second Claude account).\n  /check — re-examine the last answer on a different lane, with fresh code facts.\n  /second — answer your last question again on a second lane, side by side.\n  /help — this list.\n\nOtherwise just type — I\'ll pick the right lane myself: a free code lookup when you name a file or function, a brainstorm when you\'re thinking out loud, and a build proposal when you ask me to make something.',
       };
     }
     if (slash === 'seed') return runSaveSeedTurn(convoId);
@@ -1550,7 +1595,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // Resolve the lane BEFORE any model cost. The router is free and deterministic
   // except for one tiny tie-break judge call; it never dispatches a coding task
   // (that is the owner's click, on an implement proposal).
-  const turn = await resolveTurn({ convoId, text: trimmed, lastAssistantText: lastUserText(convoId) });
+  const turn = await resolveTurn({ convoId, text: trimmed, lastAssistantText: lastUserText(convoId), override: effectiveOverride });
 
   // implement: propose, do not dispatch. The frontend draws the three buttons.
   if (turn.intent === 'implement') return runImplementProposal(convoId, turn);

@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-23T22:10:11.162Z
+Generated: 2026-08-24T22:52:04.481Z
 
 ## Components
 
@@ -38,8 +38,23 @@ Generated: 2026-08-23T22:10:11.162Z
 
 ## Plan backlog
 
+- chat-model-picker — **PLANNED** 2026-08-24
+- opencode-terminals-as-a-second-lane — **PLANNED** 2026-08-23
+- room-shared-memory — **DONE** 2026-08-23 — shipped via `oc ship`; fixed two real bugs found by using it for real (`manualComplete` never updated the card's own status, and the new Mind panel's `loadMind`/`renderMind` collided with the Architecture tab's pre-existing functions of the same name)
+- room-turn-router — **PLANNED** 2026-08-23
+- room-world-ideas — **DONE** 2026-08-24 — shipped, but see [room-side-panels-collision.md](room-side-panels-collision.md) below for a layout bug it exposed
+- room-side-panels-collision — **PLANNED** 2026-08-24
+- room-handoff-engine-choice — **PLANNED** 2026-08-24
+- local-preview-and-deploy — **DONE** 2026-08-24
+- queue-task-second-account — **DONE** 2026-08-24 — shipped via the automated queue (`2961a8b`); verified live: schema column, `taskRunner.js` token swap + refusal when the token is missing, and the per-card Account dropdown all confirmed present in production
+- ai-settings-second-account-default — **DONE** 2026-08-24 — shipped via the automated queue (`99f43e7`)
+- queue-panel-composer-typing-erased — **PLANNED** 2026-08-24
+- pdf-section-extraction — **PARTIAL** 2026-08-24 — backend done, frontend queued
+- pdf-extraction-frontend — **PLANNED** 2026-08-24
+- room-router-confirm-followup — **PLANNED** 2026-08-24
+- room-sidebar-fixes — **PLANNED** 2026-08-24
 - one-chat-many-minds — **PLANNED** 2026-08-23 — Part 7 sent to the queue
-- files-in-the-room — **PLANNED** 2026-08-23 — sent to the queue
+- files-in-the-room — **DONE** 2026-08-23
 - one-card-for-a-plan-in-parts — **DONE** 2026-08-23 — shipped as `1e79af04` and was **inert**: `createGroup` passed `true` while the check compared `=== 1`, and the route did not await the async create (HTTP 201, empty body, silent rejection). Both fixed (`f0068ae`, `1047fe1`) with `npm run group:selftest` guarding them. The rendering half was always correct
 - plans-in-the-room — **DONE** 2026-08-23 — shipped as `6a06972`; plans mirror into project-docs/, seed as `Plan:` knowledge docs, and attach in the Room as a seventh subject type
 - conversation-voice-and-project-map — **DONE (code)** 2026-08-21 — gpt-4.1 in the catalogue, the judgement-first persona, and a ~10k-token map built once at boot and sent first (proven byte-identical and proven to be the prompt's literal prefix). Two things left: the AI Settings 'studio' row still has to be pointed at gpt-4.1 by hand, and the four live checks (caching visible in the spend ledger, the voice tests) need the deploy. One deliberate deviation is in the plan's own header.

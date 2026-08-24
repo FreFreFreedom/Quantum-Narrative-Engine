@@ -817,6 +817,16 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
  .se-implement { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px 0; }
  .se-implement .se-cmd { border:1px solid var(--c-border); border-radius:7px; padding:2px 8px; }
  .se-implement .se-cmd:hover:not(:disabled) { border-color:var(--c-brand); text-decoration:none; }
+/* Manual model picker (plan "chat-model-picker") — a quiet control living inside
+   the composer pill itself. On Auto it reads as a plain, low-contrast "Auto"
+   select, no different from any other muted control in the app; once a lane is
+   picked, it takes the brand color so the override is legible at a glance. */
+.se-lanewrap { display:flex; align-items:center; gap:4px; align-self:center; flex:none; }
+.se-lanepick, .se-lanemodel { -webkit-appearance:none; appearance:none; background:none; border:1px solid var(--c-border-2); border-radius:999px; color:var(--c-ink-4); font-size:9.5px; font-family:inherit; line-height:1.4; padding:3px 8px; cursor:pointer; max-width:104px; }
+.se-lanepick:hover, .se-lanemodel:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
+.se-lanepick.is-set { color:var(--c-brand); border-color:var(--c-brand); }
+.se-lane-clear { background:none; border:none; color:var(--c-ink-4); font-size:11px; line-height:1; cursor:pointer; padding:2px; }
+.se-lane-clear:hover { color:var(--c-ink); }
 /* The architecture panel is a fixed 330px column at every window size, so its log
    is shortened by where it lives rather than by a viewport breakpoint. */
 .ws-archdetail .se-log { max-height:240px; }
@@ -17177,11 +17187,30 @@ document.addEventListener('keydown', (e) => {
   // half-typed message survive a poll, and what brings a whole conversation back
   // when a territory filter hides its card and you then clear the filter.
   var cache = {};
+  // Manual model picker (plan "chat-model-picker"): the lanes' live model lists +
+  // availability, fetched once from /api/queue/providers and shared by every
+  // Room composer on the page rather than re-fetched per card.
+  var laneCatalog = null, laneCatalogPromise = null;
+  function ensureLaneCatalog(){
+    if(laneCatalog) return Promise.resolve(laneCatalog);
+    if(laneCatalogPromise) return laneCatalogPromise;
+    laneCatalogPromise = api('/api/queue/providers').then(function(data){
+      laneCatalog = data || {};
+      return laneCatalog;
+    }).catch(function(){ laneCatalog = {}; return laneCatalog; });
+    return laneCatalogPromise;
+  }
+  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google' };
+  function laneTagFor(provider, model){
+    var label = LANE_LABELS[provider] || provider;
+    return model ? label + ' · ' + model : label;
+  }
   function entryOf(type, subjectId){
     var key = type + ':' + subjectId;
     if(!cache[key]) cache[key] = {
       key: key, type: type, subjectId: subjectId,
       convoId: null, msgs: [], acts: [], edits: [], promptId: null, via: null, title: '',
+      lane: undefined,               // manual model picker: undefined = not loaded yet, null = Auto, {provider,model,tag} = pinned
       hint: null,                    // travels with the request for subjects the DB cannot describe
       loaded: false, loading: false,  // `loaded` gates the refetch, so a repaint costs nothing
       open: false, busy: false, draft: '', err: '', note: '',
@@ -17264,6 +17293,10 @@ document.addEventListener('keydown', (e) => {
         e.msgs = normalizeMsgs(data.messages);
         e.acts = data.acts || [];
         e.edits = data.edits || [];
+        // The sticky lane pick (plan "chat-model-picker") — null means Auto. Only
+        // set from the fetch, never left undefined once loaded, so sendTurn always
+        // knows whether to say "use Auto" or "use whatever's already pinned".
+        e.lane = data.chat_override || null;
         e.loaded = true;
         e.note = '';
         index[e.key] = data.convo;   // keeps the closed line's count honest
@@ -17291,7 +17324,13 @@ document.addEventListener('keydown', (e) => {
         // to anything that doesn't, so an old cached copy of this file keeps working.
         'Accept': 'application/x-ndjson',
       },
-      body: JSON.stringify({ text: text }),
+      // Include the current lane pick so a just-changed override takes effect on
+      // THIS send, without waiting on the separate /lane call to land first
+      // (plan "chat-model-picker"). e.lane undefined (not loaded yet) omits the
+      // key entirely, so the server falls back to whatever is already stored.
+      body: JSON.stringify(e.lane !== undefined
+        ? { text: text, override: e.lane ? { provider: e.lane.provider, model: e.lane.model || null, account: e.lane.account || null } : null }
+        : { text: text }),
     })
       .then(function(r){ return readTurn(r, e, repaint); })
       .then(function(d){
@@ -17586,6 +17625,17 @@ document.addEventListener('keydown', (e) => {
         +   '<div class="se-log"></div>'
         +   '<span class="se-cost"></span>'
         +   '<div class="se-compose">'
+        +     '<span class="se-lanewrap">'
+        +       '<select class="se-lanepick" title="Which model answers — Auto lets the app choose">'
+        +         '<option value="">Auto</option>'
+        +         '<option value="claude-code">Claude</option>'
+        +         '<option value="claude-side">Claude (2nd)</option>'
+        +         '<option value="opencode">OpenCode</option>'
+        +         '<option value="google-ai-studio">Google</option>'
+        +       '</select>'
+        +       '<select class="se-lanemodel" style="display:none"></select>'
+        +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
+        +     '</span>'
         +     '<textarea class="se-input" rows="1" placeholder="Say what you\'re thinking…"></textarea>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
         +   '</div>'
@@ -17646,8 +17696,61 @@ document.addEventListener('keydown', (e) => {
         else if(act === 'reset'){ resetConvo(e, repaint); }
       };
     });
+
+    // Manual model picker (plan "chat-model-picker") — sticky per conversation.
+    // Auto (empty value) clears the pin; OpenCode/Google also need a model choice.
+    var lanePick = host.querySelector('.se-lanepick');
+    var laneModel = host.querySelector('.se-lanemodel');
+    var laneClear = host.querySelector('.se-lane-clear');
+    if(lanePick){
+      ensureLaneCatalog().then(function(){ if(host.isConnected) fillEmbed(host, e, opts); });
+      lanePick.onchange = function(){
+        var v = lanePick.value;
+        if(!v){ e.lane = null; }
+        else {
+          var models = laneModelsFor(v, laneCatalog);
+          var model = models.length ? models[0] : null;
+          e.lane = { provider: v, model: model, tag: laneTagFor(v, model) };
+        }
+        persistLane(e, e.lane);
+        fillEmbed(host, e, opts);
+      };
+      laneModel.onchange = function(){
+        if(!e.lane) return;
+        e.lane = { provider: e.lane.provider, model: laneModel.value, tag: laneTagFor(e.lane.provider, laneModel.value) };
+        persistLane(e, e.lane);
+        fillEmbed(host, e, opts);
+      };
+      laneClear.onclick = function(ev){
+        ev.stopPropagation();
+        e.lane = null;
+        persistLane(e, null);
+        fillEmbed(host, e, opts);
+      };
+    }
     grow(input);
     if(e.justOpened){ e.justOpened = false; input.focus(); }
+  }
+
+  // Manual model picker helpers (plan "chat-model-picker") ---------------------
+  function persistLane(e, lane){
+    if(!e.convoId) return;
+    apiWrite('/api/convos/' + e.convoId + '/lane', 'POST',
+      lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : { provider: null }
+    ).catch(function(){});
+  }
+  function laneModelsFor(provider, catalog){
+    if(provider === 'opencode') return ((catalog && catalog.opencode && catalog.opencode.models) || []).map(function(m){ return (m && m.id) || m; });
+    if(provider === 'google-ai-studio') return ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return m.id; });
+    return [];
+  }
+  function laneAvailable(provider, catalog){
+    if(!catalog) return true; // don't block Auto while the catalog is still loading
+    if(provider === 'claude-code') return !!(catalog.claude && catalog.claude.available);
+    if(provider === 'claude-side') return !!(catalog.claude && catalog.claude.secondAccountAvailable);
+    if(provider === 'opencode') return !!(catalog.opencode && catalog.opencode.available);
+    if(provider === 'google-ai-studio') return !!(catalog.google && catalog.google.available);
+    return true;
   }
 
   function grow(el){ el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
@@ -17723,6 +17826,35 @@ document.addEventListener('keydown', (e) => {
     if(box && document.activeElement !== box && box.value !== (e.draft || '')){
       box.value = e.draft || '';
       grow(box);
+    }
+
+    // Manual model picker (plan "chat-model-picker") — reflect e.lane into the
+    // select(s) + clear button without stealing focus mid-interaction.
+    var lanePick = host.querySelector('.se-lanepick');
+    if(lanePick){
+      var laneModel = host.querySelector('.se-lanemodel');
+      var laneClear = host.querySelector('.se-lane-clear');
+      var laneVal = e.lane ? e.lane.provider : '';
+      if(document.activeElement !== lanePick) lanePick.value = laneVal;
+      lanePick.classList.toggle('is-set', !!e.lane);
+      Array.prototype.forEach.call(lanePick.options, function(opt){
+        if(!opt.value) return;
+        opt.disabled = laneCatalog ? !laneAvailable(opt.value, laneCatalog) : false;
+      });
+      var needsModel = !!(e.lane && (e.lane.provider === 'opencode' || e.lane.provider === 'google-ai-studio'));
+      if(needsModel){
+        var models = laneModelsFor(e.lane.provider, laneCatalog);
+        if(laneModel.getAttribute('data-for') !== e.lane.provider){
+          laneModel.innerHTML = models.map(function(m){ return '<option value="' + qEscAttr(m) + '">' + qEsc(m) + '</option>'; }).join('');
+          laneModel.setAttribute('data-for', e.lane.provider);
+        }
+        if(document.activeElement !== laneModel) laneModel.value = e.lane.model || (models[0] || '');
+        laneModel.style.display = '';
+      } else {
+        laneModel.style.display = 'none';
+        laneModel.removeAttribute('data-for');
+      }
+      laneClear.style.display = e.lane ? '' : 'none';
     }
 
     var n = e.loaded ? userTurns(e) : 0;

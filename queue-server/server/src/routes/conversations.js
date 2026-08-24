@@ -6,6 +6,12 @@ import * as convos from '../services/conversations.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
+// The lanes the manual model picker (plan "chat-model-picker") may point a
+// conversation at. Kept in sync by hand with turnRouter.js's FORCED_LANES and
+// the frontend's picker options — a short, deliberately-curated list, not the
+// full provider catalogue.
+const VALID_LANE_PROVIDERS = new Set(['claude-code', 'claude-side', 'opencode', 'google-ai-studio']);
+
 function isConvoError(out) {
   return out && typeof out === 'object' && out.error && !out.ok;
 }
@@ -35,6 +41,7 @@ export function conversationsRoutes() {
     // actually do, so it never offers a button that would only apologise.
     res.json({
       convo: out.convo,
+      chat_override: convos.getChatLane(out.convo.id),
       messages: convos.listMessages(out.convo.id),
       created: out.created,
       acts: convos.writeActsForConvo(out.convo.id),
@@ -90,7 +97,23 @@ export function conversationsRoutes() {
   router.get('/:id', (req, res) => {
     const convo = convos.getConvo(req.params.id);
     if (!convo) return res.status(404).json({ error: 'not_found' });
-    res.json({ convo, messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id) });
+    // chat_override rides on the row as a raw JSON string (or null) — parsed here
+    // into { provider, model, account, tag } so the frontend never re-implements
+    // the parse, same shape as GET/POST /:id/lane below.
+    res.json({ convo, chat_override: convos.getChatLane(convo.id), messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id) });
+  });
+
+  // POST /api/convos/:id/lane — the manual model picker's sticky pick (plan
+  // "chat-model-picker"): body { provider, model?, account? }, or {} / provider:
+  // null to clear back to Auto. Every message on this conversation runs on this
+  // lane until it is cleared.
+  router.post('/:id/lane', (req, res) => {
+    const convo = convos.getConvo(req.params.id);
+    if (!convo) return res.status(404).json({ error: 'not_found' });
+    const provider = req.body?.provider || null;
+    if (provider && !VALID_LANE_PROVIDERS.has(provider)) return res.status(400).json({ error: 'unknown_provider' });
+    const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null } : null);
+    res.json({ chat_override: lane });
   });
 
   // GET /api/convos/:id/subjects — every card attached to this conversation,
@@ -141,9 +164,19 @@ export function conversationsRoutes() {
   // chunked body.
   router.post('/:id/message', asyncHandler(async (req, res) => {
     const wantsStream = /application\/x-ndjson/i.test(String(req.headers.accept || ''));
+    // An explicit one-off override in the request body (the picker changing lane
+    // right before this send) takes effect immediately, same call, no separate
+    // /lane round trip required first. Omitting it entirely means "use whatever
+    // this conversation is stickily pinned to" (see sendMessage's effectiveOverride).
+    const bodyOverride = req.body?.override;
+    const override = bodyOverride === undefined
+      ? undefined
+      : (bodyOverride?.provider && VALID_LANE_PROVIDERS.has(bodyOverride.provider)
+        ? { provider: bodyOverride.provider, model: bodyOverride.model || null, account: bodyOverride.account || null }
+        : null);
 
     if (!wantsStream) {
-      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id });
+      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override });
       if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
       return res.json(out);
     }
@@ -170,6 +203,7 @@ export function conversationsRoutes() {
       const out = await convos.sendMessage(req.params.id, {
         text: req.body?.text,
         userId: req.user?.id,
+        override,
         onToken: (t) => { if (!clientGone) write({ type: 'token', text: t }); },
       });
       write({ type: 'done', ...out });

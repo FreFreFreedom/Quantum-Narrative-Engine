@@ -1415,6 +1415,11 @@ export function initConversationsSchema(db) {
   // Room conversation with no new turns since the last check doesn't re-trigger
   // a look. Same idea as mind_seen_turns above, for a different fire-and-forget job.
   try { db.exec(`ALTER TABLE convos ADD COLUMN world_look_seen_turns INTEGER DEFAULT 0`); } catch {}
+
+  // The manual model picker (plan "chat-model-picker"): a sticky per-conversation
+  // override of the automatic turn router, {provider, model, account} as JSON, or
+  // NULL when the conversation is on Auto. Read by conversations.js#getChatLane.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN chat_override TEXT`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────
