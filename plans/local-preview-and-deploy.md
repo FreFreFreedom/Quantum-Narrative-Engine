@@ -103,6 +103,31 @@ instead: run `oc preview <task-id>` once all work is committed, and stop there �
 ] : MANUAL ? [ /* existing --manual-only text */ ] : []),
 ```
 
+### 3b. Every plan re-checks its own "How to verify" before declaring done — not just
+`preview_required` ones
+
+Antoine's standing complaint about how these tasks get implemented: an agent finishes,
+says so, and only later does a human discover a step from the plan's own "How to
+verify" section was never actually done. This project has no test suite by design (see
+`CLAUDE.md`), so this re-check is the only safety net available, and it should apply to
+**every** plan sent through `send-plan.js`, not only preview-gated ones.
+
+In the same `body` array in `send-plan.js` (the one built right after
+`Implement the plan below...`), add one more line, **unconditionally** (not inside the
+`MANUAL`/`PREVIEW` branches):
+
+```js
+'',
+'Before you consider this finished: re-read this plan\'s own "How to verify" section' 
++ ' one more time and actually do each item in it — do not just recall having done' 
++ ' something similar earlier. If an item can\'t be done (e.g. it requires a live' 
++ ' browser you don\'t have), say so explicitly in your summary instead of silently' 
++ ' skipping it.',
+```
+
+Place it right after the lead line and before the `MANUAL`/`PREVIEW` conditionals, so it
+applies to automated, manual, and preview-gated tasks alike.
+
 ### 4. The server knows it's in preview mode
 
 In `server/src/index.js` (or wherever env vars are first read near the top — search for
@@ -197,6 +222,10 @@ waiting, not just once a preview is actually running.
 ## How to verify
 
 - `node --check` every edited/created `.js` file.
+- `queue-server/scripts/send-plan.js some-plan.md --dry-run` (no `--manual`/`--preview`
+  at all) still shows the new "re-read this plan's own How to verify section" line in
+  the printed body — confirming it applies unconditionally, not just to preview-gated
+  tasks.
 - `queue-server/scripts/send-plan.js some-plan.md --manual --preview --dry-run` shows
   `preview_required: 1` in the printed payload, and the printed instruction text tells
   the agent to run `oc preview`, not `oc ship`.
