@@ -766,6 +766,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .se-head-acts { margin-left:auto; display:flex; gap:2px; }
 .se-iconbtn { background:none; border:none; border-radius:var(--r-sm); cursor:pointer; color:var(--c-ink-4); font-size:11px; line-height:1; padding:3px 5px; }
 .se-iconbtn:hover { background:var(--c-surface); color:var(--c-ink); }
+.se-recap { border:1px solid var(--c-border); border-radius:var(--r-sm); background:var(--c-surface); padding:6px 8px; margin-bottom:8px; }
+.se-recap summary { cursor:pointer; font-size:var(--fs-sm); color:var(--c-ink-4); font-weight:var(--fw-medium); }
+.se-recap-body { white-space:pre-wrap; font-size:var(--fs-sm); color:var(--c-ink-3); margin-top:6px; }
 /* 320px was sized for the old terse answers (a few sentences, ~450 tokens). The
    conversation lane now answers at whatever length the question deserves, so the
    box gets real room — bounded by the viewport so it still can't push the
@@ -17422,6 +17425,7 @@ document.addEventListener('keydown', (e) => {
         e.title = data.convo.title || e.title;
         e.promptId = data.convo.work_prompt_id || null;
         e.msgs = normalizeMsgs(data.messages);
+        e.recap = (data.convo && data.convo.recap) || null;
         e.acts = data.acts || [];
         e.edits = data.edits || [];
         // The sticky lane pick (plan "chat-model-picker") — null means Auto. Only
@@ -17597,7 +17601,7 @@ document.addEventListener('keydown', (e) => {
   function resetConvo(e, repaint){
     if(!e.convoId) return Promise.resolve();
     return apiWrite('/api/convos/' + e.convoId + '/reset', 'POST', {})
-      .then(function(){ e.loaded = false; e.msgs = []; return fetchConvo(e, repaint); })
+      .then(function(){ e.loaded = false; return fetchConvo(e, repaint); })
       .catch(function(){});
   }
 
@@ -18050,6 +18054,10 @@ document.addEventListener('keydown', (e) => {
       html += '<div class="se-pin">✓ Sent to the Dispatch Queue, set aside — '
            +  '<a href="#" data-se-jump="' + qEsc(e.promptId) + '">open the task</a></div>';
     }
+    if(e.recap){
+      html += '<details class="se-recap" open><summary>Summary the assistant now works from</summary>'
+           +  '<div class="se-recap-body">' + qEsc(e.recap) + '</div></details>';
+    }
     e.msgs.forEach(function(m){
       var plan = m.kind === 'plan';
       var you = m.role === 'user';
@@ -18095,7 +18103,7 @@ document.addEventListener('keydown', (e) => {
       }).join('');
       html += '<details class="se-before"><summary>What it said before</summary>' + rows + '</details>';
     }
-    if(!e.msgs.length && !e.promptId && !e.busy && !e.stream){
+    if(!e.msgs.length && !e.recap && !e.promptId && !e.busy && !e.stream){
       // A roaming thread has no "this" to push, and the room it lives in is under a
       // standing rule against explaining itself — so there it says only where it is.
       html += '<div class="se-note">' + (e.type === 'open'

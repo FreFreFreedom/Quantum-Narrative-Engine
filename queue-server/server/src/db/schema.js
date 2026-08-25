@@ -1436,6 +1436,12 @@ export function initConversationsSchema(db) {
   // override of the automatic turn router, {provider, model, account} as JSON, or
   // NULL when the conversation is on Auto. Read by conversations.js#getChatLane.
   try { db.exec(`ALTER TABLE convos ADD COLUMN chat_override TEXT`); } catch {}
+
+  // "Start fresh" (plan "start-fresh-keep-conversation-visible"): the timestamp
+  // of the last manual compaction. When set, transcriptOf() sends only the recap
+  // plus messages newer than this to the model, instead of the whole transcript
+  // it still shows on screen. NULL means never compacted.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN compacted_at TEXT`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────

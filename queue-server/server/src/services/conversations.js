@@ -469,11 +469,11 @@ export function resetConvoContext(id) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(id);
   if (!convo) return { error: 'not_found' };
-  // fold everything into a short recap row and clear the message history
+  // Fold everything into a short recap row. The visible transcript stays in the
+  // DB and on screen — only the model-facing context is compacted (transcriptOf).
   const msgs = listMessages(id);
   const recap = msgs.map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${String(m.text).slice(0, 300)}`).join('\n');
-  db.prepare(`UPDATE convos SET recap=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(recap || null, id);
-  db.prepare(`DELETE FROM convo_messages WHERE convo_id=?`).run(id);
+  db.prepare(`UPDATE convos SET recap=?, compacted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(recap || null, id);
   broadcastAll('convos:updated', { convoId: id });
   return { ok: true, recap };
 }
@@ -793,7 +793,17 @@ function liveListsBlock() {
   } catch { return ''; }
 }
 
-function transcriptOf(convo, msgs, windowSize) {
+function transcriptOf(convo, msgs, windowSize, { full } = {}) {
+  // After a manual "Start fresh" compaction, the model-facing transcript is the
+  // recap plus only the turns since the click — the older messages are already
+  // folded into the recap. `full` overrides this (e.g. the background world-look
+  // pass, which must still read the whole thread) regardless of compaction state.
+  if (convo.compacted_at && !full) {
+    const since = msgs.filter((m) => m.kind === 'chat' && m.created_at > convo.compacted_at);
+    const lines = [`(folded earlier context)\n${convo.recap || ''}`];
+    for (const m of since) lines.push(`${m.role === 'user' ? 'OWNER' : 'YOU'}: ${m.text}`);
+    return lines.join('\n\n');
+  }
   const visible = msgs.slice(-windowSize).filter((m) => m.kind === 'chat');
   const lines = [];
   if (convo.recap) lines.push(`(folded earlier context)\n${convo.recap}`);
@@ -820,7 +830,7 @@ export function roomWorldLook(convoId) {
   db.prepare(`UPDATE convos SET world_look_seen_turns=? WHERE id=?`).run(turns, convoId);
   setImmediate(async () => {
     try {
-      const ideaText = transcriptOf(convo, listMessages(convoId), CONVO_HISTORY_WINDOW);
+      const ideaText = transcriptOf(convo, listMessages(convoId), CONVO_HISTORY_WINDOW, { full: true });
       if (ideaText) await runWorldLookGuarded(db, { idea_text: ideaText, source: 'convo', source_id: convoId });
     } catch (e) { console.error('[room] world-look failed:', e?.message || e); }
     finally { _worldLookInFlight.delete(convoId); }
