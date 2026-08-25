@@ -1435,19 +1435,36 @@ Respond with ONLY this JSON object and nothing else:
   if (result.error) return result;
 
   const parsed = firstJson(result.text);
+
+  // Capture the FULL conversation, not just the AI summary, so nothing is lost.
+  const msgs = getConvoMessages(convoId);
+  const transcript = msgs
+    .map((m) => {
+      const who = m.role === 'user' ? 'You' : 'Assistant';
+      const kind = m.kind && m.kind !== 'chat' ? ` (${m.kind})` : '';
+      return `**${who}${kind}:**\n${String(m.text || '').trim()}`;
+    })
+    .join('\n\n');
+
+  const understanding = String(parsed?.content || '').trim();
+  const content = [
+    understanding ? `## What this conversation understood\n\n${understanding}` : '',
+    `## Full conversation\n\n${transcript}`,
+  ].filter(Boolean).join('\n\n');
+
   const out = createKnowledgeNote(db, {
     title: parsed?.title,
     description: parsed?.description,
-    content: parsed?.content,
+    content,
   });
   if (out.error) {
     return { text: out.message || 'I could not get a clean document out of that — say in one line what should be written down, then ask again.' };
   }
 
   // Deliver the note to the coding helper's folder (best-effort; never breaks /note).
-  deliverNoteToRepo({ title: out.title, content: parsed?.content });
+  deliverNoteToRepo({ title: out.title, content });
 
-  const text = `Written down as **${out.title}**. It now sits with the app's reference documents, which means every part of the app that can read them can read this — it is context from here on, not just a note in this thread. I also dropped it into your project folder so the coding helper can pick it up.`;
+  const text = `Written down as **${out.title}**. The whole conversation is saved in it (not just a summary), and I dropped it into your project folder so the coding helper can pick it up.`;
   saveAssistantTurn(convoId, text, { act: 'note', doc_title: out.title, chars: out.chars });
   broadcastAll('convos:updated', { convoId });
   return { text, via: result.via, act: 'note', doc: out };
