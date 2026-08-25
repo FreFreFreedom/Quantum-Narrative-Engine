@@ -7863,6 +7863,7 @@ function roomUseIdea(text, { raw = false } = {}) {
 let roomExtractStatus = null;   // { running, total, pending, extracted, confirmed, rejected }
 let roomExtractChunks = [];     // rows with status='extracted', awaiting review
 let roomExtractTimer = null;
+let roomExtractCollapsed = new Set();   // chunk ids whose card body is folded away
 
 function roomExtractDocTitle(fileId) { return 'File: ' + fileId; }
 
@@ -7918,17 +7919,28 @@ function renderRoomExtract() {
   const clearBtn = roomExtractChunks.length > 0
     ? `<button type="button" class="ubtn ubtn--pill" data-room-extract-clear style="margin-left:8px;">Clear all</button>`
     : '';
-  const progress = `<div class="tv-empty" style="text-align:left;display:flex;align-items:center;gap:6px;">
-    <span>${st.running ? '📖' : '✅'} Read ${read} of ${st.total} section${st.total === 1 ? '' : 's'}${st.running ? ' — still going…' : ''}</span>${clearBtn}
+  const allCollapsed = roomExtractChunks.length > 0 && roomExtractChunks.every((c) => roomExtractCollapsed.has(c.id));
+  const collapseAllBtn = roomExtractChunks.length > 0
+    ? `<button type="button" class="ubtn ubtn--pill" data-room-extract-collapse-all style="margin-left:8px;">${allCollapsed ? 'Expand all' : 'Collapse all'}</button>`
+    : '';
+  const progress = `<div class="tv-empty" style="text-align:left;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span>${st.running ? '📖' : '✅'} Read ${read} of ${st.total} section${st.total === 1 ? '' : 's'}${st.running ? ' — still going…' : ''}</span>${clearBtn}${collapseAllBtn}
   </div>`;
-  const cards = roomExtractChunks.map((c) => `<div class="uc uc--row" data-room-extract-chunk="${qEscAttr(c.id)}">
-    <div class="uc-head"><span class="room-cardlabel">Section ${c.chunk_index}</span><span class="uc-title">${c.section_title ? qEsc(c.section_title) : `chars ${c.char_start}–${c.char_end}`}</span></div>
-    <div class="uc-body" style="white-space:pre-wrap;">${qEsc(c.extracted_text || '')}</div>
+  const cards = roomExtractChunks.map((c) => {
+    const collapsed = roomExtractCollapsed.has(c.id);
+    const body = collapsed ? '' : `<div class="uc-body" style="white-space:pre-wrap;">${qEsc(c.extracted_text || '')}</div>
     <div class="uc-acts" style="display:flex;gap:6px;">
       <button type="button" class="ubtn ubtn--pill is-primary" data-room-extract-confirm="${qEscAttr(c.id)}">Confirm</button>
       <button type="button" class="ubtn ubtn--pill" data-room-extract-reject="${qEscAttr(c.id)}">Reject</button>
-    </div>
-  </div>`).join('');
+    </div>`;
+    return `<div class="uc uc--row" data-room-extract-chunk="${qEscAttr(c.id)}">
+      <div class="uc-head" data-room-extract-toggle="${qEscAttr(c.id)}" style="cursor:pointer;" title="Collapse / expand this section">
+        <span class="room-cardlabel">Section ${c.chunk_index}</span>
+        <span class="uc-title">${c.section_title ? qEsc(c.section_title) : `chars ${c.char_start}–${c.char_end}`}</span>
+        <span class="uc-chevron" style="margin-left:auto;">${collapsed ? '▸' : '▾'}</span>
+      </div>${body}
+    </div>`;
+  }).join('');
   // Consolidated digest (plan "deep-document-extraction" §6) — written by the
   // second Claude account once every section has been read. Shown as its own
   // block, separate from the per-section cards above.
@@ -7952,6 +7964,21 @@ function roomExtractHostClick(ev) {
   if (rejectBtn) { roomExtractReject(rejectBtn.getAttribute('data-room-extract-reject')); return; }
   const clearBtn = ev.target.closest('[data-room-extract-clear]');
   if (clearBtn) { roomExtractClearAll(); return; }
+  const collapseAllBtn = ev.target.closest('[data-room-extract-collapse-all]');
+  if (collapseAllBtn) {
+    const allCollapsed = roomExtractChunks.length > 0 && roomExtractChunks.every((c) => roomExtractCollapsed.has(c.id));
+    if (allCollapsed) roomExtractCollapsed.clear();
+    else roomExtractChunks.forEach((c) => roomExtractCollapsed.add(c.id));
+    renderRoomExtract();
+    return;
+  }
+  const toggle = ev.target.closest('[data-room-extract-toggle]');
+  if (toggle) {
+    const id = toggle.getAttribute('data-room-extract-toggle');
+    if (roomExtractCollapsed.has(id)) roomExtractCollapsed.delete(id); else roomExtractCollapsed.add(id);
+    renderRoomExtract();
+    return;
+  }
 }
 
 function roomSelect(id) {
