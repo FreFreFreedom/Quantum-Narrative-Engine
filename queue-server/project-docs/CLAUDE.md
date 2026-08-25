@@ -66,6 +66,11 @@ node queue-server/scripts/migrate-ontology.js
 node queue-server/scripts/seed-knowledge.js
 ```
 
+Idea Studio conversations saved with `/note` are mirrored to
+`queue-server/project-docs/notes/` (one file per note, plus `index.md`). When a
+task relates to a saved note or earlier conversation, read the relevant file
+there.
+
 Testing the queue engine without a real Claude Code CLI install (see
 `queue-server/README.md` for the full mock-CLI recipe):
 ```bash
