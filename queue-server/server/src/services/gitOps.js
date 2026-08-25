@@ -304,6 +304,34 @@ export function listAgentBranches() {
   return out.split('\n').filter(Boolean).sort();
 }
 
+// Commit + push a fixed set of paths to the trunk (noteMirror.js). Scoped to those
+// paths only — never a blanket `git add -A` — so it cannot sweep up whatever the
+// user or an agent worktree happens to be mid-editing in the main checkout. Rebases
+// onto origin/<trunk> before pushing (same discipline as scripts/send-plan.js's
+// gitPush()) so this doesn't fight the queue's own git-ship pushes. Best-effort and
+// quiet throughout: a failed mirror push must never take down the caller (a note
+// save, a boot, a timer tick).
+export function commitAndPushPaths(paths, message) {
+  const main = mainRepo();
+  const list = (paths || []).filter(Boolean);
+  if (!main || !list.length) return { ok: false, reason: 'no_repo_or_paths' };
+
+  const addOut = gitWithRetry(['-C', main, 'add', '--', ...list], { quiet: true });
+  if (addOut === null) return { ok: false, reason: 'add_failed' };
+
+  const status = git(['-C', main, 'status', '--porcelain', '--', ...list], { quiet: true });
+  if (!status) return { ok: true, changed: false };
+
+  const commitOut = gitWithRetry(['-C', main, 'commit', '-m', message], { quiet: true });
+  if (commitOut === null) return { ok: false, reason: 'commit_failed' };
+
+  gitWithRetry(['-C', main, 'pull', '--rebase', 'origin', TRUNK, '--quiet'], { quiet: true });
+  const pushOut = gitWithRetry(['-C', main, 'push', 'origin', TRUNK], { quiet: true });
+  if (pushOut === null) return { ok: false, reason: 'push_failed' };
+
+  return { ok: true, changed: true };
+}
+
 // Boot-time GC (plan 2a): prune stale git metadata, then remove any worktree whose
 // task row no longer exists (its task id is not in knownTaskIds), or whose directory
 // is older than 7 days. Branch refs are untouched — only the working tree goes.

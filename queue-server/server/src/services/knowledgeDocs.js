@@ -21,6 +21,7 @@
 //    later conversation choosing the same words.
 
 import { randomUUID } from 'node:crypto';
+import { triggerNoteMirror } from './noteMirror.js';
 
 // Basenames of the files in data-seed/docs. Kept in sync with
 // bootstrapData.js#KNOWLEDGE_DESCRIPTIONS.
@@ -87,6 +88,11 @@ export function createKnowledgeNote(db, { title, description = '', content } = {
     INSERT INTO knowledge_docs (id, title, description, content, updated_at)
     VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
   `).run(randomUUID(), finalTitle, desc, body);
+
+  // Mirror to disk (debounced, fire-and-forget) so the terminal coding agent —
+  // which has no DB access — picks this note up on its next worktree. See
+  // services/noteMirror.js.
+  triggerNoteMirror(db);
 
   return { title: finalTitle, description: desc, chars: body.length };
 }
