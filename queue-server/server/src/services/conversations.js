@@ -70,6 +70,22 @@ export function listFiles() {
   });
 }
 
+// Notes live in knowledge_docs under the `Note: ` prefix (written by /note, see
+// runSaveNoteTurn below). This returns just {id, title, description} so the
+// Room's attach picker can draw a list without downloading each note's full
+// text. `id` is the note's title with the prefix stripped. Capped so a long
+// notebook doesn't flood the picker.
+const NOTE_LIST_CAP = 200;
+
+export function listNotes() {
+  if (!db) return [];
+  const rows = db.prepare(`SELECT title, description FROM knowledge_docs WHERE title LIKE ? ESCAPE '\\' ORDER BY title LIMIT ?`).all('Note: %', NOTE_LIST_CAP);
+  return rows.map((r) => {
+    const id = r.title.replace(/^Note: /, '');
+    return { id, title: id, description: r.description || '' };
+  });
+}
+
 // Attach a file to a conversation. The client has already extracted the file's
 // text (never send raw bytes here — see plans/files-in-the-room.md's "a file
 // never rides in the prompt" rule) and computed its own sha; this only persists

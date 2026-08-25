@@ -72,6 +72,13 @@ export function conversationsRoutes() {
     res.json({ files: convos.listFiles() });
   });
 
+  // GET /api/convos/notes — the notes saved with /note, mirrored into the
+  // knowledge store under the `Note: ` prefix, as a light list ({id, title,
+  // description}) for the Room's attach picker.
+  router.get('/notes', (req, res) => {
+    res.json({ notes: convos.listNotes() });
+  });
+
   // POST /api/convos/open — start one. No subject to pick: it gets a synthetic
   // one, and cards are attached afterwards (or never).
   router.post('/open', (req, res) => {
