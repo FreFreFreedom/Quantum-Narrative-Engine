@@ -7107,7 +7107,7 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // The picker's own copies of the two lists the Flow owns. Fetched here rather
 // than by calling loadSuggestions(), which also kicks off a world-look sync per
 // suggestion — work the picker has no use for.
-let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null;
+let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null, roomPickNotes = null;
 const ROOM_SEL_KEY = 'fmcns_room_thread';
 const ROOM_MIND_COLLAPSE_KEY = 'fmcns_room_mind_collapsed';
 const ROOM_ATTACHED_COLLAPSE_KEY = 'fmcns_room_attached_collapsed';
@@ -7147,7 +7147,7 @@ function initRoom() {
     if (roomPickOpen) {
       // Drop the cached source lists so the picker always re-fetches — otherwise
       // a file uploaded moments ago (or a newly queued task) would be missing.
-      roomPickIdeas = roomPickSuggestions = roomPickPlans = roomPickFiles = null;
+      roomPickIdeas = roomPickSuggestions = roomPickPlans = roomPickFiles = roomPickNotes = null;
       renderRoomCards();
       roomLoadPickSources();
       const s = document.getElementById('roomPickSearch');
@@ -8101,17 +8101,19 @@ async function roomDetach(type, id) {
 // they are not a registered subject type, so attaching one would need a backend
 // change, which this view does not make.
 async function roomLoadPickSources() {
-  if (roomPickIdeas && roomPickSuggestions && roomPickPlans && roomPickFiles) return;
-  const [ideas, sgs, plans, files] = await Promise.all([
+  if (roomPickIdeas && roomPickSuggestions && roomPickPlans && roomPickFiles && roomPickNotes) return;
+  const [ideas, sgs, plans, files, notes] = await Promise.all([
     api('/api/travaux/ideas').catch(() => null),
     api('/api/travaux/suggestions').catch(() => null),
     api('/api/convos/plans').catch(() => null),
     api('/api/convos/files').catch(() => null),
+    api('/api/convos/notes').catch(() => null),
   ]);
   roomPickIdeas = (ideas && ideas.ideas) || [];
   roomPickSuggestions = (sgs && sgs.suggestions) || [];
   roomPickPlans = (plans && plans.plans) || [];
   roomPickFiles = (files && files.files) || [];
+  roomPickNotes = (notes && notes.notes) || [];
   if (roomPickOpen) renderRoomPick();
 }
 
@@ -8296,6 +8298,7 @@ function roomPickRows() {
   (roomPickSuggestions || tvSuggestions || []).forEach(s => rows.push({ type: 'suggestion', label: 'Suggestion', id: s.id, title: s.title || s.id }));
   (roomPickPlans || []).forEach(p => rows.push({ type: 'plan', label: 'Plan', id: p.id, title: `${p.id} — ${p.status || 'UNKNOWN'}` }));
   (roomPickFiles || []).forEach(f => rows.push({ type: 'file', label: 'File', id: f.id, title: `${f.id} — ${f.status || 'UNKNOWN'}` }));
+  (roomPickNotes || []).forEach(n => rows.push({ type: 'note', label: 'Note', id: n.id, title: n.title || n.id }));
   (qPrompts || []).forEach(p => rows.push({ type: 'task', label: 'Task', id: p.id, title: p.title || p.prompt || p.id }));
   (typeof ARCH_DATA !== 'undefined' ? ARCH_DATA : []).forEach(c => rows.push({
     // Tech-tree pieces (`_stored`) are real DB rows; the rest live in this file,

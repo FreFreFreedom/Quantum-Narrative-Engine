@@ -15,6 +15,7 @@ import * as suggestions from './workSuggestions.js';
 import { getComponents, getComponentHistory } from './architecture.js';
 import * as archNodes from './architectureNodes.js';
 import { getReport } from './codeDiscovery.js';
+import { NOTE_PREFIX } from './knowledgeDocs.js';
 
 // Lazy import: promptQueue pulls in the whole queue machinery; loading it at
 // module init would make conversations import-heavy. Only needed for tasks.
@@ -438,6 +439,39 @@ registerSubject('plan', {
   },
 });
 
+
+// A note is short compared to a plan or a file (it's a saved conversation, not a
+// document), so its describe() sends up to the full per-subject block cap
+// (conversations.js#SUBJECT_BLOCK_CAP, 5000 chars) instead of a 1500-char opening —
+// convoContext() would truncate at that cap anyway if the note ran longer.
+const NOTE_DESCRIBE_CAP = 5000;
+
+registerSubject('note', {
+  label: 'Note',
+  load: (db, id) => {
+    if (!db) return null;
+    const row = db.prepare(`SELECT * FROM knowledge_docs WHERE title=?`).get(NOTE_PREFIX + id);
+    if (!row) return null;
+    return { id, title: NOTE_PREFIX + id, content: row.content, description: row.description };
+  },
+  title: (db, id) => {
+    const row = db?.prepare(`SELECT description FROM knowledge_docs WHERE title=?`).get(NOTE_PREFIX + id);
+    return row?.description || id;
+  },
+  describe: (subject) => {
+    const body = String(subject.content || '').replace(/\s+/g, ' ').trim().slice(0, NOTE_DESCRIBE_CAP);
+    const lines = [];
+    lines.push(`This is a NOTE — a conversation the owner saved with /note, kept in the app's knowledge base and re-read here as context.`);
+    lines.push(`Title: "${subject.title}".`);
+    lines.push(body);
+    return lines.join('\n');
+  },
+  handoff: () => {
+    // Nothing owns a note the way a seed owns its task row — the link lives on
+    // the conversation row. No owner-row back-reference needed.
+    return;
+  },
+});
 
 registerSubject('file', {
   label: 'File',
