@@ -71,6 +71,16 @@ Idea Studio conversations saved with `/note` are mirrored to
 task relates to a saved note or earlier conversation, read the relevant file
 there.
 
+The three standing reference documents are committed repo files (not in the DB
+only) at `queue-server/data-seed/docs/` and are always present in a worktree cut
+from `develop` — read them directly:
+- `ontology.md` — the fullest statement of the paradigm (ontological/semantic/
+  analogical layers, Integration Continuum, Scale Echo, Quantum Narrative Engine).
+  This is the "fractal ontology" note; read it whenever a task touches the model.
+- `films_master_list.md` — the ~199-film corpus across 12 clusters.
+- `chatgpt_archive.md` — the ~750k-token source archive. Large: search or read
+  specific sections, never pull it whole unless truly needed.
+
 Testing the queue engine without a real Claude Code CLI install (see
 `queue-server/README.md` for the full mock-CLI recipe):
 ```bash
