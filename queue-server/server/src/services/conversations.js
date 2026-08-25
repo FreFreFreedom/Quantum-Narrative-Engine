@@ -30,7 +30,7 @@ import { projectMapBlock } from './projectMap.js';
 import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
-import { createKnowledgeNote, uniqueTitle } from './knowledgeDocs.js';
+import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
 import { deliverNoteToRepo } from './gitOps.js';
 import { mindBlock, harvest as harvestMind } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
@@ -1447,17 +1447,19 @@ Respond with ONLY this JSON object and nothing else:
     .join('\n\n');
 
   const understanding = String(parsed?.content || '').trim();
-  const title = String(parsed?.title || convo.title || 'Conversation').trim() || 'Conversation';
+  // Stable title from the conversation so re-running /note updates the SAME note
+  // (and overwrites the same file) instead of creating a duplicate.
+  const baseTitle = String(convo.title || parsed?.title || 'Conversation').trim().replace(/\s+/g, ' ').slice(0, 160);
+  const noteTitle = baseTitle.startsWith(NOTE_PREFIX) ? baseTitle : `${NOTE_PREFIX}${baseTitle}`;
   const content = [
     understanding ? `## What this conversation understood\n\n${understanding}` : '',
     `## Full conversation\n\n${transcript}`,
   ].filter(Boolean).join('\n\n');
 
-  const out = createKnowledgeNote(db, {
-    title,
-    description: parsed?.description || '',
-    content,
-  });
+  const existing = db.prepare(`SELECT 1 FROM knowledge_docs WHERE title=?`).get(noteTitle);
+  const out = existing
+    ? updateKnowledgeNote(db, noteTitle, { description: parsed?.description || '', content })
+    : createKnowledgeNote(db, { title: baseTitle, description: parsed?.description, content });
   if (out.error) {
     return { text: out.message || 'I could not get a clean document out of that — say in one line what should be written down, then ask again.' };
   }

@@ -96,3 +96,16 @@ export function createKnowledgeNote(db, { title, description = '', content } = {
 
   return { title: finalTitle, description: desc, chars: body.length };
 }
+
+// Update an existing note's content in place (used when /note is run again on the
+// same conversation, so we refresh the note instead of duplicating it).
+export function updateKnowledgeNote(db, title, { description = '', content } = {}) {
+  if (!db) return { error: 'no_db' };
+  const row = db.prepare(`SELECT id FROM knowledge_docs WHERE title=?`).get(title);
+  if (!row) return { error: 'not_found' };
+  db.prepare(`
+    UPDATE knowledge_docs SET description=?, content=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    WHERE title=?
+  `).run(String(description || '').trim().replace(/\s+/g, ' ').slice(0, 400), String(content || ''), title);
+  return { title, description: String(description || '').trim().slice(0, 400), chars: String(content || '').length };
+}
