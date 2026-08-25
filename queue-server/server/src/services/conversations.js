@@ -1432,9 +1432,9 @@ Plain English, no jargon, no file names. Markdown headings are fine.
 Respond with ONLY this JSON object and nothing else:
 {"title":"a short title, a handful of words","description":"one sentence saying what is in it and when someone would want to read it","content":"the document itself"}`,
   });
-  if (result.error) return result;
-
-  const parsed = firstJson(result.text);
+  // The AI summary is a bonus. The note MUST still save the full conversation even
+  // if the model is unavailable or returns something we can't parse.
+  const parsed = !result.error ? firstJson(result.text) : null;
 
   // Capture the FULL conversation, not just the AI summary, so nothing is lost.
   const msgs = listMessages(convoId);
@@ -1447,14 +1447,15 @@ Respond with ONLY this JSON object and nothing else:
     .join('\n\n');
 
   const understanding = String(parsed?.content || '').trim();
+  const title = String(parsed?.title || convo.title || 'Conversation').trim() || 'Conversation';
   const content = [
     understanding ? `## What this conversation understood\n\n${understanding}` : '',
     `## Full conversation\n\n${transcript}`,
   ].filter(Boolean).join('\n\n');
 
   const out = createKnowledgeNote(db, {
-    title: parsed?.title,
-    description: parsed?.description,
+    title,
+    description: parsed?.description || '',
     content,
   });
   if (out.error) {
