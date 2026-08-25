@@ -31,6 +31,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, uniqueTitle } from './knowledgeDocs.js';
+import { deliverNoteToRepo } from './gitOps.js';
 import { mindBlock, harvest as harvestMind } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 
@@ -1443,7 +1444,10 @@ Respond with ONLY this JSON object and nothing else:
     return { text: out.message || 'I could not get a clean document out of that — say in one line what should be written down, then ask again.' };
   }
 
-  const text = `Written down as **${out.title}**. It now sits with the app's reference documents, which means every part of the app that can read them can read this — it is context from here on, not just a note in this thread.`;
+  // Deliver the note to the coding helper's folder (best-effort; never breaks /note).
+  deliverNoteToRepo({ title: out.title, content: parsed?.content });
+
+  const text = `Written down as **${out.title}**. It now sits with the app's reference documents, which means every part of the app that can read them can read this — it is context from here on, not just a note in this thread. I also dropped it into your project folder so the coding helper can pick it up.`;
   saveAssistantTurn(convoId, text, { act: 'note', doc_title: out.title, chars: out.chars });
   broadcastAll('convos:updated', { convoId });
   return { text, via: result.via, act: 'note', doc: out };

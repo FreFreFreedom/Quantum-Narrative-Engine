@@ -29,7 +29,7 @@ import { execFileSync } from 'node:child_process';
 // second push bought nothing and was a step to forget). Same env var and default as
 // queue-server/scripts/queue-runner.js, so there is one place to change it.
 const TRUNK = process.env.RUNNER_TRUNK || 'develop';
-import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync, appendFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync, appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join, basename } from 'node:path';
 
 let _mainRepo = null;
@@ -55,7 +55,7 @@ export function worktreesEnabled() {
   return process.env.GIT_OPS_DISABLED !== '1' && !!mainRepo() && !!worktreeRoot();
 }
 
-function git(args, { cwd, quiet = false } = {}) {
+export function git(args, { cwd, quiet = false } = {}) {
   try {
     return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
   } catch (e) {
@@ -362,4 +362,110 @@ export function gcWorktrees({ knownTaskIds = [], referencedPaths = [] } = {}) {
   }
   if (removed) console.log(`[gitOps] GC removed ${removed} stale worktree(s)`);
   return { removed };
+}
+
+// ─── /note delivery to the coding helper's folder ────────────────────────────
+// conversations.js#runSaveNoteTurn saves a note into the server DB (knowledge_docs),
+// invisible to the coding helper who only reads committed files under
+// queue-server/project-docs/. This mirrors the note into that folder and pushes it
+// to the trunk so a helper worktree (cut from origin/<trunk>) sees it.
+//
+// Best-effort: a delivery failure must NEVER break /note — the note is already
+// safe in the DB. Every failure logs and returns { ok:false }.
+//
+// Three situations:
+//   1. Local server on the Mac — mainRepo() finds the checkout; push uses ambient
+//      SSH creds. No config needed.
+//   2. Railway with GITHUB_TOKEN — no local git repo, so clone into a cache dir and
+//      push from there.
+//   3. No repo and no token — skipped; note stays in the DB only.
+
+const NOTE_GITHUB_REPO = process.env.NOTE_GITHUB_REPO || 'FreFreFreedom/Quantum-Narrative-Engine';
+const NOTE_DELIVERY_REPO_DIR = process.env.NOTE_DELIVERY_REPO_DIR
+  || (process.env.TMPDIR ? join(process.env.TMPDIR, 'fmcns-note-repo') : '/tmp/fmcns-note-repo');
+
+function noteSlug(title, used = new Set()) {
+  let slug = String(title || '')
+    .replace(/^Note:\s*/i, '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'note';
+  let candidate = slug, n = 2;
+  while (used.has(candidate)) { candidate = `${slug}-${n}`; n += 1; }
+  used.add(candidate);
+  return candidate;
+}
+
+function prepareNoteRepo() {
+  const local = mainRepo();
+  if (local) return { dir: local, tokenPush: false };
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    console.warn('[gitOps] note delivery: no git repo and no GITHUB_TOKEN — note saved to DB only');
+    return null;
+  }
+  const dir = NOTE_DELIVERY_REPO_DIR;
+  const auth = `https://x-access-token:${token}@github.com/${NOTE_GITHUB_REPO}.git`;
+  try {
+    if (!existsSync(join(dir, '.git'))) {
+      mkdirSync(dir, { recursive: true });
+      if (git(['clone', '--quiet', auth, dir]) === null) throw new Error('clone failed');
+    } else {
+      git(['fetch', 'origin', TRUNK, '--quiet'], { cwd: dir, quiet: true });
+    }
+    if (git(['checkout', TRUNK, '--quiet'], { cwd: dir, quiet: true }) === null) throw new Error(`checkout ${TRUNK} failed`);
+    git(['pull', '--quiet', 'origin', TRUNK], { cwd: dir, quiet: true });
+    if (git(['rev-parse', '--verify', '--quiet', `origin/${TRUNK}`], { cwd: dir, quiet: true }) === null) {
+      throw new Error(`no origin/${TRUNK} — refusing to create a stray branch`);
+    }
+    return { dir, tokenPush: true };
+  } catch (e) {
+    console.warn('[gitOps] note delivery: could not prepare repo:', e.message);
+    return null;
+  }
+}
+
+export function deliverNoteToRepo({ title, content } = {}) {
+  if (!title || !content) return { ok: false, reason: 'missing_args' };
+  const relDir = join('queue-server', 'project-docs', 'notes');
+  const used = new Set();
+  let finalSlug = noteSlug(title, used);
+  let finalRel = join(relDir, `${finalSlug}.md`);
+  const repo = prepareNoteRepo();
+  if (!repo) return { ok: false, reason: 'no_repo' };
+  const { dir, tokenPush } = repo;
+  if (existsSync(join(dir, finalRel))) {
+    finalSlug = noteSlug(title, used);
+    finalRel = join(relDir, `${finalSlug}.md`);
+  }
+  try {
+    mkdirSync(join(dir, relDir), { recursive: true });
+    writeFileSync(join(dir, finalRel), `# ${title}\n\n${content}\n`, 'utf8');
+  } catch (e) {
+    console.warn('[gitOps] note delivery: write failed:', e.message);
+    return { ok: false, reason: 'write_failed' };
+  }
+  const token = process.env.GITHUB_TOKEN;
+  const prev = tokenPush ? git(['remote', 'get-url', 'origin'], { cwd: dir, quiet: true }) : null;
+  if (tokenPush) {
+    git(['remote', 'set-url', 'origin', `https://x-access-token:${token}@github.com/${NOTE_GITHUB_REPO}.git`], { cwd: dir, quiet: true });
+  }
+  try {
+    if (git(['add', finalRel], { cwd: dir, quiet: true }) === null) throw new Error('add failed');
+    if (git(['commit', '-m', `note: ${finalSlug}`], { cwd: dir, quiet: true }) === null) throw new Error('commit failed');
+    if (git(['push', 'origin', `HEAD:refs/heads/${TRUNK}`, '--quiet'], { cwd: dir, quiet: true }) === null) {
+      console.warn(`[gitOps] note delivery: push to ${TRUNK} failed — run a git pull on the server machine if it is behind`);
+      return { ok: false, reason: 'push_failed' };
+    }
+    console.log(`[gitOps] note delivered → ${finalRel} (pushed to ${TRUNK})`);
+    return { ok: true, path: finalRel };
+  } catch (e) {
+    console.warn('[gitOps] note delivery: git step failed:', e.message);
+    return { ok: false, reason: 'git_failed' };
+  } finally {
+    if (tokenPush && prev) git(['remote', 'set-url', 'origin', prev], { cwd: dir, quiet: true });
+  }
 }
