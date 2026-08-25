@@ -17325,13 +17325,15 @@ document.addEventListener('keydown', (e) => {
   // when a territory filter hides its card and you then clear the filter.
   var cache = {};
   // Manual model picker (plan "chat-model-picker"): the lanes' live model lists +
-  // availability, fetched once from /api/queue/providers and shared by every
-  // Room composer on the page rather than re-fetched per card.
+  // availability, fetched once from /api/travaux/providers and shared by every
+  // Room composer on the page rather than re-fetched per card. (queueRoutes is
+  // mounted at /api/travaux, not /api/queue — a wrong path here 404s and the
+  // catalog falls back to {}, which greys out every lane except Auto.)
   var laneCatalog = null, laneCatalogPromise = null;
   function ensureLaneCatalog(){
     if(laneCatalog) return Promise.resolve(laneCatalog);
     if(laneCatalogPromise) return laneCatalogPromise;
-    laneCatalogPromise = api('/api/queue/providers').then(function(data){
+    laneCatalogPromise = api('/api/travaux/providers').then(function(data){
       laneCatalog = data || {};
       return laneCatalog;
     }).catch(function(){ laneCatalog = {}; return laneCatalog; });
