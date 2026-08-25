@@ -1437,7 +1437,7 @@ Respond with ONLY this JSON object and nothing else:
   const parsed = firstJson(result.text);
 
   // Capture the FULL conversation, not just the AI summary, so nothing is lost.
-  const msgs = getConvoMessages(convoId);
+  const msgs = listMessages(convoId);
   const transcript = msgs
     .map((m) => {
       const who = m.role === 'user' ? 'You' : 'Assistant';
