@@ -7,6 +7,8 @@
 //   node scripts/send-plan.js plans/my-plan.md --dry-run    # print what would be sent, send nothing
 //   node scripts/send-plan.js plans/my-plan.md --preset standard
 //   node scripts/send-plan.js plans/my-plan.md --account side
+//   node scripts/send-plan.js plans/my-plan.md --free            # OpenCode free lane (Hy3)
+//   node scripts/send-plan.js plans/my-plan.md --model opencode/…  # a specific free model
 //   node scripts/send-plan.js plans/my-plan.md --title "..."
 //   node scripts/send-plan.js plans/my-plan.md --again      # allow a duplicate title on purpose
 //   node scripts/send-plan.js plans/my-plan.md --manual     # invisible to the automated runner — run it yourself with `oc task <id>`
@@ -92,8 +94,13 @@ function gitPush() {
   const PRESET = opt('preset');
   const ACCOUNT = opt('account');
   const GROUP = flag('group');
+ // --free: run this on the OpenCode free lane instead of the Claude subscription.
+ // Defaults to Hy3, the only free model with a finished-task record here; --model
+ // overrides it with any id the app's catalogue knows.
+ const MODEL = opt('model');
+ const FREE = flag('free') || !!MODEL;
  // Everything that is not a flag or a flag's value is the plan path.
- const OPT_VALUES = new Set([PRESET, GROUP].filter(Boolean));
+ const OPT_VALUES = new Set([PRESET, GROUP, MODEL, ACCOUNT, TITLE].filter(Boolean));
  const positional = argv.filter((a) => !a.startsWith('--') && !OPT_VALUES.has(a));
 
 function die(msg) {
@@ -230,6 +237,7 @@ const payload = {
   ...(MANUAL ? { manual_run: 1 } : {}),
   ...(PREVIEW ? { preview_required: 1 } : {}),
   ...(ACCOUNT ? { account: ACCOUNT } : {}),
+  ...(FREE ? { provider: 'opencode', provider_model: MODEL || 'opencode/hy3-free' } : {}),
 };
 
 // Resolve (create or reuse) the umbrella group this plan's part goes under.
