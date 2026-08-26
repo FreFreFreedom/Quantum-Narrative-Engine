@@ -71,7 +71,7 @@ Idea Studio conversations saved with `/note` are mirrored to
 task relates to a saved note or earlier conversation, read the relevant file
 there.
 
-The three standing reference documents are committed repo files (not in the DB
+The standing reference documents are committed repo files (not in the DB
 only) at `queue-server/data-seed/docs/` and are always present in a worktree cut
 from `develop` — read them directly:
 - `ontology.md` — the fullest statement of the paradigm (ontological/semantic/
@@ -80,6 +80,15 @@ from `develop` — read them directly:
 - `films_master_list.md` — the ~199-film corpus across 12 clusters.
 - `chatgpt_archive.md` — the ~750k-token source archive. Large: search or read
   specific sections, never pull it whole unless truly needed.
+- `fractal_vision_spec.md` — a distilled, code-facing spec from a second, marker-indexed
+  extraction of the archive: diagonal navigation vs. entanglement jumps, the cell-to-cosmos
+  scale ladder, the per-scale vocabulary translation table, and the five-step method the
+  pattern engine is meant to automate. Read before touching `computeEchoes` or the
+  scale-echo/continuum code.
+- `fractal_vision_passages.md` — the 206 sourced passages behind that spec, kept for
+  citing a specific claim by page. Large: search by marker or page, don't pull it whole.
+  **Forbidden reading for `plans/calibration-test.md`** (see that plan) — it contains the
+  answer key for two of that test's three films.
 
 Testing the queue engine without a real Claude Code CLI install (see
 `queue-server/README.md` for the full mock-CLI recipe):

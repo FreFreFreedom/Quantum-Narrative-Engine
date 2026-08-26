@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-26 |
+| **DONE** | 2026-08-26 |
 
 ---
 
@@ -224,7 +224,7 @@ in the style of the existing three.
 ### 7. Write three plans — do not implement them
 
 Each is a **new file in `plans/`** with the standard header table
-(`| Status | Date |` / `| **PLANNED** | 2026-08-26 |`) and a row in the `## Open work`
+(`| Status | Date |` / `| **DONE** | 2026-08-26 |`) and a row in the `## Open work`
 table of `plans/README.md`. Each must stand alone the way this one does — the agent that
 runs it will not have seen this task.
 

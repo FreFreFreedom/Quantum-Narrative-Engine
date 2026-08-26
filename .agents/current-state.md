@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-24T23:22:03.655Z
+Generated: 2026-08-26T14:33:45.177Z
 
 ## Components
 
@@ -38,6 +38,14 @@ Generated: 2026-08-24T23:22:03.655Z
 
 ## Plan backlog
 
+- fix-google-model-abort-in-room — **PLANNED** 2026-08-26
+- marker-detection-calibration — **PLANNED** 2026-08-26
+- diagonal-vs-entanglement — **PLANNED** 2026-08-26
+- scale-as-an-ordered-ladder — **PLANNED** 2026-08-26
+- start-fresh-shows-no-sign — **DONE** 2026-08-26
+- auto-mirror-notes-for-coding-agent — **PLANNED** 2026-08-25
+- use-saved-note-as-conversation-context — **PLANNED** 2026-08-25
+- start-fresh-keep-conversation-visible — **DONE** 2026-08-25
 - chat-model-picker — **PLANNED** 2026-08-24
 - deep-document-extraction — **PLANNED** 2026-08-24
 - cancel-extraction-on-detach — **PLANNED** 2026-08-24
@@ -83,6 +91,8 @@ Generated: 2026-08-24T23:22:03.655Z
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
 - world-ideas-close-the-loop — **PLANNED** 2026-08-23
 - theme-follows-the-mac — **PLANNED** 2026-08-23
+- fractal-vision-paradigm — **DONE** 2026-08-26. Also fixed a contamination hazard: pages 1099-1101 are the answer key for two of the three films in [calibration-test.md](calibration-test.md), so both new docs joined its forbidden-files list with the reason stated inline. Wrote three follow-on plans (above, Open work) without implementing any.
+- script-coverage-test — **DONE** 2026-08-26. The plan's own premise was wrong — it described the corpus as heavy with Tarkovsky/Bresson/Dreyer/Béla Tarr; none of those are in `filmsIndex`, confirmed by grep. Findings report flags this and proceeds on the real 199-film list. No OpenSubtitles API key was available — all subtitle "found" results are from public listing pages, not the API itself; noted as a real gap for anyone building on this
 - tasks-start-without-waiting — DONE 2026-08-21. §6 (fanning the world-look out concurrently) deliberately **NOT** done — off the critical path once the gate went, and it risks benching the free lane; the analysis is kept in the plan
 - send-a-plan-from-the-terminal — DONE 2026-08-21
 - brainstorm-world-ideas — DONE 2026-08-20

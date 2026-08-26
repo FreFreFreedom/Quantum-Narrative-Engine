@@ -42,9 +42,17 @@ road for weeks.
 - `queue-server/data-seed/docs/chatgpt_archive.md`
 - `queue-server/data-seed/docs/ontology.md`
 - `queue-server/data-seed/docs/films_master_list.md`
+- `queue-server/data-seed/docs/fractal_vision_spec.md`
+- `queue-server/data-seed/docs/fractal_vision_passages.md`
 - `queue-server/project-docs/notes/**`
 - Anything under `plans/` other than this file
 - Any PDF in the repo
+
+The two `fractal_vision_*` files are on this list for the same reason as
+`chatgpt_archive.md`: they carry Antoine's own *Into the Wild* / *First Reformed*
+guilt-and-asceticism reading (traced up and down scale, p.1099-1101 of the source PDF) —
+the exact answer key for two of this test's three films. Opening either one is the same
+failure as opening the archive itself.
 
 Do not grep them either. Do not read the app's existing tag vocabulary anywhere it appears.
 If you find yourself about to look at an existing analysis of these films — stop. That is the
