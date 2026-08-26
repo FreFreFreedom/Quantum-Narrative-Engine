@@ -265,7 +265,7 @@ const NOW_COMPUTERS = {
     };
   },
   'thread-click': () => ({
-    text: 'Working. Click any connection (diagonal/entanglement/bridge) or node to jump to it, shared between Content and Map mode via one renderer now that the apps are unified.',
+    text: 'Working. Click any connection (vertical/entanglement/bridge) or node to jump to it, shared between Content and Map mode via one renderer now that the apps are unified.',
     status: 'Working',
   }),
   'fractal-zoom': () => ({

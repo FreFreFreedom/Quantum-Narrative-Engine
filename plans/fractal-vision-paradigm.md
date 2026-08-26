@@ -41,18 +41,18 @@ around line 3739):
 
 | App calls it | What the code actually does | What the paradigm means by that word |
 |---|---|---|
-| `diag` "diagonal" | shared director/writer (`meta.auteurs`) | tracing a pattern's **actual descent** — scale by scale, generation by generation — where every intermediate node is real, visited, causal. Answers *"how did this get here?"* |
+| `vert` "vertical" | shared director/writer (`meta.auteurs`) | tracing a pattern's **actual descent** — scale by scale, generation by generation — where every intermediate node is real, visited, causal. Answers *"how did this get here?"* |
 | `ent` "entanglement" | count of shared tags | discontinuous resonance — **no path, no causation traversed** — instant correspondence between two nodes sharing a pattern-signature. Answers *"where else does this pattern live?"* |
 | `bridge` "Scale Echo" | cross-type, `abs(Δ) < 0.07` on a shared continuum axis | not a named mechanism in the source — it is a proximity coincidence standing in for cross-scale |
 
-So **`ent` is roughly right but crude, and `diag` is misnamed.** Shared authorship is a
-production credit, not pattern descent. Diagonal navigation as the paradigm defines it
+So **`ent` is roughly right but crude, and `vert` is misnamed.** Shared authorship is a
+production credit, not pattern descent. Vertical navigation as the paradigm defines it
 exists nowhere in the codebase. There is already a comment near line 4381 complaining
-about the symptom ("one prolific director gives every one of their films a diagonal edge")
+about the symptom ("one prolific director gives every one of their films a vertical edge")
 without naming the cause.
 
 The source states the relationship precisely (p.1097): *"the jump finds kinship; the
-diagonal proves it. A jump is a hypothesis of shared structure; the diagonal is its
+vertical proves it. A jump is a hypothesis of shared structure; the vertical is its
 demonstration — recognition versus genealogy."* Neither the code nor
 `queue-server/data-seed/docs/ontology.md` draws that distinction; `ontology.md` §5 has
 "nonlocality" (the entanglement half) and nothing about traced transmission.
@@ -85,7 +85,7 @@ demonstration — recognition versus genealogy."* Neither the code nor
   exactly the `guilt_as_engine` axis and its `Ascetic Self-Destruction` pole). That plan's
   forbidden-files list covers "any PDF in the repo" but would **not** cover a new `.md`
   under `data-seed/docs/`. Filing these docs without step 5 silently invalidates that test.
-- **Markers 1 and 9 are not separable.** "Scale-jumping / diagonal navigation" (265 `full`)
+- **Markers 1 and 9 are not separable.** "Scale-jumping / vertical navigation" (265 `full`)
   and "Integration continuum / axes" (322 `full`) co-occur **175 times**; only 22 passages
   each carry one of them alone. As a label set the 10 markers collapse to roughly 6-7
   usable dimensions. Anything built on them must say so rather than reporting a false
@@ -162,7 +162,7 @@ That is expected and fine; do not hand-edit passage text.
 The distilled, code-facing spec. This is the file future agents will actually read.
 Sections:
 
-- **Diagonal navigation vs entanglement jumps** — the table from "The finding that
+- **Vertical navigation vs entanglement jumps** — the table from "The finding that
   matters" above, plus the p.1097-1101 definitions quoted from the source, plus the worked
   example the source gives: the guilt/asceticism pattern traced *down* (societal →
   institutional → family → psychic → somatic) and *up* (somatic trauma → psychic pattern →
@@ -173,7 +173,7 @@ Sections:
   sociological / religious / cosmological naming.
 - **The five-step method** — quoted from p.641-644, framed as the pipeline the pattern
   engine is meant to automate.
-- **What this corrects** — name the `diag` mislabel explicitly, and point at
+- **What this corrects** — name the `vert` mislabel explicitly, and point at
   `computeEchoes` in `queue-server/public/index.html`, so the next agent to touch that
   function finds it.
 
@@ -250,21 +250,21 @@ Why it earns its place: if a model cannot recognise "scale-jumping" in prose tha
 *written about* scale-jumping, it will not find it in film subtitles. This test can fail
 cheaply and save the subtitle work.
 
-**B. `plans/diagonal-vs-entanglement.md`** — code.
+**B. `plans/vertical-vs-entanglement.md`** — code.
 
-- **Rename** the author-similarity edge from `diag` to what it is (`auteur`), keeping the
-  edge — it is real and useful, just not diagonal navigation. In
+- **Rename** the author-similarity edge from `vert` to what it is (`auteur`), keeping the
+  edge — it is real and useful, just not vertical navigation. In
   `queue-server/public/index.html` this touches `computeEchoes`, `echoListHtml`'s label
-  map, `graphEdges`, the legend row, the `.dot.diag` / `.echo-kind` CSS classes, the dash
-  selection in the paint pass, and the far-band "diagonal edges only" rule. Mirror every
+  map, `graphEdges`, the legend row, the `.dot.vert` / `.echo-kind` CSS classes, the dash
+  selection in the paint pass, and the far-band "vertical edges only" rule. Mirror every
   change into `fmcns_navigator.html`.
 - **Give entanglement a stated signature.** Today the reason string is
   `"N shared patterns — a, b"`. The paradigm wants the shared pattern-signature named and
   the absence of lineage stated ("same bones, different bodies"). Cheapest honest version:
   keep the shared-tag computation, change only the `why` string.
-- **Diagonal navigation is a new thing — scope it as one, and stop.** It needs real
+- **Vertical navigation is a new thing — scope it as one, and stop.** It needs real
   intermediate nodes at different scales, which the app does not have (three scale labels,
-  no ordering). State plainly in the plan that diagonal navigation is **blocked on plan C**,
+  no ordering). State plainly in the plan that vertical navigation is **blocked on plan C**,
   and do not design a two-node "descent" that fakes it.
 
 Note in that plan, for whoever runs it: the rename is find-and-replace plus a legend
@@ -330,7 +330,7 @@ Verify the rest by reading:
   reason**.
 - `CLAUDE.md`'s standing-documents list names both new files.
 - Each of the three new plans has a `plans/README.md` row with status PLANNED, and plan B
-  says explicitly that diagonal navigation is blocked on plan C.
+  says explicitly that vertical navigation is blocked on plan C.
 - `git status` shows no PDF, no `fvpe.txt`, no extraction script.
 
 ## Out of scope

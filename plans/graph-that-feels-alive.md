@@ -168,7 +168,7 @@ block (`:2728-2737`) are good and are reused untouched.
 ### 1.4 d3-force replaces `runSim()`
 
 Keep `buildGraph()` (`:2633`) and the three edge-computing functions
-(`computeDiagonal`, `computeEntanglement`, `computeBridges`, `:2607-2631`) exactly
+(`computeVertical`, `computeEntanglement`, `computeBridges`, `:2607-2631`) exactly
 as they are — they define what the graph *means* and are not the problem. Keep
 `computeCentroids()` / `centroidFor()` too; they now feed `forceX`/`forceY`
 instead of a hand-written pull.
@@ -177,7 +177,7 @@ instead of a hand-written pull.
 sim = d3.forceSimulation(nodes)
   .force('charge', d3.forceManyBody().strength(-160).theta(0.9).distanceMax(700))
   .force('link', d3.forceLink(links).id(d => d.id)
-    .distance(e => e.type === 'diag' ? 70 : e.type === 'ent' ? 110 : 190)
+    .distance(e => e.type === 'vert' ? 70 : e.type === 'ent' ? 110 : 190)
     .strength(e => e.type === 'bridge' ? 0.04 : 0.35))
   .force('collide', d3.forceCollide(d => nodeRadius(d) + 4).iterations(2))
   .force('cx', d3.forceX(d => centroidFor(d).x).strength(0.05))
@@ -305,7 +305,7 @@ scale, not merely be bigger.
 
 | Zoom | What is drawn |
 |---|---|
-| `< 0.6` | Cluster regions with names, small uniform dots, diagonal edges only. Reads as a map of territories. |
+| `< 0.6` | Cluster regions with names, small uniform dots, vertical edges only. Reads as a map of territories. |
 | `0.6 – 2.5` | Today's behaviour, better drawn: degree-sized nodes, the existing edge rules, labels for high-degree nodes. |
 | `> 2.5` | Labels for everything with collision avoidance, plus **images**. |
 
@@ -392,7 +392,7 @@ Not one feature; the interaction design that makes it feel like a tool.
 
 | Keep as-is | Where |
 |---|---|
-| `buildGraph`, `computeDiagonal`, `computeEntanglement`, `computeBridges` | `:2607-2666` |
+| `buildGraph`, `computeVertical`, `computeEntanglement`, `computeBridges` | `:2607-2666` |
 | `computeCentroids`, `centroidFor` | `:2302-2320` |
 | `edgeVisible`, `labelVisible`, `neighborSet`, `clusterForEdge`, `edgeKey` | `:2673-2723` |
 | the spotlight priority block | `:2728-2737` |

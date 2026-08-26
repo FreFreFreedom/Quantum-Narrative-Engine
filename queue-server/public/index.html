@@ -199,13 +199,13 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .continuum-marker { position:absolute; top:-2px; width:2.5px; height:9px; background:var(--c-ink-solid); border-radius:2px; }
 .continuum-poles { display:flex; justify-content:space-between; font-size:8.5px; color:var(--c-ink-4); }
 .section-title { font-size:10px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; margin:12px 0 6px; }
-.section-title.diag { color:var(--c-warn); }
+.section-title.vert { color:var(--c-warn); }
 .section-title.ent { color:var(--c-violet); }
 .section-title.bridge { color:var(--c-brand); }
 .conn { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; border-radius:6px; margin-bottom:4px; cursor:pointer; background:var(--c-surface); border:1px solid var(--c-border); font-size:11px; }
 .conn:hover { background:var(--c-surface-2); }
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
-.dot.diag { background:#d99a3d; } .dot.ent { background:#8b6fb0; } .dot.bridge { background:#4f9d7a; }
+.dot.vert { background:#d99a3d; } .dot.ent { background:#8b6fb0; } .dot.bridge { background:#4f9d7a; }
 .empty { font-size:11.5px; color:var(--c-ink-4); }
 .tmdb-origtitle { font-size:11px; color:var(--c-ink-3); margin-top:2px; }
 .tmdb-alt { font-size:10.5px; color:var(--c-ink-4); font-weight:400; }
@@ -248,7 +248,7 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .echo-line { font-size:10.5px; color:var(--c-ink-2); padding:3px 0; display:flex; gap:6px; align-items:baseline; cursor:pointer; }
 .echo-line:hover { color:#000; }
 .echo-kind { font-size:8.5px; padding:1px 5px; border-radius:20px; flex-shrink:0; }
-.echo-kind.diag { background:var(--c-warn-tint); color:var(--c-warn); }
+.echo-kind.vert { background:var(--c-warn-tint); color:var(--c-warn); }
 .echo-kind.ent { background:var(--c-violet-tint); color:var(--c-violet); }
 .echo-kind.bridge { background:#d9eee4; color:var(--c-brand); }
 .echo-why { color:var(--c-ink-4); font-size:9.5px; }
@@ -2052,7 +2052,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
     </div>
     <div class="scopebar" id="scopeBar" aria-label="What the view is narrowed to" data-src="Content navigator → scope breadcrumb | fmcns_navigator.html: scopeTrail()/renderScopeBar()/scopeGoTo() — ego view, cluster, theme cluster and search, and the way back out of each"></div>
-    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + diagonal edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | ALSO the Landscape view (the embedding map), which is this same canvas, renderer and camera laid out by MEANING instead of by connection — no edges are drawn at all, nearness IS the statement: landscapeBuild() gives every entity a sparse vector over the 106 theme communities (each tag's community, weighted by how rare that community is) plus the tags at least two entities share, takes cosine similarity, and keeps the top LS_K neighbours as invisible forceLink springs; installLayoutForces('landscape') swaps the graph's forces for those springs; an entity with no themes at all is parked honestly on an outer ring at its roman-numeral cluster's anchor (landscapeGeometry()), drawn hollow and named by the same cluster-region pass. The matrix is cached per active entity set in LS and never recomputed on a redraw | backend: GET /api/ontology/entities, /api/ontology/clusters, /api/ontology/tag-communities (services/tagCommunities.js)">
+    <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + vertical edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | ALSO the Landscape view (the embedding map), which is this same canvas, renderer and camera laid out by MEANING instead of by connection — no edges are drawn at all, nearness IS the statement: landscapeBuild() gives every entity a sparse vector over the 106 theme communities (each tag's community, weighted by how rare that community is) plus the tags at least two entities share, takes cosine similarity, and keeps the top LS_K neighbours as invisible forceLink springs; installLayoutForces('landscape') swaps the graph's forces for those springs; an entity with no themes at all is parked honestly on an outer ring at its roman-numeral cluster's anchor (landscapeGeometry()), drawn hollow and named by the same cluster-region pass. The matrix is cached per active entity set in LS and never recomputed on a redraw | backend: GET /api/ontology/entities, /api/ontology/clusters, /api/ontology/tag-communities (services/tagCommunities.js)">
       <canvas id="graphCanvas"></canvas>
       <div class="legend" id="legend"></div>
       <div id="graphLive" class="sr-only" aria-live="polite"></div>
@@ -2711,7 +2711,7 @@ function selectCluster(code) {
   if (c && c.name && c.name.includes(',')) html += `<div class="note">${c.name}</div>`;
   html += `<div class="section-title" style="color:var(--c-ink-3);">Entities in this cluster (${members.length})</div>`;
   html += members.length
-    ? members.slice(0, 40).map(o => `<div class="conn" data-goto="${o.id}"><span class="dot ${o.type==='film'?'diag':o.type==='country'?'bridge':'ent'}"></span>${o.name} <span style="opacity:.6;">(${o.type})</span></div>`).join('')
+    ? members.slice(0, 40).map(o => `<div class="conn" data-goto="${o.id}"><span class="dot ${o.type==='film'?'vert':o.type==='country'?'bridge':'ent'}"></span>${o.name} <span style="opacity:.6;">(${o.type})</span></div>`).join('')
     : '<div class="empty">None.</div>';
   if (members.length > 40) html += `<div class="empty">…and ${members.length-40} more.</div>`;
 
@@ -3750,7 +3750,7 @@ function computeEchoes(e, limit = 8) {
     all.forEach(o => {
       if (o.id === e.id) return;
       const shared = ((o.meta && o.meta.auteurs) || []).filter(a => auteurs.includes(a));
-      if (shared.length) out.push({ o, kind:'diag', strength: 100 + shared.length, why:`shared author — ${shared[0]}` });
+      if (shared.length) out.push({ o, kind:'vert', strength: 100 + shared.length, why:`shared author — ${shared[0]}` });
     });
   }
   const tags = e.tags || [];
@@ -3789,7 +3789,7 @@ function computeEchoes(e, limit = 8) {
 function echoListHtml(echoes) {
   if (!echoes.length) return '<div class="empty">No echoes found anywhere in the corpus.</div>';
   return echoes.map(r => `<div class="echo-line" data-goto="${r.o.id}">
-      <span class="echo-kind ${r.kind}">${r.kind==='diag'?'author':r.kind==='ent'?'pattern':'scale echo'}</span>
+      <span class="echo-kind ${r.kind}">${r.kind==='vert'?'author':r.kind==='ent'?'pattern':'scale echo'}</span>
       <span><b>${qEsc(r.o.name)}</b> <span style="opacity:.55;">(${r.o.type})</span><br><span class="echo-why">${qEsc(r.why)}</span></span>
     </div>`).join('');
 }
@@ -3818,15 +3818,15 @@ function toggleEchoes(id, btn) {
   });
 }
 
-function computeDiagonal(e, pool) {
+function computeVertical(e, pool) {
   const auteurs = (e.meta && e.meta.auteurs) || [];
   if (!auteurs.length) return [];
   return pool.filter(o => o.id!==e.id && ((o.meta&&o.meta.auteurs)||[]).some(a=>auteurs.includes(a)));
 }
-function computeEntanglement(e, pool, diagIds) {
+function computeEntanglement(e, pool, vertIds) {
   const tags = e.tags||[];
   if (!tags.length) return [];
-  return pool.filter(o => o.id!==e.id && !diagIds.has(o.id) && (o.tags||[]).some(t=>tags.includes(t)))
+  return pool.filter(o => o.id!==e.id && !vertIds.has(o.id) && (o.tags||[]).some(t=>tags.includes(t)))
     .map(o => ({ o, shared: (o.tags||[]).filter(t=>tags.includes(t)) }))
     .sort((a,b)=>b.shared.length-a.shared.length).slice(0,3); // top 3 by default — reduces visual noise
 }
@@ -3851,15 +3851,15 @@ function computeEdges(pool) {
   const seen = new Set();
   const out = [];
   pool.forEach(e => {
-    const diag = computeDiagonal(e, pool);
-    const diagIds = new Set(diag.map(o=>o.id));
-    diag.forEach(o => {
+    const vert = computeVertical(e, pool);
+    const vertIds = new Set(vert.map(o=>o.id));
+    vert.forEach(o => {
       const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k);
       const auteurs = (e.meta&&e.meta.auteurs)||[];
       const shared = auteurs.filter(a => ((o.meta&&o.meta.auteurs)||[]).includes(a));
-      out.push({a:e.id,b:o.id,type:'diag',auteur:shared[0]||null});
+      out.push({a:e.id,b:o.id,type:'vert',auteur:shared[0]||null});
     });
-    computeEntanglement(e, pool, diagIds).forEach(({o,shared})=>{
+    computeEntanglement(e, pool, vertIds).forEach(({o,shared})=>{
       const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k);
       out.push({a:e.id,b:o.id,type:'ent',tags:shared});
     });
@@ -3995,7 +3995,7 @@ function installLayoutForces(mode) {
     // weak so cross-scale echoes hint at a relationship without dragging the two
     // clusters into each other.
     .force('link', d3.forceLink(links).id(d => d.id)
-      .distance(e => e.type === 'diag' ? 70 : e.type === 'ent' ? 110 : 190)
+      .distance(e => e.type === 'vert' ? 70 : e.type === 'ent' ? 110 : 190)
       .strength(e => e.type === 'bridge' ? 0.04 : 0.35))
     // The force the old loop never had: nothing may sit on top of anything else.
     .force('collide', d3.forceCollide(d => nodeRadius(d) + 4).iterations(2))
@@ -4021,12 +4021,12 @@ function neighborSet(id) {
   edges.forEach(e => { if(e.a===id) set.add(e.b); else if(e.b===id) set.add(e.a); });
   return set;
 }
-// An edge is drawn by default only if it's a diagonal edge (rare, always meaningful) or
+// An edge is drawn by default only if it's a vertical edge (rare, always meaningful) or
 // touches the spotlighted node. Entanglement/bridge edges elsewhere only appear once
 // "show all connections" is on, or once you focus/hover one of their endpoints.
 function edgeVisible(e, spotlight) {
   if (showAllConnections) return true;
-  if (e.type === 'diag') return true;
+  if (e.type === 'vert') return true;
   if (spotlight && (spotlight.has(e.a) || spotlight.has(e.b))) return true;
   return false;
 }
@@ -4052,7 +4052,7 @@ function edgeKey(e){ return [e.a,e.b,e.type,e.axis||''].join('|'); }
 function clusterForEdge(e) {
   const pool = activeEntities();
   const set = new Set([e.a, e.b]);
-  if (e.type === 'diag' && e.auteur) {
+  if (e.type === 'vert' && e.auteur) {
     pool.forEach(o => { if (((o.meta&&o.meta.auteurs)||[]).includes(e.auteur)) set.add(o.id); });
   } else if (e.type === 'ent' && e.tags && e.tags.length) {
     pool.forEach(o => { if ((o.tags||[]).some(t => e.tags.includes(t))) set.add(o.id); });
@@ -4104,7 +4104,7 @@ function renderFrame() {
 // their three weights rather than an `if`, which is what makes a threshold crossing a
 // ~200ms cross-fade instead of a pop.
 //
-//   far  (< 0.6)    cluster regions with names, small uniform dots, diagonal edges only
+//   far  (< 0.6)    cluster regions with names, small uniform dots, vertical edges only
 //   mid  (0.6-2.5)  the familiar picture: degree-sized nodes, the existing edge rules,
 //                   labels on the high-degree nodes
 //   near (> 2.5)    a label on everything that fits, collision-avoided
@@ -4378,7 +4378,7 @@ function graphSpotlight() {
 
 // Size carries structure: a node's radius grows with the square root of its degree, so a
 // hub is visibly a hub at a glance. sqrt rather than linear because degree here is very
-// long-tailed (one prolific director gives every one of their films a diagonal edge to
+// long-tailed (one prolific director gives every one of their films a vertical edge to
 // every other), and a linear map would turn that one cluster into beachballs. Clamped at
 // both ends — a lone node still has to be clickable, a hub still has to fit its region.
 // This replaced the flat 6/8/11, and it feeds forceCollide too, so the layout now leaves
@@ -4881,21 +4881,21 @@ function paintGraph() {
     const a = byId[e.a], b = byId[e.b]; if (!a || !b) return;
     const visible = edgeVisible(e, spotlight);
     if (!visible && !spotlight) return; // fully hidden by default, not just faded — keeps the graph legible
-    const stroke = e.type==='diag'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
+    const stroke = e.type==='vert'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
     const dash = e.type==='ent'?DASH_ENT: e.type==='bridge'?DASH_BRIDGE:DASH_NONE;
     const dimmed = spotlight && !(spotlight.has(e.a) && spotlight.has(e.b));
     const isThisEdge = activeEdge && edgeKey(activeEdge) === edgeKey(e);
-    // Far band: diagonal edges only. A shared author is a fact about the territory and
+    // Far band: vertical edges only. A shared author is a fact about the territory and
     // survives being zoomed out; the entanglement/bridge mesh at 0.3x is grey noise over
     // the whole stage. What the pointer is actually on is exempt — hovering a node must
     // still show you its connections, whatever the zoom.
     // ...and so is "show all connections": a control the user just pressed must not be
     // quietly undone by where the camera happens to be.
-    const standing = e.type === 'diag' || showAllConnections ||
+    const standing = e.type === 'vert' || showAllConnections ||
       (spotlight && (spotlight.has(e.a) || spotlight.has(e.b)));
     const band = standing ? 1 : 1 - bw.far;
-    const opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='diag'?0.75:0.55)));
-    const width = isThisEdge ? (e.type==='diag'?2.6:2.2) : (e.type==='diag'?1.6:1.3);
+    const opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='vert'?0.75:0.55)));
+    const width = isThisEdge ? (e.type==='vert'?2.6:2.2) : (e.type==='vert'?1.6:1.3);
     if (opacity <= 0.004) return; // the SVG drew these at opacity 0; not drawing them is the same picture
     ctx.globalAlpha = opacity;
     ctx.strokeStyle = stroke;
@@ -5382,7 +5382,7 @@ function renderLegend(){
     html += '<div class="row"><span class="dotswatch" style="background:var(--c-ink-4)"></span> Theme territory — its label names it</div>';
   } else {
     html = '<div class="section-label">Connections</div>';
-    html += '<div class="row"><span class="swatch"></span> Diagonal (shared director/writer)</div>';
+    html += '<div class="row"><span class="swatch"></span> Vertical (shared director/writer)</div>';
     html += '<div class="row"><span class="swatch e"></span> Entanglement (shared tags)</div>';
     html += '<div class="row"><span class="swatch b"></span> Continuum bridge (cross-scale echo)</div>';
   }
@@ -5870,7 +5870,7 @@ function normPerson(s) { return String(s || '').toLowerCase().normalize('NFD').r
 
 // "Connected by cast" — other corpus films sharing at least one actor with this
 // one (from the verified TMDb cast). The corpus already links films by shared
-// director/writer ("diagonal"); this is the cast analogue, so directors are
+// director/writer ("vertical"); this is the cast analogue, so directors are
 // deliberately excluded here to keep the two sections non-redundant.
 function castConnections(e) {
   const mine = new Set((e.enrichment && e.enrichment.cast || []).map(normPerson).filter(Boolean));
@@ -6047,13 +6047,13 @@ async function selectEntity(id){
     html += `<div class="section-title" style="color:var(--c-ink-3);">📚 Books reflecting this pattern</div><div id="booksHost"><div class="empty">Loading…</div></div>`;
 
     const pool = activeEntities();
-    const diag = computeDiagonal(e, pool);
-    const diagIds = new Set(diag.map(o=>o.id));
-    const ent = computeEntanglement(e, pool, diagIds);
+    const vert = computeVertical(e, pool);
+    const vertIds = new Set(vert.map(o=>o.id));
+    const ent = computeEntanglement(e, pool, vertIds);
     const bridges = bridgesOn ? computeBridges(e, pool) : [];
 
-    html += `<div class="section-title diag">Diagonal (${diag.length})</div>`;
-    html += diag.length ? diag.slice(0,6).map(o=>`<div class="conn" data-goto="${o.id}"><span class="dot diag"></span>${o.name}</div>`).join('') : '<div class="empty">None.</div>';
+    html += `<div class="section-title vert">Vertical (${vert.length})</div>`;
+    html += vert.length ? vert.slice(0,6).map(o=>`<div class="conn" data-goto="${o.id}"><span class="dot vert"></span>${o.name}</div>`).join('') : '<div class="empty">None.</div>';
     html += `<div class="section-title ent">Entanglement (${ent.length})</div>`;
     html += ent.length ? ent.map(({o,shared})=>`<div class="conn" data-goto="${o.id}"><span class="dot ent"></span>${o.name} — ${shared.join(', ')}</div>`).join('') : '<div class="empty">None.</div>';
     html += `<div class="section-title bridge">Continuum bridges (${bridges.length})</div>`;
@@ -6099,7 +6099,7 @@ async function selectEdgeConnection(e) {
   syncRightPanelOpen();
   requestRender();
   const cluster = Array.from(clusterForEdge(e)).map(id => byId[id]).filter(Boolean);
-  const kindLabel = e.type === 'diag' ? 'Shared author' : e.type === 'ent' ? 'Shared pattern' : 'Continuum proximity';
+  const kindLabel = e.type === 'vert' ? 'Shared author' : e.type === 'ent' ? 'Shared pattern' : 'Continuum proximity';
   let html = `<div class="section-title" style="color:var(--c-ink-3);">Connection</div>`;
   html += `<div class="lens-panel"><div class="lens-tag">${kindLabel}</div><div id="edgeExplainHost"><div class="empty">Loading…</div></div></div>`;
   html += `<div class="section-title" style="color:var(--c-ink-3);">Entities in this cluster (${cluster.length})</div>`;
@@ -6124,7 +6124,7 @@ async function selectEdgeConnection(e) {
   });
 
   const explainHost = document.getElementById('edgeExplainHost');
-  if (e.type === 'diag') {
+  if (e.type === 'vert') {
     explainHost.innerHTML = `Every entity here shares the same director/writer (<b>${qEsc(e.auteur || 'unknown')}</b>) — an authorial fingerprint running across otherwise unrelated stories.`;
     return;
   }
@@ -13617,10 +13617,10 @@ const ARCH_DATA = [
     status:'Working', depends:['semantic-layer'] },
 
   { id:'thread-click', territory:'experience', name:'Thread Click',
-    what:'Clicking any connection (diagonal / entanglement / bridge) on an entity jumps you to the connected entity.',
+    what:'Clicking any connection (vertical / entanglement / bridge) on an entity jumps you to the connected entity.',
     why:'This is the basic unit of "following a thread" through the graph — the smallest interaction the whole navigation model depends on.',
     input:'A rendered connection row in the detail panel', output:'The graph refocuses and the detail panel re-renders on the new entity',
-    now:'Working in the Fractal Navigator (click any diagonal/entanglement/bridge row, or any node). Not yet unified — the three older prototypes (map, film corpus, character navigator) each implement their own separate version of this.',
+    now:'Working in the Fractal Navigator (click any vertical/entanglement/bridge row, or any node). Not yet unified — the three older prototypes (map, film corpus, character navigator) each implement their own separate version of this.',
     next:'Unify click-through behavior across all four apps instead of four separate implementations.',
     status:'Working', depends:['analogical-layer','ontological-layer'] },
 

@@ -81,7 +81,7 @@ from `develop` — read them directly:
 - `chatgpt_archive.md` — the ~750k-token source archive. Large: search or read
   specific sections, never pull it whole unless truly needed.
 - `fractal_vision_spec.md` — a distilled, code-facing spec from a second, marker-indexed
-  extraction of the archive: diagonal navigation vs. entanglement jumps, the cell-to-cosmos
+  extraction of the archive: vertical navigation vs. entanglement jumps, the cell-to-cosmos
   scale ladder, the per-scale vocabulary translation table, and the five-step method the
   pattern engine is meant to automate. Read before touching `computeEchoes` or the
   scale-echo/continuum code.
@@ -229,7 +229,7 @@ whole thing).
 
 - **`fmcns_navigator.html`** — the current, single actively-maintained app
   (Cowork artifact `fmcns-fractal-navigator`). Five modes/tabs: Content (unified
-  graph of characters/films/countries with diagonal/entanglement/continuum-bridge
+  graph of characters/films/countries with vertical/entanglement/continuum-bridge
   edges), Map (real country-boundary geography), Architecture Navigator (the
   meta-view of FMCNS's own build), Queue, Travaux. Talks to the deployed backend
   via a hardcoded `API_BASE` / `FMCNS_CHAT_SERVER` constant near the top of the

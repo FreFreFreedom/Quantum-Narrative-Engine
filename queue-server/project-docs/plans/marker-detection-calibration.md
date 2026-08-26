@@ -36,7 +36,7 @@ subtitle-fetching effort to find that out the hard way.
 
 Defined in `queue-server/data-seed/docs/fractal_vision_spec.md`:
 
-1. Scale-jumping / diagonal navigation
+1. Scale-jumping / vertical navigation
 2. Three-layer talk (ontological / semantic / analogical)
 8. Quantum Narrative Engine language
 9. Integration continuum / axes
@@ -62,7 +62,7 @@ that line is the answer.
 
 Provide the model **only**:
 - the four marker names and their one-paragraph definitions from `fractal_vision_spec.md`
-  (the "Diagonal navigation vs entanglement jumps" section covers markers 1/2/8; write one
+  (the "Vertical navigation vs entanglement jumps" section covers markers 1/2/8; write one
   more paragraph for marker 9 if the spec doesn't already state it plainly)
 - the bare passage text (source, page number, and speaker are fine to keep — the marker
   line is what must be hidden)

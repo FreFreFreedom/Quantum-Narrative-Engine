@@ -4,31 +4,31 @@ Distilled, code-facing version of the paradigm passages in `fractal_vision_passa
 (206 passages, full text, source page numbers). Read this first; go to that file only for
 the sourced quote behind a specific claim.
 
-## Diagonal navigation vs. entanglement jumps
+## Vertical navigation vs. entanglement jumps
 
 The Content graph draws three kinds of edge (`computeEchoes` in `fmcns_navigator.html` /
 `queue-server/public/index.html`), and today two of them are named wrong.
 
 | App calls it | What the code actually does | What the paradigm means by that word |
 |---|---|---|
-| `diag` "diagonal" | shared director/writer (`meta.auteurs`) | tracing a pattern's **actual descent** — scale by scale, generation by generation. Every intermediate node is real, visited, causal. Answers *"how did this get here?"* |
+| `vert` "vertical" | shared director/writer (`meta.auteurs`) | tracing a pattern's **actual descent** — scale by scale, generation by generation. Every intermediate node is real, visited, causal. Answers *"how did this get here?"* |
 | `ent` "entanglement" | count of shared tags | discontinuous resonance — **no path, no causation traversed**, just instant correspondence between two nodes sharing a pattern-signature. Answers *"where else does this pattern live?"* |
 | `bridge` "Scale Echo" | cross-type, `abs(Δ) < 0.07` on a shared continuum axis | a proximity coincidence standing in for "cross-scale" — not a named mechanism in the source |
 
-Shared authorship is a production credit, not pattern descent. **Real diagonal navigation
+Shared authorship is a production credit, not pattern descent. **Real vertical navigation
 does not exist anywhere in this codebase yet.** `ent` is the right idea, crudely measured.
 
 The source states the relationship between the two precisely (p.1097-1098, quoted in full
 in `fractal_vision_passages.md`):
 
-> "Diagonal navigation is continuous transmission: you trace the pattern's actual
+> "Vertical navigation is continuous transmission: you trace the pattern's actual
 > descent — scale by scale, generation by generation — from Plessy through doctrine,
 > institution, family, into one body today. Every intermediate node is real, visited,
 > causal. It answers *how did this get here?* Entanglement jumps are discontinuous
 > resonance: no path, no causation traversed — just instant correspondence between two
 > nodes anywhere in the space that share the same pattern-signature. Same bones, no
-> lineage. Their relationship: the jump finds kinship; the diagonal proves it. A jump is
-> a hypothesis of shared structure; the diagonal is its demonstration, recognition versus
+> lineage. Their relationship: the jump finds kinship; the vertical proves it. A jump is
+> a hypothesis of shared structure; the vertical is its demonstration, recognition versus
 > genealogy."
 
 ### Worked example from the source (p.1099-1101)
@@ -45,7 +45,7 @@ inherited shame → individual internalises it as self-punishment → somatic ex
 triggers family shame and old secrets → the family seeks institutional help (therapy,
 religion, activism) → the story is amplified into a cultural myth (a memoir, a movement).
 
-Neither direction skips a rung. That is what makes it diagonal navigation rather than a
+Neither direction skips a rung. That is what makes it vertical navigation rather than a
 jump — every node between the two ends is real and visited.
 
 ## The scale ladder
@@ -94,8 +94,8 @@ float per axis, no split structure). Step 3 needs the scale ladder above. Step 4
 ## What this corrects
 
 The next time `computeEchoes` (`queue-server/public/index.html`, and its mirror in
-`fmcns_navigator.html`) is touched: the `diag` edge is misnamed. It measures shared
-authorship, which is a real and useful signal, but it is not diagonal navigation as this
-paradigm defines the term. Building real diagonal navigation requires the scale ladder
+`fmcns_navigator.html`) is touched: the `vert` edge is misnamed. It measures shared
+authorship, which is a real and useful signal, but it is not vertical navigation as this
+paradigm defines the term. Building real vertical navigation requires the scale ladder
 above to exist first — see `plans/scale-as-an-ordered-ladder.md` and
-`plans/diagonal-vs-entanglement.md`.
+`plans/vertical-vs-entanglement.md`.

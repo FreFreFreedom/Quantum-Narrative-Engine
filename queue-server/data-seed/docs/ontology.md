@@ -85,13 +85,13 @@ The expanded version, per this conversation: the recommendation engine should no
 
 This is what makes thread-click and fractal zoom (which you flagged as your favorites — rightly, they're the two navigation mechanics that make the analogical layer *feel* like exploration rather than a search bar) the actual interface language of the whole system: thread-click reorganizes the entire graph around one active pattern across every scale and era simultaneously; fractal zoom reveals that every node, at any scale, contains its own internal graph running the same structural logic. Together they *are* Scale Echo, made spatial and interactive rather than described in prose.
 
-### 4.1 Diagonal navigation vs. entanglement jumps
+### 4.1 Vertical navigation vs. entanglement jumps
 
 Scale Echo actually has two distinct moves inside it, named precisely in a later
 extraction pass over the archive (`fractal_vision_spec.md`, `fractal_vision_passages.md`
 in this same folder — read those for the full sourced version):
 
-- **Diagonal navigation** is continuous transmission: tracing a pattern's actual descent
+- **Vertical navigation** is continuous transmission: tracing a pattern's actual descent
   scale by scale, generation by generation, through every real intermediate node —
   family, institution, era — down to (or up from) one instance today. It answers *"how
   did this get here?"* Every node on the path is visited and causal; nothing is skipped.
@@ -100,16 +100,16 @@ in this same folder — read those for the full sourced version):
   structural signature — "same bones, no lineage." It answers *"where else does this
   pattern live?"*
 
-Their relationship: a jump finds kinship, a diagonal proves it. A jump is a hypothesis of
-shared structure; the diagonal is its demonstration — recognition versus genealogy.
+Their relationship: a jump finds kinship, a vertical proves it. A jump is a hypothesis of
+shared structure; the vertical is its demonstration — recognition versus genealogy.
 
 **Where the code stands (2026-08-26):** the Content graph's `ent` edge (shared tags) is
-a crude version of an entanglement jump. Its `diag` edge is not diagonal navigation at
+a crude version of an entanglement jump. Its `vert` edge is not vertical navigation at
 all — it measures shared authorship (a director/writer in common), which is a real
-signal but a production credit, not a traced pattern-descent. Real diagonal navigation
+signal but a production credit, not a traced pattern-descent. Real vertical navigation
 needs an ordered scale ladder between two entities' positions, which the schema doesn't
 have yet (`entities.scale` holds three unordered labels: `individual`, `film`,
-`national`). See `plans/diagonal-vs-entanglement.md` and
+`national`). See `plans/vertical-vs-entanglement.md` and
 `plans/scale-as-an-ordered-ladder.md`.
 
 The scale ladder the paradigm actually uses, consistently, across the archive: **somatic

@@ -98,7 +98,7 @@ const KNOWLEDGE_DESCRIPTIONS = {
   'ontology.md': 'FMCNS standing reference: the ontological/semantic/analogical layers, Integration Continuum, Scale Echo, and the Quantum Narrative Engine framing. The fullest statement of the paradigm.',
   'films_master_list.md': 'The master list of ~199 films across 12 thematic clusters that the film corpus and character navigator are built from.',
   'chatgpt_archive.md': 'The full source conversation archive (~750k tokens) that grounded tags, synopses, and continuum scores for the 47 archive-grounded films. Large — search or read specific sections rather than pulling the whole thing unless truly needed.',
-  'fractal_vision_spec.md': 'Distilled spec from a marker-indexed extraction of the archive: diagonal navigation vs. entanglement jumps, the cell-to-cosmos scale ladder, the per-scale vocabulary translation table, and the five-step method the pattern engine is meant to automate. Read this before touching computeEchoes or the scale-echo/continuum code.',
+  'fractal_vision_spec.md': 'Distilled spec from a marker-indexed extraction of the archive: vertical navigation vs. entanglement jumps, the cell-to-cosmos scale ladder, the per-scale vocabulary translation table, and the five-step method the pattern engine is meant to automate. Read this before touching computeEchoes or the scale-echo/continuum code.',
   'fractal_vision_passages.md': 'The 206 architecture-marker passages (of 606 total) behind fractal_vision_spec.md, kept for sourcing a specific claim. Large — search by marker or page rather than pulling the whole thing unless truly needed.',
 };
 

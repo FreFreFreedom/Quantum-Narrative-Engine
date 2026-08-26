@@ -16,7 +16,7 @@ each scale instead of merely being bigger.
 
 | Zoom | What is drawn |
 |---|---|
-| `< 0.6` | Cluster regions with names, small uniform dots, diagonal edges only. A map of territories. |
+| `< 0.6` | Cluster regions with names, small uniform dots, vertical edges only. A map of territories. |
 | `0.6 - 2.5` | Today's behaviour, better drawn: nodes, the existing edge rules, labels for high-degree nodes. |
 | `> 2.5` | Labels for everything, with collision avoidance. |
 

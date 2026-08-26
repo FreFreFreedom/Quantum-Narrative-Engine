@@ -9,7 +9,7 @@ Generated: 2026-08-26T14:33:45.177Z
 - semantic-layer · Working · next: Full corpus grounded, shared tag vocabulary enforced
 - analogical-layer · Prototype · next: Server-side pattern-instance graph, computed once and cached instead of recomputed per client
 - pattern-engine · Concept · next: One formally defined, named pattern as a proof of concept (structure, not just a tag)
-- graphrag · Prototype · next: Subgraph retrieval wired into the embedded chat assistant as a real tool
+- graphrag · Prototype · next: Static community detection over the existing tag/continuum data
 - scale-echo · Prototype · next: Scale-aware weighting (distance in scale, not just axis value)
 - integration-continuum · Working · next: A third axis once cluster III is archive-grounded
 - thread-click · Working · next: Shared click-through across one unified app’s modes — largely true now that Content and Map share one renderer
@@ -40,7 +40,7 @@ Generated: 2026-08-26T14:33:45.177Z
 
 - fix-google-model-abort-in-room — **PLANNED** 2026-08-26
 - marker-detection-calibration — **PLANNED** 2026-08-26
-- diagonal-vs-entanglement — **PLANNED** 2026-08-26
+- vertical-vs-entanglement — **PLANNED** 2026-08-26
 - scale-as-an-ordered-ladder — **PLANNED** 2026-08-26
 - start-fresh-shows-no-sign — **DONE** 2026-08-26
 - auto-mirror-notes-for-coding-agent — **PLANNED** 2026-08-25

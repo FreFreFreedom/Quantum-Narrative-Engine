@@ -38,7 +38,7 @@ Three things the plan calls out and you must get right:
 
 Then delete `runSim()` and `simRunning`.
 
-Keep `buildGraph()`'s meaning, and `computeDiagonal` / `computeEntanglement` /
+Keep `buildGraph()`'s meaning, and `computeVertical` / `computeEntanglement` /
 `computeBridges` / `computeCentroids` / `centroidFor` untouched — they define what
 the graph *means* and are not the problem.
 

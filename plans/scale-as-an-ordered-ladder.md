@@ -93,16 +93,16 @@ corpus, not a bug to paper over.
   ladder rung is a lookup, not a data change.
 - **Do not conflate "no rung" with "rung zero."** A film without a defined scale position
   must not accidentally sort as the smallest or largest rung in distance comparisons.
-- **This plan does not build diagonal navigation.** It only makes scale distance real for
-  the existing `bridge` edge. See `plans/diagonal-vs-entanglement.md`, which is explicitly
+- **This plan does not build vertical navigation.** It only makes scale distance real for
+  the existing `bridge` edge. See `plans/vertical-vs-entanglement.md`, which is explicitly
   blocked on this plan finishing.
 - **`fmcns_navigator.html` and `queue-server/public/index.html` must stay in sync** for any
   frontend-facing change from steps 2-4.
 
 ## Out of scope
 
-- Building real diagonal navigation (that's the next plan after this one, per
-  `plans/diagonal-vs-entanglement.md`).
+- Building real vertical navigation (that's the next plan after this one, per
+  `plans/vertical-vs-entanglement.md`).
 - Populating the empty rungs with new entities.
 - Changing the `0.07` axis-proximity threshold or the axis scoring itself.
 - Renaming or migrating the `entities.scale` column's stored values.
