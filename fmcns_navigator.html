@@ -17607,6 +17607,7 @@ document.addEventListener('keydown', (e) => {
     if(!e.convoId) return Promise.resolve();
     return apiWrite('/api/convos/' + e.convoId + '/reset', 'POST', {})
       .then(function(){ e.loaded = false; return fetchConvo(e, repaint); })
+      .then(function(){ e.note = 'Folded. Summary is at the top.'; if(repaint) repaint(); })
       .catch(function(){});
   }
 
