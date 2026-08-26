@@ -1015,13 +1015,14 @@ async function runChatTurn(convoId, userId, turn) {
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: false, repoFacts: turn?.repoFacts || null });
+  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null });
   const result = await generateTextStream({
     prompt,
     feature: turn?.lane?.feature || 'studio',
     model: turn?.lane?.model || null,
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
+    tools: studioTools(), dispatchTool: studioDispatch,
     maxTokens: 4000,
     label: 'conversations:chat',
     allowLongOutput: true, timeoutMs: 150_000,
