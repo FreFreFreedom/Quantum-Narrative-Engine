@@ -8764,8 +8764,8 @@ function renderAiSettings() {
       : `<div class="ai-fp-sub" style="margin-top:6px;">Everything starts on your <strong>second</strong> Claude subscription &mdash; the smaller bank, spent first on purpose. When it runs out for the next few hours the same question is asked again on your <strong>main</strong> account, and only if that is out too does it drop to a free model. Second-account jobs run on your Mac, so the runner has to be on; if its token isn&rsquo;t set they go straight to the main account.</div>`}
     <details class="ai-voice">
       <summary>How Idea Studio thinks</summary>
-      <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" placeholder="Leave empty to use the built-in voice.">${qEsc(aiSettings.studioPersona || '')}</textarea>
-      <div class="ai-voice-note">This is the lens your brainstorming conversations think through &mdash; the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest (use the real project data, invent nothing, say when something already exists), so you can rewrite it freely without breaking anything. Empty means the built-in voice. Only affects Idea Studio conversations, not the shorter system answers.</div>
+      <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" placeholder="Leave empty for a plain, neutral assistant — no personality.">${qEsc(aiSettings.studioPersona || '')}</textarea>
+      <div class="ai-voice-note">This is the lens your brainstorming conversations think through &mdash; the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest (use the real project data, invent nothing, say when something already exists), so you can rewrite it freely without breaking anything. Leave it empty for a plain assistant with no persona. Only affects Idea Studio conversations, not the shorter system answers.</div>
     </details>
     <details class="ai-adv">
       <summary>Advanced (JSON)</summary>

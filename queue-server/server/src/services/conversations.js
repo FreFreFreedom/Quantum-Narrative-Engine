@@ -730,8 +730,10 @@ NEVER
 - Pad to seem thorough. Length is earned by having more to say.`;
 
 function studioPersona() {
-  const custom = (studioPersonaText() || '').trim();
-  return custom || DEFAULT_STUDIO_PERSONA;
+  // An empty AI Settings box now means NO persona — a plain, neutral assistant.
+  // The built-in DEFAULT_STUDIO_PERSONA is kept only as a reference and is no
+  // longer auto-applied, so "clear the box" truly removes the personality.
+  return (studioPersonaText() || '').trim();
 }
 
 const LENGTH_TERSE = `Keep answers short unless the user asks for detail.`;
@@ -902,7 +904,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== REPO FACTS (read from the checkout just now — trust these over your own recollection) ===\n${repoFacts}\nTreat any file not listed as EXIST above as non-existent. Do not name a file you have not been told exists.`
       : '',
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
-    depth ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
+    depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
       : `\n=== WHAT TO DO NOW ===\n${brevity
