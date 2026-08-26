@@ -251,3 +251,43 @@ export async function getClaudeUsage() {
   _cache = { at: Date.now(), data, ttl };
   return data;
 }
+
+// ─── The SECOND subscription's own percentages ────────────────────────────────
+// Read with the side account's own token, never the main one's. This exists
+// because the queue's Claude gate used to ask getClaudeUsage() — a MAIN-account
+// read — even for tasks pinned to the second account, so a busy main account
+// diverted every side task to the free models and the second subscription could
+// never be spent. That defeated the whole point of having it.
+//
+// Deliberately subscription-only: compute()'s token counts come from walking this
+// machine's local CLI transcripts, which belong to whichever account the CLI is
+// logged into — attributing them to the side account would be wrong. The gate only
+// reads utilizationPct, so the shape below is all it needs, and it matches
+// getClaudeUsage()'s so callers can treat both identically.
+let _sideCache = null;
+
+export async function getSideClaudeUsage() {
+  if (_sideCache && Date.now() - _sideCache.at < _sideCache.ttl) return _sideCache.data;
+
+  const token = process.env.CLAUDE_SIDE_OAUTH_TOKEN || null;
+  const { data: sub, throttled } = await fetchUsageForToken(token);
+
+  const data = {
+    session: sub?.session ?? { utilizationPct: null, resetsAt: null, severity: null },
+    week: sub?.week ?? { utilizationPct: null, resetsAt: null, severity: null },
+    weekScoped: sub?.weekScoped ?? null,
+    extraUsageEnabled: sub?.extraUsageEnabled ?? false,
+    // Same contract as the main read: false means "unknown", and every caller must
+    // treat unknown as permission to run. The usage endpoint rate-limits hard per
+    // machine (both tokens have sat on 429 for 25+ minutes at a time), so a gate
+    // that blocked on an unreadable quota would strand the queue for no reason.
+    subscriptionAvailable: sub != null,
+    generatedAt: new Date().toISOString(),
+  };
+
+  const ttl = data.subscriptionAvailable
+    ? CACHE_TTL_MS
+    : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS);
+  _sideCache = { at: Date.now(), data, ttl };
+  return data;
+}

@@ -37,7 +37,7 @@ import {
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
-import { getClaudeUsage } from '../server/src/services/claudeUsage.js';
+import { getClaudeUsage, getSideClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
 import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChecks.js';
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
@@ -182,6 +182,12 @@ const CLAUDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_WEEK_RESERVE_PCT || 90
 // Deep (opus) work is the expensive kind — hold it to a stricter weekly reserve so a
 // single big task can't be what finally exhausts the week.
 const CLAUDE_DEEP_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_DEEP_WEEK_RESERVE_PCT || 70);
+// The SECOND account (work_prompts.account='side') gets its own, deliberately higher
+// reserves: it has no other job — no terminal sessions, no model judge — so it is meant
+// to be spent close to the bottom before anything hands back. Its quota is also a
+// different bank entirely, which is the whole reason these are separate numbers.
+const CLAUDE_SIDE_RESERVE_PCT = Number(process.env.CLAUDE_SIDE_RESERVE_PCT || 93);
+const CLAUDE_SIDE_WEEK_RESERVE_PCT = Number(process.env.CLAUDE_SIDE_WEEK_RESERVE_PCT || 97);
 // Set CLAUDE_QUEUE=0 to switch the priority lane off entirely (everything free).
 const CLAUDE_LANE_ENABLED = process.env.CLAUDE_QUEUE !== '0';
 
@@ -492,20 +498,36 @@ const claudeModelOf = (id) => String(id).slice('claude:'.length);
 // null when the lane is clear, or a plain-English reason to skip it. Unknown usage
 // (no local credentials, endpoint down) never blocks — the CLI's own limit message
 // still rotates us off the lane, so a missing reading shouldn't stall the queue.
-async function claudeGate({ tier, preset }) {
+// `account` MUST be passed through from the task. It used to be missing, so a task
+// pinned to the second subscription was still measured against the MAIN account's
+// quota — and since the main account also pays for terminal sessions and the model
+// judge, a busy week there diverted every side task to the free models. The second
+// account could never be spent, which is the only reason it exists.
+async function claudeGate({ tier, preset, account }) {
   if (!CLAUDE_LANE_ENABLED) return 'the Claude lane is switched off (CLAUDE_QUEUE=0)';
   if (tier === 'mini') return 'a mini task — free models handle it, no reason to spend subscription quota';
+
+  const onSide = account === 'side';
+  // Nothing to gate if the second account isn't configured here: runClaudeOnce()
+  // refuses such a task outright rather than quietly spending the main account, so
+  // say that plainly here instead of measuring the wrong bank.
+  if (onSide && !SIDE_TOKEN) return 'this task asks for the second Claude account, which is not configured on this runner (CLAUDE_SIDE_OAUTH_TOKEN unset)';
+
   let usage = null;
-  try { usage = await getClaudeUsage(); } catch { /* unknown — allow */ }
+  try { usage = onSide ? await getSideClaudeUsage() : await getClaudeUsage(); } catch { /* unknown — allow */ }
   if (!usage || !usage.subscriptionAvailable) return null;
   const sess = usage.session?.utilizationPct;
   const week = usage.week?.utilizationPct;
-  const weekCap = preset === 'deep' ? CLAUDE_DEEP_WEEK_RESERVE_PCT : CLAUDE_WEEK_RESERVE_PCT;
-  if (Number.isFinite(sess) && sess >= CLAUDE_SESSION_RESERVE_PCT) {
-    return `the 5h Claude window is ${Math.round(sess)}% used (reserve kicks in at ${CLAUDE_SESSION_RESERVE_PCT}%)`;
+  const sessCap = onSide ? CLAUDE_SIDE_RESERVE_PCT : CLAUDE_SESSION_RESERVE_PCT;
+  const weekCap = onSide
+    ? CLAUDE_SIDE_WEEK_RESERVE_PCT
+    : (preset === 'deep' ? CLAUDE_DEEP_WEEK_RESERVE_PCT : CLAUDE_WEEK_RESERVE_PCT);
+  const which = onSide ? 'second-account ' : '';
+  if (Number.isFinite(sess) && sess >= sessCap) {
+    return `the 5h ${which}Claude window is ${Math.round(sess)}% used (reserve kicks in at ${sessCap}%)`;
   }
   if (Number.isFinite(week) && week >= weekCap) {
-    return `the weekly Claude limit is ${Math.round(week)}% used (reserve for ${preset === 'deep' ? 'deep' : 'normal'} work kicks in at ${weekCap}%)`;
+    return `the weekly ${which}Claude limit is ${Math.round(week)}% used (reserve for ${onSide ? 'this account' : preset === 'deep' ? 'deep' : 'normal'} work kicks in at ${weekCap}%)`;
   }
   return null;
 }
@@ -1119,7 +1141,11 @@ async function runTask(task) {
   // credit-discipline block at the top of this file.
   if ((task.provider || 'opencode') === 'claude-code') {
     const preset = task.effort === 'high' ? 'deep' : task.effort === 'low' ? 'fast' : 'standard';
-    const skip = await claudeGate({ tier: task.task_tier, preset });
+    // account matters: a task pinned to the second subscription must be measured
+    // against THAT bank, not the main one. The helper-job path above already knew
+    // this (see the note by the `side` check); coding tasks did not, so a busy main
+    // account quietly sent every second-account task to the free models.
+    const skip = await claudeGate({ tier: task.task_tier, preset, account: task.account });
     if (skip) {
       console.log(yellow(`  Skipping the Claude lane — ${skip}.`));
       console.log(dim('  Running on free models instead.'));
@@ -1895,7 +1921,7 @@ async function main() {
   console.log(dim(`  models: Claude (queue's priority lane) → OpenCode Go → free. Give-up time on a bad model: ${Math.round(FIRST_OUTPUT_MS / 1000)}s.`));
   console.log(dim(`  money : nothing bills per token — subscriptions only (ALLOW_METERED_API=1 would permit real spending). Paid OpenCode Go lane: ${GO_LANE_ENABLED ? 'on (OPENCODE_GO=0 turns it off)' : 'off'}.`));
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
-  console.log(dim(`  second account: ${SIDE_TOKEN ? 'on — spent to its ceiling, then the main account takes over' : 'no token (CLAUDE_SIDE_OAUTH_TOKEN unset) — everything runs on the main account'}`));
+  console.log(dim(`  second account: ${SIDE_TOKEN ? `on — gated on its OWN quota (${CLAUDE_SIDE_RESERVE_PCT}% of the 5h window / ${CLAUDE_SIDE_WEEK_RESERVE_PCT}% of the week), then the main account takes over` : 'no token (CLAUDE_SIDE_OAUTH_TOKEN unset) — everything runs on the main account'}`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   try { tidyWorktrees(); } catch (e) { console.log(dim(`  (could not tidy old task folders — ${e.message})`)); }
