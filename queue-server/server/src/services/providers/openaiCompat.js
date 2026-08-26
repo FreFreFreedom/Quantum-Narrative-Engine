@@ -57,7 +57,7 @@ async function postChatCompletions({ providerId, model, messages, maxTokens, too
         // reasoning_effort "low" caps the thinking share so the answer fits.
         // Only Google's endpoint understands this field, and only small-budget
         // calls need it — large generations keep full thinking quality.
-        ...(providerId === 'google-ai-studio' && maxTokens < 512 ? { reasoning_effort: 'low' } : {}),
+        ...(providerId === 'google-ai-studio' && (maxTokens < 512 || tools) ? { reasoning_effort: 'low' } : {}),
         ...(tools ? { tools } : {}),
         // Routes every turn of one conversation to the same cache, instead of
         // scattering across machines — see stream_options below for why this is
