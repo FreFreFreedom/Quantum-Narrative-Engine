@@ -1,6 +1,6 @@
 # Script coverage test — can we get dialogue for *this* corpus?
 
-**Status:** PLANNED 2026-08-25
+**Status:** DONE 2026-08-26 — see [script-coverage-findings.md](script-coverage-findings.md)
 **Type:** Investigation. Produces one markdown report. **No code, no schema change, no pipeline.**
 
 ---
