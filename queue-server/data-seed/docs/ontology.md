@@ -85,6 +85,41 @@ The expanded version, per this conversation: the recommendation engine should no
 
 This is what makes thread-click and fractal zoom (which you flagged as your favorites — rightly, they're the two navigation mechanics that make the analogical layer *feel* like exploration rather than a search bar) the actual interface language of the whole system: thread-click reorganizes the entire graph around one active pattern across every scale and era simultaneously; fractal zoom reveals that every node, at any scale, contains its own internal graph running the same structural logic. Together they *are* Scale Echo, made spatial and interactive rather than described in prose.
 
+### 4.1 Diagonal navigation vs. entanglement jumps
+
+Scale Echo actually has two distinct moves inside it, named precisely in a later
+extraction pass over the archive (`fractal_vision_spec.md`, `fractal_vision_passages.md`
+in this same folder — read those for the full sourced version):
+
+- **Diagonal navigation** is continuous transmission: tracing a pattern's actual descent
+  scale by scale, generation by generation, through every real intermediate node —
+  family, institution, era — down to (or up from) one instance today. It answers *"how
+  did this get here?"* Every node on the path is visited and causal; nothing is skipped.
+- **Entanglement jumps** are discontinuous resonance: no path, no causation traversed,
+  just instant correspondence between two nodes anywhere in the graph that share the same
+  structural signature — "same bones, no lineage." It answers *"where else does this
+  pattern live?"*
+
+Their relationship: a jump finds kinship, a diagonal proves it. A jump is a hypothesis of
+shared structure; the diagonal is its demonstration — recognition versus genealogy.
+
+**Where the code stands (2026-08-26):** the Content graph's `ent` edge (shared tags) is
+a crude version of an entanglement jump. Its `diag` edge is not diagonal navigation at
+all — it measures shared authorship (a director/writer in common), which is a real
+signal but a production credit, not a traced pattern-descent. Real diagonal navigation
+needs an ordered scale ladder between two entities' positions, which the schema doesn't
+have yet (`entities.scale` holds three unordered labels: `individual`, `film`,
+`national`). See `plans/diagonal-vs-entanglement.md` and
+`plans/scale-as-an-ordered-ladder.md`.
+
+The scale ladder the paradigm actually uses, consistently, across the archive: **somatic
+/ cell → psyche / individual → family / lineage → group → organisation / institution →
+city → nation → civilisation → planetary → cosmos.** The same structure is named
+differently depending on which rung you're reading it from — psychology's "shadow /
+complex / projection" is sociology's "out-group / scapegoat mechanism" is religion's
+"exile / demonisation / redemption" is cosmology's "aspect / resonance / synchronicity."
+That translation layer is what makes the ladder usable rather than decorative.
+
 ---
 
 ## 5. The Quantum Narrative Engine — what the whole platform actually is
@@ -93,7 +128,7 @@ This is the frame that unifies everything above, and it goes deeper than the "st
 
 The system is not a recommendation engine that happens to be mythic. It is **a soul-cartography instrument that happens to use recommendation as its interface verb.** What it locates, at any given moment, is your current archetypal energetic signature — and then shows you that *same* signature expressed simultaneously across every scale (cell to cosmos) and every point in time (ancestral past through unrealized future), not sequentially, but as something closer to superposition: all expressions of the pattern existing at once, navigable rather than retrieved.
 
-What makes it *quantum* isn't literal quantum computing (though the archive plays seriously with that too) — it's that the three properties borrowed from quantum language are structurally real properties of the system you're describing: **simultaneity** (a pattern's expression at every scale is present at once, not sequentially searched), **nonlocality** (a pattern-instance in 12th-century mysticism and a pattern-instance in tomorrow's headline can be directly entangled with no intermediate steps, if they share structural DNA), and **recursive causality** (locating a pattern and being shown its echoes is itself part of what integrates it — the act of navigation is the ritual, not separate from it).
+What makes it *quantum* isn't literal quantum computing (though the archive plays seriously with that too) — it's that the three properties borrowed from quantum language are structurally real properties of the system you're describing: **simultaneity** (a pattern's expression at every scale is present at once, not sequentially searched), **nonlocality** (a pattern-instance in 12th-century mysticism and a pattern-instance in tomorrow's headline can be directly entangled with no intermediate steps, if they share structural DNA — an entanglement jump, §4.1), and **recursive causality** (locating a pattern and being shown its echoes is itself part of what integrates it — the act of navigation is the ritual, not separate from it).
 
 Practically, this reframes what you're building at the top level: every technical piece in this document — the ontological/semantic/analogical layers, GraphRAG, embeddings, Scale Echo, the expanded recommendation engine — is infrastructure in service of *one* claim: **that a person's, or a civilization's, current position on the integration spectrum can be located, and then shown its living echoes at every scale and in every era simultaneously, as a form of healing in itself.** That's the sentence the whole platform is trying to make operational. Everything else is engineering.
 
