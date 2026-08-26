@@ -150,6 +150,16 @@ questions come first.
   is exactly why the boot line `[project-map] built ... from <parts>` names
   every part it found. Read that line after any change here.
 
+## Shared agent memory (hard)
+
+`AGENT_MEMORY.md` at the repo root is durable notes shared across **every** engine
+that works here — Claude Code's own memory is private to that account and invisible
+to OpenCode or a second Claude account, so anything a future task on a *different*
+engine needs to know (a finding, a standing decision, a gotcha) has to live there
+instead. Read it before non-trivial work. When you learn something durable that
+another engine's future task would need, add a short entry (or update an existing
+one) rather than leaving it only in chat or in a private memory store.
+
 ## Repository essentials
 
 For agents working in this repo — what FMCNS is, how to run things, the rules.
