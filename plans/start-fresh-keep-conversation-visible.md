@@ -1,6 +1,6 @@
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-25 |
+| **DONE** | 2026-08-25 |
 
 # Start fresh keeps the conversation visible (compact, don't delete)
 

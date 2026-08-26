@@ -319,7 +319,7 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
-  // POST /api/convos/:id/reset — fold conversation into a recap, clear messages.
+  // POST /api/convos/:id/reset — fold conversation into a recap.
   router.post('/:id/reset', (req, res) => {
     const out = convos.resetConvoContext(req.params.id);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);

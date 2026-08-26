@@ -1,6 +1,6 @@
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-26 |
+| **DONE** | 2026-08-26 |
 
 # "Start fresh" gives no sign it did anything
 
