@@ -51,7 +51,11 @@ function gitCommit(message) {
     execFileSync('git', ['-C', REPO, 'commit', '-m', message], { stdio: 'pipe' });
   } catch (e) {
     // Nothing to commit is fine — the plan may already have been committed by hand.
-    if (/nothing.*to commit/i.test(e.stdout?.toString() || '')) return;
+    // git phrases this three different ways depending on what else is dirty in the
+    // tree ("nothing to commit", "nothing added to commit", "no changes added to
+    // commit"), so match all of them — matching only the first made an
+    // already-committed plan abort the send outright.
+    if (/(nothing|no changes)( added)? to commit/i.test(e.stdout?.toString() || '')) return;
     die(`git commit failed: ${e.message}`);
   }
 }
