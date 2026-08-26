@@ -328,7 +328,10 @@ async function getFallbackChain(feature, providerId, model, { noOpencodeBackup =
 
   const chain = [];
   // Primary: configured model for this feature
-  if (model) chain.push({ provider: providerId, model });
+  if (model) {
+    chain.push({ provider: providerId, model });
+    if (noOpencodeBackup) chain.push({ provider: providerId, model }); // one retry — a pinned lane still deserves a second try before failing outright
+  }
   // The second account is reached by name, not by tier chain, so an unset model
   // would drop it out of its own chain entirely. Cheap by default.
   else if (providerId === 'claude-side') chain.push({ provider: providerId, model: 'haiku' });
@@ -696,8 +699,9 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     failures.push(`claude-helper:${viaClaude?.message || 'unavailable'}`);
   }
 
-  console.error(`[${label}] all backends failed — ${failures.join(' | ')}`);
-  return { error: 'generation_failed', message: failures.join(' | ') };
+  const message = failures.join(' | ').replace(/This operation was aborted\.?/gi, `timed out after ${Math.round(timeoutMs / 1000)}s`);
+  console.error(`[${label}] all backends failed — ${message}`);
+  return { error: 'generation_failed', message };
 }
 
 // ─── Helper-job worker side (called by routes/worker.js) ─────────────────────
