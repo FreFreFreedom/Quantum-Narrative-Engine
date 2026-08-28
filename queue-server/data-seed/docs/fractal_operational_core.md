@@ -163,6 +163,33 @@ convinced its crisis is unprecedented has a failed analogical layer.
 **The failure to make the analogical jump is itself the pathology** — the entity
 experiences itself as unique and therefore repeats what it cannot recognise.
 
+### The ontological layer sets a ceiling, it does not supply intelligence
+
+An entity's ontology determines **which questions are askable at all**. You cannot ask
+about a distinction your ontology does not make. Upgrading that layer therefore has
+outsized leverage — but as a *constraint released*, not intelligence added. Gene Ontology
+did not make biologists smarter; it made a class of question possible that previously was
+not. Luhmann's version: a system cannot see outside its own code.
+
+### Worked diagnosis: the fragmented enterprise
+
+Almost every company runs **many fragmented data models** — one schema in its CRM, another
+in its finance system, another in the warehouse — and almost none have a single ontology
+across them. The layer exists, but it is shattered. (This fragmentation is precisely what
+Palantir sells against; see §13.)
+
+In this document's terms that is not a data-hygiene problem, it is a diagnosis:
+
+> **An enterprise with fragmented data models is an entity with a broken ontological
+> layer.** It cannot see itself as one thing. Its internal boundaries are drawn wrong, so
+> parts of itself are classified as not-itself.
+
+A company that cannot answer "how many customers do we have?" without a six-week
+reconciliation project is failing at self/non-self discrimination — the same failure §5
+describes in an immune system, at a different rung. This is the first worked example of
+the diagnostic reading, and it is worth keeping because the entity type is unglamorous:
+if the model only produced insight about myth and atrocity, it would be suspect.
+
 ---
 
 ## 7. What the platform is
@@ -184,6 +211,19 @@ missing *why* behind the claim already stated at the end of `ontology.md` — th
 an entity's position and showing it its living echoes is "a form of healing in itself."
 Recognition heals because it restores a blocked faculty. That is a mechanism, not a
 sentiment.
+
+### What follows for where this platform is distinctive
+
+Building ontologies is **not** this platform's edge — that ground is crowded, hard, and
+held by serious incumbents (§13). The analogical layer is the one almost nobody has, and a
+diagnosis needs the subject's ontology to already exist. So the contribution is not *"we
+will build your ontology"* but:
+
+> *"We will tell you which of your three layers is failing, and show you the entity whose
+> pattern you are currently repeating."*
+
+That sits one layer **above** the existing ontology tooling rather than competing with it.
+Recorded here as positioning of the idea, not as a business plan.
 
 ---
 
@@ -249,6 +289,28 @@ guilt/asceticism pattern traced both ways). The rule that matters is the one sta
 **neither direction skips a rung** — every intermediate node is real, visited, causal.
 That is what separates it from an entanglement jump, which asserts kinship without tracing
 a path.
+
+### The three navigation moves
+
+Vertical and entanglement were already named. A third move — **horizontal** — was named
+2026-08-28 and completes the grammar:
+
+| Move | What varies | What is traced |
+|---|---|---|
+| **Vertical** | scale | a real path — every rung visited, causal. *How did this get here?* |
+| **Horizontal** | the entity, at the same scale | comparison between peers. *Who else is here, and who is doing it better?* |
+| **Entanglement jump** | scale **and** domain | nothing — pure structural resonance, no path. *Where else does this pattern live?* |
+
+**Horizontal is the cheapest of the three**, and the only one that needs no interpretation
+to get started: same-scale entities already share units and fields, so two countries'
+policy metrics or two cities' housing numbers compare as raw data. It gets more
+interesting one layer up — not *"which city spends more"* but *"which cities are enacting
+the same stance toward scarcity"* — and at the analogical layer it becomes a sweep within
+one entity type rather than across types.
+
+It is also where a practical question already asked of this project lives: *which country
+has the avant-garde policy worth importing?* That is a horizontal move, and nothing in the
+app performs it today.
 
 Status, unchanged: **real vertical navigation exists nowhere in this codebase.** The graph
 edge formerly named "diagonal" and now named `vert` measures shared director/writer, which
@@ -405,3 +467,65 @@ re-deriving it. Grouped by layer; one line each on what they actually do.
   family-conflict or organisational-schism event database sharing a schema with them,
   because nobody in the field believes the rungs are the same thing. Nothing here does
   what §3 describes.
+
+---
+
+## 14. Reading list
+
+Books that sharpen a specific part of this project, with what to take from each and how
+hard the going is. **Difficulty is marked honestly** — several of the foundational texts
+are genuinely punishing, and knowing that in advance is more useful than a flat list.
+
+Distinct from the app's existing per-entity book recommendations (`services/books.js`):
+that feature suggests reading *about an entity in the corpus*. This is a reading list for
+**the project itself**. Antoine raised (2026-08-28) that a section like this might
+eventually live in the app. Recorded as an idea, unstarted, not a commitment.
+
+### Start here
+
+| Book | What to take | Going |
+|---|---|---|
+| **Donella Meadows — *Thinking in Systems*** | The accessible door to everything in §8. Short, clear, and it contains the leverage-points argument for why fighting a symptom is the weakest possible intervention. | Readable |
+| **Hofstadter & Sander — *Surfaces and Essences*** | The case that analogy is not a feature of thought but its engine. This is the single closest book to the analogical layer's thesis. Long but not difficult. | Readable, long |
+| **Richard Schwartz — *No Bad Parts*** | The accessible statement of Internal Family Systems: fragments in conflict, healing by re-inclusion rather than defeat. §1's model at the individual scale, written for a general reader. | Readable |
+| **Ivan Illich — *Medical Nemesis*** | A system generating the demand it exists to serve. The opioid argument in §8, made in 1975 about medicine as a whole. Polemical and bracing. | Readable |
+
+### The analogical layer
+
+| Book | What to take | Going |
+|---|---|---|
+| **Hofstadter — *Gödel, Escher, Bach*** | Self-reference and pattern-across-levels as a single subject. Relevant to why this platform has the same architecture as the things it studies (§6–7). | Demanding, rewarding |
+| **Peter Turchin — *War and Peace and War*** | Analogy as forecasting, done seriously: structurally similar societies, and what their completed arcs predict for open ones. The real discipline behind §9's ambition. | Readable |
+| **Ray Dalio — *Principles for Dealing with the Changing World Order*** | The same move in popular form — map the present onto prior empires' arcs. Useful mainly as a demonstration of how the move reads to a general audience. | Readable |
+| **Dedre Gentner — structure-mapping** | No single book; the work lives in papers. Take the one rule and stop: **a real analogy maps relations, not attributes.** | Papers only |
+
+### What a system is — fragments, boundaries, self-maintenance
+
+| Book | What to take | Going |
+|---|---|---|
+| **Maturana & Varela — *The Tree of Knowledge*** | Autopoiesis for a general reader: a living system is defined by producing its own boundary, and all living systems are cognitive systems. Backs §1 and §4. Prefer this over their technical *Autopoiesis and Cognition*. | Readable |
+| **Whitehead — *Process and Reality*** | The philosophical backing for §2 — things as stable patterns of events rather than substances. Notoriously hard; consider a secondary guide rather than the primary text. | Reference only |
+| **Luhmann — *Social Systems*** | Social systems constituted by their own distinction, each unable to see outside its own code. The sociological form of §3 and §6, and genuinely brutal prose. | Reference only |
+| **Spencer-Brown — *Laws of Form*** | Short, strange, and starts from one instruction: *draw a distinction.* Worth holding as an object even if never read straight through. | Demanding, short |
+
+### The collective and the shadow
+
+| Book | What to take | Going |
+|---|---|---|
+| **René Girard — *The Scapegoat***, or *Violence and the Sacred* | How individual desire aggregates into collective violence and reliably selects a victim. The mechanism under §8's distributed-participation argument. *The Scapegoat* is the easier entry. | Demanding |
+| **Jung — *The Undiscovered Self***, and the 1936 essay "Wotan" | The collective shadow argued at national scale. Direct ancestor of §8; the essay is short and startling. | Readable |
+
+### Fiction that stress-tests the model
+
+Fiction earns its place here because *"what if the ontology were different"* is one of its
+oldest moves — and because §12 asks for cases that would **fail** the model, which fiction
+is unusually good at supplying.
+
+| Work | What to take |
+|---|---|
+| **Borges — "The Analytical Language of John Wilkins"** | The Celestial Emporium of Benevolent Knowledge: an animal taxonomy including *those belonging to the Emperor* and *those that from a long way off look like flies.* The definitive short text on ontology as arbitrary. A few pages. **Read this one first.** |
+| **Borges — "Tlön, Uqbar, Orbis Tertius"** | A world whose language has no nouns, only verbs and adjectives — a civilisation with a different ontological layer, and therefore different thoughts. §4 as fiction. |
+| **Ted Chiang — "Story of Your Life"** | A language whose structure changes how time is perceived. Ontology determining perception, taken to its limit. |
+| **Lem — *Solaris*** | **The failure case, and the most useful entry here.** An entity no human ontology can accommodate. What happens when the thing in front of you cannot be caught by any distinction you have — §12's falsification case, dramatised. |
+| **Asimov — *Foundation*** | Psychohistory: forecasting civilisational trajectories from aggregate individual behaviour. §9 at the top rung. Turchin's cliodynamics is the real-world attempt at it. |
+| **Iain M. Banks — the Culture novels** | Minds that model whole civilisations and intervene in them. The closest fiction comes to a prosthetic analogical layer at civilisational scale — including the question §8's caution raises: whether recognising someone else's pattern gives you any right to act on it. |

@@ -81,9 +81,10 @@ from `develop` — read them directly:
   from the 2026-08-28 vision conversation: what counts as an entity (self-maintenance,
   internal fragmentation), why an event is an entity-state rather than its own node type,
   the three layers as three acts every entity performs, the platform as a prosthetic
-  analogical layer, mechanisms for integration and shadow, and a grouped list of the
-  real-world projects working each layer. **Append to this file** when the vision develops
-  further, rather than re-deriving it in a conversation.
+  analogical layer, mechanisms for integration and shadow, the three navigation moves
+  (vertical / horizontal / entanglement), a grouped list of the real-world projects working
+  each layer, and a reading list marked by difficulty. **Append to this file** when the
+  vision develops further, rather than re-deriving it in a conversation.
 - `films_master_list.md` — the ~199-film corpus across 12 clusters.
 - `chatgpt_archive.md` — the ~750k-token source archive. Large: search or read
   specific sections, never pull it whole unless truly needed.
