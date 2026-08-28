@@ -16,6 +16,12 @@ The seven analytical templates (Shadow Projection Map, Conscious/Subconscious To
 
 Three layers, in order of how mechanical vs. interpretive they are.
 
+> **See also `fractal_operational_core.md`** — the operational extension of this section.
+> It treats the three layers as three *acts* (distinguishing, interpreting, recognising)
+> performed by every self-maintaining entity, not only by this platform, and works out
+> what follows: entity and event as one kind of thing, mechanisms for integration and
+> shadow, and what the platform therefore is.
+
 ### 1.1 The Ontological Layer
 
 This is the skeleton. The formal graph: entities, their types, their properties, and the typed edges connecting them. It is machine-readable, queryable, and — critically — **schema-consistent across every scale**. A person node and a civilization node use the same underlying property structure (name, scale-designation, temporal-span, primary archetypal charge, integration-position, edge-types-available), because the whole point of fractal ontology is that the *shape* of the record doesn't change even though the *content* it holds is wildly different at each scale.

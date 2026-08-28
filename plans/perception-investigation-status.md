@@ -45,6 +45,15 @@ A future perception build is **two layers, not one**:
 - **Gaze layer** — essays, ~100% coverage but patchy depth, critic-shaped vocabulary,
   not a clean quoted mirror.
 
+**Reframed 2026-08-28** — see `queue-server/data-seed/docs/fractal_operational_core.md`
+§10. The two layers are really *self-testimony* (the entity's own semantic layer speaking)
+and *witness-testimony* (another entity's semantic layer applied to it), which means the
+**gap between them measures how well an entity's self-model matches outside observation**
+— insight when small, a blind spot when large. That framing generalises past film: a
+country's self-testimony is its constitution and speeches, its witness-testimony foreign
+press and historians. Read that section before designing the combine-pipeline; it may
+simplify the open question below.
+
 ## What's NOT decided yet
 
 **How to combine these two layers into one perception pipeline per film.** No
