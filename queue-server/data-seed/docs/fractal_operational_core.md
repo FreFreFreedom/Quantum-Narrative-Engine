@@ -95,7 +95,7 @@ structure under two names. §2 above extends that same table to **event**-names.
 The table in §2 is the first row of a table that does not yet exist. Building it out — the
 same dynamic named at every rung, for several dynamics — is unstarted work, cheap to do by
 hand, and it is the hinge between this vision and anything mechanical: without it, no
-event feed at one scale (see §13, event data) can be matched against another.
+event feed at one scale (see the event-data anchors, §13) can be matched against another.
 
 ---
 
@@ -185,7 +185,7 @@ In this document's terms that is not a data-hygiene problem, it is a diagnosis:
 > parts of itself are classified as not-itself.
 
 A company that cannot answer "how many customers do we have?" without a six-week
-reconciliation project is failing at self/non-self discrimination — the same failure §5
+reconciliation project is failing at self/non-self discrimination — the same failure the immune proof case (§5) describes
 describes in an immune system, at a different rung. This is the first worked example of
 the diagnostic reading, and it is worth keeping because the entity type is unglamorous:
 if the model only produced insight about myth and atrocity, it would be suspect.
@@ -397,7 +397,7 @@ re-deriving it. Grouped by layer; one line each on what they actually do.
 | **Schema.org** | Google/Microsoft's shared vocabulary for web pages — tells a crawler a page is *about a Restaurant with an address*, not just text that mentions food. |
 | **Palantir Foundry** | The distinctive one: its ontology binds objects to **actions** that write back to source systems. Most ontologies only describe; this one can act. |
 | **Wikidata / DBpedia** | Open, planetary-scale typed fact stores; back a large share of search result boxes. |
-| **BFO / DOLCE** | Upper ontologies — they describe what kinds of thing exist *at all*. See §2: this paradigm deliberately contradicts BFO's central division. |
+| **BFO / DOLCE** | Upper ontologies — they describe what kinds of thing exist *at all*. See *entity and event as one thing* (§2): this paradigm deliberately contradicts BFO's central division. |
 | **Brick Schema / RealEstateCore / Microsoft DTDL** | Digital-twin ontologies for buildings and equipment, fed by live sensors rather than typing. The IoT rung of the ladder. |
 
 ### Semantic layer
@@ -427,15 +427,16 @@ re-deriving it. Grouped by layer; one line each on what they actually do.
 ### Underneath the whole model
 
 - **Internal Family Systems** (Richard Schwartz) — fragments in conflict at varying
-  integration, healing by re-inclusion rather than defeat. §1's model, clinically
+  integration, healing by re-inclusion rather than defeat. the model in *what counts as an entity* (§1), clinically
   established at the individual scale.
-- **Whitehead**, *Process and Reality* — things as stable patterns of events. Backs §2.
+- **Whitehead**, *Process and Reality* — things as stable patterns of events. Backs *entity and event as one thing* (§2).
 - **Maturana & Varela** — autopoiesis: a living system is defined by producing and
-  maintaining its own boundary, and **all living systems are cognitive systems**. Backs §1
-  and §4.
+  maintaining its own boundary, and **all living systems are cognitive systems**. Backs *what counts as an entity* (§1)
+  and *the three acts* (§4).
 - **Niklas Luhmann** — social systems constitute themselves by making a distinction, and
   that distinction *is* their identity; each system cannot see outside its own code
-  (legal/illegal, payment/non-payment). The sociological form of §3 and §6.
+  (legal/illegal, payment/non-payment). the sociological form of *the event vocabulary* (§3) and
+  *the diagnostic reading* (§6).
 - **George Spencer-Brown**, *Laws of Form* — proceeds from one instruction, "draw a
   distinction," as the primal act. Luhmann built on him.
 - **Karl Friston** — the free energy principle; the **Markov blanket** is the formal object
@@ -444,16 +445,16 @@ re-deriving it. Grouped by layer; one line each on what they actually do.
   reasoning from a pattern to a hypothesis, which is the analogical layer under an older
   name.
 - **René Girard** — mimetic desire and the scapegoat mechanism: how individual desire
-  aggregates into collective violence and reliably selects a victim. Backs §8.
+  aggregates into collective violence and reliably selects a victim. Backs *integration and shadow* (§8).
 - **C. G. Jung** — the collective shadow, argued explicitly at national scale in his 1936
   essay on Germany. Direct ancestor of §8.
 - **Donella Meadows**, *Leverage Points* — why fighting a symptom is the weakest
-  intervention and changing the paradigm is nearly the strongest. Backs §8's mechanism.
+  intervention and changing the paradigm is nearly the strongest. Backs the mechanism in *integration and shadow* (§8).
 - **Ivan Illich**, *Medical Nemesis* (1975) — medicine manufacturing the dependency it
   treats. The opioid argument, made fifty years earlier about medicine generally.
 - **Thomas Schelling**; **Epstein & Axtell** — macro phenomena generated from micro
   behaviour (mild individual preferences producing extreme collective segregation), and
-  the methodological slogan *"if you didn't grow it, you didn't explain it."* Backs §9.
+  the methodological slogan *"if you didn't grow it, you didn't explain it."* Backs *vertical navigation* (§9).
 
 ### Event data (the raw material for §9)
 
@@ -485,17 +486,17 @@ eventually live in the app. Recorded as an idea, unstarted, not a commitment.
 
 | Book | What to take | Going |
 |---|---|---|
-| **Donella Meadows — *Thinking in Systems*** | The accessible door to everything in §8. Short, clear, and it contains the leverage-points argument for why fighting a symptom is the weakest possible intervention. | Readable |
+| **Donella Meadows — *Thinking in Systems*** | The accessible door to everything in *integration and shadow* (§8). Short, clear, and it contains the leverage-points argument for why fighting a symptom is the weakest possible intervention. | Readable |
 | **Hofstadter & Sander — *Surfaces and Essences*** | The case that analogy is not a feature of thought but its engine. This is the single closest book to the analogical layer's thesis. Long but not difficult. | Readable, long |
-| **Richard Schwartz — *No Bad Parts*** | The accessible statement of Internal Family Systems: fragments in conflict, healing by re-inclusion rather than defeat. §1's model at the individual scale, written for a general reader. | Readable |
-| **Ivan Illich — *Medical Nemesis*** | A system generating the demand it exists to serve. The opioid argument in §8, made in 1975 about medicine as a whole. Polemical and bracing. | Readable |
+| **Richard Schwartz — *No Bad Parts*** | The accessible statement of Internal Family Systems: fragments in conflict, healing by re-inclusion rather than defeat. the model in *what counts as an entity* (§1) at the individual scale, written for a general reader. | Readable |
+| **Ivan Illich — *Medical Nemesis*** | A system generating the demand it exists to serve. The opioid argument in *integration and shadow* (§8), made in 1975 about medicine as a whole. Polemical and bracing. | Readable |
 
 ### The analogical layer
 
 | Book | What to take | Going |
 |---|---|---|
-| **Hofstadter — *Gödel, Escher, Bach*** | Self-reference and pattern-across-levels as a single subject. Relevant to why this platform has the same architecture as the things it studies (§6–7). | Demanding, rewarding |
-| **Peter Turchin — *War and Peace and War*** | Analogy as forecasting, done seriously: structurally similar societies, and what their completed arcs predict for open ones. The real discipline behind §9's ambition. | Readable |
+| **Hofstadter — *Gödel, Escher, Bach*** | Self-reference and pattern-across-levels as a single subject. Relevant to why this platform has the same architecture as the things it studies (*the diagnostic reading* and *what the platform is*, §6–7). | Demanding, rewarding |
+| **Peter Turchin — *War and Peace and War*** | Analogy as forecasting, done seriously: structurally similar societies, and what their completed arcs predict for open ones. The real discipline behind the ambition of *vertical navigation* (§9). | Readable |
 | **Ray Dalio — *Principles for Dealing with the Changing World Order*** | The same move in popular form — map the present onto prior empires' arcs. Useful mainly as a demonstration of how the move reads to a general audience. | Readable |
 | **Dedre Gentner — structure-mapping** | No single book; the work lives in papers. Take the one rule and stop: **a real analogy maps relations, not attributes.** | Papers only |
 
@@ -503,17 +504,17 @@ eventually live in the app. Recorded as an idea, unstarted, not a commitment.
 
 | Book | What to take | Going |
 |---|---|---|
-| **Maturana & Varela — *The Tree of Knowledge*** | Autopoiesis for a general reader: a living system is defined by producing its own boundary, and all living systems are cognitive systems. Backs §1 and §4. Prefer this over their technical *Autopoiesis and Cognition*. | Readable |
-| **Whitehead — *Process and Reality*** | The philosophical backing for §2 — things as stable patterns of events rather than substances. Notoriously hard; consider a secondary guide rather than the primary text. | Reference only |
-| **Luhmann — *Social Systems*** | Social systems constituted by their own distinction, each unable to see outside its own code. The sociological form of §3 and §6, and genuinely brutal prose. | Reference only |
+| **Maturana & Varela — *The Tree of Knowledge*** | Autopoiesis for a general reader: a living system is defined by producing its own boundary, and all living systems are cognitive systems. Backs *what counts as an entity* (§1) and *the three acts* (§4). Prefer this over their technical *Autopoiesis and Cognition*. | Readable |
+| **Whitehead — *Process and Reality*** | The philosophical backing for *entity and event as one thing* (§2) — things as stable patterns of events rather than substances. Notoriously hard; consider a secondary guide rather than the primary text. | Reference only |
+| **Luhmann — *Social Systems*** | Social systems constituted by their own distinction, each unable to see outside its own code. The sociological form of *the event vocabulary* (§3) and *the diagnostic reading* (§6), and genuinely brutal prose. | Reference only |
 | **Spencer-Brown — *Laws of Form*** | Short, strange, and starts from one instruction: *draw a distinction.* Worth holding as an object even if never read straight through. | Demanding, short |
 
 ### The collective and the shadow
 
 | Book | What to take | Going |
 |---|---|---|
-| **René Girard — *The Scapegoat***, or *Violence and the Sacred* | How individual desire aggregates into collective violence and reliably selects a victim. The mechanism under §8's distributed-participation argument. *The Scapegoat* is the easier entry. | Demanding |
-| **Jung — *The Undiscovered Self***, and the 1936 essay "Wotan" | The collective shadow argued at national scale. Direct ancestor of §8; the essay is short and startling. | Readable |
+| **René Girard — *The Scapegoat***, or *Violence and the Sacred* | How individual desire aggregates into collective violence and reliably selects a victim. The mechanism under the distributed-participation argument in *integration and shadow* (§8) argument. *The Scapegoat* is the easier entry. | Demanding |
+| **Jung — *The Undiscovered Self***, and the 1936 essay "Wotan" | The collective shadow argued at national scale. Direct ancestor of *integration and shadow* (§8); the essay is short and startling. | Readable |
 
 ### Fiction that stress-tests the model
 
@@ -524,8 +525,126 @@ is unusually good at supplying.
 | Work | What to take |
 |---|---|
 | **Borges — "The Analytical Language of John Wilkins"** | The Celestial Emporium of Benevolent Knowledge: an animal taxonomy including *those belonging to the Emperor* and *those that from a long way off look like flies.* The definitive short text on ontology as arbitrary. A few pages. **Read this one first.** |
-| **Borges — "Tlön, Uqbar, Orbis Tertius"** | A world whose language has no nouns, only verbs and adjectives — a civilisation with a different ontological layer, and therefore different thoughts. §4 as fiction. |
+| **Borges — "Tlön, Uqbar, Orbis Tertius"** | A world whose language has no nouns, only verbs and adjectives — a civilisation with a different ontological layer, and therefore different thoughts. *The three acts* (§4), as fiction. |
 | **Ted Chiang — "Story of Your Life"** | A language whose structure changes how time is perceived. Ontology determining perception, taken to its limit. |
-| **Lem — *Solaris*** | **The failure case, and the most useful entry here.** An entity no human ontology can accommodate. What happens when the thing in front of you cannot be caught by any distinction you have — §12's falsification case, dramatised. |
-| **Asimov — *Foundation*** | Psychohistory: forecasting civilisational trajectories from aggregate individual behaviour. §9 at the top rung. Turchin's cliodynamics is the real-world attempt at it. |
-| **Iain M. Banks — the Culture novels** | Minds that model whole civilisations and intervene in them. The closest fiction comes to a prosthetic analogical layer at civilisational scale — including the question §8's caution raises: whether recognising someone else's pattern gives you any right to act on it. |
+| **Lem — *Solaris*** | **The failure case, and the most useful entry here.** An entity no human ontology can accommodate. What happens when the thing in front of you cannot be caught by any distinction you have — the falsification case from *the falsifiability rule* (§12), dramatised. |
+| **Asimov — *Foundation*** | Psychohistory: forecasting civilisational trajectories from aggregate individual behaviour. *Vertical navigation* (§9) at the top rung. Turchin's cliodynamics is the real-world attempt at it. |
+| **Iain M. Banks — the Culture novels** | Minds that model whole civilisations and intervene in them. The closest fiction comes to a prosthetic analogical layer at civilisational scale — including the question the double-reading caution raises in *Integration and shadow* (§8): whether recognising someone else's pattern gives you any right to act on it. |
+| **China Miéville — *Embassytown*** | **The novel on this subject.** The Ariekei's Language is bonded directly to reality, so they *cannot lie* — a sign detached from its referent is unthinkable to them. To say something new they must first **stage it into truth**: arrange for the thing to actually happen, so that it becomes sayable. The ontological layer as an absolute constraint on what can be thought, worked out more rigorously than in any philosophy text. |
+| **Greg Egan — the Truth Mines, in *Diaspora*** | **The best single image for what this platform is.** Mathematical truths as an actual navigable landscape — chambers you walk through, joined by corridors that *are* the proofs. Getting from one theorem to another means physically traversing the derivation. A knowledge graph you inhabit, in which vertical navigation (§9) is literally walking, and no rung can be skipped because the corridor is the only way through. |
+| **Vernor Vinge — *A Fire Upon the Deep*** | Two things. The **Net of a Million Lies**: a galactic message network where reliability varies wildly and assessing *who is speaking and why* is a constant, load-bearing activity — the best fictional treatment of the provenance gap named in *Known gaps* (§11). And the **Tines**: pack minds whose identity is distributed across several bodies, which can lose members, gain them, and fragment. Fragments and integration (§1) dramatised at an unfamiliar scale. |
+| **Lem — *His Master's Voice*** | Humanity receives an unmistakable signal from space and **cannot decode it**, because decoding would require an ontology humanity does not have. Decades of effort by brilliant people, no progress, no comfort offered. The purest statement of the rule that an entity cannot ask about a distinction its ontology does not make — see *the diagnostic reading* (§6). |
+| **Borges — "Funes the Memorious"** | A man remembers everything, in total and perfect detail, and is therefore **incapable of thought** — he finds it absurd that one word, "dog," should cover many dogs and many views of one dog. He begins building a numbering system giving every integer its own name. **An ontology that refuses to generalise is not a finer ontology; it is no ontology.** The failure case for anyone who assumes the answer is always more resolution. |
+
+---
+
+## 15. Where the field is going
+
+Added 2026-08-30. The state of the ground this platform is being built on, and where the
+unoccupied space is. Forward-looking by design — what is being built now and what is still
+missing, not who thought of it first.
+
+### Ontology engineering: the bottleneck moved
+
+Building an ontology used to be the expensive part. It needed specialists, formal
+languages, and years — the field's own name for this was the *knowledge acquisition
+bottleneck*. Language models collapsed that cost to near zero: what took a team a year
+takes an afternoon.
+
+But notice exactly what moved. **The bottleneck relocated from building to validating.** A
+model will produce a beautiful, coherent, subtly wrong ontology, and it is
+indistinguishable from a right one at a glance.
+
+Which means the provenance problem named in *Known gaps* (§11) is not a quirk of this
+project. **It is now the field's central problem**, and this project arrived at it
+independently by getting burned once — a model fabricated one pattern in fourteen. Treat
+that convergence as a signal the framework is pointed the right way.
+
+### Four live frontiers
+
+- **Neurosymbolic convergence.** Embeddings are fuzzy, learned, and cannot explain
+  themselves. Symbolic ontologies are rigid, explainable, and brittle. Each fixes the
+  other's weakness exactly, and marrying them is the main research frontier. Technical
+  threads to follow: knowledge-graph embeddings, graph neural networks.
+- **Ontology alignment.** Two organisations merge and two incompatible ontologies must be
+  reconciled. Worth naming in this document's own vocabulary: **that is horizontal
+  navigation between ontologies** — same scale, different entity, comparative.
+- **Self-revising ontologies.** Historically an ontology was frozen the day it shipped.
+  This app already has one that is not: the Architecture Map's umbrella categories are
+  model-derived and re-derived as components change. Most enterprises do not do this.
+- **Personal ontologies.** Ontologies were always institutional — a hospital's, a
+  discipline's, a company's. The collapse in construction cost means an individual can now
+  have one. That is what this project is: a personal ontology of meaning. There is no
+  established practice here at all, which is both the risk and the opportunity.
+
+### The white space
+
+Everyone sells ontology **construction** and **integration**. Nobody sells:
+
+> *"Your ontology is wrong in these specific ways."*
+
+Diagnosis — the discipline set out in *the falsifiability rule* (§12) — is genuinely
+unoccupied ground.
+
+### Semantic search
+
+The arc so far: keywords → vector similarity → hybrid → retrieval-augmented generation →
+graph-aware retrieval. Each step returns something less literal than the last.
+
+Where it is heading:
+
+- **From retrieving passages to retrieving structures.** Today's systems hand back text
+  chunks. Community summaries over a graph were the first commercial move toward handing
+  back *shapes* instead.
+- **Multi-hop and compositional queries** — *"find an X related to a Y through a Z."*
+  Still genuinely bad, and it is the difference between a search box and a reasoning
+  system.
+- **Personalised semantic space.** Embeddings currently encode a consensus notion of
+  similarity, but what counts as similar depends on who is asking — a critic and a
+  therapist would place the same film in different neighbourhoods. Per-viewer semantic
+  geometry is unbuilt.
+
+### Analogical search — and why it does not exist yet
+
+State it plainly, because this is the project's own territory and a flattering picture
+would be useless.
+
+**There is no general analogical search engine.** Everything real is *domain-locked*: drug
+repurposing works only in chemistry, prior-art search only in patents, case-based reasoning
+only in law. Each was rebuilt from scratch and none transfers. No system today can be asked
+*"what is structurally like this?"* and cross a domain boundary.
+
+The technical obstacle, precisely:
+
+> **Embeddings capture similarity of *content*. Analogy requires similarity of
+> *structure*. The first does not approximate the second.**
+
+Two situations can share identical relational structure and have near-zero embedding
+similarity — an atom and a solar system share everything that matters and nothing a vector
+picks up. The rule recorded in the anchors (§13) — *map relations, not attributes* — is
+exactly what embeddings cannot do, because embeddings are attribute machines. The routes
+being tried are graph neural networks and subgraph matching; both are expensive and
+brittle.
+
+So: **surface similarity is solved. Structural similarity at scale is not.** That is the
+gap this platform aims at. It is real, it is the reason the analogical layer is missing
+from nearly every system worth studying, and it is hard rather than merely neglected.
+
+### Knowledge systems, and the posture worth taking
+
+Personal knowledge tools — the bidirectional-link, "second brain" family — read cleanly in
+this document's terms: they give a user a **personal ontology** (notes and links), a **thin
+semantic layer** (tags, light inference), and **no analogical layer whatsoever.** They will
+show you what you linked. They will never tell you that two clusters of notes you keep
+apart are the same shape.
+
+Which names the posture that actually differentiates this project:
+
+> **A knowledge system that disagrees with you.**
+
+Every system in the market is confirmatory. It retrieves what was asked for, recommends
+more of what was liked, summarises what it was given. None of them says *"you are repeating
+a pattern you cannot see."* That is adversarial-in-service, it is what fractal diagnosis
+is, and the fiction in the reading list (§14) suggests why nobody has shipped it: it is
+uncomfortable, and it raises the question of whether seeing someone's pattern grants any
+right to act on it.
