@@ -83,8 +83,10 @@ from `develop` — read them directly:
   the three layers as three acts every entity performs, the platform as a prosthetic
   analogical layer, mechanisms for integration and shadow, the three navigation moves
   (vertical / horizontal / entanglement), a grouped list of the real-world projects working
-  each layer, a reading list marked by difficulty, and where the field is going — including
-  why no general analogical search engine exists yet. **Append to this file** when the
+  each layer, a reference shelf of works with why each matters to the vision (including the
+  metaphysical lineage: Indra's Net, the implicate order, morphic resonance, the four
+  worlds), and where the field is going — including why no general analogical search engine
+  exists yet. **Append to this file** when the
   vision develops further, rather than re-deriving it in a conversation.
 - `films_master_list.md` — the ~199-film corpus across 12 clusters.
 - `chatgpt_archive.md` — the ~750k-token source archive. Large: search or read

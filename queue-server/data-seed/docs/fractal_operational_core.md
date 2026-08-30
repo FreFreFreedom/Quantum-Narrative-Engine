@@ -471,72 +471,76 @@ re-deriving it. Grouped by layer; one line each on what they actually do.
 
 ---
 
-## 14. Reading list
+## 14. Reference shelf
 
-Books that sharpen a specific part of this project, with what to take from each and how
-hard the going is. **Difficulty is marked honestly** — several of the foundational texts
-are genuinely punishing, and knowing that in advance is more useful than a flat list.
+Works that carry an idea this vision needs. **Not a reading list in the sense of homework**
+— these are here for the ideas they hold and the vocabulary they lend, so each entry says
+*why it matters to the vision*, not how hard it is or how long it takes. Reach for one when
+the idea it carries is the one you are trying to reach.
 
-Distinct from the app's existing per-entity book recommendations (`services/books.js`):
-that feature suggests reading *about an entity in the corpus*. This is a reading list for
-**the project itself**. Antoine raised (2026-08-28) that a section like this might
-eventually live in the app. Recorded as an idea, unstarted, not a commitment.
+Distinct from the app's per-entity book recommendations (`services/books.js`), which suggest
+reading *about an entity in the corpus*. This shelf is for the paradigm itself.
 
-### Start here
+### The fragment model — what an entity is made of
 
-| Book | What to take | Going |
-|---|---|---|
-| **Donella Meadows — *Thinking in Systems*** | The accessible door to everything in *integration and shadow* (§8). Short, clear, and it contains the leverage-points argument for why fighting a symptom is the weakest possible intervention. | Readable |
-| **Hofstadter & Sander — *Surfaces and Essences*** | The case that analogy is not a feature of thought but its engine. This is the single closest book to the analogical layer's thesis. Long but not difficult. | Readable, long |
-| **Richard Schwartz — *No Bad Parts*** | The accessible statement of Internal Family Systems: fragments in conflict, healing by re-inclusion rather than defeat. the model in *what counts as an entity* (§1) at the individual scale, written for a general reader. | Readable |
-| **Ivan Illich — *Medical Nemesis*** | A system generating the demand it exists to serve. The opioid argument in *integration and shadow* (§8), made in 1975 about medicine as a whole. Polemical and bracing. | Readable |
-
-### The analogical layer
-
-| Book | What to take | Going |
-|---|---|---|
-| **Hofstadter — *Gödel, Escher, Bach*** | Self-reference and pattern-across-levels as a single subject. Relevant to why this platform has the same architecture as the things it studies (*the diagnostic reading* and *what the platform is*, §6–7). | Demanding, rewarding |
-| **Peter Turchin — *War and Peace and War*** | Analogy as forecasting, done seriously: structurally similar societies, and what their completed arcs predict for open ones. The real discipline behind the ambition of *vertical navigation* (§9). | Readable |
-| **Ray Dalio — *Principles for Dealing with the Changing World Order*** | The same move in popular form — map the present onto prior empires' arcs. Useful mainly as a demonstration of how the move reads to a general audience. | Readable |
-| **Dedre Gentner — structure-mapping** | No single book; the work lives in papers. Take the one rule and stop: **a real analogy maps relations, not attributes.** | Papers only |
-
-### What a system is — fragments, boundaries, self-maintenance
-
-| Book | What to take | Going |
-|---|---|---|
-| **Maturana & Varela — *The Tree of Knowledge*** | Autopoiesis for a general reader: a living system is defined by producing its own boundary, and all living systems are cognitive systems. Backs *what counts as an entity* (§1) and *the three acts* (§4). Prefer this over their technical *Autopoiesis and Cognition*. | Readable |
-| **Whitehead — *Process and Reality*** | The philosophical backing for *entity and event as one thing* (§2) — things as stable patterns of events rather than substances. Notoriously hard; consider a secondary guide rather than the primary text. | Reference only |
-| **Luhmann — *Social Systems*** | Social systems constituted by their own distinction, each unable to see outside its own code. The sociological form of *the event vocabulary* (§3) and *the diagnostic reading* (§6), and genuinely brutal prose. | Reference only |
-| **Spencer-Brown — *Laws of Form*** | Short, strange, and starts from one instruction: *draw a distinction.* Worth holding as an object even if never read straight through. | Demanding, short |
-
-### The collective and the shadow
-
-| Book | What to take | Going |
-|---|---|---|
-| **René Girard — *The Scapegoat***, or *Violence and the Sacred* | How individual desire aggregates into collective violence and reliably selects a victim. The mechanism under the distributed-participation argument in *integration and shadow* (§8) argument. *The Scapegoat* is the easier entry. | Demanding |
-| **Jung — *The Undiscovered Self***, and the 1936 essay "Wotan" | The collective shadow argued at national scale. Direct ancestor of *integration and shadow* (§8); the essay is short and startling. | Readable |
-
-### Fiction that stress-tests the model
-
-Fiction earns its place here because *"what if the ontology were different"* is one of its
-oldest moves — and because §12 asks for cases that would **fail** the model, which fiction
-is unusually good at supplying.
-
-| Work | What to take |
+| Work | Why it matters here |
 |---|---|
-| **Borges — "The Analytical Language of John Wilkins"** | The Celestial Emporium of Benevolent Knowledge: an animal taxonomy including *those belonging to the Emperor* and *those that from a long way off look like flies.* The definitive short text on ontology as arbitrary. A few pages. **Read this one first.** |
-| **Borges — "Tlön, Uqbar, Orbis Tertius"** | A world whose language has no nouns, only verbs and adjectives — a civilisation with a different ontological layer, and therefore different thoughts. *The three acts* (§4), as fiction. |
-| **Ted Chiang — "Story of Your Life"** | A language whose structure changes how time is perceived. Ontology determining perception, taken to its limit. |
-| **Lem — *Solaris*** | **The failure case, and the most useful entry here.** An entity no human ontology can accommodate. What happens when the thing in front of you cannot be caught by any distinction you have — the falsification case from *the falsifiability rule* (§12), dramatised. |
-| **Asimov — *Foundation*** | Psychohistory: forecasting civilisational trajectories from aggregate individual behaviour. *Vertical navigation* (§9) at the top rung. Turchin's cliodynamics is the real-world attempt at it. |
-| **Iain M. Banks — the Culture novels** | Minds that model whole civilisations and intervene in them. The closest fiction comes to a prosthetic analogical layer at civilisational scale — including the question the double-reading caution raises in *Integration and shadow* (§8): whether recognising someone else's pattern gives you any right to act on it. |
-| **China Miéville — *Embassytown*** | **The novel on this subject.** The Ariekei's Language is bonded directly to reality, so they *cannot lie* — a sign detached from its referent is unthinkable to them. To say something new they must first **stage it into truth**: arrange for the thing to actually happen, so that it becomes sayable. The ontological layer as an absolute constraint on what can be thought, worked out more rigorously than in any philosophy text. |
-| **Greg Egan — the Truth Mines, in *Diaspora*** | **The best single image for what this platform is.** Mathematical truths as an actual navigable landscape — chambers you walk through, joined by corridors that *are* the proofs. Getting from one theorem to another means physically traversing the derivation. A knowledge graph you inhabit, in which vertical navigation (§9) is literally walking, and no rung can be skipped because the corridor is the only way through. |
-| **Vernor Vinge — *A Fire Upon the Deep*** | Two things. The **Net of a Million Lies**: a galactic message network where reliability varies wildly and assessing *who is speaking and why* is a constant, load-bearing activity — the best fictional treatment of the provenance gap named in *Known gaps* (§11). And the **Tines**: pack minds whose identity is distributed across several bodies, which can lose members, gain them, and fragment. Fragments and integration (§1) dramatised at an unfamiliar scale. |
-| **Lem — *His Master's Voice*** | Humanity receives an unmistakable signal from space and **cannot decode it**, because decoding would require an ontology humanity does not have. Decades of effort by brilliant people, no progress, no comfort offered. The purest statement of the rule that an entity cannot ask about a distinction its ontology does not make — see *the diagnostic reading* (§6). |
-| **Borges — "Funes the Memorious"** | A man remembers everything, in total and perfect detail, and is therefore **incapable of thought** — he finds it absurd that one word, "dog," should cover many dogs and many views of one dog. He begins building a numbering system giving every integer its own name. **An ontology that refuses to generalise is not a finer ontology; it is no ontology.** The failure case for anyone who assumes the answer is always more resolution. |
+| **Internal Family Systems** (Richard Schwartz) | The psyche as a system of parts in conflict, at varying degrees of integration, healed by bringing exiled parts back into relationship rather than defeating them. Gives *what counts as an entity* (§1) its working vocabulary at the individual scale — and the whole paradigm is the claim that this vocabulary holds at every rung. |
+| **Arthur Koestler — the holon** | A holon is simultaneously a whole and a part: complete in itself, and a fragment of something larger. **This is the unit the scale ladder is made of.** The word for what sits on every rung at once. |
+| **Ken Wilber — integral theory** | An explicit attempt to build one nested-scale model covering interior and exterior, individual and collective, at every level. The closest existing map of the territory the scale ladder is trying to cross. |
 
----
+### Correspondence across scale — the analogical layer's real ancestry
+
+| Work | Why it matters here |
+|---|---|
+| **Indra's Net** (Avatamsaka Sutra / Huayan Buddhism) | An infinite net with a jewel at every knot, each jewel reflecting every other jewel, and every reflection containing all the reflections. **This is the entanglement jump as metaphysics** — total, instantaneous correspondence with no path traversed. The purest image the vision has of what its own analogical layer is reaching for. |
+| **David Bohm — *Wholeness and the Implicate Order*** | The enfolded order: every region of reality contains the whole enfolded within it, the way every fragment of a hologram holds the entire image. **Fractal ontology stated as physics.** If the same pattern genuinely lives at every scale, this is the account of *why* it could. |
+| **Rupert Sheldrake — morphic resonance** | Patterns repeating across instances by resonance rather than by causal transmission — form propagating without a physical path. **Precisely the entanglement jump proposed as a mechanism of nature.** Whether or not it stands as science, it is the boldest existing statement that structural resonance is a real force and not a way of reading. |
+| **Plotinus — emanation** | Reality as nested levels, each proceeding from the one above and each containing its pattern in a lower key. A scale ladder built as metaphysics, running from the One down to matter. |
+| **Kabbalah — the four worlds and the Tree of Life** | The same structure recurring at four levels of reality, so that one diagram reads simultaneously as cosmos, society, psyche and body. **A working per-scale translation table, held sacred rather than tabulated** — the thing *the event vocabulary* (§3) is trying to build, already built in a different key. |
+| **The hermetic axiom — "as above, so below"** | The seed sentence of the whole enterprise: a claim that pattern at one scale corresponds to pattern at another. This platform is an attempt to *compute* it. |
+| **Dedre Gentner — structure-mapping** | The technical counterpart to all of the above. One rule to keep: **a real analogy maps relations, not attributes.** It is the rule that separates a genuine cross-scale echo from a surface resemblance. |
+| **Douglas Hofstadter — *Surfaces and Essences*, *Gödel Escher Bach*** | Analogy as the engine of cognition rather than one of its features, and self-reference as a subject in its own right — relevant to why this platform has the same architecture as the things it studies. |
+
+### Boundaries, self-maintenance, and what a system is
+
+| Work | Why it matters here |
+|---|---|
+| **Maturana & Varela — autopoiesis** | A living system defined by producing and maintaining its own boundary, and the claim that **all living systems are cognitive systems**. Underwrites both *what counts as an entity* (§1) and *the three acts* (§4): perception is not something advanced beings added, it is what self-maintenance *is*. |
+| **Whitehead — process philosophy** | Things as stable patterns of events rather than substances. The metaphysics behind *entity and event as one thing* (§2), and the reason that claim is a position rather than a confusion. |
+| **Spencer-Brown — *Laws of Form*** | Begins from a single instruction: *draw a distinction.* Treats the drawing of a boundary as the primal act from which everything else follows — which is exactly what the ontological layer does. |
+| **Niklas Luhmann** | Social systems constituted by their own distinction, each structurally unable to see outside its own code. Why an entity cannot ask about a distinction its ontology does not make. |
+| **Karl Friston — the Markov blanket** | The formal object that separates a system from its environment. The ontological boundary, written as mathematics. |
+
+### The collective, the shadow, and healing
+
+| Work | Why it matters here |
+|---|---|
+| **Jung — the collective shadow** | The shadow as what a psyche has disowned, argued at collective and national scale as well as personal. Direct ancestor of *integration and shadow* (§8), and the reason that section can speak about a nation's shadow without metaphor. |
+| **René Girard — mimetic desire, the scapegoat** | How individual desire aggregates into collective violence and reliably selects a victim. The mechanism under the claim that a macro shadow is sustained by distributed participation. |
+| **Donella Meadows — leverage points** | Why fighting a symptom is the weakest possible intervention and changing the paradigm is nearly the strongest. The systems-language proof of why recognition dissolves a shadow and opposition feeds it. |
+| **Ivan Illich — *Medical Nemesis*** | A system manufacturing the very dependency it exists to relieve. The opioid argument, generalised to medicine as a whole. |
+| **Teilhard de Chardin — the noosphere** | Consciousness as something that thickens and organises at planetary scale, with evolution running toward greater integration. The top of the scale ladder, taken seriously as a destination rather than a rhetorical flourish. |
+
+### Fiction — where a different ontology is actually built
+
+Fiction earns its place because *"what if the ontology were different"* is one of its oldest
+moves, and because *the falsifiability rule* (§12) asks for cases that would **fail** the
+model — which fiction supplies more honestly than theory does.
+
+| Work | Why it matters here |
+|---|---|
+| **China Miéville — *Embassytown*** | The Ariekei's Language is bonded directly to reality, so they cannot lie — a sign detached from its referent is unthinkable. To say something new they must first **stage it into truth**: make the thing happen so that it becomes sayable. The ontological layer as an absolute limit on what can be thought, and on what can therefore be *become*. |
+| **Greg Egan — the Truth Mines, in *Diaspora*** | **The best single image for what this platform is.** Mathematical truth as a landscape you walk through, chambers joined by corridors that *are* the proofs. Vertical navigation (§9) as literal movement, where no rung can be skipped because the corridor is the only way between. |
+| **Borges — "Funes the Memorious"** | Perfect and total recall producing a man **incapable of thought**, unable to accept that one word should cover many dogs. **An ontology that refuses to generalise is no ontology.** The corrective for anyone who believes the answer is always more resolution. |
+| **Borges — "The Analytical Language of John Wilkins"** | The Celestial Emporium of Benevolent Knowledge — a taxonomy including *those belonging to the Emperor* and *those that from a long way off look like flies*. That every ontology is a choice, and that no choice is innocent. |
+| **Borges — "Tlön, Uqbar, Orbis Tertius"** | A world whose language has no nouns, only verbs and adjectives, and whose inhabitants therefore think thoughts unavailable to us. *The three acts* (§4), as fiction. |
+| **Lem — *Solaris*** | An entity no human ontology can accommodate, and the refusal to pretend otherwise. What happens when the thing before you cannot be caught by any distinction you possess. |
+| **Lem — *His Master's Voice*** | An unmistakable signal from space that **cannot be decoded**, because decoding would require an ontology humanity does not have. The purest statement that you cannot ask about a distinction you cannot make. |
+| **Vernor Vinge — *A Fire Upon the Deep*** | The **Net of a Million Lies**, where judging who is speaking and why is constant load-bearing work — the provenance problem lived rather than described. And the **Tines**, pack minds whose identity is spread across bodies that can be lost, gained and fragmented: fragments and integration at a scale we have no word for. |
+| **Ted Chiang — "Story of Your Life"** | A language whose structure changes how time itself is perceived — perception reorganised by the ontology one holds. |
+| **Asimov — *Foundation*** | Forecasting civilisational trajectory from aggregate individual behaviour. Macro from micro (§9), at the top rung, treated as an engineering problem. |
+| **Iain M. Banks — the Culture** | Minds that model whole civilisations and intervene in them. The closest fiction comes to a prosthetic analogical layer at civilisational scale — and it spends ten books on the question the double-reading caution raises in *integration and shadow* (§8): whether seeing someone's pattern grants any right to act on it. |
 
 ## 15. Where the field is going
 
