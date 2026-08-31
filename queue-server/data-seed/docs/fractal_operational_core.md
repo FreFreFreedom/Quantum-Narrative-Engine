@@ -776,13 +776,6 @@ answer, all correct — and **results stop being a list.** A ranked list is a fl
 assumption. In fractal space, results are a landscape you descend into, each opening into its
 own field. Search as navigation, where the walking is the understanding.
 
-And the contemplative register names something a modelling layer could genuinely hold: a text
-does not *have* a meaning — it has meanings at depths, and which one reaches you depends on
-the depth of attention you bring. The scripture does not change. The reader's resolution
-does. Which suggests **depth of attention as a real parameter of the system** rather than a
-property of the object: meaning as a relationship between the seer and the seen at a given
-depth, never a value sitting in a field waiting to be read.
-
 ### Analogical search
 
 - **An analogy is a fingerprint, not a score.** Two entities may correspond strongly at the
