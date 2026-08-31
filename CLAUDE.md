@@ -85,8 +85,10 @@ from `develop` — read them directly:
   (vertical / horizontal / entanglement), a grouped list of the real-world projects working
   each layer, a reference shelf of works with why each matters to the vision (including the
   metaphysical lineage: Indra's Net, the implicate order, morphic resonance, the four
-  worlds), and where the field is going — including why no general analogical search engine
-  exists yet. **Append to this file** when the
+  worlds), where the field is going — including why no general analogical search engine
+  exists yet — the fractal reading (a fractal is a process, so the ontology becomes a
+  generating rule; analogical strength as the number of scales a correspondence survives),
+  and a catalogue of mathematical instruments sorted by which of the three acts each serves. **Append to this file** when the
   vision develops further, rather than re-deriving it in a conversation.
 - `films_master_list.md` — the ~199-film corpus across 12 clusters.
 - `chatgpt_archive.md` — the ~750k-token source archive. Large: search or read
