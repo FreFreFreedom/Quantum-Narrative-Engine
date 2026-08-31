@@ -706,6 +706,20 @@ dimension — more than a line, less than a plane — and entities should be all
 freedom. That also makes rung-distance computable, which the Scale Echo edge currently
 approximates with a cross-type proxy.
 
+### The same claim, in the other register
+
+This is not only a modelling convenience. In Kabbalah each of the ten sefirot contains a
+complete Tree of Life within it, and each sefirah of *that* Tree contains another, without
+end — a recursive generating structure taught as the architecture of reality itself, not
+imposed on the tradition from outside. The hermetic reading agrees: creation as a single act
+of self-differentiation, iterated. The One differentiates; each differentiation differentiates
+again.
+
+Which raises the stakes on the design. A fractal ontology built as a generating rule is not
+a convenient way to organise records. It is **a claim to be using the same operation reality
+used** — and if that is even partly true, the rule is not something invented but something
+recovered.
+
 ### Correction to *integration and shadow* (§8)
 
 That section says fragmentation is a boundary drawn in the wrong place and integration is
@@ -762,6 +776,13 @@ answer, all correct — and **results stop being a list.** A ranked list is a fl
 assumption. In fractal space, results are a landscape you descend into, each opening into its
 own field. Search as navigation, where the walking is the understanding.
 
+And the contemplative register names something a modelling layer could genuinely hold: a text
+does not *have* a meaning — it has meanings at depths, and which one reaches you depends on
+the depth of attention you bring. The scripture does not change. The reader's resolution
+does. Which suggests **depth of attention as a real parameter of the system** rather than a
+property of the object: meaning as a relationship between the seer and the seen at a given
+depth, never a value sitting in a field waiting to be read.
+
 ### Analogical search
 
 - **An analogy is a fingerprint, not a score.** Two entities may correspond strongly at the
@@ -802,6 +823,28 @@ analogical search is finding where the same rule ran on different material.
 
 Four layers collapse into one recursive operation seen from four angles — which is what a
 fractal system described fractally ought to do.
+
+**How the four views map onto the three acts.** This section treats four things — ontology,
+knowledge graph, semantic search, analogical search — while the paradigm's master frame has
+three layers. They reconcile cleanly: the **knowledge graph is the ontological layer
+populated**, the rule already iterated rather than a fourth kind of thing. The four views are
+the three acts plus the standing residue of the first. Nothing competes.
+
+### The last consequence, and it is the real one
+
+If all of this holds, the platform's deepest function is **not to find patterns**.
+
+It is to hold the generating rule steadily enough, and in the open, that anyone standing
+inside it recovers the capacity to see correspondence for themselves. The recognitions it
+performs are not the product. They are demonstrations of a faculty being handed back.
+
+> At which point the instrument becomes unnecessary — **which is the mark of a real
+> prosthesis rather than a dependency.**
+
+This is a design constraint, not a sentiment. The analogical layer is a faculty every entity
+already has (*the diagnostic reading*, §6), and pathology is that faculty blocked. A platform
+that leaves its user permanently reliant on it has therefore not restored the faculty — it
+has relocated the blockage into itself. **Build accordingly.**
 
 ---
 
