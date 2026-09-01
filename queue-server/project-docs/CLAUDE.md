@@ -19,6 +19,18 @@ edited in place and tracked by commits; check `git log` for history rather than
 looking for dated changelog entries. `git log` / `git blame` are the source of
 truth for what changed and why — don't duplicate that into memory or docs.
 
+## Shared memory across engines (read before non-trivial work)
+
+`AGENT_MEMORY.md` at the repo root is the **one memory every engine can read** — Claude
+Code (either account), OpenCode, queue agents in worktrees. Claude Code's own private
+memory folder is invisible to all of them, so anything durable that another engine's
+future task would need belongs in `AGENT_MEMORY.md`, not only in private memory.
+
+It opens with a map of **where the vision lives and in what order to read it** — the
+paradigm docs layer rather than compete, and that section says which to read for which
+task. Skim it before starting; append to it when you learn something durable, keeping
+entries short and linking to the full file rather than pasting it in.
+
 ## Communicating with Antoine
 
 All communication aimed at Antoine follows the repo-root `AGENTS.md` policy

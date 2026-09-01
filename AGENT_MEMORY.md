@@ -18,6 +18,74 @@ instead of pasting it in.
 
 ---
 
+## The vision: where it lives, and in what order to read it
+
+**Added 2026-09-01.** There are several paradigm documents and they are NOT rivals — they
+layer, each doing a different job. Nothing here contradicts anything else; read in this
+order and skip what your task does not touch. All of them live in
+`queue-server/data-seed/docs/`, are committed (so any worktree has them), and are seeded
+into the app's `knowledge_docs` on every boot (so the app's own AI reads the same text).
+
+| Read | Doc | What it is | When you need it |
+|---|---|---|---|
+| 1st | `ontology.md` (~20k) | The paradigm **described**: the ontological/semantic/analogical layers, Integration Continuum, Scale Echo, and what the platform is. | Any task touching the model. Start here if you have never seen this project's ideas. |
+| 2nd | `fractal_operational_core.md` (~66k) | The paradigm **operationalised**: what counts as an entity, why entity and event are one thing, the three layers as three *acts*, mechanisms for integration and shadow, the fractal reading, and the catalogue of mathematical instruments. 17 sections. | The main reference. Read the sections your task touches; it is long, so do not pull it whole without reason. |
+| 3rd | `fractal_vision_spec.md` (~6k) | Short, code-facing **corrections** from the archive extraction: vertical navigation vs. entanglement jumps, the scale ladder, the five-step method. | Before touching `computeEchoes`, scale, or the continuum code. |
+| ref | `fractal_vision_passages.md` (~254k) | The 206 sourced passages behind the spec. | Only to cite a specific claim by page. Never read whole. |
+| ref | `chatgpt_archive.md` (~3M) | The raw source archive. | Only to search a specific section. Never read whole. |
+
+**The rule:** when the vision develops, **append to `fractal_operational_core.md`** and date
+the addition — do not start a new doc and do not leave the thinking in a conversation. If an
+addition corrects something already written there, say so inline and date it (that file
+already carries one such correction, on what integration means).
+
+### What was added to it 2026-08-28 → 09-01
+
+Skim these headings before any paradigm work; the detail is in the doc.
+
+- **An entity is anything that maintains a boundary against its own dissolution** — which is
+  why films, books and policy texts are *mediums* carrying an entity's testimony, not
+  entities.
+- **Entity and event are the same kind of thing.** An event is an intensity of an entity's
+  internal conflict at a given scale — autoimmune disease, dissociation, estrangement, purge,
+  genocide being one operation at five rungs. **Consequence for the schema: do NOT add an
+  `event` node type.**
+- **The three layers are three acts** — distinguishing, interpreting, recognising — performed
+  by every self-maintaining entity, not only by this platform. Which makes them
+  *diagnosable*: a blocked analogical layer is itself the pathology.
+- **The platform is a prosthetic analogical layer** — it performs the recognition an entity
+  cannot perform for itself. And a design constraint follows: a platform its user stays
+  permanently reliant on has relocated the blockage into itself rather than clearing it.
+- **A third navigation move, horizontal** (same scale, different entity), joining vertical and
+  entanglement.
+- **The fractal reading**: a fractal is a *process*, so the ontology is a generating rule
+  rather than a schema; analogical strength is the number of consecutive scales a
+  correspondence survives; the deepest matching compares *generating rules*, not structures.
+- **The mathematical instruments** the paradigm is made of, sorted by which act each serves,
+  plus how they unlock each other and why ontological instruments raise the ceiling the other
+  two work beneath.
+
+### Standing intentions from that work (NOT green lights)
+
+- **Frustrated systems** — fragmentation as a measurable property rather than a description.
+  Antoine said 2026-08-30 he wants this implemented eventually. Not scoped.
+- **Sheaves** — measures *where* an entity's fragments fail to agree and by how much; likely
+  sharper than frustrated systems for the same purpose. Raised 2026-08-31.
+- **An instrument recommender** rather than a feature recommender — matching the shape of a
+  problem to the shape of a mathematical instrument. Raised 2026-08-31.
+
+### How to talk to Antoine about ideas
+
+`AGENTS.md` → *Working with Antoine* → **"How to talk about ideas with Antoine"** carries the
+hard rules, added 2026-08-31 and applying to every engine: never an equation (but
+mathematical instruments in plain words are actively wanted), never cite historical thinkers
+as having already had his ideas, never gate an idea on feasibility, hold the grounded and
+metaphysical registers at once, write to inspire, never a bare section number, layer-match and
+anchor each idea, and references are for ideas rather than for reading. **Read that section
+before writing him anything about the paradigm.**
+
+---
+
 ## Perception layer investigation (2026-08-25/26)
 
 FMCNS has no perception layer yet — every tag is hand-authored, see
