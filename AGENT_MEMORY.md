@@ -79,6 +79,21 @@ while nothing shipped — is an ontological-layer failure, the app unable to dis
 from *appears done*. Guard rail: a self-diagnosis must produce a decision, not a pleasing
 symmetry.
 
+### Why the ontology investment is the one that matters
+
+`fractal_operational_core.md` §17. **A tag is a token with no interior** — the only question
+askable of it is present/absent, so tag-matching is counting, the weakest operation on
+meaning. Give an entity an interior and shape questions become possible: does it have an
+exiled part, is the conflict symmetric or asymmetric, does anything mediate, does the strain
+resolve or circulate.
+
+The consequence that should drive priorities: **two entities can share no vocabulary at all
+and have identical anatomy.** Shared vocabulary is a *record of noticing* — if two things
+share words, someone already saw it. So label-matching surfaces the obvious and is
+structurally blind to the profound, and the graph's current `ent` edge (a count of shared
+tags) is aimed at ground already picked clean. Giving entities interiors is not an
+improvement of degree; it moves the analogical layer into territory nobody has entered.
+
 ### Standing intentions from that work (NOT green lights)
 
 - **Frustrated systems** — fragmentation as a measurable property rather than a description.

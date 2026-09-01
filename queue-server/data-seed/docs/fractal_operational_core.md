@@ -603,6 +603,25 @@ learned the expensive way; the paradigm explains why that class of bug keeps ret
 predicts it will keep returning until the app's account of itself is checked against the
 world rather than against its own records.
 
+### The Architecture Navigator is already a prototype of this
+
+The app has one place where it looks at itself and names its own parts, with categories it
+**re-derives** as it changes rather than holding frozen. That is the self-application, half
+built, shipped, and working.
+
+And running the diagnostic on it surfaces the gluing failure precisely: its umbrella
+categories are named *perception, knowledge, reasoning, depth navigation* — which are
+descriptions of **what the Content graph does**. Two parts of one system, describing the
+same subject, unaware of each other. The seam is visible without any instrument at all.
+
+### The decision that follows from the bug reading
+
+Not a symmetry — an instruction. **Stop fixing instances of the done/appears-done fault and
+give the app a way to check its claims about itself against the world rather than against its
+own records.** Some of this exists already (the git-ancestry check that lets a card find out
+whether its work is really on the trunk). The paradigm says that is the *category* of fix, and
+that instance-by-instance repair will keep failing until the self-model is checked outward.
+
 ### The guard rail
 
 Self-application slides into cleverness if unchecked. The discipline: **a self-diagnosis must
@@ -1014,6 +1033,39 @@ structure alone gives an interior; together they give a thing neither contains �
 existing at a measurable position on a continuum*, which is an object that can be matched.
 Persistence alone is a measuring device; joined to scale it becomes the strength metric;
 joined to rule-matching it becomes evidence that two processes are one process.
+
+### Why label-matching finds the *wrong* analogies, not merely weak ones
+
+Worth stating sharply, because it is the argument for the whole ontological investment.
+
+**A tag is a token with no interior.** Exactly one question can be asked of it: present, yes
+or no. You cannot ask how guilt is *arranged* in an entity, what it is at war with, whether it
+has swallowed the whole or been walled into a corner. So two entities sharing five tags outrank
+two sharing one, and the entire operation is **counting** — the weakest thing that can be done
+to meaning.
+
+Give an entity an interior and questions appear that were previously unaskable: does it have a
+part it has **exiled**, and which one? Is the conflict **symmetric** — two equals at war — or
+asymmetric, one part dominant and one suppressed? Is there a part that **mediates**, or does the
+tension circulate with nowhere to land? Does the strain resolve anywhere, or does the whole
+hold only by never being looked at?
+
+Those are shape questions. Which leads to the turn:
+
+> **Two entities can share not one single word and have identical anatomy.**
+
+A Japanese film, a Latin American nation, a marriage. No vocabulary in common; every bone in
+common.
+
+And so label-matching fails in a specific, damning direction. **It surfaces the obvious and is
+structurally blind to the profound.** If two things share vocabulary, someone already noticed —
+shared vocabulary *is* a record of noticing. The analogies still worth finding are precisely
+those between things sharing no words at all.
+
+The current `ent` edge is therefore not a weak version of the right instrument. **It is aimed
+at the one region that has already been picked clean.** Giving an entity an interior does not
+improve the analogical layer by a degree; it moves it out of exhausted ground and into
+territory nobody has entered.
 
 ### The instrument-set is itself fragmented
 
