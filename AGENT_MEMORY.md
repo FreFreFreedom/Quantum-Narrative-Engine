@@ -56,6 +56,14 @@ Skim these headings before any paradigm work; the detail is in the doc.
 - **The platform is a prosthetic analogical layer** — it performs the recognition an entity
   cannot perform for itself. And a design constraint follows: a platform its user stays
   permanently reliant on has relocated the blockage into itself rather than clearing it.
+- **The three acts as generating rules (foundational).** Every layer takes the generating-rule
+  form, not just the ontological one: *an entity is a boundary that maintains itself, applied
+  again to its fragments*; *a part means what it is in tension with*; *two things correspond
+  when the same rule generated both*. One rule wearing three faces — draw the distinction,
+  name it by what it stands against, recognise it elsewhere. **Not three systems: one rule run
+  three times, each pass feeding the next.** Direct consequence: the semantic layer is a rule,
+  not a tag vocabulary — anything that reduces to attaching independent labels has abandoned
+  the generator.
 - **A third navigation move, horizontal** (same scale, different entity), joining vertical and
   entanglement.
 - **The fractal reading**: a fractal is a *process*, so the ontology is a generating rule

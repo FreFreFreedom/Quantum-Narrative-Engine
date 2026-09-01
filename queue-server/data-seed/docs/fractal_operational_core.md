@@ -114,6 +114,37 @@ the minimum operations any self-maintaining thing performs:
 Stated this way the model stops being an information architecture and becomes the
 structure of self-maintenance itself.
 
+### The three acts as generating rules (foundational — added 2026-09-01)
+
+Antoine's principle: the generating-rule form should govern **every** layer, not only the
+ontological one. Each act can be stated as a rule that *produces* rather than a table that
+*lists*:
+
+> **Ontological.** An entity is a boundary that maintains itself. Inside any entity, apply
+> the rule again to its fragments.
+>
+> **Semantic.** A part means what it is in tension with. Meaning is relational and recursive
+> — a fragment cannot be named in isolation, only by what it opposes and what opposes it. The
+> duty means nothing without the desire it constrains.
+>
+> **Analogical.** Two things correspond when the same rule generated both — and a
+> correspondence is itself checkable one scale up.
+
+Three rules, each recursive, each producing rather than listing. And they are one rule wearing
+three faces: **draw the distinction, name it by what it stands against, recognise it
+elsewhere.**
+
+Which is why the power multiplies rather than adds. **This is not three systems. It is one
+rule run three times, each pass feeding the next.** The semantic rule needs the ontological
+one to have drawn parts before there is anything to stand in tension; the analogical rule
+needs the semantic one to have named the tension before there is a shape to recognise; and a
+recognition then hands structure back to the ontological layer (see *how the instruments
+unlock each other*, §17).
+
+Consequence worth stating plainly: **the semantic layer is a rule, not a tag vocabulary.** A
+tag names a thing in isolation, which the rule forbids. Any future semantic work that reduces
+to attaching independent labels has abandoned the generator and gone back to the table.
+
 ---
 
 ## 5. The immune system is the proof case
