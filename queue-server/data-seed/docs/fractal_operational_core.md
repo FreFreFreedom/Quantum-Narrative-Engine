@@ -662,6 +662,87 @@ act of self-application yields only an elegant sentence, it is decoration — di
 
 ---
 
+## 14c. How an entity's interior might be populated
+
+Added 2026-09-01. **UNSTARTED METHOD — NOT A GREEN LIGHT.** Nothing here is approved,
+scoped, or scheduled; Antoine was explicit. Recorded because it is the first thing in this
+document that is a *procedure* rather than a principle, and it would otherwise be lost.
+
+### The gap it addresses
+
+*An entity is a boundary that maintains itself; inside any entity, apply the rule again to
+its fragments* is a **specification**, not a procedure. It says fragments exist. It does not
+say where to look for them in a wall of dialogue or a decade of speeches.
+
+And the obvious move is the dangerous one. Hand testimony to a model and ask *what are this
+entity's fragments*, and it will answer every time — fluently, plausibly, unfalsifiably.
+**A hallucinated interior is worse than no interior**, because everything downstream inherits
+it and the analogical layer will then find rigorous correspondences between two fictions.
+This project has already paid for that lesson once: one fabricated pattern in fourteen,
+caught only by hand.
+
+### The move that would make it robust
+
+> **Fragments should be *discovered*, not *asserted*.**
+
+Testimony is not shapeless. In a film, characters speak — to specific others, in specific
+scenes, with a rhythm of approach and withdrawal. That is a countable interaction network
+sitting in the subtitles whether or not any model believes in it. The same holds elsewhere:
+factions vote and denounce, departments escalate or route around each other. **Every
+self-maintaining entity leaves a trace of its own internal traffic**, and that trace is the
+interior before anyone interprets it.
+
+This shrinks the model's job from *invent the anatomy* (uncheckable) to *name the anatomy
+that was found* (checkable) — a job models are good at, and one where being wrong is visible.
+
+### Four stages, four distinct failure modes
+
+1. **Extraction** — get the traffic out of the testimony. Who acts on whom; which parts
+   co-occur, which never do, which appear only in opposition. Mechanical, no interpretation.
+2. **Partition** — find the groupings actually present. **Community detection** already runs
+   in this repo (`services/tagCommunities.js` turned 641 tags into 106 communities) — the same
+   machinery pointed at interactions *inside one entity* rather than tags across the corpus.
+   **Structural balance** is likely sharper: when relations carry a sign (allied / hostile),
+   a network is *balanced* if it splits cleanly into camps, and **imbalance is fragmentation,
+   directly computable** — a measurement rather than a description. **Sheaf obstruction** goes
+   further and says *where* the seams fail and by how much.
+3. **Naming** — the model reads the found partition and says what each part is. Narrow,
+   checkable, and it cannot reshape a structure it did not create.
+4. **Verification** — coarse-grain the entity and ask whether the fragmentation survives. **A
+   partition that vanishes under one round of blurring was noise wearing the costume of
+   structure.** This is the stage nobody builds and the one that makes the rest trustworthy.
+
+### Provenance at generation time, not after
+
+Every fragment produced should carry from birth: *which testimony produced this, and what
+would falsify it.* Near-zero cost when recorded at generation; impossible to reconstruct
+later, when the evidence is gone and only the confident claim remains. This closes the gap
+named in *known gaps* (§11) at the one moment it is cheap to close.
+
+### Why film would have to be first
+
+Bootstrapping looks circular — nothing is mapped, so nothing can be matched. The answer is to
+begin where the interior is **most legible**. Film dialogue is the best-case material in
+existence: characters literally speak, in turns, in scenes, to named others, so the
+interaction network is nearly free to extract. Countries and institutions have real fragments
+but muddier traces.
+
+So film characters would be the **seed anatomies** — and every other entity type becomes
+cheaper to read once film has taught the system what an anatomy looks like. Film-first was
+never only "we happen to have the corpus."
+
+### What would be built first, if anything ever were
+
+**Not the pipeline. One entity, all the way through.** Take a single film: extract its
+interaction network, partition it, have the model name the parts, blur it and see what
+survives. Then ask the only question that matters — *does this anatomy say something about
+this character that the tags never could?*
+
+If yes, the machine is worth building and its shape is known. If no, it cost one film instead
+of five hundred.
+
+---
+
 ## 15. Where the field is going
 
 Added 2026-08-30. The state of the ground this platform is being built on, and where the

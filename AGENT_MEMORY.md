@@ -108,6 +108,13 @@ improvement of degree; it moves the analogical layer into territory nobody has e
   Antoine said 2026-08-30 he wants this implemented eventually. Not scoped.
 - **Sheaves** — measures *where* an entity's fragments fail to agree and by how much; likely
   sharper than frustrated systems for the same purpose. Raised 2026-08-31.
+- **A method for populating entity interiors** — `fractal_operational_core.md` §14c.
+  **UNSTARTED, NOT A GREEN LIGHT** (Antoine, 2026-09-01). Fragments discovered from the
+  countable traffic inside testimony rather than asserted by a model; four stages
+  (extract / partition / name / verify) so a hallucinated interior cannot pass silently;
+  structural balance as a computable measure of internal conflict; provenance recorded at
+  generation time; film first, because its interior is the most legible. If it is ever
+  started, the first step is **one entity end to end**, not the pipeline.
 - **An instrument recommender** rather than a feature recommender — matching the shape of a
   problem to the shape of a mathematical instrument. Raised 2026-08-31.
 
