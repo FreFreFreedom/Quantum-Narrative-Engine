@@ -65,6 +65,20 @@ Skim these headings before any paradigm work; the detail is in the doc.
   plus how they unlock each other and why ontological instruments raise the ceiling the other
   two work beneath.
 
+### The self-diagnostic — use it when stuck
+
+`fractal_operational_core.md` §14b. **Run the paradigm on the project itself.** Ask of any
+stuck part: what can it distinguish, what can it structurally not see, what does it think
+things mean, can it recognise itself in others, and where do its fragments fail to glue —
+then the only question that pays: **which layer is failing?**
+
+Carries the project's standing self-diagnosis (the ontological layer is the failing one; the
+semantic layer is sparse; the analogical layer counts shared tags because that is all the
+ontology offers it) and the reading that this project's recurring bug — a card saying *Live*
+while nothing shipped — is an ontological-layer failure, the app unable to distinguish *done*
+from *appears done*. Guard rail: a self-diagnosis must produce a decision, not a pleasing
+symmetry.
+
 ### Standing intentions from that work (NOT green lights)
 
 - **Frustrated systems** — fragmentation as a measurable property rather than a description.

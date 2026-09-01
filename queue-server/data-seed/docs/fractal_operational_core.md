@@ -548,6 +548,70 @@ model — which fiction supplies more honestly than theory does.
 | **Asimov — *Foundation*** | Forecasting civilisational trajectory from aggregate individual behaviour. Macro from micro (§9), at the top rung, treated as an engineering problem. |
 | **Iain M. Banks — the Culture** | Minds that model whole civilisations and intervene in them. The closest fiction comes to a prosthetic analogical layer at civilisational scale — and it spends ten books on the question the double-reading caution raises in *integration and shadow* (§8): whether seeing someone's pattern grants any right to act on it. |
 
+## 14b. The self-diagnostic: run the paradigm on the project
+
+Added 2026-09-01. Not a flourish — a **working method**, and the one that has produced the
+most in the least time. Whenever the project is stuck, unclear, or choosing between
+options, turn the paradigm's own instrument on the project itself.
+
+It has already paid out repeatedly: the instrument-set turning out to be *itself*
+fragmented (so the branch this vision needs is a reconciliation, not a theorem); the
+instrument recommender turning out to *be* the analogical layer pointed at its own
+construction; the platform turning out to have the same three layers as the things it
+studies; the enterprise reading, which is the same diagnosis run on a company. Five times
+over in a single conversation is not coincidence — it is a method that works.
+
+**The questions to ask of any part of this project:**
+
+1. What can this thing *distinguish* — and what can it structurally not see?
+2. What does it think things *mean*?
+3. Can it recognise itself in others?
+4. Where are its fragments, and **where do they fail to glue**?
+
+And then the one that matters, from *the falsifiability rule* (§12): never *"does it have
+three layers"* — everything passes — but **which layer is failing, and how?**
+
+### The standing self-diagnosis of FMCNS (as of 2026-09-01)
+
+- **Ontological layer — this is the failing one.** The app can distinguish character, film
+  and country; three unordered scale labels; tags; two continuum axes. It **cannot** see
+  fragments inside an entity, time, a position between rungs, or the provenance of its own
+  claims. Everything above it is starved by this.
+- **Semantic layer — present but sparse.** 582 of 641 tags appear on exactly one entity;
+  only 214 of 413 entities carry any tag at all; the two axes are scored on 93 and 39
+  entities. Vocabulary without density.
+- **Analogical layer — doing the crudest possible thing.** The `ent` edge is a count of
+  shared tags, and real vertical navigation does not exist at all. Not because the idea is
+  hard, but because a thin ontology gives it nothing better to work with.
+
+**The app is an entity whose fragments fail to glue.** Content, Map, Architecture, Queue and
+Travaux are five locally coherent views with almost no gluing between them — the Architecture
+Navigator knows components, the Content graph knows entities, and neither knows the other
+exists.
+
+### Its own bugs are diagnostic, not merely annoying
+
+The recurring failure in this project's history — a task card reading *Live* while nothing
+shipped, eight graph tasks finishing and never merging, a feature reported done and inert —
+is **one class of fault, and in this paradigm's own terms it is an ontological-layer
+failure**: the app cannot reliably distinguish *done* from *appears done*. Its self-model and
+its reality are two local patches that do not glue, and the seam is exactly where the lie
+appears.
+
+That is why the standing rule is *use the feature, do not read the card*. The rule was
+learned the expensive way; the paradigm explains why that class of bug keeps returning, and
+predicts it will keep returning until the app's account of itself is checked against the
+world rather than against its own records.
+
+### The guard rail
+
+Self-application slides into cleverness if unchecked. The discipline: **a self-diagnosis must
+produce a decision, not a pleasing symmetry.** The fragmented-instruments reading produced one
+(what the new branch would have to be). The Architecture Navigator produced a feature. If an
+act of self-application yields only an elegant sentence, it is decoration — discard it.
+
+---
+
 ## 15. Where the field is going
 
 Added 2026-08-30. The state of the ground this platform is being built on, and where the
