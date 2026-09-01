@@ -719,6 +719,37 @@ would falsify it.* Near-zero cost when recorded at generation; impossible to rec
 later, when the evidence is gone and only the confident claim remains. This closes the gap
 named in *known gaps* (§11) at the one moment it is cheap to close.
 
+### Where the multiplication actually happens — the loop runs backwards
+
+The chain forward is plain: interiors make shape questions askable; shape questions make
+anatomy-matching possible; anatomy-matching finds correspondences vocabulary could never
+surface.
+
+But then it turns around.
+
+> **A correspondence found between two entities transfers structure.**
+
+If entity A and entity B have the same anatomy, and A's interior is richly mapped while B's is
+thin, **B's missing parts can be proposed from A's.** Not copying facts — copying *shape*, as
+a hypothesis to be tested against B's own testimony.
+
+So the analogical layer feeds back into the ontological one. **The thing that recognises
+becomes the thing that populates.** Which means the system reads entity number five hundred
+far better than it read entity number five, because by then four hundred and ninety-nine
+mapped anatomies rise to meet it.
+
+> **The corpus stops being the material. The corpus becomes the instrument.**
+
+That is the compounding: not each layer adding its increment, but the last layer reaching back
+to enrich the first, so every turn of the loop begins from higher ground. And it is the one
+property that distinguishes this from a tool — a tool stays the size it was bought at, while
+this **sharpens by being used.** Every entity understood makes the next one cheaper to
+understand.
+
+(This is also the general form of the *analogical trajectory forecasting* concept already
+logged in the app's architecture: not only projecting a completed arc forward onto an open
+one, but projecting *anatomy sideways* onto an entity whose interior is still thin.)
+
 ### Why film would have to be first
 
 Bootstrapping looks circular — nothing is mapped, so nothing can be matched. The answer is to

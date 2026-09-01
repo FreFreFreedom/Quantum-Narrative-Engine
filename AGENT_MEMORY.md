@@ -115,6 +115,12 @@ improvement of degree; it moves the analogical layer into territory nobody has e
   structural balance as a computable measure of internal conflict; provenance recorded at
   generation time; film first, because its interior is the most legible. If it is ever
   started, the first step is **one entity end to end**, not the pipeline.
+- **The corpus becomes the instrument** (`fractal_operational_core.md` §14c). A correspondence
+  between two entities **transfers structure**: where A and B share an anatomy and A is richly
+  mapped, B's missing parts can be proposed from A's — copying *shape* as a hypothesis, not
+  facts. So the analogical layer feeds back into the ontological one, and the system reads
+  entity 500 far better than entity 5. Unlike a bought tool, which stays the size it was
+  bought at, **this sharpens by being used.**
 - **An instrument recommender** rather than a feature recommender — matching the shape of a
   problem to the shape of a mathematical instrument. Raised 2026-08-31.
 
