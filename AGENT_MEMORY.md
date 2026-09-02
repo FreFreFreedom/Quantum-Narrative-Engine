@@ -289,6 +289,14 @@ wrong premises in real briefs.
   cross-conversation memory piece) is written but not queued.
 - A Gemini-for-big-attachments plan was drafted but Antoine said he's not settled
   on it — don't implement from memory, re-confirm scope with him first.
+- **Integrating ludology and narratology** — noted by Antoine 2026-09-01 as a seed for
+  later, undeveloped. Why it may matter: the paradigm has been reading entities
+  *narratively* (arcs, characters, meaning) while the generating-rule move is *ludic* —
+  a rule that produces, rather than a story that is told. So an entity is arguably both
+  at once: a story with an arc, and a system with rules, constraints, agency and a
+  state-space. Games are also the one medium where the observer is *inside* the system
+  making choices, which touches the platform-as-prosthesis idea and navigation-as-walking.
+  Nothing decided; do not build.
 
 ---
 
