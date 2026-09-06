@@ -145,6 +145,39 @@ Consequence worth stating plainly: **the semantic layer is a rule, not a tag voc
 tag names a thing in isolation, which the rule forbids. Any future semantic work that reduces
 to attaching independent labels has abandoned the generator and gone back to the table.
 
+### The fold — the paradigm must contain itself (core, added 2026-09-01)
+
+**Name for the move Antoine asked to make core:** *the fold* — the point where the paradigm
+bends back and is applied to its own construction.
+
+It is not a flourish or a nice symmetry. **It is required by the claim.** The paradigm says
+every self-maintaining thing is fragmented, performs the three acts, and can be diagnosed by
+which act is failing. This platform is self-maintaining. So is the toolkit it is built from.
+So is the corpus. **A universal claim that exempts the claimant is refuted by the exemption** —
+if the model were true of everything except its own making, it would not be true of everything.
+
+So the fold is a *test* as much as a method: a false paradigm applied to itself yields nothing.
+This one keeps yielding, which is evidence rather than elegance.
+
+**What it has already produced** — each of these a decision, not an observation:
+
+- The **instrument-set is itself fragmented** (§17): sheaf reasoning in one field, persistence
+  in another, symmetry in a third, none speaking. So the branch this vision needs is a
+  *reconciliation*, not a theorem.
+- The **instrument recommender is the analogical layer** pointed at the platform's own
+  construction (§17) — an entanglement jump between a problem's shape and an instrument's.
+- The **platform has the same three layers as the things it studies** (§6), which is what makes
+  the diagnostic reading possible at all.
+- The **standing self-diagnosis of FMCNS** (§14b): the ontological layer is the failing one.
+- The **recurring done/appears-done bug is an ontological-layer failure** (§14b) — the app
+  unable to distinguish itself as reported from itself as real.
+- **The enterprise reading** (§6): the same diagnosis run on a company.
+
+**How to use it:** whenever the project is stuck, unclear, or choosing between options, fold.
+Ask the paradigm's own questions about the project, the corpus, the toolkit, or the team. The
+guard rail from §14b holds: **a fold must produce a decision, not a pleasing symmetry** — or it
+is decoration, and should be discarded.
+
 ---
 
 ## 5. The immune system is the proof case
@@ -1111,6 +1144,8 @@ how confidently.
 | **Category theory** | An entire branch whose only subject is *same shape, different stuff*. It refuses to care what things are made of, looking solely at how they relate and at the maps carrying one world's structure faithfully into another. | **The entanglement jump, formalised — as its literal subject matter, not as metaphor.** Used for algebra and computation; sitting sharpened and aimed the wrong way. |
 | **Persistence across resolution** | Takes a shape, sweeps the resolution you view it at, and records which features survive and which dissolve. Persistent features are real; fleeting ones are noise. | **Exactly *analogical strength equals scales survived* — already built, already rigorous.** In use in biology and materials science. Never aimed at a pattern running from a body to a nation. |
 | **Renormalisation** | The mathematics of what stays the same when you blur the level below. | The lie detector for cross-scale claims; see the falsification test in *the fractal reading* (§16). |
+| **Graph spectra** | A way of reading a network that yields a **signature of its shape**, derived entirely from how it is connected and referring to nothing by name. Two networks with similar signatures have similar structure even when nothing in them shares a label. | **The most concrete instrument that exists for *compare anatomies, not labels*.** Its decisive property: it needs **no alignment** — you never have to decide which part of A corresponds to which part of B, which is the expensive, ambiguous step that makes structural matching intractable. It also gives every anatomy a position in a shared space, so arcs become paths and fragmentation becomes readable directly off the shape. **Antoine: implement eventually (2026-09-01).** Known limit: different structures can share a signature, so a spectral match is a **candidate for confirmation**, never a verdict — which suits it exactly to the propose/verify pipeline in §14c. |
+| **Causal inference** | The discipline that separates *these occur together* from *this produces that*. | **What stands between operator-transfer and superstition.** Transferring an intervention across a correspondence is only sound if the intervention *caused* the resolution rather than merely accompanying it; without this, operator-transfer is copying the gesture that happened to be in the room when things improved. Doubles as a safeguard — a system required to establish causation before recommending an intervention cannot be casually used to justify pre-emption. **Antoine: come back to this (2026-09-01).** |
 
 ### An instrument recommender, rather than a feature recommender
 

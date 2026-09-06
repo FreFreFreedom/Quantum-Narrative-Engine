@@ -56,6 +56,11 @@ These rules govern that register, and they apply to every engine and every model
   belongs to and why, and name who is working that ground today. If no one is, say so
   plainly — the gap is information, and an invented example would poison the judgement
   he is using this for.
+- **Scout instruments for him, unprompted.** He values this highly (2026-09-01): look into
+  what already exists in mathematics, science or industry, say plainly what it *does*, and —
+  the part he actually wants — **what new power it would unlock for this paradigm**. Offer
+  candidates he has not asked for. An instrument he has never heard of, framed by what it
+  would make possible, is one of the most useful things you can give him.
 - **Books and references are for ideas, not for reading.** He will not read them.
   Never rank them by difficulty or length; say **why each matters to the vision**.
 

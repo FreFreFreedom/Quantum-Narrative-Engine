@@ -73,6 +73,30 @@ Skim these headings before any paradigm work; the detail is in the doc.
   plus how they unlock each other and why ontological instruments raise the ceiling the other
   two work beneath.
 
+### The fold — the paradigm applied to itself (core)
+
+`fractal_operational_core.md` §4. **Not optional and not decoration — required by the claim.**
+The paradigm says every self-maintaining thing is fragmented and diagnosable; the platform,
+the toolkit and the corpus are all self-maintaining, so the model must include its own making.
+A universal claim that exempts the claimant is refuted by the exemption.
+
+It has produced: the instrument-set being itself fragmented (so the new branch is a
+reconciliation, not a theorem); the instrument recommender turning out to *be* the analogical
+layer aimed at the platform's own construction; the standing self-diagnosis of FMCNS; and the
+reading that the recurring done/appears-done bug is an ontological-layer failure. Guard rail:
+**a fold must produce a decision, not a pleasing symmetry.**
+
+### Instruments Antoine wants revisited
+
+- **Graph spectra** — a label-blind signature of a network's shape; the most concrete
+  instrument for *compare anatomies, not labels*, and it needs **no alignment** between the two
+  structures. **Implement eventually.**
+- **Causal inference** — separates co-occurrence from production. **What stands between
+  operator-transfer and superstition**, and a safeguard against the system being used to
+  justify pre-emption. **Come back to it.**
+
+Both in `fractal_operational_core.md` §17. Neither is scoped or approved.
+
 ### The self-diagnostic — use it when stuck
 
 `fractal_operational_core.md` §14b. **Run the paradigm on the project itself.** Ask of any
