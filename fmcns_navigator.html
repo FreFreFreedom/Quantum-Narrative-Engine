@@ -2109,6 +2109,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button class="active" data-arch-layer="territory" title="Color by territory">Territory</button>
             <button data-arch-layer="status" title="Color by build status">Status</button>
             <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
+            <button data-arch-layer="act" title="The three acts — ontological, semantic, analogical. Groups the checklist by act too.">Layer</button>
           </span>
           <button class="ctrlbtn arch-segdivider" id="archWitnessBtn" title="Check which pieces are really in the app right now. Free, and it also runs by itself every time something goes live.">Re-check</button>
         </div>
@@ -13549,8 +13550,25 @@ const STATUS_LEVELS = ['Concept','Designed','Prototype','Working','Validated','A
 const STATUS_COLORS = { Concept:'#8a8378', Designed:'#7a6a4a', Prototype:'#c08a3e', Working:'#4f9d7a', Validated:'#2f7d63', Advanced:'#1f5c48' };
 const TERRITORY_COLORS = { perception:'#3f6b85', knowledge:'#8b3f85', reasoning:'#7a3f3f', experience:'#5f7a3f', interface:'#a3672f', self:'#4a5f8b' };
 
+// The second lens on the same map. A territory says where a piece sits; a layer says
+// which of the three acts it performs — the tripartite grammar of the ontology, applied
+// to the app itself. Every piece gets exactly one, so a starved act is visible as a
+// short column rather than a feeling.
+const ARCH_LAYERS = [
+  { id:'ontological', label:'Ontological', sub:'Boundary \u2014 what makes and holds a thing.' },
+  { id:'semantic',    label:'Semantic',    sub:'Meaning \u2014 what is integrated inside it, and what sits in shadow.' },
+  { id:'analogical',  label:'Analogical',  sub:'Bridge \u2014 carrying the pattern across scales and domains.' },
+];
+const LAYER_COLORS = { ontological:'#4a5f8b', semantic:'#8b3f6b', analogical:'#3f7d7a' };
+// ponytail: stored/speculative nodes carry no layer of their own yet, so they inherit
+// their territory's dominant act. Give architecture_nodes a `layer` column when a
+// planted idea needs to disagree with its territory.
+const LAYER_BY_TERRITORY = { perception:'ontological', knowledge:'ontological', reasoning:'analogical', experience:'analogical', interface:'semantic', self:'ontological' };
+const archActOf = (c) => c.layer || LAYER_BY_TERRITORY[c.territory] || 'ontological';
+const archActLabel = (c) => (ARCH_LAYERS.find(l => l.id === archActOf(c)) || {}).label || '';
+
 const ARCH_DATA = [
-  { id:'observation-layer', territory:'perception', name:'Observation Layer',
+  { id:'observation-layer', territory:'perception', layer:'ontological', name:'Observation Layer',
     what:'The intake surface — how new material (films, characters, countries, patterns) enters FMCNS at all.',
     why:'Every other layer depends on something arriving here first; right now that arrival is entirely manual.',
     input:'Archive material, Claude\'s own knowledge, hand-written seed JSON', output:'Raw candidate entities, not yet structured',
@@ -13558,7 +13576,7 @@ const ARCH_DATA = [
     next:'Define a lightweight ingestion contract — what a "new entity submission" needs to contain — before automating anything.',
     status:'Concept', depends:[] },
 
-  { id:'ontological-layer', territory:'knowledge', name:'Ontological Layer',
+  { id:'ontological-layer', territory:'knowledge', layer:'ontological', name:'Ontological Layer',
     what:'The shared schema: one `entities` table (type: character / film / country), not separate tables per domain.',
     why:'Directly implements "character as universal ontological unit" — individuals, films-as-containers, and nations are instances of one schema, not three parallel systems.',
     input:'Curated entity records (name, type, scale, container, meta)', output:'Structured rows in a live SQLite DB, queryable by the API and the chat assistant',
@@ -13566,7 +13584,7 @@ const ARCH_DATA = [
     next:'Extend to the 152 reasoned-only films as first-class character rows (they exist as film containers today, not as characters yet).',
     status:'Working', depends:['observation-layer'] },
 
-  { id:'semantic-layer', territory:'knowledge', name:'Semantic Layer',
+  { id:'semantic-layer', territory:'knowledge', layer:'semantic', name:'Semantic Layer',
     what:'Archetypal tags and pattern-lens descriptions attached to each entity.',
     why:'Tags are the substrate entanglement and pattern-matching run on; without them an entity is just a name.',
     input:'Entity + archive-grounded (or reasoned) interpretive reading', output:'Tag arrays + a written pattern-lens note/synopsis/description per entity',
@@ -13575,7 +13593,7 @@ const ARCH_DATA = [
     status:'Prototype', depends:['ontological-layer'],
     versions:[['v0','Hand-written tags per entity, no formal vocabulary'],['v1','Grounded against primary archive material, cluster by cluster (current — 2 of 12 clusters)'],['v2','Full corpus grounded, shared tag vocabulary enforced'],['v3','Tag confidence scoring (grounded vs. reasoned shown in UI)']] },
 
-  { id:'analogical-layer', territory:'knowledge', name:'Analogical Layer',
+  { id:'analogical-layer', territory:'knowledge', layer:'analogical', name:'Analogical Layer',
     what:'The mechanism that finds structurally-similar entities across type — same pattern, different scale or surface.',
     why:'This is where "civilizations and characters share a shadow" becomes a computable relationship instead of just a metaphor.',
     input:'Tags + continuum positions across all entities', output:'Entanglement edges (shared tags) and continuum-proximity bridges (cross-type)',
@@ -13583,7 +13601,7 @@ const ARCH_DATA = [
     next:'Move this out of client-side JS into a real backend service with a stored pattern-instance graph (edges table), so the chat assistant, task queue, and navigator all read the same computed relationships instead of three separate reimplementations.',
     status:'Prototype', depends:['semantic-layer','integration-continuum'] },
 
-  { id:'pattern-engine', territory:'reasoning', name:'Pattern Engine',
+  { id:'pattern-engine', territory:'reasoning', layer:'semantic', name:'Pattern Engine',
     what:'A formal system for defining and matching archetypal patterns (not just tags, but named recurring structures with roles/dynamics).',
     why:'The vision doc treats patterns as first-class objects; right now they only exist implicitly, encoded into ad hoc tag names.',
     input:'Tags, continuum data, grounded readings', output:'Named, reusable pattern definitions an entity can be scored against',
@@ -13591,7 +13609,7 @@ const ARCH_DATA = [
     next:'Pick one well-grounded pattern (e.g. "ascetic self-destruction") and formalize it as a first named, structured pattern definition — proof of concept before generalizing.',
     status:'Concept', depends:['semantic-layer','analogical-layer'] },
 
-  { id:'graphrag', territory:'reasoning', name:'GraphRAG',
+  { id:'graphrag', territory:'reasoning', layer:'semantic', name:'GraphRAG',
     what:'Graph-based retrieval — answering questions by traversing entity relationships and community structure, not just semantic search.',
     why:'The chat assistant currently answers from flat tool calls (search/get entity); GraphRAG would let it reason across the whole relationship graph.',
     input:'The ontological + analogical graph', output:'Retrieved subgraphs / community summaries relevant to a query',
@@ -13599,7 +13617,7 @@ const ARCH_DATA = [
     next:'Wire the communities into the chat assistant as a real retrieval tool, so a question can be answered from a whole community of tags rather than a flat lookup.',
     status:'Prototype', depends:['ontological-layer','semantic-layer'] },
 
-  { id:'scale-echo', territory:'reasoning', name:'Scale Echo',
+  { id:'scale-echo', territory:'reasoning', layer:'analogical', name:'Scale Echo',
     what:'The mechanism connecting entities of different scale (individual ↔ nation ↔ civilization) that sit close on the same underlying axis.',
     why:'This is the platform\'s core unmet promise from the original vision doc — proof that the same pattern really does recur across scales, not just within one.',
     input:'Continuum-axis scores for any two entities of different type', output:'A cross-scale "bridge" edge in the graph, shown as a dotted green connection',
@@ -13608,7 +13626,7 @@ const ARCH_DATA = [
     status:'Prototype', depends:['integration-continuum','analogical-layer'],
     versions:[['v0','Semantic nearest-neighbor on a single shared axis, cross-type only (current)'],['v1','Scale-aware weighting (distance in scale, not just axis value)'],['v2','Pattern-instance graph (stored, not recomputed per render)'],['v3','GraphRAG analogical traversal'],['v4','Temporal trajectory (does the echo hold across time, not just a snapshot?)'],['v5','Dynamic cross-scale sensing (new entities auto-echo on ingestion)']] },
 
-  { id:'integration-continuum', territory:'reasoning', name:'Integration Continuum',
+  { id:'integration-continuum', territory:'reasoning', layer:'semantic', name:'Integration Continuum',
     what:'Named spectrum axes (e.g. Guilt-as-Engine, Possession/Sovereignty) that any entity, of any type, can be scored on.',
     why:'The one truly shared measurement across characters/films/countries — the thing Scale Echo bridges are computed from.',
     input:'A grounded or reasoned interpretive read of the entity', output:'A 0–1 score on each applicable axis, plus low/high pole labels',
@@ -13616,7 +13634,7 @@ const ARCH_DATA = [
     next:'Add a 3rd axis once cluster III is archive-grounded, so films in that cluster have something meaningful to score against.',
     status:'Working', depends:['semantic-layer'] },
 
-  { id:'thread-click', territory:'experience', name:'Thread Click',
+  { id:'thread-click', territory:'experience', layer:'analogical', name:'Thread Click',
     what:'Clicking any connection (vertical / entanglement / bridge) on an entity jumps you to the connected entity.',
     why:'This is the basic unit of "following a thread" through the graph — the smallest interaction the whole navigation model depends on.',
     input:'A rendered connection row in the detail panel', output:'The graph refocuses and the detail panel re-renders on the new entity',
@@ -13624,7 +13642,7 @@ const ARCH_DATA = [
     next:'Unify click-through behavior across all four apps instead of four separate implementations.',
     status:'Working', depends:['analogical-layer','ontological-layer'] },
 
-  { id:'fractal-zoom', territory:'experience', name:'Fractal Zoom',
+  { id:'fractal-zoom', territory:'experience', layer:'analogical', name:'Fractal Zoom',
     what:'Zooming from a wide view into one node revealing more structure nested inside it.',
     why:'The name of the whole system promises fractality — the same navigation logic should hold at every scale you zoom into.',
     input:'A click/scroll/zoom gesture on a node', output:'Camera reframes; in a true version, the node\'s own internal graph would appear',
@@ -13632,7 +13650,7 @@ const ARCH_DATA = [
     next:'True recursive zoom: clicking into a node reveals its own internal graph, not just a closer camera.',
     status:'Prototype', depends:['ontological-layer'] },
 
-  { id:'maps', territory:'experience', name:'Maps',
+  { id:'maps', territory:'experience', layer:'analogical', name:'Maps',
     what:'Geographic view — countries positioned on real boundaries, scored on the Integration Continuum.',
     why:'The most literal "scale" register in the system — nations as characters, on real geography.',
     input:'Country entities + continuum scores + real boundary data (Natural Earth GeoJSON)', output:'A colored, clickable map',
@@ -13640,7 +13658,7 @@ const ARCH_DATA = [
     next:'Extend scoring beyond the 10 hand-picked countries; move it onto the live API.',
     status:'Prototype', depends:['ontological-layer','integration-continuum'] },
 
-  { id:'exploration', territory:'experience', name:'Exploration',
+  { id:'exploration', territory:'experience', layer:'semantic', name:'Exploration',
     what:'List/card browsing, search, and cluster filtering — the non-graph way of moving through the corpus.',
     why:'Not everyone wants to navigate a force-directed graph; this is the plain-text fallback and the main way to scan breadth quickly.',
     input:'A search string, a cluster filter, a type toggle', output:'A filtered list/card view of matching entities',
@@ -13648,7 +13666,7 @@ const ARCH_DATA = [
     next:'Cross-app unified search — one query surfacing matches across characters, films, and countries at once, which the shared schema now makes possible.',
     status:'Working', depends:['ontological-layer'] },
 
-  { id:'layout-spacing', territory:'interface', name:'Layout & spacing',
+  { id:'layout-spacing', territory:'interface', layer:'ontological', name:'Layout & spacing',
     what:'Padding, margins, and structural spacing across the app shell and every view.',
     why:'Inconsistent spacing is invisible until you look for it, but it\'s what makes an interface feel considered instead of assembled piecemeal.',
     input:'CSS written per-component as each view was built', output:'Rendered layout the user reads at a glance',
@@ -13656,7 +13674,7 @@ const ARCH_DATA = [
     next:'Write down one spacing scale (e.g. 4/8/12/16/24px) and audit each view against it.',
     status:'Prototype', depends:[] },
 
-  { id:'typography-color', territory:'interface', name:'Typography & color',
+  { id:'typography-color', territory:'interface', layer:'semantic', name:'Typography & color',
     what:'Type sizes/weights and the color ramps used for entity types, clusters, and continuum gradients.',
     why:'Color currently carries real meaning (type, cluster, position on an axis) — if the system isn\'t coherent, that meaning gets muddied.',
     input:'TYPE_COLORS, CLUSTER_COLORS, continuum gradient stops, ad hoc font sizes', output:'Consistent (or inconsistent) visual meaning across the app',
@@ -13664,7 +13682,7 @@ const ARCH_DATA = [
     next:'Document the color system in one place (what each ramp means, when to use which) and do a full dark-mode pass — currently light-surface only.',
     status:'Prototype', depends:[] },
 
-  { id:'interaction-patterns', territory:'interface', name:'Interaction patterns',
+  { id:'interaction-patterns', territory:'interface', layer:'analogical', name:'Interaction patterns',
     what:'How the user actually moves through and manipulates the graph and detail views — pan, zoom, hover, click.',
     why:'Flagged directly: click-drag-only panning and no pinch-to-zoom made the graph feel clumsy well before the clutter itself was the issue.',
     input:'Mouse/trackpad/touch input', output:'Camera movement, spotlight/fade focus state, panel updates',
@@ -13672,7 +13690,7 @@ const ARCH_DATA = [
     next:'Frame the view on what is actually there rather than on a fixed box, and give the graph a way back to a clean starting view.',
     status:'Prototype', depends:[] },
 
-  { id:'per-view-polish', territory:'interface', name:'Per-view polish',
+  { id:'per-view-polish', territory:'interface', layer:'semantic', name:'Per-view polish',
     what:'A dedicated design pass, rated separately, for each major view: Map, Content graph, CORE ARCHITECTURE → Architecture.',
     why:'Quality was uneven across views and there was no place tracking that unevenness — this component exists specifically to hold that.',
     input:'Each view\'s own layout, density, and interaction choices', output:'A per-view quality rating and a known-gaps list',
@@ -13692,7 +13710,7 @@ const ARCH_DATA = [
   // list can be ranked, watched, or proposed as work. Their NOW text is computed
   // live on the server (architecture.js NOW_COMPUTERS), like the content ones.
 
-  { id:'self-model', territory:'self', name:'The map of itself',
+  { id:'self-model', territory:'self', layer:'ontological', name:'The map of itself',
     what:'This very list — every piece of the app, which area it belongs to, what state it is in, and what it waits on.',
     why:'Everything that answers "what should I build next?" reads this map. Anything missing from it is invisible to the app: it cannot be ranked, watched, or proposed as work.',
     input:'Hand-written descriptions of each piece, plus live counts from the database',
@@ -13702,7 +13720,7 @@ const ARCH_DATA = [
     status:'Prototype', depends:[],
     versions:[['v0','Hand-written list in the app\'s code, sent up with every request (current)'],['v1','Stored in the database, editable from the app'],['v2','Pieces discovered from the code itself instead of described by hand']] },
 
-  { id:'dispatch-queue', territory:'self', name:'Handing work to Claude',
+  { id:'dispatch-queue', territory:'self', layer:'ontological', name:'Handing work to Claude',
     what:'The queue where a piece of work is written down, planned, run by Claude, and followed to the end.',
     why:'This is how anything gets built at all now — it is the door every other idea in the app eventually walks through.',
     input:'A task, from anywhere: typed by hand, accepted from a suggestion, sent by the idea studio',
@@ -13712,7 +13730,7 @@ const ARCH_DATA = [
     status:'Working', depends:[],
     versions:[['v0','One task at a time, no plan, no conversation'],['v1','Plan drafted first, conversation per task, park/resume (current)'],['v2','Several tasks in parallel on isolated copies of the code'],['v3','A team of specialists working the same task from different angles']] },
 
-  { id:'agent-runner', territory:'self', name:'The worker that does the coding',
+  { id:'agent-runner', territory:'self', layer:'ontological', name:'The worker that does the coding',
     what:'The part that actually starts Claude on your Mac, watches it work, and reads back what it did and what it cost.',
     why:'Without it the queue is only a list. It is also where the cost of everything is measured, so it is the one place that can keep spending honest.',
     input:'A planned task and a real copy of the code to work in',
@@ -13721,7 +13739,7 @@ const ARCH_DATA = [
     next:'Give each running task its own copy of the code so two can never edit the same file at once.',
     status:'Working', depends:['dispatch-queue'] },
 
-  { id:'shipping-line', territory:'self', name:'Putting finished work live',
+  { id:'shipping-line', territory:'self', layer:'ontological', name:'Putting finished work live',
     what:'The step that takes finished work and makes it real on the live site, with a way to take it back.',
     why:'Work that is finished but not live is not finished. And a one-button undo is what makes shipping fast enough to be worth doing every time.',
     input:'A finished task\'s changes to the code',
@@ -13730,7 +13748,7 @@ const ARCH_DATA = [
     next:'Check the app still loads before pushing, so a broken change cannot reach the live site at all.',
     status:'Working', depends:['agent-runner'] },
 
-  { id:'self-observation', territory:'self', name:'Noticing its own weak spots',
+  { id:'self-observation', territory:'self', layer:'semantic', name:'Noticing its own weak spots',
     what:'The app watching itself: which pieces are stuck, waited on, forgotten, or never touched — and turning that into thoughts worth reading.',
     why:'This is the difference between a map and an opinion. Without it the app can show you its own structure but has nothing to say about it.',
     input:'The map of itself, plus the state of the corpus and the queue',
@@ -13740,7 +13758,7 @@ const ARCH_DATA = [
     status:'Prototype', depends:['self-model'],
     versions:[['v0','Structure-only weak spots, drawn on the graph'],['v1','Health scores recorded daily, thoughts kept as a feed (current)'],['v2','Weak spots found by reading the code, not only the map'],['v3','Looks back at finished work and learns from how it went']] },
 
-  { id:'next-steps-ranking', territory:'self', name:'Knowing what to build next',
+  { id:'next-steps-ranking', territory:'self', layer:'semantic', name:'Knowing what to build next',
     what:'One ordered answer to "what do I build next, and in what order?", with a plain reason for each place in the order.',
     why:'It replaced about fifteen competing answers, none of which was in charge. And it costs nothing to run, so it can be right on every screen at once.',
     input:'The map of itself, the weak spots, and what is already moving in the queue',
@@ -13749,7 +13767,7 @@ const ARCH_DATA = [
     next:'Remember the order you last asked for so it survives a reload instead of being lost.',
     status:'Working', depends:['self-model','self-observation'] },
 
-  { id:'suggestion-engine', territory:'self', name:'Proposing new work',
+  { id:'suggestion-engine', territory:'self', layer:'analogical', name:'Proposing new work',
     what:'The part that reads the state of the whole app and proposes work you had not thought of yet.',
     why:'Ranking only orders what you already know about. This is the only piece whose job is to add something new to the list.',
     input:'The state of the material, the state of the app\'s own build system, and everything already proposed or turned down',
@@ -13759,7 +13777,7 @@ const ARCH_DATA = [
     status:'Prototype', depends:['self-model','self-observation'],
     versions:[['v0','Proposals from the material\'s state only'],['v1','Both sides of the app read, with a balance rule (current)'],['v2','Learns from what gets accepted versus turned down']] },
 
-  { id:'idea-studio', territory:'self', name:'Talking an idea into a task',
+  { id:'idea-studio', territory:'self', layer:'analogical', name:'Talking an idea into a task',
     what:'A conversation you can open on anything in the app — a piece, a note, a proposal, a running task — that questions the idea and comes out with a task worth running.',
     why:'A vague task wastes a whole run. This is where a half-formed thought becomes something Claude can actually do.',
     input:'Any thing in the app, plus your own words about it',
@@ -13768,7 +13786,7 @@ const ARCH_DATA = [
     next:'Let it compare an idea against the ones already waiting, so it can say "you already have this" instead of adding a near-duplicate.',
     status:'Prototype', depends:['dispatch-queue'] },
 
-  { id:'world-look', territory:'self', name:'Looking at the world for ideas',
+  { id:'world-look', territory:'self', layer:'analogical', name:'Looking at the world for ideas',
     what:'Before a task is planned, a look outward on three shelves: real projects already built, products that exist but keep their code private, and bold ideas nobody has built yet.',
     why:'It is the app\'s only way of learning from outside itself. The bold shelf is the point — the rest is evidence that the bold idea is reachable.',
     input:'A task\'s own words, plus a live search of open-source projects',
@@ -14884,6 +14902,7 @@ const TT_STATE_LABELS = { built:'built', buildable:'buildable now', locked:'lock
 // Badge color + text follow the chosen layer: territory color, build status, or
 // the latest version tag. Speculative nodes always read provisional.
 function archNodeBadge(c) {
+  if (archLayer === 'act') return { text: archActLabel(c), color: LAYER_COLORS[archActOf(c)] };
   if (archLayer === 'status') return { text: c.status || 'Concept', color: STATUS_COLORS[c.status] || '#8a8378' };
   if (archLayer === 'evolution') return c.versions && c.versions.length ? { text: c.versions[0][0], color: TERRITORY_COLORS[c.territory] } : { text: '—', color: 'var(--c-ink-4)' };
   return { text: (TERRITORIES.find(t => t.id === c.territory) || {}).label || c.territory, color: TERRITORY_COLORS[c.territory] };
@@ -15029,8 +15048,9 @@ function archFilteredOff(c) {
   return false;
 }
 
-function archTerritoryStats(id) {
-  const nodes = ARCH_DATA.filter(c => c.territory === id);
+function archTerritoryStats(id) { return archStatsFor(ARCH_DATA.filter(c => c.territory === id)); }
+
+function archStatsFor(nodes) {
   const st = { built: 0, locked: 0, spec: 0 };
   nodes.forEach(c => {
     if (c.provenance === 'speculative') st.spec++;
@@ -15365,19 +15385,22 @@ function archDrawChecklist() {
   const host = document.getElementById('archListHost');
   if (!host) return;
   const pool = archPool().filter(c => !archFilteredOff(c));
-  const territories = archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES;
+  const byAct = archLayer === 'act';
+  const groups = byAct ? ARCH_LAYERS : (archFocus ? TERRITORIES.filter(t => t.id === archFocus) : TERRITORIES);
+  const keyOf = byAct ? archActOf : (c => c.territory);
+  const hue = (id) => (byAct ? LAYER_COLORS : TERRITORY_COLORS)[id];
   let html = '';
-  territories.forEach(t => {
-    const items = pool.filter(c => c.territory === t.id);
+  groups.forEach(t => {
+    const items = pool.filter(c => keyOf(c) === t.id);
     if (!items.length) return;
-    const stats = archTerritoryStats(t.id);
+    const stats = byAct ? archStatsFor(ARCH_DATA.filter(c => archActOf(c) === t.id)) : archTerritoryStats(t.id);
     const isOpen = archFocus === t.id || !archListCollapsed[t.id];
     const pct = stats.total ? Math.round((stats.built / stats.total) * 100) : 0;
     html += `<div class="arch-list-section">
-      <div class="arch-list-head" data-listterr="${t.id}">
+      <div class="arch-list-head" data-listterr="${t.id}" title="${qEsc(t.sub || '')}">
         <span class="arch-list-chevron">${isOpen ? '▾' : '▸'}</span>
-        <span class="arch-list-title" style="color:${TERRITORY_COLORS[t.id]}">${qEsc(t.label)}</span>
-        <span class="arch-list-bar"><span class="arch-list-fill" style="width:${pct}%;background:${TERRITORY_COLORS[t.id]}"></span></span>
+        <span class="arch-list-title" style="color:${hue(t.id)}">${qEsc(t.label)}</span>
+        <span class="arch-list-bar"><span class="arch-list-fill" style="width:${pct}%;background:${hue(t.id)}"></span></span>
         <span class="arch-list-count">${stats.built}/${stats.total} built</span>
       </div>
       ${isOpen ? `<div class="arch-list-rows">${items.map(archListRowHtml).join('')}</div>` : ''}
@@ -15482,9 +15505,9 @@ function archBoardCardHtml(c, cell) {
   const movable = !cell.why && !!c._stored;
   const cls = ['arch-bcard', cell.built && 'is-built', spec && 'is-spec', archSelected === c.id && 'selected'].filter(Boolean).join(' ');
   const title = [c.name, cell.why].filter(Boolean).join(' — ');
-  // The edge bar is the component's territory, the same palette the tree,
-  // checklist and chips use — so one colour means one thing everywhere.
-  const bar = TERRITORY_COLORS[c.territory] || 'var(--c-border)';
+  // The edge bar follows whichever lens is on — territory or act — the same palette
+  // the tree, checklist and chips use, so one colour means one thing everywhere.
+  const bar = (archLayer === 'act' ? LAYER_COLORS[archActOf(c)] : TERRITORY_COLORS[c.territory]) || 'var(--c-border)';
   return `<div class="${cls}" data-bcard="${c.id}" ${movable ? 'draggable="true"' : ''} style="border-left-color:${bar}" title="${qEsc(title)}">
       <span class="arch-bcard-name">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
       <div class="arch-bcard-meta"><span class="arch-bcard-status">${qEsc(c.status || 'Concept')}</span>${archCardActions(c)}</div>
@@ -16389,7 +16412,7 @@ function renderArchDetail(id) {
   const cell = archBoardCell(c);
   let html = `<h2 class="arch-detail-head">Component<button id="archDetailClose" class="arch-detail-close" title="Close this panel" aria-label="Close component panel">✕</button></h2>
     <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
-    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEsc(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
+    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span title="${qEsc((ARCH_LAYERS.find(l => l.id === archActOf(c)) || {}).sub || '')}" style="color:${LAYER_COLORS[archActOf(c)]}">${qEsc(archActLabel(c))}</span> · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEsc(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
   html += `<div class="arch-field"><div class="arch-field-label">What</div>${clampHtml(c.what, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(c.why, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
