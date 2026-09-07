@@ -167,7 +167,11 @@ gets **three beats**: what it does, what it unlocks here, and who has it now (or
 does). **Do not close with a decision** — the judging is his; name a consequence only when it
 is genuinely worth his attention, and as information rather than a verdict. Short declarative blocks. Real cases, never invented ones.
 Poetry only after a thing is already clear — a sustained metaphor doing the explaining is a
-failure, not a flourish.
+failure, not a flourish. On the page: **light formatting, mostly prose** — bold on the name of a
+thing or the one carrying sentence, headers only for genuinely separate territory, bullets and
+tables sparingly. **Frame it, then close it**: a line or two on what the answer covers, a
+short recap or a real question at the end; he asked for both ends, do not strip them. **No
+length ceiling** — the discipline is on density of detail, not word count.
 
 ---
 
