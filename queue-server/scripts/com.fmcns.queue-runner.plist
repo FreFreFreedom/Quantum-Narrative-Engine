@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The queue runner, started by macOS instead of by hand.
+
+  Nothing the app hands to the Mac happens without this process: queue tasks,
+  publishing a finished change, "Put it back", the Claude helper lane, and the
+  mirror that puts saved conversations in the repo. Started in a terminal, it
+  lasted exactly as long as that terminal — and its absence looks like a broken
+  app rather than a stopped program.
+
+  Install (or reinstall after editing this file):
+
+      cp queue-server/scripts/com.fmcns.queue-runner.plist ~/Library/LaunchAgents/
+      launchctl bootout  gui/$UID/com.fmcns.queue-runner 2>/dev/null
+      launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.fmcns.queue-runner.plist
+
+  Stop it for the rest of this login:  launchctl bootout gui/$UID/com.fmcns.queue-runner
+  Start it again right now:            launchctl kickstart -k gui/$UID/com.fmcns.queue-runner
+  Watch what it is doing:              tail -f ~/Library/Logs/fmcns-runner.log
+
+  Two choices worth knowing:
+
+  • It sources nvm and then runs node, rather than hardcoding a node path. The
+    absolute path carries a version number (v24.19.0 today) that a future
+    `nvm install` would silently invalidate; nvm.sh's own path does not move.
+    Sourcing it explicitly is also the only way: `zsh -lc` is NOT interactive, so
+    it never reads ~/.zshrc, which is where nvm is set up — the first version of
+    this file failed with `command not found: node` for exactly that reason.
+  • KeepAlive is SuccessfulExit=false: a crash comes straight back, a deliberate
+    clean stop stays stopped. Stopping the QUEUE is done in the app (pause), not
+    by killing this — see AGENT_MEMORY.md.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.fmcns.queue-runner</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>. "$HOME/.nvm/nvm.sh" &amp;&amp; exec node scripts/queue-runner.js</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/antoinelambert/Projects/quantum-narrative-engine/queue-server</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <!-- A runner that cannot start (a stale lock, a bad node) would otherwise be
+       relaunched in a tight loop and fill the log with the same line. -->
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/antoinelambert/Library/Logs/fmcns-runner.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/antoinelambert/Library/Logs/fmcns-runner.log</string>
+</dict>
+</plist>

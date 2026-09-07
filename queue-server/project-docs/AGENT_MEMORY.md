@@ -372,9 +372,21 @@ joined, so a fact stated once is known on both sides:
   is deliberately deferred (Antoine's call) — don't re-raise as urgent unless
   credentials come up anyway. Priority order and audit:
   `plans/rotate-leaked-credentials.md`.
-- Queue tasks execute on **Antoine's Mac** via a local runner
-  (`cd queue-server && npm run runner`), not in the Railway container — the
-  container is UI/API only. If tasks aren't running, check the runner is up first.
+- Queue tasks execute on **Antoine's Mac** via a local runner, not in the Railway
+  container — the container is UI/API only. If tasks aren't running, check the
+  runner is up first.
+- **The runner starts itself (2026-09-07).** It is a launchd agent,
+  `com.fmcns.queue-runner`, installed from
+  `queue-server/scripts/com.fmcns.queue-runner.plist` (that file holds the install,
+  stop and restart commands). It comes up at login and comes back after a crash, so
+  **never tell Antoine to run `npm run runner`** — check the agent instead:
+  `launchctl print gui/501/com.fmcns.queue-runner`, log at
+  `~/Library/Logs/fmcns-runner.log`. Two traps that cost a first attempt each:
+  the plist needs its `<!DOCTYPE plist …>` line or `bootstrap` fails with a bare
+  "Input/output error", and `zsh -lc` is not interactive so it never reads
+  `~/.zshrc` — nvm has to be sourced explicitly or node is not found.
+  After changing runner code, restart it (`launchctl kickstart -k`) or it keeps
+  serving the old build; a runner that has been up for hours is on stale code.
 - Finished queue tasks Slack-ping Antoine from the runner (not the server); webhook
   is `SLACK_WEBHOOK_URL` in `queue-server/.env`, gitignored.
 - **The Railway image has no `git` binary.** Not just "no checkout" — no git at all,
