@@ -1598,6 +1598,20 @@ export function noteRunnerPoll(runnerId = null) {
   if (runnerId) _lastPollRunnerId = runnerId;
 }
 
+// Does the attached runner hold the SECOND Claude subscription's token? Only the
+// runner can answer that: the token lives in queue-server/.env on the Mac and is
+// deliberately never set on Railway, so the server's own env says nothing about it.
+// Reported on every /worker/claim poll (every ~5s).
+//
+// In-memory on purpose, unlike the usage reading below: this is a live capability,
+// not a value worth remembering across a restart. It reads as false for the few
+// seconds between a redeploy and the next poll, which is the honest answer — an
+// unattached runner genuinely cannot serve that account.
+let _sideAccount = false;
+export function noteRunnerCapabilities({ sideAccount } = {}) {
+  if (sideAccount !== undefined) _sideAccount = !!sideAccount;
+}
+
 // Claude usage as seen ON THE MACHINE THAT RUNS CLAUDE. Since execution moved to
 // the Mac, the container can no longer read the account's local transcripts, and
 // its OAuth token may not even be set — so the runner reports its own reading on
@@ -1634,12 +1648,15 @@ export function runnerStatus() {
     .sort((a, b) => b - a)[0] || null;
   const lastSeen = Math.max(_lastClaimPollAt || 0, lastBeat || 0) || null;
   const runnerId = running[0]?.claimed_by || _lastPollRunnerId || null;
+  const connected = !!lastSeen && (Date.now() - lastSeen) < 60_000;
   return {
     mode: EXECUTION_MODE,
-    connected: !!lastSeen && (Date.now() - lastSeen) < 60_000,
+    connected,
     last_seen_at: lastSeen ? new Date(lastSeen).toISOString() : null,
     running_count: running.length,
     runner_id: runnerId,
+    // Only meaningful while connected — a runner that is gone serves nothing.
+    side_account: connected && _sideAccount,
   };
 }
 

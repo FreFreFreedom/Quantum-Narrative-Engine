@@ -20,7 +20,7 @@
 import { Router } from 'express';
 import {
   claimNextTask, recordRunnerStream, recordRunnerResult,
-  noteRunnerPoll, runnerStatus, releaseStaleClaims, isLocalExecution, noteRunnerUsage,
+  noteRunnerPoll, noteRunnerCapabilities, runnerStatus, releaseStaleClaims, isLocalExecution, noteRunnerUsage,
   findAgentTask,
 } from '../services/taskRunner.js';
 import * as queue from '../services/promptQueue.js';
@@ -46,6 +46,10 @@ export function workerRoutes() {
     // The runner rides its Claude usage reading along on this poll (see
     // noteRunnerUsage) — it's the only process that can read the local account.
     if (req.body?.usage) noteRunnerUsage(req.body.usage);
+    // Whether this runner can reach the second Claude subscription. The server
+    // cannot know it — that token is only ever on the Mac — so the runner says so
+    // here, and the model picker stops greying out a lane that in fact works.
+    noteRunnerCapabilities({ sideAccount: !!req.body?.side_account });
 
     // Free anything whose previous runner died before handing this one a new
     // task — otherwise a task stranded by a closed laptop would never come back.

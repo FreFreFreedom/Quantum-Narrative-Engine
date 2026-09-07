@@ -1936,7 +1936,13 @@ async function main() {
       // real read per minute — that's what keeps the app's usage bar truthful now
       // that Claude runs here rather than in the container.
       const usage = await usageForReport();
-      const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage });
+      // `side_account` tells the server whether the SECOND Claude subscription is
+      // reachable at all. Only this Mac has that token (never Railway — see the
+      // rule in AGENT_MEMORY.md), so the server cannot answer the question itself:
+      // without this it read its own empty env and reported the second account as
+      // unavailable, which greyed "Claude (2nd)" out of the Room's model picker
+      // even though the lane works perfectly through this runner.
+      const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage, side_account: !!SIDE_TOKEN });
       if (r.ok) {
         const body = await r.json();
         claimed = body.none ? null : body.task;

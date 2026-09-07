@@ -17885,6 +17885,14 @@ document.addEventListener('keydown', (e) => {
     if(provider === 'google-ai-studio') return ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return m.id; });
     return [];
   }
+  // Why a lane is unpickable, in Antoine's words rather than a variable name.
+  function laneOffReason(provider){
+    if(provider === 'claude-side') return 'Your second Claude account runs through your Mac. Start the queue runner there and this becomes available.';
+    if(provider === 'claude-code') return 'The main Claude account is not reachable from the server right now.';
+    if(provider === 'opencode') return 'No OpenCode models are reachable right now.';
+    if(provider === 'google-ai-studio') return 'Google is not set up on the server (no API key).';
+    return '';
+  }
   function laneAvailable(provider, catalog){
     if(!catalog) return true; // don't block Auto while the catalog is still loading
     if(provider === 'claude-code') return !!(catalog.claude && catalog.claude.available);
@@ -17980,7 +17988,11 @@ document.addEventListener('keydown', (e) => {
       lanePick.classList.toggle('is-set', !!e.lane);
       Array.prototype.forEach.call(lanePick.options, function(opt){
         if(!opt.value) return;
-        opt.disabled = laneCatalog ? !laneAvailable(opt.value, laneCatalog) : false;
+        var off = laneCatalog ? !laneAvailable(opt.value, laneCatalog) : false;
+        opt.disabled = off;
+        // A greyed option used to give no reason, so the only readable message was
+        // "this does not work". Say what is actually missing instead.
+        opt.title = off ? (laneOffReason(opt.value) || '') : '';
       });
       var needsModel = !!(e.lane && (e.lane.provider === 'opencode' || e.lane.provider === 'google-ai-studio'));
       if(needsModel){

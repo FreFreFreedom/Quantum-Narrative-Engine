@@ -32,6 +32,7 @@ export function queueRoutes() {
     // providers/models against, so the picker can never offer an id the backend
     // would reject. Available only once the key is actually set.
     const googleCatalog = getProviderCatalog('google-ai-studio');
+    const runner = runnerStatus() || {};
     res.json({
       claude: {
         available: !!(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.CLAUDE_BIN),
@@ -39,7 +40,15 @@ export function queueRoutes() {
         // The second Claude subscription (plan "chat-model-picker"): a helper-job
         // lane reachable only when its own token is present on the Mac runner, not
         // via CLAUDE_CODE_OAUTH_TOKEN (that is the main account's token).
-        secondAccountAvailable: !!process.env.CLAUDE_SIDE_OAUTH_TOKEN,
+        //
+        // Read the RUNNER, not this process's env. That token is deliberately never
+        // set on Railway (AGENT_MEMORY.md, "Model & account lanes"), so in
+        // production the env check alone was always false — and the Room greyed
+        // "Claude (2nd)" out even though the lane works: ai/text.js's claude-side
+        // branch never calls Claude here, it parks a helper job for the Mac runner,
+        // which spawns the CLI with that token. The env check stays first for the
+        // case where the server IS the Mac (local dev, `oc preview`).
+        secondAccountAvailable: !!process.env.CLAUDE_SIDE_OAUTH_TOKEN || !!runner.side_account,
       },
       opencode: {
         available: discovery.models.length > 0 || !discovery.error,
