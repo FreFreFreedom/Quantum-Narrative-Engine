@@ -1300,3 +1300,112 @@ Nobody has needed that object, because nobody has claimed a body and a nation ar
 two magnifications. **The claim is what would demand the mathematics.** This is the rarer
 position: not looking for a formalism to borrow, but holding a vision whose instrument would
 have to be grown.
+
+---
+
+## 18. The nameless interior — identity as pure relation
+
+Added 2026-09-07. Antoine's, given in conversation, and it belongs here rather than in a chat
+log:
+
+> **Each part has no identity except its relations to the others, and two nets correspond when
+> their patterns of reflection agree. The correspondence exists before it is computed. The names
+> were the obstruction.**
+
+Four sentences, each landing somewhere different. Together they are the strictest statement this
+document holds of what the analogical layer must be — and the first thing here that **forbids**
+as much as it proposes.
+
+### A part is a position, not a thing
+
+*No identity except its relations* is not modesty about labels. It strips the label of any
+cargo at all. A part is not an entity with attributes that also happens to sit in a web; it is
+nothing but its place in the web.
+
+So an interior, when extracted, arrives **blank**. No exile, no mediator, no wounded child —
+knots, and the traffic between them. Everything a part *is* must be recoverable from the traffic
+alone, or it was never there to begin with.
+
+This takes the fragment model (in *what an entity is made of*) to its end: a fragment does not
+merely *have* relations. It **is** its relations.
+
+### Correspondence is shape, not overlap
+
+*Two nets correspond when their patterns of reflection agree.* Not when their contents overlap.
+You lay the parts of one against the parts of the other so that every relation survives the
+laying — and what is compared is the pattern of standing-in-relation, nothing else.
+
+*Why label-matching finds the wrong analogies* already argued that two entities can share not
+one single word and have identical anatomy, and that interiors are therefore the better
+instrument. This is the stronger claim: **the anatomy was the only thing there ever was to
+compare.** Overlap of contents was not a weak signal. It was a different question.
+
+### The correspondence exists before it is computed — and this rules things out
+
+The hardest sentence, and the most useful, because it constrains rather than aspires. If the
+echo is a fact about the world, the engine's work is **discovery, not scoring.**
+
+A design rule follows, and it is severe:
+
+> **Any method whose answer moves when you move a threshold, swap a model, or rephrase the
+> query is measuring itself, not the world.**
+
+That line disqualifies most of what the field calls similarity search — the tuned cutoff, the
+distance in an embedding space, the relevance ranking. Each manufactures its correspondence at
+the moment of asking, then reports it as a finding.
+
+It also explains, after the fact, why two instruments already recorded here earn their place.
+**Sheaf obstruction** is not a score to tune: either the local sections glue or they do not, and
+the failure has a location and a size. And the **blur test** (in *how an entity's interior might
+be populated*) is precisely the check that something was found rather than made — a structure
+that dissolves under one round of coarse-graining was never there.
+
+The falsifiability rule gains a companion question here. Not only *what would show this wrong*,
+but: **did the asker supply the answer?**
+
+### Correction to *how an entity's interior might be populated* (14c)
+
+That section lays out four stages — extract, partition, name, verify — and puts **Naming**
+third: the model reads the found partition and says what each part is. Written that way it looks
+harmless, even modest. The model no longer invents an anatomy; it only labels one.
+
+It is not harmless. Placed third in a chain, a name flows downstream by default.
+
+> **Naming must never feed the matcher.** It is terminal — for the human reading the result, and
+> for nothing else. The moment a name re-enters the comparison, the interior has been converted
+> back into tags with extra ceremony, and the obstruction is inside the machine again, wearing a
+> new coat.
+
+Treat this as refining the four stages, not replacing them. The stages and their distinct
+failure modes stand. What changes is that Naming is not a link in the chain — it is an **exit**.
+Matching happens between partition and verification, on nameless structure, and reads nothing
+from the naming at all.
+
+### The instrument this sentence already is
+
+| Instrument | What it does | What it does here |
+|---|---|---|
+| **Neighbourhood refinement** | Every part of a net starts out indistinguishable from every other, carrying no label whatever. Each part is then described purely by the collection of descriptions of the parts it touches — then again, and again. Identity precipitates out of relation, in rounds. Two nets whose descriptions keep agreeing round after round are the same shape; the round at which they diverge is **how deep** the correspondence ran. | **Antoine's sentence, executed.** No identity except relations is literally the starting condition, and correspondence is recovered without one name entering. The round-count hands over, for free, what *analogical strength equals scales survived* asks for in the other register: a depth, not a score. Deterministic, cheap, no model call. |
+| **Spectral signature** | Describes a net by how a vibration travels through it — how it rings. | Two nets that ring the same way are the same net, and what the parts were called never enters the question. A second, independent route to the same nameless comparison, which matters: agreement between two instruments that share no assumptions is worth more than either alone. |
+
+**Who is on this ground.** Neighbourhood refinement is the theoretical spine of the
+graph-learning field — the standard against which the expressive power of graph neural networks
+is measured — so it is live, active, and already well-tooled. It is pointed at molecules,
+program code, and social graphs. **Not at interiors, and not across scales.** The instrument
+exists; the application does not. Which is the ordinary situation in this document, and the
+reason the work is a translation rather than an invention.
+
+### The other register
+
+The reference shelf keeps Indra's Net as the purest image of the entanglement jump: an infinite
+net, a jewel at every knot, each jewel reflecting every other, every reflection containing all
+the reflections. This addition is that image with the mysticism burned off and the mechanism
+left standing — because the image was never vague. It says exactly this: **the jewel has no
+colour of its own. It is only what it reflects.**
+
+And it says the net is whole before anyone looks. Nothing is computed into being; the looking
+only arrives late.
+
+Which is why the last sentence is the one to keep. *The names were the obstruction.* Not a
+missing instrument, not a shortage of data — the naming itself, standing in between things that
+were always the same shape.
