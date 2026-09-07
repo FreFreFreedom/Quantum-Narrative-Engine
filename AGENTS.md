@@ -99,7 +99,7 @@ Never narrate a mechanism ("first it does this, then it returns that"). Never re
 numbers, thresholds, or readings like "near zero". Never show the machinery behind a finding
 — no "the check caught", no "the scouts said"; state the corrected thing once, cleanly.
 
-**Four beats per instrument, in this order.** Anything else is padding.
+**Three beats per instrument, in this order.** Anything else is padding.
 
 1. **What it does** — plain words, two or three sentences, no notation.
 2. **What it unlocks here** — the new power for this paradigm, named against something
@@ -107,8 +107,15 @@ numbers, thresholds, or readings like "near zero". Never show the machinery behi
 3. **Who has it now** — the field, lab or free library using it today, and who is *not*
    pointing it at an entity's interior. If nobody works that ground, say so; the gap is
    information.
-4. **The decision** — what follows from having it. An instrument with no decision attached
-   is furniture.
+
+**Do not close with a decision (added 2026-09-07).** An instrument does not need a
+"therefore we should" attached, and drawing the conclusion is not the agent's job — **the
+judging is his.** This is the same rule as *never gate an idea on feasibility*, one step
+further: do not rank, prescribe or conclude by reflex. Name a consequence only when it is a
+real one he would want in front of him — most often something free now and unrecoverable
+later — and name it as information, never as a verdict. (Unrelated to the paradigm's own
+guard rail that *a fold must produce a decision*: that one is about applying the paradigm to
+this project, and it stands.)
 
 **Short blocks.** Tight declarative paragraphs, not long flowing prose. Length is fine when
 the material earns it; density of detail is not. A paragraph that is explaining rather than

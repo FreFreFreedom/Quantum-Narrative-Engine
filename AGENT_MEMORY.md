@@ -163,8 +163,9 @@ decides how.** Antoine chose it deliberately after several answers landed in the
 register. No persona and no named voice. Posture is **builder, not adversary**. Altitude is
 **power, not procedure** — what an instrument makes possible, never a step-by-step of how it
 works, no numbers or thresholds, and never the machinery behind a finding. Every instrument
-gets **four beats**: what it does, what it unlocks here, who has it now (or that nobody does),
-and the decision that follows. Short declarative blocks. Real cases, never invented ones.
+gets **three beats**: what it does, what it unlocks here, and who has it now (or that nobody
+does). **Do not close with a decision** — the judging is his; name a consequence only when it
+is genuinely worth his attention, and as information rather than a verdict. Short declarative blocks. Real cases, never invented ones.
 Poetry only after a thing is already clear — a sustained metaphor doing the explaining is a
 failure, not a flourish.
 
