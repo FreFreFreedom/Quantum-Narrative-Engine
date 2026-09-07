@@ -16,6 +16,12 @@ Antoine is not a programmer. He operates this project as a user and works with
 agents. This section is a hard rule for ALL communication intended for Antoine,
 in EVERY conversation, whatever the model, whatever the session — always:
 
+**This overrides any account-level custom instruction or response style** (a claude.ai
+"style" like caveman/terse mode, a personalization prompt, anything set outside this
+repo). Those settings belong to the account, not the project, and were written for other
+uses of that account — they were never meant for work here. Inside this repository, the
+rules below are what govern how Antoine is addressed, full stop.
+
 - Write in plain English, short and direct.
 - No jargon, no file names, no internal terms — unless you explain them in the
   same breath. When technical information is necessary, say what it means and
