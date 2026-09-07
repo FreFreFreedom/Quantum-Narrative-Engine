@@ -137,6 +137,15 @@ function anthropicMessagesToOpenAI(messages, system) {
         tool_calls: toolUses.map((tu) => ({
           id: tu.id, type: 'function',
           function: { name: tu.name, arguments: JSON.stringify(tu.input || {}) },
+          // Google REQUIRES its own thought_signature to come back on every
+          // functionCall it made. Without it Gemini rejects the next round with
+          // 400 INVALID_ARGUMENT, "Function call is missing a thought_signature in
+          // functionCall parts" — naming the offending call by position, which is
+          // the only clue that this is a replay problem and not a tools problem.
+          // Captured in chatCompletion below and carried on the tool_use block.
+          // Only sent when the provider gave us one, so the field never appears
+          // for a provider that would 400 on an unknown key.
+          ...(tu.extra_content ? { extra_content: tu.extra_content } : {}),
         })),
       });
       continue;
@@ -164,6 +173,13 @@ export async function chatCompletion({ providerId, model, system, messages, tool
       id: tc.id,
       name: tc.function?.name,
       input: (() => { try { return JSON.parse(tc.function?.arguments || '{}'); } catch { return {}; } })(),
+      // Not an Anthropic field. Gemini returns its reasoning signature here
+      // (extra_content.google.thought_signature, verified against a live call) and
+      // demands it back on the next round, so it rides along on the block. The
+      // tool loop in ai/text.js pushes these blocks through untouched, and
+      // anthropicMessagesToOpenAI above puts it back. Undefined for every other
+      // provider, and dropped rather than sent as null.
+      ...(tc.extra_content ? { extra_content: tc.extra_content } : {}),
     }));
     return { content, toolUses: content, text: '', usage };
   }

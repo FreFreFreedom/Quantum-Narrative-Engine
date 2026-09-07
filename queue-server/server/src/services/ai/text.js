@@ -745,6 +745,16 @@ function plainFailure(text, timeoutMs) {
   if (/exceeded your current quota|RESOURCE_EXHAUSTED/i.test(out)) {
     return "That model is rate-limited right now — wait a moment, or pick another one in the model dropdown.";
   }
+  // A provider's raw 400 is a nested JSON blob, and in the Room it was being shown
+  // verbatim as the assistant's reply — twenty lines of braces where an answer
+  // should be. Pull out the one human sentence the blob contains and drop the rest;
+  // the full text is already on the server log for whoever is debugging.
+  const blob = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(out);
+  if (blob && /^[\s\S]*[[{]/.test(out)) {
+    let detail = blob[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
+    if (detail.length > 220) detail = `${detail.slice(0, 220)}…`;
+    return `That model refused the request: ${detail} Try another model in the dropdown — and tell Claude Code, because this one is a bug rather than a limit.`;
+  }
   return out;
 }
 
