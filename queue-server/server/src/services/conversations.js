@@ -949,6 +949,29 @@ function saveAssistantTurn(convoId, text, meta = null) {
   return mid;
 }
 
+// A turn that failed still owes Antoine a reply. Without this the thread keeps his
+// question with nothing under it, and the frontend's poll fallback (awaitTurn) waits
+// out its full 150-second deadline before saying "no answer came back" — because it
+// watches for a new ASSISTANT MESSAGE, and a failed turn used to save none. So the
+// two visible symptoms of any failure were identical: dots, for two and a half
+// minutes. Saving the failure makes both paths — the live stream and the poll —
+// show the real reason at once.
+//
+// Marked `failed` in meta so a later reader can style or skip it. It does land in
+// the transcript sent with the next turn, which is the honest trade: a model seeing
+// "that model is rate-limited" in the history is better than a user question that
+// appears to have been ignored.
+function saveFailedTurn(convoId, result, turn) {
+  const text = String(result?.message || '').trim()
+    || 'That answer did not come back. Nothing was lost — send it again.';
+  saveAssistantTurn(convoId, text, {
+    failed: true,
+    error: result?.error || 'generation_failed',
+    lane: computeLaneTag(turn?.intent, turn?.lane, result?.via),
+  });
+  return { ...result, text, failed: true };
+}
+
 // Streaming sibling of runChatTurn. Same prompt, same single saveAssistantTurn at
 // the end — so the DB write is identical and the frontend's existing poll fallback
 // (awaitTurn) keeps working untouched if a stream dies mid-flight.
@@ -1011,7 +1034,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn) {
       console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
     },
   });
-  if (result.error) return result;
+  if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
@@ -1043,7 +1066,7 @@ async function runChatTurn(convoId, userId, turn) {
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
   });
-  if (result.error) return result;
+  if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
   saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
