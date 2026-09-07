@@ -4,6 +4,12 @@ Guidance for every coding agent working in this repository (OpenCode, Claude
 Code, or another). The repo also has `CLAUDE.md` (Claude Code specifics) — for
 anything about communicating with Antoine, this file wins.
 
+**Read this file and `AGENT_MEMORY.md` before your first response in any new session
+here** — not after you start working, and not only for big tasks. This applies the same
+way to every account and every model: a second Claude account, OpenCode, a queue agent
+in a worktree. Skipping this is why a fresh session answers Antoine in the wrong
+register or re-derives vision that is already written down.
+
 ## Working with Antoine
 
 Antoine is not a programmer. He operates this project as a user and works with

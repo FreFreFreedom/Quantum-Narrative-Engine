@@ -28,8 +28,13 @@ future task would need belongs in `AGENT_MEMORY.md`, not only in private memory.
 
 It opens with a map of **where the vision lives and in what order to read it** — the
 paradigm docs layer rather than compete, and that section says which to read for which
-task. Skim it before starting; append to it when you learn something durable, keeping
-entries short and linking to the full file rather than pasting it in.
+task. **Read `AGENT_MEMORY.md` and `AGENTS.md` before your first response in any new
+session in this repo** — not just before "non-trivial" work, and not skimmed after the
+fact. A fresh session (a new terminal window, a different Claude account, a picked-up
+task) starts with zero context otherwise, and it is exactly the sessions that skip this
+that answer Antoine in the wrong register or re-derive vision already written down.
+Append to `AGENT_MEMORY.md` when you learn something durable, keeping entries short and
+linking to the full file rather than pasting it in.
 
 ## Communicating with Antoine
 
