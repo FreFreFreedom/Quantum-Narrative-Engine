@@ -291,6 +291,29 @@ The paradigm itself lives in `queue-server/data-seed/docs/fractal_operational_co
 conversation. It is seeded into the app's knowledge store on every boot, so both
 terminal agents and the app itself can read it.
 
+**This section is the authority for the voice; two derived copies exist so every engine
+can reach it (added 2026-09-07).** Edit this section, then update them:
+
+- `queue-server/data-seed/voices/qne-3-0.md` — the same voice as a **prompt**, for models
+  that never read this file: the app's Room (through the AI Settings voice box) and the
+  generators that interpret meaning for Antoine. Loaded by
+  `server/src/services/ai/voice.js`. Its own header says this section wins if they drift.
+- `.claude/skills/qne-3-0/SKILL.md` — so the voice can also be requested by name, and so
+  it is a **project** asset rather than something living only in one Mac's personal
+  Claude Code folder (where QNE 1.0 and 2.0 still sit, invisible to OpenCode).
+
+Which app text carries the voice is a deliberate split, made by Antoine 2026-09-07: the
+Room and the generators that **interpret meaning** (pattern readings, tag lenses, book
+picks, book detail) carry it; status lines, task cards, queue questions and suggestions
+stay plain, because this register fights the job a line like "this task failed" is doing.
+Those short generators keep their own word limits — `paradigmVoiceBlock()` takes a flag
+that declares the caller's limit the winner, since the voice's own "no length ceiling"
+rule would otherwise contradict a 40-word cap.
+
+QNE 2.0's app text is preserved verbatim at
+`queue-server/data-seed/voices/qne-2-0.md` — it drove the app until 2026-09-07 and
+pasting it back into AI Settings restores it exactly.
+
 ### App-generated text for Antoine
 
 The same rule applies to EVERYTHING the app itself writes for Antoine:

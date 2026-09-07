@@ -5,6 +5,7 @@
 
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { paradigmVoiceBlock } from './ai/voice.js';
 
 function buildPrompt(entity, book) {
   const tags = (entity.tags || []).join(', ');
@@ -20,6 +21,7 @@ function buildPrompt(entity, book) {
     `\nGo deeper than that one-line reason. Write ONE tight paragraph (strict hard limit: 70-100 words) on specifically how this book exhibits the same pattern as ${entity.name} — name a concrete scene, character, or argument from the book itself, not just genre similarity, and draw one real point of contact between the book and this specific entity. `,
     `Cut anything not essential — no throat-clearing, no summary sentence restating the point.\n`,
     `${USER_FACING_STYLE}\n`,
+    `${paradigmVoiceBlock({ lengthRuleWins: true })}\n`,
     `Respond with ONLY the paragraph text, no preamble, no quotes, no markdown.`,
   ].join('');
 }

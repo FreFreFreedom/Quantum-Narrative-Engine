@@ -8,6 +8,7 @@
 
 import { generateText } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
+import { paradigmVoiceBlock } from './ai/voice.js';
 import { getEnrichment } from './filmEnrichment.js';
 
 // A real read is plain prose. Stream envelopes, mock stubs and self-test markers
@@ -60,6 +61,7 @@ function buildPrompt(entity, tag, kind, clusterName) {
     `Ground it in one or two concrete, specific details about this entity rather than restating the lens's definition. Cut anything not essential — no throat-clearing, no summary sentence at the end restating the point. `,
     `No preamble, no "Through the lens of..." framing device — just the examination itself, one paragraph, no list.\n`,
     `${USER_FACING_STYLE}\n`,
+    `${paradigmVoiceBlock({})}\n`,
     facts
       ? `\nAfter the paragraph, on a new line, output ONLY a JSON array — no markdown fences, no labels, no prose — listing 3 to 5 items, each an EXACT string copied from the "Verified facts" list above that this lens foregrounds. Shape: ["Genres: Drama","Director: Paul Schrader"]`
       : '',
