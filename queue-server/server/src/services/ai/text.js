@@ -168,8 +168,22 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
   // Empty string is a meaningful value here — it means "go back to the built-in
   // default voice" — so only `undefined` leaves it untouched. Capped so one paste
   // cannot push the whole prompt past a sane size.
+  //
+  // 12000, raised from 4000 on 2026-09-07. The cap is a guard against a runaway
+  // paste, not a considered budget, and 4000 had become a real constraint: QNE 3.0
+  // is ~6400 characters, so saving it was silently truncated a third of the way
+  // through — losing the whole "on the page" half of the voice with nothing to say
+  // so. The earlier QNE 2.0 text sat at 3995 characters, which is what fitting
+  // under this limit looks like. The persona rides in the cached region of the
+  // Room's prompt (conversations.js puts it last, after liveListsBlock), so the
+  // extra ~600 tokens per turn is the cost, and it is worth the voice arriving
+  // whole. Truncation is now visible rather than silent — see the warning below.
+  const PERSONA_CAP = 12000;
+  if (typeof studioPersona === 'string' && studioPersona.length > PERSONA_CAP) {
+    console.warn(`[ai-settings] voice text is ${studioPersona.length} chars — cut to ${PERSONA_CAP}. The end of it will not reach the model.`);
+  }
   const nextPersona = typeof studioPersona === 'string'
-    ? studioPersona.slice(0, 4000)
+    ? studioPersona.slice(0, PERSONA_CAP)
     : (current.studioPersona || '');
   db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, side_call_budget=?, queue_default_provider=?, queue_default_model=?, intel_json=?, studio_persona=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
     .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, nextQueue.sideCallBudget, nextQueue.defaultProvider || '', nextQueue.defaultModel || '', JSON.stringify(nextIntel), nextPersona);
