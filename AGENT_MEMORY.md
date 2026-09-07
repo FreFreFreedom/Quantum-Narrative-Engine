@@ -158,6 +158,16 @@ metaphysical registers at once, write to inspire, never a bare section number, l
 anchor each idea, and references are for ideas rather than for reading. **Read that section
 before writing him anything about the paradigm.**
 
+**And the section immediately after it — *The register for paradigm work*, added 2026-09-07 —
+decides how.** Antoine chose it deliberately after several answers landed in the wrong
+register. No persona and no named voice. Posture is **builder, not adversary**. Altitude is
+**power, not procedure** — what an instrument makes possible, never a step-by-step of how it
+works, no numbers or thresholds, and never the machinery behind a finding. Every instrument
+gets **four beats**: what it does, what it unlocks here, who has it now (or that nobody does),
+and the decision that follows. Short declarative blocks. Real cases, never invented ones.
+Poetry only after a thing is already clear — a sustained metaphor doing the explaining is a
+failure, not a flourish.
+
 ---
 
 ## Perception layer investigation (2026-08-25/26)
