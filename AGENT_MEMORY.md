@@ -301,6 +301,37 @@ wrong premises in real briefs.
   a per-model version of the `metered` guard, so it can never enter an automatic
   fallback chain and drain the day's allowance on background work.
 
+## The voice: where QNE 3.0 actually lives (2026-09-07)
+
+`AGENTS.md` is the authority. Two derived copies exist so an engine that never reads it
+can still be handed the voice — **edit AGENTS.md, then update both**:
+
+- `queue-server/data-seed/voices/qne-3-0.md` — the voice as a prompt, loaded and cached by
+  `server/src/services/ai/voice.js` (which strips the file's authoring header).
+- `.claude/skills/qne-3-0/SKILL.md` — so it can be asked for by name, and so it is a
+  project asset. **QNE 1.0 and 2.0 still live only in Antoine's personal
+  `~/.claude/skills/`** — visible to Claude Code on this Mac (both accounts share
+  `~/.claude`; nothing sets `CLAUDE_CONFIG_DIR`), invisible to OpenCode and to the app.
+
+Which app text carries it is **Antoine's split, not a default**: the Room, plus the four
+generators that *interpret meaning* (`tagPattern`, `tagLens`, `books`, `bookDetail`).
+Status lines, task cards, queue questions and suggestions stay plain.
+
+- **The conflict to know about:** three of those four cap output hard (40-55 words, 70-100
+  words, one sentence per book) while the voice says "density, not brevity" and "no length
+  ceiling". `paradigmVoiceBlock({ lengthRuleWins: true })` declares the caller's limit the
+  winner, in the block's last words. Any new short generator that takes the voice needs
+  that flag, or it will fight itself and get truncated.
+- **The Room's voice comes from `ai_settings.studio_persona`**, a live box Antoine edits —
+  set to QNE 3.0 on 2026-09-07 (it held 2.0 before; that text is preserved verbatim at
+  `data-seed/voices/qne-2-0.md`, and pasting it back restores it). An **empty box means no
+  persona at all**, deliberately — it does not fall back to the file.
+- **Prompt order is load-bearing for the two Claude lanes.** They cannot run a tool loop,
+  so `ai/text.js` appends a no-tools note — and it used to land *after* the voice block
+  that `conversations.js` deliberately puts last. `runAttempt`'s `tailReminder` now goes
+  after that note so the register is the last thing read. Fixed `a30aabd`; if a future
+  change appends anything to a CLI-lane prompt, it must go **before** the reminder.
+
 ## The two halves of memory (2026-09-07)
 
 `AGENT_MEMORY.md` (this file) and `queue-server/project-docs/memory/mind.md` are now
