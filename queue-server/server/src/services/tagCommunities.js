@@ -59,7 +59,7 @@ function weightedDegree(adjacency, node) {
   return sum;
 }
 
-function detectCommunities(adjacency) {
+export function detectCommunities(adjacency) {
   const nodes = [...adjacency.keys()].sort();
   const degree = new Map(nodes.map((n) => [n, weightedDegree(adjacency, n)]));
   const m = nodes.reduce((s, n) => s + degree.get(n), 0) / 2;

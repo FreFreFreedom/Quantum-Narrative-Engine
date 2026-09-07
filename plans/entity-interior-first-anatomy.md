@@ -2,7 +2,21 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-07 |
+| **DONE** | 2026-09-07 |
+
+Executed 2026-09-07. Findings: `plans/entity-interior-first-findings.md`. Output:
+`queue-server/scripts/interior-one-film.js`,
+`queue-server/data-seed/subtitles/f_dogville.srt`,
+`queue-server/data-seed/interiors/f_dogville.{graph,names}.json`. One deviation from the
+plan text, disclosed in the findings doc: scope was narrowed at run time from the whole film
+to one continuous scene (subtitle blocks 220–345) — attributing all 1,805 blocks by hand with
+no video/audio was judged unreliable at that scale, so one scene was read closely instead of
+the whole film read loosely. The partition step found one single community (a known property
+of modularity detection on small hub-centered graphs, checked against the gap threshold and a
+weak-edge blur); reading the raw edge weights by hand found a real, blur-surviving asymmetry
+(Tom as sole mediator between the town and Grace, carrying both the heaviest opposition and
+the heaviest alliance edge) that the corpus's flat tags could not have shown. Next step, not
+started: signed edges + structural balance on a second scene, per the findings doc's close.
 
 **Scope: one entity, one script, one JSON file, one written finding.** Not a pipeline, not
 199 films, not a schema, not a route, not UI. If you find yourself designing a table, you

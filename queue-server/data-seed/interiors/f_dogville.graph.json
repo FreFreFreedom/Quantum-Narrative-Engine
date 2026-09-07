@@ -1,0 +1,200 @@
+{
+  "entity": "f_dogville",
+  "scope": "blocks 220-345 of the corpus subtitle (acceptance meeting + Elm Street walk)",
+  "gapThreshold": 3,
+  "turnsAttributed": 93,
+  "turnsDroppedUnattributable": 9,
+  "turnsFailedVerbatimCheck": 0,
+  "graph": {
+    "nodes": [
+      "b",
+      "c",
+      "f",
+      "g",
+      "m",
+      "t"
+    ],
+    "edges": [
+      {
+        "a": "b",
+        "b": "g",
+        "weight": 1
+      },
+      {
+        "a": "b",
+        "b": "c",
+        "weight": 2
+      },
+      {
+        "a": "c",
+        "b": "f",
+        "weight": 2
+      },
+      {
+        "a": "c",
+        "b": "t",
+        "weight": 16
+      },
+      {
+        "a": "c",
+        "b": "g",
+        "weight": 1
+      },
+      {
+        "a": "f",
+        "b": "t",
+        "weight": 2
+      },
+      {
+        "a": "f",
+        "b": "g",
+        "weight": 2
+      },
+      {
+        "a": "g",
+        "b": "t",
+        "weight": 14
+      },
+      {
+        "a": "m",
+        "b": "t",
+        "weight": 2
+      }
+    ]
+  },
+  "basePartition": [
+    [
+      "b",
+      "c",
+      "f",
+      "g",
+      "m",
+      "t"
+    ]
+  ],
+  "blurA": {
+    "minWeight": 2,
+    "graph": {
+      "nodes": [
+        "b",
+        "c",
+        "f",
+        "g",
+        "m",
+        "t"
+      ],
+      "edges": [
+        {
+          "a": "b",
+          "b": "c",
+          "weight": 2
+        },
+        {
+          "a": "c",
+          "b": "f",
+          "weight": 2
+        },
+        {
+          "a": "c",
+          "b": "t",
+          "weight": 16
+        },
+        {
+          "a": "f",
+          "b": "t",
+          "weight": 2
+        },
+        {
+          "a": "f",
+          "b": "g",
+          "weight": 2
+        },
+        {
+          "a": "g",
+          "b": "t",
+          "weight": 14
+        },
+        {
+          "a": "m",
+          "b": "t",
+          "weight": 2
+        }
+      ]
+    },
+    "partition": [
+      [
+        "b",
+        "c",
+        "f",
+        "g",
+        "m",
+        "t"
+      ]
+    ]
+  },
+  "blurB": {
+    "merges": {
+      "m": "t"
+    },
+    "graph": {
+      "nodes": [
+        "b",
+        "c",
+        "f",
+        "g",
+        "t"
+      ],
+      "edges": [
+        {
+          "a": "b",
+          "b": "g",
+          "weight": 1
+        },
+        {
+          "a": "b",
+          "b": "c",
+          "weight": 2
+        },
+        {
+          "a": "c",
+          "b": "f",
+          "weight": 2
+        },
+        {
+          "a": "c",
+          "b": "t",
+          "weight": 16
+        },
+        {
+          "a": "c",
+          "b": "g",
+          "weight": 1
+        },
+        {
+          "a": "f",
+          "b": "t",
+          "weight": 2
+        },
+        {
+          "a": "f",
+          "b": "g",
+          "weight": 2
+        },
+        {
+          "a": "g",
+          "b": "t",
+          "weight": 14
+        }
+      ]
+    },
+    "partition": [
+      [
+        "b",
+        "c",
+        "f",
+        "g",
+        "t"
+      ]
+    ]
+  }
+}
