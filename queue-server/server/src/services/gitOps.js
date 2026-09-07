@@ -30,7 +30,7 @@ import { execFileSync } from 'node:child_process';
 // queue-server/scripts/queue-runner.js, so there is one place to change it.
 const TRUNK = process.env.RUNNER_TRUNK || 'develop';
 import { existsSync, mkdirSync, readdirSync, statSync, symlinkSync, appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve, join, basename } from 'node:path';
+import { resolve, join, basename, dirname } from 'node:path';
 
 let _mainRepo = null;
 export function mainRepo() {
@@ -425,6 +425,57 @@ function prepareNoteRepo() {
   } catch (e) {
     console.warn('[gitOps] note delivery: could not prepare repo:', e.message);
     return null;
+  }
+}
+
+// Write one file and push it to the trunk from a machine with NO checkout —
+// production. commitAndPushPaths() above needs mainRepo(), which is null in the
+// deployed container (Railway's build root is queue-server/, so the image carries
+// no .git), and that is exactly where the Room runs and where its memory is
+// harvested. This rides prepareNoteRepo()'s token clone, the same mechanism
+// `/note` has used in production since the auto-mirror work.
+//
+// Deliberately NOT refactored out of deliverNoteToRepo() below: that path is
+// load-bearing for /note and its slug-collision logic needs the clone directory
+// before it can pick a filename. The ~15 duplicated lines of the token dance are
+// cheaper than the risk of breaking note delivery.
+export function commitFileToTrunk({ relPath, content, message } = {}) {
+  if (!relPath || content == null || !message) return { ok: false, reason: 'missing_args' };
+  const repo = prepareNoteRepo();
+  if (!repo) return { ok: false, reason: 'no_repo' };
+  const { dir, tokenPush } = repo;
+  const full = join(dir, relPath);
+  try {
+    mkdirSync(dirname(full), { recursive: true });
+    // Nothing changed upstream: skip the commit entirely rather than making an
+    // empty one. `git commit` would refuse anyway, but this keeps the log quiet.
+    if (existsSync(full) && readFileSync(full, 'utf8') === content) return { ok: true, changed: false };
+    writeFileSync(full, content, 'utf8');
+  } catch (e) {
+    console.warn('[gitOps] commitFileToTrunk: write failed:', e.message);
+    return { ok: false, reason: 'write_failed' };
+  }
+  const token = process.env.GITHUB_TOKEN;
+  const prev = tokenPush ? git(['remote', 'get-url', 'origin'], { cwd: dir, quiet: true }) : null;
+  if (tokenPush) {
+    git(['remote', 'set-url', 'origin', `https://x-access-token:${token}@github.com/${NOTE_GITHUB_REPO}.git`], { cwd: dir, quiet: true });
+  }
+  try {
+    if (git(['add', '--', relPath], { cwd: dir, quiet: true }) === null) throw new Error('add failed');
+    const status = git(['status', '--porcelain', '--', relPath], { cwd: dir, quiet: true });
+    if (!status) return { ok: true, changed: false };
+    if (git(['commit', '-m', message], { cwd: dir, quiet: true }) === null) throw new Error('commit failed');
+    if (git(['push', 'origin', `HEAD:refs/heads/${TRUNK}`, '--quiet'], { cwd: dir, quiet: true }) === null) {
+      console.warn(`[gitOps] commitFileToTrunk: push to ${TRUNK} failed (${relPath})`);
+      return { ok: false, reason: 'push_failed' };
+    }
+    console.log(`[gitOps] committed ${relPath} → ${TRUNK}`);
+    return { ok: true, changed: true, path: relPath };
+  } catch (e) {
+    console.warn('[gitOps] commitFileToTrunk: git step failed:', e.message);
+    return { ok: false, reason: 'git_failed' };
+  } finally {
+    if (tokenPush && prev) git(['remote', 'set-url', 'origin', prev], { cwd: dir, quiet: true });
   }
 }
 

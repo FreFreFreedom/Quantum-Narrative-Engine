@@ -152,6 +152,25 @@ export function buildProjectMap() {
   const comps = componentsSection();
   if (comps) { parts.push(comps); found.push('components'); }
 
+  // A pointer, deliberately NOT the file. AGENT_MEMORY.md is the memory every
+  // engine shares, and it is ~25 KB — folding it in here would roughly double the
+  // cached prefix carried by every single turn, for something most turns never
+  // need. bootstrapData.js#seedAgentMemory puts it in knowledge_docs instead, so
+  // one tool call fetches it when a question actually turns on it.
+  parts.push(`${part('The shared memory of every engine')}
+A document titled "Memory: what every engine has learned" is available through the
+knowledge-document tools. It is the running memory of everyone who has worked on
+this project — the owner in this app, and his coding sessions on either account and
+on the free engine. It holds standing decisions, findings worth not re-learning,
+what is deliberately unfinished, and how to work here.
+
+Read it with read_knowledge_doc before answering anything that turns on project
+history, a decision already made, or whether something has been tried — rather than
+reconstructing it or asking the owner to repeat himself. What the owner says in
+this app flows back into that same memory, so it is one pool, not a log of someone
+else's work.`);
+  found.push('memory-pointer');
+
   cached = parts.join('\n\n');
   console.log(`[project-map] built ${cached.length} bytes (~${Math.round(cached.length / 4000)}k tokens) from ${found.join(', ') || 'nothing'}`);
   return cached;

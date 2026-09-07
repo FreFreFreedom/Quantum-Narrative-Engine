@@ -1090,7 +1090,7 @@ function lastUserText(convoId) {
 }
 function lastAssistantMsg(convoId) {
   const msgs = listMessages(convoId).filter((m) => m.kind === 'chat');
-  for (let i = msgs.length - 1; i >= 0; i--) if (m.role === 'assistant') return msgs[i];
+  for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === 'assistant') return msgs[i];
   return null;
 }
 

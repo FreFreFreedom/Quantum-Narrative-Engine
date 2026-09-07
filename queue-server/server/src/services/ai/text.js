@@ -699,9 +699,29 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     failures.push(`claude-helper:${viaClaude?.message || 'unavailable'}`);
   }
 
-  const message = failures.join(' | ').replace(/This operation was aborted\.?/gi, `timed out after ${Math.round(timeoutMs / 1000)}s`);
+  const message = plainFailure(failures.join(' | '), timeoutMs);
   console.error(`[${label}] all backends failed — ${message}`);
   return { error: 'generation_failed', message };
+}
+
+// Only the message that reaches the caller — a provider's raw failure text can be
+// a 500-character JSON blob, and in the Room it is shown to Antoine verbatim as the
+// assistant's reply. Every earlier use of `failures` inside the chain loop stays
+// untouched: getFallbackChain's stall guard matches on the raw text.
+function plainFailure(text, timeoutMs) {
+  let out = String(text || '');
+  // undici's AbortError message, which says nothing about what happened.
+  out = out.replace(/This operation was aborted\.?/gi, `timed out after ${Math.round(timeoutMs / 1000)}s`);
+  // Google's free tier caps some models by input tokens PER DAY (gemini-pro-latest
+  // hits this; flash does not). The reply is a nested JSON error — unreadable, and
+  // it looks like a bug rather than a limit that resets.
+  if (/PerDay-FreeTier|GenerateContentInputTokensPerModel/.test(out)) {
+    return "Google's free daily allowance for this model is used up — it resets tomorrow. Pick one of the Flash models, or Auto, in the meantime.";
+  }
+  if (/exceeded your current quota|RESOURCE_EXHAUSTED/i.test(out)) {
+    return "That model is rate-limited right now — wait a moment, or pick another one in the model dropdown.";
+  }
+  return out;
 }
 
 // ─── Helper-job worker side (called by routes/worker.js) ─────────────────────

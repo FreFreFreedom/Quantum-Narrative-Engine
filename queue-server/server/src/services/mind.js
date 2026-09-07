@@ -18,9 +18,18 @@
 import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { broadcastAll } from '../realtime.js';
+import { triggerMindMirror } from './mindMirror.js';
 
 let db = null;
 export function bindMindDb(database) { db = database; }
+
+// Push this memory back out to a repo file every engine can read
+// (mindMirror.js). Fire-and-forget and debounced there — a failed git push must
+// never turn into a failed save, so this is called AFTER the write succeeded and
+// its result is deliberately ignored.
+function mirrorOut() {
+  try { triggerMindMirror(db); } catch (e) { console.error('[mind] mirror trigger failed:', e?.message || e); }
+}
 
 const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style'];
 const MAX_FACTS = 300;
@@ -76,6 +85,7 @@ export function saveFact({ kind, text, detail = null, sourceConvoId = null, sour
     const now = new Date().toISOString();
     db.prepare(`INSERT INTO mind_facts (id, kind, text, detail, weight, source_convo_id, source_note, hits, created_at, updated_at, active) VALUES (?,?,?,?,1,?,?,0,?,?,1)`)
       .run(id, k, String(text).slice(0, 240), detail ? String(detail).slice(0, 4000) : null, sourceConvoId, sourceNote, now, now);
+    mirrorOut();
     return getFact(id);
   } catch (e) {
     return { error: e.message || 'save_failed' };
@@ -86,6 +96,7 @@ export function forgetFact(id) {
   try {
     const r = db.prepare(`UPDATE mind_facts SET active=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND active=1`).run(id);
     if (r.changes === 0) return { error: 'not_found' };
+    mirrorOut();
     return { ok: true };
   } catch (e) { return { error: e.message || 'forget_failed' }; }
 }
@@ -98,6 +109,7 @@ export function reviseFact(id, { text, detail } = {}) {
     const newDetail = detail != null ? String(detail).slice(0, 4000) : cur.detail;
     db.prepare(`UPDATE mind_facts SET text=?, detail=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
       .run(newText, newDetail, id);
+    mirrorOut();
     return getFact(id);
   } catch (e) { return { error: e.message || 'revise_failed' }; }
 }
@@ -228,6 +240,7 @@ async function runHarvest(convoId, force) {
   // Advance the watermark to the full count of chat turns seen.
   db.prepare(`UPDATE convos SET mind_seen_turns=? WHERE id=?`).run(msgs.length, convoId);
   if (wrote > 0) broadcastAll('mind:updated', {});
+  mirrorOut();
 }
 
 const _harvestInFlight = new Set();

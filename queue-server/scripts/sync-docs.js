@@ -21,7 +21,12 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const QUEUE_SERVER = resolve(HERE, '..');
 const REPO = resolve(QUEUE_SERVER, '..');
 const DEST = join(QUEUE_SERVER, 'project-docs');
-const DOCS = ['CLAUDE.md', 'AGENTS.md'];
+// AGENT_MEMORY.md rides along so the app's own AI can read what every engine has
+// learned — it used to be readable by coding sessions only, which meant the Room
+// met Antoine cold about decisions already written down. Seeded into
+// knowledge_docs by bootstrapData.js, read on demand rather than injected into
+// every turn (it is ~25 KB).
+const DOCS = ['CLAUDE.md', 'AGENTS.md', 'AGENT_MEMORY.md'];
 
 // Plans ride the same rail as CLAUDE.md / AGENTS.md: the deployed container has
 // no `/app/../plans/` (Railway's build root is queue-server/), so it must read a

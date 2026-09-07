@@ -1,6 +1,10 @@
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-24 |
+| **DONE** | 2026-08-24 |
+
+> Shipped `6264ad5` (via the queue, `580a7d7`), with a follow-up fix `ec76d2c`
+> (the lane catalog is fetched from `/api/travaux/providers`, not `/api/queue/providers`).
+> Status corrected 2026-09-07 — it had said PLANNED for two weeks after shipping.
 
 # Manual model picker in the chat Room (override automatic routing)
 

@@ -66,7 +66,7 @@ export const STUDIO_TOOLS = [
   },
   {
     name: 'list_knowledge_docs',
-    description: 'List the reference documents held by the app — the full ontology doc, the films master list, the source archive that grounded the film analysis, and every note saved out of a conversation. Returns titles and descriptions only, not content.',
+    description: 'List the reference documents held by the app — the full ontology doc, the films master list, the source archive that grounded the film analysis, the shared memory of every engine that has worked on this project (titled "Memory: ..."), and every note saved out of a conversation. Returns titles and descriptions only, not content.',
     input_schema: { type: 'object', properties: {} },
   },
   {

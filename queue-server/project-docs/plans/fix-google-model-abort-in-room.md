@@ -1,6 +1,11 @@
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-26 |
+| **DONE** | 2026-08-26 |
+
+> Shipped `e74ac0d` (via the queue, `06fc34c`). All three edits verified present in
+> the live code 2026-09-07: the `reasoning_effort` cap now fires whenever tools are
+> attached, a pinned lane gets one retry, and the abort text reads as a timeout.
+> Status corrected 2026-09-07 — it had said PLANNED after shipping.
 
 # Fix: Google model aborts in the Room chat
 

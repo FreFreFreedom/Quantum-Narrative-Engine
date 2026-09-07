@@ -196,6 +196,33 @@ export function seedPlans(db) {
   return { plans: count, pruned: del.changes };
 }
 
+// ─── The shared engine memory, mirrored into project-docs/ (scripts/sync-docs.js) ──
+// AGENT_MEMORY.md is the one memory every ENGINE reads — Claude Code on either
+// account, OpenCode, a queue agent in a worktree. Until this seeder existed, no AI
+// INSIDE the app could read a word of it, so the Room met Antoine cold about
+// decisions he had already written down with a coding session.
+//
+// It is seeded as a document to READ ON DEMAND rather than folded into the project
+// map: the map is the cached prompt prefix of every conversation turn
+// (conversations.js), and this file is ~25 KB, so injecting it would roughly double
+// the prefix on every message for a fact most turns never need. projectMap.js names
+// it instead, and the model fetches it with read_knowledge_doc when a question turns
+// on project history. Cost per turn: nothing.
+const MEMORY_TITLE = 'Memory: what every engine has learned';
+const MEMORY_DESCRIPTION = 'The durable shared notes of every engine working on this project — standing decisions, findings worth not re-learning, what is deliberately unfinished, and the rules for how to work here. Read this before answering anything about how the project works, what was already decided, or what should not be started.';
+
+export function seedAgentMemory(db) {
+  const file = resolve(__dirname, '../../../project-docs/AGENT_MEMORY.md');
+  if (!existsSync(file)) return { skipped: true };
+  const content = readFileSync(file, 'utf8');
+  db.prepare(`
+    INSERT INTO knowledge_docs (id, title, description, content, updated_at)
+    VALUES (?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    ON CONFLICT(title) DO UPDATE SET description=excluded.description, content=excluded.content, updated_at=excluded.updated_at
+  `).run(randomUUID(), MEMORY_TITLE, MEMORY_DESCRIPTION, content);
+  return { bytes: content.length };
+}
+
 // ─── Architecture Navigator: component → commit mapping (manual, appended over
 // time — going forward only, see architecture.js header) ────────────────────────
 import { seedComponentCommits } from './architecture.js';

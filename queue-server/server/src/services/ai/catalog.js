@@ -32,6 +32,14 @@
 // ai_settings.defaults_json row names it explicitly. That is the load-bearing
 // safety property of the paid lane — do not "simplify" it away. billingGuard.js
 // holds the second half (an explicit opt-in plus a monthly ceiling).
+//
+// ─── The per-model equivalent: `pinnedOnly` ──────────────────────────────────
+// `metered` is a provider-level flag, so it cannot exempt ONE model of a free
+// provider. A model marked `pinnedOnly: true` is skipped by listModels() the
+// same way — so pickChain() can never reach it — while staying visible to the
+// provider catalogue, and therefore to the Room's manual model picker. Used for
+// a model that works but whose free allowance is too small to spend on
+// background work (see gemini-pro-latest below).
 
 export const ANTHROPIC_RANKS = { opus: 95, sonnet: 85, haiku: 55 };
 
@@ -71,6 +79,15 @@ export const PROVIDERS = [
       // broke every call using it by fixed id; aliases avoid repeating that.
       { id: 'gemini-flash-latest', codingRank: 70, contextTokens: 1000000 },
       { id: 'gemini-flash-lite-latest', codingRank: 55, contextTokens: 1000000 },
+      // Google's strongest model, for a question in the Room that deserves it.
+      // `pinnedOnly` because the free tier gives Pro a DAILY INPUT-TOKEN cap, not
+      // a generous rate limit: verified live 2026-09-07, `gemini-pro-latest`
+      // (then resolving to gemini-3.1-pro) returned 429
+      // "GenerateContentInputTokensPerModelPerDay-FreeTier" in 195ms while
+      // gemini-flash-latest answered fine on the same key. So it is a deliberate
+      // hand pick only — never a link in an automatic fallback chain, or a
+      // background job would spend the day's allowance before Antoine asks for it.
+      { id: 'gemini-pro-latest', codingRank: 88, contextTokens: 1000000, pinnedOnly: true },
     ],
   },
   {
@@ -181,6 +198,11 @@ export function listModels({ minRank = 0, availableOnly = true, includeMetered =
   for (const p of providers) {
     for (const m of p.models) {
       if (m.codingRank < minRank) continue;
+      // Reachable by an explicit pick only, never by pickChain(). `metered` is a
+      // provider-level flag, so it cannot exempt a single model of an otherwise
+      // free provider — this is the per-model equivalent, and it exists for the
+      // same reason: keep something scarce or costly out of the automatic chain.
+      if (m.pinnedOnly) continue;
       out.push({ providerId: p.id, providerLabel: p.label, baseUrl: p.baseUrl, apiKeyEnv: p.apiKeyEnv, limits: p.limits, metered: !!p.metered, ...m });
     }
   }
