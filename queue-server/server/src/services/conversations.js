@@ -31,7 +31,6 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
-import { deliverNoteToRepo } from './gitOps.js';
 import { mindBlock, harvest as harvestMind } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 
@@ -78,12 +77,20 @@ export function listFiles() {
 // notebook doesn't flood the picker.
 const NOTE_LIST_CAP = 200;
 
-export function listNotes() {
+// `full` pulls the note bodies too — the Mac runner asks for them so it can write
+// the mirror files and push them to the trunk (scripts/queue-runner.js#mirrorNotes),
+// which is the only machine that can: this server has no git binary. `doc_title`
+// carries the stored title WITH its `Note: ` prefix, because the mirror's filenames
+// and headers are derived from it and must match what syncNoteMirror writes.
+// The picker's shape ({id, title, description}) is untouched.
+export function listNotes({ full = false } = {}) {
   if (!db) return [];
-  const rows = db.prepare(`SELECT title, description FROM knowledge_docs WHERE title LIKE ? ESCAPE '\\' ORDER BY title LIMIT ?`).all('Note: %', NOTE_LIST_CAP);
+  const cols = full ? 'title, description, content, updated_at' : 'title, description';
+  const rows = db.prepare(`SELECT ${cols} FROM knowledge_docs WHERE title LIKE ? ESCAPE '\\' ORDER BY title LIMIT ?`).all('Note: %', NOTE_LIST_CAP);
   return rows.map((r) => {
     const id = r.title.replace(/^Note: /, '');
-    return { id, title: id, description: r.description || '' };
+    const light = { id, title: id, description: r.description || '' };
+    return full ? { ...light, doc_title: r.title, content: r.content || '', updated_at: r.updated_at } : light;
   });
 }
 
@@ -1507,10 +1514,12 @@ Respond with ONLY this JSON object and nothing else:
     return { text: out.message || 'I could not get a clean document out of that — say in one line what should be written down, then ask again.' };
   }
 
-  // Deliver the note to the coding helper's folder (best-effort; never breaks /note).
-  deliverNoteToRepo({ title: out.title, content });
-
-  const text = `Written down as **${out.title}**. The whole conversation is saved in it (not just a summary), and I dropped it into your project folder so the coding helper can pick it up.`;
+  // No repo delivery from here. It used to call gitOps.deliverNoteToRepo(), which
+  // shells out to git — and this container has no git binary, so it failed silently
+  // every time while this message claimed the file had landed. The Mac runner does
+  // it now (scripts/queue-runner.js#mirrorNotes), within a few minutes, so what the
+  // message promises is no longer promised by the thing that cannot keep it.
+  const text = `Written down as **${out.title}**. The whole conversation is saved in it, not just a summary.`;
   saveAssistantTurn(convoId, text, { act: 'note', doc_title: out.title, chars: out.chars });
   broadcastAll('convos:updated', { convoId });
   return { text, via: result.via, act: 'note', doc: out };

@@ -65,6 +65,87 @@ that produced it.
   `queue-server/scripts/send-plan.js`. Offering is not implementing: the plan still is
   not a green light until he says go.
 
+## Antoine's saved thinking lives in the app, not in Drive (read this before saying "I can't reach it")
+
+When Antoine says he saved something in "the Room", "my notebook", as "a seed" or via
+"save it as an idea", he means **this app** — not Google Drive, Notion, or any third-party
+product. There is no connector to go looking for and nothing to copy-paste: the text is in
+FMCNS's own database and is readable over the API with the admin password already in
+`queue-server/.env`. A session that searches Google Drive for it and reports "nothing there"
+has looked in the wrong place.
+
+Two separate stores, easy to confuse:
+
+- **Seeds / ideas** — the `work_ideas` table, the "Seeds" filter in the Travaux UI. This is
+  what the "save it as an idea" button writes. Read them with `GET /api/travaux/ideas`,
+  which returns the **full text** in each row's `notes` field (plus `title`, `summary`,
+  `tag`, `created_at`, and `work_prompt_id` once the seed has been planted into a prompt).
+  A seed is a deliberate distillation, not a record: `runSaveSeedTurn` asks the model for
+  "the idea itself, not a summary of the chat" and saves a few hundred characters. The
+  conversation behind it is **not** attached and `work_ideas` has no `convo_id` column — the
+  only trace is the appended prose line `(Came out of a conversation about "<title>".)`,
+  which matches on a non-unique title. If the conversation itself matters, use `/note`.
+- **Notes** — conversations saved with the `/note` command, stored in `knowledge_docs` under
+  the `NOTE_PREFIX = 'Note: '` title convention (`services/knowledgeDocs.js`). A note is the
+  **complete record**: `runSaveNoteTurn` writes a "What this conversation understood" section
+  (AI-written) *followed by* `## Full conversation` — the entire verbatim transcript, and the
+  transcript is written even when the model call fails. Re-running `/note` on the same
+  conversation updates the same note rather than duplicating it. List them with
+  `GET /api/convos/notes`, which returns `{id, title, description}`; add **`?full=1`** for the
+  bodies too (`doc_title`, `content`, `updated_at`) — that is the only HTTP route to a note's
+  text, since `readKnowledgeDoc` has never had one of its own. Every note is also mirrored
+  into `queue-server/project-docs/notes/` on the trunk, so a coding agent in any worktree can
+  just read the file — see "Saved conversations reach the repo from the Mac" below.
+
+Both live on the deployed instance, so query production rather than
+`queue-server/data/queue.db` — the local file is a stale dev copy and will not have anything
+saved from the real app. The login-then-call shape, run from `queue-server/`:
+
+```js
+node -e '
+import("./server/src/lib/loadEnvFile.js").then(async ({loadEnvFile}) => {
+  loadEnvFile(new URL("./.env", "file://" + process.cwd() + "/"));
+  const base = process.env.QUEUE_URL || "https://quantum-narrative-engine-production.up.railway.app";
+  const t = await fetch(base + "/api/auth/login", { method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: process.env.ADMIN_PASSWORD }) }).then(r => r.json());
+  const d = await fetch(base + "/api/travaux/ideas",
+    { headers: { Authorization: "Bearer " + t.token } }).then(r => r.json());
+  for (const i of d.ideas || []) console.log(i.title, "—", (i.notes || "").slice(0, 120));
+});'
+```
+
+Same two-step (login for a token, then `Authorization: Bearer`) reaches any other read-only
+endpoint — `/api/convos/notes`, `/api/travaux/suggestions`, `/api/ontology/*`. The `runner`
+shell function in Antoine's `~/.zshrc` uses the identical pattern against
+`/api/travaux/worker/status`.
+
+### Saved conversations reach the repo from the Mac (the container has no git at all)
+
+**There is no `git` binary in the Railway image.** Not "no checkout" — no git. Every
+git call the server makes dies on `spawnSync git ENOENT`, including
+`gitOps.js#prepareNoteRepo`'s token clone, which exists precisely to work around the
+missing checkout and cannot. Confirmed in the production log 2026-09-07. Do not write
+another server-side git path, and do not read `gitOps.js` as evidence that one works.
+
+So the mirror runs on the Mac. `queue-runner.js#mirrorNotes` reads
+`GET /api/convos/notes?full=1` every 5 minutes while the runner is idle, builds the file
+list with `noteMirror.js#noteFiles` (the same list the server writes to its own disk, so
+there is one naming rule), and hands it to `git-ship.js#commitFilesToTrunk`, which writes
+it in its own worktree (`.claude/worktrees/mirror`, never the ship one — both `reset
+--hard`) and pushes `develop`. It is idempotent: filenames are a pure function of the
+notes, and nothing is committed unless the content differs from the trunk. Deleting a
+note in the app deletes its file. `npm run notes:selftest` proves all of it against a
+throwaway repo, no network, no credits.
+
+Two consequences worth knowing: notes reach the repo **only while the runner is
+running** (starting it catches everything saved since), and each mirror commit is a
+`develop` push, so it redeploys the app like any other. `commitFilesToTrunk` is generic
+over `{path, content}` — the next thing the app generates should reuse it rather than
+grow a second lane. `services/mindMirror.js` has **not** been moved over and still
+depends on the dead server-side path, so `project-docs/memory/mind.md` is not reaching
+the repo from production.
+
 ## Commands
 
 All commands run from `queue-server/` (there is no root `package.json`) — see its

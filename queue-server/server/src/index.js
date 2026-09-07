@@ -39,7 +39,7 @@ import { bindInspireLandingDb, backfillApplications } from './services/inspireLa
 import { bindCardLinesDb } from './services/cardLines.js';
 import { bindReviewsDb } from './services/reviewRunner.js';
 import { bindGitJobsDb } from './services/gitJobs.js';
-import { syncNoteMirror, commitAndPushNotes } from './services/noteMirror.js';
+import { syncNoteMirror } from './services/noteMirror.js';
 import { bindWitnessDb } from './services/witnessCheck.js';
 import { bindBriefingDb, regenerateBriefing } from './services/briefing.js';
 import { bindProjectMapDb, buildProjectMap } from './services/projectMap.js';
@@ -175,21 +175,16 @@ try {
 }
 
 // Mirror Idea Studio notes to queue-server/project-docs/notes/ so the terminal
-// coding agent (no DB access) can read them from its worktree. Runs once now —
-// notes written while the server was off still get mirrored and pushed — then
-// every 5 minutes as a safety net; createKnowledgeNote also triggers this
-// (debounced) on every /note save. See services/noteMirror.js.
+// coding agent (no DB access) can read them from its worktree. Files only — the
+// git push that used to sit next to this call, and the 5-minute timer that existed
+// to repeat it, are gone: neither could ever work here (Railway's image has no git
+// binary, so every attempt died on `spawnSync git ENOENT`). Getting these files
+// onto the trunk is the Mac runner's job now — scripts/queue-runner.js#mirrorNotes
+// reads them over the API and pushes them from the one machine with a checkout.
+// See services/noteMirror.js.
 try {
   syncNoteMirror(db);
-  commitAndPushNotes();
 } catch (e) { console.error('Note mirror boot sync failed:', e.message); }
-const NOTE_MIRROR_INTERVAL_MS = 5 * 60 * 1000;
-setInterval(() => {
-  try {
-    syncNoteMirror(db);
-    commitAndPushNotes();
-  } catch (e) { console.error('Note mirror periodic sync failed:', e.message); }
-}, NOTE_MIRROR_INTERVAL_MS).unref();
 
 // Theme clusters: regroup the archetypal tags by how often they land on the same
 // entity, once, from the live entity_tags table. Deliberately AFTER the bootstrap

@@ -377,6 +377,22 @@ joined, so a fact stated once is known on both sides:
   container is UI/API only. If tasks aren't running, check the runner is up first.
 - Finished queue tasks Slack-ping Antoine from the runner (not the server); webhook
   is `SLACK_WEBHOOK_URL` in `queue-server/.env`, gitignored.
+- **The Railway image has no `git` binary.** Not just "no checkout" — no git at all,
+  so every server-side git call dies on `spawnSync git ENOENT`, the token-clone
+  workaround in `gitOps.js#prepareNoteRepo` included. Anything that must reach the
+  repo has to go through the Mac runner. Found 2026-09-07 in the production log,
+  after six saved conversations pushed nothing while the app said they had landed in
+  the project folder.
+- **Conversations saved with `/note` in the Room are in the repo**, mirrored to
+  `queue-server/project-docs/notes/` (one file per note + `index.md`) — so read the
+  file, no DB or API needed. The runner does it every 5 minutes while idle
+  (`queue-runner.js#mirrorNotes` → `git-ship.js#commitFilesToTrunk`), which means
+  notes only land while the runner is up, and each batch is a `develop` push and so a
+  redeploy. Reading one over HTTP instead: `GET /api/convos/notes?full=1`.
+  `commitFilesToTrunk` is generic over `{path, content}` — reuse it for the next
+  thing the app generates instead of adding a second lane. `mindMirror.js` has not
+  been moved over yet, so `project-docs/memory/mind.md` is still not updating from
+  production.
 
 ## Queue/runner mechanics worth knowing before dispatching work
 

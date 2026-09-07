@@ -43,7 +43,8 @@ import { runShipChecks, shipCheckMessage } from '../server/src/services/shipChec
 import { runReviewPass as reviewPass } from '../server/src/services/codeReviewPass.js';
 import { runIdeaLanding as ideaLandingPass, buildDiff as buildIdeaDiff } from '../server/src/services/ideaLanded.js';
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
-import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk } from './git-ship.js';
+import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk, commitFilesToTrunk } from './git-ship.js';
+import { noteFiles, NOTES_REPO_PATH } from '../server/src/services/noteMirror.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
@@ -375,6 +376,18 @@ async function login() {
 async function api(path, body, { method = 'POST' } = {}) {
   if (!token) await login();
   const send = () => fetch(`${QUEUE_URL}/api/travaux${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  let r = await send();
+  if (r.status === 401) { await login(); r = await send(); }
+  return r;
+}
+// The same login, for the routes that do not live under /api/travaux.
+async function apiRoot(path, { method = 'GET', body } = {}) {
+  if (!token) await login();
+  const send = () => fetch(`${QUEUE_URL}/api${path}`, {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -1760,6 +1773,53 @@ function tidyWorktrees() {
 // path has been watched working.
 const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 
+// ─── Saved conversations into the repo ────────────────────────────────────────
+// A conversation saved with `/note` in the Room is stored in the app's database,
+// where no coding agent can see it — Claude Code, OpenCode and every task worktree
+// read files, not SQLite. The server was supposed to mirror them into the repo and
+// genuinely could not: its image has no git binary, so all six notes saved between
+// 2026-08-24 and 2026-09-07 pushed nothing while the app told Antoine they had
+// landed in his project folder. This Mac has the checkout, so this is where it
+// belongs.
+//
+// Reads the whole set and rewrites the whole mirror every time rather than tracking
+// which note is new: it costs one request, and it means a note saved while this
+// runner was off is picked up by simply starting it.
+const NOTE_MIRROR_MS = 5 * 60_000;
+let lastNoteMirrorAt = 0;
+async function mirrorNotes() {
+  if (Date.now() - lastNoteMirrorAt < NOTE_MIRROR_MS) return;
+  lastNoteMirrorAt = Date.now();
+
+  let notes = null;
+  try {
+    const r = await apiRoot('/convos/notes?full=1');
+    if (!r.ok) return;
+    notes = (await r.json()).notes;
+  } catch { return; }
+
+  // An empty list is never acted on. It is what a broken query, a half-migrated
+  // DB or a wrong environment also looks like, and mirroring it would prune every
+  // note out of the repo on the strength of a bad answer.
+  if (!Array.isArray(notes) || !notes.length) return;
+
+  const out = commitFilesToTrunk({
+    repo: RUNNER_REPO,
+    trunk: TRUNK,
+    files: noteFiles(notes.map((n) => ({
+      title: n.doc_title || `Note: ${n.title}`,
+      content: n.content,
+      updated_at: n.updated_at,
+    }))),
+    pruneDir: NOTES_REPO_PATH,
+    message: 'mirror: saved conversations from the Room',
+    dryRun: GIT_SHIP_DRY_RUN,
+    log: (m) => console.log(dim(`    ${m}`)),
+  });
+  if (out.changed) console.log(`  ${bold('notes')} ${notes.length} saved conversation(s) now in the repo`);
+  else if (!out.ok) console.log(dim(`  notes mirror: ${out.error}`));
+}
+
 async function runGitJobs() {
   let r;
   try { r = await api('/worker/git/claim', {}); } catch { return; }
@@ -1964,6 +2024,7 @@ async function main() {
       // rescuing a text call, and a git job is seconds long.
       try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
       try { await runStrandedSweep(); } catch (e) { console.error('Stranded-review sweep failed —', e.message); }
+      try { await mirrorNotes(); } catch (e) { console.error('Notes mirror failed —', e.message); }
       if (helperInFlight < HELPER_CONCURRENCY) {
         helperInFlight++;
         try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }

@@ -28,8 +28,8 @@
 // have pushed. That is how this gets proven before it is trusted.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, copyFileSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, copyFileSync, readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
+import { join, dirname, basename } from 'node:path';
 import { runShipChecks } from '../server/src/services/shipChecks.js';
 
 const APP_FILE = 'fmcns_navigator.html';
@@ -47,8 +47,14 @@ function git(cwd, args, { lines = false } = {}) {
 
 // A worktree kept for this purpose alone, reused between jobs. `.claude/worktrees`
 // is already git-excluded, so it never shows up as a stray file.
-export function shipTree(repo, trunk) {
-  const path = join(repo, '.claude', 'worktrees', 'ship');
+//
+// `name` exists so a second caller can have its OWN tree rather than share this
+// one. It must: every job here starts with `reset --hard`, so two callers in one
+// tree means whichever runs second wipes the other's work mid-flight. Ship jobs
+// are serialized by the git_jobs lock; the notes mirror below is not, and has no
+// business taking that lock just to write a file.
+export function shipTree(repo, trunk, name = 'ship') {
+  const path = join(repo, '.claude', 'worktrees', name);
   if (!existsSync(path)) {
     const base = git(repo, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${trunk}`]) ? `origin/${trunk}` : 'HEAD';
     if (git(repo, ['worktree', 'add', '--detach', path, base]) === null) return null;
@@ -81,6 +87,62 @@ function pushTrunk(wt, trunk, dryRun) {
   const out = git(wt, ['push', 'origin', `HEAD:refs/heads/${trunk}`]);
   if (out === null) return { ok: false, error: 'push_rejected' };
   return { ok: true, pushed: [trunk] };
+}
+
+// ─── files the app generates, onto the trunk ────────────────────────────────
+// Same division of labour as a ship job, for content instead of code: the server
+// decides WHAT should be in the repo, this puts it there. It has to be here and not
+// in the server, and not because of the checkout this time — the Railway image has
+// no git binary at all, so every push it attempted (six saved notes' worth) died on
+// `spawnSync git ENOENT` with the failure visible only in the logs.
+//
+// Idempotent on purpose: it resets to the trunk, writes, and commits only if the
+// result differs from what is already there. That makes it safe to call on a timer,
+// and it is why the file list must be a pure function of the data — a filename with
+// a clock or a random suffix in it would commit, and redeploy, forever.
+//
+// `pruneDir` (repo-relative) drops files in that directory that the list no longer
+// contains, so deleting a note in the app also takes it out of the repo. Without it
+// a note stays readable by every coding agent after it is gone.
+export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], pruneDir = null, message, dryRun = false, log = () => {} } = {}) {
+  if (!files.length || !message) return { ok: false, error: 'nothing_to_commit' };
+
+  const wt = shipTree(repo, trunk, 'mirror');
+  if (!wt) return { ok: false, error: 'no_worktree' };
+  if (!fetchTrunk(repo, wt, trunk)) return { ok: false, error: 'no_trunk' };
+  resetToTrunk(wt, trunk);
+
+  const paths = [];
+  try {
+    for (const f of files) {
+      const full = join(wt, f.path);
+      mkdirSync(dirname(full), { recursive: true });
+      writeFileSync(full, f.content, 'utf8');
+      paths.push(f.path);
+    }
+    if (pruneDir) {
+      const keep = new Set(files.map((f) => basename(f.path)));
+      const dir = join(wt, pruneDir);
+      if (existsSync(dir)) {
+        for (const name of readdirSync(dir)) {
+          if (!name.endsWith('.md') || keep.has(name)) continue;
+          unlinkSync(join(dir, name));
+          paths.push(`${pruneDir}/${name}`);
+        }
+      }
+    }
+  } catch (e) {
+    return { ok: false, error: `write_failed: ${e.message}` };
+  }
+
+  if (git(wt, ['add', '-A', '--', ...paths]) === null) return { ok: false, error: 'add_failed' };
+  if (!git(wt, ['status', '--porcelain', '--', ...paths])) return { ok: true, changed: false };
+  if (git(wt, ['commit', '-m', message]) === null) return { ok: false, error: 'commit_failed' };
+
+  const pushed = pushTrunk(wt, trunk, dryRun);
+  if (!pushed.ok) return { ok: false, error: pushed.error };
+  log(`pushed ${paths.length} file(s) to ${trunk}`);
+  return { ok: true, changed: true, files: paths.length, dry: !!pushed.dry };
 }
 
 // ─── is it already live? ────────────────────────────────────────────────────

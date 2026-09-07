@@ -15,16 +15,14 @@
 // gitOps.js — the one module allowed to shell out to git.
 
 import { writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
-import { commitAndPushPaths } from './gitOps.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // server/src/services -> server/src -> server -> queue-server
 const QUEUE_SERVER = join(HERE, '..', '..', '..');
 const NOTES_DIR = join(QUEUE_SERVER, 'project-docs', 'notes');
-const NOTES_REPO_PATH = 'queue-server/project-docs/notes';
+export const NOTES_REPO_PATH = 'queue-server/project-docs/notes';
 
 const NOTE_PREFIX = 'Note: ';
 
@@ -55,35 +53,65 @@ function readNotes(db) {
   `).all();
 }
 
-// Write one file per note (+ index.md), then delete any mirror file whose note no
-// longer exists in the DB. Pure filesystem work — no git here, so it can be called
-// as often as needed (boot, timer, every /note save) without any push cost.
-export function syncNoteMirror(db) {
-  const notes = readNotes(db);
-  mkdirSync(NOTES_DIR, { recursive: true });
-
+// The mirror as a plain list of { path (repo-relative), content } — one file per
+// note plus index.md. TWO writers share it, which is why it is a list and not a
+// pile of writeFileSync calls: this server writes it to its own disk (below), and
+// the Mac runner writes the identical list into a git worktree and pushes it
+// (scripts/git-ship.js#commitFilesToTrunk).
+//
+// The runner is the ONLY path that reaches the repo. Railway's image has no git
+// binary at all — every attempt from production died on `spawnSync git ENOENT`,
+// which is why six notes were saved between 2026-08-24 and 2026-09-07 and not one
+// file ever landed on the trunk. Nothing here should ever try to push again.
+//
+// Filenames must be a pure function of the notes, with no clock and no randomness
+// in them: the runner re-derives this list every few minutes and commits only when
+// it differs from the trunk, so a name that changed run to run would commit (and
+// redeploy) forever. A slug collision therefore counts up — never a random suffix.
+export function noteFiles(notes = []) {
   const used = new Set();
+  const files = [];
   const indexLines = [];
-  const keepFiles = new Set(['index.md']);
 
   for (const note of notes) {
-    let base = sanitizeSlug(note.title);
+    const base = sanitizeSlug(note.title);
     let filename = `${base}.md`;
-    if (used.has(filename)) {
-      filename = `${base}-${randomUUID().slice(0, 8)}.md`;
-    }
+    for (let n = 2; used.has(filename); n += 1) filename = `${base}-${n}.md`;
     used.add(filename);
-    keepFiles.add(filename);
 
-    const header = `# ${note.title}\n\nSaved: ${note.updated_at}\n\n`;
-    writeFileSync(join(NOTES_DIR, filename), header + String(note.content || ''), 'utf8');
+    files.push({
+      path: `${NOTES_REPO_PATH}/${filename}`,
+      content: `# ${note.title}\n\nSaved: ${note.updated_at}\n\n${String(note.content || '')}`,
+    });
     indexLines.push(`- ${note.title} — notes/${filename}`);
   }
 
-  const indexBody = notes.length
-    ? `# Idea Studio notes\n\nSaved conversations, mirrored automatically for the coding agent.\n\n${indexLines.join('\n')}\n`
-    : `# Idea Studio notes\n\nNo notes saved yet.\n`;
-  writeFileSync(join(NOTES_DIR, 'index.md'), indexBody, 'utf8');
+  files.push({
+    path: `${NOTES_REPO_PATH}/index.md`,
+    content: notes.length
+      ? `# Idea Studio notes\n\nSaved conversations, mirrored automatically for the coding agent.\n\n${indexLines.join('\n')}\n`
+      : `# Idea Studio notes\n\nNo notes saved yet.\n`,
+  });
+
+  return files;
+}
+
+// Write that list to this machine's own checkout, then delete any mirror file whose
+// note no longer exists in the DB. Pure filesystem work — no git here, so it can be
+// called as often as needed (boot, timer, every /note save) at no cost. On Railway
+// it writes into a throwaway container filesystem and only the runner's copy counts;
+// run locally, it puts the files straight into the working tree.
+export function syncNoteMirror(db) {
+  const notes = readNotes(db);
+  const files = noteFiles(notes);
+  mkdirSync(NOTES_DIR, { recursive: true });
+
+  const keepFiles = new Set();
+  for (const file of files) {
+    const name = basename(file.path);
+    keepFiles.add(name);
+    writeFileSync(join(NOTES_DIR, name), file.content, 'utf8');
+  }
 
   // Reconcile: drop mirror files for notes that no longer exist (deleted, or
   // written while the server was off and since removed).
@@ -99,26 +127,20 @@ export function syncNoteMirror(db) {
 }
 
 // Debounce rapid /note saves (a burst of edits, or the digest + section notes
-// docExtraction.js can write back to back) so one push covers several instead of
-// racing itself.
+// docExtraction.js can write back to back) so one write covers several.
 const DEBOUNCE_MS = 5000;
 let pending = null;
 
-export function commitAndPushNotes() {
-  const res = commitAndPushPaths([NOTES_REPO_PATH], 'mirror: sync Idea Studio notes');
-  if (!res.ok) console.warn(`[noteMirror] push skipped: ${res.reason}`);
-  return res;
-}
-
-// Called after a note is written to the DB. Fire-and-forget, debounced — the
-// caller (createKnowledgeNote) must never wait on a git push.
+// Called after a note is written to the DB. Fire-and-forget — the caller
+// (createKnowledgeNote) must never wait on it. No git: the push used to live here
+// and could never work from the deployed container, so the trunk is the runner's
+// job now (scripts/queue-runner.js#mirrorNotes, every few minutes).
 export function triggerNoteMirror(db) {
   if (pending) clearTimeout(pending);
   pending = setTimeout(() => {
     pending = null;
     try {
       syncNoteMirror(db);
-      commitAndPushNotes();
     } catch (e) {
       console.error('[noteMirror] sync failed:', e.message);
     }

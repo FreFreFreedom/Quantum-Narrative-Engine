@@ -75,8 +75,12 @@ export function conversationsRoutes() {
   // GET /api/convos/notes — the notes saved with /note, mirrored into the
   // knowledge store under the `Note: ` prefix, as a light list ({id, title,
   // description}) for the Room's attach picker.
+  // ?full=1 adds each note's body. That is how the Mac runner reads them to write
+  // the repo mirror (the container cannot: no git binary), and it is also the only
+  // way to read a note's text over HTTP at all — readKnowledgeDoc has never had a
+  // route of its own.
   router.get('/notes', (req, res) => {
-    res.json({ notes: convos.listNotes() });
+    res.json({ notes: convos.listNotes({ full: req.query.full === '1' }) });
   });
 
   // POST /api/convos/open — start one. No subject to pick: it gets a synthetic

@@ -55,11 +55,19 @@ export function worktreesEnabled() {
   return process.env.GIT_OPS_DISABLED !== '1' && !!mainRepo() && !!worktreeRoot();
 }
 
+// A git argv can carry a credential: the token-clone path below builds an
+// https://x-access-token:<token>@github.com/... remote, and printing that argv put
+// the live GITHUB_TOKEN in Railway's logs in plain text on every failed clone.
+// Everything that logs an argv goes through this first.
+function safeArgs(args) {
+  return args.map((a) => String(a).replace(/\/\/[^/@\s]*:[^/@\s]*@/, '//***:***@')).join(' ');
+}
+
 export function git(args, { cwd, quiet = false } = {}) {
   try {
     return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
   } catch (e) {
-    if (!quiet) console.warn(`[gitOps] git ${args.join(' ')} failed: ${e.stderr ? e.stderr.toString().trim().split('\n')[0] : e.message}`);
+    if (!quiet) console.warn(`[gitOps] git ${safeArgs(args)} failed: ${e.stderr ? e.stderr.toString().trim().split('\n')[0] : e.message}`);
     return null;
   }
 }
@@ -84,12 +92,12 @@ function gitWithRetry(args, { cwd, quiet = false, attempts = 3, delayMs = 1200 }
       if (!LOCK_ERROR_RE.test(errText)) break; // not a lock race — retrying won't help
     }
     if (i < attempts - 1) {
-      if (!quiet) console.warn(`[gitOps] git ${args.join(' ')} hit a transient lock (${errText.split('\n')[0]}) — retry ${i + 1}/${attempts}`);
+      if (!quiet) console.warn(`[gitOps] git ${safeArgs(args)} hit a transient lock (${errText.split('\n')[0]}) — retry ${i + 1}/${attempts}`);
       const until = Date.now() + delayMs;
       while (Date.now() < until) { /* busy-wait */ }
     }
   }
-  if (!quiet) console.warn(`[gitOps] git ${args.join(' ')} failed after ${attempts} attempt(s): ${(lastError || '').split('\n')[0]}`);
+  if (!quiet) console.warn(`[gitOps] git ${safeArgs(args)} failed after ${attempts} attempt(s): ${(lastError || '').split('\n')[0]}`);
   return null;
 }
 
@@ -384,20 +392,6 @@ const NOTE_GITHUB_REPO = process.env.NOTE_GITHUB_REPO || 'FreFreFreedom/Quantum-
 const NOTE_DELIVERY_REPO_DIR = process.env.NOTE_DELIVERY_REPO_DIR
   || (process.env.TMPDIR ? join(process.env.TMPDIR, 'fmcns-note-repo') : '/tmp/fmcns-note-repo');
 
-function noteSlug(title, used = new Set()) {
-  let slug = String(title || '')
-    .replace(/^Note:\s*/i, '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'note';
-  let candidate = slug, n = 2;
-  while (used.has(candidate)) { candidate = `${slug}-${n}`; n += 1; }
-  used.add(candidate);
-  return candidate;
-}
 
 function prepareNoteRepo() {
   const local = mainRepo();
@@ -435,10 +429,12 @@ function prepareNoteRepo() {
 // harvested. This rides prepareNoteRepo()'s token clone, the same mechanism
 // `/note` has used in production since the auto-mirror work.
 //
-// Deliberately NOT refactored out of deliverNoteToRepo() below: that path is
-// load-bearing for /note and its slug-collision logic needs the clone directory
-// before it can pick a filename. The ~15 duplicated lines of the token dance are
-// cheaper than the risk of breaking note delivery.
+// KNOWN BROKEN IN PRODUCTION, 2026-09-07: the deployed image has no git binary,
+// so prepareNoteRepo()'s clone dies on `spawnSync git ENOENT` and every call here
+// returns no_repo. It works only when the server runs on a machine with a checkout.
+// /note no longer relies on it — the Mac runner mirrors saved conversations
+// instead (scripts/queue-runner.js#mirrorNotes). services/mindMirror.js still does,
+// and mind.md therefore is not reaching the repo from production either.
 export function commitFileToTrunk({ relPath, content, message } = {}) {
   if (!relPath || content == null || !message) return { ok: false, reason: 'missing_args' };
   const repo = prepareNoteRepo();
@@ -479,44 +475,3 @@ export function commitFileToTrunk({ relPath, content, message } = {}) {
   }
 }
 
-export function deliverNoteToRepo({ title, content } = {}) {
-  if (!title || !content) return { ok: false, reason: 'missing_args' };
-  const relDir = join('queue-server', 'project-docs', 'notes');
-  const used = new Set();
-  let finalSlug = noteSlug(title, used);
-  let finalRel = join(relDir, `${finalSlug}.md`);
-  const repo = prepareNoteRepo();
-  if (!repo) return { ok: false, reason: 'no_repo' };
-  const { dir, tokenPush } = repo;
-  if (existsSync(join(dir, finalRel))) {
-    finalSlug = noteSlug(title, used);
-    finalRel = join(relDir, `${finalSlug}.md`);
-  }
-  try {
-    mkdirSync(join(dir, relDir), { recursive: true });
-    writeFileSync(join(dir, finalRel), `# ${title}\n\n${content}\n`, 'utf8');
-  } catch (e) {
-    console.warn('[gitOps] note delivery: write failed:', e.message);
-    return { ok: false, reason: 'write_failed' };
-  }
-  const token = process.env.GITHUB_TOKEN;
-  const prev = tokenPush ? git(['remote', 'get-url', 'origin'], { cwd: dir, quiet: true }) : null;
-  if (tokenPush) {
-    git(['remote', 'set-url', 'origin', `https://x-access-token:${token}@github.com/${NOTE_GITHUB_REPO}.git`], { cwd: dir, quiet: true });
-  }
-  try {
-    if (git(['add', finalRel], { cwd: dir, quiet: true }) === null) throw new Error('add failed');
-    if (git(['commit', '-m', `note: ${finalSlug}`], { cwd: dir, quiet: true }) === null) throw new Error('commit failed');
-    if (git(['push', 'origin', `HEAD:refs/heads/${TRUNK}`, '--quiet'], { cwd: dir, quiet: true }) === null) {
-      console.warn(`[gitOps] note delivery: push to ${TRUNK} failed — run a git pull on the server machine if it is behind`);
-      return { ok: false, reason: 'push_failed' };
-    }
-    console.log(`[gitOps] note delivered → ${finalRel} (pushed to ${TRUNK})`);
-    return { ok: true, path: finalRel };
-  } catch (e) {
-    console.warn('[gitOps] note delivery: git step failed:', e.message);
-    return { ok: false, reason: 'git_failed' };
-  } finally {
-    if (tokenPush && prev) git(['remote', 'set-url', 'origin', prev], { cwd: dir, quiet: true });
-  }
-}
