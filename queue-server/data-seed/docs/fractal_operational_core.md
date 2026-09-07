@@ -791,6 +791,14 @@ existence: characters literally speak, in turns, in scenes, to named others, so 
 interaction network is nearly free to extract. Countries and institutions have real fragments
 but muddier traces.
 
+> **Corrected 2026-09-07.** *Nearly free* overstates it. A plain subtitle file carries timed
+> lines and **no speaker labels at all** — checked on a real 7,494-line file: zero. Turns and
+> scenes are free; *to named others* is not. Some hearing-impaired versions do carry labels;
+> otherwise attribution is a real step, and the honest form of it is a narrow pass that assigns
+> each line to one of a known cast list and is then checked by string-matching every attributed
+> line against the source. Film is still the right place to start, and by a wide margin. It is
+> one step less free than this paragraph claims.
+
 So film characters would be the **seed anatomies** — and every other entity type becomes
 cheaper to read once film has taught the system what an anatomy looks like. Film-first was
 never only "we happen to have the corpus."
