@@ -423,6 +423,12 @@ joined, so a fact stated once is known on both sides:
 - Before designing a new feature from scratch, do one quick pass on how similar
   tools already solve it and adapt the best idea — don't over-build a bespoke
   system for a private single-user app.
+- **A silent `slice()` on text a human supplied is indistinguishable from that text
+  having been written short.** The AI Settings voice box capped the persona at 4000
+  chars with no warning, so saving the ~6400-char QNE 3.0 quietly dropped its last
+  third and the box read back looking fine. Found only by reading what the server
+  actually stored instead of trusting the save. Cap raised and truncation now logs
+  (2026-09-07). Worth checking the same shape anywhere user text is persisted.
 - The interface itself should carry no explanatory/reassuring text ("connected",
   "runs on your Mac") — ship the control, put mechanism in a tooltip if it must be
   said at all. Full explanation belongs in chat/commit messages, not the UI.
