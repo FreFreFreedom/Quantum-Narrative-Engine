@@ -273,14 +273,25 @@ wrong premises in real briefs.
   (`CLAUDE_SIDE_OAUTH_TOKEN`) — never put it on Railway, never overwrite
   `process.env` with it (that would silently move the *coding* queue onto the small
   account).
-  - **Consequence, confirmed live 2026-09-07:** production's
-    `GET /api/travaux/providers` returns `secondAccountAvailable: false`, so the
-    Room's model picker greys out "Claude (2nd)" — `laneAvailable()` checks the env
-    var on the *server*, which is Railway. The second account is still reachable in
-    practice through the Mac-side helper-job lane, so the greying is stricter than
-    the truth. Left alone deliberately: un-greying it means routing a Room turn
-    through a helper job, which touches quota accounting. Don't "fix" it by putting
-    the token on Railway — that is the thing the rule above forbids.
+  - **The lane still works in production without it, and the picker now says so
+    (fixed 2026-09-07, `8f49534`).** `ai/text.js`'s `claude-side` branch never calls
+    Claude on the server: it parks a **helper job** for the Mac runner, which spawns
+    the CLI with that token. Only the availability *check* was wrong — it read the
+    server's own env, which is always empty on Railway, so the Room greyed out a
+    working lane. The runner now reports `side_account` on its `/worker/claim` poll,
+    `runnerStatus()` carries it, and `secondAccountAvailable` ORs it with the env
+    check. Verified live: `true`.
+  - **Two traps that follow from that.** (1) A runner started before `8f49534` does
+    not send the field and reports `false` until restarted —
+    `launchctl kickstart -k gui/$(id -u)/com.fmcns.queue-runner` (KeepAlive, safe
+    when idle). (2) The lane needs the Mac awake with the runner attached; when it
+    is not, the option greys out again, and that is correct rather than a bug.
+  - Still true and still the rule: **never put the token on Railway.** The fix above
+    exists precisely so that stays unnecessary.
+  - Not fixed, worth knowing: a Room turn on either **Claude** lane gets **no app
+    lookup tools** — both are CLI-driven, so `runAttempt` appends `NO_TOOLS_NOTE`
+    instead of letting the model pretend. Only the free/OpenAI-compatible lanes run
+    the tool loop. Related: `plans/room-chat-tool-parity.md`.
 - **Google AI Studio (2026-09-07, verified against Google's own model listing):** the
   key reaches 55 models; four are `-latest` aliases. `gemini-pro-latest` (currently
   Gemini 3.1 Pro) is in the Room's picker but the free tier's **daily input-token**
