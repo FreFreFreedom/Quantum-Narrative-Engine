@@ -729,6 +729,21 @@ NEVER
 - Open by repeating the question back.
 - Pad to seem thorough. Length is earned by having more to say.`;
 
+// The closing line for the CLI-driven lanes (both Claude accounts). Those lanes
+// cannot run the tool loop, so ai/text.js appends a note saying the lookup tools
+// are absent — and that note used to be the LAST thing the model read, displacing
+// the voice block this file deliberately puts last. Handing the reminder over
+// separately puts the register back at the end, where it is weighted most.
+//
+// Deliberately a pointer, not a second copy of the voice: duplicating a
+// ~4000-character persona into the same prompt would pay for it twice and invite
+// the two copies to drift.
+function voiceTailReminder() {
+  return studioPersona()
+    ? 'Answer in the voice and frame set out under HOW TO THINK above. That is the register for this reply, not a suggestion — it outranks the note directly above about the lookup tools, which is housekeeping only.'
+    : null;
+}
+
 function studioPersona() {
   // An empty AI Settings box now means NO persona — a plain, neutral assistant.
   // The built-in DEFAULT_STUDIO_PERSONA is kept only as a reference and is no
@@ -974,7 +989,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn) {
     model: turn?.lane?.model || null,
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
-    label: 'conversations:chat',
+    label: 'conversations:chat', tailReminder: voiceTailReminder(),
     // The lookup tools (plan "roaming-conversations-backend" §2). Only the chat
     // turn gets them: it is the one that answers a question, and the one whose
     // prompt now claims it can look things up.
@@ -1024,7 +1039,7 @@ async function runChatTurn(convoId, userId, turn) {
     account: turn?.lane?.account || null,
     tools: studioTools(), dispatchTool: studioDispatch,
     maxTokens: 4000,
-    label: 'conversations:chat',
+    label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
   });
@@ -1049,7 +1064,7 @@ async function runCodeReadTurn(convoId, turn) {
   const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: false, repoFacts: turn?.repoFacts || null });
   const result = await generateText({
     prompt, feature: turn?.lane?.feature || 'studio', model: turn?.lane?.model || null,
-    maxTokens: 4000, label: 'conversations:chat-coderead',
+    maxTokens: 4000, label: 'conversations:chat-coderead', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 180_000,
     // Read-only: it may check the code, never touch it. The runner answers on the
     // second account and falls back to main on its own (see ai/text.js#runAttempt).
@@ -1127,7 +1142,7 @@ async function runCheckTurn(convoId) {
   });
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: 4000,
-    label: 'conversations:check', allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId,
+    label: 'conversations:check', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId,
   });
   if (result.error) return result;
   const laneTag = tagFromVia(result.via, lane.tag);
@@ -1153,7 +1168,7 @@ async function runSecondTurn(convoId) {
   const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: 4000,
-    label: 'conversations:second', allowLongOutput: true, timeoutMs: 150_000,
+    label: 'conversations:second', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000,
     tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId,
   });
   if (result.error) return result;

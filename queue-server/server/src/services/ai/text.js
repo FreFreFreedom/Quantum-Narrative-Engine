@@ -391,7 +391,7 @@ async function getFallbackChain(feature, providerId, model, { noOpencodeBackup =
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -405,7 +405,17 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // hand back a single answer, so they are told the tools are not there instead of
   // being left to pretend they used them.
   const wantsTools = !!(tools?.length && dispatchTool);
-  const toollessPrompt = wantsTools ? `${prompt}${NO_TOOLS_NOTE}` : prompt;
+  // The note goes on, and then the caller's closing reminder goes on AFTER it.
+  // Order is load-bearing and this is the one place it can go wrong: a model
+  // weights the END of a long prompt most heavily (the reason conversations.js
+  // deliberately puts its voice block last), and these CLI lanes are the ONLY
+  // ones that get the note appended — so without this the last thing the two
+  // Claude accounts read was housekeeping about missing tools, while every other
+  // lane still ended on the voice. That is why the Room's register landed
+  // weakest on exactly the Claude lanes.
+  const toollessPrompt = wantsTools
+    ? `${prompt}${NO_TOOLS_NOTE}${tailReminder ? `\n\n${tailReminder}` : ''}`
+    : prompt;
   if (p === 'claude-code') {
     return legacyGenerateText({ prompt: toollessPrompt, maxTokens, label, cliModel: m });
   }
@@ -580,7 +590,7 @@ async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens,
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // A caller-named provider (the Room's manual model picker, or the /ask forced
@@ -664,7 +674,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, account: p === providerId ? explicitAccount : null });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, account: p === providerId ? explicitAccount : null });
     attempted += 1;
 
     if (result?.text) {
@@ -957,7 +967,7 @@ export async function generateTextStream({
   provider: explicitProvider = null, account: explicitAccount = null,
   timeoutMs = 90_000, allowLongOutput = false, onToken = null, onUsage = null,
   tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP,
-  cacheKey = null,
+  cacheKey = null, tailReminder = null,
 }) {
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
@@ -972,7 +982,7 @@ export async function generateTextStream({
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }
@@ -981,7 +991,7 @@ export async function generateTextStream({
   // something Antoine needs told.
   const fallback = async (notice) => {
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
-    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap });
+    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder });
     if (r?.text && onToken) onToken(r.text);
     return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
   };
