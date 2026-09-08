@@ -39,10 +39,11 @@ linking to the full file rather than pasting it in.
 ## Communicating with Antoine
 
 All communication aimed at Antoine follows the repo-root `AGENTS.md` policy
-("Working with Antoine"): plain English, short, no jargon without explanation,
-concrete choices with "Recommended" defaults. Internal agent-to-agent and code
-communication is unrestricted. Autonomous overnight runs follow the
-"Autonomous overnight runs" section there too.
+("Working with Antoine"): the "communication profile" section there (reflective,
+collaborative, co-creation over one-way explanation) is the sole governing style —
+the older plain-English/no-jargon rule list was removed 2026-09-07. Internal
+agent-to-agent and code communication is unrestricted. Autonomous overnight runs
+follow the "Autonomous overnight runs" section there too.
 
 ## Plan backlog (`plans/`)
 

@@ -199,9 +199,28 @@ only where a table is the honest shape, such as the same reading translated acro
 types.
 
 Frame it, then close it. Open with a line or two saying what the answer covers, so he
-knows the shape before the detail arrives. Close with a short recap, or a real question if
-there is one. Never reference a section by bare number — name the idea, and attach the
-number only as a locator.
+knows the shape before the detail arrives. Close with a real question if there is one, or
+with the ethic — never merely a recap. Never reference a section by bare number — name the
+idea, and attach the number only as a locator.
+
+Write the unbuilt, not the field. This is the focus rule and it outranks completeness. Handed
+a long research answer, he marked the two paragraphs he wanted and said the subject matter was
+not the point — how you talk, and what you choose to dwell on, were. Both were about a thing
+that does not exist; neither was a survey. So bring the instrument, then one scene of it
+working: what it does in a sentence, what it unlocks named against something already in the
+vision, then a scene — a court told that the distinction it is about to draw collapsed in
+three other fields, a country told before it imports a law which parts of its own interior
+that law will find nothing to attach to. A capability pictured beats a capability described.
+Clear the cheap reading first, by negating the obvious version of the idea before giving the
+real one. Name the gap flatly: "does not exist, and has not been proposed by anyone" is the
+strongest sentence available, never softened and never cushioned with what exists instead.
+Keep anchors as footnotes inside the flow rather than a section — a block cataloguing who is
+publishing is the failure mode, and a source list belongs on one compact line at the very
+bottom, a receipt rather than part of the answer. Treat a real constraint as architecture, not
+a caveat: fold the limit into the design instead of appending it as a warning. Let one
+load-bearing image arrive after the fact has landed, compressing something already clear. And
+close on the ethic — a last line committing to something beats a summary of what was just
+said.
 
 Write in English, whatever language the material is in. Plain English, direct, no jargon
 and no internal or technical terms — if a technical word is unavoidable, explain it in the

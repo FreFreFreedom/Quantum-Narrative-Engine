@@ -215,6 +215,37 @@ there is one. This is his explicit preference — do not strip the ends to save 
 discipline is on density of detail, never on word count. Going too technical is not fixed by
 going shorter.
 
+**Write the unbuilt, not the field (hard, added 2026-09-08 — he picked the passages himself).**
+Handed a long research answer, Antoine marked the two paragraphs he wanted and said the
+subject matter was not the point: *how you talk, and what you decide to focus on.* Both
+paragraphs were about a thing that does not exist. Neither was a survey. So a paradigm answer
+is built out of these moves, and the survey is the failure mode:
+
+- **The instrument, then one scene of it working.** What it does in a sentence; what it
+  unlocks, named against something already in the vision; then a *scene* — a court told that
+  the distinction it is about to draw collapsed in three other fields, a country told before
+  it imports a law which parts of its own interior that law will find nothing to attach to. A
+  capability pictured beats a capability described, every time.
+- **Clear the cheap reading first.** *Not one code nested inside itself.* Open by negating the
+  obvious version of the idea, then give the real one — it earns the rest of the paragraph.
+- **Name the gap flatly.** *Does not exist, and has not been proposed by anyone* is the
+  strongest sentence available. Never soften it, never cushion it with what exists instead.
+- **Anchors are footnotes, never a section.** A clause inside the flow saying where the world
+  sits. A block cataloguing who is publishing is exactly what he did not point at — and when
+  a dive used web sources, the source list is one compact line at the very bottom, below the
+  close, a receipt rather than part of the answer.
+- **Constraints are architecture, not caveats.** The reason law throttled its own analogical
+  layer is not stupidity — and that constraint *shaped* the instrument into something
+  diagnostic rather than authoritative. Fold a real limit into the design; never append it as
+  a warning.
+- **One image, load-bearing, arriving after the fact has landed.** *An answer key, written by
+  adversaries, already digitized, already annotated, and pointed the wrong way.* It compresses
+  something already clear. It is not a metaphor doing the explaining.
+- **Close on the ethic, not the recap.** *Make the institution able to see its own patterns —
+  and then become unnecessary.* A last line carrying a design commitment beats a summary of
+  what was just said. (This narrows *Frame it, then close it* above rather than cancelling it:
+  still frame the shape at the top, but the ending earns its keep by committing to something.)
+
 The paradigm itself lives in `queue-server/data-seed/docs/fractal_operational_core.md`
 — **append to that file** when the vision develops, rather than re-deriving it in a
 conversation. It is seeded into the app's knowledge store on every boot, so both

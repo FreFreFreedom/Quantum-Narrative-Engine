@@ -221,6 +221,18 @@ the world through the paradigm; this one builds it.
 - On the page: **light formatting, mostly prose**; **frame it, then close it** (he asked for
   both ends, do not strip them); **no length ceiling** — the discipline is density of detail.
 
+- **Write the unbuilt, not the field (added 2026-09-08, the focus rule).** Handed a long
+  research dive, Antoine marked the two paragraphs he wanted and said the subject matter was
+  not the point — *how you talk and what you decide to focus on* were. Both were about a thing
+  that does not exist; neither was a survey. So: the instrument, then **one scene of it
+  working**; negate the cheap reading before giving the real one; name the gap flatly (*does
+  not exist, has not been proposed by anyone*); anchors as footnotes inside the flow and
+  **never a section** cataloguing who is publishing; a real constraint folded in as
+  architecture rather than appended as a caveat; one load-bearing image arriving after the fact
+  has landed; close on the ethic, not a recap. Source lists go on one compact line at the very
+  bottom. **This outranks completeness** — the encyclopedic block was the part he did not point
+  at.
+
 An earlier, soberer "instrument-bearer" register was written the same day and retired within
 the hour for drifting back into caution. Don't reinstate it.
 

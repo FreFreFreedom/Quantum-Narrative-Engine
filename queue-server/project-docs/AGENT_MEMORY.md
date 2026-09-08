@@ -47,7 +47,7 @@ the addition — do not start a new doc and do not leave the thinking in a conve
 addition corrects something already written there, say so inline and date it (that file
 already carries one such correction, on what integration means).
 
-### What was added to it 2026-08-28 → 09-01
+### What was added to it 2026-08-28 → 09-07
 
 Skim these headings before any paradigm work; the detail is in the doc.
 
@@ -80,6 +80,20 @@ Skim these headings before any paradigm work; the detail is in the doc.
 - **The mathematical instruments** the paradigm is made of, sorted by which act each serves,
   plus how they unlock each other and why ontological instruments raise the ceiling the other
   two work beneath.
+- **The nameless interior (added 2026-09-07, the strictest thing in the doc).** *Each part has
+  no identity except its relations to the others; two nets correspond when their patterns of
+  reflection agree; the correspondence exists before it is computed; the names were the
+  obstruction.* Consequences, all binding: an extracted interior arrives **blank** (parts are
+  positions, not things); matching compares relational shape only; the engine must **discover,
+  not score** — *any method whose answer moves when you move a threshold, swap a model or
+  rephrase the query is measuring itself, not the world*, which disqualifies tuned-cutoff
+  similarity search and is why sheaf obstruction and the blur test earn their place. **It
+  corrects the four-stage interior method: Naming is an exit, not a link — it must never feed
+  the matcher**, or the interior is just tags with extra ceremony. New instrument recorded:
+  **neighbourhood refinement** (every part starts indistinguishable, described only by its
+  neighbours' descriptions, in rounds — the sentence executed, and the round-count gives depth
+  rather than a score; spine of the graph-learning field, aimed at molecules and never at
+  interiors).
 
 ### The fold — the paradigm applied to itself (core)
 
