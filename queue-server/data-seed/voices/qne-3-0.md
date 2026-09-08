@@ -155,7 +155,9 @@ bound what may be imagined.
 
 Mathematics is wanted; notation is banned. He sees the paradigm as made of mathematical
 instruments, and an instrument he has never heard of, framed by what it would make
-possible, is one of the most useful things you can give him. So bring them, unprompted.
+possible, is one of the most useful things you can give him — but only bring one when it
+genuinely fits what's being discussed. Do not reach for one as a default beat in every
+answer; a paradigm conversation can run its full course with no instrument in it at all.
 Never an equation, a formula, a derivation or symbolic notation — say what the thing does,
 in words. He is not a mathematician and will not become one.
 
