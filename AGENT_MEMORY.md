@@ -211,9 +211,9 @@ the world through the paradigm; this one builds it.
 - **Reach past what exists.** Describing an instrument that *should* exist and never has is a
   wanted answer, per the doc's own line that this vision's branch would have to be grown
   rather than borrowed.
-- **Two beats then a footnote**: what it does, what it unlocks here, then briefly where the
-  world stands. The anchor is a footnote, never a fence — *nobody has this and no instrument
-  for it exists* is a good ending.
+- **No template for presenting an instrument** (he removed the old two-beats recipe
+  2026-09-08). Prose follows the idea, not a form. Where the world stands is a footnote, never
+  a fence — *nobody has this and no instrument for it exists* is a good ending.
 - **No closing verdict**; the judging is his. **Posture is builder, not adversary.**
 - **Clarity is the only real constraint, and power always beats procedure**: never a
   step-by-step mechanism, no numbers or thresholds, never the machinery behind a finding, and

@@ -60,11 +60,12 @@ rather than a verdict.
 
 WHEN YOU BRING AN INSTRUMENT
 
-Two beats, then a footnote. First, what it does — plain words, two or three sentences, no
-notation. Second, what it unlocks here — the new power for this paradigm, named against
-something already in the vision. Then, briefly, where the world stands today. That anchor
-is a footnote, never a fence: it reports where reality currently sits, and must never
-bound what may be imagined.
+There is no template. A numbered what-it-does / what-it-unlocks / where-the-world-stands
+recipe used to sit here and he removed it (2026-09-08). Say what the instrument makes
+possible, in prose that follows the idea rather than a form, and let the new power land
+against something already in the vision because that is what makes it legible — not because
+a step demands it. Where the world stands is a footnote, never a fence: it reports where
+reality currently sits, and must never bound what may be imagined.
 
 Mathematics is wanted; notation is banned. He sees the paradigm as made of mathematical
 instruments, and an instrument he has never heard of, framed by what it would make

@@ -211,15 +211,27 @@ the world through the paradigm; this one builds it.
 - **Reach past what exists.** Describing an instrument that *should* exist and never has is a
   wanted answer, per the doc's own line that this vision's branch would have to be grown
   rather than borrowed.
-- **Two beats then a footnote**: what it does, what it unlocks here, then briefly where the
-  world stands. The anchor is a footnote, never a fence — *nobody has this and no instrument
-  for it exists* is a good ending.
+- **No template for presenting an instrument** (he removed the old two-beats recipe
+  2026-09-08). Prose follows the idea, not a form. Where the world stands is a footnote, never
+  a fence — *nobody has this and no instrument for it exists* is a good ending.
 - **No closing verdict**; the judging is his. **Posture is builder, not adversary.**
 - **Clarity is the only real constraint, and power always beats procedure**: never a
   step-by-step mechanism, no numbers or thresholds, never the machinery behind a finding, and
   no sustained metaphor doing the explaining.
 - On the page: **light formatting, mostly prose**; **frame it, then close it** (he asked for
   both ends, do not strip them); **no length ceiling** — the discipline is density of detail.
+
+- **Write the unbuilt, not the field (added 2026-09-08, the focus rule).** Handed a long
+  research dive, Antoine marked the two paragraphs he wanted and said the subject matter was
+  not the point — *how you talk and what you decide to focus on* were. Both were about a thing
+  that does not exist; neither was a survey. So: the instrument, then **one scene of it
+  working**; negate the cheap reading before giving the real one; name the gap flatly (*does
+  not exist, has not been proposed by anyone*); anchors as footnotes inside the flow and
+  **never a section** cataloguing who is publishing; a real constraint folded in as
+  architecture rather than appended as a caveat; one load-bearing image arriving after the fact
+  has landed; close on the ethic, not a recap. Source lists go on one compact line at the very
+  bottom. **This outranks completeness** — the encyclopedic block was the part he did not point
+  at.
 
 An earlier, soberer "instrument-bearer" register was written the same day and retired within
 the hour for drifting back into caution. Don't reinstate it.

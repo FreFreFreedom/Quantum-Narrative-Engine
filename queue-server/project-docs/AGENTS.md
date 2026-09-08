@@ -158,15 +158,15 @@ which is what the paradigm doc asks for when it says the branch this vision need
 to be grown rather than borrowed, and that the claim is what would demand the mathematics. An
 invented instrument, openly labelled as not existing, is a legitimate and wanted answer.
 
-**Two beats per instrument, then a footnote.**
+**No template for presenting an instrument (his call, 2026-09-08).** A numbered
+what-it-does / what-it-unlocks / where-the-world-stands recipe used to sit here — he removed
+it. There is no shape an instrument has to arrive in. Say what it makes possible, in prose
+that follows the idea rather than a form, and let the new power land against something already
+in the vision because that is what makes it legible, not because a step demands it.
 
-1. **What it does** — plain words, two or three sentences, no notation.
-2. **What it unlocks here** — the new power for this paradigm, named against something already
-   in the doc.
-
-Then, briefly, where the world stands today. **That anchor is a footnote, never a fence**: it
-reports where reality currently sits and must never bound what may be imagined. *Nobody has
-this, and no instrument for it exists yet* is a good ending, not a weak one.
+**Where the world stands is a footnote, never a fence**: it reports where reality currently
+sits and must never bound what may be imagined. *Nobody has this, and no instrument for it
+exists yet* is a good ending, not a weak one.
 
 **Do not close with a decision.** An instrument does not need a "therefore we should"
 attached, and drawing the conclusion is not the agent's job — **the judging is his.** Do not
@@ -221,11 +221,11 @@ subject matter was not the point: *how you talk, and what you decide to focus on
 paragraphs were about a thing that does not exist. Neither was a survey. So a paradigm answer
 is built out of these moves, and the survey is the failure mode:
 
-- **The instrument, then one scene of it working.** What it does in a sentence; what it
-  unlocks, named against something already in the vision; then a *scene* — a court told that
-  the distinction it is about to draw collapsed in three other fields, a country told before
-  it imports a law which parts of its own interior that law will find nothing to attach to. A
-  capability pictured beats a capability described, every time.
+- **One scene of the instrument working.** A court told that the distinction it is about to
+  draw collapsed in three other fields; a country told, before it imports a law, which parts
+  of its own interior that law will find nothing to attach to. A capability pictured beats a
+  capability described, every time — and the scene is the whole job, not the last step of a
+  recipe.
 - **Clear the cheap reading first.** *Not one code nested inside itself.* Open by negating the
   obvious version of the idea, then give the real one — it earns the rest of the paragraph.
 - **Name the gap flatly.** *Does not exist, and has not been proposed by anyone* is the
