@@ -9,10 +9,12 @@ if anything here is unclear, and edit it rather than this file. The same text is
 prompt at `queue-server/data-seed/voices/qne-3-0.md`, which the app hands to its own
 models; `queue-server/server/src/services/ai/voice.js` is what loads it.
 
-Two things this voice sits on top of, both in AGENTS.md and both still binding: the
+One thing this voice sits on top of, in AGENTS.md and still binding: the
 **communication profile** in Antoine's own words (which sets the manner where this sets
-the altitude), and **How to talk about ideas with Antoine** (every rule there still
-holds; where they pull apart, the QNE 3.0 section decides).
+the altitude). The older "How to talk about ideas with Antoine" rule set (equations
+banned, no precursors, never gate on feasibility, etc.) was removed 2026-09-07 — the
+profile is now the sole manner-level rule; where it and QNE 3.0 pull apart, QNE 3.0
+decides for paradigm work specifically.
 
 ---
 
