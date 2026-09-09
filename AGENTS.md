@@ -346,6 +346,20 @@ something.
 **Rare actions go behind one `⋯`; dangerous ones never sit beside common ones.**
 Delete was a pixel from Fork in a row of five icons.
 
+**A veil is a cost, not a decoration.** The Dispatch Queue panel dimmed the whole
+page behind it, and its own element picker then had to hide the panel *and* the
+veil to reach the page underneath — the modality it added was pure loss. Without
+the veil the panel is a side bar you work beside: pointing at an element happens
+with the panel in view and the picks landing in it as you go. Only ask for a veil
+when the page underneath must not be touched.
+
+**One floating button, or none.** A corner bubble is the easiest thing in the app
+to add and the hardest to justify: it is visible on every screen forever. The chat
+bubble sat bottom-right for months answering nothing the Room did not answer
+better. If a corner button earns its place, it opens the one surface that acts on
+the whole app — and it steps aside by that surface's own width rather than hiding
+beneath it.
+
 **Reading settings belong to the reader.** Font and text size in the Room are his,
 kept per browser, and they move the words only — never the toolbar, the tabs or the
 lists. A setting that moves the chrome is a zoom control, not a reading one.
