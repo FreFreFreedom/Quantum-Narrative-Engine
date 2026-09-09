@@ -18141,8 +18141,13 @@ document.addEventListener('keydown', (e) => {
       }, 0);
     });
   }
+  // contains(), not ===: the popover is a bar of buttons, so a click lands on a
+  // CHILD. Comparing against the bar itself tore it down on mousedown, before the
+  // click could ever reach the button — the offer appeared and then did nothing,
+  // which is worse than never appearing. Capture phase, so stopPropagation inside
+  // the bar cannot save it either; the containment check is the only fix.
   document.addEventListener('mousedown', function(ev){
-    if(quotePop && ev.target !== quotePop) killQuotePop();
+    if(quotePop && !quotePop.contains(ev.target)) killQuotePop();
   }, true);
   window.addEventListener('scroll', placeQuotePop, true);
   // Clicking away clears the selection; the offer goes with it.
@@ -18201,7 +18206,11 @@ document.addEventListener('keydown', (e) => {
     laneMenu.onmousedown = function(ev){ ev.stopPropagation(); };
     document.body.appendChild(laneMenu);
   }
-  document.addEventListener('mousedown', killLaneMenu, true);
+  // Same trap as the quote popover above, same fix: every entry in this menu is a
+  // child of it, so an unconditional kill on mousedown would swallow every pick.
+  document.addEventListener('mousedown', function(ev){
+    if(laneMenu && !laneMenu.contains(ev.target)) killLaneMenu();
+  }, true);
   window.addEventListener('scroll', killLaneMenu, true);
 
   // Chapters: a place in a long answer you meant to come back to. Saved on the
