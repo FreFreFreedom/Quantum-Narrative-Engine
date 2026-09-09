@@ -801,6 +801,19 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .se-dots span:nth-child(2) { animation-delay:.2s; }
 .se-dots span:nth-child(3) { animation-delay:.4s; }
 @keyframes seBlink { 0%, 80%, 100% { opacity:.25; } 40% { opacity:1; } }
+/* What the turn is doing while the dots spin — a lookup, a lane that went quiet.
+   Quieter than the answer it precedes, and it disappears the moment real words
+   start arriving. */
+.se-phase { font-size:11px; color:var(--c-ink-5); margin-top:3px; font-style:italic; }
+/* Quote a passage into the next question. Sits on the selection, follows it, and
+   is removed the moment the selection is dropped. */
+.se-quote-pop { position:fixed; z-index:60; background:var(--c-bg, #fff); border:1px solid var(--c-border); border-radius:7px;
+  padding:3px 9px; font-size:11px; font-family:inherit; color:var(--c-ink); cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.14); }
+.se-quote-pop:hover { border-color:var(--c-brand); }
+/* A passage carried into the composer: shown above the input, dismissable. */
+.se-quoted { display:flex; align-items:flex-start; gap:6px; border-left:2px solid var(--c-brand); padding:3px 0 3px 7px; margin-bottom:5px;
+  font-size:11px; color:var(--c-ink-4); line-height:1.45; }
+.se-quoted button { background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; padding:0 2px; line-height:1; }
 /* Caret on the end of an answer still being written. Same reduced-motion kill
    switch as the dots above. */
 .se-cursor { display:inline-block; margin-left:1px; color:var(--c-ink-4); animation:seBlink 1s var(--ease) infinite; }
@@ -1892,6 +1905,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-bolt" viewBox="0 0 16 16"><path d="M9 1.8 3.6 9h3.6l-.6 5.2L12.4 7H8.8z"/></symbol>
   <symbol id="ic-seed" viewBox="0 0 16 16"><path d="M8 14V7.4"/><path d="M8 7.4C8 4.6 10 2.4 13.2 2.4c0 3-2 5-5.2 5z"/><path d="M8 10.2C8 8.4 6.6 7 4.2 7c0 2 1.5 3.2 3.8 3.2z"/></symbol>
   <symbol id="ic-queue" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h6"/></symbol>
+  <symbol id="ic-fork" viewBox="0 0 16 16"><path d="M5 13.4V8.6a2 2 0 0 1 2-2h4"/><path d="M5 2.6v4"/><circle cx="5" cy="14" r="1.4"/><circle cx="5" cy="2" r="1.4"/><circle cx="12" cy="6.6" r="1.4"/></symbol>
   <symbol id="ic-pencil" viewBox="0 0 16 16"><path d="M11.2 2.6 13.4 4.8 5.6 12.6l-3 .8.8-3z"/></symbol>
   <symbol id="ic-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 0 1-8.6 3.5"/><path d="M3 8a5 5 0 0 1 8.6-3.5"/><path d="M11.6 1.9v2.6H9M4.4 14.1v-2.6H7"/></symbol>
   <symbol id="ic-brand" viewBox="0 0 16 16"><path d="M8 1.4 14.6 8 8 14.6 1.4 8z"/><path d="M8 5 11 8l-3 3-3-3z"/></symbol>
@@ -2291,6 +2305,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-toolacts">
             <button type="button" class="uicon" id="roomRenameBtn" title="Rename this thread" aria-label="Rename this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-pencil"/></svg></button>
+            <button type="button" class="uicon" id="roomForkBtn" title="Fork this thread — the same conversation so far, carried into a new one" aria-label="Fork this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-fork"/></svg></button>
             <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg></button>
             <button type="button" class="uicon is-danger" id="roomDeleteBtn" title="Delete this thread" aria-label="Delete this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-trash"/></svg></button>
           </span>
@@ -7136,6 +7151,7 @@ function initRoom() {
   document.getElementById('roomNewBtn').onclick = roomNewThread;
   document.getElementById('roomRenameBtn').onclick = roomBeginRename;
   document.getElementById('roomDeleteBtn').onclick = () => roomDeleteThread(roomSel);
+  document.getElementById('roomForkBtn').onclick = () => roomForkThread(roomSel);
   const box = document.getElementById('roomRenameBox');
   box.onkeydown = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); roomCommitRename(); }
@@ -7494,7 +7510,29 @@ function renderRoomHead() {
   if (!t) { const cardsEl = document.getElementById('roomCards'); if (cardsEl) cardsEl.classList.remove('peek'); }
   const delBtn = document.getElementById('roomDeleteBtn');
   if (delBtn) delBtn.disabled = !t;
+  const forkBtn = document.getElementById('roomForkBtn');
+  if (forkBtn) forkBtn.disabled = !t;
   if (!t) roomEndRename();
+}
+
+// Fork: carry this conversation, as it stands, into a new thread and open it.
+// Nothing is taken away from the original — this is a branch, not a move — so it
+// needs no confirm; the way back is the thread list, and Delete is next door.
+async function roomForkThread(id) {
+  if (!id) return;
+  const btn = document.getElementById('roomForkBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(id) + '/fork', 'POST', {});
+    const forkId = out && out.convo ? out.convo.id : null;
+    await loadRoom();
+    if (forkId) roomSelect(forkId);
+  } catch (e) {
+    roomThreadsNote = 'Could not fork this thread.';
+    renderRoomThreads();
+  } finally {
+    if (btn) btn.disabled = !roomSel;
+  }
 }
 
 // Two clicks from the sidebar (trash icon, then confirm) or from the open
@@ -17473,7 +17511,7 @@ document.addEventListener('keydown', (e) => {
   function sendTurn(e, text, repaint, onDone){
     text = String(text || '').trim();
     if(!text || !e.convoId || e.busy) return false;
-    e.busy = true; e.draft = ''; e.note = '';
+    e.busy = true; e.draft = ''; e.note = ''; e.phase = '';
     e.msgs.push({ role: 'user', kind: 'chat', text: text });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
@@ -17537,7 +17575,7 @@ document.addEventListener('keydown', (e) => {
         e.stream = '';
         return awaitTurn(e, sentAt, repaint);
       })
-      .then(function(){ e.busy = false; if(repaint) repaint(); });
+      .then(function(){ e.busy = false; e.phase = ''; if(repaint) repaint(); });
     return true;
   }
 
@@ -17570,6 +17608,12 @@ document.addEventListener('keydown', (e) => {
       try { obj = JSON.parse(line); } catch(err) { return; }
       if(obj.type === 'token'){
         e.stream += obj.text;
+        // Words beat a progress line: once the answer is arriving, the phase
+        // note has done its job and would only compete with it.
+        e.phase = '';
+        paintSoon();
+      } else if(obj.type === 'status'){
+        e.phase = obj.text || '';
         paintSoon();
       } else if(obj.type === 'done'){
         out = obj;
@@ -17788,6 +17832,7 @@ document.addEventListener('keydown', (e) => {
         +   '</div>'
         +   '<div class="se-log"></div>'
         +   '<span class="se-cost"></span>'
+        +   '<div class="se-quotebar"></div>'
         +   '<div class="se-compose">'
         +     '<span class="se-lanewrap">'
         +       '<select class="se-lanepick" title="Which model answers — Auto lets the app choose">'
@@ -17842,7 +17887,7 @@ document.addEventListener('keydown', (e) => {
       if(e.busy || !String(text || '').trim()) return;
       // Clear only once the message is actually on its way. Losing what someone
       // typed is worse than any error message.
-      if(sendTurn(e, text, repaint, opts.onDone)){ input.value = ''; grow(input); }
+      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone)){ input.value = ''; e.quote = ''; grow(input); }
       else { e.note = 'Still opening this conversation — give it a second and send again.'; repaint(); }
     };
     // The draft lives on the entry, not in the box, so a rebuilt card gets it back.
@@ -17925,6 +17970,67 @@ document.addEventListener('keydown', (e) => {
     return true;
   }
 
+  // Select a passage of an answer, click Quote, ask about that passage — the move
+  // every chat app has and this one did not (his ask, 2026-09-09).
+  //
+  // One popover for the whole page, not one per conversation box: two boxes are
+  // open at once on a card, and two popovers chasing one selection is a mess. It
+  // is removed on the next mousedown, on scroll, and whenever the selection is
+  // dropped, so it can never outlive the thing it points at.
+  var quotePop = null;
+  function killQuotePop(){
+    if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
+    quotePop = null;
+  }
+  function wireQuotePick(log, e, repaint){
+    if(log.dataset.quoteWired) return;
+    log.dataset.quoteWired = '1';
+    log.addEventListener('mouseup', function(){
+      // After mouseup the selection is final; a frame later it is also painted,
+      // which is when getBoundingClientRect is worth reading.
+      setTimeout(function(){
+        var sel = window.getSelection && window.getSelection();
+        var text = sel ? String(sel).trim() : '';
+        killQuotePop();
+        // Only a real passage of an answer: a stray click, or a word grabbed from
+        // your own message, is not something to quote back at the model.
+        if(!text || text.length < 2 || !sel.rangeCount) return;
+        var node = sel.getRangeAt(0).commonAncestorContainer;
+        var el = node.nodeType === 1 ? node : node.parentNode;
+        if(!el || !el.closest || !el.closest('.se-turn') || el.closest('.se-turn.you')) return;
+        var r = sel.getRangeAt(0).getBoundingClientRect();
+        if(!r || (!r.width && !r.height)) return;
+        quotePop = document.createElement('button');
+        quotePop.type = 'button';
+        quotePop.className = 'se-quote-pop';
+        quotePop.textContent = '❝ Quote';
+        quotePop.style.left = Math.max(6, Math.min(window.innerWidth - 90, r.left)) + 'px';
+        quotePop.style.top = Math.max(6, r.top - 30) + 'px';
+        quotePop.onmousedown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
+        quotePop.onclick = function(ev){
+          ev.stopPropagation();
+          e.quote = text.replace(/\s+/g, ' ').slice(0, 1200);
+          killQuotePop();
+          if(sel.removeAllRanges) sel.removeAllRanges();
+          if(repaint) repaint();
+        };
+        document.body.appendChild(quotePop);
+      }, 0);
+    });
+  }
+  document.addEventListener('mousedown', function(ev){
+    if(quotePop && ev.target !== quotePop) killQuotePop();
+  }, true);
+  window.addEventListener('scroll', killQuotePop, true);
+
+  // The carried passage, folded into the message actually sent. Quoted rather than
+  // pasted invisibly, so the transcript still reads as a conversation afterwards —
+  // and so the model is told which part of its own answer is being asked about.
+  function withQuote(e, text){
+    if(!e.quote) return text;
+    return 'About this part of your answer:\n\u201c' + e.quote + '\u201d\n\n' + text;
+  }
+
   function grow(el){ el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
 
   // Everything that changes between repaints, written into a scaffold that stays
@@ -17952,6 +18058,20 @@ document.addEventListener('keydown', (e) => {
     // Repaint helper bound to this host (fillEmbed is called with host/e/opts but
     // no repaint of its own, so rebuild from those).
     var repaintHere = function(){ if(host.isConnected) fillEmbed(host, e, opts); };
+
+    // A passage carried from an answer into the next question. Painted here so it
+    // survives a repaint mid-answer, same as the draft does.
+    var qbar = host.querySelector('.se-quotebar');
+    if(qbar){
+      if(e.quote){
+        qbar.innerHTML = '<div class="se-quoted"><span>“' + qEsc(e.quote.length > 240 ? e.quote.slice(0, 240) + '…' : e.quote)
+          + '”</span><button type="button" title="Drop this passage">✕</button></div>';
+        qbar.querySelector('button').onclick = function(ev){ ev.stopPropagation(); e.quote = ''; repaintHere(); };
+      } else {
+        qbar.innerHTML = '';
+      }
+    }
+    wireQuotePick(log, e, repaintHere);
 
     // Lane tag -> re-ask the last question on a different lane. The router's
     // forced path does the rest; this is just the typed /ask, triggered by click.
@@ -18133,7 +18253,11 @@ document.addEventListener('keydown', (e) => {
       html += '<div class="se-turn"><div class="se-who">Studio</div>'
            +  (e.stream
                 ? '<div class="se-body">' + fmtBody(e.stream) + '<span class="se-cursor">▍</span></div>'
-                : '<div class="se-body se-dots"><span>·</span><span>·</span><span>·</span></div>')
+                : '<div class="se-body se-dots"><span>·</span><span>·</span><span>·</span></div>'
+                  // What it is doing while there is nothing to show yet — a lookup,
+                  // or a lane that is not answering. Silence for a minute reads as
+                  // broken; the same minute with a phase on it reads as work.
+                  + (e.phase ? '<div class="se-phase">' + qEsc(e.phase) + '</div>' : ''))
            +  '</div>';
     }
     if(e.edits && e.edits.length){

@@ -25,7 +25,7 @@
     "ending:selftest": "node scripts/ending-selftest.js",
     "never-deep:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/never-deep-selftest.js",
     "notes:selftest": "node scripts/notes-selftest.js",
-    "length:selftest": "node scripts/length-selftest.mjs"
+    "room:selftest": "node scripts/room-selftest.mjs"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",

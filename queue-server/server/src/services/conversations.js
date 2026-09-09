@@ -511,6 +511,54 @@ export function deleteConvo(id) {
   return { ok: true };
 }
 
+// Fork: the same conversation up to a point, in a new thread (his ask, 2026-09-09).
+//
+// The copy is always an 'open' (roaming) conversation whatever the original was,
+// for a reason the schema forces: convos has a UNIQUE index on
+// (subject_type, subject_id) while alive, so a second conversation about the same
+// card is not representable. createOpenConvo's synthetic subject sidesteps that,
+// and the cards the original was talking about are re-attached below — so a fork
+// of a card conversation still knows what it is about, it just is not THE card's
+// conversation.
+//
+// Copies the transcript rows only. Deliberately left behind: the recap (the fork
+// is a fresh context — reset folded the old one for the old thread), the queue
+// hand-off, the extraction state, and the attached files. A branch that inherited
+// a work_prompt_id would look like it had already been sent to the queue.
+export function forkConvo(convoId, { throughMessageId = null, title = null, createdBy = 'antoine' } = {}) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+
+  const msgs = listMessages(convoId);
+  let keep = msgs;
+  if (throughMessageId) {
+    const cut = msgs.findIndex((m) => m.id === throughMessageId);
+    if (cut < 0) return { error: 'no_such_message' };
+    keep = msgs.slice(0, cut + 1);
+  }
+
+  const base = String(title || convo.title || DEFAULT_OPEN_TITLE).replace(/\s*\(fork(?:\s+\d+)?\)\s*$/i, '');
+  const made = createOpenConvo({ title: `${base} (fork)`.slice(0, 120), createdBy });
+  if (made.error) return made;
+  const forkId = made.convo.id;
+
+  const insert = db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta, created_at) VALUES (?,?,?,?,?,?,?)`);
+  // created_at is carried over so the branch reads in its original order, and the
+  // rowid tiebreak in listMessages keeps two same-millisecond rows stable.
+  for (const m of keep) insert.run(randomUUID(), forkId, m.role, m.kind, m.text, m.meta || null, m.created_at);
+
+  // The cards, not the synthetic 'open' subject the original may have had.
+  for (const r of convoSubjectRows(convo)) {
+    if (r.subject_type === 'open') continue;
+    attachSubject(forkId, { subjectType: r.subject_type, subjectId: r.subject_id, subjectHint: r.subject_hint || null });
+  }
+
+  db.prepare(`UPDATE convos SET turns=? WHERE id=?`).run(keep.filter((m) => m.role === 'user').length, forkId);
+  broadcastAll('convos:updated', { convoId: forkId });
+  return { ok: true, convo: getConvo(forkId), copied: keep.length, of: msgs.length };
+}
+
 export function latestConvoPlan(id) {
   const convo = getConvo(id);
   if (!convo) return { error: 'not_exist' };
@@ -1041,7 +1089,7 @@ function noticeFor(turn, existingNotice) {
 
 // The streaming turn, now laned. `turn` is the resolveTurn() decision; its
 // feature/model drive the generation, and repoFacts (if any) ride in the prompt.
-async function runChatTurnStreaming(convoId, userId, onToken, turn) {
+async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
@@ -1074,7 +1122,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn) {
     // uses, so a high ceiling on a short answer costs nothing. This is headroom
     // for the times a question genuinely needs it, not a target.
     maxTokens: turnMaxTokens(convoId),
-    allowLongOutput: true, timeoutMs: 150_000, onToken,
+    allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
@@ -1696,7 +1744,7 @@ Respond with ONLY this JSON object and nothing else:
 // onToken, when supplied by the route, turns the ordinary text turn into a
 // streamed one. Slash commands stay non-streamed: they are structured actions
 // (plan, handoff, fold) whose value is the finished artefact, not the typing.
-export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, override = undefined } = {}) {
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -1753,6 +1801,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // Resolve the lane BEFORE any model cost. The router is free and deterministic
   // except for one tiny tie-break judge call; it never dispatches a coding task
   // (that is the owner's click, on an implement proposal).
+  if (onStatus) { try { onStatus('Working out where to send this…'); } catch {} }
   const turn = await resolveTurn({ convoId, text: trimmed, lastAssistantText: lastUserText(convoId), override: effectiveOverride });
 
   // implement: propose, do not dispatch. The frontend draws the three buttons.
@@ -1768,7 +1817,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
     .run(mid, convoId, 'user', 'chat', sendText);
   const out = onToken
-    ? await runChatTurnStreaming(convoId, userId, onToken, turn)
+    ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus)
     : await runChatTurn(convoId, userId, turn);
   if (out.error) return out;
   out.laneTag = out.laneTag || turn.lane?.tag || null;

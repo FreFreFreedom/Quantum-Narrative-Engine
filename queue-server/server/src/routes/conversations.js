@@ -19,7 +19,7 @@ function isConvoError(out) {
 function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
-      || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required') return 400;
+      || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message') return 400;
   return 500;
 }
 
@@ -221,6 +221,9 @@ export function conversationsRoutes() {
         userId: req.user?.id,
         override,
         onToken: (t) => { if (!clientGone) write({ type: 'token', text: t }); },
+        // Progress lines. Same channel as the tokens, different type — an older
+        // cached frontend ignores an unknown type, so this cannot break one.
+        onStatus: (m) => { if (!clientGone) write({ type: 'status', text: String(m || '') }); },
       });
       write({ type: 'done', ...out });
     } catch (e) {
@@ -326,6 +329,18 @@ export function conversationsRoutes() {
   // POST /api/convos/:id/reset — fold conversation into a recap.
   router.post('/:id/reset', (req, res) => {
     const out = convos.resetConvoContext(req.params.id);
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  // POST /api/convos/:id/fork — the same thread up to a point, in a new one.
+  // Body: { throughMessageId? } to branch from a message rather than the end.
+  router.post('/:id/fork', (req, res) => {
+    const out = convos.forkConvo(req.params.id, {
+      throughMessageId: req.body?.throughMessageId || null,
+      title: req.body?.title || null,
+      createdBy: req.user?.id || 'antoine',
+    });
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
   });

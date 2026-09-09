@@ -609,7 +609,7 @@ async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens,
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // A caller-named provider (the Room's manual model picker, or the /ask forced
@@ -693,6 +693,10 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
       continue;
     }
 
+    // Where the minute actually goes. A dead lane costs a full timeout before the
+    // next one is tried, and from outside that is indistinguishable from a model
+    // thinking hard — so say which one is being asked, and say when one gives up.
+    if (onStatus) { try { onStatus(failures.length ? `That lane did not answer — trying ${laneName(p, m)}…` : `Asking ${laneName(p, m)}…`); } catch {} }
     const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, account: p === providerId ? explicitAccount : null });
     attempted += 1;
 
@@ -990,13 +994,51 @@ function explicitModelUsableBy(providerId, model) {
 // That notice is not decoration. The standing complaint about this lane is that
 // it falls back to a cheaper model WITHOUT SAYING SO, so a fallback that stays
 // quiet is the bug, not the feature. Every early return below either streams from
+// A tool call, in words rather than in function names. Nothing is invented here:
+// each phrase says what that tool actually reads, so the line under the dots is a
+// report and not a decoration. An unknown tool degrades to a plain "looking
+// something up" rather than leaking a function name into the room.
+const TOOL_PHRASES = {
+  search_entities: 'Searching the corpus',
+  get_entity: 'Reading a card',
+  list_clusters: 'Looking through the clusters',
+  list_continuum_axes: 'Looking at the continuum axes',
+  nearby_on_axis: 'Finding what sits nearby on that axis',
+  list_knowledge_docs: 'Looking through the documents',
+  read_knowledge_doc: 'Reading a document',
+  list_architecture_components: 'Reading the build',
+  read_tech_tree: 'Reading the tech tree',
+  list_theme_clusters: 'Looking through the themes',
+  theme_cluster_for_tag: 'Placing that theme',
+  list_recent_work: 'Checking recent work',
+  recall_memory: 'Remembering what you said before',
+};
+// A backend, named the way Antoine names them rather than by provider id.
+function laneName(providerId, model = null) {
+  const base = { 'claude-side': 'your second Claude', 'claude-code': 'Claude', openai: 'GPT', opencode: 'the free lane', 'google-ai-studio': 'Gemini' }[providerId] || providerId;
+  const m = model && !/^opencode\//.test(model) ? ` (${model})` : '';
+  return `${base}${m}`;
+}
+
+function describeToolCall(name, input) {
+  const phrase = TOOL_PHRASES[name] || 'Looking something up';
+  // The one argument worth showing: what it is actually looking for.
+  const q = input && (input.query || input.q || input.name || input.title || input.tag || input.id);
+  const term = typeof q === 'string' && q.trim() ? ` — ${q.trim().slice(0, 60)}` : '';
+  return `${phrase}${term}…`;
+}
+
 // the paid lane or carries a notice.
 export async function generateTextStream({
   prompt, feature, maxTokens = 800, label = 'ai-text-stream', model: explicitModel = null,
   provider: explicitProvider = null, account: explicitAccount = null,
   timeoutMs = 90_000, allowLongOutput = false, onToken = null, onUsage = null,
   tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP,
-  cacheKey = null, tailReminder = null,
+  // Progress, not content: called with a short human phrase whenever the turn
+  // moves to a new phase (a lookup, a retry on another lane). The Room shows it
+  // where the three dots used to sit alone, so a minute of silence says what it
+  // is doing. Never required — every caller may leave it null.
+  cacheKey = null, tailReminder = null, onStatus = null,
 }) {
   const { defaults } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
@@ -1011,7 +1053,7 @@ export async function generateTextStream({
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder , onStatus });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }
@@ -1020,7 +1062,8 @@ export async function generateTextStream({
   // something Antoine needs told.
   const fallback = async (notice) => {
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
-    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder });
+    if (onStatus) { try { onStatus('The paid lane is unavailable — answering on the free lane…'); } catch {} }
+    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus });
     if (r?.text && onToken) onToken(r.text);
     return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
   };
@@ -1128,6 +1171,7 @@ export async function generateTextStream({
     });
     for (const [i, c] of calls.entries()) {
       let result;
+      if (onStatus) { try { onStatus(describeToolCall(c.name, c.input)); } catch {} }
       try { result = await dispatchTool(c.name, c.input); } catch (e) { result = { error: e.message }; }
       toolCallsMade += 1;
       messages.push({
