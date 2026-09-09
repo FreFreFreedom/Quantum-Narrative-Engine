@@ -878,6 +878,28 @@ export function initOntologySchema(db) {
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_to ON entity_relations(to_id, deleted_at)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_shape ON entity_relations(shape, deleted_at)`); } catch {}
 
+  // A walk somebody kept — plans/civic-structures-and-loops.md, Stage 5.
+  //
+  // Navigating this corpus produces a path: an entity, the relation followed out of it,
+  // the entity that led to. Until now that path lived only in the back button. A saved map
+  // is the ordered list of what was walked, so a reading can be returned to and deepened
+  // instead of being re-derived from the start each time.
+  //
+  // `path_json` holds entity ids in visit order. Ids, not names and not a rendered path:
+  // the entities behind them keep changing as the corpus grows, and a map should show what
+  // they say now rather than what they said the day it was saved.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS saved_maps (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      root_id TEXT,
+      path_json TEXT NOT NULL,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS clusters (
       code TEXT PRIMARY KEY,

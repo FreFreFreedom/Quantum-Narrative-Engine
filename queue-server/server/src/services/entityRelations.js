@@ -248,3 +248,45 @@ export function shapeByRungAudit(db) {
     })),
   };
 }
+
+// ─── Saved maps ──────────────────────────────────────────────────────────────
+// A walk somebody kept, so a reading can be returned to instead of re-derived. The stored
+// path is entity ids in visit order and nothing else — no names, no rendered text — so a
+// map reopened next month shows what those entities say then, not what they said when it
+// was saved. That is the difference between a map and a screenshot.
+
+export function listSavedMaps(db) {
+  return db.prepare(`
+    SELECT id, title, root_id, path_json, created_at, updated_at
+    FROM saved_maps WHERE deleted_at IS NULL ORDER BY updated_at DESC
+  `).all().map((m) => ({ ...m, path: JSON.parse(m.path_json || '[]'), path_json: undefined }));
+}
+
+export function saveMap(db, { id, title, path }) {
+  const steps = (path || []).filter(Boolean);
+  if (!title || !title.trim()) { const e = new Error('A map needs a title to be found again.'); e.status = 400; throw e; }
+  if (steps.length < 2) { const e = new Error('A map of one entity is not a walk.'); e.status = 400; throw e; }
+  const payload = JSON.stringify(steps);
+  if (id) {
+    const r = db.prepare(`
+      UPDATE saved_maps SET title=?, root_id=?, path_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+      WHERE id=? AND deleted_at IS NULL
+    `).run(title.trim(), steps[0], payload, id);
+    if (!r.changes) { const e = new Error('No such map.'); e.status = 404; throw e; }
+    return getSavedMap(db, id);
+  }
+  const newId = randomUUID();
+  db.prepare(`INSERT INTO saved_maps (id, title, root_id, path_json) VALUES (?,?,?,?)`)
+    .run(newId, title.trim(), steps[0], payload);
+  return getSavedMap(db, newId);
+}
+
+export function getSavedMap(db, id) {
+  const m = db.prepare(`SELECT * FROM saved_maps WHERE id=? AND deleted_at IS NULL`).get(id);
+  return m ? { ...m, path: JSON.parse(m.path_json || '[]'), path_json: undefined } : null;
+}
+
+export function deleteSavedMap(db, id) {
+  return db.prepare(`UPDATE saved_maps SET deleted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND deleted_at IS NULL`)
+    .run(id).changes > 0;
+}

@@ -219,6 +219,26 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rel-when { font-variant-numeric:tabular-nums; color:var(--c-ink-4); }
 .rel-loop { font-size:11px; padding:5px 8px; margin-bottom:4px; border-radius:6px;
   background:var(--c-surface-2); border:1px solid var(--c-border); }
+/* The trail: a walk in progress, and the walks that were kept. Chips rather than rows —
+   a path is one thing read left to right, not a list of separate items. */
+.trail-path { display:flex; flex-wrap:wrap; align-items:center; gap:3px; margin-bottom:6px; }
+.trail-step { font-size:10.5px; padding:2px 6px; border-radius:5px; cursor:pointer;
+  background:var(--c-surface-2); border:1px solid var(--c-border); color:var(--c-ink-2);
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.trail-step:hover { border-color:var(--c-accent); }
+.trail-arrow { font-size:9px; color:var(--c-ink-4); }
+.trail-row { display:flex; gap:4px; align-items:center; margin-bottom:6px; }
+.trail-btn { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px;
+  padding:3px 8px; font-size:10.5px; cursor:pointer; color:var(--c-ink-3); white-space:nowrap; }
+.trail-btn:hover { border-color:var(--c-ink); color:var(--c-ink); }
+.trail-title { flex:1; min-width:0; font-size:10.5px; padding:3px 6px; }
+.trail-map { display:flex; align-items:center; gap:6px; padding:4px 6px; margin-bottom:3px;
+  border-radius:6px; cursor:pointer; background:var(--c-surface); border:1px solid var(--c-border); font-size:11px; }
+.trail-map:hover { background:var(--c-surface-2); }
+.trail-map-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.trail-when { font-variant-numeric:tabular-nums; color:var(--c-ink-4); font-size:10px; }
+.trail-x { border:none; background:none; color:var(--c-ink-4); cursor:pointer; padding:0 2px; font-size:10px; }
+.trail-x:hover { color:var(--c-danger); }
 .empty { font-size:11.5px; color:var(--c-ink-4); }
 .tmdb-origtitle { font-size:11px; color:var(--c-ink-3); margin-top:2px; }
 .tmdb-alt { font-size:10.5px; color:var(--c-ink-4); font-weight:400; }
@@ -2161,6 +2181,8 @@ button:active { transform: translateY(1px) scale(.99); }
         <h2>Source</h2>
         <div id="sourceList"></div>
       </div>
+      <h2>Trail</h2>
+      <div id="trailHost"></div>
       <h2>Search</h2>
       <input class="searchbox" id="search" placeholder="Search entities...">
       <h2>Axis</h2>
@@ -2770,6 +2792,7 @@ async function boot() {
     // Films are containers — on by default they bury the characters inside them.
     enabledTypes = new Set(FACETS.types.map(t => t.value).filter(t => t !== 'film'));
     enabledSources = new Set(FACETS.sources.map(s => s.value));
+    loadSavedMaps();
     // What "nothing filtered" looks like, so the collapsed panel's dot can tell a
     // real narrowing from the film default (see syncFiltersActive()).
     FILTER_DEFAULTS = { types: new Set(enabledTypes), sources: new Set(enabledSources) };
@@ -3551,6 +3574,104 @@ function rungLabel(entity) {
 // The rung and the names the same structure goes by at that rung, as a tooltip — the
 // spec's vocabulary translation table, reachable from the app instead of only from a
 // doc. A tooltip and not a line of text on the card: helper prose does not go in the UI.
+// ---------- The trail, and maps kept from it ----------
+// Walking this corpus produces a path — an entity, the relation followed out of it, where
+// that led. The path used to live only in the back button. It is recorded here as you go
+// and can be kept, so a reading is returned to rather than re-derived from the start.
+//
+// Recorded, not curated: every entity you open joins the trail, consecutive repeats
+// collapse, and it is capped so a long session cannot grow it without bound. Clearing is
+// one click, which is the right price for something that costs nothing to rebuild.
+let trail = [];
+let savedMaps = [];
+let trailSaving = false;      // is the title box open — module-level, so a repaint keeps it
+const TRAIL_CAP = 24;
+const TRAIL_KEY = 'fmcns_trail';
+
+function trailPush(id) {
+  if (!id || trail[trail.length - 1] === id) return;
+  trail.push(id);
+  if (trail.length > TRAIL_CAP) trail = trail.slice(-TRAIL_CAP);
+  try { localStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch (e) {}
+  renderTrail();
+}
+
+function trailClear() {
+  trail = [];
+  trailSaving = false;
+  try { localStorage.removeItem(TRAIL_KEY); } catch (e) {}
+  renderTrail();
+}
+
+function renderTrail() {
+  const host = document.getElementById('trailHost');
+  if (!host) return;
+  const steps = trail.map(id => `<span class="trail-step" data-goto="${id}" title="${qEsc((byId[id] && byId[id].name) || id)}">${qEsc((byId[id] && byId[id].name) || id)}</span>`).join('<span class="trail-arrow">→</span>');
+  let html = trail.length
+    ? `<div class="trail-path">${steps}</div>
+       <div class="trail-row">
+         ${trail.length > 1 ? `<button class="trail-btn" id="trailSave">Keep</button>` : ''}
+         <button class="trail-btn" id="trailClear">Clear</button>
+       </div>`
+    : '<div class="empty">Open an entity and the walk records itself.</div>';
+  if (trailSaving) {
+    html += `<div class="trail-row"><input class="searchbox trail-title" id="trailTitle" placeholder="Name this walk…"><button class="trail-btn" id="trailConfirm">Save</button></div>`;
+  }
+  if (savedMaps.length) {
+    html += savedMaps.map(m => `<div class="trail-map" data-map="${m.id}" title="${qEsc(m.path.map(i => (byId[i] && byId[i].name) || i).join(' → '))}">
+      <span class="trail-map-name">${qEsc(m.title)}</span><span class="trail-when">${m.path.length}</span>
+      <button class="trail-x" data-mapdel="${m.id}" title="Forget this map" aria-label="Forget this map">✕</button>
+    </div>`).join('');
+  }
+  host.innerHTML = html;
+  host.querySelectorAll('[data-goto]').forEach(el => { el.onclick = () => selectEntity(el.getAttribute('data-goto')); });
+  const clearBtn = document.getElementById('trailClear');
+  if (clearBtn) clearBtn.onclick = trailClear;
+  const saveBtn = document.getElementById('trailSave');
+  if (saveBtn) saveBtn.onclick = () => { trailSaving = true; renderTrail(); const t = document.getElementById('trailTitle'); if (t) t.focus(); };
+  const confirm = document.getElementById('trailConfirm');
+  if (confirm) confirm.onclick = trailSaveNow;
+  const titleBox = document.getElementById('trailTitle');
+  if (titleBox) titleBox.onkeydown = (ev) => { if (ev.key === 'Enter') trailSaveNow(); if (ev.key === 'Escape') { trailSaving = false; renderTrail(); } };
+  host.querySelectorAll('[data-map]').forEach(el => {
+    el.onclick = (ev) => {
+      if (ev.target.hasAttribute('data-mapdel')) return;
+      const m = savedMaps.find(x => x.id === el.getAttribute('data-map'));
+      if (!m) return;
+      trail = [...m.path];
+      renderTrail();
+      selectEntity(m.path[m.path.length - 1]);
+    };
+  });
+  host.querySelectorAll('[data-mapdel]').forEach(el => {
+    el.onclick = async (ev) => {
+      ev.stopPropagation();
+      const id = el.getAttribute('data-mapdel');
+      try { await apiWrite('/api/ontology/maps/' + id, 'DELETE'); } catch (e) { console.error('map delete failed:', e); return; }
+      savedMaps = savedMaps.filter(m => m.id !== id);
+      renderTrail();
+    };
+  });
+}
+
+async function trailSaveNow() {
+  const box = document.getElementById('trailTitle');
+  const title = box ? box.value.trim() : '';
+  if (!title) { if (box) box.focus(); return; }
+  try {
+    const { map } = await apiWrite('/api/ontology/maps', 'POST', { title, path: trail });
+    savedMaps.unshift(map);
+  } catch (e) { console.error('map save failed:', e); return; }
+  trailSaving = false;
+  renderTrail();
+}
+
+async function loadSavedMaps() {
+  try { savedMaps = (await api('/api/ontology/maps')).maps || []; } catch (e) { savedMaps = []; }
+  try { const t = JSON.parse(localStorage.getItem(TRAIL_KEY) || '[]'); if (Array.isArray(t)) trail = t.filter(id => byId[id]); } catch (e) {}
+  renderTrail();
+}
+
 // ---------- Stored relations ----------
 // Unlike the computed echoes above, these are claims somebody made and wrote down: a
 // direction, a date, where it came from, and what would prove it wrong. That last part is
@@ -6352,6 +6473,7 @@ async function selectEntity(id){
     html += bridges.length ? bridges.map(({o,axis,gap})=>`<div class="conn" data-goto="${o.id}"><span class="dot bridge"></span>${o.name} (${rungLabel(o)||o.type}) — close on ${AXES[axis]?AXES[axis].name:axis}, ${gap} rung${gap>1?"s":""} apart</div>`).join('') : '<div class="empty">None within range.</div>';
 
     document.getElementById(activeCardHost).innerHTML = html;
+    trailPush(e.id);
     // After the markup exists, never before: loadRelations looks its host up by id, and
     // called any earlier it would find nothing and return silently — the panel would be
     // permanently empty with no error to show for it.

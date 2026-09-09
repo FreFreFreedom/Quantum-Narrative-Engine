@@ -77,6 +77,14 @@ export function ontologyRoutes(db) {
   // empty cells are the output worth having.
   router.get('/shape-audit', (req, res) => res.json(rel.shapeByRungAudit(db)));
 
+  // Saved maps — a walk kept so it can be returned to and deepened.
+  router.get('/maps', (req, res) => res.json({ maps: rel.listSavedMaps(db) }));
+  router.post('/maps', (req, res) => {
+    try { res.status(201).json({ map: rel.saveMap(db, req.body || {}) }); }
+    catch (e) { res.status(e.status || 500).json({ error: e.message }); }
+  });
+  router.delete('/maps/:mapId', (req, res) => res.json({ deleted: rel.deleteSavedMap(db, req.params.mapId) }));
+
   // Live facets (entity types, sources, continuum axes with their scored counts) so the
   // client's filter UI is built from real data instead of a hardcoded list of three types.
   router.get('/facets', (req, res) => res.json(q.listFacets(db)));
