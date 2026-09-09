@@ -780,10 +780,21 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* Branch from this point. Hidden until the turn is hovered — one of these on every
    message, visible all at once, would be a column of icons down the thread. Shown
    on keyboard focus too, or it would be unreachable without a mouse. */
-.se-turnfork { position:absolute; top:6px; right:0; opacity:0; transition:opacity .12s var(--ease);
+.se-turnfork, .se-turnredo { position:absolute; top:6px; opacity:0; transition:opacity .12s var(--ease);
   background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; line-height:1; padding:2px 4px; }
-.se-turn:hover .se-turnfork, .se-turnfork:focus-visible { opacity:1; }
-.se-turnfork:hover { color:var(--c-brand); }
+.se-turnfork { right:0; }
+.se-turnredo { right:20px; }
+.se-turn:hover .se-turnfork, .se-turnfork:focus-visible,
+.se-turn:hover .se-turnredo, .se-turnredo:focus-visible { opacity:1; }
+.se-turnfork:hover, .se-turnredo:hover { color:var(--c-brand); }
+/* Which model should answer it again. Same fixed-position treatment as the quote
+   popover, and closed by the same page-level mousedown. */
+.se-lane-menu { position:fixed; z-index:61; background:var(--c-bg, #fff); border:1px solid var(--c-border); border-radius:8px;
+  padding:3px; box-shadow:0 4px 14px rgba(0,0,0,.16); display:flex; flex-direction:column; min-width:140px; }
+.se-lane-menu button { background:none; border:none; text-align:left; cursor:pointer; font-family:inherit; font-size:11.5px;
+  color:var(--c-ink); padding:4px 9px; border-radius:5px; white-space:nowrap; }
+.se-lane-menu button:hover { background:var(--c-border); }
+.se-lane-menu button:disabled { opacity:.35; cursor:default; }
 .se-turn:first-child { border-top:none; padding-top:4px; }
 .se-who { font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--c-ink-5); margin-bottom:3px; }
 .se-turn.you .se-who { color:var(--c-brand); }
@@ -17515,7 +17526,10 @@ document.addEventListener('keydown', (e) => {
 
   // Returns true if the message was accepted and is on its way, false if it could
   // not be sent — the caller needs to know, so it can keep the words on screen.
-  function sendTurn(e, text, repaint, onDone){
+  // laneOverride: a lane for THIS send only, without disturbing the conversation's
+  // sticky pick — what "answer this again on another model" needs. Undefined means
+  // the sticky pick, exactly as before; null means Auto for this one turn.
+  function sendTurn(e, text, repaint, onDone, laneOverride){
     text = String(text || '').trim();
     if(!text || !e.convoId || e.busy) return false;
     e.busy = true; e.draft = ''; e.note = ''; e.phase = '';
@@ -17536,9 +17550,11 @@ document.addEventListener('keydown', (e) => {
       // THIS send, without waiting on the separate /lane call to land first
       // (plan "chat-model-picker"). e.lane undefined (not loaded yet) omits the
       // key entirely, so the server falls back to whatever is already stored.
-      body: JSON.stringify(e.lane !== undefined
-        ? { text: text, override: e.lane ? { provider: e.lane.provider, model: e.lane.model || null, account: e.lane.account || null } : null }
-        : { text: text }),
+      body: JSON.stringify((function(){
+        var lane = laneOverride !== undefined ? laneOverride : e.lane;
+        if(laneOverride === undefined && e.lane === undefined) return { text: text };
+        return { text: text, override: lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : null };
+      })()),
     })
       .then(function(r){ return readTurn(r, e, repaint); })
       .then(function(d){
@@ -18061,6 +18077,60 @@ document.addEventListener('keydown', (e) => {
   }, true);
   window.addEventListener('scroll', killQuotePop, true);
 
+  // "Answer this again, on that model." Any earlier question of yours, not only the
+  // last one, and an explicit pick rather than the lane tag's fixed three-way cycle
+  // (his ask, 2026-09-09). The re-answer is a new turn at the end of the thread:
+  // nothing in the history is rewritten, so both answers stay side by side.
+  var laneMenu = null;
+  function killLaneMenu(){
+    if(laneMenu && laneMenu.parentNode) laneMenu.parentNode.removeChild(laneMenu);
+    laneMenu = null;
+  }
+  var REASK_LANES = [
+    ['', 'Auto'],
+    ['openai', 'ChatGPT'],
+    ['claude-code', 'Claude'],
+    ['claude-side', 'Claude (2nd)'],
+    ['google-ai-studio', 'Google'],
+    ['opencode', 'OpenCode'],
+  ];
+  function openLaneMenu(btn, e, text, repaint){
+    killLaneMenu();
+    var r = btn.getBoundingClientRect();
+    laneMenu = document.createElement('div');
+    laneMenu.className = 'se-lane-menu';
+    REASK_LANES.forEach(function(row){
+      var provider = row[0];
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = row[1];
+      // Greyed rather than hidden: a lane that is off today is still worth seeing,
+      // and laneOffReason already says why in words.
+      var off = provider && !laneAvailable(provider, laneCatalog);
+      b.disabled = !!off;
+      if(off) b.title = laneOffReason(provider);
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        killLaneMenu();
+        if(e.busy) return;
+        var lane = null;
+        if(provider){
+          var models = laneModelsFor(provider, laneCatalog);
+          var model = models.length ? models[0] : null;
+          lane = { provider: provider, model: model, account: null };
+        }
+        sendTurn(e, text, repaint, null, lane);
+      };
+      laneMenu.appendChild(b);
+    });
+    laneMenu.style.left = Math.max(6, Math.min(window.innerWidth - 160, r.right - 150)) + 'px';
+    laneMenu.style.top = Math.min(window.innerHeight - 190, r.bottom + 4) + 'px';
+    laneMenu.onmousedown = function(ev){ ev.stopPropagation(); };
+    document.body.appendChild(laneMenu);
+  }
+  document.addEventListener('mousedown', killLaneMenu, true);
+  window.addEventListener('scroll', killLaneMenu, true);
+
   // The carried passage, folded into the message actually sent. Quoted rather than
   // pasted invisibly, so the transcript still reads as a conversation afterwards —
   // and so the model is told which part of its own answer is being asked about.
@@ -18084,6 +18154,14 @@ document.addEventListener('keydown', (e) => {
     log.scrollTop = atBottom ? log.scrollHeight : was;
     log.querySelectorAll('[data-se-jump]').forEach(function(a){
       a.onclick = function(ev){ ev.preventDefault(); jumpToQueueItem(a.getAttribute('data-se-jump')); };
+    });
+    log.querySelectorAll('[data-se-redo]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if(e.busy) return;
+        var m = e.msgs[Number(b.getAttribute('data-se-redo'))];
+        if(m && m.text) openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); });
+      };
     });
     log.querySelectorAll('[data-se-fork]').forEach(function(b){
       b.onclick = function(ev){ ev.stopPropagation(); forkFromMessage(e, b.getAttribute('data-se-fork'), function(){ if(host.isConnected) fillEmbed(host, e, opts); }); };
@@ -18260,7 +18338,7 @@ document.addEventListener('keydown', (e) => {
       html += '<details class="se-recap" open><summary>Summary the assistant now works from</summary>'
            +  '<div class="se-recap-body">' + qEsc(e.recap) + '</div></details>';
     }
-    e.msgs.forEach(function(m){
+    e.msgs.forEach(function(m, idx){
       var plan = m.kind === 'plan';
       var you = m.role === 'user';
       var tag = (!you && !plan && m.laneTag) ? m.laneTag : '';
@@ -18275,6 +18353,7 @@ document.addEventListener('keydown', (e) => {
         : '';
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
            +  (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
+           +  (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body">' + fmtBody(m.text) + '</div>')
