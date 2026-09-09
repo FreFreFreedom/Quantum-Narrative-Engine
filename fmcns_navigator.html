@@ -825,25 +825,35 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .se-phase { font-size:11px; color:var(--c-ink-5); margin-top:3px; font-style:italic; }
 /* Quote a passage into the next question. Sits on the selection, follows it, and
    is removed the moment the selection is dropped. */
-.se-quote-pop { position:fixed; z-index:60; background:var(--c-bg, #fff); border:1px solid var(--c-border); border-radius:7px;
-  padding:2px; display:flex; gap:1px; box-shadow:0 2px 8px rgba(0,0,0,.14); }
-.se-quote-pop button { background:none; border:none; cursor:pointer; font-family:inherit; font-size:11px; color:var(--c-ink);
-  padding:3px 8px; border-radius:5px; white-space:nowrap; }
-.se-quote-pop button:hover { background:var(--c-border); }
+.se-quote-pop { position:fixed; z-index:60; background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
+  border-radius:8px; padding:3px; display:flex; gap:2px; box-shadow:0 6px 18px rgba(0,0,0,.22);
+  animation:sePopIn .12s var(--ease); }
+@keyframes sePopIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+.se-quote-pop button { display:inline-flex; align-items:center; gap:5px; background:none; border:none; cursor:pointer;
+  font-family:inherit; font-size:11px; color:var(--c-ink-3); padding:4px 9px; border-radius:6px; white-space:nowrap;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.se-quote-pop button:hover { background:var(--c-border); color:var(--c-ink); }
+.se-quote-pop .ic { width:11px; height:11px; flex:none; }
 /* The chapters strip, and the flash that lands on the passage jumped to. */
-.se-marks { display:flex; flex-wrap:wrap; gap:4px; padding:4px 0 2px; }
-.se-mark { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--c-border); border-radius:999px;
-  padding:1px 4px 1px 8px; font-size:10.5px; color:var(--c-ink-4); background:none; cursor:pointer; font-family:inherit; max-width:230px; }
+.se-marks { display:flex; flex-wrap:wrap; gap:5px; padding:5px 0 3px; }
+.se-mark { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--c-border); border-radius:999px;
+  padding:2px 5px 2px 9px; font-size:10.5px; color:var(--c-ink-4); background:none; cursor:pointer; font-family:inherit;
+  max-width:230px; transition:border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-mark:hover { border-color:var(--c-brand); color:var(--c-ink); }
+.se-mark .ic { width:10px; height:10px; flex:none; color:var(--c-ink-5); }
+.se-mark:hover .ic { color:var(--c-brand); }
 .se-mark span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.se-mark b { font-weight:400; color:var(--c-ink-5); padding:0 2px; }
+.se-mark b { font-weight:400; color:var(--c-ink-5); padding:0 1px; font-size:11px; line-height:1; }
 .se-mark b:hover { color:var(--c-danger); }
 mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radius:2px; animation:seJumped 2.2s var(--ease) forwards; }
 @keyframes seJumped { 0%, 55% { background:var(--c-amber, #f3c969); } 100% { background:transparent; } }
 /* A passage carried into the composer: shown above the input, dismissable. */
-.se-quoted { display:flex; align-items:flex-start; gap:6px; border-left:2px solid var(--c-brand); padding:3px 0 3px 7px; margin-bottom:5px;
-  font-size:11px; color:var(--c-ink-4); line-height:1.45; }
-.se-quoted button { background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; padding:0 2px; line-height:1; }
+.se-quoted { display:flex; align-items:flex-start; gap:7px; border-left:2px solid var(--c-brand); padding:4px 0 4px 8px;
+  margin-bottom:5px; font-size:11px; color:var(--c-ink-4); line-height:1.45; }
+.se-quoted:hover button { opacity:1; }
+.se-quoted button { background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; padding:0 2px;
+  line-height:1; margin-left:auto; opacity:0; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.se-quoted button:hover { color:var(--c-danger); }
 .se-quoted-n { flex:none; min-width:14px; height:14px; border-radius:4px; background:var(--c-border); color:var(--c-ink-4);
   font-size:9.5px; line-height:14px; text-align:center; margin-top:1px; }
 /* Caret on the end of an answer still being written. Same reduced-motion kill
@@ -1937,6 +1947,8 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-bolt" viewBox="0 0 16 16"><path d="M9 1.8 3.6 9h3.6l-.6 5.2L12.4 7H8.8z"/></symbol>
   <symbol id="ic-seed" viewBox="0 0 16 16"><path d="M8 14V7.4"/><path d="M8 7.4C8 4.6 10 2.4 13.2 2.4c0 3-2 5-5.2 5z"/><path d="M8 10.2C8 8.4 6.6 7 4.2 7c0 2 1.5 3.2 3.8 3.2z"/></symbol>
   <symbol id="ic-queue" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h6"/></symbol>
+  <symbol id="ic-quote" viewBox="0 0 16 16"><path d="M6.4 4.2C4.7 4.9 3.6 6.3 3.6 8.1v3.7h3.6V8.2H5.4c0-1.1.4-2 1-2.6zM12.8 4.2c-1.7.7-2.8 2.1-2.8 3.9v3.7h3.6V8.2h-1.8c0-1.1.4-2 1-2.6z"/></symbol>
+  <symbol id="ic-bookmark" viewBox="0 0 16 16"><path d="M4.2 2.6h7.6v11l-3.8-2.7-3.8 2.7z"/></symbol>
   <symbol id="ic-fork" viewBox="0 0 16 16"><path d="M5 13.4V8.6a2 2 0 0 1 2-2h4"/><path d="M5 2.6v4"/><circle cx="5" cy="14" r="1.4"/><circle cx="5" cy="2" r="1.4"/><circle cx="12" cy="6.6" r="1.4"/></symbol>
   <symbol id="ic-pencil" viewBox="0 0 16 16"><path d="M11.2 2.6 13.4 4.8 5.6 12.6l-3 .8.8-3z"/></symbol>
   <symbol id="ic-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 0 1-8.6 3.5"/><path d="M3 8a5 5 0 0 1 8.6-3.5"/><path d="M11.6 1.9v2.6H9M4.4 14.1v-2.6H7"/></symbol>
@@ -18052,6 +18064,26 @@ document.addEventListener('keydown', (e) => {
     if(quotePop && quotePop.parentNode) quotePop.parentNode.removeChild(quotePop);
     quotePop = null;
   }
+  // The answer a node sits in, or nothing if it is in your own message or outside
+  // the transcript altogether.
+  function answerTurnOf(node){
+    var el = node && (node.nodeType === 1 ? node : node.parentNode);
+    if(!el || !el.closest) return null;
+    var turn = el.closest('.se-turn');
+    if(!turn || turn.classList.contains('you')) return null;
+    return turn;
+  }
+  // Reading a long answer means scrolling, so scrolling must not throw the offer
+  // away — it follows the passage instead, and only leaves when the selection does.
+  function placeQuotePop(){
+    if(!quotePop) return;
+    var sel = window.getSelection && window.getSelection();
+    if(!sel || !sel.rangeCount || !String(sel).trim()) return killQuotePop();
+    var r = sel.getRangeAt(0).getBoundingClientRect();
+    if(!r || (!r.width && !r.height)) return killQuotePop();
+    quotePop.style.left = Math.max(6, Math.min(window.innerWidth - quotePop.offsetWidth - 6, r.left)) + 'px';
+    quotePop.style.top = (r.top > 44 ? r.top - 34 : r.bottom + 8) + 'px';
+  }
   function wireQuotePick(log, e, repaint){
     if(log.dataset.quoteWired) return;
     log.dataset.quoteWired = '1';
@@ -18065,20 +18097,26 @@ document.addEventListener('keydown', (e) => {
         // Only a real passage of an answer: a stray click, or a word grabbed from
         // your own message, is not something to quote back at the model.
         if(!text || text.length < 2 || !sel.rangeCount) return;
-        var node = sel.getRangeAt(0).commonAncestorContainer;
-        var el = node.nodeType === 1 ? node : node.parentNode;
-        if(!el || !el.closest || !el.closest('.se-turn') || el.closest('.se-turn.you')) return;
-        var r = sel.getRangeAt(0).getBoundingClientRect();
+        // Which answer this selection belongs to. Read from BOTH ends of the range,
+        // never from its common ancestor: a swipe that begins in the left margin —
+        // which is how anyone grabs a whole line — puts the common ancestor at the
+        // log, and the old check then decided the selection was in no answer at all
+        // and silently did nothing. Same for a selection that runs across two turns.
+        var range = sel.getRangeAt(0);
+        var turnEl = answerTurnOf(range.startContainer) || answerTurnOf(range.endContainer);
+        if(!turnEl) return;
+        var r = range.getBoundingClientRect();
         if(!r || (!r.width && !r.height)) return;
-        var turnEl = el.closest('.se-turn');
-        var msgId = turnEl && turnEl.getAttribute('data-msg-id');
+        var msgId = turnEl.getAttribute('data-msg-id');
         var passage = text.replace(/\s+/g, ' ').slice(0, 1200);
         quotePop = document.createElement('div');
         quotePop.className = 'se-quote-pop';
         quotePop.onmousedown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
-        var mk = function(labelText, title, fn){
+        var mk = function(icon, labelText, title, fn){
           var b = document.createElement('button');
-          b.type = 'button'; b.textContent = labelText; b.title = title;
+          b.type = 'button'; b.title = title;
+          b.innerHTML = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-'
+            + icon + '"/></svg>' + qEsc(labelText);
           b.onclick = function(ev){
             ev.stopPropagation();
             fn();
@@ -18087,7 +18125,7 @@ document.addEventListener('keydown', (e) => {
           };
           quotePop.appendChild(b);
         };
-        mk('\u275D Quote', 'Carry this passage into your next question', function(){
+        mk('quote', 'Quote', 'Carry this passage into your next question', function(){
           if(!e.quotes) e.quotes = [];
           if(e.quotes.indexOf(passage) === -1) e.quotes.push(passage);
           if(repaint) repaint();
@@ -18095,19 +18133,22 @@ document.addEventListener('keydown', (e) => {
         // Only where there is a saved message to anchor to: an answer still
         // streaming has no id yet, and a chapter pointing at nothing is worse
         // than no chapter.
-        if(msgId) mk('\uD83D\uDD16 Chapter', 'Save this place, to come back to it later', function(){
+        if(msgId) mk('bookmark', 'Chapter', 'Save this place, to come back to it later', function(){
           saveMark(e, msgId, passage, repaint);
         });
-        quotePop.style.left = Math.max(6, Math.min(window.innerWidth - 190, r.left)) + 'px';
-        quotePop.style.top = Math.max(6, r.top - 32) + 'px';
         document.body.appendChild(quotePop);
+        placeQuotePop();
       }, 0);
     });
   }
   document.addEventListener('mousedown', function(ev){
     if(quotePop && ev.target !== quotePop) killQuotePop();
   }, true);
-  window.addEventListener('scroll', killQuotePop, true);
+  window.addEventListener('scroll', placeQuotePop, true);
+  // Clicking away clears the selection; the offer goes with it.
+  document.addEventListener('selectionchange', function(){
+    if(quotePop && !String(window.getSelection() || '').trim()) killQuotePop();
+  });
 
   // "Answer this again, on that model." Any earlier question of yours, not only the
   // last one, and an explicit pick rather than the lane tag's fixed three-way cycle
@@ -18310,7 +18351,8 @@ document.addEventListener('keydown', (e) => {
       mbar.innerHTML = marks.length
         ? '<div class="se-marks">' + marks.map(function(m, i){
             return '<button type="button" class="se-mark" data-mark="' + qEsc(m.id) + '" title="Go back to this place">'
-              + '\uD83D\uDD16 <span>' + qEsc(m.label || ('Chapter ' + (i + 1))) + '</span>'
+              + '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bookmark"/></svg>'
+              + '<span>' + qEsc(m.label || ('Chapter ' + (i + 1))) + '</span>'
               + '<b data-mark-drop="' + qEsc(m.id) + '" title="Forget this chapter">\u2715</b></button>';
           }).join('') + '</div>'
         : '';
