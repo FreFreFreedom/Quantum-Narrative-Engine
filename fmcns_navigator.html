@@ -77,7 +77,7 @@ body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-appl
 ::-webkit-scrollbar-thumb { background:var(--c-border-3); border-radius:8px; border:3px solid transparent; background-clip:content-box; }
 ::-webkit-scrollbar-thumb:hover { background:var(--c-ink-4); border:3px solid transparent; background-clip:content-box; }
 :focus-visible { outline:2px solid var(--c-ring); outline-offset:2px; }
-body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, .tv-toolbar, .mind-toolbar, .flow-composer, .q-right, .q-left, .ws-slot, .ws-archdetail { transition:background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
+body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .mind-toolbar, .flow-composer, .q-right, .q-left, .ws-slot, .ws-archdetail { transition:background-color .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 .wrap { display:flex; height:100vh; min-height:640px; position:relative; overflow:hidden; }
 /* The filters panel, in two parts for the same reason the side rail is (see the
@@ -302,15 +302,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    mode is the open one AND the panel is wide: at 52px there is no room for words,
    and four unlabelled dots would say less than nothing. Reaching Mind or Building
    blocks used to cost three clicks across two different bars. */
-.rail-sub { display:none; flex-direction:column; gap:1px; margin:2px 0 4px; }
-.rail-sub.on { display:flex; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-sub { display:none; }
-.rail-subitem { position:relative; display:flex; align-items:center; width:100%; height:27px; padding:0 7px 0 30px; flex:none; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-3); font-size:var(--fs-sm); font-weight:400; text-align:left; white-space:nowrap; overflow:hidden; cursor:pointer; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
-.rail-subitem::before { content:''; position:absolute; left:17px; top:0; bottom:0; width:1px; background:var(--c-border); }
-.rail-subitem:hover { background:var(--c-surface-2); color:var(--c-ink); }
-.rail-subitem.active { color:var(--c-ink); font-weight:var(--fw-medium); }
-.rail-subitem.active::before { width:2px; background:var(--c-accent); }
-.rail-subitem .core-tab-count { margin-left:5px; }
 .rail-sep { flex:none; height:1px; margin:6px 7px; background:var(--c-border); }
 .rail-foot { margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px; border-top:1px solid var(--c-border); }
 .rail-row { cursor:default; }
@@ -430,19 +421,9 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* ---------- CORE ARCHITECTURE shell (merged Architecture/Seeds/Suggestion Engine/Dispatch Queue) ---------- */
 #coreApp { flex:1; display:none; flex-direction:column; min-height:0; }
 #coreApp.open { display:flex; }
-/* Only the Architecture/Flow chips remain here — everything else moved to the
-   side rail — so it no longer needs to wrap, and it is a thin strip now. */
-.core-header { display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-1) var(--sp-3); border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
-.core-tabs { display:flex; align-items:center; gap:2px; }
-.core-tabs button { padding:5px 10px; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; border:1px solid transparent; background:transparent; color:var(--c-ink-3); cursor:pointer; border-radius:6px; }
-.core-tabs button:hover { background:var(--c-surface-2); color:var(--c-ink); }
-.core-tabs button.active { background:var(--c-ink-solid); color:var(--c-on-solid); }
-/* Graph / Building blocks / Mind are three views of one pane; Flow and Room are
-   their own. The hairline says so without a word, and without the second tab row
-   that used to say it by living one band lower. */
-.core-tabs-sep { width:1px; height:14px; margin:0 5px; background:var(--c-border); flex:none; }
+/* No header row at all: the side rail is the whole of this app's navigation, so
+   a Core view starts at its own first line. */
 .core-tab-count { font-family:monospace; font-size:10px; color:var(--c-warn); }
-.core-tabs button.active .core-tab-count { color:var(--c-amber); }
 .core-banner { font-size:10px; color:var(--c-ink-4); white-space:nowrap; }
 .core-serverpick { display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--c-ink-4); }
 .core-serverpick select { font-size:10.5px; padding:1px 4px; }
@@ -1863,7 +1844,6 @@ button, .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .min
 }
 button:active { transform: translateY(1px) scale(.99); }
 .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button { border-radius: var(--r-md); }
-.core-tabs button { border-radius: var(--r-md); font-size:11px; }
 /* (The resting shadow that used to be restated here is set once on .uc itself. It
    was listed again after .uc--row, which meant a hairline row carried a box's
    shadow — the one thing --row exists not to have.) */
@@ -1950,7 +1930,7 @@ button:active { transform: translateY(1px) scale(.99); }
 /* Chip rows are single-line flex today. Given no room they compress their chips
    into unreadable stubs rather than taking a second line. */
 @media (max-width: 700px) {
-  .core-tabs, .flow-typecips, .sg-filterbtns, .tv-toolbar-top, .flow-controls { flex-wrap:wrap; row-gap:4px; }
+  .flow-typecips, .sg-filterbtns, .tv-toolbar-top, .flow-controls { flex-wrap:wrap; row-gap:4px; }
 }
 /* The head line is title | pill | actions in one row. Squeezed hard enough it
    shortens the title to three characters, which is the one part of a card that
@@ -2075,17 +2055,32 @@ button:active { transform: translateY(1px) scale(.99); }
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg>
         <span class="rail-label">Map</span>
       </button>
-      <button id="modeCoreBtn" class="rail-item" role="tab" aria-selected="false" title="Core architecture">
+      <div class="rail-sep"></div>
+      <!-- Flat, and every one of them a real destination. These five used to be
+           children of an "Architecture" item that was also their sibling in a top
+           bar — a hierarchy that existed only to be redrawn twice. The top bar is
+           gone, so the rail carries them itself: an icon each, so a collapsed rail
+           still shows all of them and which one you are in. -->
+      <button class="rail-item" data-rail-sub="graph" role="tab" aria-selected="false" title="The architecture graph">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
         <span class="rail-label">Architecture</span>
       </button>
-      <div class="rail-sub" id="railSubCore" role="group" aria-label="Inside Architecture">
-        <button class="rail-subitem" data-rail-sub="graph" title="The architecture graph">Graph</button>
-        <button class="rail-subitem" data-rail-sub="blocks" title="Building blocks — Discover and the Idea box">Building blocks</button>
-        <button class="rail-subitem" data-rail-sub="mind" title="Mind — the intel feed">Mind</button>
-        <button class="rail-subitem" data-rail-sub="flow" title="Flow — tasks, suggestions and ideas">Flow<span class="core-tab-count" id="railCountFlow"></span></button>
-        <button class="rail-subitem" data-rail-sub="room" title="Room — a place to think, with cards pulled in when they matter">Room</button>
-      </div>
+      <button class="rail-item" data-rail-sub="blocks" role="tab" aria-selected="false" title="Building blocks — Discover and the Idea box">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg>
+        <span class="rail-label">Building blocks</span>
+      </button>
+      <button class="rail-item" data-rail-sub="mind" role="tab" aria-selected="false" title="Mind — the intel feed">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-spark"/></svg>
+        <span class="rail-label">Mind</span>
+      </button>
+      <button class="rail-item" data-rail-sub="flow" role="tab" aria-selected="false" title="Flow — tasks, suggestions and ideas">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
+        <span class="rail-label">Flow</span><span id="railCountFlow" class="mode-pill-count"></span>
+      </button>
+      <button class="rail-item" data-rail-sub="room" role="tab" aria-selected="false" title="Room — a place to think, with cards pulled in when they matter">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chat"/></svg>
+        <span class="rail-label">Room</span>
+      </button>
     </div>
     <div class="rail-sep"></div>
     <button id="modeQueueBtn" class="rail-item" title="Open the Dispatch Queue — the count is tasks waiting for your answer">
@@ -2218,16 +2213,6 @@ button:active { transform: translateY(1px) scale(.99); }
   </div>
 </div>
 <div id="coreApp" data-src="CORE ARCHITECTURE tab | fmcns_navigator.html: coreApp shell (slim header + three-zone workspace), initCore()/switchCoreView()/renderWorkspace() | backend: services/architecture.js, services/promptQueue.js, routes/travaux.js, services/claudeUsage.js">
-  <div class="core-header">
-    <div class="core-tabs" data-src="CORE ARCHITECTURE → view chips | fmcns_navigator.html: switchCoreView()/renderWorkspace()">
-      <button class="active" data-core-dest="graph" title="The architecture graph">Graph</button>
-      <button data-core-dest="blocks" title="Building blocks — Discover and the Idea box">Building blocks</button>
-      <button data-core-dest="mind" title="Mind — the intel feed">Mind</button>
-      <span class="core-tabs-sep" aria-hidden="true"></span>
-      <button data-core-dest="flow" title="Flow — tasks, suggestions and ideas">Flow <span class="core-tab-count" id="coreCountFlow"></span></button>
-      <button data-core-dest="room" title="A place to think — threads that belong to no card, with cards pulled in when they matter">Room</button>
-    </div>
-  </div>
   <div class="ws-shell">
     <div class="ws-map" id="wsMap" data-src="CORE ARCHITECTURE → workspace graph zone: the idea place — architecture graph (Graph tab) and Building blocks (Discover / Idea box) as inner tabs | fmcns_navigator.html: initArchNav()/setArchTab()/renderArchStage() with four layouts — Checklist (archDrawChecklist()), Tech Tree (archDrawTree()), Map (a zoomable d3.pack() circle-packing on #archMapCanvas: paintArchMap()/requestArchMapRender(), umbrella grouping from GET /api/architecture/umbrellas, colour = status ramp, area = nodes beneath, click-to-zoom via archMapTap()/archMapFitTo(), umbrellas past PRESSURE_LIMIT ringed) and Board (the lifecycle board: archDrawBoard()/archBoardCell()/archSetLifecycle(), five columns Concept · Planned · Building · Live · Retired, drag between Concept and Retired only, derived columns read-only, columns fold to slim rails — empty derived ones auto-fold, header clicks stick). Map and Board both fold the app’s 25 built parts in beside the planted ideas (archMapHierarchyRoot()/archMapComponents(), status from GET /api/architecture/components) without ever writing them into architecture_nodes — one picture, still one source of truth per fact. initBlocks() into #tvBodyBlocks | backend: services/architecture.js (NOW_COMPUTERS), services/umbrellas.js (PRESSURE_LIMIT), services/architectureNodes.js (MANUAL_LIFECYCLE_STATES), services/witnessCheck.js, routes/architecture.js, routes/discovery.js">
       <div class="arch-toolbar">
@@ -6562,7 +6547,6 @@ function mapResetZoom() {
 let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
-document.getElementById('modeCoreBtn').onclick = () => setMode('core');
 document.getElementById('modeQueueBtn').onclick = () => openQueuePanel();
 // ---------- The side rail ----------
 // Two jobs. First, the pin: unpinned the rail is 52px of symbols that widen on
@@ -6993,19 +6977,21 @@ function setMode(m) {
   // The three rail items are the tablist now. `aria-selected` used to be written
   // once in the markup and never updated, so a screen reader always heard
   // "Content navigator, selected" whatever you were looking at.
-  [['modeContentBtn','content'], ['modeMapBtn','map'], ['modeCoreBtn','core']].forEach(([id, mode]) => {
+  [['modeContentBtn','content'], ['modeMapBtn','map']].forEach(([id, mode]) => {
     const b = document.getElementById(id);
     b.classList.toggle('active', m === mode);
     b.setAttribute('aria-selected', String(m === mode));
   });
-  const railSub = document.getElementById('railSubCore');
-  if (railSub) railSub.classList.toggle('on', m === 'core');
   document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
   document.getElementById('mapApp').classList.toggle('open', m==='map');
   document.getElementById('coreApp').classList.toggle('open', m==='core');
   activeCardHost = m==='map' ? 'mapCardHost' : 'cardHost';
   if (m==='map') initMap();
   if (m==='core') initCore(); else teardownCore();
+  // Last, and after coreApp has been shown or hidden, since that is what it
+  // reads: the five Core destinations are rail items of their own now, so
+  // leaving Core has to put them all out — nothing else marks them.
+  syncRailSub();
 }
 
 // ---------- CORE ARCHITECTURE shell ----------
@@ -7103,7 +7089,6 @@ function initQMic() {
 function initCore() {
   if (!coreInited) {
     coreInited = true;
-    document.querySelectorAll('[data-core-dest]').forEach(b => { b.onclick = () => goCoreDest(b.getAttribute('data-core-dest')); });
     document.getElementById('qAddBtn').onclick = () => qAddPrompt(false);
     document.getElementById('qSetAsideBtn').onclick = () => qAddPrompt(true);
     // "I'll run this myself in OpenCode" — hides the provider/model pickers
@@ -7206,10 +7191,14 @@ function renderWorkspace() {
 // from renderWorkspace() and setArchTab() rather than sharing their data-attribute
 // selectors, so nothing double-binds the clicks initCore()/initArchNav() own.
 function syncRailSub() {
-  const cur = coreView === 'arch' ? archTab : coreView;
-  document.querySelectorAll('[data-rail-sub], [data-core-dest]').forEach((b) => {
-    const name = b.getAttribute('data-rail-sub') || b.getAttribute('data-core-dest');
-    b.classList.toggle('active', name === cur);
+  // Only one of the rail's destinations is lit at a time, and none of the five
+  // Core ones is lit while you are in Content or Map.
+  const inCore = document.getElementById('coreApp').classList.contains('open');
+  const cur = inCore ? (coreView === 'arch' ? archTab : coreView) : null;
+  document.querySelectorAll('[data-rail-sub]').forEach((b) => {
+    const on = b.getAttribute('data-rail-sub') === cur;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
   });
 }
 
@@ -9558,7 +9547,13 @@ async function qLoad() {
   const countEl = document.getElementById('coreCountFlow');
   if (countEl) countEl.textContent = activeCount || '';
   const railCountEl = document.getElementById('railCountFlow');
-  if (railCountEl) railCountEl.textContent = activeCount || '';
+  if (railCountEl) {
+    railCountEl.textContent = activeCount || '';
+    // A pill, like the Queue's, rather than a number after the word — a number
+    // after the word is invisible on a collapsed rail, where the label is
+    // clipped; the pill moves onto the icon instead.
+    railCountEl.classList.toggle('on', activeCount > 0);
+  }
   // "Waiting for you" count — how many tasks have an unanswered question.
   const askingCount = qPrompts.filter(qIsAsking).length;
   const askCountEl = document.getElementById('coreCountAsking');
