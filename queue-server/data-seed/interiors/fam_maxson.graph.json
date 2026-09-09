@@ -1,0 +1,270 @@
+{
+  "entity": "fam_maxson",
+  "medium": "f_fences",
+  "source": "data-seed/subtitles/f_fences.srt",
+  "scope": "subtitle blocks 355-479 (Lyons arrives on payday and asks for ten dollars)",
+  "gapThreshold": 3,
+  "turnsAttributed": 75,
+  "turnsByCueClass": {
+    "A": 17,
+    "C": 6,
+    "c": 33,
+    "B": 10,
+    "E": 9
+  },
+  "turnsDroppedMixedBlock": [
+    369,
+    381
+  ],
+  "turnsDroppedNoCue": [
+    359,
+    373,
+    374,
+    425,
+    427,
+    428,
+    437,
+    438,
+    439,
+    440,
+    469
+  ],
+  "continuationsFolded": "blocks 386-415, 422-424, 453, 459, 465-466, 472, 475, 478",
+  "turnsFailedVerbatimCheck": 0,
+  "turnsInWrongBlock": [],
+  "graph": {
+    "nodes": [
+      "b",
+      "l",
+      "r",
+      "t"
+    ],
+    "edges": [
+      {
+        "a": "b",
+        "b": "t",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "l",
+        "b": "t",
+        "weight": 17,
+        "sign": "opp",
+        "stances": {
+          "opp": 12,
+          "ally": 2,
+          "neu": 3
+        }
+      },
+      {
+        "a": "l",
+        "b": "r",
+        "weight": 4,
+        "sign": "ally",
+        "stances": {
+          "opp": 1,
+          "ally": 2,
+          "neu": 1
+        }
+      },
+      {
+        "a": "r",
+        "b": "t",
+        "weight": 9,
+        "sign": "opp",
+        "stances": {
+          "opp": 8,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "basePartition": [
+    [
+      "b",
+      "l",
+      "r",
+      "t"
+    ]
+  ],
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 4,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "b",
+        "t"
+      ],
+      [
+        "l",
+        "r"
+      ]
+    ]
+  },
+  "sensitivityWithoutWeakAttributions": {
+    "droppedWeakTurns": 21,
+    "graph": {
+      "nodes": [
+        "b",
+        "l",
+        "r",
+        "t"
+      ],
+      "edges": [
+        {
+          "a": "b",
+          "b": "t",
+          "weight": 1,
+          "sign": "ally",
+          "stances": {
+            "opp": 0,
+            "ally": 1,
+            "neu": 0
+          }
+        },
+        {
+          "a": "l",
+          "b": "t",
+          "weight": 9,
+          "sign": "opp",
+          "stances": {
+            "opp": 7,
+            "ally": 2,
+            "neu": 0
+          }
+        },
+        {
+          "a": "l",
+          "b": "r",
+          "weight": 2,
+          "sign": "ally",
+          "stances": {
+            "opp": 0,
+            "ally": 2,
+            "neu": 0
+          }
+        },
+        {
+          "a": "r",
+          "b": "t",
+          "weight": 6,
+          "sign": "opp",
+          "stances": {
+            "opp": 6,
+            "ally": 0,
+            "neu": 0
+          }
+        }
+      ]
+    },
+    "partition": [
+      [
+        "b",
+        "l",
+        "r",
+        "t"
+      ]
+    ],
+    "structuralBalance": {
+      "testable": true,
+      "signedEdges": 4,
+      "balanced": true,
+      "frustration": 0,
+      "violations": [],
+      "bestSplit": [
+        [
+          "b",
+          "t"
+        ],
+        [
+          "l",
+          "r"
+        ]
+      ]
+    }
+  },
+  "blurA": {
+    "minWeight": 2,
+    "graph": {
+      "nodes": [
+        "b",
+        "l",
+        "r",
+        "t"
+      ],
+      "edges": [
+        {
+          "a": "l",
+          "b": "t",
+          "weight": 17
+        },
+        {
+          "a": "l",
+          "b": "r",
+          "weight": 4
+        },
+        {
+          "a": "r",
+          "b": "t",
+          "weight": 9
+        }
+      ]
+    },
+    "partition": [
+      [
+        "b"
+      ],
+      [
+        "l",
+        "r",
+        "t"
+      ]
+    ]
+  },
+  "blurB": {
+    "merges": {
+      "b": "t"
+    },
+    "graph": {
+      "nodes": [
+        "l",
+        "r",
+        "t"
+      ],
+      "edges": [
+        {
+          "a": "l",
+          "b": "t",
+          "weight": 17
+        },
+        {
+          "a": "l",
+          "b": "r",
+          "weight": 4
+        },
+        {
+          "a": "r",
+          "b": "t",
+          "weight": 9
+        }
+      ]
+    },
+    "partition": [
+      [
+        "l",
+        "r",
+        "t"
+      ]
+    ]
+  }
+}
