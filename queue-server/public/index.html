@@ -610,7 +610,6 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .room-cards.collapsed.peek { position:absolute; top:0; right:0; bottom:0; z-index:8;
   width:290px; min-width:0; max-width:92vw; padding:14px;
   border-left-color:var(--c-border); box-shadow:var(--sh-md); }
-.room-side-acts { display:flex; align-items:center; gap:1px; margin-left:auto; flex:none; }
 /* One tab row instead of five headings. Wraps to a second line rather than
    scrolling sideways — a column this narrow can spare 18px of height far more
    easily than it can spare a hidden tab. */
@@ -7449,7 +7448,6 @@ function initRoom() {
   };
   const thColl = document.getElementById('roomThreadsCollapse');
   if (thColl) thColl.onclick = () => collapseZone(zoneOf(threads));
-  if (caColl) caColl.onclick = () => collapseZone(zoneOf(cards));
   document.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
     if (e.key === 'Escape' && !typing) {
