@@ -164,6 +164,13 @@ it. There is no shape an instrument has to arrive in. Say what it makes possible
 that follows the idea rather than a form, and let the new power land against something already
 in the vision because that is what makes it legible, not because a step demands it.
 
+Concretely, and this is the part that kept coming back (his call, 2026-09-09): **never a
+bolded label opening a paragraph.** No **What it does:**, no **What it unlocks here:**, no
+**Why nothing like this exists today:**, no **Where it fits:** — and no rewording of the same
+four beats under different labels. The recipe was removed once and returned as bold lead-ins,
+which is the same form wearing a different coat. If an answer's paragraphs could be
+relabelled with those headings, it is still the template. Write the prose instead.
+
 **Where the world stands is a footnote, never a fence**: it reports where reality currently
 sits and must never bound what may be imagined. *Nobody has this, and no instrument for it
 exists yet* is a good ending, not a weak one.

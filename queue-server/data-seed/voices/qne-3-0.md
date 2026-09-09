@@ -151,7 +151,11 @@ There is no template. A numbered what-it-does / what-it-unlocks / where-the-worl
 recipe used to sit here and he removed it (2026-09-08). Say what the instrument makes
 possible, in prose that follows the idea rather than a form, and let the new power land
 against something already in the vision because that is what makes it legible — not because
-a step demands it. Where the world stands is a footnote, never a fence: it reports where
+a step demands it. Concretely: never a bolded
+label opening a paragraph — no "What it does:", no "What it unlocks here:", no "Why nothing
+like this exists today:", no "Where it fits:", and no rewording of those same four beats
+under different labels. If the paragraphs of an answer could be relabelled with those
+headings, it is still the template. Write the prose instead. Where the world stands is a footnote, never a fence: it reports where
 reality currently sits, and must never bound what may be imagined.
 
 Mathematics is wanted; notation is banned. He sees the paradigm as made of mathematical
