@@ -24,6 +24,7 @@
 import { generateText } from './ai/text.js';
 import { runRepoProbe } from './ai/text.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
+import { PROVIDERS } from './ai/catalog.js';
 
 // The lanes. `feature` is the ai_settings feature key, used only as a label for
 // generateText's per-feature cost/cooldown bookkeeping — the real backend is
@@ -271,22 +272,35 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
   return brainstormIntent('default -> brainstorm');
 }
 
-// Map a generated answer's `via` (provider id) to the display tag.
+// Map a generated answer's `via` (provider id) to the display tag. Every free
+// provider in the catalogue is named here too, not just the three big ones —
+// otherwise a fallback to Groq or Google returned the caller's fallback tag,
+// i.e. the model that did NOT answer.
 export function tagFromVia(via, fallback = 'gpt-4.1') {
   const v = String(via || '');
+  if (!v) return fallback;
   if (/openai/.test(v)) return 'gpt-4.1';
   if (/claude/.test(v)) return 'claude';
   if (/opencode/.test(v)) return 'opencode';
-  return fallback;
+  const p = PROVIDERS.find((x) => x.id === v);
+  return p ? p.label : fallback;
 }
 
 // The display tag for a completed turn, from its intent + lane + actual via.
+//
+// What ANSWERED wins over what was asked for. A pinned lane that fell back to
+// the free lane (paid lane off, monthly cap reached, OpenAI rate limit) used to
+// keep printing the pinned model's name on an answer it did not write — the
+// notice said "the free lane instead" while the tag still said ChatGPT.
 export function computeLaneTag(intent, lane, via) {
   if (intent === 'about_app') return 'git';
   if (intent === 'code_read') return 'claude';
-  if (intent === 'forced') return lane?.tag || tagFromVia(via);
-  if (intent === 'check') return lane?.tag || tagFromVia(via);
-  if (intent === 'second') return lane?.tag || tagFromVia(via);
+  if (intent === 'forced' || intent === 'check' || intent === 'second') {
+    // The pinned lane did answer -> keep its own tag, which carries the model
+    // name too ("ChatGPT · gpt-4.1"). Something else answered -> name that.
+    if (lane?.tag && lane?.provider && via && tagFromVia(lane.provider, '~') === tagFromVia(via, '~')) return lane.tag;
+    return tagFromVia(via, lane?.tag);
+  }
   // brainstorm (and anything else)
   return tagFromVia(via, lane?.tag || 'gpt-4.1');
 }

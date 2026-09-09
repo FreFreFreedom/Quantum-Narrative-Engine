@@ -108,3 +108,15 @@ assert.ok(passages.deletePassage(kept.passage.id).ok);
 assert.equal(passages.listPassages().length, 0, 'a forgotten passage leaves the shelf');
 assert.equal(passages.deletePassage(kept.passage.id).error, 'not_found');
 console.log('passages OK — kept, de-duplicated, listed, forgotten');
+
+// ─── Lane tag ────────────────────────────────────────────────────────────────
+// The tag must name what ANSWERED, not what was asked for: a pinned paid lane
+// that fell back to the free lane used to keep printing the paid model's name.
+const { computeLaneTag } = await import('../server/src/services/turnRouter.js');
+const pinned = { provider: 'openai', model: 'gpt-4.1', tag: 'ChatGPT · gpt-4.1' };
+assert.equal(computeLaneTag('forced', pinned, 'openai'), 'ChatGPT · gpt-4.1', 'the pinned lane answered');
+assert.equal(computeLaneTag('forced', pinned, 'groq'), 'Groq', 'it fell back to Groq');
+assert.equal(computeLaneTag('forced', pinned, 'claude-side'), 'claude', 'it fell back to Claude');
+assert.equal(computeLaneTag('forced', { provider: 'claude-code', tag: 'claude' }, 'claude-main'), 'claude');
+assert.equal(computeLaneTag('about_app', pinned, 'groq'), 'git', 'the repo lane is still the repo lane');
+console.log('lane tag OK — names the model that actually answered');
