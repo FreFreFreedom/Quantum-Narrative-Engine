@@ -307,6 +307,64 @@ shared style module). New features must attach it from day one; before
 shipping a feature, check its text is style-tagged. This is a hard rule, not a
 preference.
 
+### Designing the app's own interface (hard, added 2026-09-09)
+
+Written after a UI pass Antoine asked for in his own words: "intelligent, elegant,
+not taking too much space for nothing". These are the rules that pass produced, and
+they hold for every view, not only the ones it touched.
+
+**Nothing is drawn twice.** The single most expensive mistake in this app's chrome
+has been the same navigation existing in two or three places at once — a rail
+sub-list, a header row and an inner tab row all naming the same five destinations,
+costing two horizontal bands to say what one control already said. Before adding a
+row of controls, look for the row that already carries them.
+
+**A hierarchy that is wrong will keep growing rows.** "Architecture" was both the
+parent of Flow and Room and their sibling in the tab strip; once a parent sits
+beside its own children, the children need a second row of their own. Fix the
+naming and the extra row disappears by itself.
+
+**Horizontal bands are the scarcest thing on the screen.** Every strip above the
+content costs the reading area for the life of the app. A band that carries only a
+number, or a title repeating the tab directly above it, is not a band — delete it
+and put the number where it means something.
+
+**A control that opens a panel must never end up underneath it.** A hover-peek that
+slides over its own button cannot be clicked, ever. This shipped once (2026-09-09)
+and was invisible until someone reached for the button.
+
+**Redundancy is not always waste — check the survivor is reachable.** Removing an
+in-panel pin because "the toolbar button already does it" turned a duplicate into a
+dead end, because the toolbar button was the one covered by the panel.
+
+**Stacked accordions are a tab strip in disguise.** Five sections, each with a
+heading and a fold-away chevron, in a 290px column, is six controls and five
+headings before any content. One tab row with counts says the same and shows one
+pane at a time. Put the count on the tab so a shut pane still says it holds
+something.
+
+**Rare actions go behind one `⋯`; dangerous ones never sit beside common ones.**
+Delete was a pixel from Fork in a row of five icons.
+
+**Reading settings belong to the reader.** Font and text size in the Room are his,
+kept per browser, and they move the words only — never the toolbar, the tabs or the
+lists. A setting that moves the chrome is a zoom control, not a reading one.
+
+**The app remembers how you left it.** Every panel a person can open, close, resize
+or switch remembers its state per browser: which mode and view, which thread, which
+pane, how wide, open or shut, the half-written message and the passages carried with
+it. The exception is a panel that is an overlay rather than a column — on a narrow
+window, one left standing open from last time is in the way, not where you left it.
+
+**No explaining inside the app.** Ship the control, not the paragraph. Helper text
+belongs in a `title` tooltip or nowhere.
+
+**Verify by driving the live app, not by reading the diff.** Three of the bugs in
+that pass — an empty Room from one stale identifier, a toolbar wrapping to a second
+row, a composer whose text box had zero width — all passed every syntax check and
+were only visible on screen. See "Ship directly" below for the checks that are
+worth running first; they do not replace opening it.
+
 ### A plan sent to the queue must stand alone (hard)
 
 The agent that picks a task off the queue **never sees the conversation that

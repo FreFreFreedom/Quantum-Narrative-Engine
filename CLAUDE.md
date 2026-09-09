@@ -45,6 +45,16 @@ the older plain-English/no-jargon rule list was removed 2026-09-07. Internal
 agent-to-agent and code communication is unrestricted. Autonomous overnight runs
 follow the "Autonomous overnight runs" section there too.
 
+## Designing the app's UI
+
+Antoine's interface rules live in the repo-root `AGENTS.md` under "Designing the
+app's own interface" — nothing drawn twice, horizontal bands are the scarcest
+thing on the screen, a control must never sit under the panel it opens, every
+panel remembers how you left it, no explanatory prose inside the app, and verify
+by driving the live app rather than reading the diff. **Read that section before
+any change to the app's chrome** — rails, headers, toolbars, side panels — and
+append to it when a new rule is learned the hard way.
+
 ## Plan backlog (`plans/`)
 
 Approved implementation plans live in `plans/`, indexed by `plans/README.md` with a
