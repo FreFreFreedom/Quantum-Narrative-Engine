@@ -23,7 +23,7 @@ import {
 } from './codeDiscovery.js';
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
-import { generateText, generateTextStream, studioPersonaText } from './ai/text.js';
+import { generateText, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
 import { getComponents } from './architecture.js';
 import { projectMapBlock } from './projectMap.js';
@@ -1092,7 +1092,7 @@ export function turnMaxTokens(convoId, base = 4000) {
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
 // same thing — a second copy of this assembly would drift.
-function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null }) {
+function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
   // Only on a depth turn: the brief turn lands in a small card, where a
@@ -1118,10 +1118,14 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
   //    Verified live before and after.
   //
   // Both hold at once: stable map first, variable material after, voice last.
-  return [
-    includeProjectContext ? projectMapBlock() : '',
+  //
+  // Assembled through a function rather than returned outright, because a lane
+  // with a hard per-minute ceiling (OpenAI) may need the same prompt built
+  // smaller — see the ladder under it.
+  const assemble = ({ withMap, historyWindow }) => [
+    withMap ? projectMapBlock() : '',
     subjectSystemPrompt(ctx.contextText, { depth, mode: ctx.mode || 'single', tools }),
-    includeProjectContext ? liveListsBlock() : '',
+    withMap ? liveListsBlock() : '',
     // Load-bearing position: immediately AFTER liveListsBlock(), which already
     // varies per turn and sits outside the cached prefix (projectMapBlock +
     // subjectSystemPrompt). Memory ahead of the project map would break the cache
@@ -1136,7 +1140,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     repoFacts
       ? `\n=== REPO FACTS (read from the checkout just now — trust these over your own recollection) ===\n${repoFacts}\nTreat any file not listed as EXIST above as non-existent. Do not name a file you have not been told exists.`
       : '',
-    `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, CONVO_HISTORY_WINDOW) || '(nothing yet)'}`,
+    `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, historyWindow) || '(nothing yet)'}`,
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction
       ? `\n=== WHAT TO DO NOW ===\n${instruction}`
@@ -1149,6 +1153,31 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nThis is an instruction, not a suggestion, and it overrides every other line about length, density or brevity in this prompt. Write at least ${askedWords} words. Do not stop early, do not summarise, do not offer to continue, and never end with "let me know if you want more" — write the whole thing now.\n\nReach the length by going further into the material, never by padding: more of the idea, more cases, more of what follows from it, the objection taken seriously, the scene played out. Repeating yourself in new words, restating the question, or adding a recap is a failure, not length. If you genuinely run out of substance before ${askedWords} words, go deeper into what you already said rather than wider into filler.`
       : '',
   ].filter(Boolean).join('\n');
+
+  const full = assemble({ withMap: includeProjectContext, historyWindow: CONVO_HISTORY_WINDOW });
+  if (!maxChars || full.length <= maxChars) return full;
+
+  // Over the lane's ceiling. Give things up in order of what an answer can least
+  // afford to lose, and stop at the first version that fits:
+  //
+  //   1. the project map — by far the biggest block (~40k characters of file
+  //      tree and build notes), and the one a question about an idea never
+  //      reads. Anything actually grounded in the repo rides in REPO FACTS,
+  //      which is gathered fresh per turn and is NEVER dropped here.
+  //   2. then the oldest turns of the thread, newest always kept.
+  //
+  // Never given up at any step: the subject context, standing memory, repo
+  // facts, the voice, the task, and the length instruction. Losing any of those
+  // changes what the answer IS, not just how much history it can see.
+  let out = assemble({ withMap: false, historyWindow: CONVO_HISTORY_WINDOW });
+  let window = CONVO_HISTORY_WINDOW;
+  for (const w of [10, 6, 4, 2]) {
+    if (out.length <= maxChars) break;
+    window = w;
+    out = assemble({ withMap: false, historyWindow: w });
+  }
+  console.warn(`[studio-turn] prompt ${full.length} chars over the ${maxChars} the lane allows — dropped the project map${window < CONVO_HISTORY_WINDOW ? ` and kept the last ${window} turns` : ''}, now ${out.length}`);
+  return out;
 }
 
 async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeProjectContext = true }) {
@@ -1220,7 +1249,14 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null });
+  // How long the answer may be decides how much room is left for the question on
+  // a lane that counts both against one ceiling — so the budget is worked out
+  // BEFORE the prompt is built, and the prompt is built to fit it.
+  const maxTokens = turnMaxTokens(convoId);
+  const prompt = buildTurnPrompt({
+    convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null,
+    maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
+  });
   // Instrumentation for the prompt-caching plan (2026-08-21): the map's own
   // length, so a short/empty map inside the container shows up as an obvious
   // number instead of a guess. Cheap — projectMapBlock() just returns the
@@ -1246,7 +1282,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // Neither is a budget constraint — an answer only costs what it actually
     // uses, so a high ceiling on a short answer costs nothing. This is headroom
     // for the times a question genuinely needs it, not a target.
-    maxTokens: turnMaxTokens(convoId),
+    maxTokens,
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
@@ -1276,7 +1312,11 @@ async function runChatTurn(convoId, userId, turn) {
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null });
+  const maxTokens = turnMaxTokens(convoId);
+  const prompt = buildTurnPrompt({
+    convo, ctx, brevity: false, tools: true, repoFacts: turn?.repoFacts || null,
+    maxChars: promptCharBudget({ feature: turn?.lane?.feature || 'studio', provider: turn?.lane?.provider || null, maxTokens }),
+  });
   const result = await generateTextStream({
     prompt,
     feature: turn?.lane?.feature || 'studio',
@@ -1284,7 +1324,7 @@ async function runChatTurn(convoId, userId, turn) {
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
     tools: studioTools(), dispatchTool: studioDispatch,
-    maxTokens: turnMaxTokens(convoId),
+    maxTokens,
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
@@ -1382,12 +1422,14 @@ async function runCheckTurn(convoId) {
     repoFacts = formatRepoFacts(f);
   } catch { repoFacts = ''; }
 
+  const checkTokens = turnMaxTokens(convoId);
   const prompt = buildTurnPrompt({
     convo, ctx, brevity: false, tools: false, repoFacts,
+    maxChars: promptCharBudget({ feature: lane.feature, maxTokens: checkTokens }),
     instruction: `The conversation above ends with an answer from another lane (${originalTag}). Re-examine it critically using the repo facts and your own judgement: point out anything wrong, overclaimed, missing, or unsafe — files it names that may not exist, suggestions that would break something, or anything it got backwards. If it is sound, say so plainly. Plain English, no jargon, no file names you have not been told exist.`,
   });
   const result = await generateTextStream({
-    prompt, feature: lane.feature, model: null, maxTokens: turnMaxTokens(convoId),
+    prompt, feature: lane.feature, model: null, maxTokens: checkTokens,
     label: 'conversations:check', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId,
   });
   if (result.error) return result;
@@ -1411,9 +1453,13 @@ async function runSecondTurn(convoId) {
   const ctx = await convoContext(convo);
   if (ctx.error) return { error: ctx.error };
 
-  const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
+  const secondTokens = turnMaxTokens(convoId);
+  const prompt = buildTurnPrompt({
+    convo, ctx, brevity: false, tools: true,
+    maxChars: promptCharBudget({ feature: lane.feature, maxTokens: secondTokens }),
+  });
   const result = await generateTextStream({
-    prompt, feature: lane.feature, model: null, maxTokens: turnMaxTokens(convoId),
+    prompt, feature: lane.feature, model: null, maxTokens: secondTokens,
     label: 'conversations:second', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000,
     tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId,
   });

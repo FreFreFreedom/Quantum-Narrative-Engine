@@ -1028,6 +1028,28 @@ function describeToolCall(name, input) {
   return `${phrase}${term}…`;
 }
 
+// OpenAI's tokens-per-minute ceiling counts the question and the answer TOGETHER,
+// and rejects the call outright when the pair is over it — no partial answer, no
+// waiting it out, because the request is over the limit no matter when it is sent.
+// So the longer the answer asked for, the less the question may carry. 30000 is
+// the tier this account is on; raise the env var when OpenAI raises the tier.
+//
+// Returns the number of prompt CHARACTERS that still fit, or null for a lane with
+// no such ceiling (every free provider, and Claude). 3.6 chars/token is
+// deliberately below the ~4 this app's English prose actually measures: guessing
+// low trims a little more than strictly needed, guessing high fails the call.
+const OPENAI_TPM_LIMIT = Number(process.env.OPENAI_TPM_LIMIT || 30000);
+const TPM_HEADROOM_TOKENS = 3000; // tool results, and the count never being exact
+
+export function promptCharBudget({ feature, provider = null, maxTokens = 0 }) {
+  const { defaults } = loadAiSettings();
+  const featureDefaults = defaults[feature] || {};
+  const providerId = provider && isKnownProvider(provider) ? provider : (featureDefaults.provider || 'claude-side');
+  if (providerId !== 'openai') return null;
+  const room = OPENAI_TPM_LIMIT - maxTokens - TPM_HEADROOM_TOKENS;
+  return Math.max(20000, Math.round(room * 3.6));
+}
+
 // the paid lane or carries a notice.
 export async function generateTextStream({
   prompt, feature, maxTokens = 800, label = 'ai-text-stream', model: explicitModel = null,

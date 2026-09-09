@@ -120,3 +120,16 @@ assert.equal(computeLaneTag('forced', pinned, 'claude-side'), 'claude', 'it fell
 assert.equal(computeLaneTag('forced', { provider: 'claude-code', tag: 'claude' }, 'claude-main'), 'claude');
 assert.equal(computeLaneTag('about_app', pinned, 'groq'), 'git', 'the repo lane is still the repo lane');
 console.log('lane tag OK — names the model that actually answered');
+
+// ─── Prompt budget ───────────────────────────────────────────────────────────
+// OpenAI counts the question and the answer against one per-minute ceiling, so
+// a long answer must leave room for itself. Only that lane has the ceiling.
+const { promptCharBudget } = await import('../server/src/services/ai/text.js');
+assert.equal(promptCharBudget({ feature: 'studio', provider: 'google-ai-studio', maxTokens: 8400 }), null, 'a free lane has no ceiling');
+const budget = promptCharBudget({ feature: 'studio', provider: 'openai', maxTokens: 8400 });
+// 30000 - 8400 answer - 3000 headroom = 18600 tokens of question.
+assert.equal(budget, Math.round(18600 * 3.6));
+assert.ok(budget + 8400 * 3.6 < 30000 * 3.6, 'question + answer must fit under the ceiling');
+// A huge answer must never drive the budget negative — the floor holds.
+assert.equal(promptCharBudget({ feature: 'studio', provider: 'openai', maxTokens: 32000 }), 20000);
+console.log(`prompt budget OK — ${budget} chars for the question when the answer may run 8400 tokens`);

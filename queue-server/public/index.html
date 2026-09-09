@@ -796,16 +796,17 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* Turns are separated by a rule, not by alignment — nothing flips from side to
    side, so a long conversation reads straight down like a page. */
 .se-turn { padding:9px 0; border-top:1px solid var(--c-border); position:relative; }
-/* Branch from this point. Hidden until the turn is hovered — one of these on every
-   message, visible all at once, would be a column of icons down the thread. Shown
-   on keyboard focus too, or it would be unreachable without a mouse. */
-.se-turnfork, .se-turnredo { position:absolute; top:6px; opacity:0; transition:opacity .12s var(--ease);
-  background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; line-height:1; padding:2px 4px; }
-.se-turnfork { right:0; }
-.se-turnredo { right:20px; }
-.se-turn:hover .se-turnfork, .se-turnfork:focus-visible,
-.se-turn:hover .se-turnredo, .se-turnredo:focus-visible { opacity:1; }
-.se-turnfork:hover, .se-turnredo:hover { color:var(--c-brand); }
+/* Answer again / branch from here. A row under the message, right-aligned, in
+   the flow — it holds its space whether or not it is showing, so nothing shifts
+   when the turn is hovered. Faded until the turn is hovered: one of these on
+   every message, visible all at once, would be a column of icons down the
+   thread. Shown on keyboard focus too, or it would be unreachable by keyboard. */
+.se-turnacts { display:flex; justify-content:flex-end; gap:1px; margin-top:3px;
+  opacity:0; transition:opacity .12s var(--ease); }
+.se-turn:hover .se-turnacts, .se-turnacts:focus-within { opacity:1; }
+.se-turnfork, .se-turnredo { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
+  font-size:12px; line-height:1; padding:3px 6px; border-radius:6px; transition:color .12s var(--ease), background .12s var(--ease); }
+.se-turnfork:hover, .se-turnredo:hover { color:var(--c-brand); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
 .se-lane-menu { position:fixed; z-index:61; background:var(--c-bg, #fff); border:1px solid var(--c-border); border-radius:8px;
@@ -18889,12 +18890,21 @@ document.addEventListener('keydown', (e) => {
       var tagHtml = tag
         ? ' <span class="se-lane" data-lane="' + qEsc(tag) + '" title="Answered on the ' + qEsc(tag) + ' lane — click to re-ask on a different lane.">' + qEsc(tag) + '</span>'
         : '';
+      // The two per-message controls sit UNDER the message, right-aligned, not
+      // floating over its top-right corner: a right-aligned bubble reaches the
+      // same corner, so the old placement put them on top of his own words.
+      var actsHtml = '';
+      if (m.id || (you && m.text)) {
+        actsHtml = '<div class="se-turnacts">'
+                 + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
+                 + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
+                 + '</div>';
+      }
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
-           +  (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
-           +  (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body">' + fmtBody(m.text) + '</div>')
+           +  actsHtml
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.
       if (!you && m.intent === 'implement') {
