@@ -7274,6 +7274,12 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // suggestion — work the picker has no use for.
 let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null, roomPickNotes = null;
 const ROOM_SEL_KEY = 'fmcns_room_thread';
+// Whether each side zone is being kept open. Not saved before this, so shutting
+// the thread list to read something long meant shutting it again on every
+// return — the app remembered which thread, which pane and how wide the column
+// was, and forgot the one thing that changes what you actually see.
+const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmcns_room_cards_open' };
+
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
@@ -7400,6 +7406,28 @@ function initRoom() {
     if (z.panel === cards) applyRoomCardsWidth();
   }); };
   roomZonesSync = syncZoneBtns;
+  // Saved on the wide layout only. Narrow, a side zone is an overlay that slides
+  // over the conversation, and one left standing open from last time would be in
+  // the way rather than where you left it.
+  const rememberZones = () => {
+    if (isRoomNarrow()) return;
+    zones.forEach((z) => {
+      const key = ROOM_ZONE_KEYS[z.panel.id];
+      if (key) { try { localStorage.setItem(key, zoneIsKept(z) ? '1' : '0'); } catch (e) {} }
+    });
+  };
+  const applySavedZones = () => {
+    if (isRoomNarrow()) return;
+    zones.forEach((z) => {
+      const key = ROOM_ZONE_KEYS[z.panel.id];
+      if (!key) return;
+      let saved = null;
+      try { saved = localStorage.getItem(key); } catch (e) {}
+      // No answer means never touched: both zones start open, as they always did.
+      z.panel.classList.toggle('collapsed', saved === '0');
+    });
+  };
+  applySavedZones();
   const stopPeekTimer = (z) => { clearTimeout(z.timer); z.timer = null; };
   const dropPeek = (z) => { stopPeekTimer(z); z.panel.classList.remove('peek'); };
   const dropAllPeeks = () => zones.forEach(dropPeek);
@@ -7446,6 +7474,7 @@ function initRoom() {
       z.panel.classList.toggle('collapsed');
     }
     syncZoneBtns();
+    rememberZones();
   };
   zones.forEach((z) => {
     z.btn.onclick = (e) => {
@@ -7478,6 +7507,7 @@ function initRoom() {
     // nothing at all.
     else if (!isRoomNarrow()) z.panel.classList.toggle('collapsed');
     syncZoneBtns();
+    rememberZones();
   };
   const thColl = document.getElementById('roomThreadsCollapse');
   if (thColl) thColl.onclick = () => collapseZone(zoneOf(threads));
@@ -7487,6 +7517,7 @@ function initRoom() {
       dropAllPeeks();
       zones.forEach(z => z.panel.classList.remove('open', 'collapsed'));
       syncZoneBtns();
+      rememberZones();
     }
   });
   // Crossing the wide/narrow boundary clears states that no longer apply, so a
@@ -7495,6 +7526,10 @@ function initRoom() {
     dropAllPeeks();
     const stale = isRoomNarrow() ? 'collapsed' : 'open';
     zones.forEach(z => z.panel.classList.remove(stale));
+    // Narrowing throws the collapsed state away, since a column that is not a
+    // column has nothing to collapse. Widening has to put it back, or a trip
+    // through a small window silently forgets how you had it.
+    applySavedZones();
     syncZoneBtns();
   });
   syncZoneBtns();
