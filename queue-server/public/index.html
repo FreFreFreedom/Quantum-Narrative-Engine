@@ -2746,6 +2746,14 @@ async function boot() {
     initRailControls();
     // initArchNav() used to run here on every boot; it now runs lazily from
     // switchCoreView('arch') the first time the Architecture view is opened.
+    // Last, once the shell is up: go back to the mode he left the app in. Content
+    // stays the default for a first visit and for anything unrecognised, and this
+    // is deliberately after every init above so the restored mode opens onto a
+    // shell that is already built.
+    try {
+      const lastMode = localStorage.getItem(MODE_KEY);
+      if (lastMode === 'core' || lastMode === 'map') setMode(lastMode);
+    } catch (e) { /* a blocked store just means the default mode */ }
   } catch (e) {
     // This used to report EVERY startup failure as "Session expired, log in again."
     // A plain JS bug in any init step therefore looked exactly like being locked out
@@ -6934,7 +6942,14 @@ function initRailControls() {
   startUsagePolling();
 }
 
+// Content / Map / Architecture, remembered like the view inside it. Persisting
+// only the inner view was half a fix: coreView came back as 'room' while the app
+// still booted into Content, so the Room was restored behind a screen he was not
+// looking at. Verified live before this — landedInRoom 'room', roomVisible false.
+const MODE_KEY = 'fmcns_mode';
+
 function setMode(m) {
+  try { localStorage.setItem(MODE_KEY, m); } catch (e) {}
   // The three rail items are the tablist now. `aria-selected` used to be written
   // once in the markup and never updated, so a screen reader always heard
   // "Content navigator, selected" whatever you were looking at.
