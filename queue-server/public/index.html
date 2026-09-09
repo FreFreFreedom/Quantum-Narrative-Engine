@@ -7617,10 +7617,20 @@ function renderHome() {
   if (n) {
     let b = '<div class="home-n' + (n.total ? '' : ' zero') + '">' + n.total + '</div>';
     b += '<div class="home-sub">' + (n.total ? 'stopped, unplanted or unanswered' : 'nothing is waiting') + '</div>';
-    b += homeRows(n.blocked, (t) => '<div class="home-row"><span class="home-tag">stopped</span><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span></div>');
-    b += homeRows(n.seeds, (t) => '<div class="home-row"><span class="home-tag">seed</span><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span></div>');
-    b += homeRows(n.suggestions, (t) => '<div class="home-row"><span class="home-tag">idea</span><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span></div>');
-    if (n.total) b += '<button type="button" class="home-go" data-home-go="flow">Open Flow →</button>';
+    // Six rows, hard. Five of each kind came to thirteen on the first real load,
+    // and a card that long has stopped being a summary and become the Flow view
+    // with worse controls — the rule this screen is built on. Stopped tasks first:
+    // they are the ones that are actually stuck.
+    const waiting = [].concat(
+      (n.blocked || []).map((t) => ['stopped', t.title]),
+      (n.seeds || []).map((t) => ['seed', t.title]),
+      (n.suggestions || []).map((t) => ['idea', t.title]),
+    );
+    b += homeRows(waiting.slice(0, 6), (r) => '<div class="home-row"><span class="home-tag">' + r[0] + '</span><span class="t" title="' + qEscAttr(r[1] || '') + '">' + qEsc(r[1] || '(untitled)') + '</span></div>');
+    if (n.total) {
+      const more = n.total - Math.min(6, waiting.length);
+      b += '<button type="button" class="home-go" data-home-go="flow">' + (more > 0 ? more + ' more in Flow →' : 'Open Flow →') + '</button>';
+    }
     cards.push(homeCard('Waiting on you', b));
   }
 
