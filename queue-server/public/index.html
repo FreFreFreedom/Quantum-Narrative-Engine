@@ -422,7 +422,13 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    and four unlabelled dots would say less than nothing. Reaching Mind or Building
    blocks used to cost three clicks across two different bars. */
 .rail-sep { flex:none; height:1px; margin:6px 7px; background:var(--c-border); }
-.rail-foot { margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px; border-top:1px solid var(--c-border); }
+/* When the rail runs out of height, the destination list is what yields — never the
+   foot. Expanding the rail makes the quota strip appear, which grew the foot by about
+   sixty pixels inside a column that clips: the Look and AI Settings buttons dropped past
+   the bottom edge, so the button you were reaching for moved out of the window as the
+   rail opened under your cursor. Found by reaching for it. */
+.rail-nav { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:2px; }
+.rail-foot { flex:0 0 auto; margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px; border-top:1px solid var(--c-border); }
 .rail-row { cursor:default; }
 .rail-row:hover { background:none; }
 .rail-foot #serverToggle { max-width:110px; font-size:var(--fs-xs); }
