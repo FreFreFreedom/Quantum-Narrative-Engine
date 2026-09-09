@@ -8141,8 +8141,13 @@ function renderRoomMind() {
   else {
     list.innerHTML = roomMind.map((f) => {
       const kind = f.kind ? `<span class="room-picklabel">${qEsc(f.kind)}</span> ` : '';
+      // The reasoning rides in `detail` now (mind.js insists on it), and a claim
+      // without its argument is the thing that made this memory thin. Shown on
+      // hover rather than in the row: the panel stays a list, the why is one
+      // gesture away.
+      const why = f.detail ? String(f.detail) : 'Click to edit';
       return `<div class="room-mind-row" data-mind-id="${qEscAttr(f.id)}">`
-        + `<div class="room-mind-text" data-mind-edit="${qEscAttr(f.id)}" title="Click to edit">${kind}${qEsc(f.text)}</div>`
+        + `<div class="room-mind-text" data-mind-edit="${qEscAttr(f.id)}" title="${qEscAttr(why)}">${kind}${qEsc(f.text)}</div>`
         + `<button type="button" class="uicon" data-mind-forget="${qEscAttr(f.id)}" title="Forget this fact" aria-label="Forget this fact"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button>`
         + `</div>`;
     }).join('');

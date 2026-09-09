@@ -2,9 +2,14 @@
 // Thin router behind requireAuth, same shape as every other route file.
 import { Router } from 'express';
 import * as mind from '../services/mind.js';
+import { KINDS } from '../services/mind.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
-const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style'];
+// KINDS is imported, never re-declared. This file used to keep its own copy of the
+// list, and it drifted the moment `vision` was added to mind.js: the service
+// accepted the new kind and this router rejected it as `bad_kind`, so the Mind
+// panel could not file the paradigm by hand and a probe against the deployed API
+// read as "the deploy never landed".
 
 export function mindRoutes() {
   const router = Router();
@@ -25,7 +30,8 @@ export function mindRoutes() {
 
   router.patch('/:id', (req, res) => {
     const b = req.body || {};
-    const out = mind.reviseFact(req.params.id, { text: b.text, detail: b.detail });
+    if (b.kind && !KINDS.includes(b.kind)) return res.status(400).json({ error: 'bad_kind' });
+    const out = mind.reviseFact(req.params.id, { text: b.text, detail: b.detail, kind: b.kind });
     if (out.error) return res.status(out.error === 'not_found' ? 404 : 400).json(out);
     res.json({ fact: out });
   });

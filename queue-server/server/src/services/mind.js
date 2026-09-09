@@ -36,7 +36,7 @@ function mirrorOut() {
 // 'project', which is what is being built. Kept as its own kind because the repo
 // mirror files them separately: the paradigm belongs beside the vision docs, not
 // in a list of the owner's preferences.
-const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style', 'vision'];
+export const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style', 'vision'];
 const MAX_FACTS = 300;
 // How many of his own messages must pile up before a harvest runs. Was 8, which
 // never fired for the way he actually talks: his threads are a handful of long
@@ -114,14 +114,19 @@ export function forgetFact(id) {
   } catch (e) { return { error: e.message || 'forget_failed' }; }
 }
 
-export function reviseFact(id, { text, detail } = {}) {
+// `kind` is revisable, not just the words. Without it a fact could never be
+// re-filed, and the facts harvested before `vision` existed would sit under
+// 'project' forever — the paradigm stuck in the list of preferences, invisible to
+// the vision mirror. The harvest re-files them itself now, through `replaces`.
+export function reviseFact(id, { text, detail, kind } = {}) {
   try {
     const cur = getFact(id);
     if (!cur) return { error: 'not_found' };
     const newText = text != null ? String(text).slice(0, 240) : cur.text;
     const newDetail = detail != null ? String(detail).slice(0, 4000) : cur.detail;
-    db.prepare(`UPDATE mind_facts SET text=?, detail=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
-      .run(newText, newDetail, id);
+    const newKind = kind && KINDS.includes(kind) ? kind : cur.kind;
+    db.prepare(`UPDATE mind_facts SET text=?, detail=?, kind=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+      .run(newText, newDetail, newKind, id);
     mirrorOut();
     return getFact(id);
   } catch (e) { return { error: e.message || 'revise_failed' }; }
@@ -229,6 +234,8 @@ ALWAYS fill "detail" when there is reasoning behind a fact. "text" alone is a he
 
 Keep only what would still be worth knowing next month. Do NOT save the shape of the conversation itself ("he asked about X", "the answer explored Y"), pleasantries, or anything already in the list below — if a turn merely repeats a known fact, omit it. But an idea that DEVELOPS a fact already in the list is not a repeat: return it with "replaces" set to that fact's id.
 
+Use "replaces" to REPAIR the list too, when this conversation gives you what it takes: a fact filed under the wrong kind (the paradigm sitting under "project", say), or one whose "detail" is empty although the reasoning is right here in front of you. Return it with its id in "replaces", the kind it should have had, and the detail filled in. Repairing a fact is as valuable as finding a new one.
+
 WHAT YOU ALREADY KNOW:
 ${facts}
 
@@ -281,7 +288,7 @@ async function runHarvest(convoId, force) {
     if (!it || !it.kind || !it.text || !KINDS.includes(it.kind)) continue;
     if (it.replaces) {
       const existing = getFact(it.replaces);
-      if (existing) { reviseFact(it.replaces, { text: it.text, detail: it.detail || null }); wrote++; continue; }
+      if (existing) { reviseFact(it.replaces, { text: it.text, detail: it.detail || null, kind: it.kind }); wrote++; continue; }
     }
     const saved = saveFact({ kind: it.kind, text: it.text, detail: it.detail || null, sourceConvoId: convoId });
     if (saved && !saved.error) wrote++;
