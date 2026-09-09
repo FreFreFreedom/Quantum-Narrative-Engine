@@ -178,7 +178,12 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
   // Room's prompt (conversations.js puts it last, after liveListsBlock), so the
   // extra ~600 tokens per turn is the cost, and it is worth the voice arriving
   // whole. Truncation is now visible rather than silent — see the warning below.
-  const PERSONA_CAP = 12000;
+  // 16000, raised from 12000 on 2026-09-09, for the same reason again: Antoine asked
+  // for the communication profile in the Room too, and both layers of the voice file
+  // together are ~13000 characters, so 12000 cut the tail — which is once more the
+  // "on the page" section. Both layers are what AGENTS.md itself keeps, so the whole
+  // file body has to fit.
+  const PERSONA_CAP = 16000;
   if (typeof studioPersona === 'string' && studioPersona.length > PERSONA_CAP) {
     console.warn(`[ai-settings] voice text is ${studioPersona.length} chars — cut to ${PERSONA_CAP}. The end of it will not reach the model.`);
   }
