@@ -776,7 +776,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .se-log { max-height:min(60vh, 640px); overflow-y:auto; padding-right:4px; }
 /* Turns are separated by a rule, not by alignment — nothing flips from side to
    side, so a long conversation reads straight down like a page. */
-.se-turn { padding:9px 0; border-top:1px solid var(--c-border); }
+.se-turn { padding:9px 0; border-top:1px solid var(--c-border); position:relative; }
+/* Branch from this point. Hidden until the turn is hovered — one of these on every
+   message, visible all at once, would be a column of icons down the thread. Shown
+   on keyboard focus too, or it would be unreachable without a mouse. */
+.se-turnfork { position:absolute; top:6px; right:0; opacity:0; transition:opacity .12s var(--ease);
+  background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; line-height:1; padding:2px 4px; }
+.se-turn:hover .se-turnfork, .se-turnfork:focus-visible { opacity:1; }
+.se-turnfork:hover { color:var(--c-brand); }
 .se-turn:first-child { border-top:none; padding-top:4px; }
 .se-who { font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--c-ink-5); margin-bottom:3px; }
 .se-turn.you .se-who { color:var(--c-brand); }
@@ -17465,7 +17472,7 @@ document.addEventListener('keydown', (e) => {
   }
   function normalizeMsgs(arr){
     return (arr || []).map(function(m){
-      var out = { role: m.role, kind: m.kind, text: m.text };
+      var out = { id: m.id, role: m.role, kind: m.kind, text: m.text };
       var meta = m.meta ? safeParseJson(m.meta) : null;
       if (meta) {
         if (meta.lane) out.laneTag = meta.lane;
@@ -17668,6 +17675,33 @@ document.addEventListener('keydown', (e) => {
         .catch(function(){ return tick(); });
     }
     return tick();
+  }
+
+  // Branch the thread at one message: everything up to and including it, nothing
+  // after. The copy is always a Room thread (the card-conversation index makes a
+  // second conversation about one card impossible), so when the fork was made in
+  // the Room it is opened there straight away, and anywhere else it is announced
+  // rather than silently created somewhere the eye cannot follow.
+  function forkFromMessage(e, messageId, repaint){
+    if(!e.convoId || !messageId || e.forking) return;
+    e.forking = true;
+    e.note = 'Branching…';
+    if(repaint) repaint();
+    apiWrite('/api/convos/' + e.convoId + '/fork', 'POST', { throughMessageId: messageId })
+      .then(function(out){
+        var id = out && out.convo ? out.convo.id : null;
+        var inRoom = typeof roomSel !== 'undefined' && roomSel === e.convoId && typeof roomSelect === 'function';
+        if(id && inRoom){
+          e.note = '';
+          return loadRoom().then(function(){ roomSelect(id); });
+        }
+        e.note = id
+          ? 'Branched — the new thread is waiting in the Room.'
+          : 'Could not branch this conversation.';
+        if(repaint) repaint();
+      })
+      .catch(function(){ e.note = 'Could not branch this conversation.'; if(repaint) repaint(); })
+      .then(function(){ e.forking = false; if(repaint) repaint(); });
   }
 
   function resetConvo(e, repaint){
@@ -18047,6 +18081,9 @@ document.addEventListener('keydown', (e) => {
     log.querySelectorAll('[data-se-jump]').forEach(function(a){
       a.onclick = function(ev){ ev.preventDefault(); jumpToQueueItem(a.getAttribute('data-se-jump')); };
     });
+    log.querySelectorAll('[data-se-fork]').forEach(function(b){
+      b.onclick = function(ev){ ev.stopPropagation(); forkFromMessage(e, b.getAttribute('data-se-fork'), function(){ if(host.isConnected) fillEmbed(host, e, opts); }); };
+    });
     var retry = log.querySelector('[data-se-retry]');
     if (retry) retry.onclick = function(ev){
       ev.stopPropagation();
@@ -18233,6 +18270,7 @@ document.addEventListener('keydown', (e) => {
         ? ' <span class="se-lane" data-lane="' + qEsc(tag) + '" title="Answered on the ' + qEsc(tag) + ' lane — click to re-ask on a different lane.">' + qEsc(tag) + '</span>'
         : '';
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
+           +  (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body">' + fmtBody(m.text) + '</div>')
