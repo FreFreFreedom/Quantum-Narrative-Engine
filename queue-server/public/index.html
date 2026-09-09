@@ -18256,7 +18256,10 @@ document.addEventListener('keydown', (e) => {
     var lr = log.getBoundingClientRect();
     var tr = target.getBoundingClientRect();
     var to = log.scrollTop + (tr.top - lr.top) - (log.clientHeight / 2) + (tr.height / 2);
-    log.scrollTo({ top: Math.max(0, to), behavior: 'smooth' });
+    // Plain assignment, not scrollTo({behavior:'smooth'}): smooth is a no-op on
+    // this element — measured live, the scrollTop did not move by a single pixel —
+    // and the app kills animation under reduced motion anyway.
+    log.scrollTop = Math.max(0, to);
   }
 
   // Wrap the first run of text matching `needle` in a <mark>. Walks text nodes so
