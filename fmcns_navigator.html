@@ -601,6 +601,29 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .arch-detail-close:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .ws-flow { flex:1; min-width:0; min-height:0; display:none; flex-direction:column; }
 .ws-flow.open { display:flex; }
+/* ── Home (Core → Home) ────────────────────────────────────────────────────────
+   The landing view. Deliberately NOT a copy of the rail's foot: the queue line and
+   the usage strip already sit there on every screen, so a queue tile and a quota
+   tile here would be the same numbers drawn twice. What is left is the material
+   that is nowhere else — what is waiting, what was learned, what was left open.
+   Cards, not a table: each is a short summary with a way in, and any card that grows
+   past a handful of rows has become the view that owns it and should link instead. */
+.ws-home { flex:1; min-width:0; min-height:0; display:none; overflow:auto; }
+.ws-home.open { display:block; }
+.home-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; padding:14px; align-content:start; }
+.home-card { border:1px solid var(--c-border); border-radius:10px; background:var(--c-surface); padding:11px 12px; min-width:0; }
+.home-card h3 { margin:0 0 7px; font-size:12px; font-weight:600; letter-spacing:.02em; color:var(--c-ink-4); text-transform:uppercase; display:flex; align-items:baseline; gap:6px; }
+.home-n { font-size:22px; font-weight:600; color:var(--c-ink); line-height:1; margin-bottom:6px; }
+.home-n.zero { color:var(--c-ink-5); font-weight:400; }
+.home-sub { font-size:11px; color:var(--c-ink-4); margin-bottom:8px; }
+.home-row { display:flex; gap:7px; align-items:baseline; padding:3px 0; border-top:1px solid var(--c-border); font-size:12px; min-width:0; }
+.home-row:first-of-type { border-top:none; }
+.home-row .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-row .n { color:var(--c-ink-5); font-size:11px; flex:none; }
+.home-tag { font-size:10px; color:var(--c-ink-5); border:1px solid var(--c-border); border-radius:4px; padding:0 4px; flex:none; }
+.home-go { background:none; border:none; padding:6px 0 0; margin:0; cursor:pointer; color:var(--c-brand); font-family:inherit; font-size:11px; }
+.home-go:hover { text-decoration:underline; }
+.home-empty { font-size:12px; color:var(--c-ink-5); }
 /* ── The room to think in (Core → Room) ────────────────────────────────────────
    Third Core sub-view, same three-zone shape as the rest of the workspace — but
    here the middle zone is the whole point: a conversation with real vertical room
@@ -2057,6 +2080,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-bolt" viewBox="0 0 16 16"><path d="M9 1.8 3.6 9h3.6l-.6 5.2L12.4 7H8.8z"/></symbol>
   <symbol id="ic-seed" viewBox="0 0 16 16"><path d="M8 14V7.4"/><path d="M8 7.4C8 4.6 10 2.4 13.2 2.4c0 3-2 5-5.2 5z"/><path d="M8 10.2C8 8.4 6.6 7 4.2 7c0 2 1.5 3.2 3.8 3.2z"/></symbol>
   <symbol id="ic-queue" viewBox="0 0 16 16"><path d="M3 4.2h10M3 8h10M3 11.8h6"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 16 16"><path d="M2.4 7.2 8 2.6l5.6 4.6"/><path d="M3.8 8.4v4.2a.8.8 0 0 0 .8.8h6.8a.8.8 0 0 0 .8-.8V8.4"/></symbol>
   <symbol id="ic-quote" viewBox="0 0 16 16"><path d="M6.4 4.2C4.7 4.9 3.6 6.3 3.6 8.1v3.7h3.6V8.2H5.4c0-1.1.4-2 1-2.6zM12.8 4.2c-1.7.7-2.8 2.1-2.8 3.9v3.7h3.6V8.2h-1.8c0-1.1.4-2 1-2.6z"/></symbol>
   <symbol id="ic-bookmark" viewBox="0 0 16 16"><path d="M4.2 2.6h7.6v11l-3.8-2.7-3.8 2.7z"/></symbol>
   <symbol id="ic-fork" viewBox="0 0 16 16"><path d="M5 13.4V8.6a2 2 0 0 1 2-2h4"/><path d="M5 2.6v4"/><circle cx="5" cy="14" r="1.4"/><circle cx="5" cy="2" r="1.4"/><circle cx="12" cy="6.6" r="1.4"/></symbol>
@@ -2106,6 +2130,10 @@ button:active { transform: translateY(1px) scale(.99); }
            bar — a hierarchy that existed only to be redrawn twice. The top bar is
            gone, so the rail carries them itself: an icon each, so a collapsed rail
            still shows all of them and which one you are in. -->
+      <button class="rail-item" data-rail-sub="home" role="tab" aria-selected="false" title="Home — what is waiting on you, what the Room learned, where you left off">
+        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-home"/></svg>
+        <span class="rail-label">Home</span><span id="railCountHome" class="mode-pill-count"></span>
+      </button>
       <button class="rail-item" data-rail-sub="graph" role="tab" aria-selected="false" title="The architecture graph">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
         <span class="rail-label">Architecture</span>
@@ -2326,6 +2354,9 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="tv-body" id="tvBodyMind"></div>
       </div>
+    </div>
+    <div class="ws-home" id="wsHome" data-src="CORE ARCHITECTURE → Home: the command centre. What is waiting on you, what the Room has learned, threads the memory has not absorbed, and the walks you kept | fmcns_navigator.html: loadHome(), renderHome() | backend: GET /api/dashboard, services/dashboard.js; the ranked list rides the existing POST /api/architecture/next">
+      <div class="home-grid" id="homeGrid"></div>
     </div>
     <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done; finished cards carry an amber ✨ N badge when a picked world idea isn't usable yet) + the New-prompt composer | fmcns_navigator.html: renderFlow(), flowQueueRow() idea-gap badge, qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js (idea_gaps), services/inspireLanding.js">
       <div id="corePaneFlow" class="core-pane" data-src="CORE ARCHITECTURE → Flow | fmcns_navigator.html: renderFlow() into #tvBodyFlow, item detail into the right zone | backend: services/promptQueue.js, services/suggestions.js, services/workIdeas.js">
@@ -7302,7 +7333,7 @@ const CORE_VIEW_KEY = 'fmcns_core_view';
 let coreView = (function(){
   try {
     var v = localStorage.getItem(CORE_VIEW_KEY);
-    return (v === 'arch' || v === 'flow' || v === 'room') ? v : 'arch';
+    return (v === 'arch' || v === 'flow' || v === 'room' || v === 'home') ? v : 'arch';
   } catch (e) { return 'arch'; }
 })();
 let coreInited = false;
@@ -7476,6 +7507,7 @@ function renderWorkspace() {
   // would open the Flow zone underneath the Room as well.
   document.getElementById('wsFlow').classList.toggle('open', v === 'flow');
   document.getElementById('wsRoom').classList.toggle('open', v === 'room');
+  document.getElementById('wsHome').classList.toggle('open', v === 'home');
   Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
   syncRailSub();
 }
@@ -7502,7 +7534,7 @@ function syncRailSub() {
 // clicks here rather than each mapping the names itself.
 function goCoreDest(dest) {
   if (!document.getElementById('coreApp').classList.contains('open')) setMode('core');
-  if (dest === 'flow' || dest === 'room') switchCoreView(dest);
+  if (dest === 'home' || dest === 'flow' || dest === 'room') switchCoreView(dest);
   else { archTab = dest; switchCoreView('arch'); }
 }
 
@@ -7526,7 +7558,128 @@ function switchCoreView(v) {
   if (v === 'arch') { initArchNav(); setArchTab(archTab); }
   if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
   if (v === 'room') { initRoom(); loadRoom(); }
+  // Home reuses loadNextUp() rather than fetching the ranking itself: the ranked
+  // list needs the component catalogue, which lives in this file and not in the
+  // database, so /api/architecture/next is a POST the browser has to make. One
+  // caller, two readers.
+  if (v === 'home') { loadHome(); loadNextUp(); }
   if (coreInited) startQueuePolling(); // rate depends on which view is now active
+}
+
+// ---------- Home (Core → Home): the command centre ----------
+// One screen answering "what is happening, what is stuck, what is waiting on me",
+// which until now meant reading the runner's log file or asking a terminal session.
+//
+// What is NOT here is the point. The rail's foot already carries the queue line
+// (#archQueueBanner: paused/running/queued, auto-ship, today's spend, the helper
+// budget, the storage warning) and the usage strip, on every view. Drawing either
+// again here would be the same numbers twice — the rule in AGENTS.md this app has
+// already been bitten by. So Home carries only what is nowhere else.
+//
+// Every card is a summary with a way in. A card that grows past a handful of rows
+// has become the view that owns that data and should be a link instead.
+let homeData = null;
+let homeErr = '';
+
+async function loadHome(quiet) {
+  if (!quiet) homeErr = '';
+  try {
+    homeData = await api('/api/dashboard');
+    homeErr = '';
+  } catch (e) {
+    // Say so rather than rendering empty cards, which read as "there is nothing
+    // waiting on you" — the one wrong answer this screen can give.
+    homeErr = 'Could not read the dashboard just now.';
+  }
+  renderHome();
+}
+
+function homeRows(items, render) {
+  if (!items || !items.length) return '';
+  return items.map(render).join('');
+}
+
+function homeCard(title, body) {
+  return '<div class="home-card"><h3>' + qEsc(title) + '</h3>' + body + '</div>';
+}
+
+function renderHome() {
+  const host = document.getElementById('homeGrid');
+  if (!host) return;
+  if (homeErr) { host.innerHTML = '<div class="home-card"><div class="home-empty">' + qEsc(homeErr) + '</div></div>'; return; }
+  if (!homeData) { host.innerHTML = ''; return; }
+
+  const cards = [];
+
+  // 1. Waiting on you. Stopped tasks, seeds never planted, suggestions never
+  // answered — three lists that have never been counted in one place.
+  const n = homeData.needsYou;
+  if (n) {
+    let b = '<div class="home-n' + (n.total ? '' : ' zero') + '">' + n.total + '</div>';
+    b += '<div class="home-sub">' + (n.total ? 'stopped, unplanted or unanswered' : 'nothing is waiting') + '</div>';
+    b += homeRows(n.blocked, (t) => '<div class="home-row"><span class="home-tag">stopped</span><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span></div>');
+    b += homeRows(n.seeds, (t) => '<div class="home-row"><span class="home-tag">seed</span><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span></div>');
+    b += homeRows(n.suggestions, (t) => '<div class="home-row"><span class="home-tag">idea</span><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span></div>');
+    if (n.total) b += '<button type="button" class="home-go" data-home-go="flow">Open Flow →</button>';
+    cards.push(homeCard('Waiting on you', b));
+  }
+
+  // 2. What to build next. Rendered from the SAME nextUp the Flow view loads —
+  // three rows and a way in, never the whole list.
+  {
+    const picks = (typeof nextUp !== 'undefined' && nextUp && nextUp.picks) || [];
+    let b = '';
+    if (typeof nextUpErr !== 'undefined' && nextUpErr) b += '<div class="home-empty">' + qEsc(nextUpErr) + '</div>';
+    else if (!picks.length) b += '<div class="home-empty">Nothing ranked yet.</div>';
+    else b += picks.slice(0, 3).map((p, i) => '<div class="home-row"><span class="n">' + (i + 1) + '</span><span class="t" title="' + qEscAttr(p.reason || '') + '">' + qEsc(p.name || '') + '</span></div>').join('');
+    if (picks.length) b += '<button type="button" class="home-go" data-home-go="flow">See the order →</button>';
+    cards.push(homeCard('What to build next', b));
+  }
+
+  // 3. What the Room has learned. The vision split is the number that matters:
+  // the paradigm accumulating is the thing nothing else in the app says out loud.
+  const l = homeData.learned;
+  if (l) {
+    let b = '<div class="home-n' + (l.total ? '' : ' zero') + '">' + l.total + '</div>';
+    b += '<div class="home-sub">' + (l.vision ? l.vision + ' of them the paradigm' : 'nothing filed as the paradigm yet') + '</div>';
+    b += homeRows(l.recent, (f) => '<div class="home-row"><span class="home-tag">' + qEsc(f.kind || '') + '</span><span class="t" title="' + qEscAttr(f.text || '') + '">' + qEsc(f.text || '') + '</span></div>');
+    b += '<button type="button" class="home-go" data-home-go="room">Open the Room →</button>';
+    cards.push(homeCard('What the Room has learned', b));
+  }
+
+  // 4. Threads the memory has not caught up with. `behind` is his messages the
+  // harvest has not read — thinking the app does not have yet.
+  const u = homeData.unharvested;
+  if (u) {
+    let b = '<div class="home-n' + (u.count ? '' : ' zero') + '">' + u.count + '</div>';
+    b += '<div class="home-sub">' + (u.count ? 'with turns the memory has not read' : 'every thread is absorbed') + '</div>';
+    b += homeRows(u.threads, (t) => '<div class="home-row"><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span><span class="n">' + t.behind + ' behind</span></div>');
+    if (u.count) b += '<button type="button" class="home-go" data-home-go="room">Open the Room →</button>';
+    cards.push(homeCard('Not yet remembered', b));
+  }
+
+  // 5. Walks kept through the ontology. Invisible everywhere else once set down.
+  const w = homeData.walks;
+  if (w) {
+    let b = w.length
+      ? homeRows(w, (m) => '<div class="home-row"><span class="t" title="' + qEscAttr(m.title || '') + '">' + qEsc(m.title || '(untitled)') + '</span><span class="n">' + m.steps + ' steps</span></div>')
+      : '<div class="home-empty">No walks kept yet.</div>';
+    cards.push(homeCard('Walks you kept', b));
+  }
+
+  host.innerHTML = cards.join('');
+  host.querySelectorAll('[data-home-go]').forEach((btn) => {
+    btn.onclick = () => goCoreDest(btn.getAttribute('data-home-go'));
+  });
+
+  // The rail badge counts only what is genuinely waiting — never the totals of the
+  // other cards, which would make a quiet day look busy.
+  const badge = document.getElementById('railCountHome');
+  if (badge) {
+    const total = (homeData.needsYou && homeData.needsYou.total) || 0;
+    badge.textContent = total ? String(total) : '';
+    badge.classList.toggle('on', total > 0);
+  }
 }
 
 // ---------- The room to think in (Core → Room) ----------

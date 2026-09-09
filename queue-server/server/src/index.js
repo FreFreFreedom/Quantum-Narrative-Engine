@@ -58,6 +58,8 @@ import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
 import { bindMindDb } from './services/mind.js';
+import { dashboardRoutes } from './routes/dashboard.js';
+import { bindDashboardDb } from './services/dashboard.js';
 import { killTextCalls, activeTextCallCount } from './services/textCallRegistry.js';
 import { errorHandler } from './lib/asyncHandler.js';
 import { localPreviewRoutes, fetchPreviewTaskTitle } from './routes/localPreview.js';
@@ -121,6 +123,7 @@ bindConversationsDb(db);
 bindPassagesDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
+bindDashboardDb(db);
 bindTagCommunitiesDb(db);
 
 // Recover the history of which world ideas were applied to which card. Free, no
@@ -381,6 +384,7 @@ app.use('/api/discovery', requireAuth, discoveryRoutes(db));
 app.use('/api/convos', requireAuth, conversationsRoutes());
 app.use('/api/passages', requireAuth, passagesRoutes());
 app.use('/api/mind', requireAuth, mindRoutes());
+app.use('/api/dashboard', requireAuth, dashboardRoutes());
 
 // Serve the single-file frontend app (fmcns_navigator.html, copied to
 // public/index.html) at the root address, so the whole app lives at one URL.

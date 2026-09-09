@@ -103,6 +103,14 @@ export function noteFiles(notes = []) {
 // run locally, it puts the files straight into the working tree.
 export function syncNoteMirror(db) {
   const notes = readNotes(db);
+  // An empty answer is never acted on. It is what a fresh throwaway database, a
+  // half-migrated one or the wrong environment also looks like, and the reconcile
+  // below would read it as "he deleted every note" and delete all six files. That
+  // is not hypothetical: booting this server locally against an empty DB_PATH wiped
+  // the notes mirror in the working tree twice on 2026-09-09, and the deletions were
+  // staged into a commit the first time. The runner has always had this guard
+  // (queue-runner.js#mirrorToRepo); the local write path never did.
+  if (!notes.length) return { notes: 0, removed: 0, skipped: 'empty' };
   const files = noteFiles(notes);
   mkdirSync(NOTES_DIR, { recursive: true });
 

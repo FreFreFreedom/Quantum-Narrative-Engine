@@ -175,7 +175,13 @@ export function renderMind(db) { return renderMindFrom(readFacts(db)); }
 // git here. Returns changed:false when there is nothing to do, which is what keeps
 // a harvest that found no new facts from producing an empty write.
 export function syncMindMirror(db) {
-  const files = mindFiles(readFacts(db));
+  const facts = readFacts(db);
+  // Same guard as noteMirror.js, for the same reason: an empty read is what a fresh
+  // throwaway database looks like, and overwriting a real mirror with "Nothing
+  // recorded yet" loses the paradigm. A memory that legitimately empties out is not
+  // a thing that happens — forgetFact deactivates one row at a time.
+  if (!facts.length) return { changed: false, skipped: 'empty' };
+  const files = mindFiles(facts);
   mkdirSync(MEMORY_DIR, { recursive: true });
   let changed = false;
   for (const f of files) {
