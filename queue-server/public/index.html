@@ -109,6 +109,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
   background:var(--c-success-tint); color:var(--c-accent); }
 .left.pinned .panel-pin:hover, .right.pinned .panel-pin:hover {
   background:var(--c-success-tint); color:var(--c-accent); }
+.details-close { color:var(--c-ink-4); }
+.details-close:hover { color:var(--c-danger); background:var(--c-surface-2); }
 /* The 44px face the collapsed panel leaves behind. Drawn at every width but only
    shown by the min-width:821px block, since below that the panel is an overlay
    with its own button in the graph toolbar. */
@@ -2276,6 +2278,7 @@ button:active { transform: translateY(1px) scale(.99); }
     <div class="right-inner">
       <div class="right-head">
         <button type="button" class="uicon panel-pin" id="detailsPin" aria-pressed="false" title="Keep the details open (or press \ )" aria-label="Keep the details open"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
+        <button type="button" class="uicon details-close" id="detailsClose" title="Close the details panel (or press Escape)" aria-label="Close the details panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-x"/></svg></button>
       </div>
       <div id="cardHost" data-src="Content navigator → entity detail card (books, tag-lens, edge explain) | fmcns_navigator.html: renderList() card html (~line 923), fetchBooks()/fetchTagLens()/fetchEdgeExplain() | backend: services/books.js, tagLens.js, tagPattern.js"><div class="empty">Click a node to inspect it.</div></div>
     </div>
@@ -7026,11 +7029,26 @@ function initDetailPanel() {
   // e.detail is 0 for keyboard activation, which must keep its place; a mouse click
   // has to let go, or the focus it leaves behind holds the panel open.
   if (pin) pin.onclick = (e) => { setPin(!right.classList.contains('pinned')); if (e.detail) pin.blur(); };
+  const closeBtn = document.getElementById('detailsClose');
+  if (closeBtn) closeBtn.onclick = (e) => { dismissDetails(); if (e.detail) closeBtn.blur(); };
   let on = false;
   try { on = localStorage.getItem(DETAILS_PIN_KEY) === '1'; } catch (e) {}
   applyDetailsPinned(on);
+  // Capturing phase: fire before the graph canvas handler so focus is blurred
+  // while the panel is still open (the graph handler calls dismissDetails() which
+  // closes the panel, making the contains() check fail in the bubbling phase).
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && right.contains(document.activeElement)) { document.activeElement.blur(); dismissDetails(); return; }
+    if (e.key === 'Escape' && (right.classList.contains('is-open') || right.classList.contains('open'))) {
+      if (right.contains(document.activeElement)) document.activeElement.blur();
+    }
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      // The graph canvas handler calls dismissDetails() for us; a second call on an
+      // already-closed panel is a no-op, so this is safe either way.
+      dismissDetails();
+      return;
+    }
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || '')) || e.target.isContentEditable;
     if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
     // '\' pins the details, after the rail's '[' and the filters' ']'.
