@@ -880,6 +880,41 @@ export function roomWorldLook(convoId) {
   });
 }
 
+// A length he asked for out loud is an order, not a hint (his ask, 2026-09-09:
+// "if I say I want a thousand words, they really give me the length I want").
+// Two separate things used to swallow it. The voice says "density, not brevity"
+// and "do not pad", which a model reads as permission to stop early; and the
+// output ceiling was a flat 4000 tokens, so anything past ~3000 words was cut
+// mid-sentence no matter what the prompt said. Both are handled below.
+//
+// Deterministic on purpose — a regex over his own words, no model call, no cost.
+// Digits and the spelled-out forms he actually says out loud ("a thousand words").
+const WORD_NUMBERS = { a: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, eight: 8, ten: 10 };
+const LENGTH_PATTERNS = [
+  /\b(\d{3,5})\s*(?:\+|or\s+more)?\s*(?:words|word|mots)\b/i,
+  /\b(a|one|two|three|four|five|six|eight|ten)\s+thousand\s+(?:words|mots)\b/i,
+  /\b(two|three|four|five|six|eight)\s+hundred\s+(?:words|mots)\b/i,
+];
+export function lengthRequest(text) {
+  const t = String(text || '');
+  for (const [i, re] of LENGTH_PATTERNS.entries()) {
+    const m = re.exec(t);
+    if (!m) continue;
+    const n = i === 0 ? Number(m[1]) : (WORD_NUMBERS[m[1].toLowerCase()] || 0) * (i === 1 ? 1000 : 100);
+    if (Number.isFinite(n) && n >= 100 && n <= 20000) return n;
+  }
+  return null;
+}
+
+// ~1.4 tokens per English word, then half again as headroom so the answer ends
+// where it means to rather than at the ceiling. Never below the standing 4000 —
+// this only ever raises the roof.
+export function turnMaxTokens(convoId, base = 4000) {
+  const words = lengthRequest(lastUserText(convoId));
+  if (!words) return base;
+  return Math.min(32000, Math.max(base, Math.round(words * 2.1)));
+}
+
 // One turn against the routed lane (AI Settings decides which; the Claude
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
@@ -887,6 +922,9 @@ export function roomWorldLook(convoId) {
 function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
+  // Only on a depth turn: the brief turn lands in a small card, where a
+  // 1000-word answer would be a bug rather than obedience.
+  const askedWords = depth ? lengthRequest(lastUserText(convo.id)) : null;
   // ORDER MATTERS, TWICE OVER, AND EACH HALF FIXES A REAL FAILURE. A later
   // innocent-looking reorder would undo one of them, so both reasons are written
   // down here.
@@ -932,6 +970,11 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
       : `\n=== WHAT TO DO NOW ===\n${brevity
           ? `Reply to the owner's last message. Nothing else.\n\nKeep it short: this lands in a small box inside a card, not on a page. A few sentences. No preamble, no restating the question back, no summary at the end. If the honest answer is one line, give one line.`
           : `Reply to the owner's last message.${depth && studioPersona() ? ' Use the voice and frame set out under HOW TO THINK above — that is the register, not a suggestion.' : ''} Judge the thing being discussed: is it real, what is it actually, is it worth his attention. Say so.\n\nNo preamble, no restating the question back, no closing summary. Start with the substance and give it the room it needs.`}`,
+    // DEAD LAST, after the voice and after the task, because the end of a long
+    // prompt is weighted most and this has to beat "density, not brevity".
+    askedWords
+      ? `\n=== LENGTH: HE ASKED FOR ${askedWords} WORDS ===\nThis is an instruction, not a suggestion, and it overrides every other line about length, density or brevity in this prompt. Write at least ${askedWords} words. Do not stop early, do not summarise, do not offer to continue, and never end with "let me know if you want more" — write the whole thing now.\n\nReach the length by going further into the material, never by padding: more of the idea, more cases, more of what follows from it, the objection taken seriously, the scene played out. Repeating yourself in new words, restating the question, or adding a recap is a failure, not length. If you genuinely run out of substance before ${askedWords} words, go deeper into what you already said rather than wider into filler.`
+      : '',
   ].filter(Boolean).join('\n');
 }
 
@@ -1030,7 +1073,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn) {
     // Neither is a budget constraint — an answer only costs what it actually
     // uses, so a high ceiling on a short answer costs nothing. This is headroom
     // for the times a question genuinely needs it, not a target.
-    maxTokens: 4000,
+    maxTokens: turnMaxTokens(convoId),
     allowLongOutput: true, timeoutMs: 150_000, onToken,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
@@ -1068,7 +1111,7 @@ async function runChatTurn(convoId, userId, turn) {
     provider: turn?.lane?.provider || null,
     account: turn?.lane?.account || null,
     tools: studioTools(), dispatchTool: studioDispatch,
-    maxTokens: 4000,
+    maxTokens: turnMaxTokens(convoId),
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
     cacheKey: convoId,
@@ -1094,7 +1137,7 @@ async function runCodeReadTurn(convoId, turn) {
   const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: false, repoFacts: turn?.repoFacts || null });
   const result = await generateText({
     prompt, feature: turn?.lane?.feature || 'studio', model: turn?.lane?.model || null,
-    maxTokens: 4000, label: 'conversations:chat-coderead', tailReminder: voiceTailReminder(),
+    maxTokens: turnMaxTokens(convoId), label: 'conversations:chat-coderead', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 180_000,
     // Read-only: it may check the code, never touch it. The runner answers on the
     // second account and falls back to main on its own (see ai/text.js#runAttempt).
@@ -1171,7 +1214,7 @@ async function runCheckTurn(convoId) {
     instruction: `The conversation above ends with an answer from another lane (${originalTag}). Re-examine it critically using the repo facts and your own judgement: point out anything wrong, overclaimed, missing, or unsafe — files it names that may not exist, suggestions that would break something, or anything it got backwards. If it is sound, say so plainly. Plain English, no jargon, no file names you have not been told exist.`,
   });
   const result = await generateTextStream({
-    prompt, feature: lane.feature, model: null, maxTokens: 4000,
+    prompt, feature: lane.feature, model: null, maxTokens: turnMaxTokens(convoId),
     label: 'conversations:check', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId,
   });
   if (result.error) return result;
@@ -1197,7 +1240,7 @@ async function runSecondTurn(convoId) {
 
   const prompt = buildTurnPrompt({ convo, ctx, brevity: false, tools: true });
   const result = await generateTextStream({
-    prompt, feature: lane.feature, model: null, maxTokens: 4000,
+    prompt, feature: lane.feature, model: null, maxTokens: turnMaxTokens(convoId),
     label: 'conversations:second', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000,
     tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId,
   });
