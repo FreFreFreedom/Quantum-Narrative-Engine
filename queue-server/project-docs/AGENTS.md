@@ -346,6 +346,18 @@ something.
 **Rare actions go behind one `⋯`; dangerous ones never sit beside common ones.**
 Delete was a pixel from Fork in a row of five icons.
 
+**An empty section is worse than no section.** Three headings each followed by a
+dashed box saying "Nothing running." was the entire Dispatch Queue panel whenever
+the queue was quiet — five things drawn to say one. Render a section only when it
+holds something and let one grey line cover the quiet case. The same goes for a
+control that restates the panel's own title: the button under "Dispatch Queue"
+does not need to say "Add to queue".
+
+**A binary that resets on repaint is a bug wearing a control's clothes.** The
+panel's placement segment rebuilt itself as "Last in line" on every re-render, so
+a choice made before typing quietly undid itself. Selection state that outlives a
+repaint has to live outside the markup.
+
 **A veil is a cost, not a decoration.** The Dispatch Queue panel dimmed the whole
 page behind it, and its own element picker then had to hide the panel *and* the
 veil to reach the page underneath — the modality it added was pure loss. Without
