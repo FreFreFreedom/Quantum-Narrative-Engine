@@ -442,7 +442,13 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    bar spans underneath and widens with the panel, because the original strip was
    built for a 46px bar the full width of the window and simply cannot fit a
    232px column. The full breakdown lives in AI Settings (.uq-panel below). */
-.rail-foot #usageStripHost { padding:4px 7px 2px; }
+/* The quota read-out is the only thing in the foot that is information rather than a
+   control, so it is the only thing allowed to go. Expanded, it runs to five rows and
+   about 230px, which is taller than the space the foot gets on a short window — so it
+   sits last and clips, and Pause, the server pick, AI Settings and Look are always
+   reachable. The full read-out is one click away in AI Settings, which holds all of it. */
+.rail-foot #usageStripHost { padding:4px 7px 2px; order:2; flex:0 1 auto; min-height:0; overflow:hidden; }
+.rail-foot > *:not(#usageStripHost) { order:1; flex:0 0 auto; }
 .rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:6px; }
 .rail-foot .usage-group { display:flex; flex-direction:column; gap:4px; }
 .rail-foot .usage-groupname { font-size:var(--fs-xs); font-weight:var(--fw-medium); text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); }
