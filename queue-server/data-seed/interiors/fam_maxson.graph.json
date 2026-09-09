@@ -32,6 +32,533 @@
   "continuationsFolded": "blocks 386-415, 422-424, 453, 459, 465-466, 472, 475, 478",
   "turnsFailedVerbatimCheck": 0,
   "turnsInWrongBlock": [],
+  "turns": [
+    {
+      "block": 355,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "ally",
+      "quote": "Hey, pop."
+    },
+    {
+      "block": 356,
+      "speaker": "t",
+      "cue": "C",
+      "stance": "opp",
+      "quote": "What you come\n\"hey, poppin'\" me for?"
+    },
+    {
+      "block": 357,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "ally",
+      "quote": "How you doing, rose?"
+    },
+    {
+      "block": 358,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "ally",
+      "quote": "Mr. bono, how you doing?"
+    },
+    {
+      "block": 360,
+      "speaker": "t",
+      "cue": "C",
+      "stance": "opp",
+      "quote": "He must've been doing all right."
+    },
+    {
+      "block": 361,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "I ain't seen him\naround here last week."
+    },
+    {
+      "block": 362,
+      "speaker": "r",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "Troy, leave your boy alone.\nHe come by to see you"
+    },
+    {
+      "block": 363,
+      "speaker": "r",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "and you want to start\nall that nonsense."
+    },
+    {
+      "block": 364,
+      "speaker": "t",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "I ain't bothering lyons.\nHere, get you a drink."
+    },
+    {
+      "block": 365,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "Me and him got an understanding."
+    },
+    {
+      "block": 366,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "I know why he come by to see\nme, and he know I know."
+    },
+    {
+      "block": 367,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "ally",
+      "quote": "Come on, pop. I just\nstopped by to say hi,"
+    },
+    {
+      "block": 368,
+      "speaker": "l",
+      "cue": "c",
+      "stance": "ally",
+      "quote": "see how you was doing."
+    },
+    {
+      "block": 370,
+      "speaker": "r",
+      "cue": "C",
+      "stance": "ally",
+      "quote": "I got some chicken\ncooking in the oven."
+    },
+    {
+      "block": 371,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "ally",
+      "quote": "No, rose, thanks. I just\nwas in the neighborhood"
+    },
+    {
+      "block": 372,
+      "speaker": "l",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "and thought I'd stop by\nfor a minute."
+    },
+    {
+      "block": 375,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "opp",
+      "quote": "You was in the neighborhood\n'cause it's my payday."
+    },
+    {
+      "block": 376,
+      "speaker": "l",
+      "cue": "E",
+      "stance": "neu",
+      "quote": "Well, hell, since you mentioned\nit, let me have $10."
+    },
+    {
+      "block": 377,
+      "speaker": "t",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "I'll be damned.\nI'll die and go to hell"
+    },
+    {
+      "block": 378,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "and play Blackjack with the\ndevil before I give you $10."
+    },
+    {
+      "block": 379,
+      "speaker": "l",
+      "cue": "C",
+      "stance": "neu",
+      "quote": "That's what I want to know\nabout, that devil you done seen."
+    },
+    {
+      "block": 380,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "ally",
+      "quote": "Pop done seen the devil?\nYou too much, pop."
+    },
+    {
+      "block": 382,
+      "speaker": "r",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "I told him that man ain't had\nnothing to do with the devil."
+    },
+    {
+      "block": 383,
+      "speaker": "r",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "Anything he can't understand,\nhe want to call it the devil."
+    },
+    {
+      "block": 384,
+      "speaker": "t",
+      "cue": "A",
+      "stance": "neu",
+      "quote": "Look here, bono. I go by\nhertzberger's to get some furniture."
+    },
+    {
+      "block": 385,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "You got three rooms for $298.\nThat what it say on the radio."
+    },
+    {
+      "block": 390,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "I got an empty house with\nsome raggedy furniture."
+    },
+    {
+      "block": 391,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "Cory ain't got no bed."
+    },
+    {
+      "block": 394,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "I come back here,\nrose'll tell you,"
+    },
+    {
+      "block": 416,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "That was 15 years ago."
+    },
+    {
+      "block": 417,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "To this day, first day of\nevery month, I send my $10,"
+    },
+    {
+      "block": 418,
+      "speaker": "t",
+      "cue": "A",
+      "stance": "neu",
+      "quote": "just like clockwork.\nRose'll tell you."
+    },
+    {
+      "block": 419,
+      "speaker": "r",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "Troy lying."
+    },
+    {
+      "block": 420,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "opp",
+      "quote": "I ain't never seen\nthat man since."
+    },
+    {
+      "block": 421,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "Now, you tell me, who else\nthat gonna be but the devil?"
+    },
+    {
+      "block": 426,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "15 years."
+    },
+    {
+      "block": 429,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "Oh, hell, I done paid for it."
+    },
+    {
+      "block": 430,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "I done paid for it\n10 times over."
+    },
+    {
+      "block": 431,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "Fact is,\nI'm scared to stop paying."
+    },
+    {
+      "block": 432,
+      "speaker": "r",
+      "cue": "C",
+      "stance": "opp",
+      "quote": "Troy lying. We got that\nfurniture from Mr. glickman."
+    },
+    {
+      "block": 433,
+      "speaker": "r",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "He ain't paying\nno $10 a month to nobody."
+    },
+    {
+      "block": 434,
+      "speaker": "t",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "Hell, woman, bono know\nI ain't that big a fool."
+    },
+    {
+      "block": 435,
+      "speaker": "b",
+      "cue": "C",
+      "stance": "ally",
+      "quote": "I was just getting ready to say,"
+    },
+    {
+      "block": 436,
+      "speaker": "b",
+      "cue": "c",
+      "stance": "ally",
+      "quote": "I know where\nthere's a bridge for sale."
+    },
+    {
+      "block": 441,
+      "speaker": "r",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "You walking around here saying you\ngonna make truck with the devil,"
+    },
+    {
+      "block": 442,
+      "speaker": "r",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "god's the one you're gonna\nhave to answer to."
+    },
+    {
+      "block": 443,
+      "speaker": "r",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "He's the one gonna\nbe at the judgment."
+    },
+    {
+      "block": 444,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "neu",
+      "quote": "Yeah, well, look here, pop,\nlet me have that $10."
+    },
+    {
+      "block": 445,
+      "speaker": "l",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "I'll give it back to you."
+    },
+    {
+      "block": 446,
+      "speaker": "l",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "Bonnie got a job\nworking at the hospital."
+    },
+    {
+      "block": 447,
+      "speaker": "t",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "Bono, what did I tell you?"
+    },
+    {
+      "block": 448,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "Only time I see this nigger\nis when he want something."
+    },
+    {
+      "block": 449,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "That's the only time I see him."
+    },
+    {
+      "block": 450,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "Come on, pop, Mr. bono don't\nwant to hear all that."
+    },
+    {
+      "block": 451,
+      "speaker": "l",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "Let me have the $10.\nI told you, Bonnie's working!"
+    },
+    {
+      "block": 452,
+      "speaker": "t",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "What that mean to me\nif Bonnie's working?"
+    },
+    {
+      "block": 454,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "Talking about Bonnie working.\nWhy ain't you working?"
+    },
+    {
+      "block": 455,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "Ah, pop, you know I can't\nfind no decent job."
+    },
+    {
+      "block": 456,
+      "speaker": "l",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "Where am I gonna get a job at?\nYou know I can't get no job."
+    },
+    {
+      "block": 457,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "opp",
+      "quote": "I told you, I know\nsome people down there."
+    },
+    {
+      "block": 458,
+      "speaker": "t",
+      "cue": "B",
+      "stance": "neu",
+      "quote": "I can get you on the rubbish\nif you want to work."
+    },
+    {
+      "block": 460,
+      "speaker": "l",
+      "cue": "A",
+      "stance": "opp",
+      "quote": "No, pop, thanks,\nthat ain't for me."
+    },
+    {
+      "block": 461,
+      "speaker": "l",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "I don't want to be carrying\nnobody's rubbish."
+    },
+    {
+      "block": 462,
+      "speaker": "l",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "I don't want to be punching\nnobody's time clock."
+    },
+    {
+      "block": 463,
+      "speaker": "t",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "What's the matter? You too good\nto carry people's rubbish?"
+    },
+    {
+      "block": 464,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "Where you think that $10 you\ntalking about comes from?"
+    },
+    {
+      "block": 467,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "You're too lazy to work"
+    },
+    {
+      "block": 468,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "and want to know why you\nain't got what I got."
+    },
+    {
+      "block": 470,
+      "speaker": "l",
+      "cue": "E",
+      "stance": "neu",
+      "quote": "She down at passavant,\nworking in the laundry."
+    },
+    {
+      "block": 471,
+      "speaker": "t",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "I ain't got nothing as it is.\nI give you $10,"
+    },
+    {
+      "block": 473,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "No, you ain't\ngetting no $10 over here."
+    },
+    {
+      "block": 474,
+      "speaker": "r",
+      "cue": "E",
+      "stance": "opp",
+      "quote": "You ain't got to\nbe eating no beans."
+    },
+    {
+      "block": 476,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "opp",
+      "quote": "I ain't got no extra money!"
+    },
+    {
+      "block": 477,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "Gabe done moved out,"
+    },
+    {
+      "block": 479,
+      "speaker": "t",
+      "cue": "c",
+      "stance": "neu",
+      "quote": "Things done got\ntight around here."
+    }
+  ],
   "graph": {
     "nodes": [
       "b",

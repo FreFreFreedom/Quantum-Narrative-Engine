@@ -2,10 +2,18 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-09 |
+| **DONE** | 2026-09-09 |
 
-**Not a green light.** Written because Antoine asked what stands between the civic build and
-this. Do not start it unless he asks for it by name.
+Antoine gave the green light the same day it was written and all three parts shipped.
+Two things worth carrying forward, both found while building rather than while planning:
+
+- **`entity_relations` already existed in production**, so the new `moment` column needed an
+  additive `ALTER TABLE` in try/catch — `CREATE TABLE IF NOT EXISTS` adds no column to a table
+  that is already there. Proved against a table built in the old shape, with a row in it.
+- **The first version of the Mirror polled for a Room thread and gave up after five seconds.**
+  On a Room with no threads yet, the question vanished with nothing said — the worst possible
+  failure for a control whose only job is to ask something. It now creates the thread, and says
+  so in the Room's own notice line if it cannot.
 
 ---
 

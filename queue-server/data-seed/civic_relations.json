@@ -1,5 +1,5 @@
 {
- "_readme": "The first stored relations in this app — plans/civic-structures-and-loops.md Stage 4. Every one was written by hand from a named source and carries what would break it; none is generated, and nothing here may be added without both. `shape` is an opaque handle for the anatomy two entities share: it is for the matcher, never for a reader to draw meaning from, so it is a code and not a phrase (fractal_operational_core.md section 18). A vertical relation crosses exactly one rung and asserts a real path; a jump asserts structural kinship and no path at all. The seeder refuses anything that breaks either rule, which is why these were written against the ladder rather than against intuition.",
+ "_readme": "The first stored relations in this app — plans/civic-structures-and-loops.md Stage 4. Every one was written by hand from a named source and carries what would break it; none is generated, and nothing here may be added without both. `shape` is an opaque handle for the anatomy two entities share: it is for the matcher, never for a reader to draw meaning from, so it is a code and not a phrase (fractal_operational_core.md section 18). A vertical relation crosses exactly one rung and asserts a real path; a jump asserts structural kinship and no path at all. The seeder refuses anything that breaks either rule, which is why these were written against the ladder rather than against intuition. A relation may carry a `moment` — \"<entityId>#<fromBlock>-<toBlock>\" — pointing at the verified turns an anatomy run wrote to data-seed/interiors/. Every line reachable that way already passed a byte-for-byte check against the source file, which is why the Narrative Mirror cannot be handed an invented quote. Most relations have none, and that is normal: a claim about structure is not a claim about one moment.",
  "shapes": {
   "sh_exile_to_hold": "The group pushes one of its own outside the boundary in order to keep the rest coherent.",
   "sh_load_down": "A decision taken at one rung is paid for at a lower one, by whoever cannot refuse it.",
@@ -49,7 +49,8 @@
    "note": "The department draws its boundary by who drives; Troy draws his by who is inside the yard. The anatomy run on the household found the camp line falling between {Troy, Bono} and {Lyons, Rose} — Troy's ally is his workmate, not his kin. Same miscut, two rungs, and no traced path between them, which is why this is a jump and not a descent.",
    "source_kind": "witness",
    "source_ref": "plans/civic-structures-first-anatomy-findings.md — signed graph, balanced, frustration 0",
-   "falsifier": "A scene in which Troy's alliances follow the household rather than the crew would break this."
+   "falsifier": "A scene in which Troy's alliances follow the household rather than the crew would break this.",
+   "moment": "fam_maxson#355-479"
   },
   {
    "from_id": "inst_nypd_manhattan_north",
@@ -147,7 +148,8 @@
    "note": "What the crew taught Troy about who is inside arrives at the dinner table as who is inside there. This is the step that finishes the path from the department to the household without skipping a rung.",
    "source_kind": "witness",
    "source_ref": "Fences; plans/civic-structures-first-anatomy-findings.md",
-   "falsifier": "Troy holding a different boundary at home than at work would break this."
+   "falsifier": "Troy holding a different boundary at home than at work would break this.",
+   "moment": "fam_maxson#355-479"
   },
   {
    "from_id": "fam_maxson",
@@ -158,7 +160,8 @@
    "note": "And it returns: with the household emptied of his son, the crew is the only structure left holding him, which is what makes the miscut permanent. This closes the Pittsburgh circuit.",
    "source_kind": "witness",
    "source_ref": "Fences — the final act",
-   "falsifier": "Troy rebuilding a household tie after Cory leaves would break the closure."
+   "falsifier": "Troy rebuilding a household tie after Cory leaves would break the closure.",
+   "moment": "fam_maxson#355-479"
   }
  ]
 }

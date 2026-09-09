@@ -310,6 +310,12 @@ function main() {
       turnsAttributed: passed.length,
       turnsDroppedUnattributable: DROPPED_BLOCKS.length,
       turnsFailedVerbatimCheck: failures.length,
+      // The verified turns, written out rather than discarded — every quote here already
+      // passed the verbatim check against the .srt on disk. Added 2026-09-09 for the
+      // Narrative Mirror (plans/narrative-mirror.md Part 2); nothing about the
+      // attribution, the gap threshold or the blurs is changed, and this run still
+      // reproduces plans/entity-interior-first-findings.md exactly.
+      turns: passed.map((t) => ({ block: t.block, speaker: t.speaker, quote: t.text })),
       graph: adjacencyToJSON(adjacency),
       basePartition,
       blurA: { minWeight: 2, graph: adjacencyToJSON(blurA), partition: blurAPartition },

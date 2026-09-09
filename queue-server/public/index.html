@@ -219,6 +219,9 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rel-mark { flex-shrink:0; color:var(--c-ink-4); width:12px; text-align:center; }
 .rel-body { flex:1; }
 .rel-when { font-variant-numeric:tabular-nums; color:var(--c-ink-4); }
+.rel-mirror { border:none; background:none; cursor:pointer; padding:0 2px; font-size:11px;
+  color:var(--c-ink-4); flex-shrink:0; line-height:1; }
+.rel-mirror:hover { color:var(--c-accent); }
 .rel-loop { font-size:11px; padding:5px 8px; margin-bottom:4px; border-radius:6px;
   background:var(--c-surface-2); border:1px solid var(--c-border); }
 /* The trail: a walk in progress, and the walks that were kept. Chips rather than rows —
@@ -3723,10 +3726,104 @@ function relationLineHtml(r, selfId) {
   const mark = r.move === 'vertical' ? (r.direction === 'down' ? '↓' : '↑') : (MOVE_MARK[r.move] || '·');
   const tip = [r.note, r.source_ref && 'Source: ' + r.source_ref, r.falsifier && 'Breaks if: ' + r.falsifier]
     .filter(Boolean).join('\n\n');
+  // The Mirror sits on the row rather than in a panel of its own: it is per-relation and
+  // used rarely, so it earns an affordance on the thing it acts on and no permanent chrome.
+  // A relation with a scene on file says so with a filled marker; one without is still
+  // askable, and the question tells the Room to name the absence instead of writing one.
   return `<div class="conn rel" data-goto="${otherId}" title="${qEsc(tip)}">
     <span class="rel-mark">${mark}</span>
     <span class="rel-body">${qEsc(otherName || otherId)}${r.at ? ` <span class="rel-when">${qEsc(r.at)}</span>` : ''}</span>
+    <button class="rel-mirror" data-mirror="${r.id}" title="${r.moment ? 'Open this onto the scene it costs' : 'Ask what this costs — no scene is on file for it'}" aria-label="Open the Narrative Mirror on this relation">${r.moment ? '◉' : '◎'}</button>
   </div>`;
+}
+
+// ---------- The Narrative Mirror ----------
+// A traced relation is a structural claim. This opens it onto the human scene it costs —
+// the deposition, the film scene, the line somebody actually said — so the analytic never
+// closes without witness. It is a question put to the Room, not a new engine: the server
+// composes everything known about the relation (both entities, their postures, their
+// mapped interiors, and the verified lines behind the claim) and the Room answers.
+//
+// Two things are written into the question because the paradigm requires them and a model
+// left to itself will drop both:
+//   • THE DOUBLE READING. A macro shadow is sustained by distributed participation AND by
+//     specific actors making specific amplifying choices. An answer carrying only one is a
+//     bug — naïve blame, or diluted absolution (fractal_operational_core.md §8).
+//   • WHOSE TESTIMONY IT IS. What an entity says of itself and what was observed of it are
+//     different evidence, and the gap between them is the measurable blind spot (§10).
+//
+// Every quote it can reach has already passed a byte-for-byte check against a real source
+// file, so the scene cannot be invented — but the model can still be asked for one that
+// does not exist, which is why the question says to name the absence instead.
+async function openMirror(relId) {
+  let d;
+  try { d = await api('/api/ontology/relations/' + encodeURIComponent(relId) + '/mirror'); }
+  catch (e) { console.error('mirror fetch failed:', e); return; }
+  const r = d.relation || {};
+  const side = (s) => s ? `${s.name} (${rungLabel(s) || s.type})${s.note ? ' — ' + s.note : ''}` : '(unknown)';
+  const lines = [];
+  lines.push(`Open this traced relation onto the human scene it costs.`);
+  lines.push('');
+  lines.push(`FROM: ${side(d.from)}`);
+  lines.push(`TO:   ${side(d.to)}`);
+  lines.push(`MOVE: ${r.move}${r.direction ? ' (' + r.direction + ')' : ''}${r.at ? ' · ' + r.at : ''}`);
+  if (r.note) lines.push(`CLAIM: ${r.note}`);
+  lines.push(`SOURCE (${r.source_kind === 'self' ? 'self-testimony' : 'witness-testimony'}): ${r.source_ref}`);
+  lines.push(`WOULD BE BROKEN BY: ${r.falsifier}`);
+  for (const s of [d.from, d.to]) {
+    if (s && s.postures && s.postures.length) {
+      lines.push(`POSTURES HELD BY ${s.name}: ` + s.postures.map(p => `${p.name} (${p.since}${p.until ? '–' + p.until : ' →'})`).join('; '));
+    }
+    if (s && s.anatomy) {
+      const a = s.anatomy;
+      lines.push(`MAPPED INTERIOR OF ${s.name}: ${a.nodes.length} parts, ${a.balanced ? 'splits cleanly into two camps' : 'does not split cleanly'}, frustration ${a.frustration}.`);
+    }
+  }
+  if (d.loops && d.loops.length) {
+    lines.push(`LOOPS THIS SITS IN: ` + d.loops.map(l => l.span.join(' → ')).join('; '));
+  }
+  if (d.scene && d.scene.turns && d.scene.turns.length) {
+    lines.push('');
+    lines.push(`THE SCENE — ${d.scene.scope}. These lines are verified verbatim against ${d.scene.source}; quote from them and nowhere else:`);
+    for (const t of d.scene.turns) lines.push(`  ${t.speaker}: ${t.quote.replace(/\n/g, ' ')}`);
+  } else {
+    lines.push('');
+    lines.push(`THERE IS NO SCENE ON FILE for this relation. Say so plainly. Do not write one.`);
+  }
+  lines.push('');
+  lines.push(`Show me what this costs at the scale where it is felt. Quote only lines given above, and if none were, say the corpus holds no scene for this yet.`);
+  lines.push(`Hold both readings at once: the pattern is sustained by many people's ordinary participation, AND specific actors made specific amplifying choices. An answer that gives only one is wrong in a way that matters — one absolves everybody, the other blames one person for a structure.`);
+  lines.push(`Say whether the evidence is the entity's own account of itself or somebody else's account of it, and if both exist, what the gap between them shows.`);
+
+  const text = lines.join('\n');
+  goCoreDest('room');
+  // A first version polled for a thread to appear and gave up after five seconds. On a
+  // Room with no threads yet that meant the question vanished with nothing said — the
+  // worst possible failure for a control whose whole job is to ask something. Make the
+  // thread instead of waiting for one, and if that cannot be done, say so where the Room
+  // already says such things rather than only in the console.
+  const t = roomThreads.find((x) => x.id === roomSel) || (await ensureRoomThread());
+  if (!t || !window.studioLend) {
+    roomThreadsNote = 'Could not open a thread for the Mirror.';
+    renderRoomThreads();
+    return;
+  }
+  const e = window.studioLend.entry('open', t.subject_id);
+  window.studioLend.send(e, text, renderRoomConvo, () => loadRoom());
+}
+
+// The selected thread, creating one if the Room has none. Returns null only if the
+// creation itself failed, which the caller must surface rather than swallow.
+async function ensureRoomThread() {
+  const have = roomThreads.find((x) => x.id === roomSel);
+  if (have) return have;
+  try {
+    const out = await apiWrite('/api/convos/open', 'POST', {});
+    const id = out && out.convo ? out.convo.id : null;
+    await loadRoom();
+    if (id) roomSelect(id);
+  } catch (err) { console.error('could not open a Room thread:', err); return null; }
+  return roomThreads.find((x) => x.id === roomSel) || null;
 }
 
 async function loadRelations(id) {
@@ -3757,7 +3854,15 @@ async function loadRelations(id) {
   host.innerHTML = html;
   // These rows arrive after selectEntity has already wired every .conn on the card, so
   // they wire their own or they are dead links.
-  host.querySelectorAll('.conn').forEach(el => { el.onclick = () => selectEntity(el.getAttribute('data-goto')); });
+  host.querySelectorAll('.conn').forEach(el => {
+    el.onclick = (ev) => {
+      if (ev.target.hasAttribute('data-mirror')) return; // the Mirror button is not a jump
+      selectEntity(el.getAttribute('data-goto'));
+    };
+  });
+  host.querySelectorAll('[data-mirror]').forEach(el => {
+    el.onclick = (ev) => { ev.stopPropagation(); openMirror(el.getAttribute('data-mirror')); };
+  });
 }
 
 // A posture is what an institution freezes into when it stops looking and writes a rule

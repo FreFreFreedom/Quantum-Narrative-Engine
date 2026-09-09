@@ -186,8 +186,8 @@ function seedCivicRelations(db) {
       WHERE from_id=? AND to_id=? AND move=? AND COALESCE(at,'')=COALESCE(?,'') AND deleted_at IS NULL
     `).get(r.from_id, r.to_id, r.move, r.at || null);
     if (existing) {
-      db.prepare(`UPDATE entity_relations SET shape=?, note=?, source_kind=?, source_ref=?, falsifier=? WHERE id=?`)
-        .run(r.shape || null, r.note || null, r.source_kind || 'witness', r.source_ref, r.falsifier, existing.id);
+      db.prepare(`UPDATE entity_relations SET shape=?, note=?, moment=?, source_kind=?, source_ref=?, falsifier=? WHERE id=?`)
+        .run(r.shape || null, r.note || null, r.moment || null, r.source_kind || 'witness', r.source_ref, r.falsifier, existing.id);
     } else {
       createRelation(db, { ...r, created_by: 'seed' });
     }

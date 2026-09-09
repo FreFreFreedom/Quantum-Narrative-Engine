@@ -405,6 +405,12 @@ function main() {
     continuationsFolded: FOLDED_CONTINUATIONS,
     turnsFailedVerbatimCheck: failures.length,
     turnsInWrongBlock: wrongBlock,
+    // The verified turns, written out rather than discarded. Every quote below already
+    // passed both mechanical checks — it appears in the .srt on disk, in the block it
+    // claims — so this is the one place in the project where a structural claim can be
+    // taken back to the line that produced it. Added 2026-09-09 for the Narrative Mirror
+    // (plans/narrative-mirror.md Part 2); the analysis above is untouched.
+    turns: passed.map((t) => ({ block: t.block, speaker: t.speaker, cue: t.cue, stance: t.stance, quote: t.text })),
     graph,
     basePartition,
     structuralBalance: balance,

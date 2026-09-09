@@ -20,6 +20,10 @@
 // see the row caps below and toolResultCap in the callers.
 
 import * as q from './ontologyQuery.js';
+import * as rel from './entityRelations.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getComponents } from './architecture.js';
 import { listNodes } from './architectureNodes.js';
 import { listKnowledgeDocs, readKnowledgeDoc } from './knowledgeDocs.js';
@@ -28,11 +32,16 @@ import { recallFacts } from './mind.js';
 export const STUDIO_TOOLS = [
   {
     name: 'search_entities',
-    description: 'Search/filter the project\'s entities (characters, films, countries) by type, cluster, tag, name substring, or grounded status.',
+    description: 'Search/filter the project\'s entities by type, cluster, tag, name substring, or grounded status. Entity types include characters, films, countries, and — from the civic/justice corpus — institutions, families, cities and groups. A film is a MEDIUM (a record carrying testimony), not a thing that sits on the scale ladder; the institutions, families and cities it testifies about are the entities.',
     input_schema: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['character', 'film', 'country'] },
+        // Deliberately NOT an enum. It was ['character','film','country'] and that went
+        // stale the moment institutions, families, cities and groups arrived — the Room
+        // could not name them, so 35 entities were unreachable through this tool while
+        // being perfectly visible in the app. The live list is in the tool's description,
+        // built from the facets at call time; a free string cannot go stale the same way.
+        type: { type: 'string', description: 'Entity type. Call with no arguments first if unsure — the result names every type in use.' },
         cluster: { type: 'string', description: 'Cluster code, e.g. "I" or "II"' },
         tag: { type: 'string' },
         name: { type: 'string', description: 'Substring match on entity name' },
@@ -129,6 +138,30 @@ export const STUDIO_TOOLS = [
       required: ['query'],
     },
   },
+  // ─── The civic corpus: relations, loops, anatomies ───────────────────────
+  // Everything above answers "what is in the corpus". These four answer "what has been
+  // traced through it", which is a different kind of fact: a computed echo is a
+  // resemblance the app noticed, a stored relation is a claim someone is answerable for.
+  {
+    name: 'get_relations',
+    description: "Stored relations touching one entity — claims somebody made and wrote down, unlike the computed echoes in the graph. Each carries its move (vertical = a real path crossing exactly one rung of the scale ladder; horizontal = peers on the same rung; jump = structural kinship with no path traced), its direction and date, the source it came from, and a FALSIFIER: what observation would break the claim. Quote the falsifier when reporting one — it is what separates a claim that can lose from an assertion.",
+    input_schema: { type: 'object', properties: { entity_id: { type: 'string' } }, required: ['entity_id'] },
+  },
+  {
+    name: 'find_loops',
+    description: "Loops: chains of vertical relations that leave a rung and return to it with time moving forward — a rule descending to the people it lands on, and their fracture returning as pressure for the next rule. `entity_id` means loops the entity PARTICIPATES IN, not loops that start at it; omit it for every loop in the corpus. A loop is a query over relations, never a stored object.",
+    input_schema: { type: 'object', properties: { entity_id: { type: 'string' } } },
+  },
+  {
+    name: 'shape_audit',
+    description: "Which anatomies have been traced at which rungs of the scale ladder, as a grid of counts. THE EMPTY CELLS ARE THE POINT: a rung where a shape is certain to be operating and nobody has looked yet. Report the gaps before the coverage.",
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_anatomy',
+    description: "One entity's interior, where it has been mapped: who interacts with whom inside it, how heavily, and whether each relation is opposition or alliance — plus whether the signed network is BALANCED (splits cleanly into two camps) and its FRUSTRATION (how many relations must break for the split to be clean). Parts are opaque codes with a separate name map; the structure is the evidence, the names are only for reading it out. Very few entities have one.",
+    input_schema: { type: 'object', properties: { entity_id: { type: 'string' } }, required: ['entity_id'] },
+  },
 ];
 
 // Row caps. Each of these results is re-sent with every subsequent round, so a
@@ -144,6 +177,19 @@ const DOC_SLICE_CAP = 24000;
 // already ordered that way).
 const CLUSTER_CAP = 40;
 const CLUSTER_TAG_EXAMPLES = 4;
+// The civic tools. Relations and loops are few today (14 and 2) and will not stay few;
+// an anatomy is small per entity but every edge carries a sign tally, so it is capped by
+// edges rather than by entities.
+const RELATION_CAP = 40;
+const LOOP_CAP = 20;
+const ANATOMY_EDGE_CAP = 120;
+const INTERIORS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../../data-seed/interiors');
+
+function readNames(entityId) {
+  const f = resolve(INTERIORS_DIR, entityId + '.names.json');
+  if (!f.startsWith(INTERIORS_DIR) || !existsSync(f)) return null;
+  try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return null; }
+}
 
 export function dispatchStudioTool(db, name, input) {
   const args = input || {};
@@ -225,6 +271,75 @@ export function dispatchStudioTool(db, name, input) {
         ...r, summary: r.summary ? String(r.summary).slice(0, 220) : null,
       }));
     }
+    case 'get_relations': {
+      const rows = rel.relationsFor(db, args.entity_id) || [];
+      return {
+        total: rows.length,
+        showing: Math.min(rows.length, RELATION_CAP),
+        relations: rows.slice(0, RELATION_CAP).map((r) => ({
+          other: r.role === 'from' ? r.to_name : r.from_name,
+          other_id: r.role === 'from' ? r.to_id : r.from_id,
+          other_rung: r.role === 'from' ? r.to_scale : r.from_scale,
+          move: r.move,
+          direction: r.direction,
+          at: r.at,
+          note: r.note,
+          source_kind: r.source_kind,
+          source: r.source_ref,
+          falsifier: r.falsifier,
+        })),
+      };
+    }
+    case 'find_loops': {
+      const loops = rel.findLoops(db, { entityId: args.entity_id || undefined }) || [];
+      const name = (id) => {
+        const row = db.prepare(`SELECT name FROM entities WHERE id=?`).get(id);
+        return row ? row.name : id;
+      };
+      return {
+        total: loops.length,
+        showing: Math.min(loops.length, LOOP_CAP),
+        loops: loops.slice(0, LOOP_CAP).map((l) => ({
+          starts_at: name(l.entity),
+          path: l.steps.map((st) => name(st.to)),
+          span: l.span,
+          dated_steps: l.datedSteps,
+        })),
+      };
+    }
+    case 'shape_audit':
+      return rel.shapeByRungAudit(db);
+    case 'get_anatomy': {
+      // Read from the interiors written by the anatomy runs. Ids come from the corpus, so
+      // they are not arbitrary strings — but this reads a path built from one, so anything
+      // that could climb out of the directory is refused rather than sanitised.
+      const id = String(args.entity_id || '');
+      if (!/^[a-z0-9_]+$/i.test(id)) return { error: 'bad_entity_id' };
+      const file = resolve(INTERIORS_DIR, id + '.graph.json');
+      if (!file.startsWith(INTERIORS_DIR) || !existsSync(file)) {
+        return { error: 'no_anatomy', message: 'This entity has no mapped interior. Very few do — say so rather than inferring one.' };
+      }
+      let doc;
+      try { doc = JSON.parse(readFileSync(file, 'utf8')); } catch { return { error: 'unreadable_anatomy' }; }
+      const b = doc.structuralBalance || {};
+      return {
+        entity: doc.entity,
+        source: doc.source,
+        scope: doc.scope,
+        turns_attributed: doc.turnsAttributed,
+        nodes: doc.graph?.nodes || [],
+        edges: (doc.graph?.edges || []).slice(0, ANATOMY_EDGE_CAP),
+        partition: doc.basePartition,
+        balanced: b.balanced,
+        frustration: b.frustration,
+        camps: b.bestSplit,
+        // The map out of codes into names. It is an exit for a human reading the answer —
+        // never something to compare on, because a name has no interior to compare
+        // (fractal_operational_core.md, the nameless interior).
+        names: readNames(id),
+        blur_survives: doc.blurB?.partition,
+      };
+    }
     case 'recall_memory': {
       const query = String(args.query || '').trim();
       if (!query) return { error: 'query_required' };
@@ -244,5 +359,9 @@ export const TOOLS_PROMPT_BLOCK = `You have read-only lookup tools and you shoul
 The project's content — search its entities (characters, films, countries are one kind of object at different scales), open one in full with its tags and continuum scores, list the 12 hand-defined film clusters, list the Integration Continuum axes, find what else scores near a given value on an axis, and list or read the reference documents in full (the ontology doc, the films master list, the source archive, and every note saved out of an earlier conversation). Separately, there are theme clusters — communities of tags computed from which entities actually share them, a different thing from the film clusters above: list them as a bounded summary, or give one tag to get its full cluster, sibling tags and the entities carrying them.
 
 The app itself — list the pieces it is built from and where each stands, read the tech tree of what it could become, and list recent work in its queue.
+
+What has been traced through the corpus — a separate kind of fact from what is in it. Entities sit on an ordered scale ladder (cell, individual, family, group, institution, city, nation, civilisation, planetary, cosmos); a film is a MEDIUM carrying testimony and sits on no rung, while the institutions, families and cities it testifies about are the entities. A policy is not a thing of its own: it is a dated POSTURE an institution holds, in that entity's detail. Beyond the computed echoes there are STORED RELATIONS — claims somebody made, each with a source and a falsifier — and LOOPS, which are chains of those that leave a rung and return to it with time moving forward. A few entities have a mapped INTERIOR: who interacts with whom inside them, signed opposition or alliance, and whether that splits cleanly into two camps. Ask the shape audit which rungs have never been looked at; the empty cells are the useful part.
+
+When you report a stored relation, quote its falsifier — the claim is only worth as much as the thing that could break it. When you report an interior, the parts are codes with a separate name map: the structure is the evidence and the names are only for reading it out.
 
 Call a tool for anything specific rather than inferring it from this prompt. Never claim you looked something up when you did not.`;

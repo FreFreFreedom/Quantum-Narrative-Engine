@@ -8,6 +8,17 @@ import { makeBookDetailHandler } from '../services/bookDetail.js';
 import { enrichFilm, enrichAllFilms, listEnrichments, batchStatus } from '../services/filmEnrichment.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
+// Two ends can be in the same loop; report it once.
+function dedupeLoops(loops) {
+  const seen = new Set();
+  return loops.filter((l) => {
+    const k = l.steps.map((s) => s.id).sort().join('|');
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 export function ontologyRoutes(db) {
   const router = Router();
   const getBooks = makeBooksHandler(db);
@@ -65,6 +76,41 @@ export function ontologyRoutes(db) {
 
   router.delete('/relations/:relId', (req, res) => {
     res.json({ deleted: rel.deleteRelation(db, req.params.relId) });
+  });
+
+  // Everything the Narrative Mirror needs about one relation, composed here so the client
+  // makes one call instead of four and cannot assemble a half-set: both entities with
+  // their rungs and postures, the mapped interiors on either side if any, and the scene —
+  // the verified lines behind the claim. Every quote returned has already passed a
+  // byte-for-byte check against its source file, which is why nothing here can hand the
+  // Room an invented line.
+  router.get('/relations/:relId/mirror', (req, res) => {
+    const r = rel.getRelation(db, req.params.relId);
+    if (!r) return res.status(404).json({ error: 'not_found' });
+    const side = (id) => {
+      const e = q.getEntity(db, id);
+      if (!e) return null;
+      return {
+        id: e.id, name: e.name, type: e.type, scale: e.scale,
+        note: e.meta?.note || null,
+        postures: e.meta?.postures || [],
+        testimony: e.meta?.testimony || [],
+        anatomy: rel.anatomyFor(e.id),
+      };
+    };
+    res.json({
+      relation: r,
+      from: side(r.from_id),
+      to: side(r.to_id),
+      scene: r.moment ? rel.resolveMoment(r.moment) : null,
+      // Loops either END sits in, not just the `from` one. Looking only at `from` was the
+      // first version and it reported none for a relation whose other end was in a
+      // circuit — which is precisely the case a reader is most likely to be looking at.
+      loops: dedupeLoops([
+        ...rel.findLoops(db, { entityId: r.from_id }),
+        ...rel.findLoops(db, { entityId: r.to_id }),
+      ]),
+    });
   });
 
   // A loop is a query, never a row: vertical relations that leave a rung and come back to

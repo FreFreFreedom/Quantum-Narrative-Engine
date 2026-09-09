@@ -866,6 +866,12 @@ export function initOntologySchema(db) {
       direction TEXT,
       at TEXT,
       note TEXT,
+      -- Where this claim can be taken back to an actual line, when it can. Format
+      -- "<entityId>#<fromBlock>-<toBlock>", resolved against the verified turns the
+      -- anatomy runs write into data-seed/interiors/. Nullable and usually null: most
+      -- relations are claims about structure, not about one moment, and a relation
+      -- without a scene must stay perfectly renderable.
+      moment TEXT,
       source_kind TEXT NOT NULL DEFAULT 'witness',
       source_ref TEXT,
       falsifier TEXT,
@@ -874,6 +880,11 @@ export function initOntologySchema(db) {
       deleted_at TEXT
     )
   `);
+  // `moment` was added 2026-09-09, after entity_relations already existed in production —
+  // and CREATE TABLE IF NOT EXISTS does not add a column to a table that is already there.
+  // Additive ALTER wrapped in try/catch, the pattern this file uses throughout: it throws
+  // harmlessly on every boot after the first.
+  try { db.exec(`ALTER TABLE entity_relations ADD COLUMN moment TEXT`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_from ON entity_relations(from_id, deleted_at)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_to ON entity_relations(to_id, deleted_at)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_shape ON entity_relations(shape, deleted_at)`); } catch {}

@@ -28,6 +28,9 @@
 // below is that query, nothing more.
 
 import { randomUUID } from 'node:crypto';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { rungOf, rungDirection, SCALE_LADDER } from './scaleLadder.js';
 
 export const MOVES = ['vertical', 'horizontal', 'jump'];
@@ -79,7 +82,7 @@ export function createRelation(db, input) {
   const problem = validateRelation(db, input);
   if (problem) { const e = new Error(problem); e.status = 400; throw e; }
 
-  const { from_id, to_id, move, shape = null, at = null, note = null,
+  const { from_id, to_id, move, shape = null, at = null, note = null, moment = null,
     source_kind = 'witness', source_ref, falsifier, created_by = 'antoine' } = input;
 
   // Direction is derived, never taken from the caller: it is a fact about the two rungs,
@@ -88,9 +91,9 @@ export function createRelation(db, input) {
 
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO entity_relations (id, from_id, to_id, move, shape, direction, at, note, source_kind, source_ref, falsifier, created_by)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-  `).run(id, from_id, to_id, move, shape, direction, at, note, source_kind, source_ref, falsifier, created_by);
+    INSERT INTO entity_relations (id, from_id, to_id, move, shape, direction, at, note, moment, source_kind, source_ref, falsifier, created_by)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(id, from_id, to_id, move, shape, direction, at, note, moment, source_kind, source_ref, falsifier, created_by);
   return getRelation(db, id);
 }
 
@@ -247,6 +250,65 @@ export function shapeByRungAudit(db) {
       }),
     })),
   };
+}
+
+// ─── Moments ─────────────────────────────────────────────────────────────────
+// A relation's path back to the lines that produced it. The Narrative Mirror exists so
+// that no structural claim closes without the scene it costs, and this is the only route
+// from one to the other.
+//
+// It reads the verified turns the anatomy runs write to data-seed/interiors/. That matters
+// more than it looks: every line returned here already passed a byte-for-byte check
+// against the source file on disk, so the Mirror cannot be handed an invented quote even
+// if everything upstream of it went wrong. Nothing in this project generates a moment.
+
+const INTERIORS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../../data-seed/interiors');
+
+// "fam_maxson#355-479" → the turns in that block range, with speakers named.
+export function resolveMoment(moment) {
+  if (!moment) return null;
+  const m = String(moment).match(/^([A-Za-z0-9_]+)#(\d+)-(\d+)$/);
+  if (!m) return { error: 'unparseable_moment', moment };
+  const [, entityId, fromS, toS] = m;
+  const from = Number(fromS), to = Number(toS);
+  const file = resolve(INTERIORS_DIR, entityId + '.graph.json');
+  // The id is already constrained to word characters by the pattern above; this is the
+  // second guard, because a path built from data should never rest on one check.
+  if (!file.startsWith(INTERIORS_DIR) || !existsSync(file)) return { error: 'no_interior', entityId };
+  let doc;
+  try { doc = JSON.parse(readFileSync(file, 'utf8')); } catch { return { error: 'unreadable_interior', entityId }; }
+  if (!Array.isArray(doc.turns)) {
+    return { error: 'interior_has_no_turns', entityId, hint: 'Re-run the anatomy script — it writes turns as of 2026-09-09.' };
+  }
+  let names = {};
+  const nf = resolve(INTERIORS_DIR, entityId + '.names.json');
+  if (nf.startsWith(INTERIORS_DIR) && existsSync(nf)) {
+    try { names = JSON.parse(readFileSync(nf, 'utf8')); } catch { names = {}; }
+  }
+  const turns = doc.turns
+    .filter((t) => t.block >= from && t.block <= to)
+    .map((t) => ({ block: t.block, speaker: names[t.speaker] || t.speaker, stance: t.stance || null, quote: t.quote }));
+  return { entityId, source: doc.source, scope: doc.scope, from, to, turns };
+}
+
+// One entity's mapped interior, or null. Most entities have none and that is the normal
+// case — an anatomy costs a careful read of a real scene, and two exist.
+export function anatomyFor(entityId) {
+  if (!/^[A-Za-z0-9_]+$/.test(String(entityId || ''))) return null;
+  const file = resolve(INTERIORS_DIR, entityId + '.graph.json');
+  if (!file.startsWith(INTERIORS_DIR) || !existsSync(file)) return null;
+  try {
+    const d = JSON.parse(readFileSync(file, 'utf8'));
+    const b = d.structuralBalance || {};
+    return {
+      scope: d.scope,
+      nodes: d.graph?.nodes || [],
+      edges: d.graph?.edges || [],
+      balanced: b.balanced,
+      frustration: b.frustration,
+      camps: b.bestSplit,
+    };
+  } catch { return null; }
 }
 
 // ─── Saved maps ──────────────────────────────────────────────────────────────

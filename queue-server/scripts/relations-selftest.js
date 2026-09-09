@@ -18,7 +18,7 @@ const db = new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE entities (id TEXT PRIMARY KEY, name TEXT, type TEXT, scale TEXT)`);
 db.exec(`CREATE TABLE entity_relations (
   id TEXT PRIMARY KEY, from_id TEXT, to_id TEXT, move TEXT, shape TEXT, direction TEXT,
-  at TEXT, note TEXT, source_kind TEXT DEFAULT 'witness', source_ref TEXT, falsifier TEXT,
+  at TEXT, note TEXT, moment TEXT, source_kind TEXT DEFAULT 'witness', source_ref TEXT, falsifier TEXT,
   created_by TEXT, created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), deleted_at TEXT)`);
 
 const add = (id, type, scale) => db.prepare(`INSERT INTO entities (id,name,type,scale) VALUES (?,?,?,?)`).run(id, id, type, scale);
@@ -204,4 +204,32 @@ const circa = findLoops(db);
 assert.equal(circa.length, 1);
 assert.deepEqual(circa[0].span, ['c.1950', '1965'], 'reported in the order it happened, in the words the source used');
 
-console.log('entity relations selftest: OK (rung rules, provenance, derived direction, loops-as-query, gap audit, soft delete, date normalisation)');
+// ── moments: the only route from a claim back to a line ─────────────────────
+// Everything the Narrative Mirror shows comes through here, so the failure modes matter
+// more than the happy path. A moment resolves against turns that already passed a
+// byte-for-byte check against a real file — nothing in this project generates one.
+import { resolveMoment, anatomyFor } from '../server/src/services/entityRelations.js';
+
+assert.equal(resolveMoment(null), null, 'no moment is not an error — most relations have none');
+assert.match(resolveMoment('not-a-moment').error, /unparseable/);
+assert.match(resolveMoment('../../etc/passwd#1-2').error, /unparseable/, 'a path cannot be smuggled in through the id');
+assert.match(resolveMoment('fam_maxson#1-2/../../x').error, /unparseable/);
+assert.match(resolveMoment('no_such_entity#1-2').error, /no_interior/);
+
+// against the real interior on disk
+const scene = resolveMoment('fam_maxson#355-360');
+assert.equal(scene.entityId, 'fam_maxson');
+assert.ok(scene.turns.length >= 3 && scene.turns.length <= 8, 'the range narrows the scene');
+assert.ok(scene.turns.every((t) => t.block >= 355 && t.block <= 360), 'and nothing outside it leaks in');
+assert.ok(scene.turns.every((t) => typeof t.quote === 'string' && t.quote.length), 'every turn carries its line');
+assert.ok(scene.turns.some((t) => t.speaker === 'Lyons Maxson'), 'codes are resolved to names on the way out');
+assert.ok(scene.source && scene.source.endsWith('.srt'), 'and the scene says where it came from');
+
+const anat = anatomyFor('fam_maxson');
+assert.equal(anat.balanced, true);
+assert.equal(anat.frustration, 0);
+assert.equal(anat.nodes.length, 4);
+assert.equal(anatomyFor('country_united_states'), null, 'almost no entity has one, and that is normal');
+assert.equal(anatomyFor('../../secrets'), null);
+
+console.log('entity relations selftest: OK (rung rules, provenance, derived direction, loops-as-query, gap audit, soft delete, date normalisation, moments, anatomy lookup)');
