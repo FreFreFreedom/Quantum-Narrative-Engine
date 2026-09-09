@@ -10,7 +10,11 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 // conversation at. Kept in sync by hand with turnRouter.js's FORCED_LANES and
 // the frontend's picker options — a short, deliberately-curated list, not the
 // full provider catalogue.
-const VALID_LANE_PROVIDERS = new Set(['claude-code', 'claude-side', 'opencode', 'google-ai-studio']);
+// 'openai' is the one metered lane here (gpt-4.1, the Idea Studio's own model).
+// It was reachable only as Auto, which meant pinning any other lane was a one-way
+// door — added at Antoine's ask, 2026-09-09. The monthly cap in ai/text.js still
+// governs the spend; this only decides what may be asked for.
+const VALID_LANE_PROVIDERS = new Set(['claude-code', 'claude-side', 'opencode', 'google-ai-studio', 'openai']);
 
 function isConvoError(out) {
   return out && typeof out === 'object' && out.error && !out.ok;

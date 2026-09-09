@@ -149,6 +149,29 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
   const raw = String(text || '');
   const trimmed = raw.trim();
 
+  // Is this a question about the app itself? Worked out BEFORE the two forced
+  // paths below, because a forced lane still deserves the free repo grounding —
+  // see readRepoFacts.
+  let candidates = extractCandidates(trimmed);
+  const aboutPhrase = ABOUT_APP_PHRASE.test(trimmed);
+  if (aboutPhrase && !candidates.paths.length && !candidates.identifiers.length) {
+    candidates = { paths: [], identifiers: phraseKeywords(trimmed) };
+  }
+  const hasAppSignal = candidates.paths.length || candidates.identifiers.length || aboutPhrase;
+
+  // The repo probe is free — it is git on the Mac, not a model — so grounding is
+  // never the thing a lane choice should cost. Pinning ChatGPT or Gemini used to
+  // send repoFacts: null and leave the model answering about this codebase from
+  // memory; now the chosen model gets the same facts the 'git' lane would have
+  // read (his ask, 2026-09-09). Runs only on an app question, and a probe that
+  // fails is simply no facts, exactly as before.
+  const readRepoFacts = async () => {
+    if (!hasAppSignal) return null;
+    try {
+      return formatRepoFacts(await runRepoProbe({ request: candidates, waitMs: 20_000, label: 'room-turn-probe' }));
+    } catch { return null; }
+  };
+
   // 1. forced — a typed /ask, straight to one lane, everything else skipped.
   const fm = trimmed.match(/^\/ask\s+(gpt|claude|second|claude-side|opencode|brainstorm)\b[:\s]*([\s\S]*)$/i);
   if (fm) {
@@ -157,7 +180,7 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
     return {
       intent: 'forced',
       lane: { ...FORCED_LANES[key], forcedQuestion: question },
-      repoFacts: null,
+      repoFacts: await readRepoFacts(),
       why: `forced to ${key}`,
     };
   }
@@ -176,25 +199,13 @@ export async function resolveTurn({ convoId, text, lastAssistantText, override =
         tag: override.tag || override.provider,
         forcedQuestion: trimmed,
       },
-      repoFacts: null,
+      repoFacts: await readRepoFacts(),
       why: `sticky override -> ${override.provider}`,
     };
   }
 
-  // 2. about_app — a path / identifier token, or one of the phrasings above.
-  let candidates = extractCandidates(trimmed);
-  const aboutPhrase = ABOUT_APP_PHRASE.test(trimmed);
-  if (aboutPhrase && !candidates.paths.length && !candidates.identifiers.length) {
-    candidates = { paths: [], identifiers: phraseKeywords(trimmed) };
-  }
-  const hasAppSignal = candidates.paths.length || candidates.identifiers.length || aboutPhrase;
-
   if (hasAppSignal) {
-    let repoFacts = null;
-    try {
-      const facts = await runRepoProbe({ request: candidates, waitMs: 20_000, label: 'room-turn-probe' });
-      repoFacts = formatRepoFacts(facts);
-    } catch { repoFacts = null; }
+    const repoFacts = await readRepoFacts();
     // No usable facts back (runner offline, or nothing matched). Detecting
     // "no_runner" precisely is impossible here, but an empty facts block with a
     // real app signal means we cannot honestly ground the answer — fall back to

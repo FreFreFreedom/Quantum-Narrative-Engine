@@ -32,6 +32,10 @@ export function queueRoutes() {
     // providers/models against, so the picker can never offer an id the backend
     // would reject. Available only once the key is actually set.
     const googleCatalog = getProviderCatalog('google-ai-studio');
+    // Same for OpenAI, so the Room's picker can offer gpt-4.1 by its real id.
+    // 'available' is the key being set, exactly as Google's is — whether the
+    // monthly budget still has room is a separate, later refusal.
+    const openaiCatalog = getProviderCatalog('openai');
     const runner = runnerStatus() || {};
     res.json({
       claude: {
@@ -64,6 +68,10 @@ export function queueRoutes() {
       google: {
         available: !!process.env.GOOGLE_AI_STUDIO_API_KEY,
         models: googleCatalog ? googleCatalog.models.map((m) => ({ id: m.id, codingRank: m.codingRank })) : [],
+      },
+      openai: {
+        available: !!process.env.OPENAI_API_KEY,
+        models: openaiCatalog ? openaiCatalog.models.map((m) => ({ id: m.id, codingRank: m.codingRank })) : [],
       },
     });
   });

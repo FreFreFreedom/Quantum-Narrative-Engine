@@ -17407,7 +17407,7 @@ document.addEventListener('keydown', (e) => {
     }).catch(function(){ laneCatalog = {}; return laneCatalog; });
     return laneCatalogPromise;
   }
-  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google' };
+  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT' };
   function laneTagFor(provider, model){
     var label = LANE_LABELS[provider] || provider;
     return model ? label + ' · ' + model : label;
@@ -17875,6 +17875,7 @@ document.addEventListener('keydown', (e) => {
         +         '<option value="claude-side">Claude (2nd)</option>'
         +         '<option value="opencode">OpenCode</option>'
         +         '<option value="google-ai-studio">Google</option>'
+        +         '<option value="openai">ChatGPT</option>'
         +       '</select>'
         +       '<select class="se-lanemodel" style="display:none"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
@@ -17985,6 +17986,7 @@ document.addEventListener('keydown', (e) => {
   function laneModelsFor(provider, catalog){
     if(provider === 'opencode') return ((catalog && catalog.opencode && catalog.opencode.models) || []).map(function(m){ return (m && m.id) || m; });
     if(provider === 'google-ai-studio') return ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return m.id; });
+    if(provider === 'openai') return ((catalog && catalog.openai && catalog.openai.models) || []).map(function(m){ return m.id; });
     return [];
   }
   // Why a lane is unpickable, in Antoine's words rather than a variable name.
@@ -17993,6 +17995,7 @@ document.addEventListener('keydown', (e) => {
     if(provider === 'claude-code') return 'The main Claude account is not reachable from the server right now.';
     if(provider === 'opencode') return 'No OpenCode models are reachable right now.';
     if(provider === 'google-ai-studio') return 'Google is not set up on the server (no API key).';
+    if(provider === 'openai') return 'ChatGPT is not set up on the server (no API key), or the monthly budget for it is switched off.';
     return '';
   }
   function laneAvailable(provider, catalog){
@@ -18001,6 +18004,7 @@ document.addEventListener('keydown', (e) => {
     if(provider === 'claude-side') return !!(catalog.claude && catalog.claude.secondAccountAvailable);
     if(provider === 'opencode') return !!(catalog.opencode && catalog.opencode.available);
     if(provider === 'google-ai-studio') return !!(catalog.google && catalog.google.available);
+    if(provider === 'openai') return !!(catalog.openai && catalog.openai.available);
     return true;
   }
 
