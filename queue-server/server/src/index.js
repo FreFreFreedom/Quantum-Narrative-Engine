@@ -182,7 +182,7 @@ try {
 // git push that used to sit next to this call, and the 5-minute timer that existed
 // to repeat it, are gone: neither could ever work here (Railway's image has no git
 // binary, so every attempt died on `spawnSync git ENOENT`). Getting these files
-// onto the trunk is the Mac runner's job now — scripts/queue-runner.js#mirrorNotes
+// onto the trunk is the Mac runner's job now — scripts/queue-runner.js#mirrorToRepo
 // reads them over the API and pushes them from the one machine with a checkout.
 // See services/noteMirror.js.
 try {

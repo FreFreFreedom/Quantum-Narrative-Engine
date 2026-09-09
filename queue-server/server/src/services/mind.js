@@ -23,15 +23,20 @@ import { triggerMindMirror } from './mindMirror.js';
 let db = null;
 export function bindMindDb(database) { db = database; }
 
-// Push this memory back out to a repo file every engine can read
-// (mindMirror.js). Fire-and-forget and debounced there — a failed git push must
-// never turn into a failed save, so this is called AFTER the write succeeded and
-// its result is deliberately ignored.
+// Write this memory back out to the repo files every engine can read
+// (mindMirror.js). Fire-and-forget and debounced there — a failed write must
+// never turn into a failed save, so this is called AFTER the row landed and its
+// result is deliberately ignored. Getting those files onto the trunk is the Mac
+// runner's job (scripts/queue-runner.js#mirrorToRepo); production has no git.
 function mirrorOut() {
   try { triggerMindMirror(db); } catch (e) { console.error('[mind] mirror trigger failed:', e?.message || e); }
 }
 
-const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style'];
+// 'vision' is the paradigm itself — what the platform IS and why — as opposed to
+// 'project', which is what is being built. Kept as its own kind because the repo
+// mirror files them separately: the paradigm belongs beside the vision docs, not
+// in a list of the owner's preferences.
+const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style', 'vision'];
 const MAX_FACTS = 300;
 // How many of his own messages must pile up before a harvest runs. Was 8, which
 // never fired for the way he actually talks: his threads are a handful of long
@@ -179,23 +184,56 @@ function enforceCap() {
   }
 }
 
+// The transcript given to the harvest. His own messages AND the answers, because
+// the answers are where the thinking lands: his threads are a few long questions
+// worked out at length, so reading only his side threw away most of what the
+// conversation arrived at. Answers are cut to ANSWER_CHARS — enough to carry the
+// idea, short enough that the pass stays cheap on the free lane.
+const ANSWER_CHARS = 2000;
+function transcriptFor(turns) {
+  if (!turns.length) return '(none)';
+  return turns.map((t) => (t.role === 'user'
+    ? `HE ASKED: ${t.text}`
+    : `THE ANSWER: ${String(t.text).slice(0, ANSWER_CHARS)}`)).join('\n\n');
+}
+
+// The slice of a thread the harvest has not read yet. `seen` counts HIS messages
+// only — that is what mind_seen_turns has always meant — but the slice returned
+// runs from his first unseen message to the end of the thread, answers included.
+// Exported for the self-test: the off-by-one here decides whether a conversation's
+// ideas are read twice or missed entirely.
+export function unseenTurns(all = [], seen = 0) {
+  let cut = all.length;
+  for (let i = 0, u = 0; i < all.length; i++) {
+    if (all[i].role !== 'user') continue;
+    if (u === seen) { cut = i; break; }
+    u++;
+  }
+  return all.slice(cut);
+}
+
 function buildHarvestPrompt(newTurns, factList) {
   const facts = factList.length
-    ? factList.map((f) => `- [${f.id}] ${f.text}`).join('\n')
+    ? factList.map((f) => `- [${f.id}] (${f.kind}) ${f.text}`).join('\n')
     : '(none yet)';
-  const turns = newTurns.length ? newTurns.map((t, i) => `${i + 1}. ${t}`).join('\n') : '(none)';
-  return `You maintain a long-term memory of standing facts about the owner of this personal app. He is one person; the app is built for him alone.
+  return `You maintain the long-term memory of a personal app built for one man. He is its only user. Two things go in that memory: standing facts about HIM, and the PARADIGM the platform is built on — the ideas he and this app are working out together.
 
 Return ONLY a JSON array (no prose, no markdown fence) of objects:
-  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style", "text": "<one fact, plain English, <= 240 chars>", "detail"?": "<longer body if needed>", "replaces"?": "<an existing fact id from the list below, if this corrects it>"}
+  {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the claim itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land — as long as it needs to be>", "replaces"?: "<an existing fact id from the list below, if this corrects or sharpens it>"}
 
-Save ONLY facts that would still be true next month: standing preferences, decisions AND the reason behind them, people, constraints, how he likes things. Do NOT save conversation content, do NOT save what was merely discussed, and do NOT save anything already present in the existing facts list below — if a new message repeats a known fact, omit it.
+USE "vision" for the paradigm: what the platform IS, the mechanisms it runs on, what counts as an entity or a scale or a pattern, how analogy is supposed to work, what a part of the system is FOR. This is the material the whole project is built to accumulate — err toward keeping it.
 
-EXISTING FACTS YOU ALREADY KNOW:
+Use the other kinds for him: "taste" and "style" for how he likes things and wants to be worked with, "decision" for a choice he has made, "project" for what is being built, "person" for people, "about" for who he is.
+
+ALWAYS fill "detail" when there is reasoning behind a fact. "text" alone is a headline, and a headline without its argument is close to useless a month later — the mechanism, the why, and the example that convinced him all belong in "detail".
+
+Keep only what would still be worth knowing next month. Do NOT save the shape of the conversation itself ("he asked about X", "the answer explored Y"), pleasantries, or anything already in the list below — if a turn merely repeats a known fact, omit it. But an idea that DEVELOPS a fact already in the list is not a repeat: return it with "replaces" set to that fact's id.
+
+WHAT YOU ALREADY KNOW:
 ${facts}
 
-NEW MESSAGES FROM THE OWNER (most recent last):
-${turns}`;
+THE CONVERSATION SINCE YOU LAST LOOKED (most recent last):
+${transcriptFor(newTurns)}`;
 }
 
 // Pull the JSON array out of a model reply that may be fenced or have a sentence
@@ -218,15 +256,19 @@ function parseHarvest(text) {
 async function runHarvest(convoId, force) {
   const convo = db.prepare(`SELECT id, turns, mind_seen_turns FROM convos WHERE id=? AND deleted_at IS NULL`).get(convoId);
   if (!convo) return;
-  const msgs = db.prepare(`SELECT text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role='user' ORDER BY created_at`).all(convoId);
-  const seen = convo.mind_seen_turns || 0;
-  const newMsgs = msgs.slice(Math.min(seen, msgs.length));
-  if (!force && newMsgs.length < HARVEST_AFTER_TURNS) return;
+  // Both roles now. mind_seen_turns still counts HIS messages only — that is what
+  // the watermark has always meant and what the trigger counts — but the slice
+  // handed to the model runs from his first unseen message to the end, answers
+  // included, so the pass sees what the conversation actually worked out.
+  const all = db.prepare(`SELECT role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') ORDER BY created_at`).all(convoId);
+  const userCount = all.filter((m) => m.role === 'user').length;
+  const newTurns = unseenTurns(all, convo.mind_seen_turns || 0);
+  if (!force && newTurns.filter((m) => m.role === 'user').length < HARVEST_AFTER_TURNS) return;
 
-  const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text }));
+  const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text, kind: f.kind }));
   const result = await generateText({
-    feature: 'summary', maxTokens: 500, label: 'mind:harvest',
-    prompt: buildHarvestPrompt(newMsgs.map((m) => m.text), factList),
+    feature: 'summary', maxTokens: 1500, label: 'mind:harvest',
+    prompt: buildHarvestPrompt(newTurns, factList),
   });
   if (result.error) { console.error('[mind] harvest model error:', result.error); return; }
   const items = parseHarvest(result.text);
@@ -246,9 +288,19 @@ async function runHarvest(convoId, force) {
   }
   enforceCap();
   // Advance the watermark to the full count of chat turns seen.
-  db.prepare(`UPDATE convos SET mind_seen_turns=? WHERE id=?`).run(msgs.length, convoId);
+  db.prepare(`UPDATE convos SET mind_seen_turns=? WHERE id=?`).run(userCount, convoId);
   if (wrote > 0) broadcastAll('mind:updated', {});
   mirrorOut();
+}
+
+// Rewind the watermark so the next harvest reads a thread from the beginning.
+// Its own function rather than a flag on harvest() because it is a write that must
+// land before the fire-and-forget pass starts reading.
+export function rewindHarvest(convoId) {
+  try {
+    db.prepare(`UPDATE convos SET mind_seen_turns=0 WHERE id=?`).run(convoId);
+    return { ok: true };
+  } catch (e) { return { error: e.message || 'rewind_failed' }; }
 }
 
 const _harvestInFlight = new Set();

@@ -432,9 +432,13 @@ function prepareNoteRepo() {
 // KNOWN BROKEN IN PRODUCTION, 2026-09-07: the deployed image has no git binary,
 // so prepareNoteRepo()'s clone dies on `spawnSync git ENOENT` and every call here
 // returns no_repo. It works only when the server runs on a machine with a checkout.
-// /note no longer relies on it — the Mac runner mirrors saved conversations
-// instead (scripts/queue-runner.js#mirrorNotes). services/mindMirror.js still does,
-// and mind.md therefore is not reaching the repo from production either.
+// NOTHING CALLS THIS ANY MORE. /note stopped relying on it first, and
+// services/mindMirror.js followed 2026-09-09 — both memories now reach the trunk
+// from the Mac (scripts/queue-runner.js#mirrorToRepo), the only machine with a
+// checkout. Kept only so this comment stays attached to the lesson: do not write
+// another server-side git path, and do not read this function as evidence that one
+// works. commitAndPushPaths() and prepareNoteRepo() below are dead for the same
+// reason.
 export function commitFileToTrunk({ relPath, content, message } = {}) {
   if (!relPath || content == null || !message) return { ok: false, reason: 'missing_args' };
   const repo = prepareNoteRepo();

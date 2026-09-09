@@ -134,7 +134,7 @@ let pending = null;
 // Called after a note is written to the DB. Fire-and-forget — the caller
 // (createKnowledgeNote) must never wait on it. No git: the push used to live here
 // and could never work from the deployed container, so the trunk is the runner's
-// job now (scripts/queue-runner.js#mirrorNotes, every few minutes).
+// job now (scripts/queue-runner.js#mirrorToRepo, every few minutes).
 export function triggerNoteMirror(db) {
   if (pending) clearTimeout(pending);
   pending = setTimeout(() => {

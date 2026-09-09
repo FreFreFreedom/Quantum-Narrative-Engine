@@ -78,7 +78,7 @@ export function listFiles() {
 const NOTE_LIST_CAP = 200;
 
 // `full` pulls the note bodies too — the Mac runner asks for them so it can write
-// the mirror files and push them to the trunk (scripts/queue-runner.js#mirrorNotes),
+// the mirror files and push them to the trunk (scripts/queue-runner.js#mirrorToRepo),
 // which is the only machine that can: this server has no git binary. `doc_title`
 // carries the stored title WITH its `Note: ` prefix, because the mirror's filenames
 // and headers are derived from it and must match what syncNoteMirror writes.
@@ -1785,7 +1785,7 @@ Respond with ONLY this JSON object and nothing else:
   // No repo delivery from here. It used to call gitOps.deliverNoteToRepo(), which
   // shells out to git — and this container has no git binary, so it failed silently
   // every time while this message claimed the file had landed. The Mac runner does
-  // it now (scripts/queue-runner.js#mirrorNotes), within a few minutes, so what the
+  // it now (scripts/queue-runner.js#mirrorToRepo), within a few minutes, so what the
   // message promises is no longer promised by the thing that cannot keep it.
   const text = `Written down as **${out.title}**. The whole conversation is saved in it, not just a summary.`;
   saveAssistantTurn(convoId, text, { act: 'note', doc_title: out.title, chars: out.chars });

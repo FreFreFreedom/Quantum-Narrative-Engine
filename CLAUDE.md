@@ -153,9 +153,33 @@ Two consequences worth knowing: notes reach the repo **only while the runner is
 running** (starting it catches everything saved since), and each mirror commit is a
 `develop` push, so it redeploys the app like any other. `commitFilesToTrunk` is generic
 over `{path, content}` — the next thing the app generates should reuse it rather than
-grow a second lane. `services/mindMirror.js` has **not** been moved over and still
-depends on the dead server-side path, so `project-docs/memory/mind.md` is not reaching
-the repo from production.
+grow a second lane.
+
+### What the Room learns reaches the repo on its own (added 2026-09-09)
+
+`services/mind.js` harvests standing facts out of every Room conversation and
+`mindBlock()` injects them into every later turn, so the app carries its own memory
+forward with no action from Antoine. Three things make that memory reach a coding
+session too:
+
+- **Both roles are read.** The harvest used to see only his messages, which threw away
+  most of the thinking in a thread of few questions and long answers. It now reads the
+  answers as well (cut to 2000 chars each) and runs after **three** of his messages, not
+  eight — a whole conversation used to end below the old watermark and harvest nothing.
+- **`vision` is its own kind.** The paradigm — what the platform is, the mechanisms, what
+  counts as an entity — is filed apart from his preferences, and the prompt insists on a
+  `detail` field so the reasoning survives and not just the headline.
+- **The Mac runner pushes both memories**, in **one commit** with the notes mirror
+  (`queue-runner.js#mirrorToRepo`), every 5 minutes while idle: `mind.md` for what he is
+  like, `vision-from-the-room.md` for the paradigm, both under `project-docs/memory/`.
+  `mindMirror.js` no longer touches git at all — its old server-side push could never
+  work and left that file reading "Nothing recorded yet" while the app held twenty facts.
+
+Nothing appends to `data-seed/docs/fractal_operational_core.md` automatically, and
+nothing should — that file is hand-curated and a generated writer would fight it. It
+carries a pointer to the vision mirror instead; promoting an idea from there into the
+vision proper is a judgment call, done by hand. `npm run mind:selftest` covers the slice
+arithmetic and the split between the two files, with no DB, network or credits.
 
 ## Commands
 

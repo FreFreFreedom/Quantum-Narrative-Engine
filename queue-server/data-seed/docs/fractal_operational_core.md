@@ -13,6 +13,15 @@ Companion docs: `ontology.md` (fullest statement of the paradigm),
 `fractal_vision_spec.md` (vertical navigation vs. entanglement jumps, the scale ladder,
 the five-step method).
 
+**What the Room has arrived at since:** every conversation Antoine has in the app is
+harvested for standing ideas (`services/mind.js`), and the paradigm ones are written out
+to `queue-server/project-docs/memory/vision-from-the-room.md` — automatically, every few
+minutes, by the Mac runner. Read that file alongside this one: it is where the vision has
+got to, whereas this file is where it has settled. Nothing appends to *this* document
+automatically and nothing should — folding an idea in from there is a judgment call, and a
+generated writer would fight the hand that curates it. When an idea from the Room has
+proven itself, move it in here by hand and date it.
+
 ---
 
 ## 1. What counts as an entity: self-maintenance, not aliveness

@@ -36,10 +36,19 @@ export function mindRoutes() {
     res.json({ ok: true });
   });
 
-  // Manual trigger for the harvest job (useful for testing without 8 turns).
+  // Manual trigger for the harvest job (useful for testing without waiting for the
+  // turn watermark).
+  //
+  // `rescan: true` also rewinds the watermark, so the whole thread is read again
+  // from its first message. Needed whenever what the harvest LOOKS FOR changes —
+  // adding the `vision` kind meant every conversation already past the watermark
+  // held paradigm material that would never be extracted otherwise. Safe to repeat:
+  // saveFact() dedups on the normalised text, so a re-read of ground already
+  // covered writes nothing.
   router.post('/harvest', asyncHandler(async (req, res) => {
     const b = req.body || {};
     if (!b.convoId) return res.status(400).json({ error: 'convoId_required' });
+    if (b.rescan) mind.rewindHarvest(b.convoId);
     await mind.harvest(b.convoId, { force: true });
     res.json({ ok: true });
   }));

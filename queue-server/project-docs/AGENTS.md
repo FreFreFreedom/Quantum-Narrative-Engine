@@ -164,6 +164,13 @@ it. There is no shape an instrument has to arrive in. Say what it makes possible
 that follows the idea rather than a form, and let the new power land against something already
 in the vision because that is what makes it legible, not because a step demands it.
 
+Concretely, and this is the part that kept coming back (his call, 2026-09-09): **never a
+bolded label opening a paragraph.** No **What it does:**, no **What it unlocks here:**, no
+**Why nothing like this exists today:**, no **Where it fits:** — and no rewording of the same
+four beats under different labels. The recipe was removed once and returned as bold lead-ins,
+which is the same form wearing a different coat. If an answer's paragraphs could be
+relabelled with those headings, it is still the template. Write the prose instead.
+
 **Where the world stands is a footnote, never a fence**: it reports where reality currently
 sits and must never bound what may be imagined. *Nobody has this, and no instrument for it
 exists yet* is a good ending, not a weak one.
@@ -214,6 +221,22 @@ there is one. This is his explicit preference — do not strip the ends to save 
 **No length ceiling.** A rich idea earns a long answer; a thin one gets three lines. The
 discipline is on density of detail, never on word count. Going too technical is not fixed by
 going shorter.
+
+**Simple words, hard ideas (hard, his own reason, 2026-09-09).** English is not his first
+language. So the vocabulary is plain and the thinking is not: use the common word over the
+literary one every time — *use* not *utilise*, *shows* not *evinces*, *make it easier* not
+*obviate the friction*. No Latinate showing-off, no rare words, no idioms a non-native
+reader has to guess at, no word chosen because it sounds impressive. If a technical or
+unusual word is genuinely the only one that carries the meaning, use it and explain it in
+the same breath, once.
+
+**This is a rule about words, never about depth.** It does not shorten an answer, drop a
+layer, soften a claim or simplify an idea — those are forbidden, and he said so when he
+asked for this. Plain does not mean diluted, and simple sentences carrying a difficult idea
+in full is exactly the target. The hardest version of the thought, in the easiest words
+available: if a sentence has to be re-read for its vocabulary rather than for its idea, it
+failed.
+
 
 **Write the unbuilt, not the field (hard, added 2026-09-08 — he picked the passages himself).**
 Handed a long research answer, Antoine marked the two paragraphs he wanted and said the
@@ -283,6 +306,78 @@ read MUST carry the shared plain-English style instruction (see the app's
 shared style module). New features must attach it from day one; before
 shipping a feature, check its text is style-tagged. This is a hard rule, not a
 preference.
+
+### Designing the app's own interface (hard, added 2026-09-09)
+
+Written after a UI pass Antoine asked for in his own words: "intelligent, elegant,
+not taking too much space for nothing". These are the rules that pass produced, and
+they hold for every view, not only the ones it touched.
+
+**Nothing is drawn twice.** The single most expensive mistake in this app's chrome
+has been the same navigation existing in two or three places at once — a rail
+sub-list, a header row and an inner tab row all naming the same five destinations,
+costing two horizontal bands to say what one control already said. Before adding a
+row of controls, look for the row that already carries them.
+
+**A hierarchy that is wrong will keep growing rows.** "Architecture" was both the
+parent of Flow and Room and their sibling in the tab strip; once a parent sits
+beside its own children, the children need a second row of their own. Fix the
+naming and the extra row disappears by itself.
+
+**Horizontal bands are the scarcest thing on the screen.** Every strip above the
+content costs the reading area for the life of the app. A band that carries only a
+number, or a title repeating the tab directly above it, is not a band — delete it
+and put the number where it means something.
+
+**A control that opens a panel must never end up underneath it.** A hover-peek that
+slides over its own button cannot be clicked, ever. This shipped once (2026-09-09)
+and was invisible until someone reached for the button.
+
+**Redundancy is not always waste — check the survivor is reachable.** Removing an
+in-panel pin because "the toolbar button already does it" turned a duplicate into a
+dead end, because the toolbar button was the one covered by the panel.
+
+**Stacked accordions are a tab strip in disguise.** Five sections, each with a
+heading and a fold-away chevron, in a 290px column, is six controls and five
+headings before any content. One tab row with counts says the same and shows one
+pane at a time. Put the count on the tab so a shut pane still says it holds
+something.
+
+**Rare actions go behind one `⋯`; dangerous ones never sit beside common ones.**
+Delete was a pixel from Fork in a row of five icons.
+
+**A veil is a cost, not a decoration.** The Dispatch Queue panel dimmed the whole
+page behind it, and its own element picker then had to hide the panel *and* the
+veil to reach the page underneath — the modality it added was pure loss. Without
+the veil the panel is a side bar you work beside: pointing at an element happens
+with the panel in view and the picks landing in it as you go. Only ask for a veil
+when the page underneath must not be touched.
+
+**One floating button, or none.** A corner bubble is the easiest thing in the app
+to add and the hardest to justify: it is visible on every screen forever. The chat
+bubble sat bottom-right for months answering nothing the Room did not answer
+better. If a corner button earns its place, it opens the one surface that acts on
+the whole app — and it steps aside by that surface's own width rather than hiding
+beneath it.
+
+**Reading settings belong to the reader.** Font and text size in the Room are his,
+kept per browser, and they move the words only — never the toolbar, the tabs or the
+lists. A setting that moves the chrome is a zoom control, not a reading one.
+
+**The app remembers how you left it.** Every panel a person can open, close, resize
+or switch remembers its state per browser: which mode and view, which thread, which
+pane, how wide, open or shut, the half-written message and the passages carried with
+it. The exception is a panel that is an overlay rather than a column — on a narrow
+window, one left standing open from last time is in the way, not where you left it.
+
+**No explaining inside the app.** Ship the control, not the paragraph. Helper text
+belongs in a `title` tooltip or nowhere.
+
+**Verify by driving the live app, not by reading the diff.** Three of the bugs in
+that pass — an empty Room from one stale identifier, a toolbar wrapping to a second
+row, a composer whose text box had zero width — all passed every syntax check and
+were only visible on screen. See "Ship directly" below for the checks that are
+worth running first; they do not replace opening it.
 
 ### A plan sent to the queue must stand alone (hard)
 

@@ -45,6 +45,7 @@ import { runIdeaLanding as ideaLandingPass, buildDiff as buildIdeaDiff } from '.
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk, commitFilesToTrunk } from './git-ship.js';
 import { noteFiles, NOTES_REPO_PATH } from '../server/src/services/noteMirror.js';
+import { mindFiles } from '../server/src/services/mindMirror.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
@@ -1773,51 +1774,84 @@ function tidyWorktrees() {
 // path has been watched working.
 const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 
-// ─── Saved conversations into the repo ────────────────────────────────────────
-// A conversation saved with `/note` in the Room is stored in the app's database,
-// where no coding agent can see it — Claude Code, OpenCode and every task worktree
-// read files, not SQLite. The server was supposed to mirror them into the repo and
-// genuinely could not: its image has no git binary, so all six notes saved between
-// 2026-08-24 and 2026-09-07 pushed nothing while the app told Antoine they had
-// landed in his project folder. This Mac has the checkout, so this is where it
-// belongs.
+// ─── What the Room knows, into the repo ───────────────────────────────────────
+// Two memories live in the app's database, where no coding agent can see them —
+// Claude Code, OpenCode and every task worktree read files, not SQLite:
+//
+//   - conversations saved with `/note` (knowledge_docs)
+//   - the facts harvested out of every Room conversation (mind_facts), split into
+//     what he is like and the paradigm itself
+//
+// The server was supposed to mirror both and genuinely could not: its image has no
+// git binary, so all six notes saved between 2026-08-24 and 2026-09-07 pushed
+// nothing while the app told Antoine they had landed in his project folder, and the
+// memory mirror sat at "Nothing recorded yet" while the app held twenty facts. This
+// Mac has the checkout, so this is where it belongs.
+//
+// ONE commit for both, because every push to the trunk redeploys the app — two
+// mirrors on the same timer would mean two deploys for one tick's worth of news.
 //
 // Reads the whole set and rewrites the whole mirror every time rather than tracking
-// which note is new: it costs one request, and it means a note saved while this
-// runner was off is picked up by simply starting it.
+// what is new: it costs two requests, and it means anything saved while this runner
+// was off is picked up by simply starting it.
 const NOTE_MIRROR_MS = 5 * 60_000;
 let lastNoteMirrorAt = 0;
-async function mirrorNotes() {
+async function mirrorToRepo() {
   if (Date.now() - lastNoteMirrorAt < NOTE_MIRROR_MS) return;
   lastNoteMirrorAt = Date.now();
+
+  const files = [];
+  const said = [];
 
   let notes = null;
   try {
     const r = await apiRoot('/convos/notes?full=1');
-    if (!r.ok) return;
-    notes = (await r.json()).notes;
-  } catch { return; }
+    if (r.ok) notes = (await r.json()).notes;
+  } catch { /* leave notes alone this tick */ }
 
   // An empty list is never acted on. It is what a broken query, a half-migrated
   // DB or a wrong environment also looks like, and mirroring it would prune every
-  // note out of the repo on the strength of a bad answer.
-  if (!Array.isArray(notes) || !notes.length) return;
+  // note out of the repo on the strength of a bad answer. Same reasoning for the
+  // facts below — except there is nothing to prune there, so an empty answer just
+  // means this tick has no memory news.
+  const haveNotes = Array.isArray(notes) && notes.length > 0;
+  if (haveNotes) {
+    files.push(...noteFiles(notes.map((n) => ({
+      title: n.doc_title || `Note: ${n.title}`,
+      content: n.content,
+      updated_at: n.updated_at,
+    }))));
+    said.push(`${notes.length} saved conversation(s)`);
+  }
+
+  let facts = null;
+  try {
+    const r = await apiRoot('/mind');
+    if (r.ok) facts = (await r.json()).facts;
+  } catch { /* leave the memory alone this tick */ }
+  if (Array.isArray(facts) && facts.length) {
+    files.push(...mindFiles(facts));
+    const vision = facts.filter((f) => f.kind === 'vision').length;
+    said.push(`${facts.length} remembered fact(s)${vision ? `, ${vision} of them the paradigm` : ''}`);
+  }
+
+  if (!files.length) return;
 
   const out = commitFilesToTrunk({
     repo: RUNNER_REPO,
     trunk: TRUNK,
-    files: noteFiles(notes.map((n) => ({
-      title: n.doc_title || `Note: ${n.title}`,
-      content: n.content,
-      updated_at: n.updated_at,
-    }))),
-    pruneDir: NOTES_REPO_PATH,
-    message: 'mirror: saved conversations from the Room',
+    files,
+    // Only the notes directory is reconciled: a deleted note must lose its file,
+    // while the memory mirror has fixed filenames and nothing to prune. Pruning is
+    // skipped entirely on a tick where the notes request failed — an unanswered
+    // query must never be read as "he deleted everything".
+    pruneDir: haveNotes ? NOTES_REPO_PATH : null,
+    message: 'mirror: what the Room knows',
     dryRun: GIT_SHIP_DRY_RUN,
     log: (m) => console.log(dim(`    ${m}`)),
   });
-  if (out.changed) console.log(`  ${bold('notes')} ${notes.length} saved conversation(s) now in the repo`);
-  else if (!out.ok) console.log(dim(`  notes mirror: ${out.error}`));
+  if (out.changed) console.log(`  ${bold('mirror')} ${said.join(' and ')} now in the repo`);
+  else if (!out.ok) console.log(dim(`  mirror: ${out.error}`));
 }
 
 async function runGitJobs() {
@@ -2024,7 +2058,7 @@ async function main() {
       // rescuing a text call, and a git job is seconds long.
       try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
       try { await runStrandedSweep(); } catch (e) { console.error('Stranded-review sweep failed —', e.message); }
-      try { await mirrorNotes(); } catch (e) { console.error('Notes mirror failed —', e.message); }
+      try { await mirrorToRepo(); } catch (e) { console.error('Room mirror failed —', e.message); }
       if (helperInFlight < HELPER_CONCURRENCY) {
         helperInFlight++;
         try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }

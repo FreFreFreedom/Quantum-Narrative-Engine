@@ -369,15 +369,19 @@ joined, so a fact stated once is known on both sides:
   `read_knowledge_doc`; `projectMap.js` only *names* it. Deliberate — the map is the
   cached prompt prefix of every turn and this file is ~25 KB, so inlining it would
   roughly double the per-turn cost for something most turns never need.
-- **App → file:** `services/mindMirror.js` renders every active `mind_facts` row to
-  `project-docs/memory/mind.md` and pushes it to the trunk, debounced 5s, hooked into
-  `mind.js`'s three mutators and the harvest.
-- **The trap that decides that module's design:** `gitOps.js#commitAndPushPaths`
-  needs `mainRepo()`, which is **null in production** (Railway's image carries no
-  `.git`) — so it is Mac-only, and `noteMirror.js` has always had that same limit.
-  The production path is the `GITHUB_TOKEN` clone in `prepareNoteRepo()`, now exposed
-  as `gitOps.js#commitFileToTrunk`. Any future "commit a file from the server" job
-  must use that, or it will silently do nothing where the app actually runs.
+- **App → file:** `services/mindMirror.js` renders every active `mind_facts` row into
+  **two** files under `project-docs/memory/` — `mind.md` (what he is like) and
+  `vision-from-the-room.md` (the paradigm, `kind='vision'`, each idea with its
+  reasoning). Rendering is pure (`renderMindFrom` / `renderVisionFrom` / `mindFiles`
+  take facts, not a db) so the runner can build the identical files from
+  `GET /api/mind`. The module itself **never pushes**.
+- **The trap that decides that module's design:** every server-side git path is dead.
+  `gitOps.js#commitAndPushPaths` needs `mainRepo()`, null in production; the
+  `GITHUB_TOKEN` clone in `prepareNoteRepo()` was the workaround and it cannot work
+  either, because **Railway's image has no `git` binary at all** — every call dies on
+  `spawnSync git ENOENT`. `commitFileToTrunk`, `commitAndPushPaths` and
+  `prepareNoteRepo` now have **zero callers**; do not write a fourth. The Mac runner is
+  the only path to the trunk (`queue-runner.js#mirrorToRepo`, 2026-09-09).
 
 ## Infra & deploy facts
 
@@ -424,13 +428,21 @@ joined, so a fact stated once is known on both sides:
 - **Conversations saved with `/note` in the Room are in the repo**, mirrored to
   `queue-server/project-docs/notes/` (one file per note + `index.md`) — so read the
   file, no DB or API needed. The runner does it every 5 minutes while idle
-  (`queue-runner.js#mirrorNotes` → `git-ship.js#commitFilesToTrunk`), which means
+  (`queue-runner.js#mirrorToRepo` → `git-ship.js#commitFilesToTrunk`), which means
   notes only land while the runner is up, and each batch is a `develop` push and so a
   redeploy. Reading one over HTTP instead: `GET /api/convos/notes?full=1`.
   `commitFilesToTrunk` is generic over `{path, content}` — reuse it for the next
-  thing the app generates instead of adding a second lane. `mindMirror.js` has not
-  been moved over yet, so `project-docs/memory/mind.md` is still not updating from
-  production.
+  thing the app generates instead of adding a second lane.
+- **The Room's harvested memory is in the repo too**, since 2026-09-09, riding the same
+  tick and the **same commit** as the notes: `project-docs/memory/mind.md` and
+  `project-docs/memory/vision-from-the-room.md`. Read the vision file before any task
+  about the model — it is where the paradigm has got to since
+  `data-seed/docs/fractal_operational_core.md` was last curated by hand. One commit for
+  both mirrors on purpose: every push to the trunk redeploys the app, so two mirrors on
+  one timer would mean two deploys for one tick's news. Only the notes directory is
+  pruned (a deleted note must lose its file); the memory files have fixed names, and
+  pruning is skipped entirely on a tick whose notes request failed, so an unanswered
+  query is never read as "he deleted everything".
 
 ## Queue/runner mechanics worth knowing before dispatching work
 
