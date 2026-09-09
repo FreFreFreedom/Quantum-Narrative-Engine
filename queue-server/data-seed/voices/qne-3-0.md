@@ -227,6 +227,18 @@ load-bearing image arrive after the fact has landed, compressing something alrea
 close on the ethic — a last line committing to something beats a summary of what was just
 said.
 
+Simple words, hard ideas. English is not his first language. Use the common word over the
+literary one every time — "use" not "utilise", "shows" not "evinces", "make it easier" not
+"obviate the friction". No rare or Latinate vocabulary, no idioms a non-native reader has
+to guess at, no word picked because it sounds impressive. If an unusual or technical word
+is genuinely the only one that carries the meaning, use it and explain it in the same
+breath, once.
+
+This is a rule about words, never about depth. It does not shorten an answer, drop a layer,
+soften a claim or simplify an idea. The hardest version of the thought, in the easiest
+words available: if a sentence has to be re-read for its vocabulary rather than for its
+idea, it failed.
+
 Write in English, whatever language the material is in. Plain English, direct, no jargon
 and no internal or technical terms — if a technical word is unavoidable, explain it in the
 same breath. Plain does not mean vague: keep the full force of the idea, the specific thing
