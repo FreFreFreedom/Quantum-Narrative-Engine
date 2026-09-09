@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as q from '../services/ontologyQuery.js';
+import * as rel from '../services/entityRelations.js';
 import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
@@ -44,6 +45,37 @@ export function ontologyRoutes(db) {
     if (!entity) return res.status(404).json({ error: 'not_found' });
     res.json(entity);
   });
+
+  // Stored relations — plans/civic-structures-and-loops.md Stage 4. Unlike the computed
+  // echoes, these are claims somebody made, each carrying where it came from and what would
+  // break it. The service refuses a vertical relation that skips a rung; the 400 it throws
+  // says which rungs were skipped, so the message is a fix rather than a complaint.
+  router.get('/entities/:id/relations', (req, res) => {
+    if (!q.getEntity(db, req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json({ relations: rel.relationsFor(db, req.params.id) });
+  });
+
+  router.post('/entities/:id/relations', (req, res) => {
+    try {
+      res.status(201).json({ relation: rel.createRelation(db, { ...req.body, from_id: req.params.id }) });
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  router.delete('/relations/:relId', (req, res) => {
+    res.json({ deleted: rel.deleteRelation(db, req.params.relId) });
+  });
+
+  // A loop is a query, never a row: vertical relations that leave a rung and come back to
+  // it with time moving forward. Pass ?entity=<id> to ask only about one starting point.
+  router.get('/loops', (req, res) => {
+    res.json({ loops: rel.findLoops(db, { entityId: req.query.entity || undefined }) });
+  });
+
+  // Which anatomies have been asserted at which rungs, and which cells are empty. The
+  // empty cells are the output worth having.
+  router.get('/shape-audit', (req, res) => res.json(rel.shapeByRungAudit(db)));
 
   // Live facets (entity types, sources, continuum axes with their scored counts) so the
   // client's filter UI is built from real data instead of a hardcoded list of three types.

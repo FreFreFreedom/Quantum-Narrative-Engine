@@ -211,6 +211,14 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .posture { display:flex; gap:8px; align-items:baseline; padding:5px 8px; border-radius:6px; margin-bottom:4px;
   background:var(--c-surface); border:1px solid var(--c-border); font-size:11px; }
 .posture-when { font-variant-numeric:tabular-nums; color:var(--c-ink-4); flex-shrink:0; min-width:74px; }
+/* A traced relation: an assertion with a source and a falsifier behind it, drawn with a
+   left rule so it reads as a different kind of thing from a computed echo. */
+.conn.rel { border-left:2px solid var(--c-accent); }
+.rel-mark { flex-shrink:0; color:var(--c-ink-4); width:12px; text-align:center; }
+.rel-body { flex:1; }
+.rel-when { font-variant-numeric:tabular-nums; color:var(--c-ink-4); }
+.rel-loop { font-size:11px; padding:5px 8px; margin-bottom:4px; border-radius:6px;
+  background:var(--c-surface-2); border:1px solid var(--c-border); }
 .empty { font-size:11.5px; color:var(--c-ink-4); }
 .tmdb-origtitle { font-size:11px; color:var(--c-ink-3); margin-top:2px; }
 .tmdb-alt { font-size:10.5px; color:var(--c-ink-4); font-weight:400; }
@@ -3543,6 +3551,60 @@ function rungLabel(entity) {
 // The rung and the names the same structure goes by at that rung, as a tooltip — the
 // spec's vocabulary translation table, reachable from the app instead of only from a
 // doc. A tooltip and not a line of text on the card: helper prose does not go in the UI.
+// ---------- Stored relations ----------
+// Unlike the computed echoes above, these are claims somebody made and wrote down: a
+// direction, a date, where it came from, and what would prove it wrong. That last part is
+// the reason they are worth drawing differently — an echo is a resemblance the app noticed,
+// a relation is an assertion someone is answerable for.
+const MOVE_MARK = { vertical: '↓', horizontal: '↔', jump: '⤳' };
+function relationLineHtml(r, selfId) {
+  const otherId = r.role === 'from' ? r.to_id : r.from_id;
+  const otherName = r.role === 'from' ? r.to_name : r.from_name;
+  // The arrow is the relation's ACTUAL direction of travel — ↓ the larger acting on the
+  // smaller, ↑ the smaller returning to it — and is never flipped to suit which end you
+  // are reading from. Flipping it was the first version and it was wrong: with two
+  // relations to the same neighbour, one down and one back up, flipping drew both the
+  // same way and the loop became invisible on the card that most needed to show it.
+  const mark = r.move === 'vertical' ? (r.direction === 'down' ? '↓' : '↑') : (MOVE_MARK[r.move] || '·');
+  const tip = [r.note, r.source_ref && 'Source: ' + r.source_ref, r.falsifier && 'Breaks if: ' + r.falsifier]
+    .filter(Boolean).join('\n\n');
+  return `<div class="conn rel" data-goto="${otherId}" title="${qEsc(tip)}">
+    <span class="rel-mark">${mark}</span>
+    <span class="rel-body">${qEsc(otherName || otherId)}${r.at ? ` <span class="rel-when">${qEsc(r.at)}</span>` : ''}</span>
+  </div>`;
+}
+
+async function loadRelations(id) {
+  const host = document.getElementById('relHost-' + id);
+  if (!host) return;
+  let rels = [], loops = [];
+  try {
+    [rels, loops] = await Promise.all([
+      api('/api/ontology/entities/' + id + '/relations').then(r => r.relations || []),
+      api('/api/ontology/loops?entity=' + encodeURIComponent(id)).then(r => r.loops || []),
+    ]);
+  } catch (err) { console.error('relations fetch failed:', err); return; }
+  // The panel is re-rendered on every selection, so a slow answer for an entity the user
+  // has already left must not paint over the one they are looking at now.
+  if (!document.getElementById('relHost-' + id)) return;
+  if (!rels.length) { host.innerHTML = ''; return; }
+  let html = `<div class="section-title" style="color:var(--c-ink-3);">Traced (${rels.length})</div>`;
+  html += rels.map(r => relationLineHtml(r, id)).join('');
+  if (loops.length) {
+    html += `<div class="section-title" style="color:var(--c-ink-3);">Loops (${loops.length})</div>`;
+    html += loops.map(l => {
+      const path = l.steps.map(s => byId[s.to] ? byId[s.to].name : s.to).join(' → ');
+      return `<div class="rel-loop" title="${qEsc('Returns to where it started. ' + l.datedSteps + ' dated steps.')}">
+        <span class="rel-when">${qEsc(l.span[0])} → ${qEsc(l.span[1])}</span> ${qEsc(path)}
+      </div>`;
+    }).join('');
+  }
+  host.innerHTML = html;
+  // These rows arrive after selectEntity has already wired every .conn on the card, so
+  // they wire their own or they are dead links.
+  host.querySelectorAll('.conn').forEach(el => { el.onclick = () => selectEntity(el.getAttribute('data-goto')); });
+}
+
 // A posture is what an institution freezes into when it stops looking and writes a rule
 // instead. It is NOT an entity and NOT an event — it is a state this entity holds, with a
 // span, so it lives on the entity and renders as a dated line. The falsifier travels with
@@ -6259,6 +6321,7 @@ async function selectEntity(id){
     }
     html += posturesHtml(e);
     html += testimonyHtml(e);
+    html += `<div id="relHost-${e.id}"></div>`;
     if (e.type === 'film') {
       html += `<div id="tmdbBlock">${filmEnrichmentHtml(e, !!activeLensTag)}</div>`;
       const ccast = castConnections(e);
@@ -6289,6 +6352,10 @@ async function selectEntity(id){
     html += bridges.length ? bridges.map(({o,axis,gap})=>`<div class="conn" data-goto="${o.id}"><span class="dot bridge"></span>${o.name} (${rungLabel(o)||o.type}) — close on ${AXES[axis]?AXES[axis].name:axis}, ${gap} rung${gap>1?"s":""} apart</div>`).join('') : '<div class="empty">None within range.</div>';
 
     document.getElementById(activeCardHost).innerHTML = html;
+    // After the markup exists, never before: loadRelations looks its host up by id, and
+    // called any earlier it would find nothing and return silently — the panel would be
+    // permanently empty with no error to show for it.
+    loadRelations(e.id);
     document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
     wireThemeLine();

@@ -2,20 +2,18 @@
 
 | Status | Date |
 |---|---|
-| **IN PROGRESS — Stages 1-3 shipped** | 2026-09-09 |
+| **IN PROGRESS — Stages 1-4 shipped** | 2026-09-09 |
 
-Antoine gave the green light on 2026-09-09 and Stages 1, 2 and 3 shipped the same day.
-Stage 3's gate was met (see `plans/civic-structures-first-anatomy-findings.md`), so Stage 4
-is earned. Stages 4-6 below have not been started, and each should be re-checked against
-the code before it is.
+Antoine gave the green light on 2026-09-09 and Stages 1-4 shipped the same day. Stages 5
+and 6 have not been started, and each should be re-checked against the code before it is.
 
 | Stage | State |
 |---|---|
 | 1 — ordered scale ladder | **DONE** — `services/scaleLadder.js`, `npm run scale:selftest`, `vert` edge renamed `author` |
 | 2 — the justice cluster | **DONE** — `data-seed/civic_cluster.json`, cluster XIII, 11 mediums / 33 characters / 34 civic entities |
 | 3 — first anatomy | **DONE** — `scripts/interior-fences.js`, findings in `plans/civic-structures-first-anatomy-findings.md`; balanced, seam `{Bono, Troy}` vs `{Lyons, Rose}` |
-| 4 — stored relations | not started |
-| 5 — saved maps + gap audit | not started |
+| 4 — stored relations | **DONE** — `entity_relations` + `services/entityRelations.js`, `npm run relations:selftest`; 14 seeded claims, two real loops (Fences c.1950→1965, Baltimore 1996→2004) |
+| 5 — saved maps + gap audit | gap audit **DONE** early (it was a `GROUP BY` once Stage 4 existed) — `GET /api/ontology/shape-audit`. Saved maps not started. |
 | 6 — intake pointed at traffic | not started |
 
 ---

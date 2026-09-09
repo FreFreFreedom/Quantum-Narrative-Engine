@@ -1,0 +1,164 @@
+{
+ "_readme": "The first stored relations in this app — plans/civic-structures-and-loops.md Stage 4. Every one was written by hand from a named source and carries what would break it; none is generated, and nothing here may be added without both. `shape` is an opaque handle for the anatomy two entities share: it is for the matcher, never for a reader to draw meaning from, so it is a code and not a phrase (fractal_operational_core.md section 18). A vertical relation crosses exactly one rung and asserts a real path; a jump asserts structural kinship and no path at all. The seeder refuses anything that breaks either rule, which is why these were written against the ladder rather than against intuition.",
+ "shapes": {
+  "sh_exile_to_hold": "The group pushes one of its own outside the boundary in order to keep the rest coherent.",
+  "sh_load_down": "A decision taken at one rung is paid for at a lower one, by whoever cannot refuse it.",
+  "sh_protect_becomes_prey": "A structure built to shelter its members becomes the main danger to them.",
+  "sh_boundary_miscut": "The entity draws 'us' somewhere other than where its own membership runs."
+ },
+ "relations": [
+  {
+   "from_id": "inst_organized_baseball_color_line",
+   "to_id": "city_pittsburgh",
+   "move": "vertical",
+   "shape": "sh_exile_to_hold",
+   "at": "1889",
+   "note": "The colour bar is held nationally and enforced locally: the leagues a Pittsburgh player could reach were the leagues that would not have him.",
+   "source_kind": "witness",
+   "source_ref": "Fences (August Wilson, 1985 / dir. Denzel Washington, 2016)",
+   "falsifier": "A Black player on a major-league roster reachable from Pittsburgh before 1947 would break this."
+  },
+  {
+   "from_id": "city_pittsburgh",
+   "to_id": "inst_pittsburgh_sanitation",
+   "move": "vertical",
+   "shape": "sh_exile_to_hold",
+   "at": "c.1930",
+   "note": "The city's grammar of exclusion arrives in one department as an unwritten rule about who drives.",
+   "source_kind": "witness",
+   "source_ref": "Fences — Troy's grievance to the union, Act One",
+   "falsifier": "A Black driver on the Pittsburgh sanitation rolls before 1957 would break this."
+  },
+  {
+   "from_id": "inst_pittsburgh_sanitation",
+   "to_id": "grp_truck_crew",
+   "move": "vertical",
+   "shape": "sh_load_down",
+   "at": "c.1950",
+   "note": "The department's rule about who drives lands on the two-man crew that lifts. This is the intermediate rung the descent needs, and it exists in the play rather than being invented for the ladder.",
+   "source_kind": "witness",
+   "source_ref": "plans/civic-structures-first-anatomy-findings.md",
+   "falsifier": "A crew organised across the driving line would break this."
+  },
+  {
+   "from_id": "inst_pittsburgh_sanitation",
+   "to_id": "fam_maxson",
+   "move": "jump",
+   "shape": "sh_boundary_miscut",
+   "at": "1957",
+   "note": "The department draws its boundary by who drives; Troy draws his by who is inside the yard. The anatomy run on the household found the camp line falling between {Troy, Bono} and {Lyons, Rose} — Troy's ally is his workmate, not his kin. Same miscut, two rungs, and no traced path between them, which is why this is a jump and not a descent.",
+   "source_kind": "witness",
+   "source_ref": "plans/civic-structures-first-anatomy-findings.md — signed graph, balanced, frustration 0",
+   "falsifier": "A scene in which Troy's alliances follow the household rather than the crew would break this."
+  },
+  {
+   "from_id": "inst_nypd_manhattan_north",
+   "to_id": "fam_mccray",
+   "move": "jump",
+   "shape": "sh_load_down",
+   "at": "1989",
+   "note": "The precinct cannot hold the city's panic, so it is pressed into a room with a father and a fourteen-year-old until the father tells the son to sign. The load lands two rungs down, on the person who cannot refuse it.",
+   "source_kind": "witness",
+   "source_ref": "When They See Us (2019), episode 1",
+   "falsifier": "Evidence that a guardian was present and unpressured, or that the confession was not obtained in that room, would break this."
+  },
+  {
+   "from_id": "inst_baltimore_pd",
+   "to_id": "grp_the_corner_crew",
+   "move": "vertical",
+   "shape": "sh_protect_becomes_prey",
+   "at": "1996",
+   "note": "CompStat makes the arrest tally the measure, so the corner is swept for whoever is standing on it. Protection inverts into predation at the rung directly below the policy.",
+   "source_kind": "witness",
+   "source_ref": "The Wire (2002-2008), seasons 3-4; The Corner (2000)",
+   "falsifier": "A district in the same period evaluated on clearance quality rather than arrest count, with the same street effect, would break this."
+  },
+  {
+   "from_id": "grp_the_corner_crew",
+   "to_id": "inst_baltimore_pd",
+   "move": "vertical",
+   "shape": "sh_protect_becomes_prey",
+   "at": "2004",
+   "note": "The swept corner returns as the violence the next quota is written to answer. This is the step that closes the circuit: the department's own output becomes its input.",
+   "source_kind": "witness",
+   "source_ref": "The Wire, season 3 — the political reaction that ends Hamsterdam",
+   "falsifier": "Falling street violence following the sweeps, with quotas unchanged, would break this."
+  },
+  {
+   "from_id": "city_baltimore",
+   "to_id": "inst_baltimore_pd",
+   "move": "vertical",
+   "shape": "sh_protect_becomes_prey",
+   "at": "1994",
+   "note": "The city adopts the measure before the department applies it; the demand for a number comes from above the department, not inside it.",
+   "source_kind": "witness",
+   "source_ref": "The Wire, season 3 — the Comstat sessions",
+   "falsifier": "The department adopting the tally against city hall's wishes would break this."
+  },
+  {
+   "from_id": "city_yonkers",
+   "to_id": "inst_yonkers_city_council",
+   "move": "vertical",
+   "shape": "sh_load_down",
+   "at": "1987",
+   "note": "A federal order the city will not own is pushed onto the council, which pushes it onto one office, which pushes it onto one man.",
+   "source_kind": "witness",
+   "source_ref": "Show Me a Hero (2015); United States v. Yonkers Board of Education",
+   "falsifier": "The council absorbing the political cost itself would break this."
+  },
+  {
+   "from_id": "inst_provisional_ira",
+   "to_id": "fam_mcconville",
+   "move": "jump",
+   "shape": "sh_exile_to_hold",
+   "at": "1972",
+   "note": "A mother of ten is taken and disappeared so the movement can hold itself together, and the silence that follows is the same operation continued by everyone who keeps it.",
+   "source_kind": "witness",
+   "source_ref": "Say Nothing (2024); Patrick Radden Keefe, Say Nothing",
+   "falsifier": "Contemporaneous acknowledgement by the organisation would break the silence half of this."
+  },
+  {
+   "from_id": "inst_provisional_ira",
+   "to_id": "fam_price",
+   "move": "jump",
+   "shape": "sh_exile_to_hold",
+   "at": "1998",
+   "note": "The fighters the movement needed become an embarrassment to the party it becomes, and are exiled a second time — by their own side, into silence.",
+   "source_kind": "witness",
+   "source_ref": "Say Nothing (2024) — the post-Good-Friday chapters",
+   "falsifier": "Public acknowledgement of the operatives by the political wing in that period would break this."
+  },
+  {
+   "from_id": "inst_pittsburgh_sanitation",
+   "to_id": "inst_baltimore_pd",
+   "move": "horizontal",
+   "shape": "sh_boundary_miscut",
+   "note": "Two institutions on one rung holding the same miscut boundary — who is inside the protected set and who is merely handled — thirty years and one city apart. The cheapest of the three moves and the one nothing in this app has ever performed.",
+   "source_kind": "witness",
+   "source_ref": "Fences; The Wire",
+   "falsifier": "Either institution's own records showing the protected set drawn along the line it claims would break this."
+  },
+  {
+   "from_id": "grp_truck_crew",
+   "to_id": "fam_maxson",
+   "move": "vertical",
+   "shape": "sh_boundary_miscut",
+   "at": "c.1950",
+   "note": "What the crew taught Troy about who is inside arrives at the dinner table as who is inside there. This is the step that finishes the path from the department to the household without skipping a rung.",
+   "source_kind": "witness",
+   "source_ref": "Fences; plans/civic-structures-first-anatomy-findings.md",
+   "falsifier": "Troy holding a different boundary at home than at work would break this."
+  },
+  {
+   "from_id": "fam_maxson",
+   "to_id": "grp_truck_crew",
+   "move": "vertical",
+   "shape": "sh_boundary_miscut",
+   "at": "1965",
+   "note": "And it returns: with the household emptied of his son, the crew is the only structure left holding him, which is what makes the miscut permanent. This closes the Pittsburgh circuit.",
+   "source_kind": "witness",
+   "source_ref": "Fences — the final act",
+   "falsifier": "Troy rebuilding a household tie after Cory leaves would break the closure."
+  }
+ ]
+}

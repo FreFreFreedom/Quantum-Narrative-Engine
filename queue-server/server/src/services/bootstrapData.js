@@ -22,6 +22,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { createRelation, validateRelation } from './entityRelations.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEED_DIR = resolve(__dirname, '../../../data-seed');
@@ -158,7 +159,44 @@ export function migrateCivicCluster(db) {
     mediums: Object.keys(seed.filmsIndex).length,
     characters: seed.characters.length,
     civicEntities: seed.civicEntities.length,
+    relations: seedCivicRelations(db),
   };
+}
+
+// The first stored relations — plans/civic-structures-and-loops.md Stage 4. Hand-written,
+// each with a source and a falsifier, and each put through the same validator a relation
+// created through the API goes through: a vertical relation that skips a rung is refused
+// here exactly as it would be there. A seed file that could bypass the rules would make
+// the rules decorative.
+//
+// Idempotent by content rather than by id, since the file has no ids: a relation with the
+// same two ends, move and date is updated in place instead of being inserted again. That
+// is what lets this run on every boot like the rest of the seeding.
+function seedCivicRelations(db) {
+  const p = resolve(SEED_DIR, 'civic_relations.json');
+  if (!existsSync(p)) return { skipped: true };
+  const { relations = [] } = JSON.parse(readFileSync(p, 'utf8'));
+  let written = 0;
+  const refused = [];
+  for (const r of relations) {
+    const problem = validateRelation(db, r);
+    if (problem) { refused.push(`${r.from_id} → ${r.to_id}: ${problem}`); continue; }
+    const existing = db.prepare(`
+      SELECT id FROM entity_relations
+      WHERE from_id=? AND to_id=? AND move=? AND COALESCE(at,'')=COALESCE(?,'') AND deleted_at IS NULL
+    `).get(r.from_id, r.to_id, r.move, r.at || null);
+    if (existing) {
+      db.prepare(`UPDATE entity_relations SET shape=?, note=?, source_kind=?, source_ref=?, falsifier=? WHERE id=?`)
+        .run(r.shape || null, r.note || null, r.source_kind || 'witness', r.source_ref, r.falsifier, existing.id);
+    } else {
+      createRelation(db, { ...r, created_by: 'seed' });
+    }
+    written += 1;
+  }
+  // Refusals are returned, never swallowed. A relation the validator rejects is a claim
+  // that could not be stated honestly, and the boot log is where that belongs.
+  if (refused.length) console.warn(`[civic relations] refused ${refused.length}:\n  ${refused.join('\n  ')}`);
+  return { written, refused };
 }
 
 const KNOWLEDGE_DESCRIPTIONS = {

@@ -831,6 +831,53 @@ export function initOntologySchema(db) {
     )
   `);
 
+  // Relations between entities — plans/civic-structures-and-loops.md, Stage 4.
+  //
+  // Until now the app stored no relation at all: every echo was recomputed from tags and
+  // axis values on each render and then forgotten, so nothing could carry a direction, a
+  // date, a source or a reason to doubt it. A loop — the thing the whole civic reading is
+  // about — was not expressible.
+  //
+  // What each column is for, and the rule it enforces:
+  //
+  //   move    the paradigm's three navigation moves (fractal_operational_core.md §9).
+  //           'vertical' crosses ONE rung and asserts a real, causal, visited path;
+  //           'horizontal' compares peers on the same rung; 'jump' asserts structural
+  //           kinship with no path at all. The service refuses a vertical relation that
+  //           skips a rung — that is exactly what separates it from a jump.
+  //   shape   an opaque id for the anatomy the two share. NOT a name. A name that re-enters
+  //           the comparison is a tag with extra ceremony (§18), so this is a handle the
+  //           matcher may use and a human may not read meaning into.
+  //   at      when the relation holds. This is how a loop exists without an `event` type:
+  //           a loop is a set of vertical relations returning to its starting rung with
+  //           `at` increasing (§2 — an event is an entity-state over time, not a node).
+  //   source_kind / source_ref / falsifier
+  //           provenance recorded at birth, which is the only moment it is cheap (§11).
+  //           `source_kind` keeps self-testimony apart from witness-testimony (§10) —
+  //           what an institution says it does versus what was observed of it — because
+  //           the gap between the two is the measurable blind spot.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_relations (
+      id TEXT PRIMARY KEY,
+      from_id TEXT NOT NULL REFERENCES entities(id),
+      to_id TEXT NOT NULL REFERENCES entities(id),
+      move TEXT NOT NULL,
+      shape TEXT,
+      direction TEXT,
+      at TEXT,
+      note TEXT,
+      source_kind TEXT NOT NULL DEFAULT 'witness',
+      source_ref TEXT,
+      falsifier TEXT,
+      created_by TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_from ON entity_relations(from_id, deleted_at)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_to ON entity_relations(to_id, deleted_at)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_shape ON entity_relations(shape, deleted_at)`); } catch {}
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS clusters (
       code TEXT PRIMARY KEY,

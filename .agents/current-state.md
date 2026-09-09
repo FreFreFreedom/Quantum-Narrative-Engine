@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-09T21:59:06.734Z
+Generated: 2026-09-09T22:29:41.430Z
 
 ## Components
 
@@ -38,7 +38,8 @@ Generated: 2026-09-09T21:59:06.734Z
 
 ## Plan backlog
 
-- civic-structures-and-loops — PLANNED
+- civic-structures-and-loops — IN PROGRESS
+- command-center-dashboard — **PLANNED** 2026-09-09
 - entity-interior-first-anatomy — **DONE** 2026-09-07
 - google-models-and-one-shared-memory — **DONE** 2026-09-07
 - room-chat-tool-parity — **PLANNED** 2026-08-26

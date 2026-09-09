@@ -1657,6 +1657,29 @@
    "postures": []
   },
   {
+   "id": "grp_truck_crew",
+   "type": "group",
+   "scale": "group",
+   "name": "Troy and Bono's truck crew",
+   "note": "Two men on the back of the same truck for years. The smallest civic structure in the film, and — the anatomy found — the one whose boundary Troy actually defends: his ally in the household scene is his workmate, not his kin.",
+   "container": "inst_pittsburgh_sanitation",
+   "testimony": [
+    "f_fences"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "boundary-drawn-wrong",
+    "loyalty-as-conscience",
+    "dignity-through-sacrifice"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.45
+   },
+   "postures": []
+  },
+  {
    "id": "fam_maxson",
    "type": "family",
    "scale": "family",
