@@ -1414,6 +1414,27 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_marks ON convo_marks(convo_id, created_at)`); } catch {}
+
+  // Passages — lines kept out of conversations, with the thinking about them
+  // attached. Not a seed (work_ideas is an intention to build) and not a chapter
+  // (convo_marks is a place to return to): a found line, kept verbatim.
+  // convo_id/message_id are where it came from, kept nullable so a passage
+  // outlives the conversation being deleted.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS saved_passages (
+      id TEXT PRIMARY KEY,
+      text TEXT NOT NULL,
+      convo_id TEXT,
+      message_id TEXT,
+      source_title TEXT,
+      reading TEXT,
+      read_at TEXT,
+      created_by TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_saved_passages ON saved_passages(created_at DESC)`); } catch {}
   // Every rewrite a conversation made to the thing it was about — one row per
   // field, before and after. A single table rather than an "original" column on
   // each of the five subject tables: it keeps the whole history, needs no
@@ -1439,6 +1460,9 @@ export function initConversationsSchema(db) {
   // constraint and SQLite cannot alter one, and these rows must stay kind='chat'
   // so the conversation keeps remembering them in its turn window.
   try { db.exec(`ALTER TABLE convo_messages ADD COLUMN meta TEXT`); } catch {}
+  // 1 while the title is the machine's, cleared the moment the owner renames.
+  // Without it, re-titling a drifted conversation would overwrite a name he chose.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN title_auto INTEGER NOT NULL DEFAULT 0`); } catch {}
 
   // The memory watermark (plan "room-shared-memory"): how many of this
   // conversation's turns the fact-harvest job has already read, so it never

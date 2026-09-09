@@ -23,7 +23,7 @@ function isConvoError(out) {
 function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
-      || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message') return 400;
+      || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title') return 400;
   return 500;
 }
 
@@ -337,6 +337,14 @@ export function conversationsRoutes() {
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
   });
+
+  // POST /api/convos/:id/retitle — name it again, properly. Waits for the model:
+  // it is a click, and a click that changes nothing on screen reads as broken.
+  router.post('/:id/retitle', asyncHandler(async (req, res) => {
+    const out = await convos.retitleConvo(req.params.id);
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
 
   // Chapters — saved places inside one conversation.
   router.get('/:id/marks', (req, res) => {

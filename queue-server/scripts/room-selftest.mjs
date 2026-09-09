@@ -9,6 +9,7 @@ import { rmSync } from 'node:fs';
 rmSync(process.env.DB_PATH, { force: true }); // a fork test must start from an empty thread list
 
 const { openDb } = await import('../server/src/db/schema.js');
+const passages = await import('../server/src/services/passages.js');
 const convos = await import('../server/src/services/conversations.js');
 const { lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark } = convos;
 convos.bindConversationsDb(openDb());
@@ -85,3 +86,25 @@ assert.ok(deleteMark(convo.id, m.mark.id).ok);
 assert.equal(listMarks(convo.id).length, 1);
 assert.equal(deleteMark(convo.id, m.mark.id).error, 'not_found', 'deleting twice is a 404, not a silent ok');
 console.log('chapters OK — saved, labelled, carried into a fork, deleted');
+
+// ─── Passages ────────────────────────────────────────────────────────────────
+// The shelf of kept lines. No model here: the reading is a separate call, and
+// this checks only the free, deterministic half.
+passages.bindPassagesDb(db);
+const line = 'the play asks: what happens to a people when the civic structure meant to hold them together becomes the instrument of their isolation?';
+const kept = passages.savePassage({ text: '  ' + line.replace('play', 'play  ') + ' ', convoId: convo.id, sourceTitle: 'Civic structures' });
+assert.ok(kept.ok);
+assert.equal(kept.passage.text, line, 'whitespace is collapsed so the same line saved twice is the same text');
+assert.equal(kept.passage.source_title, 'Civic structures');
+assert.equal(kept.passage.reading, null, 'the reading is written afterwards, not on save');
+
+const again = passages.savePassage({ text: line });
+assert.ok(again.already, 'the same line twice is one passage, not two');
+assert.equal(again.passage.id, kept.passage.id);
+assert.equal(passages.listPassages().length, 1);
+assert.equal(passages.savePassage({ text: '   ' }).error, 'empty');
+
+assert.ok(passages.deletePassage(kept.passage.id).ok);
+assert.equal(passages.listPassages().length, 0, 'a forgotten passage leaves the shelf');
+assert.equal(passages.deletePassage(kept.passage.id).error, 'not_found');
+console.log('passages OK — kept, de-duplicated, listed, forgotten');

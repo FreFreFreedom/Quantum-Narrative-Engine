@@ -198,15 +198,92 @@ export function generateTitleFromText(text) {
 // (manual or a prior auto-title) means this has already been decided.
 function maybeAutoTitleConvo(convo) {
   if (!db || !convo || convo.subject_type !== 'open') return;
-  if ((convo.turns || 0) !== 0) return;
-  if (String(convo.title || '').trim() !== DEFAULT_OPEN_TITLE) return;
-  const firstUser = db.prepare(
-    `SELECT text FROM convo_messages WHERE convo_id=? AND role='user' ORDER BY created_at ASC, rowid ASC LIMIT 1`,
-  ).get(convo.id);
-  const title = generateTitleFromText(firstUser?.text);
-  if (!title) return;
-  db.prepare(`UPDATE convos SET title=? WHERE id=?`).run(title, convo.id);
-  broadcastAll('convos:updated', { convoId: convo.id });
+  const turns = convo.turns || 0;
+  const named = String(convo.title || '').trim();
+
+  // Turn one: name it instantly from the words themselves, so a new thread is
+  // never nameless while a model is thinking, then improve it below.
+  if (turns === 0 && named === DEFAULT_OPEN_TITLE) {
+    const firstUser = db.prepare(
+      `SELECT text FROM convo_messages WHERE convo_id=? AND role='user' ORDER BY created_at ASC, rowid ASC LIMIT 1`,
+    ).get(convo.id);
+    const title = generateTitleFromText(firstUser?.text);
+    if (title) {
+      db.prepare(`UPDATE convos SET title=?, title_auto=1 WHERE id=?`).run(title, convo.id);
+      broadcastAll('convos:updated', { convoId: convo.id });
+    }
+  }
+
+  // Then the real one. Twice: after the first exchange, and again at the fifth —
+  // a thread that opens on one question is often about something else by then,
+  // and "Find myself becoming more and more interested in…" is a transcript
+  // fragment rather than a name (his complaint, 2026-09-09).
+  if (turns === 0 || turns === 4) smartTitleSoon(convo.id);
+}
+
+// A title is a few words, so this is the cheapest call the app makes: the free
+// summary lane, ~20 tokens out. Fire-and-forget — naming a thread must never
+// stand between him and his answer.
+const SMART_TITLE_PROMPT = `Name this conversation the way a person would name it afterwards: what it is ABOUT, not how it opened.
+
+Three to six words. A noun phrase, no verb needed, no quotes, no final full stop. Name the subject and, where there is one, the angle on it — "Civic structures as instruments of isolation" beats "Politics discussion". Never echo the opening words of the first message, never start with "Conversation about" or "Exploration of", and never use the words "fractal" or "paradigm" unless the conversation is genuinely about those and not merely written in them.
+
+Reply with the title alone.`;
+
+// The same pass, asked for on purpose. Ignores title_auto — clicking the button
+// IS the permission — and marks the result as the machine's again so a drifting
+// thread keeps being renamed until he names it himself.
+export async function retitleConvo(convoId) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(convoId);
+  if (!convo) return { error: 'not_found' };
+  db.prepare(`UPDATE convos SET title_auto=1 WHERE id=?`).run(convoId);
+  const title = await writeSmartTitle(convoId);
+  if (!title) return { error: 'no_title', message: 'The model did not come back with a usable name — try again in a moment.' };
+  return { ok: true, convo: getConvo(convoId) };
+}
+
+function smartTitleSoon(convoId) {
+  setImmediate(() => {
+    writeSmartTitle(convoId).catch((e) => console.error('[room] smart title failed:', e?.message || e));
+  });
+}
+
+async function writeSmartTitle(convoId) {
+  const convo = getConvo(convoId);
+  // Renamed by hand while this was queued: his name wins, always.
+  if (!convo || Number(convo.title_auto) !== 1) return null;
+  const msgs = listMessages(convoId).filter((m) => m.kind === 'chat').slice(0, 6);
+  if (!msgs.length) return null;
+  const transcript = msgs
+    .map((m) => `${m.role === 'user' ? 'He asked' : 'The answer'}: ${String(m.text).slice(0, 1200)}`)
+    .join('\n\n');
+  const out = await generateText({
+    prompt: `${SMART_TITLE_PROMPT}\n\n=== THE CONVERSATION ===\n${transcript}`,
+    feature: 'summary',
+    label: 'conversations:smart-title',
+    maxTokens: 30,
+    timeoutMs: 45_000,
+  });
+  const title = cleanTitle(out?.text);
+  if (!title) return null;
+  // Read again: the whole point of the flag is that a rename during the call wins.
+  const still = getConvo(convoId);
+  if (!still || Number(still.title_auto) !== 1) return null;
+  db.prepare(`UPDATE convos SET title=?, title_auto=1 WHERE id=?`).run(title, convoId);
+  broadcastAll('convos:updated', { convoId });
+  return title;
+}
+
+// Models like to answer a request for a title with a sentence about the title.
+function cleanTitle(raw) {
+  let t = String(raw || '').trim().split('\n')[0].trim();
+  t = t.replace(/^(title|name)\s*[:\-]\s*/i, '');
+  t = t.replace(/^[""'\u201c\u2018]+|[""'\u201d\u2019]+$/g, '').trim();
+  t = t.replace(/[.]+$/, '').trim();
+  if (t.length < 3 || t.length > 90) return null;
+  if (t.split(/\s+/).length > 10) return null;
+  return t.slice(0, 80);
 }
 
 // ─── Read paths ──────────────────────────────────────────────────────────────
@@ -484,7 +561,8 @@ export function renameConvo(id, title) {
   if (!convo) return { error: 'not_found' };
   const name = String(title || '').trim().slice(0, 120);
   if (!name) return { error: 'empty' };
-  db.prepare(`UPDATE convos SET title=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(name, id);
+  // title_auto=0: he has named it, so no later pass may rename it again.
+  db.prepare(`UPDATE convos SET title=?, title_auto=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(name, id);
   broadcastAll('convos:updated', { convoId: id });
   return { ok: true, convo: getConvo(id) };
 }

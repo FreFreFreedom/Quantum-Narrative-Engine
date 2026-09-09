@@ -53,6 +53,8 @@ import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaSched
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
+import { passagesRoutes } from './routes/passages.js';
+import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
 import { mindRoutes } from './routes/mind.js';
 import { bindMindDb } from './services/mind.js';
@@ -116,6 +118,7 @@ bindOpenAiSpendDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
+bindPassagesDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
 bindTagCommunitiesDb(db);
@@ -376,6 +379,7 @@ app.use('/api/architecture', requireAuth, architectureRoutes(db));
 app.use('/api/architecture/intel', requireAuth, intelRoutes(db));
 app.use('/api/discovery', requireAuth, discoveryRoutes(db));
 app.use('/api/convos', requireAuth, conversationsRoutes());
+app.use('/api/passages', requireAuth, passagesRoutes());
 app.use('/api/mind', requireAuth, mindRoutes());
 
 // Serve the single-file frontend app (fmcns_navigator.html, copied to

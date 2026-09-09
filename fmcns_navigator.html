@@ -717,6 +717,25 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    conversation (plan "room-world-ideas") — the same ✨ cards suggestions and
    ideas already get, drawn with the same worldPartsHtml() used everywhere else. */
 .room-ideas { margin-top:14px; border-top:1px solid var(--c-border); padding-top:12px; }
+/* Passages — kept lines. The line itself is the heading, so it is set in the
+   reading face rather than the label face, and the reading under it is quieter. */
+.pass { border-bottom:1px solid var(--c-border-2, var(--c-border)); padding:7px 0; }
+.pass:last-child { border-bottom:none; }
+.pass-line { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:0;
+  font-family:inherit; color:var(--c-ink-3); font-size:11.5px; line-height:1.5; }
+.pass-line:hover { color:var(--c-ink); }
+.pass-quote { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.pass.open .pass-quote { -webkit-line-clamp:unset; overflow:visible; color:var(--c-ink); }
+.pass-quote::before { content:'“'; color:var(--c-ink-5); }
+.pass-quote::after { content:'”'; color:var(--c-ink-5); }
+.pass-body { padding:6px 0 2px; }
+.pass-reading { font-size:11px; line-height:1.55; color:var(--c-ink-4); white-space:pre-wrap; }
+.pass-reading.is-waiting { color:var(--c-ink-5); font-style:italic; }
+.pass-world { margin-top:7px; border-left:2px solid var(--c-border); padding-left:8px; }
+.pass-world-row { font-size:10.5px; line-height:1.45; color:var(--c-ink-4); margin-bottom:5px; }
+.pass-world-row b { display:block; color:var(--c-ink-3); font-weight:600; }
+.pass-acts { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-top:8px; }
+.pass-from { font-size:10px; color:var(--c-ink-5); margin-right:auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px; }
 /* Scoped to the Room only — .wl-title elsewhere (suggestion/seed cards) keeps its
    app-wide single-line ellipsis; this column is narrow enough that truncating a
    long idea title there cuts off nearly all of it. */
@@ -2349,6 +2368,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-toolacts">
             <button type="button" class="uicon" id="roomRenameBtn" title="Rename this thread" aria-label="Rename this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-pencil"/></svg></button>
+            <button type="button" class="uicon" id="roomRetitleBtn" title="Name this thread by what it is about" aria-label="Name this thread by what it is about"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-spark"/></svg></button>
             <button type="button" class="uicon" id="roomForkBtn" title="Fork this thread — the same conversation so far, carried into a new one" aria-label="Fork this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-fork"/></svg></button>
             <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg></button>
             <button type="button" class="uicon is-danger" id="roomDeleteBtn" title="Delete this thread" aria-label="Delete this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-trash"/></svg></button>
@@ -2400,6 +2420,13 @@ button:active { transform: translateY(1px) scale(.99); }
             <button type="button" class="uicon room-collapse-btn" id="roomExtractCollapse" title="Collapse the Extraction panel" aria-label="Collapse the Extraction panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-up"/></svg></button>
           </div>
           <div id="roomExtractHost"></div>
+        </div>
+        <div class="room-ideas" id="roomPassages">
+          <div class="room-side-head">
+            <h2>Passages</h2>
+            <button type="button" class="uicon room-collapse-btn" id="roomPassagesCollapse" title="Collapse the Passages panel" aria-label="Collapse the Passages panel"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-up"/></svg></button>
+          </div>
+          <div id="roomPassagesHost"></div>
         </div>
         <div class="room-ideas" id="roomIdeas">
           <div class="room-side-head">
@@ -7173,6 +7200,11 @@ const ROOM_MIND_COLLAPSE_KEY = 'fmcns_room_mind_collapsed';
 const ROOM_ATTACHED_COLLAPSE_KEY = 'fmcns_room_attached_collapsed';
 const ROOM_EXTRACT_COLLAPSE_KEY = 'fmcns_room_extract_collapsed';
 const ROOM_IDEAS_COLLAPSE_KEY = 'fmcns_room_ideas_collapsed';
+const ROOM_PASSAGES_COLLAPSE_KEY = 'fmcns_room_passages_collapsed';
+// The kept lines. Global rather than per-thread on purpose: a passage outlives the
+// conversation it came from, and the shelf is the same shelf whichever thread is open.
+let roomPassages = [];
+let roomPassagesOpen = new Set();
 const ROOM_CARDS_WIDTH_KEY = 'fmcns_room_cards_width';
 const ROOM_CARDS_MIN_W = 250, ROOM_CARDS_MAX_W = 480;
 // Applies the saved custom width, or lets the CSS default/collapsed/narrow rules
@@ -7196,6 +7228,7 @@ function initRoom() {
   document.getElementById('roomRenameBtn').onclick = roomBeginRename;
   document.getElementById('roomDeleteBtn').onclick = () => roomDeleteThread(roomSel);
   document.getElementById('roomForkBtn').onclick = () => roomForkThread(roomSel);
+  document.getElementById('roomRetitleBtn').onclick = () => roomRetitleThread(roomSel);
   const box = document.getElementById('roomRenameBox');
   box.onkeydown = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); roomCommitRename(); }
@@ -7421,6 +7454,19 @@ function initRoom() {
   wireRoomSectionCollapse(document.getElementById('roomAttached'), document.getElementById('roomAttachedCollapse'), ROOM_ATTACHED_COLLAPSE_KEY, 'Attached', false);
   wireRoomSectionCollapse(document.getElementById('roomExtract'), document.getElementById('roomExtractCollapse'), ROOM_EXTRACT_COLLAPSE_KEY, 'Extraction', false);
   wireRoomSectionCollapse(document.getElementById('roomIdeas'), document.getElementById('roomIdeasCollapse'), ROOM_IDEAS_COLLAPSE_KEY, 'Ideas', false);
+  wireRoomSectionCollapse(document.getElementById('roomPassages'), document.getElementById('roomPassagesCollapse'), ROOM_PASSAGES_COLLAPSE_KEY, 'Passages', false);
+  const passHost = document.getElementById('roomPassagesHost');
+  if (passHost) passHost.onclick = (ev) => {
+    const btn = ev.target.closest && ev.target.closest('[data-pass-act]');
+    if (!btn) return;
+    ev.stopPropagation();
+    const id = btn.getAttribute('data-pass-id');
+    const act = btn.getAttribute('data-pass-act');
+    if (act === 'open') { roomPassagesOpen.has(id) ? roomPassagesOpen.delete(id) : roomPassagesOpen.add(id); renderRoomPassages(); }
+    else if (act === 'drop') roomDropPassage(id);
+    else if (act === 'read') roomReadPassage(id);
+    else if (act === 'world') roomPassageWorldLook(id);
+  };
   // The Room's shared memory (plan "room-shared-memory").
   const mindAdd = document.getElementById('roomMindAdd');
   if (mindAdd) mindAdd.onclick = roomAddFact;
@@ -7478,6 +7524,114 @@ async function loadRoom() {
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
   loadRoomIdeas();
   loadRoomExtract();
+  loadRoomPassages().then(loadRoomPassageWorld);
+}
+
+async function loadRoomPassages() {
+  try {
+    const out = await api('/api/passages');
+    roomPassages = out.passages || [];
+  } catch (e) { roomPassages = []; }
+  renderRoomPassages();
+}
+window.loadRoomPassages = loadRoomPassages;
+
+async function roomDropPassage(id) {
+  if (!roomPassages.some(x => x.id === id)) return;
+  if (!confirm('Forget this passage? The reading of it goes too.')) return;
+  roomPassages = roomPassages.filter(x => x.id !== id);
+  renderRoomPassages();
+  try { await apiWrite('/api/passages/' + encodeURIComponent(id), 'DELETE'); } catch (e) { loadRoomPassages(); }
+}
+
+// Ask for the reading again — a first one if the background pass failed, a fresh
+// one if what came back said nothing useful.
+async function roomReadPassage(id) {
+  const p = roomPassages.find(x => x.id === id);
+  if (!p || p.reading_busy) return;
+  p.reading_busy = true;
+  renderRoomPassages();
+  try {
+    const out = await apiWrite('/api/passages/' + encodeURIComponent(id) + '/read', 'POST', { force: !!p.reading });
+    if (out && out.passage) Object.assign(p, out.passage);
+  } catch (e) { /* leave what is already there */ }
+  p.reading_busy = false;
+  renderRoomPassages();
+}
+
+// The world-look for one passage, on the generic discovery endpoint — same pass and
+// same reports as the Room's own Ideas panel, which already takes any source. A
+// click, never automatic: this one costs real model time.
+async function roomPassageWorldLook(id) {
+  const p = roomPassages.find(x => x.id === id);
+  if (!p) return;
+  if (p.world && p.world.report) { roomPassagesOpen.add(id); renderRoomPassages(); return; }
+  p.world = { running: true };
+  renderRoomPassages();
+  try { await apiWrite('/api/discovery/world-look', 'POST', { source: 'passage', source_id: id, idea_text: p.text }); }
+  catch (e) { /* the reload below settles it */ }
+  setTimeout(loadRoomPassageWorld, 4000);
+}
+
+// One free lookup for every passage on screen: reports are rows, not model calls.
+async function loadRoomPassageWorld() {
+  if (!roomPassages.length) return;
+  try {
+    const ids = roomPassages.map(p => p.id).join(',');
+    const out = await api('/api/discovery/world-look/for?source=passage&ids=' + encodeURIComponent(ids));
+    const items = (out && out.items) || {};
+    roomPassages.forEach(p => { p.world = items[p.id] || null; });
+  } catch (e) { /* leave them as they are */ }
+  renderRoomPassages();
+}
+
+function renderRoomPassages() {
+  const host = document.getElementById('roomPassagesHost');
+  if (!host) return;
+  if (!roomPassages.length) {
+    host.innerHTML = '<div class="tv-empty">Select a line in an answer and press Keep.</div>';
+    return;
+  }
+  host.innerHTML = roomPassages.map(p => {
+    const open = roomPassagesOpen.has(p.id);
+    const world = p.world || null;
+    const readingHtml = p.reading_busy
+      ? '<div class="pass-reading is-waiting">Reading it…</div>'
+      : (p.reading ? '<div class="pass-reading">' + qEsc(p.reading) + '</div>'
+                   : '<div class="pass-reading is-waiting">No reading yet.</div>');
+    const worldHtml = world && world.running
+      ? '<div class="pass-reading is-waiting">Looking at the world — a minute or two.</div>'
+      : (world && world.report ? '<div class="pass-world">' + roomPassageWorldHtml(world.report) + '</div>' : '');
+    return '<div class="pass' + (open ? ' open' : '') + '">'
+      + '<button type="button" class="pass-line" data-pass-act="open" data-pass-id="' + qEsc(p.id) + '">'
+      +   '<span class="pass-quote">' + qEsc(p.text) + '</span>'
+      + '</button>'
+      + (open
+          ? '<div class="pass-body">'
+            + readingHtml
+            + worldHtml
+            + '<div class="pass-acts">'
+            +   (p.source_title ? '<span class="pass-from">from “' + qEsc(p.source_title) + '”</span>' : '')
+            +   '<button type="button" class="se-cmd" data-pass-act="read" data-pass-id="' + qEsc(p.id) + '">' + (p.reading ? 'Read it again' : 'Read it') + '</button>'
+            +   '<button type="button" class="se-cmd" data-pass-act="world" data-pass-id="' + qEsc(p.id) + '">' + (world && world.report ? 'World ideas' : 'Look at the world') + '</button>'
+            +   '<button type="button" class="se-cmd" data-pass-act="drop" data-pass-id="' + qEsc(p.id) + '">Forget</button>'
+            + '</div>'
+            + '</div>'
+          : '')
+      + '</div>';
+  }).join('');
+}
+
+// The bold ideas out of a world-look report, in the compact shape this narrow
+// column can hold — a full round already has its own rendering in Ideas.
+function roomPassageWorldHtml(report) {
+  let picks = [];
+  try { picks = JSON.parse(report.picks_json || '[]'); } catch (e) { picks = []; }
+  if (!picks.length) return '<div class="pass-reading is-waiting">Nothing came back from that look.</div>';
+  return picks.slice(0, 6).map(x =>
+    '<div class="pass-world-row"><b>' + qEsc(x.title || x.name || 'Idea') + '</b>'
+    + (x.why || x.what ? '<span>' + qEsc(String(x.why || x.what).slice(0, 220)) + '</span>' : '') + '</div>'
+  ).join('');
 }
 
 async function loadRoomSubjects() {
@@ -7556,7 +7710,27 @@ function renderRoomHead() {
   if (delBtn) delBtn.disabled = !t;
   const forkBtn = document.getElementById('roomForkBtn');
   if (forkBtn) forkBtn.disabled = !t;
+  const retitleBtn = document.getElementById('roomRetitleBtn');
+  if (retitleBtn) retitleBtn.disabled = !t;
   if (!t) roomEndRename();
+}
+
+// Name it by what it is about. The automatic pass already runs after the first
+// exchange and again at the fifth, but only while the name is still the machine's
+// — so this is how a thread he renamed once, or an old one, gets a real name.
+async function roomRetitleThread(id) {
+  if (!id) return;
+  const btn = document.getElementById('roomRetitleBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(id) + '/retitle', 'POST', {});
+    await loadRoom();
+  } catch (e) {
+    roomThreadsNote = 'Could not name this thread just now.';
+    renderRoomThreads();
+  } finally {
+    if (btn) btn.disabled = !roomSel;
+  }
 }
 
 // Fork: carry this conversation, as it stands, into a new thread and open it.
@@ -8086,6 +8260,7 @@ function roomSelect(id) {
   loadRoomSubjects();
   loadRoomIdeas();
   loadRoomExtract();
+  loadRoomPassages().then(loadRoomPassageWorld);
 }
 
 async function roomNewThread() {
@@ -18136,6 +18311,11 @@ document.addEventListener('keydown', (e) => {
         if(msgId) mk('bookmark', 'Chapter', 'Save this place, to come back to it later', function(){
           saveMark(e, msgId, passage, repaint);
         });
+        // Keep the line itself, not the place and not the context: it goes on the
+        // Passages shelf and is read there.
+        mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
+          keepPassage(e, msgId, passage, repaint);
+        });
         document.body.appendChild(quotePop);
         placeQuotePop();
       }, 0);
@@ -18245,9 +18425,16 @@ document.addEventListener('keydown', (e) => {
     var turn = log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(mark.message_id) : mark.message_id) + '"]');
     if(!turn) return;
     var body = turn.querySelector('.se-body') || turn;
+    // Take the previous highlight off — AND put the text back together. Replacing
+    // a <mark> with a text node leaves two or three adjacent text nodes where
+    // there was one, and the search below matches inside a single node: from the
+    // second click on, the passage straddled a seam, nothing matched, and the
+    // jump quietly landed on the top of the message instead of on the place.
+    // That is the bug he reported. normalize() welds the fragments back.
     log.querySelectorAll('mark.se-jumped').forEach(function(m){
       m.replaceWith(document.createTextNode(m.textContent));
     });
+    log.normalize();
     var hit = mark.snippet ? highlightIn(body, mark.snippet) : null;
     // Scroll the LOG, by arithmetic. scrollIntoView refused to move this nested
     // scroller — verified live: the passage lit up correctly and stayed off
@@ -18266,22 +18453,47 @@ document.addEventListener('keydown', (e) => {
   // the surrounding markup (code spans, links) is left exactly as it was; gives up
   // rather than guessing when the passage spans several nodes.
   function highlightIn(root, needle){
-    var want = needle.replace(/\s+/g, ' ').trim();
+    var want = String(needle || '').replace(/\s+/g, ' ').trim();
     if(!want) return null;
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
-    var node;
-    while((node = walker.nextNode())){
-      var i = node.nodeValue.replace(/\s+/g, ' ').indexOf(want.slice(0, 80));
-      if(i === -1) continue;
-      var range = document.createRange();
-      range.setStart(node, Math.min(i, node.nodeValue.length));
-      range.setEnd(node, Math.min(i + Math.min(want.length, 80), node.nodeValue.length));
-      var el = document.createElement('mark');
-      el.className = 'se-jumped';
-      try { range.surroundContents(el); } catch(err) { return null; }
-      return el;
+    root.normalize();
+    // Longest first, then shorter openings. A passage can run through a code span
+    // or a link, and no single text node then holds all of it — but its first
+    // twenty characters almost always sit in one, which is enough to land on.
+    var tries = [80, 40, 20].filter(function(n, i){ return i === 0 || n < want.length + 10; });
+    for(var k = 0; k < tries.length; k++){
+      var probe = want.slice(0, tries[k]);
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      var node;
+      while((node = walker.nextNode())){
+        var i = node.nodeValue.indexOf(probe);
+        if(i === -1) continue;
+        var range = document.createRange();
+        range.setStart(node, i);
+        range.setEnd(node, Math.min(i + probe.length, node.nodeValue.length));
+        var el = document.createElement('mark');
+        el.className = 'se-jumped';
+        try { range.surroundContents(el); } catch(err) { continue; }
+        return el;
+      }
     }
     return null;
+  }
+
+  // Keep a line. The reading of it is written server-side straight after, so this
+  // returns as soon as the line is safe rather than waiting on a model.
+  function keepPassage(e, messageId, text, repaint){
+    apiWrite('/api/passages', 'POST', {
+      text: text,
+      convoId: e.convoId || null,
+      messageId: messageId || null,
+      sourceTitle: e.title || null,
+    })
+      .then(function(out){
+        e.note = (out && out.already) ? 'Already kept.' : 'Kept — it is in Passages.';
+        if(repaint) repaint();
+        if(window.loadRoomPassages) window.loadRoomPassages();
+      })
+      .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); });
   }
 
   // The carried passage, folded into the message actually sent. Quoted rather than
