@@ -12,8 +12,8 @@
 //     specific older/lower-ranked fact the block didn't surface.
 //
 // A fire-and-forget `harvest()` extracts standing facts from conversation turns
-// (after the 8-turn watermark) using the existing `summary` feature lane, which
-// is free in practice (second Claude account first, then free models).
+// (after the HARVEST_AFTER_TURNS watermark) using the existing `summary` feature
+// lane, which is free in practice (second Claude account first, then free models).
 
 import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
@@ -33,6 +33,14 @@ function mirrorOut() {
 
 const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style'];
 const MAX_FACTS = 300;
+// How many of his own messages must pile up before a harvest runs. Was 8, which
+// never fired for the way he actually talks: his threads are a handful of long
+// questions answered at length, so a whole conversation ends below the
+// watermark and its facts are never extracted at all — "Cross-Domain Analogical
+// Reasoning" sat at 4 turns with nothing harvested. 3 costs no more per fact
+// (the pass only ever reads the messages since the watermark, on the free
+// `summary` lane) — it just runs more often on smaller batches.
+const HARVEST_AFTER_TURNS = 3;
 const BLOCK_CAP = 4000;
 // Stopwords dropped before normalising a fact for the deterministic dedup check.
 const STOPWORDS = new Set([
@@ -213,7 +221,7 @@ async function runHarvest(convoId, force) {
   const msgs = db.prepare(`SELECT text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role='user' ORDER BY created_at`).all(convoId);
   const seen = convo.mind_seen_turns || 0;
   const newMsgs = msgs.slice(Math.min(seen, msgs.length));
-  if (!force && newMsgs.length < 8) return;
+  if (!force && newMsgs.length < HARVEST_AFTER_TURNS) return;
 
   const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text }));
   const result = await generateText({
