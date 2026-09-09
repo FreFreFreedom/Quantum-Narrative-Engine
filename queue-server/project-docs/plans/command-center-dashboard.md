@@ -1,7 +1,8 @@
 # Command Center — one screen that says what the system is doing
 
-**Status: PLANNED** — written 2026-09-09. Not a green light; implement only when Antoine
-asks for it by name.
+**Status: DONE** — shipped 2026-09-09 (`ffcb3d0`, `4d73ed9`, `cb3dbbd`). Read
+"What the implementation changed" at the foot before trusting the body: **two of the
+seven tiles were dropped during the build**, for the reason the plan itself gives.
 
 **Re-verified 2026-09-09 against `4c9c789`**, after the civic-structures work landed six
 commits. Three references in the first draft were wrong and are corrected below — see
@@ -183,3 +184,44 @@ existing SELECT. No schema change, no dependency, no external service, no model 
    the latter offered as an optional line in tile 4.
 5. Every backend reference in the first draft that was *not* listed above was re-checked
    and is still exact.
+
+
+## What the implementation changed (2026-09-09)
+
+Built as `services/dashboard.js` + `routes/dashboard.js` (`GET /api/dashboard`), a
+`ws-home` view, and a `Home` rail item first in the list. Three departures from the
+plan, all found by building it rather than reading it:
+
+1. **The queue tile and the quota tile were dropped.** The rail's foot already draws
+   both on every view — `#archQueueBanner` carries paused/running/queued, auto-ship,
+   today's spend, the helper budget and the storage warning
+   (`renderArchQueueBanner`), and `#usageStripHost` carries the 5-hour and weekly
+   windows. Building them again on Home would have been the same numbers twice, which
+   is the rule this plan cites in its own design constraints. Five tiles, not seven.
+   What survived is only what is genuinely nowhere else.
+2. **`mind_seen_turns` needed no schema or query change.** `listOpenConvos` does
+   `SELECT *`, so it was already there. The plan expected to add a column.
+3. **`listSuggestions` is called with `flagShipped: false`.** The default runs
+   `shipFacts.js`'s "this may already be done" comparison over a month of shipped
+   work — useful on the Flow card that owns a suggestion, pure cost on a screen that
+   only counts them.
+
+Two bugs the diff could not show, both caught by driving the live app:
+
+- **The remembered-view whitelist** (`fmcns_navigator.html`, `coreView` initialiser)
+  listed `arch`/`flow`/`room` only, so `home` was silently discarded on reload and he
+  would have landed back on Architecture every time.
+- **The ranking card was empty on every open.** `loadNextUp()` is asynchronous; Home
+  rendered "Nothing ranked yet" before the answer arrived and nothing redrew it. Fixed
+  with one line in that function's `finally`, so the refresh and second-opinion paths
+  redraw too.
+
+And one design correction after seeing real data: **the waiting card capped at six
+rows**. Five each of stopped tasks, seeds and suggestions came to thirteen on the
+first real load — a card that long has become the Flow view with worse controls.
+
+Unrelated but fixed in the same commit, because it bit twice while building this:
+`syncNoteMirror` and `syncMindMirror` now refuse to act on an empty read. Booting the
+server against an empty throwaway `DB_PATH` deleted the entire notes mirror in the
+working tree, and the deletions reached a staged commit the first time. The runner has
+always had that guard; the local write path never did.
