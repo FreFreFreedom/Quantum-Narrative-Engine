@@ -3,6 +3,7 @@
 // never drift out of sync with each other.
 
 import { getTagCommunities } from './tagCommunities.js';
+import { SCALE_LADDER, rungOf, rungKeyOf } from './scaleLadder.js';
 
 export function hydrate(db, row) {
   if (!row) return null;
@@ -64,7 +65,40 @@ export function listFacets(db) {
     GROUP BY a.key, a.name, a.low, a.high
   `).all();
   const total = db.prepare(`SELECT COUNT(*) AS n FROM entities`).get().n;
-  return { types, sources, axes, total };
+  return { types, sources, axes, scales: listScaleFacet(db), total };
+}
+
+// The scale ladder with this corpus's counts hung on it — ordered, and including the
+// rungs that hold nothing. An empty rung is a true fact about the corpus (four of them
+// are empty today), so it ships as a row with n:0 rather than being filtered out.
+// `unplaced` is everything whose stored scale names no rung at all: films, which are
+// mediums rather than self-maintaining entities, plus any value nobody has mapped yet.
+function listScaleFacet(db) {
+  const rows = db.prepare(`SELECT COALESCE(scale,'') AS value, COUNT(*) AS n FROM entities GROUP BY COALESCE(scale,'')`).all();
+  const counted = new Map();
+  const unplaced = [];
+  for (const r of rows) {
+    const key = rungKeyOf(r.value);
+    if (key === null) unplaced.push({ value: r.value || '(none)', n: r.n });
+    else counted.set(key, (counted.get(key) || 0) + r.n);
+  }
+  return {
+    ladder: SCALE_LADDER.map((rung, i) => ({ key: rung.key, name: rung.name, rung: i, vocab: rung.vocab, n: counted.get(rung.key) || 0 })),
+    unplaced,
+  };
+}
+
+// Rung distance between two entities by id — the honest replacement for the frontend's
+// old `o.type !== e.type` stand-in for "cross-scale". null means at least one of them is
+// unplaced and the pair cannot be compared at all.
+export function rungDistanceBetween(db, idA, idB) {
+  const a = db.prepare(`SELECT scale FROM entities WHERE id=?`).get(idA);
+  const b = db.prepare(`SELECT scale FROM entities WHERE id=?`).get(idB);
+  if (!a || !b) return null;
+  const ra = rungOf(a.scale);
+  const rb = rungOf(b.scale);
+  if (ra === null || rb === null) return null;
+  return Math.abs(ra - rb);
 }
 
 // ─── Theme clusters (tag communities) ────────────────────────────────────────
