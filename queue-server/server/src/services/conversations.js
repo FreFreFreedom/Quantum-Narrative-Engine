@@ -1079,13 +1079,19 @@ export function lengthRequest(text) {
   return null;
 }
 
-// ~1.4 tokens per English word, then half again as headroom so the answer ends
-// where it means to rather than at the ceiling. Never below the standing 4000 —
-// this only ever raises the roof.
+// ~1.4 tokens per English word, doubled, plus a flat 2000.
+//
+// 2.1x was too tight and cut a 4000-word answer mid-sentence on Gemini: the
+// ceiling covers the model's own THINKING as well as the words that reach the
+// page, and a thinking model can spend a few thousand tokens before it writes
+// anything. The flat 2000 is that thinking; the doubling is markdown, headings
+// and the model overshooting its own estimate. Never below the standing 4000 —
+// this only ever raises the roof — and a bigger roof costs nothing on its own,
+// since an answer is billed for what it uses, not for what it was allowed.
 export function turnMaxTokens(convoId, base = 4000) {
   const words = lengthRequest(lastUserText(convoId));
   if (!words) return base;
-  return Math.min(32000, Math.max(base, Math.round(words * 2.1)));
+  return Math.min(32000, Math.max(base, Math.round(words * 2.8) + 2000));
 }
 
 // One turn against the routed lane (AI Settings decides which; the Claude

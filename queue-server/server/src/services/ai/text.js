@@ -23,6 +23,12 @@ export function bindAiTextDb(database) { db = database; }
 // whole extra API call that re-sends every earlier round's tool results, so an
 // uncapped loop is an uncapped bill.
 const TOOL_MAX_ROUNDS = 6;
+// An answer stopped by the output ceiling is not finished — it stops mid-word.
+// Rather than hand that over, ask the model to carry on from exactly where it
+// stopped. Twice at most: a third would mean the ceiling is simply wrong for
+// what was asked, and that belongs in the ceiling, not in a retry loop.
+const MAX_CONTINUATIONS = 2;
+const CONTINUE_INSTRUCTION = 'Your previous message was cut off by a length limit before you finished — it ends mid-sentence. Carry straight on from the exact word you stopped at, as if you had never paused. Do not repeat anything you already wrote, do not start again, do not summarise what came before, and do not apologise or mention the cut.';
 const TOOL_RESULT_CAP = 8000;
 
 // What a toolless backend gets told when the caller DID ask for tools. Same
@@ -568,9 +574,14 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
 // openaiCompat.chatCompletion's Anthropic<->OpenAI translation rather than a
 // second copy of it. Messages stay Anthropic-shaped here because that is what
 // chatCompletion takes.
-async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label, cacheKey = null }) {
+export async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label, cacheKey = null }) {
   const messages = [{ role: 'user', content: prompt }];
-  for (let round = 0; round < Math.max(1, maxRounds); round++) {
+  // Text kept from a round that was cut off by the output ceiling, waiting for
+  // the continuation that follows it.
+  let carried = '';
+  let continuations = 0;
+  let toolRounds = 0;
+  for (let round = 0; round < Math.max(1, maxRounds) + MAX_CONTINUATIONS; round++) {
     const out = await mod.chatCompletion({ providerId, model, messages, tools, maxTokens, timeoutMs, cacheKey });
     if (out.error) return { error: out.error, message: out.message, limit: out.limit || null };
     // Bill EVERY round, same reasoning as the streaming loop below: pricing only
@@ -582,10 +593,24 @@ async function runCatalogueToolLoop({ mod, providerId, model, prompt, maxTokens,
     const toolUses = (out.content || []).filter((b) => b.type === 'tool_use');
     if (!toolUses.length) {
       const text = out.text || (out.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
-      if (text?.trim()) return { text: text.trim(), via: providerId };
+      // Concatenated with no separator on purpose: the cut can fall inside a
+      // word, and the continuation picks up from that exact letter.
+      const whole = carried + (text || '');
+      if (out.truncated && text && continuations < MAX_CONTINUATIONS) {
+        continuations += 1;
+        carried = whole;
+        console.warn(`[${label}] ${providerId}/${model} hit the ${maxTokens}-token ceiling at ${whole.length} chars — asking it to carry on (${continuations}/${MAX_CONTINUATIONS})`);
+        messages.push({ role: 'assistant', content: text });
+        messages.push({ role: 'user', content: CONTINUE_INSTRUCTION });
+        continue;
+      }
+      if (whole.trim()) return { text: whole.trim(), via: providerId };
       return { error: `${providerId}_failed`, message: 'empty_response' };
     }
-    if (round === Math.max(1, maxRounds) - 1) {
+    // Counted separately from `round`, which a continuation also advances — a
+    // cut answer must not eat into the tool budget.
+    toolRounds += 1;
+    if (toolRounds >= Math.max(1, maxRounds)) {
       console.warn(`[${label}] ${providerId} hit the ${maxRounds}-round tool ceiling`);
       return { error: `${providerId}_failed`, message: 'too_many_tool_rounds' };
     }
@@ -1118,7 +1143,8 @@ export async function generateTextStream({
 
   let text = '';
   let toolCallsMade = 0;
-  const rounds = useTools ? Math.max(1, maxRounds) : 1;
+  let continuations = 0;
+  const rounds = (useTools ? Math.max(1, maxRounds) : 1) + MAX_CONTINUATIONS;
 
   for (let round = 0; round < rounds; round++) {
     const stream = await mod.postChatCompletionsStream({
@@ -1142,12 +1168,15 @@ export async function generateTextStream({
 
     let roundText = '';
     let usage = null;
+    let cutOff = false;
     const calls = [];
     try {
       for await (const ev of stream) {
         if (ev.type === 'content' && ev.text) {
           roundText += ev.text;
           if (onToken) onToken(ev.text);
+        } else if (ev.type === 'truncated') {
+          cutOff = true;
         } else if (ev.type === 'usage') {
           usage = ev.usage;
         } else if (ev.type === 'tool_use' && ev.tool?.name) {
@@ -1174,6 +1203,18 @@ export async function generateTextStream({
     }
 
     text += roundText;
+
+    // Stopped by the ceiling, not by having finished. Ask it to carry straight
+    // on — the words already streamed to the reader stay on the page, and the
+    // continuation simply keeps arriving after them.
+    if (cutOff && !calls.length && roundText && continuations < MAX_CONTINUATIONS) {
+      continuations += 1;
+      console.warn(`[${label}] ${providerId}/${model} hit the ${maxTokens}-token ceiling at ${text.length} chars — asking it to carry on (${continuations}/${MAX_CONTINUATIONS})`);
+      if (onStatus) { try { onStatus('That ran to the length limit — asking it to carry on…'); } catch {} }
+      messages.push({ role: 'assistant', content: roundText });
+      messages.push({ role: 'user', content: CONTINUE_INSTRUCTION });
+      continue;
+    }
 
     if (!calls.length) break;
 

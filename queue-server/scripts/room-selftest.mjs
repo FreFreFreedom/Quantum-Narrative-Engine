@@ -133,3 +133,45 @@ assert.ok(budget + 8400 * 3.6 < 30000 * 3.6, 'question + answer must fit under t
 // A huge answer must never drive the budget negative — the floor holds.
 assert.equal(promptCharBudget({ feature: 'studio', provider: 'openai', maxTokens: 32000 }), 20000);
 console.log(`prompt budget OK — ${budget} chars for the question when the answer may run 8400 tokens`);
+
+// ─── A cut answer carries on ─────────────────────────────────────────────────
+// An answer stopped by the output ceiling ends mid-word. The loop must ask for
+// the rest and join it seamlessly — never hand over half a sentence.
+const { runCatalogueToolLoop } = await import('../server/src/services/ai/text.js');
+const { turnMaxTokens } = convos;
+let calls = 0;
+const fakeMod = {
+  chatCompletion: async () => {
+    calls += 1;
+    if (calls === 1) return { text: 'the grace we extend will return decades later to prot', truncated: true, content: [] };
+    return { text: 'ect a child.', truncated: false, content: [] };
+  },
+};
+const rejoined = await runCatalogueToolLoop({
+  mod: fakeMod, providerId: 'google-ai-studio', model: 'gemini-flash-latest',
+  prompt: 'x', maxTokens: 8400, timeoutMs: 1000, tools: null, dispatchTool: null,
+  maxRounds: 6, toolResultCap: 4000, label: 'selftest',
+});
+assert.equal(calls, 2, 'the cut answer is continued exactly once');
+assert.equal(rejoined.text, 'the grace we extend will return decades later to protect a child.', 'the join falls inside the cut word');
+
+// It must give up rather than loop forever on a model that is always truncated.
+let endless = 0;
+const alwaysCut = { chatCompletion: async () => { endless += 1; return { text: ' more', truncated: true, content: [] }; } };
+const gaveUp = await runCatalogueToolLoop({
+  mod: alwaysCut, providerId: 'google-ai-studio', model: 'm', prompt: 'x', maxTokens: 100,
+  timeoutMs: 1000, tools: null, dispatchTool: null, maxRounds: 6, toolResultCap: 100, label: 'selftest',
+});
+assert.equal(endless, 3, 'one first try plus two continuations, then it stops');
+assert.equal(gaveUp.text, 'more more more');
+
+// And the ceiling itself has to be big enough that the cut is rare: a thinking
+// model spends part of the budget before it writes a word.
+const db2 = openDb();
+const { convo: lengthy } = createOpenConvo({ title: 'Length' });
+db2.prepare('INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)')
+  .run('L1', lengthy.id, 'user', 'chat', 'give me 4000 words on this');
+const roof = turnMaxTokens(lengthy.id);
+assert.ok(roof >= 4000 * 1.4 + 2000, `4000 words needs room to actually write them, got ${roof}`);
+assert.equal(turnMaxTokens(convo.id), 4000, 'no length asked -> the standing ceiling');
+console.log(`cut answers OK — continued and joined; a 4000-word ask now gets ${roof} tokens`);

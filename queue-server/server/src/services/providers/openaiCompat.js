@@ -184,7 +184,10 @@ export async function chatCompletion({ providerId, model, system, messages, tool
     return { content, toolUses: content, text: '', usage };
   }
   const text = (msg.content || '').trim();
-  return { content: text ? [{ type: 'text', text }] : [], toolUses: [], text, usage };
+  // 'length' means the model was still writing when the output ceiling hit —
+  // the caller gets a sentence that stops mid-word unless it acts on this.
+  const truncated = choice?.finish_reason === 'length';
+  return { content: text ? [{ type: 'text', text }] : [], toolUses: [], text, usage, truncated };
 }
 
 export function listModels(providerId) {
@@ -333,7 +336,14 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
       pending.push({ type: 'content', text: delta.content, sessionId: parsed.id });
     }
     // finish_reason closes the turn — that is when a tool call is known complete.
-    if (choice.finish_reason) { flushToolCalls(parsed.id); return; }
+    if (choice.finish_reason) {
+      // 'length' means the output ceiling stopped it mid-word. Emitted as its
+      // own event so the caller can ask the model to carry on instead of
+      // handing over half a sentence.
+      if (choice.finish_reason === 'length') pending.push({ type: 'truncated' });
+      flushToolCalls(parsed.id);
+      return;
+    }
     if (!delta.content && !delta.tool_calls && parsed.id) {
       pending.push({ type: 'session', sessionId: parsed.id });
     }
