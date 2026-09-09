@@ -206,6 +206,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .conn:hover { background:var(--c-surface-2); }
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
 .dot.author { background:#d99a3d; } .dot.ent { background:#8b6fb0; } .dot.bridge { background:#4f9d7a; }
+.dot.film { background:#2f6ba8; }
+/* A dated rule an institution holds. The date carries the weight, so it leads. */
+.posture { display:flex; gap:8px; align-items:baseline; padding:5px 8px; border-radius:6px; margin-bottom:4px;
+  background:var(--c-surface); border:1px solid var(--c-border); font-size:11px; }
+.posture-when { font-variant-numeric:tabular-nums; color:var(--c-ink-4); flex-shrink:0; min-width:74px; }
 .empty { font-size:11.5px; color:var(--c-ink-4); }
 .tmdb-origtitle { font-size:11px; color:var(--c-ink-3); margin-top:2px; }
 .tmdb-alt { font-size:10.5px; color:var(--c-ink-4); font-weight:400; }
@@ -3070,8 +3075,12 @@ const CLUSTER_COLORS_DARK = {
 };
 // Type colouring is a separate mode (never shown at the same time as cluster colouring),
 // so it can borrow the anchor of three families rather than invent a fourth colour axis.
-const TYPE_COLORS_LIGHT = { character: '#a83f83', film: '#2f6ba8', country: '#96702c' };
-const TYPE_COLORS_DARK  = { character: '#d06fae', film: '#4f8fd1', country: '#c69a4a' };
+// One hue per rung for the civic types, warm to cool as the ladder climbs, so the graph
+// reads as a ladder rather than as an unrelated set of categories.
+const TYPE_COLORS_LIGHT = { character: '#a83f83', film: '#2f6ba8', country: '#96702c',
+  family: '#b0553a', group: '#9a6b2f', institution: '#4a7c59', city: '#3d7d94' };
+const TYPE_COLORS_DARK  = { character: '#d06fae', film: '#4f8fd1', country: '#c69a4a',
+  family: '#d4785a', group: '#c49450', institution: '#6faa83', city: '#5fa4bd' };
 
 // These two are MUTATED IN PLACE on a theme flip rather than reassigned, and that is
 // load-bearing: the legend, the detail-panel gradient, the cluster regions and the node
@@ -3534,6 +3543,35 @@ function rungLabel(entity) {
 // The rung and the names the same structure goes by at that rung, as a tooltip — the
 // spec's vocabulary translation table, reachable from the app instead of only from a
 // doc. A tooltip and not a line of text on the card: helper prose does not go in the UI.
+// A posture is what an institution freezes into when it stops looking and writes a rule
+// instead. It is NOT an entity and NOT an event — it is a state this entity holds, with a
+// span, so it lives on the entity and renders as a dated line. The falsifier travels with
+// it (hover): what observation would break the reading. Nothing here is generated.
+function posturesHtml(e) {
+  const list = (e.meta && e.meta.postures) || [];
+  if (!list.length) return '';
+  return `<div class="section-title" style="color:var(--c-ink-3);">Postures held (${list.length})</div>` +
+    list.map(p => {
+      const span = p.until ? `${p.since}–${p.until}` : `${p.since} →`;
+      const tip = [p.source, p.falsifier && 'Breaks if: ' + p.falsifier].filter(Boolean).join('\n');
+      return `<div class="posture" title="${qEsc(tip)}"><span class="posture-when">${qEsc(span)}</span>${qEsc(p.name)}</div>`;
+    }).join('');
+}
+
+// Which mediums testify about this entity. A film is a record, not a thing that maintains
+// itself, so the relationship runs this way round: the work is evidence about the city,
+// not the city's container. Several works can testify about one entity, which is exactly
+// why this is a list and not the single container column.
+function testimonyHtml(e) {
+  const ids = (e.meta && e.meta.testimony) || [];
+  if (!ids.length) return '';
+  return `<div class="section-title" style="color:var(--c-ink-3);">Testimony (${ids.length})</div>` +
+    ids.map(id => {
+      const o = byId[id];
+      return `<div class="conn" data-goto="${id}"><span class="dot film"></span>${qEsc(o ? o.name : id)}</div>`;
+    }).join('');
+}
+
 function rungTitle(entity) {
   const i = rungOf(entity);
   const ladder = (FACETS.scales && FACETS.scales.ladder) || [];
@@ -3754,8 +3792,9 @@ function reframeGraph() {
   requestRender();
 }
 
-const TYPE_LABELS = { character:'Characters', country:'Countries', film:'Films (containers)' };
-const SOURCE_LABELS = { archive:'Archive / curated', reddit:'Reddit-derived' };
+const TYPE_LABELS = { character:'Characters', country:'Countries', film:'Films (containers)',
+  family:'Families', group:'Groups', institution:'Institutions', city:'Cities' };
+const SOURCE_LABELS = { archive:'Archive', reddit:'Reddit-derived', curated:'Written by hand' };
 function prettyLabel(map, v) {
   return map[v] || (v.charAt(0).toUpperCase() + v.slice(1).replace(/[-_]/g, ' '));
 }
@@ -6218,6 +6257,8 @@ async function selectEntity(id){
       html += `<div class="tagrow"><span class="tagrow-label">Themes</span>${e.clusters.map(c => `<span class="tag cluster-lens" data-cluster="${c}" title="${qEsc(CLUSTERS[c] ? CLUSTERS[c].name : c)}">${qEsc(clusterLensLabel(c))}</span>`).join('')}</div>`;
       html += `<div id="lensHost"></div>`;
     }
+    html += posturesHtml(e);
+    html += testimonyHtml(e);
     if (e.type === 'film') {
       html += `<div id="tmdbBlock">${filmEnrichmentHtml(e, !!activeLensTag)}</div>`;
       const ccast = castConnections(e);

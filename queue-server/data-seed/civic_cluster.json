@@ -1,0 +1,1868 @@
+{
+ "_readme": "Hand-curated, not archive-mined. The civic/justice cluster from the conversation 'Fractal reasoning across civic and justice narratives' (2026-09-09), added by plans/civic-structures-and-loops.md Stage 2. Films and series here are MEDIUMS, not entities: they carry the testimony of the institutions, families, cities and groups listed under civicEntities, which are the things that actually maintain a boundary against their own dissolution (fractal_operational_core.md section 1). A policy is NOT an entity either — it is a posture an institution holds, so it lives in that institution's `postures` array with a date and a falsifier, never as a row of its own.",
+ "cluster": {
+  "code": "XIII",
+  "name": "Civic Structures, Justice & the Shadow of the Law",
+  "grounding": {
+   "status": "curated",
+   "note": "Written by hand from the works themselves, 2026-09-09. Not archive-mined; provenance is the work named in each entity's testimony list."
+  }
+ },
+ "baseTags": [
+  "institutional-shadow",
+  "exile-as-social-control"
+ ],
+ "filmsIndex": {
+  "f_fences": {
+   "title": "Fences",
+   "year": 2016,
+   "auteurs": [
+    "Denzel Washington",
+    "August Wilson"
+   ],
+   "kind": "film",
+   "synopsis": "A Pittsburgh sanitation worker, barred from organised baseball by the colour line, rebuilds that same boundary inside his own yard.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_when_they_see_us": {
+   "title": "When They See Us",
+   "year": 2019,
+   "auteurs": [
+    "Ava DuVernay"
+   ],
+   "kind": "series",
+   "synopsis": "Five Harlem teenagers are coerced into confessions after a Central Park assault, convicted, and exonerated years later.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_the_wire": {
+   "title": "The Wire",
+   "year": 2002,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "kind": "series",
+   "synopsis": "One Baltimore pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution surviving at the expense of the people it claims to serve.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_the_corner": {
+   "title": "The Corner",
+   "year": 2000,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "kind": "series",
+   "synopsis": "A year on one West Baltimore corner, told through a family the drug trade is dismantling from the inside.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_show_me_a_hero": {
+   "title": "Show Me a Hero",
+   "year": 2015,
+   "auteurs": [
+    "David Simon",
+    "William F. Zorzi"
+   ],
+   "kind": "series",
+   "synopsis": "A federal desegregation order lands on Yonkers, and the city survives its own deadlock by consuming the young mayor who has to enforce it.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_city_of_god": {
+   "title": "City of God",
+   "year": 2002,
+   "auteurs": [
+    "Fernando Meirelles",
+    "Kátia Lund"
+   ],
+   "kind": "film",
+   "synopsis": "A housing project built at Rio's edge and left without a single civic membrane; the children inside organise the only order available to them.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_precious": {
+   "title": "Precious",
+   "year": 2009,
+   "auteurs": [
+    "Lee Daniels"
+   ],
+   "kind": "film",
+   "synopsis": "An illiterate, abused Harlem teenager carries a household's whole weight, invisible to the school and the welfare office until an alternative school makes a place for her to exist.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_beasts_of_no_nation": {
+   "title": "Beasts of No Nation",
+   "year": 2015,
+   "auteurs": [
+    "Cary Joji Fukunaga"
+   ],
+   "kind": "film",
+   "synopsis": "A militia offers a boy shelter and brotherhood after his family is killed, and within weeks the shelter is the machine that makes him a killer.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_say_nothing": {
+   "title": "Say Nothing",
+   "year": 2024,
+   "auteurs": [
+    "Joshua Zetumer",
+    "Patrick Radden Keefe"
+   ],
+   "kind": "series",
+   "synopsis": "The Troubles read through one disappearance and the fighters the movement silenced once peace made them an embarrassment.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_i_know_this_much_is_true": {
+   "title": "I Know This Much Is True",
+   "year": 2020,
+   "auteurs": [
+    "Derek Cianfrance",
+    "Wally Lamb"
+   ],
+   "kind": "series",
+   "synopsis": "Twin brothers, one schizophrenic, and a family whose inherited silence is administered by a forensic hospital.",
+   "clusters": [
+    "XIII"
+   ]
+  },
+  "f_zero_dark_thirty": {
+   "title": "Zero Dark Thirty",
+   "year": 2012,
+   "auteurs": [
+    "Kathryn Bigelow",
+    "Mark Boal"
+   ],
+   "kind": "film",
+   "synopsis": "A decade-long manhunt in which an agency's need for a body to produce reorganises everything, including the people running it.",
+   "clusters": [
+    "XIII"
+   ]
+  }
+ },
+ "characters": [
+  {
+   "id": "c_troy_maxson",
+   "name": "Troy Maxson",
+   "filmId": "f_fences",
+   "filmTitle": "Fences",
+   "filmYear": 2016,
+   "auteurs": [
+    "Denzel Washington",
+    "August Wilson"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "father-hunger",
+    "moral-split-fatherhood",
+    "inherited-duty",
+    "duty-over-desire",
+    "exile-through-duty",
+    "institution-as-adversary",
+    "violence-as-inheritance",
+    "boundary-drawn-wrong"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.18,
+    "possession_sovereignty": 0.15
+   },
+   "grounded": true,
+   "note": "Kept out of organised baseball by the colour line and shaped by a penitentiary youth, he draws the same boundary around his own family — and the fence that was built to keep the world out ends up exiling his son.",
+   "synopsis": "A Pittsburgh sanitation worker, barred from organised baseball by the colour line, rebuilds that same boundary inside his own yard."
+  },
+  {
+   "id": "c_rose_maxson",
+   "name": "Rose Maxson",
+   "filmId": "f_fences",
+   "filmTitle": "Fences",
+   "filmYear": 2016,
+   "auteurs": [
+    "Denzel Washington",
+    "August Wilson"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "dignity-through-sacrifice",
+    "duty-over-desire",
+    "complicity-disguised-as-love",
+    "silence-as-agency",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.74,
+    "possession_sovereignty": 0.62
+   },
+   "grounded": true,
+   "note": "Holds the household together by absorbing what the men will not carry; her forgiveness at the end is a decision taken in full sight of the cost, not a feeling.",
+   "synopsis": "A Pittsburgh sanitation worker, barred from organised baseball by the colour line, rebuilds that same boundary inside his own yard."
+  },
+  {
+   "id": "c_cory_maxson",
+   "name": "Cory Maxson",
+   "filmId": "f_fences",
+   "filmTitle": "Fences",
+   "filmYear": 2016,
+   "auteurs": [
+    "Denzel Washington",
+    "August Wilson"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "father-hunger",
+    "inherited-duty",
+    "exile-through-duty",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.52
+   },
+   "grounded": true,
+   "note": "The son the fence was built to protect, and then to keep out; he inherits the refusal along with the house.",
+   "synopsis": "A Pittsburgh sanitation worker, barred from organised baseball by the colour line, rebuilds that same boundary inside his own yard."
+  },
+  {
+   "id": "c_gabriel_maxson",
+   "name": "Gabriel Maxson",
+   "filmId": "f_fences",
+   "filmTitle": "Fences",
+   "filmYear": 2016,
+   "auteurs": [
+    "Denzel Washington",
+    "August Wilson"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "servant-sacrificed-for-status",
+    "sacrifice-as-transaction",
+    "institutional-indifference",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.4
+   },
+   "grounded": true,
+   "note": "A head wound from the war bought the house his brother lives in; when his presence turns into an administrative nuisance, the signature that commits him is his brother's.",
+   "synopsis": "A Pittsburgh sanitation worker, barred from organised baseball by the colour line, rebuilds that same boundary inside his own yard."
+  },
+  {
+   "id": "c_korey_wise",
+   "name": "Korey Wise",
+   "filmId": "f_when_they_see_us",
+   "filmTitle": "When They See Us",
+   "filmYear": 2019,
+   "auteurs": [
+    "Ava DuVernay"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "exile-as-social-control",
+    "scapegoat-ritual",
+    "law-as-cruelty",
+    "justice-as-theater",
+    "protection-becomes-predation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.66
+   },
+   "grounded": true,
+   "note": "Went to the precinct to keep a friend company, was the only one tried as an adult, and served the longest — his psyche fractured into survival states to endure solitary confinement.",
+   "synopsis": "Five Harlem teenagers are coerced into confessions after a Central Park assault, convicted, and exonerated years later."
+  },
+  {
+   "id": "c_antron_mccray",
+   "name": "Antron McCray",
+   "filmId": "f_when_they_see_us",
+   "filmTitle": "When They See Us",
+   "filmYear": 2019,
+   "auteurs": [
+    "Ava DuVernay"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "scapegoat-ritual",
+    "fatherhood-and-complicity",
+    "complicity-through-desperation",
+    "law-as-cruelty"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.48
+   },
+   "grounded": true,
+   "note": "Fourteen, kept awake thirty hours, and told by his own father to sign — the father's nerve broken by the room before the son's was.",
+   "synopsis": "Five Harlem teenagers are coerced into confessions after a Central Park assault, convicted, and exonerated years later."
+  },
+  {
+   "id": "c_bobby_mccray",
+   "name": "Bobby McCray",
+   "filmId": "f_when_they_see_us",
+   "filmTitle": "When They See Us",
+   "filmYear": 2019,
+   "auteurs": [
+    "Ava DuVernay"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "fatherhood-and-complicity",
+    "complicity-through-desperation",
+    "moral-split-fatherhood",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.3
+   },
+   "grounded": true,
+   "note": "Under thirty hours of institutional pressure he tells his son to sign what they want; he is structurally unable to transmit protection because the state has taught him there is none.",
+   "synopsis": "Five Harlem teenagers are coerced into confessions after a Central Park assault, convicted, and exonerated years later."
+  },
+  {
+   "id": "c_yusef_salaam",
+   "name": "Yusef Salaam",
+   "filmId": "f_when_they_see_us",
+   "filmTitle": "When They See Us",
+   "filmYear": 2019,
+   "auteurs": [
+    "Ava DuVernay"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "scapegoat-ritual",
+    "exile-as-social-control",
+    "silence-as-agency",
+    "justice-as-theater"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.71
+   },
+   "grounded": true,
+   "note": "Refused to sign, was convicted anyway, and carried the branding through his whole adolescence before the record was vacated.",
+   "synopsis": "Five Harlem teenagers are coerced into confessions after a Central Park assault, convicted, and exonerated years later."
+  },
+  {
+   "id": "c_dangelo_barksdale",
+   "name": "D'Angelo Barksdale",
+   "filmId": "f_the_wire",
+   "filmTitle": "The Wire",
+   "filmYear": 2002,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "inherited-duty",
+    "loyalty-tax",
+    "duty-versus-departure",
+    "exile-as-social-control",
+    "violence-as-inheritance"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.58,
+    "possession_sovereignty": 0.34
+   },
+   "grounded": true,
+   "note": "The nephew who can see the shape of the thing he is inside and cannot get out of it; the family's business is also the family's boundary.",
+   "synopsis": "One Baltimore pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution surviving at the expense of the people it claims to serve."
+  },
+  {
+   "id": "c_bunny_colvin",
+   "name": "Howard 'Bunny' Colvin",
+   "filmId": "f_the_wire",
+   "filmTitle": "The Wire",
+   "filmYear": 2002,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "command-against-institutional-racism",
+    "containment-over-extermination",
+    "institution-as-adversary",
+    "loyalty-to-process"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.8
+   },
+   "grounded": true,
+   "note": "Tired of watching the drug war destroy the district it claims to protect, he draws a perimeter instead of making arrests — a containment answer his own institution cannot tolerate.",
+   "synopsis": "One Baltimore pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution surviving at the expense of the people it claims to serve."
+  },
+  {
+   "id": "c_stringer_bell",
+   "name": "Stringer Bell",
+   "filmId": "f_the_wire",
+   "filmTitle": "The Wire",
+   "filmYear": 2002,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-cannibalism",
+    "loyalty-as-performance",
+    "violence-as-craft"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.22,
+    "possession_sovereignty": 0.18
+   },
+   "grounded": true,
+   "note": "Runs the corner like a firm and discovers the two logics are the same one, and that neither will admit him.",
+   "synopsis": "One Baltimore pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution surviving at the expense of the people it claims to serve."
+  },
+  {
+   "id": "c_jimmy_mcnulty",
+   "name": "Jimmy McNulty",
+   "filmId": "f_the_wire",
+   "filmTitle": "The Wire",
+   "filmYear": 2002,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institution-as-adversary",
+    "obsessive-witnessing",
+    "loyalty-to-process"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.35
+   },
+   "grounded": true,
+   "note": "Right about the case and wrong about everything else; his need to be the one who sees it is the department's pathology at individual scale.",
+   "synopsis": "One Baltimore pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution surviving at the expense of the people it claims to serve."
+  },
+  {
+   "id": "c_omar_little",
+   "name": "Omar Little",
+   "filmId": "f_the_wire",
+   "filmTitle": "The Wire",
+   "filmYear": 2002,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "communal-justice",
+    "vigilante-justice-as-loop",
+    "exile-as-origin"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.62,
+    "possession_sovereignty": 0.78
+   },
+   "grounded": true,
+   "note": "Lives outside every code but his own and is legible to no institution — which is exactly why the street's rules bend around him until they don't.",
+   "synopsis": "One Baltimore pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution surviving at the expense of the people it claims to serve."
+  },
+  {
+   "id": "c_gary_mccullough",
+   "name": "Gary McCullough",
+   "filmId": "f_the_corner",
+   "filmTitle": "The Corner",
+   "filmYear": 2000,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "abandonment",
+    "complicity-through-desperation",
+    "institutional-indifference"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.55
+   },
+   "grounded": true,
+   "note": "Was the one who made it out and came back in; his gentleness is the part of him the corner has no use for.",
+   "synopsis": "A year on one West Baltimore corner, told through a family the drug trade is dismantling from the inside."
+  },
+  {
+   "id": "c_fran_boyd",
+   "name": "Fran Boyd",
+   "filmId": "f_the_corner",
+   "filmTitle": "The Corner",
+   "filmYear": 2000,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "complicity-disguised-as-love",
+    "maternal-transmission-of-violence",
+    "dignity-through-sacrifice"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.68
+   },
+   "grounded": true,
+   "note": "Runs a household and an addiction at once, and the recovery, when it comes, is a boundary she has to draw against people she loves.",
+   "synopsis": "A year on one West Baltimore corner, told through a family the drug trade is dismantling from the inside."
+  },
+  {
+   "id": "c_deandre_mccullough",
+   "name": "DeAndre McCullough",
+   "filmId": "f_the_corner",
+   "filmTitle": "The Corner",
+   "filmYear": 2000,
+   "auteurs": [
+    "David Simon",
+    "Ed Burns"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "inherited-duty",
+    "violence-as-inheritance",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.44
+   },
+   "grounded": true,
+   "note": "Fifteen, already holding a package, already reading the arrest as the fee rather than the risk.",
+   "synopsis": "A year on one West Baltimore corner, told through a family the drug trade is dismantling from the inside."
+  },
+  {
+   "id": "c_nick_wasicsko",
+   "name": "Nick Wasicsko",
+   "filmId": "f_show_me_a_hero",
+   "filmTitle": "Show Me a Hero",
+   "filmYear": 2015,
+   "auteurs": [
+    "David Simon",
+    "William F. Zorzi"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "load-shifted-downward",
+    "loyalty-to-process",
+    "institutional-cannibalism",
+    "duty-over-desire"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.6
+   },
+   "grounded": true,
+   "note": "The young mayor who has to enforce a desegregation order nobody with more power will own; the city survives its deadlock by consuming him.",
+   "synopsis": "A federal desegregation order lands on Yonkers, and the city survives its own deadlock by consuming the young mayor who has to enforce it."
+  },
+  {
+   "id": "c_mary_dorman",
+   "name": "Mary Dorman",
+   "filmId": "f_show_me_a_hero",
+   "filmTitle": "Show Me a Hero",
+   "filmYear": 2015,
+   "auteurs": [
+    "David Simon",
+    "William F. Zorzi"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "witness-as-transformation",
+    "bystander-complicity"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.77
+   },
+   "grounded": true,
+   "note": "Opposes the housing until she meets the people who will live in it, and then has to carry the reversal in public.",
+   "synopsis": "A federal desegregation order lands on Yonkers, and the city survives its own deadlock by consuming the young mayor who has to enforce it."
+  },
+  {
+   "id": "c_rocket_city_of_god",
+   "name": "Rocket",
+   "filmId": "f_city_of_god",
+   "filmTitle": "City of God",
+   "filmYear": 2002,
+   "auteurs": [
+    "Fernando Meirelles",
+    "Kátia Lund"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "obsessive-witnessing",
+    "witness-as-transformation",
+    "exile-as-origin"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.64
+   },
+   "grounded": true,
+   "note": "Survives by becoming an eye — a photographer who documents the violence without touching it, which is both his escape and his compromise.",
+   "synopsis": "A housing project built at Rio's edge and left without a single civic membrane; the children inside organise the only order available to them."
+  },
+  {
+   "id": "c_lil_ze",
+   "name": "Lil Zé",
+   "filmId": "f_city_of_god",
+   "filmTitle": "City of God",
+   "filmYear": 2002,
+   "auteurs": [
+    "Fernando Meirelles",
+    "Kátia Lund"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "violence-as-inheritance",
+    "tribal-violence-as-identity",
+    "protection-becomes-predation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.1,
+    "possession_sovereignty": 0.08
+   },
+   "grounded": true,
+   "note": "Metabolises an absolute lack of worth into unrestrained sovereignty; the vacuum the state left is the shape he grows into.",
+   "synopsis": "A housing project built at Rio's edge and left without a single civic membrane; the children inside organise the only order available to them."
+  },
+  {
+   "id": "c_knockout_ned",
+   "name": "Knockout Ned",
+   "filmId": "f_city_of_god",
+   "filmTitle": "City of God",
+   "filmYear": 2002,
+   "auteurs": [
+    "Fernando Meirelles",
+    "Kátia Lund"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "revenge-as-inheritance",
+    "vigilante-justice-as-loop",
+    "failed-baptism-of-violence"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.38
+   },
+   "grounded": true,
+   "note": "Pulled into the war by a private wrong and discovers that the war has no private register — every act is immediately collective.",
+   "synopsis": "A housing project built at Rio's edge and left without a single civic membrane; the children inside organise the only order available to them."
+  },
+  {
+   "id": "c_precious_jones",
+   "name": "Claireece 'Precious' Jones",
+   "filmId": "f_precious",
+   "filmTitle": "Precious",
+   "filmYear": 2009,
+   "auteurs": [
+    "Lee Daniels"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "exile-as-social-control",
+    "institutional-indifference",
+    "load-shifted-downward",
+    "dignity-through-sacrifice"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.69
+   },
+   "grounded": true,
+   "note": "Carries a household's whole multi-generational weight and is invisible to both the school and the welfare office until an alternative school makes a place for her to exist.",
+   "synopsis": "An illiterate, abused Harlem teenager carries a household's whole weight, invisible to the school and the welfare office until an alternative school makes a place for her to exist."
+  },
+  {
+   "id": "c_mary_lee_johnston",
+   "name": "Mary Lee Johnston",
+   "filmId": "f_precious",
+   "filmTitle": "Precious",
+   "filmYear": 2009,
+   "auteurs": [
+    "Lee Daniels"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "maternal-transmission-of-violence",
+    "complicity-disguised-as-love",
+    "denial-as-shared-fiction"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.12
+   },
+   "grounded": true,
+   "note": "Both the instrument of the consumption and a person consumed; the welfare interview is the one place the whole arrangement is spoken aloud.",
+   "synopsis": "An illiterate, abused Harlem teenager carries a household's whole weight, invisible to the school and the welfare office until an alternative school makes a place for her to exist."
+  },
+  {
+   "id": "c_ms_rain",
+   "name": "Ms. Rain",
+   "filmId": "f_precious",
+   "filmTitle": "Precious",
+   "filmYear": 2009,
+   "auteurs": [
+    "Lee Daniels"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "containment-over-extermination",
+    "witness-as-transformation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.85
+   },
+   "grounded": true,
+   "note": "Teaches in the alternative school — the buffering membrane the main system could not supply, staffed by someone who stays inside the tissue.",
+   "synopsis": "An illiterate, abused Harlem teenager carries a household's whole weight, invisible to the school and the welfare office until an alternative school makes a place for her to exist."
+  },
+  {
+   "id": "c_agu",
+   "name": "Agu",
+   "filmId": "f_beasts_of_no_nation",
+   "filmTitle": "Beasts of No Nation",
+   "filmYear": 2015,
+   "auteurs": [
+    "Cary Joji Fukunaga"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "sovereignty-reversal",
+    "failed-baptism-of-violence",
+    "war-as-inheritance",
+    "protection-becomes-predation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.5
+   },
+   "grounded": true,
+   "note": "A boy whose family is killed by government troops and who is taken in by the militia that then makes him do the same thing; the shelter and the slaughterhouse are one building.",
+   "synopsis": "A militia offers a boy shelter and brotherhood after his family is killed, and within weeks the shelter is the machine that makes him a killer."
+  },
+  {
+   "id": "c_the_commandant",
+   "name": "The Commandant",
+   "filmId": "f_beasts_of_no_nation",
+   "filmTitle": "Beasts of No Nation",
+   "filmYear": 2015,
+   "auteurs": [
+    "Cary Joji Fukunaga"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "violence-as-liturgy",
+    "tribal-violence-as-identity",
+    "loyalty-as-performance"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.14,
+    "possession_sovereignty": 0.1
+   },
+   "grounded": true,
+   "note": "Offers vengeance and brotherhood to children with nothing left, and the offer is real — which is what makes it work.",
+   "synopsis": "A militia offers a boy shelter and brotherhood after his family is killed, and within weeks the shelter is the machine that makes him a killer."
+  },
+  {
+   "id": "c_dolours_price",
+   "name": "Dolours Price",
+   "filmId": "f_say_nothing",
+   "filmTitle": "Say Nothing",
+   "filmYear": 2024,
+   "auteurs": [
+    "Joshua Zetumer",
+    "Patrick Radden Keefe"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "loyalty-under-erasure",
+    "22-years-of-silence",
+    "confession-as-soil",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.33
+   },
+   "grounded": true,
+   "note": "Carried out the movement's orders, spent decades holding what she did, and at the end recorded her confession for an archive because no living body would receive it.",
+   "synopsis": "The Troubles read through one disappearance and the fighters the movement silenced once peace made them an embarrassment."
+  },
+  {
+   "id": "c_brendan_hughes",
+   "name": "Brendan Hughes",
+   "filmId": "f_say_nothing",
+   "filmTitle": "Say Nothing",
+   "filmYear": 2024,
+   "auteurs": [
+    "Joshua Zetumer",
+    "Patrick Radden Keefe"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "loyalty-under-erasure",
+    "confession-as-soil",
+    "institutional-cannibalism"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.41
+   },
+   "grounded": true,
+   "note": "The commander the movement needed and then could not acknowledge; his testimony had to wait for his death to be released.",
+   "synopsis": "The Troubles read through one disappearance and the fighters the movement silenced once peace made them an embarrassment."
+  },
+  {
+   "id": "c_jean_mcconville",
+   "name": "Jean McConville",
+   "filmId": "f_say_nothing",
+   "filmTitle": "Say Nothing",
+   "filmYear": 2024,
+   "auteurs": [
+    "Joshua Zetumer",
+    "Patrick Radden Keefe"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "the-disappeared",
+    "exile-as-social-control",
+    "denial-as-shared-fiction"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.58
+   },
+   "grounded": true,
+   "note": "A widowed mother of ten taken from her flat and disappeared; the community that took her then had to keep the silence that took her.",
+   "synopsis": "The Troubles read through one disappearance and the fighters the movement silenced once peace made them an embarrassment."
+  },
+  {
+   "id": "c_dominick_birdsey",
+   "name": "Dominick Birdsey",
+   "filmId": "f_i_know_this_much_is_true",
+   "filmTitle": "I Know This Much Is True",
+   "filmYear": 2020,
+   "auteurs": [
+    "Derek Cianfrance",
+    "Wally Lamb"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "inherited-guilt",
+    "duty-over-desire",
+    "institution-as-adversary",
+    "grief-suppressed-by-duty"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.46
+   },
+   "grounded": true,
+   "note": "Spends his life as his brother's only advocate against a forensic system that has no slot for advocacy, and inherits the family's silence as a job.",
+   "synopsis": "Twin brothers, one schizophrenic, and a family whose inherited silence is administered by a forensic hospital."
+  },
+  {
+   "id": "c_thomas_birdsey",
+   "name": "Thomas Birdsey",
+   "filmId": "f_i_know_this_much_is_true",
+   "filmTitle": "I Know This Much Is True",
+   "filmYear": 2020,
+   "auteurs": [
+    "Derek Cianfrance",
+    "Wally Lamb"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-indifference",
+    "sacrifice-as-transaction",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.36
+   },
+   "grounded": true,
+   "note": "His illness is legible to the hospital only as risk; the act that puts him inside is a religious one the intake form has no field for.",
+   "synopsis": "Twin brothers, one schizophrenic, and a family whose inherited silence is administered by a forensic hospital."
+  },
+  {
+   "id": "c_maya_zdt",
+   "name": "Maya",
+   "filmId": "f_zero_dark_thirty",
+   "filmTitle": "Zero Dark Thirty",
+   "filmYear": 2012,
+   "auteurs": [
+    "Kathryn Bigelow",
+    "Mark Boal"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "obsessive-witnessing",
+    "family-sacrificed-to-quest",
+    "loyalty-to-process",
+    "procedural-guilt"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.28
+   },
+   "grounded": true,
+   "note": "Becomes the agency's certainty in a single body; when the body is finally produced there is nothing left of her that was not the hunt.",
+   "synopsis": "A decade-long manhunt in which an agency's need for a body to produce reorganises everything, including the people running it."
+  },
+  {
+   "id": "c_dan_zdt",
+   "name": "Dan",
+   "filmId": "f_zero_dark_thirty",
+   "filmTitle": "Zero Dark Thirty",
+   "filmYear": 2012,
+   "auteurs": [
+    "Kathryn Bigelow",
+    "Mark Boal"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "procedural-guilt",
+    "violence-as-craft",
+    "denial-as-shield"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.2
+   },
+   "grounded": true,
+   "note": "Runs the interrogations and then leaves the room for a desk, carrying the method out with him rather than answering for it.",
+   "synopsis": "A decade-long manhunt in which an agency's need for a body to produce reorganises everything, including the people running it."
+  }
+ ],
+ "civicEntities": [
+  {
+   "id": "city_pittsburgh",
+   "type": "city",
+   "scale": "city",
+   "name": "Pittsburgh",
+   "note": "The Hill District in the late 1950s: a city whose promise of opportunity was administered as a grammar of exclusion written into who gets the loan, the promotion, the truck.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_fences"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "boundary-drawn-wrong",
+    "institutional-shadow",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.3
+   },
+   "postures": []
+  },
+  {
+   "id": "city_new_york",
+   "type": "city",
+   "scale": "city",
+   "name": "New York City",
+   "note": "A civic body that suffers an acute rupture, cannot metabolise its own fear, and reaches into Harlem for five bodies to close the edge with.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_when_they_see_us",
+    "f_precious"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "scapegoat-ritual",
+    "justice-as-theater",
+    "institutional-shadow"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.26
+   },
+   "postures": []
+  },
+  {
+   "id": "city_baltimore",
+   "type": "city",
+   "scale": "city",
+   "name": "Baltimore",
+   "note": "One pattern read at five rungs — the corner, the docks, city hall, the schools, the paper — each institution optimising for its own survival at the expense of the people it exists to serve.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_the_wire",
+    "f_the_corner"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-rot",
+    "institutional-cannibalism",
+    "quota-as-truth",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.24
+   },
+   "postures": []
+  },
+  {
+   "id": "city_yonkers",
+   "type": "city",
+   "scale": "city",
+   "name": "Yonkers",
+   "note": "A city ordered by a federal court to desegregate its public housing, which answers by pushing the whole political cost onto one office.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_show_me_a_hero"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "load-shifted-downward",
+    "boundary-drawn-wrong",
+    "institutional-cannibalism"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.32
+   },
+   "postures": []
+  },
+  {
+   "id": "city_rio_de_janeiro",
+   "type": "city",
+   "scale": "city",
+   "name": "Rio de Janeiro",
+   "note": "Pushes its poor to the barren periphery to keep the tourist zone legible to itself, then supplies the periphery with no schools, no clinics and no courts.",
+   "container": null,
+   "testimony": [
+    "f_city_of_god"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "boundary-drawn-wrong",
+    "institutional-indifference",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.2
+   },
+   "postures": []
+  },
+  {
+   "id": "city_belfast",
+   "type": "city",
+   "scale": "city",
+   "name": "Belfast",
+   "note": "A city where the civic structure of resistance became its own machinery of exile, and where the peace was built on sealed archives rather than public confession.",
+   "container": null,
+   "testimony": [
+    "f_say_nothing"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "denial-as-shared-fiction",
+    "22-years-of-silence",
+    "the-disappeared"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.34
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_pittsburgh_sanitation",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Pittsburgh Sanitation Department",
+   "note": "The crew Troy Maxson lifts for: Black men on the back of the truck, white men behind the wheel, a rule nobody had to write down until somebody asked why.",
+   "container": "city_pittsburgh",
+   "testimony": [
+    "f_fences"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-shadow",
+    "boundary-drawn-wrong",
+    "hatred-as-institution"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.22
+   },
+   "postures": [
+    {
+     "name": "Only white men drive the trucks",
+     "since": "c.1930",
+     "until": "1957",
+     "source_kind": "witness",
+     "source": "Fences (August Wilson, 1985) — Troy's grievance to the union, Act One",
+     "falsifier": "A Black driver on the Pittsburgh sanitation rolls before 1957 would break this reading of the posture's duration."
+    }
+   ]
+  },
+  {
+   "id": "inst_organized_baseball_color_line",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Organised baseball's colour line",
+   "note": "The rule that kept Troy out of the majors in his prime and then, when it fell, kept him out again by being too late — an exclusion whose repeal does not return the years.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_fences"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "boundary-drawn-wrong",
+    "exile-as-social-control",
+    "institutional-shadow"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.15
+   },
+   "postures": [
+    {
+     "name": "No Black players in the major leagues",
+     "since": "1889",
+     "until": "1947",
+     "source_kind": "witness",
+     "source": "Fences (August Wilson, 1985); the historical colour bar in organised baseball",
+     "falsifier": "A Black player on a major-league roster between 1889 and 1947 would break the stated span."
+    }
+   ]
+  },
+  {
+   "id": "inst_nypd_manhattan_north",
+   "type": "institution",
+   "scale": "institution",
+   "name": "NYPD Manhattan North homicide/sex-crimes detectives",
+   "note": "The interrogation rooms where the city's unmanageable panic was pressed into five adolescent bodies until they signed.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_when_they_see_us"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "scapegoat-ritual",
+    "protection-becomes-predation",
+    "law-as-cruelty",
+    "institutional-shadow"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.1
+   },
+   "postures": [
+    {
+     "name": "Question juveniles at length without a guardian present",
+     "since": "1989",
+     "until": null,
+     "source_kind": "witness",
+     "source": "When They See Us (2019); the vacated convictions in the Central Park jogger case, 2002",
+     "falsifier": "A contemporaneous departmental rule requiring a guardian, and evidence it was followed here, would break this."
+    }
+   ]
+  },
+  {
+   "id": "inst_manhattan_da_sex_crimes",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Manhattan District Attorney's sex crimes unit",
+   "note": "The office that carried the case to trial on the confessions and against the physical evidence, and whose theory the city needed to be true.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_when_they_see_us"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "justice-as-theater",
+    "procedural-guilt",
+    "denial-as-shield"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.16
+   },
+   "postures": [
+    {
+     "name": "Prosecute on the confessions despite unmatched DNA",
+     "since": "1990",
+     "until": "2002",
+     "source_kind": "witness",
+     "source": "When They See Us (2019); the 2002 reinvestigation and vacatur",
+     "falsifier": "Contemporaneous DNA linking any of the five to the scene would break this."
+    }
+   ]
+  },
+  {
+   "id": "inst_baltimore_pd",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Baltimore Police Department",
+   "note": "A patrol system that cannot reliably tell the tissue it protects from the thing it hunts, and that escalates as the scar tissue thickens.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_wire",
+    "f_the_corner"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "quota-as-truth",
+    "protection-becomes-predation",
+    "institutional-rot",
+    "boundary-drawn-wrong"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.18
+   },
+   "postures": [
+    {
+     "name": "CompStat — the district is measured by its arrest tally",
+     "since": "1996",
+     "until": null,
+     "source_kind": "witness",
+     "source": "The Wire (2002-2008), seasons 3-4",
+     "falsifier": "A district evaluated on clearance quality rather than arrest count, in the same period, would break this."
+    },
+    {
+     "name": "Hamsterdam — a tolerated free zone that buffers rather than exterminates",
+     "since": "2004",
+     "until": "2004",
+     "source_kind": "witness",
+     "source": "The Wire, season 3",
+     "falsifier": "The zone surviving the political reaction would break the reading that the institution could not tolerate it."
+    }
+   ]
+  },
+  {
+   "id": "inst_barksdale_organization",
+   "type": "institution",
+   "scale": "institution",
+   "name": "The Barksdale organisation",
+   "note": "A firm with the same liquidation logic as any other: liability held by the youngest bodies, revenue by the oldest.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_wire"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "load-shifted-downward",
+    "loyalty-tax",
+    "institutional-cannibalism",
+    "violence-as-craft"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.14
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_baltimore_schools",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Baltimore City Public Schools",
+   "note": "The intake interface for every child the corner is about to recruit, and the rung where the loop is least defended.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_wire"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-indifference",
+    "quota-as-truth",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.4
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_baltimore_sun",
+   "type": "institution",
+   "scale": "institution",
+   "name": "The Baltimore Sun",
+   "note": "The organ that was supposed to make the city legible to itself, cutting the reporters who knew the ground while chasing the prize story.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_wire"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-rot",
+    "denial-as-shield",
+    "loyalty-as-performance"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.3
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_yonkers_city_council",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Yonkers City Council",
+   "note": "Could not bear to tell its constituents the law must be obeyed, nor bear the contempt fines, so it shifted the whole load onto one young mayor.",
+   "container": "city_yonkers",
+   "testimony": [
+    "f_show_me_a_hero"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "load-shifted-downward",
+    "institutional-cannibalism",
+    "bystander-complicity"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.2
+   },
+   "postures": [
+    {
+     "name": "Refuse the federal desegregation order",
+     "since": "1987",
+     "until": "1988",
+     "source_kind": "witness",
+     "source": "Show Me a Hero (2015); United States v. Yonkers Board of Education",
+     "falsifier": "Compliance before the contempt fines began would break the stated span."
+    }
+   ]
+  },
+  {
+   "id": "inst_rio_military_police",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Rio military police",
+   "note": "Enters the project as an occupying force and leaves as a supplier; the boundary between the patrol and the trade dissolves in both directions.",
+   "container": "city_rio_de_janeiro",
+   "testimony": [
+    "f_city_of_god"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "protection-becomes-predation",
+    "sovereignty-reversal",
+    "institutional-rot"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.12
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_ny_welfare_office",
+   "type": "institution",
+   "scale": "institution",
+   "name": "New York City welfare office",
+   "note": "Means-tests the household and therefore cannot see the child inside it; the interview is the one place the whole arrangement is finally said out loud.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_precious"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-indifference",
+    "load-shifted-downward",
+    "denial-as-shield"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.34
+   },
+   "postures": [
+    {
+     "name": "Assess the household as the unit, not the child",
+     "since": "1987",
+     "until": null,
+     "source_kind": "witness",
+     "source": "Precious (2009), the caseworker interview",
+     "falsifier": "A contemporaneous rule requiring the child be interviewed separately would break this."
+    }
+   ]
+  },
+  {
+   "id": "inst_each_one_teach_one",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Each One Teach One alternative school",
+   "note": "The membrane the main system could not supply: small, inside the tissue, and buffering rather than sorting.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_precious"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "containment-over-extermination",
+    "witness-as-transformation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.86
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_provisional_ira",
+   "type": "institution",
+   "scale": "institution",
+   "name": "The Provisional IRA",
+   "note": "A civic structure of resistance that becomes its own machinery of exile — first of the woman it disappeared, then of the fighters who became an embarrassment to the peace.",
+   "container": "city_belfast",
+   "testimony": [
+    "f_say_nothing"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "loyalty-under-erasure",
+    "the-disappeared",
+    "institutional-cannibalism",
+    "sovereignty-reversal"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.22
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_hm_prison_maze",
+   "type": "institution",
+   "scale": "institution",
+   "name": "HM Prison Maze",
+   "note": "Where the state held what it would not name, and where the hunger strike turned the prisoner's own body into the last available instrument.",
+   "container": "city_belfast",
+   "testimony": [
+    "f_say_nothing"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "exile-as-social-control",
+    "sacrifice-as-transaction",
+    "law-as-cruelty"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.28
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_hatch_forensic_hospital",
+   "type": "institution",
+   "scale": "institution",
+   "name": "Hatch Forensic Institute",
+   "note": "Reads a religious act as a risk score, because risk is the only field the intake form has.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_i_know_this_much_is_true"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "institutional-indifference",
+    "law-meets-the-unspeakable",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.3
+   },
+   "postures": []
+  },
+  {
+   "id": "inst_cia_counterterrorism_center",
+   "type": "institution",
+   "scale": "institution",
+   "name": "CIA Counterterrorism Center",
+   "note": "An agency that needs a body to produce, and reorganises its methods, its people and its truth around producing one.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_zero_dark_thirty"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "procedural-guilt",
+    "sovereignty-reversal",
+    "denial-as-shield",
+    "institutional-shadow"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.16
+   },
+   "postures": []
+  },
+  {
+   "id": "grp_cidade_de_deus",
+   "type": "group",
+   "scale": "group",
+   "name": "Cidade de Deus",
+   "note": "The housing project itself: an entity the state created by subtraction, holding itself together with the only order its children could build.",
+   "container": "city_rio_de_janeiro",
+   "testimony": [
+    "f_city_of_god"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "exile-as-social-control",
+    "boundary-drawn-wrong",
+    "tribal-violence-as-identity"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.24
+   },
+   "postures": []
+  },
+  {
+   "id": "grp_commandant_battalion",
+   "type": "group",
+   "scale": "group",
+   "name": "The Commandant's battalion",
+   "note": "Nominally a shelter against extermination; within weeks the shelter is the machine that erodes a child's ability to tell love from obedience.",
+   "container": null,
+   "testimony": [
+    "f_beasts_of_no_nation"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "sovereignty-reversal",
+    "violence-as-liturgy",
+    "protection-becomes-predation",
+    "war-as-inheritance"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.12
+   },
+   "postures": []
+  },
+  {
+   "id": "grp_the_corner_crew",
+   "type": "group",
+   "scale": "group",
+   "name": "The Fayette Street corner",
+   "note": "A market with a full labour hierarchy, a training programme and a pension of exactly nothing, holding a neighbourhood together the way a wound holds a body together.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_corner"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "load-shifted-downward",
+    "institutional-rot",
+    "complicity-through-desperation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.26
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_maxson",
+   "type": "family",
+   "scale": "family",
+   "name": "The Maxson household",
+   "note": "A civic space with its own laws, its own exiles and its own unspoken constitution: a fortress against the world's violence that becomes the instrument of its own isolation.",
+   "container": "city_pittsburgh",
+   "testimony": [
+    "f_fences"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "boundary-drawn-wrong",
+    "exile-through-duty",
+    "inherited-duty",
+    "father-hunger"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.35
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_mccray",
+   "type": "family",
+   "scale": "family",
+   "name": "The McCray family",
+   "note": "The father's nerve breaks in the interrogation room before the son's does, and the family is dissolved by the signature that was supposed to end the night.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_when_they_see_us"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "fatherhood-and-complicity",
+    "load-shifted-downward",
+    "complicity-through-desperation"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.38
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_wise",
+   "type": "family",
+   "scale": "family",
+   "name": "The Wise family",
+   "note": "A mother's faith in the civic covenant collapses into despair, and the collapse travels outward into how a whole block deals with the precinct.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_when_they_see_us"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "load-shifted-downward",
+    "institutional-indifference",
+    "exile-as-social-control"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.52
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_barksdale",
+   "type": "family",
+   "scale": "family",
+   "name": "The Barksdale family",
+   "note": "Where the firm and the kinship are the same structure, so leaving the business and leaving the family are one act.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_wire"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "inherited-duty",
+    "loyalty-tax",
+    "violence-as-inheritance"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.2
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_mccullough_boyd",
+   "type": "family",
+   "scale": "family",
+   "name": "The McCullough/Boyd family",
+   "note": "Three generations on one corner, each of them at a different point in the same loop at the same time.",
+   "container": "city_baltimore",
+   "testimony": [
+    "f_the_corner"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "violence-as-inheritance",
+    "complicity-disguised-as-love",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.42
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_jones_johnston",
+   "type": "family",
+   "scale": "family",
+   "name": "The Jones/Johnston household",
+   "note": "A sealed room in which a multi-generational weight is transmitted downward and the outside world's two institutions are trained not to look in.",
+   "container": "city_new_york",
+   "testimony": [
+    "f_precious"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "maternal-transmission-of-violence",
+    "denial-as-shared-fiction",
+    "load-shifted-downward"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.14
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_mcconville",
+   "type": "family",
+   "scale": "family",
+   "name": "The McConville family",
+   "note": "Ten children left in a flat after their mother is taken, then dispersed into institutions — the disappearance administered twice.",
+   "container": "city_belfast",
+   "testimony": [
+    "f_say_nothing"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "the-disappeared",
+    "institutional-indifference",
+    "22-years-of-silence"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.56
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_price",
+   "type": "family",
+   "scale": "family",
+   "name": "The Price family",
+   "note": "A republican lineage in which the movement is the inheritance, and the daughters carry an obligation that was decided before they existed.",
+   "container": "city_belfast",
+   "testimony": [
+    "f_say_nothing"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "inherited-duty",
+    "war-as-inheritance",
+    "loyalty-under-erasure"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.3
+   },
+   "postures": []
+  },
+  {
+   "id": "fam_birdsey",
+   "type": "family",
+   "scale": "family",
+   "name": "The Birdsey family",
+   "note": "A household organised around a silence about paternity, which the next generation administers on the family's behalf without ever being told what it is.",
+   "container": "country_united_states",
+   "testimony": [
+    "f_i_know_this_much_is_true"
+   ],
+   "clusters": [
+    "XIII"
+   ],
+   "tags": [
+    "inherited-guilt",
+    "denial-as-shared-fiction",
+    "grief-suppressed-by-duty"
+   ],
+   "continuum": {
+    "guilt_as_engine": 0.4
+   },
+   "postures": []
+  }
+ ]
+}

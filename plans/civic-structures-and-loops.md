@@ -261,12 +261,19 @@ the prompt and say so in the commit.
 **Gate:** one uploaded transcript (a court transcript or an episode's subtitle) produces a
 graph whose every edge quotes a line that exists in the source.
 
-## What stays out
+## Deliberately deferred — come back to these
 
-- The Narrative Mirror (open a loop onto the human scene it costs) — that is the Room,
-  given the relation and asked for the scene. No new machinery. Later.
-- Cross-domain healing search (the gut's buffering as a policing model; the forest's nurse
-  log as a truth commission) — needs a corpus outside film first. Later.
+Antoine asked (2026-09-09) that these be written down rather than quietly dropped. Each is
+wanted; each is waiting on something specific.
+
+| Deferred | Why it waits | What unblocks it |
+|---|---|---|
+| **The gap audit** — which anatomies have been mapped at which rungs, and which cells are empty ("exile is mapped in justice and in the Troubles, never in finance or migration") | It falls out for free once anatomies and rungs both exist; building it before there is anything to count would produce an empty table | Stage 3 (anatomies) + Stage 4 (`entity_relations.shape`). It is then a `GROUP BY`, and it is Stage 5's second half. |
+| **The Narrative Mirror** — open any loop onto the human scene it costs: the deposition, the film scene, the unsent letter | No new machinery is needed at all. It is the Room, handed a relation and asked for the scene | Stage 4's stored relations, so there is something to hand it. |
+| **Cross-domain healing search** — retrieve a structural antidote from a domain with no shared vocabulary (the gut's sIgA buffering as a model for policing; the forest's nurse log as a model for transitional justice) | The corpus is entirely film and its entities. A search across domains needs at least one domain that is not narrative | A non-narrative corpus — biology, ecology, law — decomposed to the same anatomy shape. Nothing about this is scheduled. |
+
+## What stays out entirely
+
 - Any automatic naming of patterns that feeds back into matching (rule 3).
 - A `policy` or `event` entity type (rules 1–2).
 - Populating empty rungs (cell, civilisation, cosmos) with placeholders.

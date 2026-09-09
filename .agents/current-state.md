@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-08-26T14:33:45.177Z
+Generated: 2026-09-09T21:59:06.734Z
 
 ## Components
 
@@ -9,7 +9,7 @@ Generated: 2026-08-26T14:33:45.177Z
 - semantic-layer · Working · next: Full corpus grounded, shared tag vocabulary enforced
 - analogical-layer · Prototype · next: Server-side pattern-instance graph, computed once and cached instead of recomputed per client
 - pattern-engine · Concept · next: One formally defined, named pattern as a proof of concept (structure, not just a tag)
-- graphrag · Prototype · next: Static community detection over the existing tag/continuum data
+- graphrag · Prototype · next: Subgraph retrieval wired into the embedded chat assistant as a real tool
 - scale-echo · Prototype · next: Scale-aware weighting (distance in scale, not just axis value)
 - integration-continuum · Working · next: A third axis once cluster III is archive-grounded
 - thread-click · Working · next: Shared click-through across one unified app’s modes — largely true now that Content and Map share one renderer
@@ -38,7 +38,11 @@ Generated: 2026-08-26T14:33:45.177Z
 
 ## Plan backlog
 
-- fix-google-model-abort-in-room — **PLANNED** 2026-08-26
+- civic-structures-and-loops — PLANNED
+- entity-interior-first-anatomy — **DONE** 2026-09-07
+- google-models-and-one-shared-memory — **DONE** 2026-09-07
+- room-chat-tool-parity — **PLANNED** 2026-08-26
+- fix-google-model-abort-in-room — **DONE** 2026-08-26
 - marker-detection-calibration — **PLANNED** 2026-08-26
 - vertical-vs-entanglement — **PLANNED** 2026-08-26
 - scale-as-an-ordered-ladder — **PLANNED** 2026-08-26
@@ -46,7 +50,7 @@ Generated: 2026-08-26T14:33:45.177Z
 - auto-mirror-notes-for-coding-agent — **PLANNED** 2026-08-25
 - use-saved-note-as-conversation-context — **PLANNED** 2026-08-25
 - start-fresh-keep-conversation-visible — **DONE** 2026-08-25
-- chat-model-picker — **PLANNED** 2026-08-24
+- chat-model-picker — **DONE** 2026-08-24
 - deep-document-extraction — **PLANNED** 2026-08-24
 - cancel-extraction-on-detach — **PLANNED** 2026-08-24
 - opencode-terminals-as-a-second-lane — **PLANNED** 2026-08-23

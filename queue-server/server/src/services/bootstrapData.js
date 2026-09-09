@@ -91,7 +91,74 @@ export function migrateOntology(db) {
     setTags(db, id, c.tags || []);
     setContinuum(db, id, { guilt_as_engine: c.guilt_as_engine });
   }
-  return { films: Object.keys(seed.filmsIndex).length, characters: seed.characters.length, countries: seed.countries.length };
+  const base = { films: Object.keys(seed.filmsIndex).length, characters: seed.characters.length, countries: seed.countries.length };
+  return { ...base, civic: migrateCivicCluster(db) };
+}
+
+// The civic/justice cluster (plans/civic-structures-and-loops.md, Stage 2) lives in its
+// own seed file rather than inside fmcns_ontology.json, for two reasons: it is written by
+// hand from the works themselves instead of mined out of the archive, and it introduces
+// entity kinds the archive file has no shape for.
+//
+// Three rules from the paradigm are enforced here rather than trusted to the data:
+//
+//   • A MEDIUM IS NOT AN ENTITY. Films and series go in as `film` rows with no rung, the
+//     way the archive's films do. The institutions, families, cities and groups they
+//     testify about are the entities, because those are what maintain a boundary against
+//     their own dissolution (fractal_operational_core.md §1).
+//   • A POLICY IS NOT AN ENTITY EITHER. It is a posture an institution holds, so it lands
+//     in that institution's meta.postures with a date, a source and a falsifier — never as
+//     a row of its own, and never as an `event` type (§2).
+//   • CONTAINER MEANS THE NEXT RUNG UP, for these rows. A family sits inside a city, a
+//     city inside a country. That differs from the archive's characters, whose container
+//     is the film they appear in, and it is deliberate: a civic entity is testified about
+//     by several works at once (Baltimore by both The Wire and The Corner), so the medium
+//     link has to be a list — meta.testimony — and cannot be the single container column.
+//
+// `source: 'curated'` keeps that provenance visible in the app's own facets rather than
+// letting hand-written rows pass as archive-derived ones (§11, "Provenance").
+export function migrateCivicCluster(db) {
+  const seedPath = resolve(SEED_DIR, 'civic_cluster.json');
+  if (!existsSync(seedPath)) return { skipped: true };
+  const seed = JSON.parse(readFileSync(seedPath, 'utf8'));
+
+  const { code, name, grounding } = seed.cluster;
+  db.prepare(`
+    INSERT INTO clusters (code, name, grounding_status) VALUES (?,?,?)
+    ON CONFLICT(code) DO UPDATE SET name=excluded.name, grounding_status=excluded.grounding_status
+  `).run(code, name, grounding?.status || null);
+
+  for (const [filmId, film] of Object.entries(seed.filmsIndex)) {
+    upsertEntity(db, {
+      id: filmId, type: 'film', name: film.title, scale: 'film', clusters: film.clusters,
+      grounded: true, source: 'curated',
+      meta: { year: film.year, auteurs: film.auteurs, synopsis: film.synopsis || '', kind: film.kind || 'film' },
+    });
+  }
+  for (const ch of seed.characters) {
+    upsertEntity(db, {
+      id: ch.id, type: 'character', name: ch.name, scale: 'individual', container_id: ch.filmId,
+      clusters: ch.clusters, grounded: !!ch.grounded, source: 'curated',
+      meta: { note: ch.note, filmTitle: ch.filmTitle, filmYear: ch.filmYear, auteurs: ch.auteurs, synopsis: ch.synopsis },
+    });
+    setTags(db, ch.id, ch.tags);
+    setContinuum(db, ch.id, ch.continuum);
+  }
+  for (const c of seed.civicEntities) {
+    upsertEntity(db, {
+      id: c.id, type: c.type, name: c.name, scale: c.scale, container_id: c.container || null,
+      clusters: c.clusters, grounded: true, source: 'curated',
+      meta: { note: c.note, testimony: c.testimony || [], postures: c.postures || [] },
+    });
+    setTags(db, c.id, c.tags);
+    setContinuum(db, c.id, c.continuum);
+  }
+  return {
+    cluster: code,
+    mediums: Object.keys(seed.filmsIndex).length,
+    characters: seed.characters.length,
+    civicEntities: seed.civicEntities.length,
+  };
 }
 
 const KNOWLEDGE_DESCRIPTIONS = {
