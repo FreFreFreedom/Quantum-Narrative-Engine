@@ -11315,6 +11315,11 @@ async function loadNextUp(quiet) {
   } finally {
     nextUpBusy = false;
     scheduleFlowRender();
+    // Home shows the top three of this same ranking. It is fetched asynchronously,
+    // so without this the card had already rendered "Nothing ranked yet" by the time
+    // the answer arrived and nothing redrew it — which is what driving the live app
+    // showed and reading the diff did not. One caller, two readers.
+    if (typeof coreView !== 'undefined' && coreView === 'home') renderHome();
   }
 }
 
