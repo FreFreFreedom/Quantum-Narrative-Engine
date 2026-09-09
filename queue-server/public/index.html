@@ -656,7 +656,11 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 .uc--row:hover .room-row-acts, .uc--row:focus-within .room-row-acts, .uc--row.is-sel .room-row-acts { opacity:1; }
 .room-row-acts .uicon { padding:2px 4px; }
 .room-main { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; }
-.room-toolbar { gap:8px; }
+/* One line, always. .tv-toolbar wraps by default, which in a squeezed middle
+   column dropped the five toolbar icons onto a second row — a band created by
+   the very row meant to save one. The title gives up its width instead. */
+.room-toolbar { gap:8px; flex-wrap:nowrap; }
+.room-toolbar .room-turns { white-space:nowrap; }
 .room-toolbar .arch-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .room-toolacts { display:flex; align-items:center; gap:2px; flex:none; }
 /* Kept open by a click, so the button stays lit; a hover-peek deliberately does
@@ -710,7 +714,14 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* The composer as a pill, centered under the same measure, always the last
    thing in the flex column — .se-log is what scrolls, so this never moves. */
 .room-convo .se-compose { max-width:48rem; margin:8px auto 0; width:100%; gap:8px; border:1px solid var(--c-border-2); border-radius:999px; background:var(--c-surface); box-shadow:var(--sh-xs); padding:8px; align-items:center; }
-.room-convo .se-input { border-bottom:none; padding:6px 0; }
+/* The composer holds a lane pill, a clear, the ＋ and the send button. Given a
+   narrow column those took every pixel and left the box you type in at zero
+   width. The box now claims a floor of its own and the lane pill is what gives
+   way — it can say "ChatGPT" or "Cha…" and still be the same control, which the
+   thing you are writing in cannot. */
+.room-convo .se-compose { flex-wrap:nowrap; }
+.room-convo .se-input { border-bottom:none; padding:6px 0; flex:1 1 6rem; min-width:6rem; }
+.room-convo .se-lanepick, .room-convo .se-lanemodel { min-width:0; }
 .room-convo .se-input:focus { border-bottom:none; }
 .room-convo .se-send { border-radius:999px; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none; }
 .room-convo .se-cmds { max-width:48rem; margin:6px auto 0; padding:0 18px; }
