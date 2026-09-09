@@ -2,11 +2,33 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-09 |
+| **Stages 1-6 shipped; one live check outstanding** | 2026-09-09 |
 
-**Not a green light.** Antoine asked for this plan to be written so a session with no
-conversation context could execute it. He has not said "implement". Do not start it
-without that.
+Antoine gave the green light on 2026-09-09 and all six stages shipped the same day. One
+thing is genuinely outstanding, stated plainly rather than counted as done: Stage 6's
+extractor has never been run against a real model, because this Mac's `.env` carries no
+Google key and the free Gemini lane is the only lane it is allowed to use. Its verbatim
+gate is proved mechanically by `npm run traffic:selftest` against a model that
+deliberately lies, which is a stronger proof of the gate than one live run would be — but
+"the machine's read agrees with the hand read" is a claim nobody has tested yet. The
+comparison is one command once a key exists:
+
+```bash
+cd queue-server
+node scripts/extract-traffic.js data-seed/subtitles/f_fences.srt \
+  --blocks 355-479 --cast "Troy,Rose,Lyons,Bono"
+# then compare against plans/civic-structures-first-anatomy-findings.md:
+# 4 nodes, l-t 17 opp / r-t 9 opp / l-r 4 ally / b-t 1 ally, balanced, {b,t} vs {l,r}
+```
+
+| Stage | State |
+|---|---|
+| 1 — ordered scale ladder | **DONE** — `services/scaleLadder.js`, `npm run scale:selftest`, `vert` edge renamed `author` |
+| 2 — the justice cluster | **DONE** — `data-seed/civic_cluster.json`, cluster XIII, 11 mediums / 33 characters / 34 civic entities |
+| 3 — first anatomy | **DONE** — `scripts/interior-fences.js`, findings in `plans/civic-structures-first-anatomy-findings.md`; balanced, seam `{Bono, Troy}` vs `{Lyons, Rose}` |
+| 4 — stored relations | **DONE** — `entity_relations` + `services/entityRelations.js`, `npm run relations:selftest`; 14 seeded claims, two real loops (Fences c.1950→1965, Baltimore 1996→2004) |
+| 5 — saved maps + gap audit | **DONE** — `saved_maps` + the Trail block in the Content sidebar; the gap audit landed a stage early as `GET /api/ontology/shape-audit` |
+| 6 — intake pointed at traffic | **DONE, one check outstanding** — `services/trafficExtraction.js` + `services/interactionGraph.js` + `scripts/extract-traffic.js`, `npm run traffic:selftest`. Built alongside `docExtraction` rather than replacing its prompt (see the deviation note below). Never run against a live model on this machine. |
 
 ---
 
@@ -249,6 +271,16 @@ the graph draws it distinctly from the computed echoes.
 filled and several empty cells.
 
 ### Stage 6 — intake, pointed at traffic
+
+> **Deviation from this plan, made 2026-09-09 and recorded rather than hidden.** The plan
+> said to repoint `services/docExtraction.js`'s per-section prompt at interaction traffic.
+> That prompt reads the vision PDFs and archives Antoine uploads to the Room and asks for
+> mechanics, patterns and ideas; aiming it at "who acts on whom" would point a working
+> feature at material with no dialogue in it and break what it is for. The plan was written
+> before that prompt had been read closely. The goal behind it — intake that produces
+> traffic, reusing what exists rather than growing a second lane — is met by
+> `services/trafficExtraction.js`, which uses the same free Gemini model, the same window
+> size and the same between-call pause, and leaves the existing extraction untouched.
 
 Repoint `services/docExtraction.js`'s per-section prompt from "mechanics and ideas" to
 **interaction traffic**: who acts on whom, in what direction, with what sign, quoting the
