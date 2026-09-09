@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## MIRROR CHECK — this fact exists only to prove the repo mirror runs unattended, and is deleted straight after.
+
+Written by a verification pass on 2026-09-09.
+
 ## Post-cyberpunk knowledge systems (esp. Greg Egan's Diaspora) are a working model for the paradigm: hyperdimensional ontology where consciousness is topology and knowledge is geometric.
 
 Diaspora's mapping of the infinite topologies a consciousness could inhabit is the concrete shape of what the analogical and generative layers approximate: not merely tracing the geometry of thought but engineering the space for a new metaphysical migration — inhabiting a form a culture has never yet tried. This is what frames the generative layer as 'meta-engineering the shape of consciousness itself.' Keep exploring this lineage — its hyperdimensional ontology and intelligence architecture — as direct material for the platform's own knowledge-system design and the growing candidate layer stack.
