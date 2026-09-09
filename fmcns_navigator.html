@@ -602,12 +602,19 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
    reflow what is under the mouse, applies here too. Clicking pins it back into
    the row (that is .collapsed coming off), so the temporary state and the kept
    one live in two different classes and can never fight. */
-.room-threads.collapsed.peek { position:absolute; top:0; left:0; bottom:0; z-index:8;
+/* A peek starts BELOW the toolbar. It used to start at the top of the room and
+   so slid straight over the two buttons that summon it — reach for "keep the
+   attached cards open" and the panel arrived on top of the button before the
+   click could land, every time, with no way ever to pin it. A control that
+   opens a panel must never end up underneath it.
+   --room-topbar is measured from the toolbar itself (syncRoomTopbar) rather than
+   written here as a number, so it cannot go stale when the bar changes. */
+.room-threads.collapsed.peek { position:absolute; top:var(--room-topbar, 0px); left:0; bottom:0; z-index:8;
   width:250px; min-width:0; max-width:92vw; padding:14px;
-  border-right-color:var(--c-border); box-shadow:var(--sh-md); }
-.room-cards.collapsed.peek { position:absolute; top:0; right:0; bottom:0; z-index:8;
+  border-right-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
+.room-cards.collapsed.peek { position:absolute; top:var(--room-topbar, 0px); right:0; bottom:0; z-index:8;
   width:290px; min-width:0; max-width:92vw; padding:14px;
-  border-left-color:var(--c-border); box-shadow:var(--sh-md); }
+  border-left-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
 /* One tab row instead of five headings. Wraps to a second line rather than
    scrolling sideways — a column this narrow can spare 18px of height far more
    easily than it can spare a hidden tab. */
@@ -1933,7 +1940,8 @@ button:active { transform: translateY(1px) scale(.99); }
   /* The room's two side zones, same treatment: the conversation keeps the full
      width and each panel slides over it from the button in the room's toolbar. */
   .room-threads, .room-cards {
-    position:absolute; top:0; bottom:0; z-index:8; padding:14px;
+    position:absolute; top:var(--room-topbar, 0px); bottom:0; z-index:8; padding:14px;
+    border-top:1px solid var(--c-border);
     box-shadow:var(--sh-md); transition:transform var(--t-med) var(--ease); }
   .room-threads { left:0; width:250px; max-width:80vw; transform:translateX(-100%); }
   .room-cards { right:0; width:300px; max-width:92vw; transform:translateX(100%); }
@@ -7296,6 +7304,16 @@ function applyRoomCardsWidth() {
   panel.style.width = (saved && saved >= ROOM_CARDS_MIN_W && saved <= ROOM_CARDS_MAX_W) ? saved + 'px' : '';
 }
 
+// The height of the Room's toolbar, published to CSS so a peeked side panel can
+// start under it instead of on top of the buttons that open it.
+function syncRoomTopbar() {
+  const bar = document.querySelector('.room-toolbar');
+  const host = document.getElementById('wsRoom');
+  if (!bar || !host) return;
+  const h = Math.round(bar.getBoundingClientRect().height);
+  if (h > 0) host.style.setProperty('--room-topbar', h + 'px');
+}
+
 function initRoom() {
   if (roomInited) return;
   roomInited = true;
@@ -7371,18 +7389,25 @@ function initRoom() {
   // column that is open unless collapsed; narrow, it is an overlay that is shut
   // unless slid in.
   const zoneIsKept = (z) => isRoomNarrow() ? z.panel.classList.contains('open') : !z.panel.classList.contains('collapsed');
-  const syncZoneBtns = () => zones.forEach(z => {
+  // How far down a peeked panel has to start so it clears the toolbar. Measured,
+  // not assumed: the bar is one row of icons today, and a number written into the
+  // CSS would quietly go wrong the day it is not.
+  window.addEventListener('resize', syncRoomTopbar);
+  const syncZoneBtns = () => { syncRoomTopbar(); zones.forEach(z => {
     const on = zoneIsKept(z);
     z.btn.setAttribute('aria-expanded', String(on));
     z.btn.title = on ? z.keptTitle : z.shutTitle;
     if (z.panel === cards) applyRoomCardsWidth();
-  });
+  }); };
   roomZonesSync = syncZoneBtns;
   const stopPeekTimer = (z) => { clearTimeout(z.timer); z.timer = null; };
   const dropPeek = (z) => { stopPeekTimer(z); z.panel.classList.remove('peek'); };
   const dropAllPeeks = () => zones.forEach(dropPeek);
   const peekZone = (z) => {
     stopPeekTimer(z);
+    // Measured again here, before the panel is shown: at initRoom() the Room may
+    // not be on screen yet, and a hidden bar measures zero.
+    syncRoomTopbar();
     // Nothing to peek at when it is already being kept open, and nothing to show
     // at all when there is no thread selected (the button is disabled then).
     if (zoneIsKept(z) || z.btn.disabled) return;
