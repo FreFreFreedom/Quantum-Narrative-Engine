@@ -380,17 +380,28 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 /* Above .studio-overlay (10000) too, so opening the Dispatch Queue from the
    rail shows the panel on top of whatever modal was already open, instead of
    silently rendering underneath it. */
-.queue-panel-veil { position:fixed; inset:0; background:rgba(20,17,10,.14); z-index:10020; }
-.queue-panel { position:fixed; top:0; right:0; bottom:0; width:420px; max-width:100vw; background:var(--c-surface); border-left:1px solid var(--c-border); box-shadow:var(--sh-md); z-index:10021; display:flex; flex-direction:column; }
-.queue-panel[hidden], .queue-panel-veil[hidden] { display:none; }
-.queue-panel-head { display:flex; align-items:center; gap:8px; height:56px; padding:0 14px; border-bottom:1px solid var(--c-border); flex-shrink:0; }
+/* No veil: this is a side bar, not a modal. The page stays live underneath,
+   which is what lets you point at an element without hiding the panel first.
+   Width is dragged from the left edge and remembered (QP_W_KEY). */
+.queue-panel { position:fixed; top:0; right:0; bottom:0; width:var(--qp-w,420px); min-width:320px; max-width:100vw; background:var(--c-surface); border-left:1px solid var(--c-border); box-shadow:var(--sh-md); z-index:10021; display:flex; flex-direction:column; }
+.queue-panel[hidden] { display:none; }
+.queue-panel-resize { position:absolute; left:-3px; top:0; bottom:0; width:7px; cursor:ew-resize; z-index:2; }
+.queue-panel-resize:hover, .queue-panel-resize.dragging { background:var(--c-accent); opacity:.45; }
+.queue-panel-head { display:flex; align-items:center; gap:8px; height:44px; padding:0 8px 0 14px; border-bottom:1px solid var(--c-border); flex-shrink:0; }
 .queue-panel-icon { font-size:14px; color:var(--c-ink-3); }
 .queue-panel-title { font-size:13px; font-weight:700; color:var(--c-ink); }
 .queue-panel-openpage { margin-left:auto; font-size:11px; font-weight:600; color:var(--c-accent); text-decoration:none; white-space:nowrap; }
 .queue-panel-openpage:hover { text-decoration:underline; }
 .queue-panel-close { border:none; background:none; cursor:pointer; font-size:14px; color:var(--c-ink-4); padding:5px 8px; border-radius:8px; flex-shrink:0; }
 .queue-panel-close:hover { background:var(--c-surface-2); color:var(--c-ink); }
-.queue-panel-body { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:16px; }
+.queue-panel-body { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:14px; }
+/* The app's one floating control. Small and quiet until something waits on you. */
+#sysBtn { position:fixed; bottom:14px; right:14px; width:30px; height:30px; border-radius:50%; background:var(--c-ink-solid); color:var(--c-on-solid); border:none; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10019; box-shadow:var(--sh-sm); opacity:.5; transition:opacity var(--t-fast) var(--ease); }
+#sysBtn:hover, #sysBtn.on { opacity:1; }
+#sysBtn.on { right:calc(var(--qp-w,420px) + 14px); }
+#sysBtn.warm { background:var(--c-amber); color:#fff; opacity:1; }
+#sysBtn svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; }
+#sysBtn .mode-pill-count { position:absolute; top:-4px; right:-4px; margin:0; min-width:15px; height:15px; padding:0 4px; font-size:9px; border:2px solid var(--c-bg); }
 .qp-sec-title { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); font-weight:600; margin-bottom:6px; }
 .qp-sec-title.asking { color:var(--c-violet); }
 .qp-empty { font-size:11px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:12px; text-align:center; }
@@ -2082,11 +2093,6 @@ button:active { transform: translateY(1px) scale(.99); }
         <span class="rail-label">Room</span>
       </button>
     </div>
-    <div class="rail-sep"></div>
-    <button id="modeQueueBtn" class="rail-item" title="Open the Dispatch Queue — the count is tasks waiting for your answer">
-      <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg>
-      <span class="rail-label">Queue</span><span id="modeQueueBadge" class="mode-pill-count"></span>
-    </button>
     <div class="rail-foot">
       <div id="usageStripHost" data-src="Side rail → Claude usage (5h + weekly) | fmcns_navigator.html: loadUsage(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
       <span id="archQueueBanner" class="core-banner" data-src="Side rail → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
@@ -2117,10 +2123,12 @@ button:active { transform: translateY(1px) scale(.99); }
 </nav>
 <div class="app-main" id="appMain">
 <div id="storageWarn" class="storage-warn" hidden data-src="Global | fmcns_navigator.html: renderStorageWarn() | backend: GET /api/architecture/queue-status -> storage"></div>
-<div id="queuePanelVeil" class="queue-panel-veil" hidden></div>
+<button id="sysBtn" title="Change the app — describe it, point at what you mean, send it (⌘/Ctrl+/)" aria-label="Open the build panel">
+  <svg viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg><span id="sysBadge" class="mode-pill-count"></span>
+</button>
 <aside id="queuePanel" class="queue-panel" hidden aria-label="Dispatch Queue">
+  <div class="queue-panel-resize" id="queuePanelResize" title="Drag to resize"></div>
   <div class="queue-panel-head">
-    <span class="queue-panel-icon">☰</span>
     <span class="queue-panel-title">Dispatch Queue</span>
     <a href="#" id="queuePanelOpenPage" class="queue-panel-openpage">Open full page →</a>
     <button id="queuePanelClose" class="queue-panel-close" title="Close (Esc)" aria-label="Close">✕</button>
@@ -6547,7 +6555,7 @@ function mapResetZoom() {
 let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
 document.getElementById('modeMapBtn').onclick = () => setMode('map');
-document.getElementById('modeQueueBtn').onclick = () => openQueuePanel();
+document.getElementById('sysBtn').onclick = () => (queuePanelOpen ? closeQueuePanel() : openQueuePanel());
 // ---------- The side rail ----------
 // Two jobs. First, the pin: unpinned the rail is 52px of symbols that widen on
 // hover (pure CSS); pinned it keeps that width and the content shrinks, and the
@@ -9563,8 +9571,8 @@ async function qLoad() {
   if (!nbLanded && !nbLandedBusy && !nbLandedError) nbLoadLanded();
   const landedEl = document.getElementById('coreCountLanded');
   if (landedEl) landedEl.textContent = nbLandedCount() || '';
-  const modeBadgeEl = document.getElementById('modeQueueBadge');
-  const modeBtnEl = document.getElementById('modeQueueBtn');
+  const modeBadgeEl = document.getElementById('sysBadge');
+  const modeBtnEl = document.getElementById('sysBtn');
   if (modeBadgeEl) {
     modeBadgeEl.textContent = askingCount || '';
     modeBadgeEl.classList.toggle('on', askingCount > 0);
@@ -11401,7 +11409,7 @@ function renderFlow() {
   }
 
   if (!questionsRaw.length && !runningRaw.length && !readyRaw.length && !parkedRaw.length && !groupSectionMap.size) {
-    html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt), or ask the assistant (bottom-right ✦).</div>';
+    html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt).</div>';
   }
   // so ✨ markers appear on rows the moment a look lands — no need to open the
   // item first. Poll is a no-op unless the item is pending.
@@ -11470,7 +11478,7 @@ function renderFlow() {
           <div class="id-form-row">
             <button class="id-addbtn" id="idAddBtn">+ Keep the idea</button>
           </div>
-        </div>` + (ideas.length ? ideas.map(i => flowIdRow(i)).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down, or tell the assistant (bottom-right ✦) an idea and save it from there.</div>')));
+        </div>` + (ideas.length ? ideas.map(i => flowIdRow(i)).join('') : (flowSearch ? '' : '<div class="empty" style="margin:0;">No seeds yet — jot one down here, or save one out of a Room conversation.</div>')));
   }
 
   if (flowComponentFilter) {
@@ -17228,15 +17236,13 @@ async function loadArchHistory(id) {
   }
 }
 
+// Was: open the floating chat bubble with this text. The bubble is gone (it
+// answered nothing the Room does not answer better), so the text lands in the
+// one panel that can act on it.
 function openChatWithPrompt(text) {
-  if (window.fwShowTab) window.fwShowTab('chat');
-  const panel = document.getElementById('fmcns-chat-panel');
-  const btn = document.getElementById('fmcns-chat-btn');
-  if (!panel.classList.contains('open')) btn.click();
-  setTimeout(() => {
-    const input = document.getElementById('fmcns-chat-input');
-    if (input) { input.value = text; input.focus(); }
-  }, 50);
+  openQueuePanel();
+  const t = document.getElementById('qpText');
+  if (t) { t.value = text; t.focus(); }
 }
 
 // ---------- Queue panel: quick access to the queue from anywhere (⌘/Ctrl+/) ----------
@@ -17274,14 +17280,12 @@ function renderQueuePanel() {
           <button class="${qpMode === 'implement' ? 'active' : ''}" data-qpmode="implement">Implement</button>
           <button class="${qpMode === 'question' ? 'active' : ''}" data-qpmode="question">Question</button>
         </div>
-      </div>
-      <div class="qp-composer-row">
-        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn">${qpPickActive ? '✕ Cancel' : (qpPicked.length ? '＋ Point at another element' : '✏️ Point at an element')}</button>
-        ${qpPicked.length > 1 ? '<button class="qp-pick-clear" id="qpPickClear">Clear all</button>' : ''}
+        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn" title="Click something on the page and it comes back as a chip here">${qpPickActive ? '✕ Stop pointing' : (qpPicked.length ? '🎯 Point at another' : '🎯 Point at an element')}</button>
       </div>
       ${qpPicked.length ? `<div class="qp-composer-row">
         <div class="qp-pick-list" id="qpPickList">
           ${qpPicked.map((desc, i) => `<span class="qp-pick-chip" data-idx="${i}">🎯 <span>${qEsc(desc)}</span><button data-qpremove="${i}" title="Remove">✕</button></span>`).join('')}
+          ${qpPicked.length > 1 ? '<button class="qp-pick-clear" id="qpPickClear">Clear all</button>' : ''}
         </div>
       </div>` : ''}
       <div class="qp-composer-row">
@@ -17387,9 +17391,14 @@ function qpDescribeEl(el) {
   }
   return parts.join(' · ');
 }
+function qpIsOurs(t) {
+  return document.getElementById('queuePanel').contains(t)
+    || document.getElementById('sysBtn').contains(t)
+    || (qpPickBanner && qpPickBanner.contains(t));
+}
 function qpHover(e) {
   const t = e.target;
-  if (!t || t.nodeType !== 1 || document.getElementById('queuePanel').contains(t) || (qpPickBanner && qpPickBanner.contains(t))) return;
+  if (!t || t.nodeType !== 1 || qpIsOurs(t)) return;
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
   const r = t.getBoundingClientRect();
   if (r.width <= 0 || r.height <= 0) return;
@@ -17401,7 +17410,7 @@ function qpHover(e) {
 }
 function qpClick(e) {
   const t = e.target;
-  if (document.getElementById('queuePanel').contains(t) || (qpPickBanner && qpPickBanner.contains(t))) return;
+  if (qpIsOurs(t)) return;
   e.preventDefault();
   e.stopPropagation();
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
@@ -17416,22 +17425,13 @@ function qpStopPicking() {
   document.removeEventListener('keydown', qpEscListener, true);
   if (qpPickBanner) { qpPickBanner.remove(); qpPickBanner = null; }
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
-  // The panel and its veil were hidden for the duration of the pick (see qpTogglePicking)
-  // so the whole page underneath was actually clickable — bring them back now.
-  if (queuePanelOpen) {
-    document.getElementById('queuePanelVeil').hidden = false;
-    document.getElementById('queuePanel').hidden = false;
-  }
   renderQueuePanel();
 }
 function qpTogglePicking() {
   if (qpPickActive) { qpStopPicking(); return; }
   qpPickActive = true;
-  // Hide the panel AND its full-viewport veil while picking — otherwise the veil (it sits
-  // on top of the whole page, not just the panel's own width) swallows every hover/click
-  // before it reaches the real element underneath, which is why pointing used to fail.
-  document.getElementById('queuePanelVeil').hidden = true;
-  document.getElementById('queuePanel').hidden = true;
+  // Nothing to hide: the panel is not modal, so the page underneath is already
+  // reachable and you can see your picks land in the list while you point.
   qpPickBanner = document.createElement('div');
   qpPickBanner.className = 'fw-pick-banner';
   qpPickBanner.innerHTML = '<span>🎯 Point at an element — click it to capture</span><button id="qpPickSkip">Skip</button>';
@@ -17443,23 +17443,55 @@ function qpTogglePicking() {
 }
 function qpEscListener(e) { if (qpPickActive && e.key === 'Escape') { e.stopPropagation(); qpStopPicking(); } }
 
-function openQueuePanel() {
+// The panel remembers both how wide you dragged it and whether you left it open,
+// the same rule every other zone in the app follows.
+const QP_W_KEY = 'fmcns_qp_width';
+const QP_OPEN_KEY = 'fmcns_qp_open';
+function applyQpWidth(w) {
+  const max = Math.max(320, window.innerWidth - 120);
+  const px = Math.min(Math.max(320, Math.round(w)), max);
+  document.documentElement.style.setProperty('--qp-w', px + 'px');
+  return px;
+}
+function openQueuePanel(focus = true) {
   queuePanelOpen = true;
-  document.getElementById('queuePanelVeil').hidden = false;
   document.getElementById('queuePanel').hidden = false;
+  document.getElementById('sysBtn').classList.add('on');
+  try { localStorage.setItem(QP_OPEN_KEY, '1'); } catch (e) {}
   renderQueuePanel();
   const t = document.getElementById('qpText');
-  if (t) t.focus();
+  if (t && focus) t.focus();
 }
 function closeQueuePanel() {
   if (qpPickActive) qpStopPicking(); // never let a stuck/abandoned pick block closing
   queuePanelOpen = false;
-  document.getElementById('queuePanelVeil').hidden = true;
   document.getElementById('queuePanel').hidden = true;
+  document.getElementById('sysBtn').classList.remove('on');
+  try { localStorage.setItem(QP_OPEN_KEY, '0'); } catch (e) {}
 }
 
-document.getElementById('queuePanelVeil').onclick = closeQueuePanel;
 document.getElementById('queuePanelClose').onclick = closeQueuePanel;
+(function initQpWidth() {
+  const grip = document.getElementById('queuePanelResize');
+  let saved = 0;
+  try { saved = Number(localStorage.getItem(QP_W_KEY)) || 0; } catch (e) {}
+  if (saved) applyQpWidth(saved);
+  grip.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    grip.classList.add('dragging');
+    const move = (ev) => applyQpWidth(window.innerWidth - ev.clientX);
+    const up = (ev) => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      grip.classList.remove('dragging');
+      try { localStorage.setItem(QP_W_KEY, String(applyQpWidth(window.innerWidth - ev.clientX))); } catch (err) {}
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  });
+  // Reopened the way you left it — but without stealing the caret on page load.
+  try { if (localStorage.getItem(QP_OPEN_KEY) === '1') openQueuePanel(false); } catch (e) {}
+})();
 document.getElementById('queuePanelOpenPage').onclick = (e) => {
   e.preventDefault();
   closeQueuePanel();
@@ -17479,44 +17511,10 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 <style>
-#fmcns-chat-btn { position: fixed; bottom: 18px; right: 18px; width: 40px; height: 40px; border-radius: 50%; background: var(--c-ink); color: var(--c-bg); border: none; font-size: 15px; cursor: pointer; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
-#fw-badge { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--c-violet); border: 2px solid var(--c-bg); display: none; }
-#fmcns-chat-panel { position: fixed; bottom: 72px; right: 20px; width: 400px; height: 520px; max-width: calc(100vw - 40px); max-height: calc(100vh - 100px); background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.2); display: none; flex-direction: column; z-index: 9999; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; overflow: hidden; }
-#fmcns-chat-panel.open { display: flex; }
-#fmcns-chat-header { padding: 0 6px 0 2px; border-bottom: 1px solid var(--c-border); font-size: 12.5px; font-weight: 600; color: var(--c-ink); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-#fmcns-chat-header .fw-tabs { display: flex; gap: 2px; padding: 6px 6px 6px 8px; }
-#fmcns-chat-header .fw-tabs button { background: none; border: none; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--c-ink-3); cursor: pointer; }
-#fmcns-chat-header .fw-tabs button:hover { color: var(--c-ink); }
-#fmcns-chat-header .fw-tabs button.active { background: var(--c-surface-2); color: var(--c-ink); }
-#fmcns-chat-header button.fw-close { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--c-ink-4); padding: 6px 10px; border-radius: 8px; }
-#fmcns-chat-header button.fw-close:hover { background: var(--c-surface-2); color: var(--c-ink); }
-.fw-tab { flex: 1; min-height: 0; display: none; flex-direction: column; }
-.fw-tab.active-tab { display: flex; }
-#fmcns-chat-log { flex: 1; overflow-y: auto; padding: 10px 14px; font-size: 12.5px; line-height: 1.5; }
-#fmcns-chat-log .msg { margin-bottom: 10px; white-space: pre-wrap; }
-#fmcns-chat-log .msg.user { color: var(--c-ink); }
-#fmcns-chat-log .msg.assistant { color: var(--c-ink-2); }
-#fmcns-chat-log .msg .role { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--c-ink-4); display: block; margin-bottom: 2px; }
-#fmcns-chat-log .msg.pending { color: var(--c-ink-4); font-style: italic; }
-.idea-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; margin-bottom: 10px; border: 1px dashed var(--c-border-2); border-radius: 8px; font-size: 12px; color: var(--c-ink-3); background: var(--c-surface-2); }
-.idea-chip-btn { padding: 3px 12px; border: 1px solid var(--c-border-2); border-radius: 6px; background: var(--c-surface); color: var(--c-ink); font-size: 11.5px; cursor: pointer; }
-.idea-chip-btn:hover { background: var(--c-ink-solid); color: var(--c-on-solid); }
-.idea-chip-status { font-size: 11px; color: var(--c-ink-4); }
-.idea-chip.ok { border-style: solid; border-color: var(--c-border-2); color: var(--c-ink-2); }
-.idea-chip a { color: var(--c-ink-3); }
-#fmcns-chat-input-row { border-top: 1px solid var(--c-border); padding: 8px; display: flex; gap: 6px; align-items: center; }
-#fmcns-chat-input { flex: 1; border: 1px solid var(--c-border-2); border-radius: 6px; padding: 7px 9px; font-size: 12.5px; resize: none; font-family: inherit; }
-#fmcns-chat-send, #fmcns-chat-attach { border: 1px solid var(--c-border-2); background: #fff; border-radius: 6px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
-#fmcns-chat-attach-label { font-size: 10px; color: var(--c-ink-4); padding: 0 8px 6px; }
-#fmcns-chat-login { padding: 14px; font-size: 12.5px; }
-#fmcns-chat-login input { width: 100%; padding: 7px 9px; border: 1px solid var(--c-border-2); border-radius: 6px; font-size: 12.5px; margin: 8px 0; }
-#fmcns-chat-login button { width: 100%; padding: 7px; border-radius: 6px; border: none; background: var(--c-ink); color: var(--c-bg); font-size: 12.5px; cursor: pointer; }
-.fw-resize { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; cursor: nwse-resize; z-index: 1; }
-/* (Deleted here: 34 rules for the floating widget's old New-task and Queue tabs
-   — .fw-task-*, .fw-mode-seg, .fw-q-*, .fw-pick-btn/.fw-pick-ctx. Those tabs were
-   folded into the Queue slide-over long ago and showFwTab() now forces 'chat', so
-   no element ever carried these classes again. The picker banner and hover
-   highlight below are still live.) */
+/* All that is left of the old floating chat widget: the element picker it used
+   to host. The bubble, its panel and its ~270-line script were deleted — the
+   Room is where you talk to a model, and the bottom-right corner now belongs to
+   the one button that opens the build panel (#sysBtn). */
 .fw-pick-banner { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: var(--c-ink-solid); color: var(--c-on-solid); padding: 8px 14px; border-radius: 10px; font-size: 12.5px; z-index: 10001; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
 .fw-pick-banner button { border: 1px solid var(--c-border-2); background: transparent; color: inherit; border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
 .fw-hover-hl { position: fixed; border: 1.5px solid var(--c-accent); border-radius: 4px; pointer-events: none; z-index: 10000; }
@@ -17538,302 +17536,6 @@ document.addEventListener('keydown', (e) => {
 .studio-actions .ghost:hover { border-color:var(--c-ink); color:var(--c-ink); }
 .studio-actions button:disabled { opacity:.5; cursor:default; }
 </style>
-<button id="fmcns-chat-btn" title="FMCNS Assistant (⌘/Ctrl+`)">✦</button>
-<div id="fmcns-chat-panel">
-  <div id="fmcns-chat-header">
-    <div class="fw-tabs">
-      <button data-fw-tab="chat" class="active">Chat</button>
-    </div>
-    <button class="fw-close" id="fmcns-chat-close" title="Close">✕</button>
-  </div>
-  <div class="fw-tab active-tab" id="fw-tab-chat">
-    <div id="fmcns-chat-login" style="display:none;">
-      <div>Enter the app password to connect:</div>
-      <input type="password" id="fmcns-chat-pw" placeholder="Password">
-      <button id="fmcns-chat-pw-submit">Connect</button>
-      <div id="fmcns-chat-pw-error" style="color:var(--c-danger);margin-top:6px;"></div>
-    </div>
-    <div id="fmcns-chat-log"></div>
-    <div id="fmcns-chat-attach-label"></div>
-    <div id="fmcns-chat-input-row">
-      <button id="fmcns-chat-attach" title="Attach PDF">📎</button>
-      <input type="file" id="fmcns-chat-file" accept="application/pdf" style="display:none;">
-      <textarea id="fmcns-chat-input" rows="1" placeholder="Ask the assistant..."></textarea>
-      <button id="fmcns-chat-send">Send</button>
-    </div>
-  </div>
-  <div class="fw-resize" id="fw-resize" title="Drag to resize"></div>
-</div>
-<script>
-(function() {
-  // Same shared server choice as the main app: the chat panel must follow the
-  // "Server: local / production" toggle. Reuses the main script's own API_BASE
-  // (a top-level const declared earlier in the file, reachable here the same
-  // way qEsc is) instead of recomputing the same expression a second time.
-  var FMCNS_CHAT_SERVER = API_BASE;
-  var btn = document.getElementById('fmcns-chat-btn');
-  var panel = document.getElementById('fmcns-chat-panel');
-  var closeBtn = document.getElementById('fmcns-chat-close');
-  var loginBox = document.getElementById('fmcns-chat-login');
-  var pwInput = document.getElementById('fmcns-chat-pw');
-  var pwSubmit = document.getElementById('fmcns-chat-pw-submit');
-  var pwError = document.getElementById('fmcns-chat-pw-error');
-  var log = document.getElementById('fmcns-chat-log');
-  var input = document.getElementById('fmcns-chat-input');
-  var sendBtn = document.getElementById('fmcns-chat-send');
-  var attachBtn = document.getElementById('fmcns-chat-attach');
-  var fileInput = document.getElementById('fmcns-chat-file');
-  var attachLabel = document.getElementById('fmcns-chat-attach-label');
-  var pendingAttachment = null;
-
-  function getToken() { return localStorage.getItem('fmcns_chat_token'); }
-  function setToken(t) { localStorage.setItem('fmcns_chat_token', t); }
-  function getSessionId() { return localStorage.getItem('fmcns_chat_session'); }
-  function setSessionId(id) { localStorage.setItem('fmcns_chat_session', id); }
-
-  function addMsg(role, text) {
-    var d = document.createElement('div');
-    d.className = 'msg ' + role;
-    d.innerHTML = '<span class="role">' + (role === 'user' ? 'You' : 'Assistant') + '</span>';
-    var t = document.createElement('span');
-    t.textContent = text;
-    d.appendChild(t);
-    log.appendChild(d);
-    log.scrollTop = log.scrollHeight;
-    return d;
-  }
-
-  // The single idea door. A free heuristic judges the message the human just sent:
-  // if it reads like an idea (not a plain question), offer to save it — one model
-  // call, only on the click. Routine chat stays routine chat.
-  function soundsLikeIdea(text) {
-    var t = (text || '').trim().toLowerCase();
-    if (!t || t.length > 220) return false;
-    var markers = ['what about', "wouldn", "would it be", "it would be cool", 'it could be', 'we should', "let's", 'idea', 'imagine', 'add a ', 'add an ', 'add the ', 'make a ', 'make an ', 'make the ', 'build a ', 'build an ', 'build the ', 'create a ', 'create an ', 'create the ', 'introduce a ', 'feature', 'button', 'new view', 'new tab', 'a way to '];
-    return markers.some(function (m) { return t.indexOf(m) !== -1; });
-  }
-
-  // Task detection (sister of the idea chip): message reads like a change request
-  // for the coding agent → offer to hand it to the New task tab. Never auto-sends.
-  function soundsLikeTask(text) {
-    var t = (text || '').trim().toLowerCase();
-    // No length cap — see turnRouter.js#soundsLikeTask for why (a long dictated
-    // message was being silently dropped; a false positive here only costs a
-    // discardable proposal, never an actual dispatch).
-    if (!t) return false;
-    var markers = ['fix', 'change', 'remove', 'make it ', 'get it working', "doesn't work", 'does not work', 'broken', 'bug', 'update the ', 'the button', 'the page', 'when i click', 'the header', 'the flow', 'the queue', 'the graph', 'the tab ', 'add a ', 'add an ', 'add the ', 'build a ', 'create a ', 'implement'];
-    return markers.some(function (m) { return t.indexOf(m) !== -1; });
-  }
-
-  function taskChipFor(text) {
-    var w = document.createElement('div');
-    w.className = 'msg';
-    w.innerHTML = '<span class="idea-chip">🛠 This sounds like a task for the coding agent — <button class="idea-chip-btn" id="taskChipBtn">Turn it into a task</button></span>';
-    log.appendChild(w);
-    log.scrollTop = log.scrollHeight;
-    w.querySelector('#taskChipBtn').onclick = function() {
-      if (window.fwPrefillTask) window.fwPrefillTask(text);
-    };
-  }
-
-  function ideaChipFor(text) {
-    var w = document.createElement('div');
-    w.className = 'msg';
-    w.innerHTML = '<span class="idea-chip">💡 This sounds like an idea — <button class="idea-chip-btn" id="ideaChipSave">Save it</button><span class="idea-chip-status" id="ideaChipStatus"></span></span>';
-    log.appendChild(w);
-    log.scrollTop = log.scrollHeight;
-    w.querySelector('#ideaChipSave').onclick = function () {
-      var st = w.querySelector('#ideaChipStatus');
-      var saveBtn = w.querySelector('#ideaChipSave');
-      saveBtn.disabled = true;
-      if (!window.submitIdea) { st.textContent = 'Ideas live in the Core tab — open it and use the tool there.'; return; }
-      submitIdea(text, st).then(function (out) {
-        if (!out) { saveBtn.disabled = false; return; }
-        if (out.kind === 'node') {
-          w.innerHTML = '<span class="idea-chip ok">✓ In the tree — <b>' + (out.node.name || '') + '</b> (proposed). <a href="#" id="ideaChipJump">View it</a></span>';
-          w.querySelector('#ideaChipJump').onclick = function (e) { e.preventDefault(); window.jumpToArchNode(out.node.id); };
-        } else {
-          w.innerHTML = '<span class="idea-chip ok">✓ Saved as a seed. <a href="#" id="ideaChipSeed">View in Flow</a></span>';
-          w.querySelector('#ideaChipSeed').onclick = function (e) { e.preventDefault(); window.setMode('core'); window.switchCoreView('flow'); };
-        }
-      });
-    };
-  }
-
-  async function api(path, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
-    if (getToken()) opts.headers['Authorization'] = 'Bearer ' + getToken();
-    var resp = await fetch(FMCNS_CHAT_SERVER + path, opts);
-    if (resp.status === 401) { setToken(''); showLogin(); throw new Error('unauthorized'); }
-    return resp;
-  }
-
-  function showLogin() { loginBox.style.display = 'block'; log.style.display = 'none'; document.getElementById('fmcns-chat-input-row').style.display = 'none'; }
-  function showChat() { loginBox.style.display = 'none'; log.style.display = 'block'; document.getElementById('fmcns-chat-input-row').style.display = 'flex'; }
-
-  async function ensureSession() {
-    var sid = getSessionId();
-    if (sid) return sid;
-    var resp = await api('/api/chat/sessions', { method: 'POST', body: JSON.stringify({}) });
-    var data = await resp.json();
-    setSessionId(data.id);
-    return data.id;
-  }
-
-  async function loadHistory() {
-    var sid = getSessionId();
-    if (!sid) return;
-    try {
-      var resp = await api('/api/chat/sessions/' + sid + '/messages');
-      if (!resp.ok) return;
-      var data = await resp.json();
-      log.innerHTML = '';
-      (data.messages || []).forEach(function(m) { addMsg(m.role, m.text); });
-    } catch (e) {}
-  }
-
-  pwSubmit.onclick = async function() {
-    pwError.textContent = '';
-    try {
-      var result = await fmcnsLogin(pwInput.value);
-      if (!result.ok) { pwError.textContent = 'Wrong password.'; return; }
-      setToken(result.token);
-      showChat();
-      await ensureSession();
-      await loadHistory();
-    } catch (e) { pwError.textContent = 'Could not reach the server.'; }
-  };
-
-  btn.onclick = async function() {
-    panel.classList.toggle('open');
-    saveWindowState();
-    if (!panel.classList.contains('open')) return;
-    if (!getToken()) { showLogin(); return; }
-    showChat(); await ensureSession(); if (!log.dataset.loaded) { await loadHistory(); log.dataset.loaded = '1'; }
-  };
-  closeBtn.onclick = function() { panel.classList.remove('open'); saveWindowState(); };
-
-  // ── Floating window: tabs (Chat only — New task/Queue folded into the Queue panel,
-  // see openQueuePanel/renderQueuePanel above), resize, persistence, shortcut ─────────
-  var fwTabs = Array.prototype.slice.call(document.querySelectorAll('[data-fw-tab]'));
-  var fwTabIds = { chat: 'fw-tab-chat' };
-  var resizeHandle = document.getElementById('fw-resize');
-  var currentFwTab = 'chat';
-  var fwWindowState = (function() { try { return JSON.parse(localStorage.getItem('fmcns_window_state') || 'null') || {}; } catch (e) { return {}; } })();
-
-  function saveWindowState() {
-    try { localStorage.setItem('fmcns_window_state', JSON.stringify({ open: panel.classList.contains('open'), w: panel.offsetWidth, h: panel.offsetHeight, tab: currentFwTab })); } catch (e) {}
-  }
-
-  function showFwTab(t) {
-    // Only 'chat' is a real tab now — a stale 'task'/'queue' saved from before this
-    // migration falls back to it instead of leaving the panel with nothing active.
-    if (!fwTabIds[t]) t = 'chat';
-    currentFwTab = t;
-    fwTabs.forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-fw-tab') === t); });
-    Object.keys(fwTabIds).forEach(function(k) { document.getElementById(fwTabIds[k]).classList.toggle('active-tab', k === t); });
-    saveWindowState();
-  }
-  window.fwShowTab = showFwTab;
-
-  fwTabs.forEach(function(b) { b.onclick = function() { showFwTab(b.getAttribute('data-fw-tab')); }; });
-
-  document.addEventListener('keydown', function(e) {
-    if ((e.metaKey || e.ctrlKey) && e.key === '`') { e.preventDefault(); btn.click(); }
-  });
-
-  resizeHandle.addEventListener('pointerdown', function(e) {
-    e.preventDefault();
-    var startX = e.clientX, startY = e.clientY, startW = panel.offsetWidth, startH = panel.offsetHeight;
-    function move(ev) {
-      var w = Math.min(Math.max(360, startW + ev.clientX - startX), Math.round(window.innerWidth * 0.9) - 40);
-      var h = Math.min(Math.max(440, startH + ev.clientY - startY), Math.round(window.innerHeight * 0.85) - 100);
-      panel.style.width = w + 'px';
-      panel.style.height = h + 'px';
-    }
-    function up() { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); saveWindowState(); }
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-  });
-
-  // Prefill the Queue panel's composer from anywhere (the "Turn it into a task" chip).
-  // The widget's own New-task tab was folded into that panel — see openQueuePanel above.
-  window.fwPrefillTask = function(text) {
-    if (window.openQueuePanel) window.openQueuePanel();
-    var t = document.getElementById('qpText');
-    if (t) { t.value = text; t.focus(); }
-  };
-
-  // Restore the saved window size/tab/open state.
-  if (fwWindowState.w) panel.style.width = fwWindowState.w + 'px';
-  if (fwWindowState.h) panel.style.height = fwWindowState.h + 'px';
-  showFwTab(fwWindowState.tab || 'chat');
-  if (fwWindowState.open) {
-    panel.classList.add('open');
-    if (!getToken()) showLogin();
-    else { showChat(); ensureSession(); if (!log.dataset.loaded) loadHistory(); }
-  }
-
-  attachBtn.onclick = function() { fileInput.click(); };
-  fileInput.onchange = function() {
-    var f = fileInput.files[0];
-    if (!f) return;
-    var reader = new FileReader();
-    reader.onload = function() {
-      var base64 = reader.result.split(',')[1];
-      pendingAttachment = { filename: f.name, mimeType: f.type || 'application/pdf', dataBase64: base64 };
-      attachLabel.textContent = '📎 ' + f.name + ' attached';
-    };
-    reader.readAsDataURL(f);
-  };
-
-  async function sendMessageOnce(sid, text, attachments) {
-    return api('/api/chat/message', {
-      method: 'POST',
-      body: JSON.stringify({ sessionId: sid, text: text, attachments: attachments }),
-    });
-  }
-
-  async function send() {
-    var text = input.value.trim();
-    if (!text && !pendingAttachment) return;
-    var sid = await ensureSession();
-    addMsg('user', text || '(PDF attached, no message)');
-    input.value = '';
-    var pending = addMsg('assistant', 'Thinking...');
-    pending.classList.add('pending');
-    var attachments = pendingAttachment ? [pendingAttachment] : [];
-    pendingAttachment = null;
-    attachLabel.textContent = '';
-    var msgText = text || '(see attached PDF)';
-    try {
-      var resp = await sendMessageOnce(sid, msgText, attachments);
-      var data = await resp.json();
-      if (data.error === 'invalid_session') {
-        // Stale session from before a backend restart (Railway resets the DB on redeploy).
-        // Clear it, mint a fresh one, and retry silently before bothering the user.
-        setSessionId('');
-        sid = await ensureSession();
-        resp = await sendMessageOnce(sid, msgText, attachments);
-        data = await resp.json();
-      }
-      pending.remove();
-      if (data.error) addMsg('assistant', 'Error: ' + (data.message || data.error));
-      else {
-        addMsg('assistant', data.text);
-        if (soundsLikeIdea(msgText)) ideaChipFor(msgText);
-        if (soundsLikeTask(msgText)) taskChipFor(msgText);
-      }
-    } catch (e) {
-      pending.remove();
-      addMsg('assistant', 'Could not reach the assistant.');
-    }
-  }
-  sendBtn.onclick = send;
-  input.onkeydown = function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
-})();
-</script>
 
 <script>
 (function(){
