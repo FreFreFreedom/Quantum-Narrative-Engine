@@ -511,6 +511,40 @@ export function deleteConvo(id) {
   return { ok: true };
 }
 
+// ─── Chapters ────────────────────────────────────────────────────────────────
+// A saved place inside a conversation. Deleting the conversation leaves its marks
+// behind as orphans on purpose: convos are soft-deleted (deleted_at) and can be
+// looked at again, so throwing the chapters away would be the destructive choice.
+export function listMarks(convoId) {
+  if (!db) return [];
+  return db.prepare(`SELECT * FROM convo_marks WHERE convo_id=? ORDER BY created_at ASC, rowid ASC`).all(convoId);
+}
+
+export function addMark(convoId, { messageId, snippet = '', label = '' } = {}) {
+  if (!db) return { error: 'no_db' };
+  if (!getConvo(convoId)) return { error: 'not_found' };
+  const mid = String(messageId || '').trim();
+  if (!mid) return { error: 'empty' };
+  const text = String(snippet || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+  // The label is what shows in the strip, so it falls back to the first words of
+  // the passage — a chapter with no name is still worth having.
+  const name = (String(label || '').trim() || text).slice(0, 80) || 'Chapter';
+  const id = randomUUID();
+  db.prepare(`INSERT INTO convo_marks (id, convo_id, message_id, label, snippet) VALUES (?,?,?,?,?)`)
+    .run(id, convoId, mid, name, text);
+  broadcastAll('convos:updated', { convoId });
+  return { ok: true, mark: db.prepare(`SELECT * FROM convo_marks WHERE id=?`).get(id) };
+}
+
+export function deleteMark(convoId, markId) {
+  if (!db) return { error: 'no_db' };
+  const row = db.prepare(`SELECT * FROM convo_marks WHERE id=? AND convo_id=?`).get(markId, convoId);
+  if (!row) return { error: 'not_found' };
+  db.prepare(`DELETE FROM convo_marks WHERE id=?`).run(markId);
+  broadcastAll('convos:updated', { convoId });
+  return { ok: true };
+}
+
 // Fork: the same conversation up to a point, in a new thread (his ask, 2026-09-09).
 //
 // The copy is always an 'open' (roaming) conversation whatever the original was,
@@ -546,7 +580,20 @@ export function forkConvo(convoId, { throughMessageId = null, title = null, crea
   const insert = db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta, created_at) VALUES (?,?,?,?,?,?,?)`);
   // created_at is carried over so the branch reads in its original order, and the
   // rowid tiebreak in listMessages keeps two same-millisecond rows stable.
-  for (const m of keep) insert.run(randomUUID(), forkId, m.role, m.kind, m.text, m.meta || null, m.created_at);
+  const newIdOf = new Map();
+  for (const m of keep) {
+    const copyId = randomUUID();
+    newIdOf.set(m.id, copyId);
+    insert.run(copyId, forkId, m.role, m.kind, m.text, m.meta || null, m.created_at);
+  }
+
+  // Chapters follow their message. A branch is the same reading, so losing the
+  // saved places in it would be a papercut every single time.
+  const markIns = db.prepare(`INSERT INTO convo_marks (id, convo_id, message_id, label, snippet) VALUES (?,?,?,?,?)`);
+  for (const mk of listMarks(convoId)) {
+    const target = newIdOf.get(mk.message_id);
+    if (target) markIns.run(randomUUID(), forkId, target, mk.label, mk.snippet);
+  }
 
   // The cards, not the synthetic 'open' subject the original may have had.
   for (const r of convoSubjectRows(convo)) {

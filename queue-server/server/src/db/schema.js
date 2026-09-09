@@ -1395,6 +1395,25 @@ export function initConversationsSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_messages ON convo_messages(convo_id, created_at)`); } catch {}
+  // Chapters: a place in a long answer, saved so it can be returned to (his ask,
+  // 2026-09-09 — "sometimes i dont finish reading an answer and i send another
+  // one"). The row holds the message it lives in AND the passage that was
+  // selected, because a message can be two thousand words and the point is the
+  // precise spot inside it. `snippet` is the anchor, matched at read time rather
+  // than an offset: an offset would be silently wrong the moment anything about
+  // the text changed, while a passage that no longer matches simply lands on the
+  // message and says nothing false.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS convo_marks (
+      id TEXT PRIMARY KEY,
+      convo_id TEXT NOT NULL REFERENCES convos(id),
+      message_id TEXT NOT NULL,
+      label TEXT NOT NULL DEFAULT '',
+      snippet TEXT NOT NULL DEFAULT '',
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_convo_marks ON convo_marks(convo_id, created_at)`); } catch {}
   // Every rewrite a conversation made to the thing it was about — one row per
   // field, before and after. A single table rather than an "original" column on
   // each of the five subject tables: it keeps the whole history, needs no

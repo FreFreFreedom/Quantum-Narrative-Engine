@@ -51,6 +51,7 @@ export function conversationsRoutes() {
       acts: convos.writeActsForConvo(out.convo.id),
       edits: convos.convoSubjectEdits(out.convo.id),
       subjects: convos.listConvoSubjects(out.convo.id),
+      marks: convos.listMarks(out.convo.id),
     });
   });
 
@@ -115,7 +116,7 @@ export function conversationsRoutes() {
     // chat_override rides on the row as a raw JSON string (or null) — parsed here
     // into { provider, model, account, tag } so the frontend never re-implements
     // the parse, same shape as GET/POST /:id/lane below.
-    res.json({ convo, chat_override: convos.getChatLane(convo.id), messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id) });
+    res.json({ convo, chat_override: convos.getChatLane(convo.id), messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id), marks: convos.listMarks(convo.id) });
   });
 
   // POST /api/convos/:id/lane — the manual model picker's sticky pick (plan
@@ -333,6 +334,27 @@ export function conversationsRoutes() {
   // POST /api/convos/:id/reset — fold conversation into a recap.
   router.post('/:id/reset', (req, res) => {
     const out = convos.resetConvoContext(req.params.id);
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  // Chapters — saved places inside one conversation.
+  router.get('/:id/marks', (req, res) => {
+    res.json({ marks: convos.listMarks(req.params.id) });
+  });
+
+  router.post('/:id/marks', (req, res) => {
+    const out = convos.addMark(req.params.id, {
+      messageId: req.body?.messageId,
+      snippet: req.body?.snippet,
+      label: req.body?.label,
+    });
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  router.delete('/:id/marks/:markId', (req, res) => {
+    const out = convos.deleteMark(req.params.id, req.params.markId);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
   });

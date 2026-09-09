@@ -826,12 +826,26 @@ body, .left, .right, .graph-controls, .rail-inner, .core-header, .arch-toolbar, 
 /* Quote a passage into the next question. Sits on the selection, follows it, and
    is removed the moment the selection is dropped. */
 .se-quote-pop { position:fixed; z-index:60; background:var(--c-bg, #fff); border:1px solid var(--c-border); border-radius:7px;
-  padding:3px 9px; font-size:11px; font-family:inherit; color:var(--c-ink); cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.14); }
-.se-quote-pop:hover { border-color:var(--c-brand); }
+  padding:2px; display:flex; gap:1px; box-shadow:0 2px 8px rgba(0,0,0,.14); }
+.se-quote-pop button { background:none; border:none; cursor:pointer; font-family:inherit; font-size:11px; color:var(--c-ink);
+  padding:3px 8px; border-radius:5px; white-space:nowrap; }
+.se-quote-pop button:hover { background:var(--c-border); }
+/* The chapters strip, and the flash that lands on the passage jumped to. */
+.se-marks { display:flex; flex-wrap:wrap; gap:4px; padding:4px 0 2px; }
+.se-mark { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--c-border); border-radius:999px;
+  padding:1px 4px 1px 8px; font-size:10.5px; color:var(--c-ink-4); background:none; cursor:pointer; font-family:inherit; max-width:230px; }
+.se-mark:hover { border-color:var(--c-brand); color:var(--c-ink); }
+.se-mark span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.se-mark b { font-weight:400; color:var(--c-ink-5); padding:0 2px; }
+.se-mark b:hover { color:var(--c-danger); }
+mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radius:2px; animation:seJumped 2.2s var(--ease) forwards; }
+@keyframes seJumped { 0%, 55% { background:var(--c-amber, #f3c969); } 100% { background:transparent; } }
 /* A passage carried into the composer: shown above the input, dismissable. */
 .se-quoted { display:flex; align-items:flex-start; gap:6px; border-left:2px solid var(--c-brand); padding:3px 0 3px 7px; margin-bottom:5px;
   font-size:11px; color:var(--c-ink-4); line-height:1.45; }
 .se-quoted button { background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; padding:0 2px; line-height:1; }
+.se-quoted-n { flex:none; min-width:14px; height:14px; border-radius:4px; background:var(--c-border); color:var(--c-ink-4);
+  font-size:9.5px; line-height:14px; text-align:center; margin-top:1px; }
 /* Caret on the end of an answer still being written. Same reduced-motion kill
    switch as the dots above. */
 .se-cursor { display:inline-block; margin-left:1px; color:var(--c-ink-4); animation:seBlink 1s var(--ease) infinite; }
@@ -17512,6 +17526,7 @@ document.addEventListener('keydown', (e) => {
         e.recap = (data.convo && data.convo.recap) || null;
         e.acts = data.acts || [];
         e.edits = data.edits || [];
+        e.marks = data.marks || [];
         // The sticky lane pick (plan "chat-model-picker") — null means Auto. Only
         // set from the fetch, never left undefined once loaded, so sendTurn always
         // knows whether to say "use Auto" or "use whatever's already pinned".
@@ -17882,6 +17897,7 @@ document.addEventListener('keydown', (e) => {
         +   '</div>'
         +   '<div class="se-log"></div>'
         +   '<span class="se-cost"></span>'
+        +   '<div class="se-markbar"></div>'
         +   '<div class="se-quotebar"></div>'
         +   '<div class="se-compose">'
         +     '<span class="se-lanewrap">'
@@ -17938,7 +17954,7 @@ document.addEventListener('keydown', (e) => {
       if(e.busy || !String(text || '').trim()) return;
       // Clear only once the message is actually on its way. Losing what someone
       // typed is worse than any error message.
-      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone)){ input.value = ''; e.quote = ''; grow(input); }
+      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone)){ input.value = ''; e.quotes = []; grow(input); }
       else { e.note = 'Still opening this conversation — give it a second and send again.'; repaint(); }
     };
     // The draft lives on the entry, not in the box, so a rebuilt card gets it back.
@@ -18054,20 +18070,36 @@ document.addEventListener('keydown', (e) => {
         if(!el || !el.closest || !el.closest('.se-turn') || el.closest('.se-turn.you')) return;
         var r = sel.getRangeAt(0).getBoundingClientRect();
         if(!r || (!r.width && !r.height)) return;
-        quotePop = document.createElement('button');
-        quotePop.type = 'button';
+        var turnEl = el.closest('.se-turn');
+        var msgId = turnEl && turnEl.getAttribute('data-msg-id');
+        var passage = text.replace(/\s+/g, ' ').slice(0, 1200);
+        quotePop = document.createElement('div');
         quotePop.className = 'se-quote-pop';
-        quotePop.textContent = '❝ Quote';
-        quotePop.style.left = Math.max(6, Math.min(window.innerWidth - 90, r.left)) + 'px';
-        quotePop.style.top = Math.max(6, r.top - 30) + 'px';
         quotePop.onmousedown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };
-        quotePop.onclick = function(ev){
-          ev.stopPropagation();
-          e.quote = text.replace(/\s+/g, ' ').slice(0, 1200);
-          killQuotePop();
-          if(sel.removeAllRanges) sel.removeAllRanges();
-          if(repaint) repaint();
+        var mk = function(labelText, title, fn){
+          var b = document.createElement('button');
+          b.type = 'button'; b.textContent = labelText; b.title = title;
+          b.onclick = function(ev){
+            ev.stopPropagation();
+            fn();
+            killQuotePop();
+            if(sel.removeAllRanges) sel.removeAllRanges();
+          };
+          quotePop.appendChild(b);
         };
+        mk('\u275D Quote', 'Carry this passage into your next question', function(){
+          if(!e.quotes) e.quotes = [];
+          if(e.quotes.indexOf(passage) === -1) e.quotes.push(passage);
+          if(repaint) repaint();
+        });
+        // Only where there is a saved message to anchor to: an answer still
+        // streaming has no id yet, and a chapter pointing at nothing is worse
+        // than no chapter.
+        if(msgId) mk('\uD83D\uDD16 Chapter', 'Save this place, to come back to it later', function(){
+          saveMark(e, msgId, passage, repaint);
+        });
+        quotePop.style.left = Math.max(6, Math.min(window.innerWidth - 190, r.left)) + 'px';
+        quotePop.style.top = Math.max(6, r.top - 32) + 'px';
         document.body.appendChild(quotePop);
       }, 0);
     });
@@ -18131,12 +18163,79 @@ document.addEventListener('keydown', (e) => {
   document.addEventListener('mousedown', killLaneMenu, true);
   window.addEventListener('scroll', killLaneMenu, true);
 
+  // Chapters: a place in a long answer you meant to come back to. Saved on the
+  // server, not in this browser, because the whole point is that it is still there
+  // tomorrow (his ask, 2026-09-09 — an answer half-read, then another question
+  // sent, and no way back to the spot).
+  function saveMark(e, messageId, snippet, repaint){
+    if(!e.convoId || !messageId) return;
+    apiWrite('/api/convos/' + e.convoId + '/marks', 'POST', { messageId: messageId, snippet: snippet })
+      .then(function(out){
+        if(out && out.mark){
+          if(!e.marks) e.marks = [];
+          e.marks.push(out.mark);
+        }
+        if(repaint) repaint();
+      })
+      .catch(function(){ e.note = 'Could not save that chapter.'; if(repaint) repaint(); });
+  }
+
+  function dropMark(e, markId, repaint){
+    if(!e.convoId) return;
+    e.marks = (e.marks || []).filter(function(m){ return m.id !== markId; });
+    if(repaint) repaint();
+    apiWrite('/api/convos/' + e.convoId + '/marks/' + encodeURIComponent(markId), 'DELETE').catch(function(){});
+  }
+
+  // Go back to a saved place: scroll its message into view, then light up the
+  // passage itself. The passage is found by matching its text, not by a stored
+  // offset — an offset would point at the wrong words the moment anything
+  // changed, and a passage that no longer matches simply lands on the message.
+  function jumpToMark(log, mark){
+    var turn = log.querySelector('[data-msg-id="' + (window.CSS && CSS.escape ? CSS.escape(mark.message_id) : mark.message_id) + '"]');
+    if(!turn) return;
+    var body = turn.querySelector('.se-body') || turn;
+    log.querySelectorAll('mark.se-jumped').forEach(function(m){
+      m.replaceWith(document.createTextNode(m.textContent));
+    });
+    var hit = mark.snippet ? highlightIn(body, mark.snippet) : null;
+    (hit || turn).scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  // Wrap the first run of text matching `needle` in a <mark>. Walks text nodes so
+  // the surrounding markup (code spans, links) is left exactly as it was; gives up
+  // rather than guessing when the passage spans several nodes.
+  function highlightIn(root, needle){
+    var want = needle.replace(/\s+/g, ' ').trim();
+    if(!want) return null;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var node;
+    while((node = walker.nextNode())){
+      var i = node.nodeValue.replace(/\s+/g, ' ').indexOf(want.slice(0, 80));
+      if(i === -1) continue;
+      var range = document.createRange();
+      range.setStart(node, Math.min(i, node.nodeValue.length));
+      range.setEnd(node, Math.min(i + Math.min(want.length, 80), node.nodeValue.length));
+      var el = document.createElement('mark');
+      el.className = 'se-jumped';
+      try { range.surroundContents(el); } catch(err) { return null; }
+      return el;
+    }
+    return null;
+  }
+
   // The carried passage, folded into the message actually sent. Quoted rather than
   // pasted invisibly, so the transcript still reads as a conversation afterwards —
   // and so the model is told which part of its own answer is being asked about.
   function withQuote(e, text){
-    if(!e.quote) return text;
-    return 'About this part of your answer:\n\u201c' + e.quote + '\u201d\n\n' + text;
+    var qs = e.quotes || [];
+    if(!qs.length) return text;
+    if(qs.length === 1) return 'About this part of your answer:\n\u201c' + qs[0] + '\u201d\n\n' + text;
+    // Numbered on the wire exactly as they are numbered on screen, so "quote 2"
+    // in his question points at the same passage the model is looking at.
+    return 'About these parts of your answer:\n'
+      + qs.map(function(q, i){ return '[' + (i + 1) + '] \u201c' + q + '\u201d'; }).join('\n')
+      + '\n\n' + text;
   }
 
   function grow(el){ el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
@@ -18182,15 +18281,51 @@ document.addEventListener('keydown', (e) => {
     // survives a repaint mid-answer, same as the draft does.
     var qbar = host.querySelector('.se-quotebar');
     if(qbar){
-      if(e.quote){
-        qbar.innerHTML = '<div class="se-quoted"><span>“' + qEsc(e.quote.length > 240 ? e.quote.slice(0, 240) + '…' : e.quote)
-          + '”</span><button type="button" title="Drop this passage">✕</button></div>';
-        qbar.querySelector('button').onclick = function(ev){ ev.stopPropagation(); e.quote = ''; repaintHere(); };
+      if(e.quotes && e.quotes.length){
+        // Numbered, because the number is what makes two passages referable:
+        // "in 1 you said X, but 2 says Y" only works if he can see which is which.
+        qbar.innerHTML = e.quotes.map(function(q, i){
+          return '<div class="se-quoted"><span class="se-quoted-n">' + (i + 1) + '</span><span>“'
+            + qEsc(q.length > 240 ? q.slice(0, 240) + '…' : q)
+            + '”</span><button type="button" data-drop="' + i + '" title="Drop this passage">✕</button></div>';
+        }).join('');
+        qbar.querySelectorAll('[data-drop]').forEach(function(b){
+          b.onclick = function(ev){
+            ev.stopPropagation();
+            e.quotes.splice(Number(b.getAttribute('data-drop')), 1);
+            repaintHere();
+          };
+        });
       } else {
         qbar.innerHTML = '';
       }
     }
     wireQuotePick(log, e, repaintHere);
+
+    // The chapters strip. Above the composer with the quotes, because both are
+    // "things you have set aside", and neither belongs inside the transcript.
+    var mbar = host.querySelector('.se-markbar');
+    if(mbar){
+      var marks = e.marks || [];
+      mbar.innerHTML = marks.length
+        ? '<div class="se-marks">' + marks.map(function(m, i){
+            return '<button type="button" class="se-mark" data-mark="' + qEsc(m.id) + '" title="Go back to this place">'
+              + '\uD83D\uDD16 <span>' + qEsc(m.label || ('Chapter ' + (i + 1))) + '</span>'
+              + '<b data-mark-drop="' + qEsc(m.id) + '" title="Forget this chapter">\u2715</b></button>';
+          }).join('') + '</div>'
+        : '';
+      mbar.querySelectorAll('[data-mark]').forEach(function(b){
+        b.onclick = function(ev){
+          ev.stopPropagation();
+          if(ev.target && ev.target.hasAttribute && ev.target.hasAttribute('data-mark-drop')){
+            dropMark(e, ev.target.getAttribute('data-mark-drop'), repaintHere);
+            return;
+          }
+          var mark = (e.marks || []).find(function(m){ return m.id === b.getAttribute('data-mark'); });
+          if(mark) jumpToMark(log, mark);
+        };
+      });
+    }
 
     // Lane tag -> re-ask the last question on a different lane. The router's
     // forced path does the rest; this is just the typed /ask, triggered by click.
@@ -18351,7 +18486,7 @@ document.addEventListener('keydown', (e) => {
       var tagHtml = tag
         ? ' <span class="se-lane" data-lane="' + qEsc(tag) + '" title="Answered on the ' + qEsc(tag) + ' lane — click to re-ask on a different lane.">' + qEsc(tag) + '</span>'
         : '';
-      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
+      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
            +  (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
            +  (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
            +  '<div class="se-who">' + who + tagHtml + '</div>'

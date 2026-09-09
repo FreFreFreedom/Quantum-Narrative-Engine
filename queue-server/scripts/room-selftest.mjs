@@ -10,7 +10,7 @@ rmSync(process.env.DB_PATH, { force: true }); // a fork test must start from an 
 
 const { openDb } = await import('../server/src/db/schema.js');
 const convos = await import('../server/src/services/conversations.js');
-const { lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos } = convos;
+const { lengthRequest, forkConvo, createOpenConvo, listMessages, listOpenConvos, addMark, listMarks, deleteMark } = convos;
 convos.bindConversationsDb(openDb());
 
 const HITS = {
@@ -61,3 +61,27 @@ assert.equal(forkConvo(convo.id, { throughMessageId: 'nope' }).error, 'no_such_m
 assert.equal(forkConvo('missing').error, 'not_found');
 assert.ok(listOpenConvos(50).some((c) => c.id === part.convo.id), 'a fork shows up in the Room');
 console.log('fork OK — whole thread, from a point, no stacked suffix, original untouched');
+
+// ─── Chapters ────────────────────────────────────────────────────────────────
+// A saved place, its label falling back to the passage, and a fork that carries
+// its chapters onto the copied messages rather than losing them.
+const m = addMark(convo.id, { messageId: 'm2', snippet: '  A civic  structure   is …  ' });
+assert.ok(m.ok, JSON.stringify(m));
+assert.equal(m.mark.snippet, 'A civic structure is …', 'whitespace is normalised so the anchor can be matched later');
+assert.equal(m.mark.label, 'A civic structure is …', 'no label given falls back to the passage');
+assert.equal(addMark(convo.id, { messageId: 'm4', snippet: 'Deeper still …', label: 'the good bit' }).mark.label, 'the good bit');
+assert.equal(listMarks(convo.id).length, 2);
+assert.equal(addMark(convo.id, {}).error, 'empty');
+assert.equal(addMark('missing', { messageId: 'm2' }).error, 'not_found');
+
+const branched = forkConvo(convo.id, { throughMessageId: 'm2' });
+const carried = listMarks(branched.convo.id);
+assert.equal(carried.length, 1, 'only the chapter whose message was copied comes along');
+assert.equal(carried[0].snippet, 'A civic structure is …');
+assert.notEqual(carried[0].message_id, 'm2', 'it points at the copy, not the original message');
+assert.ok(listMessages(branched.convo.id).some((x) => x.id === carried[0].message_id), 'and that copy really exists');
+
+assert.ok(deleteMark(convo.id, m.mark.id).ok);
+assert.equal(listMarks(convo.id).length, 1);
+assert.equal(deleteMark(convo.id, m.mark.id).error, 'not_found', 'deleting twice is a 404, not a silent ok');
+console.log('chapters OK — saved, labelled, carried into a fork, deleted');
