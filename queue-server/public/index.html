@@ -407,13 +407,14 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .qp-empty { font-size:11px; color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:8px; padding:12px; text-align:center; }
 .qp-composer textarea { width:100%; border:1px solid var(--c-border-2); border-radius:8px; padding:8px 10px; font-size:12.5px; resize:vertical; min-height:64px; font-family:inherit; box-sizing:border-box; }
 .qp-composer-row { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
-.qp-mode-seg, .qp-place-seg { display:flex; gap:2px; }
-.qp-mode-seg button, .qp-place-seg button { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:var(--c-ink-3); }
-.qp-mode-seg button.active, .qp-place-seg button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink-solid); }
-.qp-pick-btn { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:var(--c-ink-2); }
+.qp-mode-seg { display:flex; gap:2px; }
+.qp-mode-seg button, .qp-toggle, .qp-pick-btn { border:1px solid var(--c-border-2); background:var(--c-surface); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:var(--c-ink-3); white-space:nowrap; }
+.qp-mode-seg button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink-solid); }
+.qp-toggle.active { border-color:var(--c-ink); color:var(--c-ink); background:var(--c-surface-2); }
+.qp-quiet { font-size:11.5px; color:var(--c-ink-4); padding:2px; }
 .qp-pick-btn.active { border-color:var(--c-danger); color:var(--c-danger); }
 .qp-pick-ctx { font-size:10.5px; color:var(--c-ink-4); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.qp-pick-list { display:flex; flex-wrap:wrap; gap:5px; width:100%; }
+.qp-pick-list { display:flex; flex-wrap:wrap; align-items:center; gap:5px; width:100%; margin-top:6px; }
 .qp-pick-chip { display:inline-flex; align-items:center; gap:5px; max-width:100%; background:var(--c-surface-2); border:1px solid var(--c-border-2); border-radius:20px; padding:3px 6px 3px 10px; font-size:10.5px; color:var(--c-ink-3); }
 .qp-pick-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
 .qp-pick-chip button { border:none; background:none; cursor:pointer; color:var(--c-ink-4); font-size:12px; line-height:1; padding:1px 3px; border-radius:50%; }
@@ -2130,7 +2131,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="queue-panel-resize" id="queuePanelResize" title="Drag to resize"></div>
   <div class="queue-panel-head">
     <span class="queue-panel-title">Dispatch Queue</span>
-    <a href="#" id="queuePanelOpenPage" class="queue-panel-openpage">Open full page →</a>
+    <a href="#" id="queuePanelOpenPage" class="queue-panel-openpage">Full page →</a>
     <button id="queuePanelClose" class="queue-panel-close" title="Close (Esc)" aria-label="Close">✕</button>
   </div>
   <div class="queue-panel-body" id="queuePanelBody"></div>
@@ -17254,13 +17255,18 @@ function openChatWithPrompt(text) {
 let queuePanelOpen = false;
 let qpMode = 'implement';
 let qpPicked = []; // ordered list of pointed-element descriptions (add order preserved)
+let qpJumpLine = false; // "put it first" — module-level so a re-render keeps the choice
 let qpPickActive = false;
 let qpPickBanner = null;
 
-function qpSectionHtml(cls, title, count, rowsHtml, emptyText) {
+// An empty section is a heading and a dashed box saying nothing — three of them
+// stacked was the whole panel when the queue was quiet. A section that holds
+// nothing now renders nothing, and one line covers the quiet case.
+function qpSectionHtml(cls, title, count, rowsHtml) {
+  if (!rowsHtml) return '';
   return `<div>
-    <div class="qp-sec-title ${cls}">${title}${count != null ? ' · ' + count : ''}</div>
-    ${rowsHtml || `<div class="qp-empty">${emptyText}</div>`}
+    <div class="qp-sec-title ${cls}">${title} · ${count}</div>
+    ${rowsHtml}
   </div>`;
 }
 
@@ -17275,41 +17281,33 @@ function renderQueuePanel() {
   body.innerHTML = `
     <div class="qp-composer">
       <textarea id="qpText" placeholder="Describe the task…"></textarea>
+      ${qpPicked.length ? `<div class="qp-pick-list" id="qpPickList">
+        ${qpPicked.map((desc, i) => `<span class="qp-pick-chip" data-idx="${i}">🎯 <span>${qEsc(desc)}</span><button data-qpremove="${i}" title="Remove">✕</button></span>`).join('')}
+        ${qpPicked.length > 1 ? '<button class="qp-pick-clear" id="qpPickClear">Clear all</button>' : ''}
+      </div>` : ''}
       <div class="qp-composer-row">
         <div class="qp-mode-seg">
           <button class="${qpMode === 'implement' ? 'active' : ''}" data-qpmode="implement">Implement</button>
           <button class="${qpMode === 'question' ? 'active' : ''}" data-qpmode="question">Question</button>
         </div>
-        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn" title="Click something on the page and it comes back as a chip here">${qpPickActive ? '✕ Stop pointing' : (qpPicked.length ? '🎯 Point at another' : '🎯 Point at an element')}</button>
-      </div>
-      ${qpPicked.length ? `<div class="qp-composer-row">
-        <div class="qp-pick-list" id="qpPickList">
-          ${qpPicked.map((desc, i) => `<span class="qp-pick-chip" data-idx="${i}">🎯 <span>${qEsc(desc)}</span><button data-qpremove="${i}" title="Remove">✕</button></span>`).join('')}
-          ${qpPicked.length > 1 ? '<button class="qp-pick-clear" id="qpPickClear">Clear all</button>' : ''}
-        </div>
-      </div>` : ''}
-      <div class="qp-composer-row">
-        <div class="qp-place-seg" id="qpPlaceSeg">
-          <button class="active" data-pl="last">Last in line</button>
-          <button data-pl="first">First in line</button>
-        </div>
+        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn" title="Click anything on the page and it comes back as a chip here">${qpPickActive ? '✕ Stop' : (qpPicked.length ? '🎯 ＋' : '🎯 Point')}</button>
+        <button class="qp-toggle${qpJumpLine ? ' active' : ''}" id="qpJumpBtn" aria-pressed="${qpJumpLine}" title="Put this at the front of the queue instead of the end">⤒ First</button>
         <span class="qp-status" id="qpStatus"></span>
-        <button class="qp-submit" id="qpSubmit">Add to queue</button>
+        <button class="qp-submit" id="qpSubmit" title="⌘/Ctrl + Enter">Add</button>
       </div>
-      ${qPaused ? '<div class="qp-status" style="margin-top:6px;">⏸ Queue paused — this will wait until resumed.</div>' : ''}
+      ${qPaused ? '<div class="qp-status" style="display:block;margin-top:6px;">⏸ Paused — this waits until you resume.</div>' : ''}
     </div>
-    ${qpSectionHtml('asking', '🙋 Waiting for you', asking.length,
+    ${qpSectionHtml('asking', 'Waiting for you', asking.length,
       asking.map(p => `<div class="qp-card">
         <div class="q-item-title">${qEsc(p.title || '(untitled)')}</div>
         ${qQuestionBlockHtml(p, { showQuestion: true })}
         ${qReplyBoxHtml('qp' + p.id)}
-      </div>`).join(''), 'Nothing waiting on you.')}
-    ${qpSectionHtml('', '▶ Running now', running.length,
-      running.map(p => `<div class="qp-row"><span class="qp-num">▶</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''),
-      'Nothing running.')}
+      </div>`).join(''))}
+    ${qpSectionHtml('', 'Running now', running.length,
+      running.map(p => `<div class="qp-row"><span class="qp-num">▶</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''))}
     ${qpSectionHtml('', 'In queue', queued.length,
-      queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span>${i > 0 ? iconBtn('top', 'Move it to the front of the queue and start it sooner', 'first', p.id) : ''}</div>`).join(''),
-      'Queue is empty — add a task above.')}
+      queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span>${i > 0 ? iconBtn('top', 'Move it to the front of the queue and start it sooner', 'first', p.id) : ''}</div>`).join(''))}
+    ${asking.length || running.length || queued.length ? '' : '<div class="qp-quiet">Nothing in the queue.</div>'}
   `;
   qRestoreInputs(body, snap);
 
@@ -17332,9 +17330,7 @@ function renderQueuePanel() {
   body.querySelectorAll('[data-qpmode]').forEach(b => {
     b.onclick = () => { qpMode = b.getAttribute('data-qpmode'); renderQueuePanel(); };
   });
-  body.querySelectorAll('#qpPlaceSeg button').forEach(b => {
-    b.onclick = () => body.querySelectorAll('#qpPlaceSeg button').forEach(x => x.classList.toggle('active', x === b));
-  });
+  document.getElementById('qpJumpBtn').onclick = () => { qpJumpLine = !qpJumpLine; renderQueuePanel(); };
   document.getElementById('qpPickBtn').onclick = qpTogglePicking;
   const clearBtn = document.getElementById('qpPickClear');
   if (clearBtn) clearBtn.onclick = () => { qpPicked = []; renderQueuePanel(); };
@@ -17358,7 +17354,7 @@ async function qpSubmitTask() {
       ? '\n\n(context — ' + qpPicked.length + ' elements pointed at, in order:\n' + qpPicked.map((d, i) => (i + 1) + '. ' + d).join('\n') + ')'
       : '';
   const fullText = text + contextText;
-  const first = (document.querySelector('#qpPlaceSeg .active') || {}).getAttribute?.('data-pl') === 'first';
+  const first = qpJumpLine;
   submitBtn.disabled = true;
   try {
     await apiWrite('/api/travaux/prompts', 'POST', {
@@ -17366,6 +17362,7 @@ async function qpSubmitTask() {
     });
     textEl.value = '';
     qpPicked = [];
+    qpJumpLine = false;
     await qLoad();
   } catch (e) {
     statusEl.textContent = 'Error: ' + e.message;
