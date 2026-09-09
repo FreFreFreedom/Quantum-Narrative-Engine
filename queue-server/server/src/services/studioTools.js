@@ -39,9 +39,10 @@ export const STUDIO_TOOLS = [
         // Deliberately NOT an enum. It was ['character','film','country'] and that went
         // stale the moment institutions, families, cities and groups arrived — the Room
         // could not name them, so 35 entities were unreachable through this tool while
-        // being perfectly visible in the app. The live list is in the tool's description,
-        // built from the facets at call time; a free string cannot go stale the same way.
-        type: { type: 'string', description: 'Entity type. Call with no arguments first if unsure — the result names every type in use.' },
+        // being perfectly visible in the app. A free string cannot go stale that way, and
+        // the result of an unfiltered call names every type actually in use (see
+        // `types_in_use` below), so the live list is discoverable rather than declared.
+        type: { type: 'string', description: 'Entity type. Call with no arguments first if unsure — the result lists every type in use.' },
         cluster: { type: 'string', description: 'Cluster code, e.g. "I" or "II"' },
         tag: { type: 'string' },
         name: { type: 'string', description: 'Substring match on entity name' },
@@ -200,6 +201,10 @@ export function dispatchStudioTool(db, name, input) {
       return {
         total: rows.length,
         showing: Math.min(rows.length, ENTITY_CAP),
+        // What the tool's description promises: an unfiltered call names every type that
+        // exists right now. Computed, so a type added tomorrow appears without an edit
+        // here — which is the mistake the removed enum made.
+        ...(args.type ? {} : { types_in_use: q.listFacets(db).types.map((t) => `${t.value} (${t.n})`) }),
         entities: rows.slice(0, ENTITY_CAP).map((e) => ({
           id: e.id, name: e.name, type: e.type, scale: e.scale, clusters: e.clusters, grounded: e.grounded,
         })),

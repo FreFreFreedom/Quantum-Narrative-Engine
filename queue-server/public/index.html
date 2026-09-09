@@ -4,73 +4,146 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
+/* A look is one complete set of colour tokens, chosen by hand from the rail. This runs
+   before first paint so the page never flashes the other look, and it sets BOTH the
+   data-look attribute (which the CSS reads) and the .dark class (which the three canvas
+   renderers read, since a canvas gets no CSS). FMCNS_LOOKS is the whole registry: adding
+   a look later is one entry here and one block of values in the stylesheet. */
+window.FMCNS_LOOKS = {
+  atlas:    { name: 'Daylight atlas', dark: false },
+  darkroom: { name: 'Darkroom',       dark: true  }
+};
+window.FMCNS_LOOK_DAY = 'atlas';
+window.FMCNS_LOOK_NIGHT = 'darkroom';
 (function () {
-  var t = null;
-  try { t = localStorage.getItem('fmcns-theme'); } catch (e) {}
+  var v = null;
+  try { v = localStorage.getItem('fmcns-look'); } catch (e) {}
+  if (!v) {
+    /* Carry over the old light/dark/auto choice so nobody's setting is lost. */
+    var old = null;
+    try { old = localStorage.getItem('fmcns-theme'); } catch (e) {}
+    v = old === 'light' ? 'atlas' : old === 'dark' ? 'darkroom' : 'auto';
+  }
+  if (v !== 'auto' && !window.FMCNS_LOOKS[v]) v = 'auto';
   var sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  if (!t || t === 'auto') t = sysDark ? 'dark' : 'light';
-  document.documentElement.classList.add(t);
+  var look = v === 'auto' ? (sysDark ? window.FMCNS_LOOK_NIGHT : window.FMCNS_LOOK_DAY) : v;
+  var el = document.documentElement;
+  el.setAttribute('data-look', look);
+  el.classList.add(window.FMCNS_LOOKS[look].dark ? 'dark' : 'light');
 })();
 </script>
 <style>
+/* Two faces, self-hosted, so the app keeps making zero third-party requests and works
+   offline. Both are variable (one file covers 400-700) and latin-subset, ~232KB total.
+   Literata: SIL OFL 1.1, github.com/googlefonts/literata.
+   Source Sans 3: SIL OFL 1.1, github.com/adobe-fonts/source-sans.
+   Files came from the Google Fonts latin subset; to update, re-fetch the woff2 the css2
+   endpoint names for the latin unicode-range and drop it in queue-server/public/fonts/.
+   Opening the master file over file:// cannot resolve /fonts, so every stack below must
+   still look deliberate on its fallback alone. */
+@font-face { font-family:'Literata'; font-style:normal; font-weight:400 700; font-display:swap;
+  src:url('/fonts/literata-normal.woff2') format('woff2'); }
+@font-face { font-family:'Literata'; font-style:italic; font-weight:400 700; font-display:swap;
+  src:url('/fonts/literata-italic.woff2') format('woff2'); }
+@font-face { font-family:'Source Sans 3'; font-style:normal; font-weight:400 700; font-display:swap;
+  src:url('/fonts/sourcesans3-normal.woff2') format('woff2'); }
+@font-face { font-family:'Source Sans 3'; font-style:italic; font-weight:400 700; font-display:swap;
+  src:url('/fonts/sourcesans3-italic.woff2') format('woff2'); }
+/* ─── The look-independent system: type, space, shape, motion ───────────────
+   These never change between looks. Only colour does. The type scale is seven stops
+   quantised from the thirteen half-pixel sizes the file had grown; every stop is a size
+   the app had already converged on, so almost nothing moved by more than half a pixel.
+   Sizes are deliberately dense: this is an instrument, read close. */
 :root {
-  color-scheme: light;
-  --c-bg: #faf9f6; --c-bg-2: #f4f2ee; --c-stage: #f0ede6; --c-mapstage: #eef1f3;
-  --c-surface: #fff; --c-surface-2: #f3f0ea; --c-surface-3: #ece7dc;
-  --c-surface-rgb: 255 255 255;
-  --c-border: #e7e1d8; --c-border-2: #dcd5c9; --c-border-3: #c8bfae;
-  --c-ink: #26221b; --c-ink-2: #38332b; --c-ink-3: #615a4e;
-  --c-ink-4: #89806f; --c-ink-5: #a49b8c;
-  --c-ink-solid: #26221b; --c-ink-solid-2: #38332b; --c-on-solid: #fbfaf8;
-  --c-halo: #f4f2ee;
-  --c-accent: #2f7d63;
-  --c-ring: rgba(47,125,99,.5);
-  --c-hover-wash: rgba(38,34,27,.045);
-  --sh-xs: 0 1px 2px rgba(38,34,27,.05); --sh-sm: 0 2px 10px rgba(38,34,27,.07); --sh-md: 0 10px 26px rgba(38,34,27,.12);
-  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
-  --t-fast: 140ms; --t-med: 220ms; --ease: cubic-bezier(.2,.7,.3,1);
-  /* Spacing scale: 4px base. Type scale: documents sizes already converged on. Same in light/dark. */
-  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
-  --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-base: 13px; --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
+  --font-ui: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-read: 'Literata', Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --fs-2xs: 9.5px; --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-base: 13px;
+  --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
   --fw-normal: 400; --fw-medium: 600;
-  --c-warn: #8a5a1e; --c-warn-tint: #f6e7cf;
-  --c-info: #3f6b85; --c-info-tint: #e8eef0;
-  --c-success-tint: #e4f0ea;
-  --c-danger: #b23a2f; --c-danger-tint: #fbe4e0;
+  /* Reading measure. Long prose stops here however wide the window gets. */
+  --measure: 68ch;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --r-xs: 4px; --r-sm: 6px; --r-md: 9px; --r-lg: 14px; --r-pill: 999px;
+  --t-fast: 140ms; --t-med: 220ms; --t-slow: 350ms; --ease: cubic-bezier(.2,.7,.3,1);
+  /* One stacking ladder. The values are spread out rather than sequential because the
+     order between the rail, the floating button and the drawer it opens is load-bearing:
+     the button must sit UNDER the drawer (it steps aside by the drawer's width instead of
+     hiding beneath it), and the rail must sit over the settings sheet. */
+  --z-base: 2; --z-stage: 6; --z-panel: 8; --z-floating: 9; --z-popover: 60;
+  --z-popover-top: 61; --z-sheet: 100; --z-pickbanner: 110; --z-rail: 120;
+  --z-sysbtn: 130; --z-drawer: 140; --z-preview: 200;
+}
+
+/* ─── Look: Daylight atlas ──────────────────────────────────────────────────
+   Stone paper, deep ink, one vermilion line — a mark on a chart. This is also the
+   base set, so a look that forgets a token falls back to something legible rather
+   than to nothing. */
+:root, :root[data-look="atlas"] {
+  color-scheme: light;
+  --c-bg: #f1f0eb; --c-bg-2: #ecebe5; --c-stage: #e6e4dd; --c-mapstage: #e8eae8;
+  --c-surface: #fff; --c-surface-2: #f4f3ef; --c-surface-3: #e9e7e0;
+  --c-surface-rgb: 255 255 255;
+  --c-border: #ddd9d0; --c-border-2: #cfc9be; --c-border-3: #b9b2a4;
+  --c-ink: #1e1c19; --c-ink-2: #2e2b27; --c-ink-3: #57524a;
+  --c-ink-4: #6f6a61; --c-ink-5: #948e83;
+  --c-ink-solid: #1e1c19; --c-ink-solid-2: #2e2b27; --c-on-solid: #fbf9f6;
+  --c-halo: #f1f0eb;
+  --c-accent: #c8472e;
+  --c-ring: rgba(200,71,46,.45);
+  --c-hover-wash: rgba(30,28,25,.05);
+  --sh-xs: 0 1px 2px rgba(30,28,25,.05); --sh-sm: 0 2px 10px rgba(30,28,25,.07); --sh-md: 0 10px 26px rgba(30,28,25,.12);
+  /* Semantic colour is separate from the accent and never used as decoration. Danger is
+     darker and duller than the vermilion accent on purpose, so the two never read as one. */
+  --c-warn: #9a6420; --c-warn-tint: #f6e7cf;
+  --c-info: #3f6b85; --c-info-tint: #e6edf0;
+  --c-success-tint: #dfeee6;
+  --c-danger: #a8382c; --c-danger-tint: #f8e0dc;
   --c-violet: #5c3f80; --c-violet-tint: #ece5f4; --c-violet-tint-2: #faf8fd;
-  --c-brand: #2f7d63; --c-warm-tint: #fffaf0;
-  --c-amber: #c08a3e; --c-amber-tint: #fffdf8;
+  --c-brand: #2f7d63; --c-warm-tint: #fdf8f0;
+  --c-amber: #a9762f; --c-amber-tint: #fffdf8;
   --c-plot-1: #5c3f80; --c-plot-2: #3f6b85; --c-plot-3: #8a5a1e;
   --c-plot-4: #2f7d63; --c-plot-5: #8b6fb0; --c-plot-6: #a88a55;
   --c-plot-7: #7e8fb0; --c-plot-8: #c08a3e;
 }
-.dark {
+/* ─── Look: Darkroom ────────────────────────────────────────────────────────
+   Deep teal-green, pale text, a safelight amber-coral — the room where images are
+   developed. The .dark class is kept as a selector because the canvas renderers test
+   for it, and because a future night look joins this branch by adding its attribute
+   here rather than by duplicating the whole set. */
+.dark, :root[data-look="darkroom"] {
   color-scheme: dark;
-  --c-bg: #0c1017; --c-bg-2: #12161d; --c-stage: #0f141b; --c-mapstage: #0c1017;
-  --c-surface: #131927; --c-surface-2: #1a2131; --c-surface-3: #212a3c;
-  --c-surface-rgb: 19 25 39;
-  --c-border: #26303f; --c-border-2: #333e50; --c-border-3: #42506a;
-  --c-ink: #ece8df; --c-ink-2: #d5d0c5; --c-ink-3: #9aa2ad;
-  --c-ink-4: #79818e; --c-ink-5: #5c636e;
-  --c-ink-solid: #ece8df; --c-ink-solid-2: #d5d0c5; --c-on-solid: #14100a;
-  --c-halo: #0c1017;
-  --c-accent: #5db48c;
-  --c-ring: rgba(93,180,140,.55);
+  --c-bg: #0f1b1b; --c-bg-2: #122020; --c-stage: #0b1516; --c-mapstage: #0b1516;
+  --c-surface: #16262a; --c-surface-2: #1b2e32; --c-surface-3: #1e3236;
+  --c-surface-rgb: 22 38 42;
+  --c-border: #274043; --c-border-2: #325054; --c-border-3: #42666a;
+  --c-ink: #e4eee9; --c-ink-2: #cfdcd7; --c-ink-3: #a3b8b3;
+  --c-ink-4: #86a09b; --c-ink-5: #5f7773;
+  --c-ink-solid: #e4eee9; --c-ink-solid-2: #cfdcd7; --c-on-solid: #0d1818;
+  --c-halo: #0b1516;
+  --c-accent: #f0965a;
+  --c-ring: rgba(240,150,90,.5);
   --c-hover-wash: rgba(255,255,255,.055);
   --sh-xs: 0 1px 2px rgba(0,0,0,.3); --sh-sm: 0 2px 10px rgba(0,0,0,.38); --sh-md: 0 10px 26px rgba(0,0,0,.5);
-  --c-warn: #e3a64f; --c-warn-tint: #3a2c14;
-  --c-info: #6ea8dc; --c-info-tint: #16283e;
-  --c-success-tint: #123027;
-  --c-danger: #f0716a; --c-danger-tint: #381715;
-  --c-violet: #b39ae0; --c-violet-tint: #2a2140; --c-violet-tint-2: #221a38;
-  --c-brand: #5db48c; --c-warm-tint: #332106;
-  --c-amber: #c08a3e; --c-amber-tint: #332106;
-  --c-plot-1: #a587d0; --c-plot-2: #6f9fc4; --c-plot-3: #d9a05c;
-  --c-plot-4: #5db48c; --c-plot-5: #a587d0; --c-plot-6: #a88a55;
-  --c-plot-7: #7e8fb0; --c-plot-8: #c08a3e;
+  /* The gold family is pulled toward straw here so it cannot be mistaken for the
+     safelight accent, which is the only amber on the screen that means "this one". */
+  --c-warn: #e0a458; --c-warn-tint: #3a2c14;
+  --c-info: #6fa8dc; --c-info-tint: #16283e;
+  --c-success-tint: #173a34;
+  --c-danger: #f07a6a; --c-danger-tint: #381715;
+  --c-violet: #b08be0; --c-violet-tint: #2a2140; --c-violet-tint-2: #221a38;
+  --c-brand: #6fcfa0; --c-warm-tint: #332106;
+  --c-amber: #c9b06a; --c-amber-tint: #2b2a16;
+  --c-plot-1: #b08be0; --c-plot-2: #6fa8dc; --c-plot-3: #d9a05c;
+  --c-plot-4: #6fcfa0; --c-plot-5: #b08be0; --c-plot-6: #c9b06a;
+  --c-plot-7: #7e8fb0; --c-plot-8: #c9b06a;
 }
 * { box-sizing: border-box; }
-body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; font-size:13px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:var(--font-ui); font-size:var(--fs-base); line-height:1.5; -webkit-font-smoothing:antialiased; }
+/* Numbers that sit in a column line up. Counts, costs and durations are read against
+   each other, so they get the same width per digit wherever they appear. */
+.home-n, .home-row .n, .uq-row, .trail-when, .posture-when, .rel-when, .core-tab-count,
+.room-tabcount, .q-cost, .bk-stars, .home-behind { font-variant-numeric: tabular-nums; }
 * { scrollbar-width:thin; scrollbar-color:var(--c-border-3) transparent; }
 ::-webkit-scrollbar { width:10px; height:10px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -3139,7 +3212,7 @@ const CLUSTER_COLORS_DARK = {
   VI:'#e0685a', I:'#cf7d5c', IV:'#bd8f78',
   II:'#d06fae', X:'#a878cc', III:'#d99ab6',
   VIII:'#4f8fd1', VII:'#4fa8bd', IX:'#93c2dd',
-  XI:'#c99a4a', V:'#a8a85e', XII:'#86b06b'
+  XI:'#c2a866', V:'#a8a85e', XII:'#86b06b'
 };
 // Type colouring is a separate mode (never shown at the same time as cluster colouring),
 // so it can borrow the anchor of three families rather than invent a fourth colour axis.
@@ -3147,7 +3220,7 @@ const CLUSTER_COLORS_DARK = {
 // reads as a ladder rather than as an unrelated set of categories.
 const TYPE_COLORS_LIGHT = { character: '#a83f83', film: '#2f6ba8', country: '#96702c',
   family: '#b0553a', group: '#9a6b2f', institution: '#4a7c59', city: '#3d7d94' };
-const TYPE_COLORS_DARK  = { character: '#d06fae', film: '#4f8fd1', country: '#c69a4a',
+const TYPE_COLORS_DARK  = { character: '#d06fae', film: '#4f8fd1', country: '#c2a866',
   family: '#d4785a', group: '#c49450', institution: '#6faa83', city: '#5fa4bd' };
 
 // These two are MUTATED IN PLACE on a theme flip rather than reassigned, and that is
