@@ -3809,7 +3809,17 @@ async function openMirror(relId) {
     return;
   }
   const e = window.studioLend.entry('open', t.subject_id);
-  window.studioLend.send(e, text, renderRoomConvo, () => loadRoom());
+  // Sent on the brainstorm lane, and that prefix is load-bearing rather than tidy.
+  // The Room's router reads every message for build markers before answering, and the
+  // list includes the word "broken" — which every Mirror question contains, because it
+  // quotes the relation's falsifier ("WOULD BE BROKEN BY: …"). Left alone, the Room
+  // answered a request for a human scene with a build proposal, every single time. The
+  // markers cannot be dodged by rewording either: a falsifier is author-written and may
+  // legitimately say fix, change, remove or bug. `/ask brainstorm` is the escape hatch
+  // the router already provides for exactly this (it backs the "Just talk about it"
+  // button), it strips its own prefix before the model sees the question, and a forced
+  // turn still gets the full tool set — so the Room can go deeper on its own.
+  window.studioLend.send(e, '/ask brainstorm ' + text, renderRoomConvo, () => loadRoom());
 }
 
 // The selected thread, creating one if the Room has none. Returns null only if the
