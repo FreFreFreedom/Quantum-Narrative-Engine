@@ -372,6 +372,25 @@ better. If a corner button earns its place, it opens the one surface that acts o
 the whole app — and it steps aside by that surface's own width rather than hiding
 beneath it.
 
+**A new kind of thing goes in an existing panel's own idiom, or it needs a very good
+reason.** The Trail — a walk you took, and the walks you kept — went into the filters
+sidebar under an `<h2>`, which is exactly what "Entity types", "Source", "Search" and
+"Axis" already are there. No new band, no new panel, no new pattern to learn, and the
+panel's existing open/closed memory covers it for free. Reach for new chrome only when
+the thing genuinely does not fit any idiom already on the screen.
+
+**An arrow that means direction must never be flipped to suit which end you read from.**
+The relation rows on an entity card first showed the arrow relative to the card you were
+on, which sounded thoughtful and drew a descent and its return the same way — so the loop
+became invisible on the one card that most needed to show it. Draw the real direction of
+travel and let the reader place themselves.
+
+**A block that fills itself in must be written after the markup it fills, not before.**
+`loadRelations` looked its host up by id and was called while the surrounding HTML was
+still a string, so it found nothing and returned silently: a permanently empty panel with
+no error anywhere. If a render function paints late, it also has to wire its own clicks —
+the pass that wired the rest has already run.
+
 **Reading settings belong to the reader.** Font and text size in the Room are his,
 kept per browser, and they move the words only — never the toolbar, the tabs or the
 lists. A setting that moves the chrome is a zoom control, not a reading one.

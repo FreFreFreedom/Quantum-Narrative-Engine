@@ -1426,3 +1426,117 @@ only arrives late.
 Which is why the last sentence is the one to keep. *The names were the obstruction.* Not a
 missing instrument, not a shortage of data — the naming itself, standing in between things that
 were always the same shape.
+
+---
+
+## 19. The civic rung, and what a second anatomy taught (added 2026-09-09)
+
+From the conversation *"Fractal reasoning across civic and justice narratives"* and the build
+that followed it (`plans/civic-structures-and-loops.md`, all six stages shipped the same day).
+Everything below is either a claim the conversation settled or a thing the code found out the
+hard way. The build detail lives in the plan; only the durable part is here.
+
+### A civic structure is an entity; a policy is not
+
+A civic structure is not an institution and not a building. It is the recurring act of a
+community answering *how do we hold together* and making the answer stick — through a norm, a
+ritual, a law, a practice of exclusion. The courthouse is where it performs. The prison is
+where it deposits what it cannot face. **The family dinner table is a civic space**: it has its
+laws, its exiles, its unspoken constitution and its shadow.
+
+This puts institutions, families, cities and groups squarely inside §1's test — each maintains
+a boundary against its own dissolution — and the corpus now holds them as entities rather than
+as background to characters.
+
+A **policy**, though, fails that test, and the distinction is load-bearing:
+
+> **A policy is the frozen posture an entity takes toward its own vulnerability.** It is what a
+> structure writes when it stops being present in real time and substitutes a rule for its own
+> attention. When an institution cannot look at a person with the care required to see what is
+> happening, it writes a rule that makes looking unnecessary. **That automated refusal of
+> attention is what travels downward.**
+
+So a policy is a *state* an institution holds, with a span — not a node. Which is §2's rule
+about events arriving from the other direction, and the first thing in this corpus to carry a
+date at all.
+
+### The loop is the claim, and it is not a chain
+
+Does the wound at the family scale feed the dysfunction at the institutional scale, or does
+institutional violence create the family fracture? **Both** — it is a loop, and the loop has a
+period. The instrument's distinctive output is not that a pattern exists at several rungs but
+the *lag*: how long between a rule being written and the first life broken by it, and how long
+before that break returns as pressure for the next rule.
+
+Two consequences the code forced, both of which read as obvious afterwards and were not:
+
+- **A loop must never be a stored object.** It is a query over vertical relations that leave a
+  rung and return with time moving forward. Giving it a table would smuggle the `event` node
+  type back in through the side door.
+- **Because a vertical step crosses exactly one rung, every cycle contains a two-step
+  sub-cycle**, and a two-step cycle is always chronological from its earlier end. So a
+  monotonic-time rule prunes long chains; it cannot reject a cycle. Anyone reasoning about
+  causal circuits here should know that before designing on top of it.
+
+### Brittle points: the leverage is one rung below the visible problem
+
+The conventional intervention is at the institutional scale, which is where the pattern is most
+defended, most calcified and best supplied with its own political fuel. The fractal reading
+asks instead where the loop is *least* defended. In the worked case the answer was the school
+intake interface rather than the legislature — one rung below the visible problem, cutting the
+loop's recruitment line and starving the upper circuit.
+
+This is a claim about where to spend, and it is testable: it predicts that same-rung reform
+underperforms an intervention one rung down, in the same loop, for the same money.
+
+### What the second anatomy added to §14c
+
+The interior method was run twice now — the town in *Dogville* (2026-09-07) and the Maxson
+household in *Fences* (2026-09-09, `plans/civic-structures-first-anatomy-findings.md`). Three
+results that are about the method rather than about either work:
+
+- **Unsigned community detection cannot see the fracture in a hub-centred entity.** Twice, on
+  two different entity types, it returned one undivided blob while the seam was plainly there.
+  This is a property of modularity on stars, not bad luck, and it means the partition step as
+  specified in §14c is the weak link.
+- **Sign is what carries the information.** Add opposition/alliance to the edges and structural
+  balance finds the seam immediately. In the Maxson case: balanced, frustration 0, camps
+  `{Troy, Bono}` against `{Lyons, Rose}`. **The camp line does not follow the family line** —
+  the man's only ally in the room is his workmate, and under coarse-graining that ally does not
+  survive as a part of his own but collapses into him. No tag on the household states that or
+  could be made to.
+- **Frustration is the number worth storing.** Balance is a yes/no; frustration — how many edges
+  must break for the camps to be clean — is a measurement, and it is the honest candidate for
+  what the Integration Continuum has been approximating with a hand-assigned float.
+
+Same coarse shape, opposite function, is the finding that needed both runs: **Dogville's hub is
+a mediator** holding a symmetric tension with somewhere to land; **the Maxsons' hub is a gate**,
+and the wife–husband edge carries zero alliance turns in the entire scene. A method that could
+only say "both are star-shaped" would have missed the whole difference.
+
+### The diagnostic reading, run on a family
+
+Per §12, the question is which act is failing. In the Maxson case it is the **ontological** one.
+Troy is not failing to value his family — the scene is full of him explaining at length what he
+owes and to whom. He is drawing *us* in the wrong place. That is the autoimmune shape of §5 at
+the family rung, and the graph is the evidence rather than the illustration: the camp line,
+computed from signed exchanges alone, does not coincide with the household. The fence he builds
+through the scene does not enclose the people the camp line encloses.
+
+### Provenance became a refusal, not a field
+
+§11 named provenance as a known gap. It is now enforced: a stored relation without a source and
+a **falsifier** is rejected outright, before any other check. The falsifier is the half that
+does the work — "what observation would break this" turns an assertion into something that can
+lose. Every claim in the civic corpus carries one.
+
+### What the conversation left open, and this build did not close
+
+- The fourth layer beyond ontological → semantic → analogical was sensed and not named.
+- **Cross-domain healing** — retrieving a structural antidote from a domain with no shared
+  vocabulary (the gut's buffering as a policing model, the burnt forest's nurse log as a
+  transitional-justice model) — is the conversation's most striking move and needs a corpus that
+  is not narrative. Nothing is scheduled.
+- The **horizontal** move (§9's cheapest, *who else is holding this stance, and better?*) is now
+  expressible and has exactly one instance in the data. It remains the most under-used of the
+  three moves.
