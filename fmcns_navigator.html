@@ -6961,7 +6961,16 @@ function setMode(m) {
 // (queue-state line) is shared across all four sub-tabs since it governs all of them.
 // The workspace shell (three zones) is driven by one view state: which list view
 // the center zone shows, and which detail slot the right zone displays.
-let coreView = 'arch';
+// Which of Architecture / Flow / Room was open, remembered across a refresh: he
+// leaves the app in the Room and expects to come back to it, and landing on
+// Architecture every time is its own small loss of place.
+const CORE_VIEW_KEY = 'fmcns_core_view';
+let coreView = (function(){
+  try {
+    var v = localStorage.getItem(CORE_VIEW_KEY);
+    return (v === 'arch' || v === 'flow' || v === 'room') ? v : 'arch';
+  } catch (e) { return 'arch'; }
+})();
 let coreInited = false;
 const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
@@ -7162,6 +7171,7 @@ function setArchTab(t) {
 
 function switchCoreView(v) {
   coreView = v;
+  try { localStorage.setItem(CORE_VIEW_KEY, v); } catch (e) {}
   renderWorkspace();
   if (v === 'arch') { initArchNav(); setArchTab(archTab); }
   if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
@@ -17624,6 +17634,53 @@ document.addEventListener('keydown', (e) => {
     var label = LANE_LABELS[provider] || provider;
     return model ? label + ' · ' + model : label;
   }
+  // What you had in hand when you walked away: the half-written question, and the
+  // passages you had lined up to ask about (his ask, 2026-09-09 — "the prompt i
+  // started to write stays there so when i come back its all still there").
+  //
+  // Browser-side, keyed by the box rather than by the conversation id, because the
+  // key exists before the conversation has been fetched — a draft must survive a
+  // refresh taken one second after typing. Chapters and passages are NOT here:
+  // those are on the server, where they belong, and already come back on their own.
+  //
+  // Capped at 30 boxes, oldest dropped, so this cannot grow forever in a browser
+  // that never clears.
+  var DRAFT_KEY = 'fmcns_room_drafts';
+  var DRAFT_MAX = 30;
+  function readDrafts(){
+    try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}') || {}; } catch(err){ return {}; }
+  }
+  function loadDraft(e){
+    var all = readDrafts();
+    var row = all[e.key];
+    if(!row) return;
+    if(e.draft === undefined || e.draft === '') e.draft = row.draft || '';
+    if(!e.quotes || !e.quotes.length) e.quotes = Array.isArray(row.quotes) ? row.quotes : [];
+  }
+  var draftTimer = null;
+  function saveDraft(e){
+    if(!e || !e.key) return;
+    clearTimeout(draftTimer);
+    // Debounced: this runs on every keystroke, and a JSON round trip per character
+    // is the kind of thing that makes a text box feel slow on a long draft.
+    draftTimer = setTimeout(function(){
+      try {
+        var all = readDrafts();
+        var draft = String(e.draft || '');
+        var quotes = e.quotes || [];
+        if(!draft && !quotes.length) delete all[e.key];
+        else all[e.key] = { draft: draft, quotes: quotes, at: Date.now() };
+        var keys = Object.keys(all);
+        if(keys.length > DRAFT_MAX){
+          keys.sort(function(a, b){ return (all[a].at || 0) - (all[b].at || 0); })
+              .slice(0, keys.length - DRAFT_MAX)
+              .forEach(function(k){ delete all[k]; });
+        }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(all));
+      } catch(err) { /* a full or blocked store loses the draft, never the app */ }
+    }, 250);
+  }
+
   function entryOf(type, subjectId){
     var key = type + ':' + subjectId;
     if(!cache[key]) cache[key] = {
@@ -18141,12 +18198,18 @@ document.addEventListener('keydown', (e) => {
       if(e.busy || !String(text || '').trim()) return;
       // Clear only once the message is actually on its way. Losing what someone
       // typed is worse than any error message.
-      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone)){ input.value = ''; e.quotes = []; grow(input); }
+      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone)){
+        input.value = ''; e.quotes = []; e.draft = '';
+        saveDraft(e);
+        grow(input);
+      }
       else { e.note = 'Still opening this conversation — give it a second and send again.'; repaint(); }
     };
-    // The draft lives on the entry, not in the box, so a rebuilt card gets it back.
+    // The draft lives on the entry, not in the box, so a rebuilt card gets it back —
+    // and in localStorage, so a REFRESH gets it back too.
+    loadDraft(e);
     input.value = e.draft || '';
-    input.oninput = function(){ e.draft = input.value; grow(input); };
+    input.oninput = function(){ e.draft = input.value; saveDraft(e); grow(input); };
     input.onkeydown = function(ev){
       if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); say(input.value); }
     };
@@ -18303,6 +18366,7 @@ document.addEventListener('keydown', (e) => {
         mk('quote', 'Quote', 'Carry this passage into your next question', function(){
           if(!e.quotes) e.quotes = [];
           if(e.quotes.indexOf(passage) === -1) e.quotes.push(passage);
+          saveDraft(e);
           if(repaint) repaint();
         });
         // Only where there is a saved message to anchor to: an answer still
@@ -18565,6 +18629,7 @@ document.addEventListener('keydown', (e) => {
           b.onclick = function(ev){
             ev.stopPropagation();
             e.quotes.splice(Number(b.getAttribute('data-drop')), 1);
+            saveDraft(e);
             repaintHere();
           };
         });
