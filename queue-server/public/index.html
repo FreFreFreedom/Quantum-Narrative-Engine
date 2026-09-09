@@ -18249,7 +18249,14 @@ document.addEventListener('keydown', (e) => {
       m.replaceWith(document.createTextNode(m.textContent));
     });
     var hit = mark.snippet ? highlightIn(body, mark.snippet) : null;
-    (hit || turn).scrollIntoView({ block: 'center', behavior: 'smooth' });
+    // Scroll the LOG, by arithmetic. scrollIntoView refused to move this nested
+    // scroller — verified live: the passage lit up correctly and stayed off
+    // screen — and a chapter you cannot see is not a chapter.
+    var target = hit || turn;
+    var lr = log.getBoundingClientRect();
+    var tr = target.getBoundingClientRect();
+    var to = log.scrollTop + (tr.top - lr.top) - (log.clientHeight / 2) + (tr.height / 2);
+    log.scrollTo({ top: Math.max(0, to), behavior: 'smooth' });
   }
 
   // Wrap the first run of text matching `needle` in a <mark>. Walks text nodes so
