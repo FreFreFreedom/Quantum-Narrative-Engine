@@ -869,10 +869,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 /* A passage carried into the composer: shown above the input, dismissable. */
 .se-quoted { display:flex; align-items:flex-start; gap:7px; border-left:2px solid var(--c-brand); padding:4px 0 4px 8px;
   margin-bottom:5px; font-size:11px; color:var(--c-ink-4); line-height:1.45; }
+/* The ✕ was hidden until hover and he could not tell a quote could be taken off
+   at all. A control you cannot see is a control you do not have — it is visible
+   now, dim until pointed at. */
+.se-quoted button { background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:13px; padding:0 3px;
+  line-height:1; margin-left:auto; opacity:.55; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-quoted:hover button { opacity:1; }
-.se-quoted button { background:none; border:none; cursor:pointer; color:var(--c-ink-5); font-size:12px; padding:0 2px;
-  line-height:1; margin-left:auto; opacity:0; transition:opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
-.se-quoted button:hover { color:var(--c-danger); }
+.se-quoted button:hover { color:var(--c-danger); opacity:1; }
+/* Take them all off at once, once there is more than one to take off. */
+.se-quotes-clear { align-self:flex-start; background:none; border:none; cursor:pointer; font-family:inherit; font-size:10px;
+  color:var(--c-ink-5); padding:1px 0 4px; }
+.se-quotes-clear:hover { color:var(--c-danger); }
 .se-quoted-n { flex:none; min-width:14px; height:14px; border-radius:4px; background:var(--c-border); color:var(--c-ink-4);
   font-size:9.5px; line-height:14px; text-align:center; margin-top:1px; }
 /* Caret on the end of an answer still being written. Same reduced-motion kill
@@ -18638,9 +18645,12 @@ document.addEventListener('keydown', (e) => {
         qbar.innerHTML = e.quotes.map(function(q, i){
           return '<div class="se-quoted"><span class="se-quoted-n">' + (i + 1) + '</span><span>“'
             + qEsc(q.length > 240 ? q.slice(0, 240) + '…' : q)
-            + '”</span><button type="button" data-drop="' + i + '" title="Drop this passage">✕</button></div>';
-        }).join('');
-        qbar.querySelectorAll('[data-drop]').forEach(function(b){
+            + '”</span><button type="button" data-drop="' + i + '" title="Take this passage off — it will not be sent with your question" aria-label="Remove this passage">✕</button></div>';
+        }).join('')
+          + (e.quotes.length > 1 ? '<button type="button" class="se-quotes-clear" data-drop-all="1">Clear all ' + e.quotes.length + '</button>' : '');
+        var clearAll = qbar.querySelector('[data-drop-all]');
+        if(clearAll) clearAll.onclick = function(ev){ ev.stopPropagation(); e.quotes = []; saveDraft(e); repaintHere(); };
+        qbar.querySelectorAll('[data-drop]:not([data-drop-all])').forEach(function(b){
           b.onclick = function(ev){
             ev.stopPropagation();
             e.quotes.splice(Number(b.getAttribute('data-drop')), 1);
