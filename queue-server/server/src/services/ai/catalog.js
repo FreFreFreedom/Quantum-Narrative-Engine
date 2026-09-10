@@ -50,10 +50,15 @@ export const PROVIDERS = [
     baseUrl: 'https://api.groq.com/openai/v1',
     apiKeyEnv: 'GROQ_API_KEY',
     limits: { rpm: 30, rpd: 14400 },
+    // Read from the account's own /v1/models and each one answered, 2026-09-10.
+    // The three llama/deepseek ids that used to sit here are gone from Groq.
+    // gpt-oss thinks before it answers and the thinking eats the output budget:
+    // ask for 20 tokens and the reply is an empty string with no error at all —
+    // which reads exactly like a broken lane. Nothing here asks for less than 150.
     models: [
-      { id: 'llama-3.3-70b-versatile', codingRank: 62, contextTokens: 128000 },
-      { id: 'deepseek-r1-distill-llama-70b', codingRank: 66, contextTokens: 128000 },
-      { id: 'llama-3.1-8b-instant', codingRank: 40, contextTokens: 128000 },
+      { id: 'openai/gpt-oss-120b', codingRank: 68, contextTokens: 128000 },
+      { id: 'qwen/qwen3.8-27b', codingRank: 62, contextTokens: 128000 },
+      { id: 'openai/gpt-oss-20b', codingRank: 50, contextTokens: 128000 },
     ],
   },
   {
