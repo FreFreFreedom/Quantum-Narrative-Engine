@@ -337,6 +337,21 @@ export function listMessages(convoId) {
   return db.prepare(`SELECT * FROM convo_messages WHERE convo_id=? ORDER BY created_at ASC, rowid ASC`).all(convoId);
 }
 
+// Rewind: drop a message and everything said after it, so the question can be
+// asked again differently. Destructive on purpose — fork is the keeping kind.
+export function rewindConvo(convoId, messageId) {
+  if (!db) return { error: 'no_db' };
+  if (!getConvo(convoId)) return { error: 'not_found' };
+  const msgs = listMessages(convoId);
+  const cut = msgs.findIndex((m) => m.id === messageId);
+  if (cut < 0) return { error: 'no_such_message' };
+  const gone = msgs.slice(cut).map((m) => m.id);
+  const ph = gone.map(() => '?').join(',');
+  db.prepare(`DELETE FROM convo_marks WHERE convo_id=? AND message_id IN (${ph})`).run(convoId, ...gone);
+  db.prepare(`DELETE FROM convo_messages WHERE convo_id=? AND id IN (${ph})`).run(convoId, ...gone);
+  return { ok: true, text: msgs[cut].text, removed: gone.length };
+}
+
 export function listConvosForSubjects(subjectType, ids) {
   if (!db || !ids.length) return {};
   const placeholders = ids.map(() => '?').join(',');

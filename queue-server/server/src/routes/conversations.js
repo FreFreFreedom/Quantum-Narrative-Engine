@@ -382,6 +382,13 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // POST /api/convos/:id/rewind — remove a message and everything after it.
+  router.post('/:id/rewind', (req, res) => {
+    const out = convos.rewindConvo(req.params.id, req.body?.messageId || null);
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
   // DELETE /api/convos/:id — soft-delete the conversation.
   router.delete('/:id', (req, res) => {
     const out = convos.deleteConvo(req.params.id);

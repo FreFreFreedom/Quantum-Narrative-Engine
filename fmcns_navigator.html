@@ -1185,11 +1185,11 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnacts { display:flex; justify-content:flex-end; gap:1px; margin-top:3px;
   opacity:0; transition:opacity var(--t-fast) var(--ease); }
 .se-turn:hover .se-turnacts, .se-turnacts:focus-within { opacity:1; }
-.se-turnfork, .se-turnredo { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
+.se-turnfork, .se-turnredo, .se-turnrewind { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
   font-family:var(--font-ui); font-size:var(--fs-sm); line-height:1; width:24px; height:24px;
   display:inline-flex; align-items:center; justify-content:center; border-radius:var(--r-sm);
   transition:color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
-.se-turnfork:hover, .se-turnredo:hover { color:var(--c-ink); background:var(--c-surface-2); }
+.se-turnfork:hover, .se-turnredo:hover, .se-turnrewind:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
 /* The lane picker and the ⋯ menu are on the shared .umenu now; these four rules were
@@ -20044,6 +20044,21 @@ document.addEventListener('keydown', (e) => {
       .then(function(){ e.forking = false; if(repaint) repaint(); });
   }
 
+  function rewindToMessage(e, messageId, repaint){
+    if(!e.convoId || !messageId || e.busy) return;
+    var at = -1;
+    for(var i = 0; i < e.msgs.length; i++){ if(e.msgs[i].id === messageId){ at = i; break; } }
+    if(at < 0) return;
+    var text = e.msgs[at].text || '';
+    e.msgs = e.msgs.slice(0, at);
+    e.marks = (e.marks || []).filter(function(mk){ return e.msgs.some(function(m){ return m.id === mk.message_id; }); });
+    e.draft = text; e.draftForce = true; saveDraft(e);
+    e.note = '';
+    if(repaint) repaint();
+    apiWrite('/api/convos/' + e.convoId + '/rewind', 'POST', { messageId: messageId })
+      .catch(function(){ e.loaded = false; e.note = 'Could not rewind — reloaded the thread as it is.'; return fetchConvo(e, repaint); });
+  }
+
   function resetConvo(e, repaint){
     if(!e.convoId) return Promise.resolve();
     return apiWrite('/api/convos/' + e.convoId + '/reset', 'POST', {})
@@ -20710,6 +20725,17 @@ document.addEventListener('keydown', (e) => {
         if(m && m.text) openLaneMenu(b, e, m.text, function(){ if(host.isConnected) fillEmbed(host, e, opts); });
       };
     });
+    log.querySelectorAll('[data-se-rewind]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        if(e.busy) return;
+        rewindToMessage(e, b.getAttribute('data-se-rewind'), function(){
+          if(!host.isConnected) return;
+          fillEmbed(host, e, opts);
+          var box = host.querySelector('.se-input'); if(box) box.focus();
+        });
+      };
+    });
     log.querySelectorAll('[data-se-fork]').forEach(function(b){
       b.onclick = function(ev){ ev.stopPropagation(); forkFromMessage(e, b.getAttribute('data-se-fork'), function(){ if(host.isConnected) fillEmbed(host, e, opts); }); };
     });
@@ -20971,6 +20997,7 @@ document.addEventListener('keydown', (e) => {
       if (m.id || (you && m.text)) {
         actsHtml = '<div class="se-turnacts">'
                  + (you && m.text ? '<button type="button" class="se-turnredo" data-se-redo="' + qEsc(String(idx)) + '" title="Answer this again — pick which model">↻</button>' : '')
+                 + (you && m.id ? '<button type="button" class="se-turnrewind" data-se-rewind="' + qEsc(m.id) + '" title="Rewind to here — this and everything after is removed, and the words come back to the box to change and ask again">↶</button>' : '')
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
                  + '</div>';
       }
