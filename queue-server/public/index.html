@@ -872,7 +872,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    never land on top of the thing it is reporting about. */
 .notice-host { position:fixed; left:0; right:0; bottom:0; z-index:var(--z-popover); display:flex; justify-content:center;
   pointer-events:none; padding:0 14px 14px; transition:right var(--t-med) var(--ease); }
-body:has(#sysBtn.on) .notice-host { right:var(--qp-w, 420px); }
+body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .notice { pointer-events:auto; display:flex; align-items:center; gap:10px; max-width:min(560px, 100%);
   padding:8px 8px 8px 12px; border-radius:var(--r-md); background:var(--c-surface); color:var(--c-ink-2);
   border:1px solid var(--c-border-2); box-shadow:var(--sh-md); font-size:var(--fs-base); }
@@ -18358,6 +18358,7 @@ function openQueuePanel(focus = true) {
   queuePanelOpen = true;
   document.getElementById('queuePanel').hidden = false;
   document.getElementById('sysBtn').classList.add('on');
+  document.body.classList.add('qp-open');
   try { localStorage.setItem(QP_OPEN_KEY, '1'); } catch (e) {}
   renderQueuePanel();
   const t = document.getElementById('qpText');
@@ -18368,6 +18369,7 @@ function closeQueuePanel() {
   queuePanelOpen = false;
   document.getElementById('queuePanel').hidden = true;
   document.getElementById('sysBtn').classList.remove('on');
+  document.body.classList.remove('qp-open');
   try { localStorage.setItem(QP_OPEN_KEY, '0'); } catch (e) {}
 }
 
