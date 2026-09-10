@@ -2975,6 +2975,26 @@ const API_BASE = localStorage.getItem('fmcns_api_base')
 let TOKEN = localStorage.getItem('fmcns_chat_token') || '';
 let ENTITIES = [], CLUSTERS = {}, AXES = {};
 let ENRICHMENTS = {}; // entity_id -> tmdb_enrichments row (merged into entities as e.enrichment)
+/* The film metadata is the biggest thing this app downloads: 330KB, larger than the
+   entity list. It used to come down on every load, in boot's parallel batch, so that a
+   film card could open with no round trip — but films are unchecked in the filters by
+   default and posters are only drawn past 2.5x zoom, so most sessions paid for it and
+   never used it. Fetched once, on the first question about a film, and memoised. The
+   graph repaints when it lands. */
+let _enrichLoad = null;
+function ensureEnrichments() {
+  if (_enrichLoad) return _enrichLoad;
+  _enrichLoad = api('/api/ontology/enrichments').then((res) => {
+    if (res && res.enrichments) {
+      ENRICHMENTS = {};
+      res.enrichments.forEach((r) => { ENRICHMENTS[r.entity_id] = r; });
+      ENTITIES.forEach((e) => { if (ENRICHMENTS[e.id]) e.enrichment = ENRICHMENTS[e.id]; });
+      if (typeof requestRender === 'function') requestRender();
+    }
+    return ENRICHMENTS;
+  }).catch(() => { _enrichLoad = null; return ENRICHMENTS; });
+  return _enrichLoad;
+}
 const byId = {};
 
 async function api(path) {
@@ -3076,20 +3096,17 @@ async function boot() {
   // it must never be able to hold up or break the app coming online.
   checkStorageOnce();
   try {
-    const [entRes, clRes, axRes, facetRes, enrichRes, tcRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes, tcRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
       // Tolerate an older backend that predates /facets rather than failing to boot.
       api('/api/ontology/facets').catch(() => null),
-      api('/api/ontology/enrichments').catch(() => null),
       // Theme clusters: fetched once here so an entity's detail panel can name its
       // cluster with no per-click round trip. Same tolerance — an older backend
       // without the route just means no cluster line.
       api('/api/ontology/tag-communities').catch(() => null),
     ]);
     ENTITIES = entRes.entities;
-    ENRICHMENTS = {};
-    if (enrichRes && enrichRes.enrichments) enrichRes.enrichments.forEach(r => ENRICHMENTS[r.entity_id] = r);
-    ENTITIES.forEach(e => { byId[e.id] = e; if (ENRICHMENTS[e.id]) e.enrichment = ENRICHMENTS[e.id]; });
+    ENTITIES.forEach(e => { byId[e.id] = e; });
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
     axRes.axes.forEach(a => AXES[a.key] = a);
     setTagCommunities(tcRes);
@@ -5457,6 +5474,7 @@ function nodeInView(n) {
 
 function nodePosterPath(n) {
   if (n.type !== 'film') return null;
+  ensureEnrichments();   // memoised; the first film on screen pays for it, once
   // The node is a spread copy taken at buildGraph() time, so a later enrichment refresh
   // lands on the ENTITY, not on it — fall back to the live map rather than showing a
   // stale "no poster" until the next rebuild.
@@ -6801,6 +6819,18 @@ function filmHeaderHtml(e) {
 }
 
 function filmEnrichmentHtml(e, lensActive) {
+  // A film card can be opened without any poster having been drawn — films are off in
+  // the graph by default, so it usually arrives from the list or from a connection row.
+  // Only scheduled when the data is genuinely missing, and only repainted if it then
+  // arrives: this function calls itself, and an unconditional re-render would recurse
+  // for as long as the card stayed open.
+  if (!(e.enrichment || ENRICHMENTS[e.id])) {
+    ensureEnrichments().then(() => {
+      if (!(e.enrichment || ENRICHMENTS[e.id])) return;
+      const host = document.getElementById('tmdbBlock');
+      if (host && focusedId === e.id) host.innerHTML = filmEnrichmentHtml(e, lensActive);
+    });
+  }
   const r = e && e.enrichment;
   const lab = `<div class="section-title" style="color:var(--c-ink-3);">🎬 Verified metadata (TMDb)</div>`;
   if (!r) {
