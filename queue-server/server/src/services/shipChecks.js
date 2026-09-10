@@ -46,6 +46,41 @@ export function checkSyntaxFiles(root, files) {
 // so nothing else in this project would ever catch a syntax error in it. Extract
 // the blocks, check them, and assert a few structural anchors so a truncated write
 // is caught too.
+// Blanking every HTML comment first, then matching <script> tags, was wrong in the
+// other direction: a minified library can carry the literal `<!--` inside a string or
+// regex (marked does — it parses HTML comments), so the blanker ran from that token to
+// the next `-->` and ate real code, inventing a syntax error in a file that is fine.
+// It rejected the whole of `develop` on 2026-09-10 and refused a finished task with it.
+//
+// One left-to-right scan settles both hazards, because it never has to guess which
+// layer it is in: outside a script an HTML comment is a comment (so prose that merely
+// mentions a `<script src>` tag is skipped, the 2026-08-22 failure), and inside one it
+// is just characters. Comments are blanked rather than cut so a reported block number
+// still matches what a person counts in the file.
+function extractInlineScripts(html) {
+  const scripts = [];
+  const OPEN = /<script\b([^>]*)>/gi;
+  let i = 0;
+  while (i < html.length) {
+    const comment = html.indexOf('<!--', i);
+    OPEN.lastIndex = i;
+    const open = OPEN.exec(html);
+    // Whichever comes first decides what we are looking at.
+    if (comment !== -1 && (!open || comment < open.index)) {
+      const end = html.indexOf('-->', comment + 4);
+      i = end === -1 ? html.length : end + 3;
+      continue;
+    }
+    if (!open) break;
+    const close = html.toLowerCase().indexOf('</script', open.index + open[0].length);
+    const body = html.slice(open.index + open[0].length, close === -1 ? html.length : close);
+    // Only inline blocks: a src= tag has no body worth checking.
+    if (!/\bsrc\s*=/i.test(open[1])) scripts.push(body);
+    i = close === -1 ? html.length : close;
+  }
+  return scripts;
+}
+
 export function checkInlineHtmlScripts(root, files) {
   const APP_FILE = 'fmcns_navigator.html';
   if (!files.some((f) => f === APP_FILE || f.endsWith(`/${APP_FILE}`))) {
@@ -63,8 +98,7 @@ export function checkInlineHtmlScripts(root, files) {
     // paragraph of English glued to the next real script. That is not a hypothetical
     // — it happened on 2026-08-22 and refused all eleven tasks of an overnight run
     // with an identical syntax error, hours of work each, none of it at fault.
-    const scannable = html.replace(/<!--[\s\S]*?-->/g, (m) => ' '.repeat(m.length));
-    const scripts = [...scannable.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    const scripts = extractInlineScripts(html);
     // Checked one block at a time rather than concatenated: joining them can hide a
     // fault (or invent one) across a boundary, and it loses which block was wrong.
     for (let i = 0; i < scripts.length; i++) {

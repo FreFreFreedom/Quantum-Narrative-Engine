@@ -37,7 +37,7 @@ const SERVED_FILE = 'queue-server/public/index.html';
 
 function git(cwd, args, { lines = false } = {}) {
   try {
-    const out = execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const out = execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
     const t = out.trim();
     return lines ? (t ? t.split('\n').map((l) => l.trim()).filter(Boolean) : []) : t;
   } catch (e) {
