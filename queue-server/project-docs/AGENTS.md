@@ -401,6 +401,21 @@ pane, how wide, open or shut, the half-written message and the passages carried 
 it. The exception is a panel that is an overlay rather than a column — on a narrow
 window, one left standing open from last time is in the way, not where you left it.
 
+**A popover must outrank whatever it hangs off, and be tested in the state you use it
+in (added 2026-09-09).** The Look menu opened *behind* the side rail for an afternoon: the
+stacking ladder put popovers at 60 and the rail at 120. It passed testing because it was
+tested with the rail collapsed to 52px, where the menu lands just clear of it — and by the
+time anyone actually reaches for a rail button, the rail is expanded and 232px wide, so
+the menu is entirely hidden under it. Worse, the click still registered, so the next click
+toggled an invisible menu shut and the button read as dead on alternate presses.
+
+Two rules fall out. The popover layer sits above every surface a menu can be anchored
+inside — the rail and the build drawer both. And chrome is verified in the state it is
+actually used in: a hover-expanding rail must be driven expanded, because collapsed is a
+state the pointer is never in when it clicks. The decisive check is not "is it in the
+DOM" but `elementFromPoint` at the menu's own corners — that is what tells you whether the
+thing you are looking at is the thing you would hit.
+
 **No explaining inside the app.** Ship the control, not the paragraph. Helper text
 belongs in a `title` tooltip or nowhere.
 
