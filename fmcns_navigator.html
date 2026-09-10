@@ -2743,7 +2743,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="room-main">
         <div class="tv-toolbar room-toolbar">
           <button type="button" class="uicon" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
-          <span class="arch-title" id="roomTitle">Room</span>
+          <span class="arch-title" id="roomTitle"></span>
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-turns" id="roomTurns"></span>
           <span class="room-toolacts">
@@ -10501,8 +10501,6 @@ async function qLoad() {
   // "Work still waiting" is the useful count — finished/cancelled items no longer move
   // the number, so it stops meaning something once the list never shrinks.
   const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
-  const countEl = document.getElementById('coreCountFlow');
-  if (countEl) countEl.textContent = activeCount || '';
   const railCountEl = document.getElementById('railCountFlow');
   if (railCountEl) {
     railCountEl.textContent = activeCount || '';
@@ -18553,8 +18551,12 @@ document.getElementById('queuePanelClose').onclick = closeQueuePanel;
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
   });
-  // Reopened the way you left it — but without stealing the caret on page load.
-  try { if (localStorage.getItem(QP_OPEN_KEY) === '1') openQueuePanel(false); } catch (e) {}
+  // Reopened the way you left it — but without stealing the caret on page load, and
+  // never on a window narrow enough that the panel is a full-screen overlay: one left
+  // open from last time is in the way there rather than where you left it.
+  try {
+    if (localStorage.getItem(QP_OPEN_KEY) === '1' && window.matchMedia('(min-width: 521px)').matches) openQueuePanel(false);
+  } catch (e) {}
 })();
 document.getElementById('queuePanelOpenPage').onclick = (e) => {
   e.preventDefault();
