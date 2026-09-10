@@ -311,6 +311,13 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .relscope { display:inline-flex; gap:2px; }
 .relscope .ctrlbtn { padding:1px 8px; font-size:var(--fs-2xs); text-transform:none; letter-spacing:0; }
 .uc-sum .goto { cursor:pointer; text-decoration:underline dotted; text-underline-offset:2px; }
+.tag .tag-vs { margin-left:5px; opacity:.55; font-weight:400; }
+.tag .tag-vs:hover { opacity:1; text-decoration:underline dotted; }
+.tag.held { box-shadow: inset 0 0 0 1px var(--c-violet); }
+.theme-line .held { color:var(--c-violet); }
+.lens-vs { margin-top:8px; padding-top:6px; border-top:1px dashed var(--c-border); font-size:var(--fs-sm); color:var(--c-ink-3); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.lens-vs .uicon { opacity:.5; } .lens-vs:hover .uicon { opacity:1; }
+.lens-vs-in { flex:1; min-width:120px; font-size:var(--fs-sm); padding:3px 6px; border:1px solid var(--c-border); border-radius:var(--r-sm); background:var(--c-surface); color:inherit; }
 .conn { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; border-radius:var(--r-sm); margin-bottom:4px; cursor:pointer; background:var(--c-surface); border:1px solid var(--c-border); font-size:var(--fs-sm); }
 .conn:hover { background:var(--c-surface-2); }
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
@@ -3202,7 +3209,7 @@ async function boot() {
   // it must never be able to hold up or break the app coming online.
   checkStorageOnce();
   try {
-    const [entRes, clRes, axRes, facetRes, tcRes, gapRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes, tcRes, gapRes, tnRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
       // Tolerate an older backend that predates /facets rather than failing to boot.
       api('/api/ontology/facets').catch(() => null),
@@ -3213,7 +3220,10 @@ async function boot() {
       // And the same grouping read for its holes, so the cluster line can also name
       // what that cluster is furthest from. Same tolerance: no route, no far side.
       api('/api/ontology/tag-gaps').catch(() => null),
+      // What each tag stands against. Same tolerance: no route, tags stay bare labels.
+      api('/api/ontology/tags/tensions').catch(() => null),
     ]);
+    setTensions(tnRes);
     ENTITIES = entRes.entities;
     ENTITIES.forEach(e => { byId[e.id] = e; });
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
@@ -3388,7 +3398,9 @@ function themeLineHtml(e) {
   const farHtml = farTag && farTag.length
     ? ` · furthest from <span class="far" data-far="${far.id}" data-far-lead="${qEscAttr(farTag[0])}" title="${qEscAttr(far.name)} — show only the entities in the cluster this one barely touches">${qEsc(far.name.split(' / ')[0])}</span>`
     : '';
-  return `<div class="theme-line${on ? ' active' : ''}" data-community="${c.id}" data-lead="${qEscAttr(c.leadTag)}" title="Show only the entities in this theme cluster">Theme cluster · <b>${qEsc(c.name)}</b>${rest}${farHtml}</div>`;
+  const held = heldTensions(e);
+  const heldHtml = held.length ? ` · <span class="held" title="${qEscAttr(held.join('; '))}">holds ${held.length} tension${held.length > 1 ? 's' : ''}</span>` : '';
+  return `<div class="theme-line${on ? ' active' : ''}" data-community="${c.id}" data-lead="${qEscAttr(c.leadTag)}" title="Show only the entities in this theme cluster">Theme cluster · <b>${qEsc(c.name)}</b>${rest}${farHtml}${heldHtml}</div>`;
 }
 
 // Clicking it narrows every Content view to the entities carrying any of the cluster's
@@ -4953,6 +4965,42 @@ function renderList() {
 // question this answers is "what does this echo anywhere?", which is the opposite of
 // the filtered card sections that only look inside the current view. Ranked so the
 // strongest structural rhyme comes first regardless of kind.
+// ─── Tensions: what a tag stands against ─────────────────────────────────────
+// A tag used to be a bare label. The paradigm says a part means what it is in tension
+// with, so every tag now carries the tag it stands against (model-written, hand-editable).
+// Two things follow. An entity carrying both poles of one tension HOLDS it — the first
+// measurable fragment inside an entity. And two entities are entangled when they share a
+// tension, not only when they share a word: either pole of the same pair counts.
+let TENSIONS = {};                       // tag -> { tag, against, why, source }
+function setTensions(res) {
+  TENSIONS = {};
+  ((res && res.tensions) || []).forEach(t => { TENSIONS[t.tag] = t; });
+}
+function pairKey(a, b) { return [a, b].sort().join(' ↔ '); }
+// Every pair an entity touches, by either pole: tag→its against, and against→its tag.
+function tensionKeys(e) {
+  const out = new Set();
+  (e.tags || []).forEach(t => {
+    if (TENSIONS[t]) out.add(pairKey(t, TENSIONS[t].against));
+    Object.values(TENSIONS).forEach(x => { if (x.against === t) out.add(pairKey(x.tag, t)); });
+  });
+  return out;
+}
+function heldTensions(e) {
+  const tags = new Set(e.tags || []);
+  return (e.tags || []).filter(t => TENSIONS[t] && tags.has(TENSIONS[t].against)).map(t => pairKey(t, TENSIONS[t].against));
+}
+// What two entities share: the tags they both carry, then the tensions they both touch
+// that no shared tag already explains. Pair labels read "x ↔ y".
+function sharedPatterns(a, b) {
+  const bt = new Set(b.tags || []);
+  const shared = (a.tags || []).filter(t => bt.has(t));
+  const covered = new Set(shared.flatMap(t => TENSIONS[t] ? [pairKey(t, TENSIONS[t].against)] : []));
+  const bk = tensionKeys(b);
+  tensionKeys(a).forEach(k => { if (bk.has(k) && !covered.has(k)) shared.push(k); });
+  return shared;
+}
+
 // One computation of the three relations. This used to reimplement shared author,
 // entanglement and bridge inline over ENTITIES while the card computed the same three over
 // the filtered pool a few lines away — two definitions of "related" that drifted (one
@@ -5074,8 +5122,9 @@ function computeSharedAuthor(e, pool) {
 function computeEntanglement(e, pool, vertIds, cap = 3) { // top 3 by default — reduces visual noise
   const tags = e.tags||[];
   if (!tags.length) return [];
-  return pool.filter(o => o.id!==e.id && !vertIds.has(o.id) && (o.tags||[]).some(t=>tags.includes(t)))
-    .map(o => ({ o, shared: (o.tags||[]).filter(t=>tags.includes(t)) }))
+  return pool.filter(o => o.id!==e.id && !vertIds.has(o.id))
+    .map(o => ({ o, shared: sharedPatterns(e, o) }))
+    .filter(x => x.shared.length)
     .sort((a,b)=>b.shared.length-a.shared.length).slice(0, cap);
 }
 function computeBridges(e, pool, cap = 5) {
@@ -7730,7 +7779,13 @@ async function selectEntity(id){
     if (lensText) html += `<div class="note">${qEsc(lensText)}</div>`;
     else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
     if (e.tags && e.tags.length) {
-      html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
+      const held = new Set(heldTensions(e));
+      html += `<div class="tagrow">${e.tags.map(t => {
+        const tn = TENSIONS[t];
+        const isHeld = tn && held.has(pairKey(t, tn.against));
+        const vs = tn ? `<span class="tag-vs" data-vs="${qEscAttr(tn.against)}" title="${qEscAttr(tn.why || 'What this pattern stands against')}">↔ ${qEsc(tn.against)}</span>` : '';
+        return `<span class="tag${isHeld ? ' held' : ''}" data-tag="${t}">${t}${vs}</span>`;
+      }).join('')}</div>`;
       themeLineEntity = e;
       html += `<div id="themeLineHost">${themeLineHtml(e)}</div>`;
       html += `<div id="lensHost"></div>`;
@@ -7771,6 +7826,9 @@ async function selectEntity(id){
     loadPeers(e.id);
     document.querySelectorAll('.conn, .uc-sum .goto').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
+    document.querySelectorAll('.tag-vs[data-vs]').forEach(elx => {
+      elx.onclick = (ev) => { ev.stopPropagation(); const t = elx.getAttribute('data-vs'); focusedTag = focusedTag === t ? null : t; renderPatternList(); requestRender(); };
+    });
     wireThemeLine();
     document.querySelectorAll('.tag[data-cluster]').forEach(elx => {
       const code = elx.getAttribute('data-cluster');
@@ -7908,7 +7966,8 @@ async function toggleTagLens(entity, tag, tagEl, label) {
       return;
     }
     activeLensSalient = data.salient || null;
-    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div>${qEsc(data.lens)}</div>`;
+    lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div>${qEsc(data.lens)}${tensionLineHtml(tag)}</div>`;
+    wireTensionEdit(entity, tag);
     refreshTmdbBlock(); // now that the lens's salient facts are known, filter the fact sheet
   } catch (err) {
     clearTimeout(timer);
@@ -7920,6 +7979,39 @@ async function toggleTagLens(entity, tag, tagEl, label) {
     lensHost.innerHTML = `<div class="lens-panel"><div class="lens-tag">Through the lens of "${qEsc(display)}"</div><div class="empty" style="margin:0;">${msg}</div></div>`;
     refreshTmdbBlock();
   }
+}
+
+// The tension line under a lens: what the tag stands against and why, with a pencil
+// that turns it into two fields. Saving writes a hand row, which the generator never
+// overwrites, and redraws the card so the chips follow.
+function tensionLineHtml(tag) {
+  if (!TENSIONS[tag] && !tag) return '';
+  const tn = TENSIONS[tag];
+  const body = tn
+    ? `Stands against <b>${qEsc(tn.against)}</b> — ${qEsc(tn.why || '')}`
+    : `Not yet named what this stands against.`;
+  return `<div class="lens-vs" id="tensionLine">${body} <button type="button" class="uicon" data-tension-edit="${qEscAttr(tag)}" title="Edit what this stands against" aria-label="Edit what this stands against">✎</button></div>`;
+}
+function wireTensionEdit(entity, tag) {
+  const btn = document.querySelector(`[data-tension-edit="${tag}"]`);
+  const line = document.getElementById('tensionLine');
+  if (!btn || !line) return;
+  btn.onclick = () => {
+    const tn = TENSIONS[tag] || {};
+    line.innerHTML = `<input class="lens-vs-in" id="tensionAgainst" placeholder="stands against…" value="${qEscAttr(tn.against || '')}">
+      <input class="lens-vs-in" id="tensionWhy" placeholder="why, in one sentence" value="${qEscAttr(tn.why || '')}">
+      <button type="button" class="ctrlbtn" id="tensionSave">Save</button>`;
+    document.getElementById('tensionSave').onclick = async () => {
+      const against = document.getElementById('tensionAgainst').value.trim().toLowerCase().replace(/\s+/g, '-');
+      const why = document.getElementById('tensionWhy').value.trim();
+      if (!against || !why) return;
+      try {
+        const row = await apiWrite('/api/ontology/tags/' + encodeURIComponent(tag) + '/tension', 'PUT', { against, why });
+        if (row && row.tag) TENSIONS[row.tag] = row;
+        selectEntity(entity.id);
+      } catch (err) { line.textContent = 'Could not save.'; }
+    };
+  };
 }
 
 async function loadBooksFor(entityId) {
@@ -8987,6 +9079,7 @@ function renderHome() {
   }
 
   host.innerHTML = cards.join('');
+  wireMindWhy(host);
   host.querySelectorAll('[data-home-go]').forEach((btn) => {
     btn.onclick = () => goCoreDest(btn.getAttribute('data-home-go'));
   });

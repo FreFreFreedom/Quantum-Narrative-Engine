@@ -10,7 +10,7 @@ import { makeBookDetailHandler } from '../services/bookDetail.js';
 import { enrichFilm, enrichAllFilms, listEnrichments, batchStatus } from '../services/filmEnrichment.js';
 import { getTagGaps } from '../services/tagGaps.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
-import { listTensions, setTension, generateTension } from '../services/tagTensions.js';
+import { listTensions, setTension, generateTension, fillMissingTensions } from '../services/tagTensions.js';
 
 // Two ends can be in the same loop; report it once.
 function dedupeLoops(loops) {
@@ -50,8 +50,8 @@ export function ontologyRoutes(db) {
   router.get('/enrich-films/status', (req, res) => res.json(batchStatus()));
 
   router.get('/entities', (req, res) => {
-    const { type, cluster, tag, name, grounded, source } = req.query;
-    const entities = q.searchEntities(db, { type, cluster, tag, name, source, grounded: grounded === undefined ? undefined : grounded === 'true' });
+    const { type, cluster, tag, name, source } = req.query;
+    const entities = q.searchEntities(db, { type, cluster, tag, name, source });
     res.json({ entities, count: entities.length });
   });
 
@@ -247,6 +247,14 @@ export function ontologyRoutes(db) {
     const why = String(req.body?.why || '').trim();
     if (!against || !why) return res.status(400).json({ error: 'against_and_why_required' });
     res.json(setTension(db, req.params.tag, { against, why }, 'hand'));
+  });
+
+  // Fill every tag that has no tension yet, in the background. Warm-up does the same on
+  // boot only under PREGEN_ENABLED; this lets the Mac kick it on a live instance.
+  router.post('/tags/tensions/fill', (req, res) => {
+    const missing = db.prepare(`SELECT COUNT(DISTINCT tag) AS n FROM entity_tags WHERE tag NOT IN (SELECT tag FROM tag_tensions)`).get().n;
+    fillMissingTensions(db).catch((e) => console.warn('[tag-tension] fill failed:', e.message));
+    res.json({ started: true, missing });
   });
 
   router.post('/tags/:tag/tension/regenerate', asyncHandler(async (req, res) => {

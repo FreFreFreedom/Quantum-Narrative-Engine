@@ -753,7 +753,7 @@ export function initOntologySchema(db) {
       scale TEXT NOT NULL DEFAULT 'individual',
       container_id TEXT REFERENCES entities(id),
       clusters TEXT,
-      grounded INTEGER NOT NULL DEFAULT 0,
+      grounded INTEGER NOT NULL DEFAULT 0, -- dead since 2026-09-10: was 1 on every row, so it divided nothing; provenance is the source column. Kept only because this schema never drops columns.
       -- Provenance, independent of type: where this instance came from (archive,
       -- reddit, …). Type says WHAT it is, source says WHERE IT CAME FROM — keeping
       -- them separate is what lets a Reddit-derived instance be a first-class
