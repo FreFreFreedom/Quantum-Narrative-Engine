@@ -217,6 +217,13 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .left.has-filters .left-spine-dot { display:block; }
 .type-toggle { display:flex; align-items:center; gap:7px; padding:6px 4px; font-size:var(--fs-base); cursor:pointer; }
 .type-toggle input { margin:0; }
+/* Clicking the name isolates that one kind (and clicking it again brings the rest
+   back), so getting to one type is one click instead of unchecking eight. The word
+   only shows on hover/focus — the row must not look like it holds two controls. */
+.type-toggle .tt-name { flex:1; }
+.type-toggle .tt-solo { flex:none; font-size:var(--fs-xs); color:var(--c-ink-4); opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.type-toggle:hover .tt-solo, .type-toggle:focus-within .tt-solo { opacity:1; }
+.facet-all { margin:4px 0 2px 4px; }
 .cluster-item { padding:7px 8px; border-radius:var(--r-sm); cursor:pointer; margin-bottom:2px; font-size:var(--fs-sm); }
 .cluster-item:hover { background:var(--c-surface-2); }
 .cluster-item.active { background:var(--c-surface-3); font-weight:600; }
@@ -4796,45 +4803,63 @@ function prettyLabel(map, v) {
 // Films default off (they're containers, and including them buries the characters);
 // everything else defaults on, including any source/type that didn't exist when this
 // was written.
-function renderFacets() {
-  const typeHost = document.getElementById('typeList');
-  typeHost.innerHTML = '';
-  FACETS.types.forEach(({ value, n }) => {
-    const on = enabledTypes.has(value);
+// One row list for both facet blocks. The checkbox is the ordinary toggle; the name
+// is a second, smaller move: show only this one. Pressing the name of the only kind
+// left on brings everything back, so isolating and returning are the same click.
+function renderToggleList(host, items, labelMap, set) {
+  host.innerHTML = '';
+  const soloed = (v) => set.size === 1 && set.has(v);
+  items.forEach(({ value, n }) => {
+    const on = set.has(value);
     const lab = document.createElement('label');
     lab.className = 'type-toggle';
-    lab.innerHTML = `<input type="checkbox" ${on?'checked':''}> ${prettyLabel(TYPE_LABELS, value)} <span style="opacity:.5;">${n}</span>`;
+    lab.innerHTML = `<input type="checkbox" ${on?'checked':''}>` +
+      `<span class="tt-name">${prettyLabel(labelMap, value)} <span style="opacity:.5;">${n}</span></span>` +
+      `<span class="tt-solo">${soloed(value) ? 'all' : 'only'}</span>`;
     lab.querySelector('input').onchange = (ev) => {
-      if (ev.target.checked) enabledTypes.add(value); else enabledTypes.delete(value);
-      refreshView();
+      if (ev.target.checked) set.add(value); else set.delete(value);
+      renderFacets(); refreshView();
     };
-    typeHost.appendChild(lab);
+    // The name sits inside the <label>, so a plain click would also toggle the box.
+    const name = lab.querySelector('.tt-name');
+    const solo = (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      if (soloed(value)) { items.forEach(i => set.add(i.value)); }
+      else { set.clear(); set.add(value); }
+      renderFacets(); refreshView();
+    };
+    name.onclick = solo;
+    lab.querySelector('.tt-solo').onclick = solo;
+    name.title = soloed(value) ? 'Bring the others back' : 'Show only this one';
+    host.appendChild(lab);
   });
+  if (set.size !== items.length) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ubtn facet-all';
+    b.textContent = 'Show all';
+    b.onclick = () => { items.forEach(i => set.add(i.value)); renderFacets(); refreshView(); };
+    host.appendChild(b);
+  }
+}
+
+function renderFacets() {
+  renderToggleList(document.getElementById('typeList'), FACETS.types, TYPE_LABELS, enabledTypes);
 
   // The source filter only earns its space once more than one source exists.
   const block = document.getElementById('sourceBlock');
   if (FACETS.sources.length > 1) {
     block.style.display = '';
-    const host = document.getElementById('sourceList');
-    host.innerHTML = '';
-    FACETS.sources.forEach(({ value, n }) => {
-      const on = enabledSources.has(value);
-      const lab = document.createElement('label');
-      lab.className = 'type-toggle';
-      lab.innerHTML = `<input type="checkbox" ${on?'checked':''}> ${prettyLabel(SOURCE_LABELS, value)} <span style="opacity:.5;">${n}</span>`;
-      lab.querySelector('input').onchange = (ev) => {
-        if (ev.target.checked) enabledSources.add(value); else enabledSources.delete(value);
-        refreshView();
-      };
-      host.appendChild(lab);
-    });
+    renderToggleList(document.getElementById('sourceList'), FACETS.sources, SOURCE_LABELS, enabledSources);
   } else {
     block.style.display = 'none';
   }
 
   const sel = document.getElementById('axisSelect');
+  const keep = sel.value;
   sel.innerHTML = '<option value="">No axis filter</option>' +
     FACETS.axes.map(a => `<option value="${a.key}">${a.name} (${a.scored} scored)</option>`).join('');
+  if (keep) sel.value = keep;
 }
 
 function renderAxisControls() {
