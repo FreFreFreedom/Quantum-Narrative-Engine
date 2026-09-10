@@ -447,7 +447,14 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    about 230px, which is taller than the space the foot gets on a short window — so it
    sits last and clips, and Pause, the server pick, AI Settings and Look are always
    reachable. The full read-out is one click away in AI Settings, which holds all of it. */
-.rail-foot #usageStripHost { padding:4px 7px 2px; order:2; flex:0 1 auto; min-height:0; overflow:hidden; }
+/* The read-out is the last thing in the foot and its height is FIXED, in both states.
+   That is the whole point: the foot's height decides where the four buttons above it
+   start, so a strip that asks for its natural height moves Pause, the server pick, AI
+   Settings and Look by three hundred pixels the moment the rail opens — out from under
+   the cursor that was reaching for them. Fixed here, the buttons never move at all.
+   Two windows fit exactly; a limit warning is clipped, and says the same thing as the
+   pause badge two rows up. */
+.rail-foot #usageStripHost { padding:4px 7px 2px; order:2; flex:0 0 auto; height:92px; overflow:hidden; }
 .rail-foot > *:not(#usageStripHost) { order:1; flex:0 0 auto; }
 .rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:6px; }
 .rail-foot .usage-group { display:flex; flex-direction:column; gap:4px; }
