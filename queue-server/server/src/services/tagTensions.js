@@ -37,6 +37,23 @@ function missingTags(database) {
 const _inflight = new Map();
 
 // `gen` is injectable so the selftest can run it with no network and no credits.
+// Free-lane models do not all obey "one line, against|why": reasoning models wrap a
+// think block around it, others write "Against: x" / "Why: y" on two lines, or use a dash.
+// Take the pipe line if there is one (the last, so a restated instruction does not win),
+// else the labelled pair, else a dash split on the last non-empty line.
+export function parseTension(raw) {
+  let text = String(raw || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```[a-z]*|\*\*/g, '').trim();
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  let pipe = [...lines].reverse().find((l) => l.includes('|') && !/against\|why/i.test(l));
+  if (pipe) { const i = pipe.indexOf('|'); return { against: slug(pipe.slice(0, i)), why: pipe.slice(i + 1).trim().slice(0, 200) }; }
+  const a = text.match(/against\s*[:=]\s*([^\n|]+)/i), w = text.match(/why\s*[:=]\s*([^\n]+)/i);
+  if (a && w) return { against: slug(a[1]), why: w[1].trim().slice(0, 200) };
+  const last = lines[lines.length - 1] || '';
+  const m = last.match(/^([a-z0-9][a-z0-9 _-]{1,60}?)\s+[—–-]+\s+(.{10,})$/i);
+  if (m) return { against: slug(m[1]), why: m[2].trim().slice(0, 200) };
+  return { against: '', why: '' };
+}
+
 export async function generateTension(database, tag, { gen = generateText } = {}) {
   if (_inflight.has(tag)) return _inflight.get(tag);
   const attempt = (async () => {
@@ -58,17 +75,14 @@ export async function generateTension(database, tag, { gen = generateText } = {}
         'Reply with exactly one line in the form: against|why',
       ].filter(Boolean).join('\n\n'),
       feature: 'summary',
-      maxTokens: 120,
+      maxTokens: 400,
       label: `tag-tension:${tag}`,
       timeoutMs: TIMEOUT_MS,
       maxAttempts: MAX_ATTEMPTS,
       claudeLastResort: true,
     });
-    const text = String(out?.text || '').trim().split('\n').find((l) => l.includes('|')) || '';
-    const i = text.indexOf('|');
-    const against = slug(text.slice(0, i));
-    const why = text.slice(i + 1).trim().slice(0, 200);
-    if (!against || !why) return { error: `tension failed (${tag}): ${out?.message || out?.error || 'unparseable reply'}` };
+    const { against, why } = parseTension(out?.text);
+    if (!against || !why) return { error: `tension failed (${tag}): ${out?.message || out?.error || 'unparseable reply'} :: ${String(out?.text || '').replace(/\s+/g, ' ').slice(0, 160)}` };
     return setTension(database, tag, { against, why }, 'model');
   })();
   _inflight.set(tag, attempt);
