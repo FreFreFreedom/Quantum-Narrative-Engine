@@ -3211,7 +3211,7 @@ function selectCluster(code) {
     <div class="uc-title">${qEsc(code + '. ' + (c ? c.name.split(',')[0] : code))}</div>
     <div class="uc-sum">${members.length} entities</div>
   </div>`;
-  if (c && c.name && c.name.includes(',')) html += `<div class="note">${c.name}</div>`;
+  if (c && c.name && c.name.includes(',')) html += `<div class="note">${qEsc(c.name)}</div>`;
   html += `<div class="section-title" style="color:var(--c-ink-3);">Entities in this cluster (${members.length})</div>`;
   html += members.length
     ? members.slice(0, 40).map(o => `<div class="conn" data-goto="${o.id}"><span class="dot ${o.type==='film'?'author':o.type==='country'?'bridge':'ent'}"></span>${o.name} <span style="opacity:.6;">(${o.type})</span></div>`).join('')
@@ -7006,7 +7006,7 @@ function continuumHtml(e){
   keys.forEach(k=>{
     const axis=AXES[k]; if(!axis) return;
     const p=e.continuum[k];
-    rows += `<div class="continuum-row"><div class="continuum-label">${axis.name}</div><div class="continuum-bar"><div class="continuum-marker" style="left:${p*100}%"></div></div><div class="continuum-poles"><span>${axis.low}</span><span>${axis.high}</span></div></div>`;
+    rows += `<div class="continuum-row"><div class="continuum-label">${qEsc(axis.name)}</div><div class="continuum-bar"><div class="continuum-marker" style="left:${p*100}%"></div></div><div class="continuum-poles"><span>${axis.low}</span><span>${axis.high}</span></div></div>`;
   });
   return `<div class="continuum-block">${rows}</div>`;
 }
@@ -7058,7 +7058,7 @@ async function selectEntity(id){
       </div>`;
     }
     const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
-    if (lensText) html += `<div class="note">${lensText}</div>`;
+    if (lensText) html += `<div class="note">${qEsc(lensText)}</div>`;
     else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
     if (e.tags && e.tags.length) {
       html += `<div class="tagrow">${e.tags.map(t=>`<span class="tag" data-tag="${t}">${t}</span>`).join('')}</div>`;
@@ -7182,7 +7182,7 @@ async function selectEdgeConnection(e) {
   if (e.type === 'bridge') {
     const axis = AXES[e.axis];
     explainHost.innerHTML = axis
-      ? `These entities land within a narrow band on the same continuum — <b>${axis.name}</b> (between "${axis.low}" and "${axis.high}") — a cross-type echo of the same underlying position, regardless of scale.`
+      ? `These entities land within a narrow band on the same continuum — <b>${qEsc(axis.name)}</b> (between "${qEsc(axis.low)}" and "${qEsc(axis.high)}") — a cross-type echo of the same underlying position, regardless of scale.`
       : `These entities sit close together on the same continuum axis, a cross-type echo of the same underlying position.`;
     return;
   }
@@ -18331,13 +18331,13 @@ function renderArchDetail(id) {
   // is why this asks archBoardCell() rather than reading the field.
   const cell = archBoardCell(c);
   let html = `<h2 class="arch-detail-head">Component<button id="archDetailClose" class="arch-detail-close" title="Close this panel" aria-label="Close component panel">✕</button></h2>
-    <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
-    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span title="${qEscAttr((ARCH_LAYERS.find(l => l.id === archActOf(c)) || {}).sub || '')}" style="color:${LAYER_COLORS[archActOf(c)]}">${qEsc(archActLabel(c))}</span> · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEscAttr(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
+    <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${qEsc(c.name)}</div>
+    <div class="arch-detail-territory">${qEsc(terr ? terr.label : c.territory)} · <span title="${qEscAttr((ARCH_LAYERS.find(l => l.id === archActOf(c)) || {}).sub || '')}" style="color:${LAYER_COLORS[archActOf(c)]}">${qEsc(archActLabel(c))}</span> · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEscAttr(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
   html += `<div class="arch-field"><div class="arch-field-label">What</div>${clampHtml(c.what, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(c.why, 180, 'arch-field-body')}</div>
-    <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
-    <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${c.now || '—'}</div></div>
-    <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${c.next || '—'}</div></div>`;
+    <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${qEsc(c.input || '—')}</span><span class="arrow">→</span><span class="a">${qEsc(c.output || '—')}</span></div></div>
+    <div class="arch-field"><div class="arch-field-label">Now</div><div class="arch-field-body">${qEsc(c.now || '—')}</div></div>
+    <div class="arch-field"><div class="arch-field-label">Next</div><div class="arch-field-body">${qEsc(c.next || '—')}</div></div>`;
   // The witness: the one thing the app looks for to know this is really there.
   // Only a node the backend stores has one, and a witness_value is exactly that —
   // a trunk component with a stored row of its own keeps the trunk object, so the
@@ -18362,7 +18362,7 @@ function renderArchDetail(id) {
   if (c.subviews && c.subviews.length) {
     html += `<div class="arch-field"><div class="arch-field-label">Per-view rating</div>`;
     c.subviews.forEach(sv => {
-      html += `<div class="arch-vstep"><span class="vtag">${sv.label}</span><b>${sv.rating}.</b> ${sv.note}</div>`;
+      html += `<div class="arch-vstep"><span class="vtag">${qEsc(sv.label)}</span><b>${qEsc(String(sv.rating))}.</b> ${qEsc(sv.note)}</div>`;
     });
     html += `</div>`;
   }
@@ -18557,8 +18557,8 @@ function renderArchDetail(id) {
   document.getElementById('archQueueBtn').onclick = () => {
     const qhost = document.getElementById('archQueueHost');
     qhost.innerHTML = `<div class="arch-queueform">
-        <input id="qfTitle" value="${c.name}: ${(c.next || '').split('.')[0]}">
-        <textarea id="qfPrompt">${c.next}\n\nContext — ${c.name} (${c.territory}, ${c.status}): ${c.what}</textarea>
+        <input id="qfTitle" value="${qEscAttr(c.name + ': ' + (c.next || '').split('.')[0])}">
+        <textarea id="qfPrompt">${qEsc(c.next + '\n\nContext — ' + c.name + ' (' + c.territory + ', ' + c.status + '): ' + c.what)}</textarea>
         <button id="qfSubmit">Create queued prompt</button>
         <div class="arch-qf-status" id="qfStatus"></div>
       </div>`;
