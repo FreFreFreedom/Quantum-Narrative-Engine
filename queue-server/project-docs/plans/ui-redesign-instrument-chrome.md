@@ -29,11 +29,11 @@ Decisions Antoine made in that session, which this plan builds on:
   and the meta-views (Architecture, Mind, Building blocks). The Room is where he spends his
   days, so it gets the reading treatment first.
 
-The mockups he chose from (private pages, for anyone who needs to see the intent):
-`https://claude.ai/code/artifact/a1ed8451-4be4-4559-b745-389730e430c5` (today vs three
-looks), `https://claude.ai/code/artifact/143cb777-4a04-4ed5-b2f7-63676b27ff34` (eight
-looks), `https://claude.ai/code/artifact/901f0fa4-8ae3-46be-b15a-44dfecb89697` (six daylight
-looks, Darkroom at the bottom for pairing).
+He chose from three pages of mockups — the same Room screen drawn in fourteen candidate
+looks. **Those pages were throwaway and are deleted.** Nothing is lost: every palette he
+saw is written out as hex values at the bottom of this file, which is the durable copy
+and the only one worth keeping. If a look ever needs to be seen again rather than read,
+rebuild the mockup from those values.
 
 Where the app already stands: the chrome pass of 2026-09-09 (commits `18608e7` → `06d8295`)
 fixed the worst structural problems — one rail carries every destination, one floating

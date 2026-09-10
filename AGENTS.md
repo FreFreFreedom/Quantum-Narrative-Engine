@@ -410,6 +410,23 @@ row, a composer whose text box had zero width — all passed every syntax check 
 were only visible on screen. See "Ship directly" below for the checks that are
 worth running first; they do not replace opening it.
 
+### Don't leave published pages behind (added 2026-09-09)
+
+A visual Antoine only has to **look at once** — mockups, palette comparisons, a chart to
+choose from — is a throwaway. Write it as an `.html` file in the session scratchpad and
+give him the path, or drive it in his own browser. **Publish an Artifact only when he
+asks for a link**, or when the page is a deliverable someone returns to.
+
+Two reasons this is a rule rather than a preference. Published pages accumulate in his
+gallery and he has to delete them by hand — **no session can delete an artifact**, the
+tool has no such action, so publishing makes the cleanup his job. And a page that existed
+to help him decide one thing is dead the moment he decides.
+
+Whatever the page settled must land in the repo as text. The fourteen candidate look
+palettes from the 2026-09-09 UI session are hex values in
+`plans/ui-redesign-instrument-chrome.md`, which is why deleting the pages cost nothing.
+**Never leave a repo file citing an artifact URL** — it rots the moment he tidies up.
+
 ### A plan sent to the queue must stand alone (hard)
 
 The agent that picks a task off the queue **never sees the conversation that
