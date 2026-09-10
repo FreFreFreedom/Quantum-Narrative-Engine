@@ -1583,8 +1583,9 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .stage-strip.tone-stop { --c-stage-tone:var(--c-danger); }
 .stage-strip.tone-idle { --c-stage-tone:var(--c-ink-4); }
 .stage-where { font-weight:600; color:var(--c-ink-2); }
-.card-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:2px; margin-top:7px; padding-top:5px; border-top:1px solid var(--c-border); opacity:.62; transition:opacity var(--t-fast) var(--ease); }
-.arch-suggestion:hover .card-actions, .card-actions:focus-within { opacity:1; }
+/* .card-actions went with the second builder. A suggestion's own cluster follows the
+   same reveal-on-hover rule every other card's does. */
+.arch-suggestion .uc-acts { justify-content:flex-end; margin-top:6px; }
 .cardbtn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:none; background:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; flex:none; }
 .cardbtn:hover { color:var(--c-ink); background:var(--c-surface-2); }
 .cardbtn:focus-visible { outline:2px solid var(--c-accent); outline-offset:1px; }
@@ -1594,8 +1595,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .cardbtn .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 /* The checklist stays one line per component, so its symbols sit inline at the
    end of the row rather than under it — no rule, no margin. */
-.arch-list-row .card-actions { margin:0; padding:0; border-top:none; flex:none; gap:0; }
-.arch-list-row:hover .card-actions, .arch-list-row .card-actions:focus-within { opacity:1; }
+.arch-list-row .uc-acts { margin:0; padding:0; flex:none; gap:0; }
 .arch-list-row .cardbtn { width:22px; height:22px; }
 .arch-list-row .cardbtn .ic { width:13px; height:13px; }
 /* The row-level Start button for a parked task — deliberately louder than the
@@ -2083,8 +2083,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .arch-bcard-name { font-size:var(--fs-sm); font-weight:600; line-height:1.35; min-width:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .arch-bcard-meta { display:flex; align-items:center; gap:6px; margin-top:3px; min-height:17px; }
 .arch-bcard-status { font-size:var(--fs-2xs); color:var(--c-ink-4); flex-shrink:0; }
-.arch-bcard .card-actions { margin:0; padding:0; border-top:none; flex:none; gap:0; }
-.arch-bcard:hover .card-actions, .arch-bcard .card-actions:focus-within { opacity:1; }
+.arch-bcard .uc-acts { margin:0; padding:0; flex:none; gap:0; }
 .arch-bcard .cardbtn { width:21px; height:21px; }
 .arch-bcard .cardbtn .ic { width:12px; height:12px; }
 .arch-bcol-empty { font-size:var(--fs-xs); color:var(--c-ink-4); padding:8px 4px; }
@@ -11726,11 +11725,9 @@ function iconBtn(icon, label, act, id, kind = '', extra = '') {
 //
 // This is the OLD bar, kept for the card types that have not been converted yet
 // (the architecture checklist rows and the architecture suggestion cards). The
-// converted cards use cardActs() below instead: word buttons on the title line.
-function cardActions(btns) {
-  const html = btns.filter(Boolean).join('');
-  return html ? `<div class="card-actions">${html}</div>` : '';
-}
+// The old two-builder split is gone: cardActs() below is the only one, so every card in
+// the app — queue, suggestion, seed, component, board, repo — puts its actions in the
+// same cluster in the same place.
 
 // ---------- One button per card, and a "⋯" for the rest ----------
 // The rule this replaces nine stacked symbols with: ONE obvious button, its word
@@ -11768,6 +11765,7 @@ const UC_MENU_ICON = {
   rerun: 'again', 'rerun-fresh': 'again-fresh', 'ship-undo': 'refresh',
   'sg-discuss': 'chat', 'seed-plant': 'seed', 'mind-deepen': 'spark',
   'bk-useful': 'check', 'bk-not-useful': 'x',
+  'arch-build': 'bolt', 'arch-queue': 'queue', 'arch-discuss': 'chat', 'as-queue': 'queue',
   delete: 'trash', 'seed-delete': 'trash',
 };
 function cardMenuBtn(items) {
@@ -17418,11 +17416,11 @@ try { archListCollapsed = JSON.parse(localStorage.getItem('fmcns.archListCollaps
 // component can do stays in the right-hand panel — a graph node has no room for
 // a full toolbar, and putting one there would make the tree unreadable.
 function archCardActions(c) {
-  return cardActions([
-    archNodeState(c) === 'buildable'
-      ? iconBtn('bolt', 'Build this — every prerequisite is met', 'arch-build', c.id, 'primary') : '',
-    iconBtn('queue', 'Queue a task about this component', 'arch-queue', c.id),
-    iconBtn('chat', 'Talk this component over', 'arch-discuss', c.id),
+  const buildable = archNodeState(c) === 'buildable';
+  return cardActs('', [
+    buildable ? { act: 'arch-build', id: c.id, label: 'Build this — every prerequisite is met' } : null,
+    { act: 'arch-queue', id: c.id, label: 'Queue a task about this component' },
+    { act: 'arch-discuss', id: c.id, label: 'Talk this component over' },
   ]);
 }
 
@@ -18758,7 +18756,7 @@ function renderArchSuggestions(c) {
       // The whole card has always been clickable to queue it, with nothing on
       // screen saying so. The symbol makes that action visible; the card click
       // still works for anyone used to it.
-      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(cardOneLine(s.prompt))}</div>${cardActions([iconBtn('queue', 'Send this suggestion to the queue', 'as-queue', s.id, 'primary')])}</div>`;
+      html += `<div class="arch-suggestion" data-sid="${s.id}"><div class="as-title">${qEsc(s.title)}</div><div class="as-prompt">${qEsc(cardOneLine(s.prompt))}</div>${cardActs('', [{ act: 'as-queue', id: s.id, label: 'Send this suggestion to the queue' }])}</div>`;
     });
     const genAt = qShipWhen(c.suggestions_generated_at);
     if (genAt) html += `<div class="arch-verified" style="margin-top:2px;">Generated ${genAt}</div>`;
