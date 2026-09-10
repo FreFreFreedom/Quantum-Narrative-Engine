@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | PLANNED 2026-09-09 (awaiting Antoine's go) |
+| Status | **Phase 0 DONE, Phase 1 part-done** 2026-09-09. Shipped and verified on production: the two looks, the fonts, the token system, the notice, one segmented control, the prose removal, plus four defects found by driving the app (the rail's foot moved its own buttons out from under the cursor, twice; the world map drew a band across itself; a `:has()` on body froze the renderer). Phases 2-6 still open. |
 | Scope | The whole frontend, `fmcns_navigator.html` (19,537 lines at `594d394`) and its byte-identical copy `queue-server/public/index.html`; two font files under `queue-server/public/fonts/`; one optional backend route |
 | Cost | Zero model credits. Pure frontend work, no AI calls |
 | Ships as | Seven phases, each shippable on its own, shipped **in order, one at a time** |
@@ -381,6 +381,39 @@ current tab, the send button, a running task's pill. Semantic colours (success/w
 info) are separate and never used as decoration.
 
 ---
+
+## What shipped on 2026-09-09, and what it cost to find
+
+Phase 0 whole, plus the first pass of Phase 1. Four defects came out of driving the live
+app that no reading of the diff would have produced, and they are the reason the
+"verify by driving it" rule exists:
+
+- **The rail's foot moved its own buttons out from under the cursor.** Expanding the rail
+  made the quota read-out appear, which grew the foot by about 230px inside a column that
+  clips — so Look and AI Settings dropped below the bottom edge, and at a 651px window
+  could not be reached at all. Fixed in three passes: the destination list yields rather
+  than the foot, the controls sit before the read-out, and the read-out's height is now
+  fixed in both states so nothing moves at all.
+- **White text on accent-filled buttons.** Correct on Daylight atlas's deep vermilion,
+  unreadable on Darkroom's light amber. Ink over a filled colour is a token per look now
+  (`--c-on-accent` and four siblings); without this the night look had illegible buttons
+  everywhere and the whole look system would have been a dead end.
+- **The world map drew an orange band across itself.** A country crossing the date line
+  was one continuous path, so +179° to -179° rendered as a line back across the world.
+  Visible on every open of the Map for as long as the view has existed.
+- **A `:has()` selector on `body` froze the renderer.** Used to make the notice step aside
+  for the build panel. Chrome re-checks body's whole subtree on every mutation, and this
+  app replaces markup constantly. Reverted to a class the panel already toggles.
+
+One thing that looked like a fifth defect and was not: the app appeared to hang on every
+load. It was the tab, poisoned by my own capture-phase event instrumentation and pending
+script injections. A fresh tab was perfect. `AGENT_MEMORY.md` already carries this exact
+warning and it still caught me.
+
+Also true and worth knowing: **the font files reached the trunk inside a queue task's
+commit**, not mine — a task shipped while they sat untracked and its `git add -A` swept
+them up. They are on `develop` and production serves all four, but that is the
+concurrency this plan's ground rules warn about, happening for real.
 
 ## Part 3 — Implementation, in seven phases
 
