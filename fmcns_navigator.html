@@ -412,9 +412,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .graph-homebtn { right:14px; bottom:14px; }
 .graph-homebtn .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor;
   stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
-/* The one control that offers a descent. It only exists while the thing being held has a
-   mapped inside, so it is never an offer the app cannot keep. */
-#descendBtn { color:var(--c-accent); }
+/* The descent is offered in the entity's own panel, under its name — not in the stage's
+   corner, which is for the camera. The way back out is a step in the scope trail, because
+   that row already exists to say what is narrowing the view and how to leave it. */
+#descendHost:empty { display:none; }
+#descendHost { margin:8px 0 2px; }
 .list-stage { display:none; flex:1; overflow-y:auto; padding:2px 2px 10px; }
 .list-summary { font-size:var(--fs-xs); color:var(--c-ink-4); padding:4px 2px 8px; }
 .lgroup { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-5); margin:12px 0 6px; padding-bottom:3px; border-bottom:1px solid var(--c-surface-3); }
@@ -2609,7 +2611,6 @@ button:active { transform: translateY(1px) scale(.99); }
     <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + vertical edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | ALSO the Landscape view (the embedding map), which is this same canvas, renderer and camera laid out by MEANING instead of by connection — no edges are drawn at all, nearness IS the statement: landscapeBuild() gives every entity a sparse vector over the theme communities (each tag's community, weighted by how rare that community is) plus the tags at least two entities share, takes cosine similarity, and keeps the top LS_K neighbours as invisible forceLink springs; installLayoutForces('landscape') swaps the graph's forces for those springs; an entity with no themes at all is parked honestly on an outer ring at its roman-numeral cluster's anchor (landscapeGeometry()), drawn hollow and named by the same cluster-region pass. The matrix is cached per active entity set in LS and never recomputed on a redraw | backend: GET /api/ontology/entities, /api/ontology/clusters, /api/ontology/tag-communities (services/tagCommunities.js)">
       <canvas id="graphCanvas"></canvas>
       <div class="arch-zoombtns graph-homebtn">
-        <button id="descendBtn" hidden aria-label="Descend into it"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-down"></use></svg></button>
         <button id="resetBtn" title="Back to the whole graph, centred — clears the zoom, the pan and any ego scope" aria-label="Fit the whole graph">⌂</button>
       </div>
       <details class="legend" id="legend"><summary>Key</summary><div id="legendBody"></div></details>
@@ -4667,6 +4668,8 @@ function scopeTrail() {
     const n = byId[id];
     trail.push({ label: (n && n.name) || id, kind: 'ego', level: i });
   });
+  // Inside a thing is the narrowest the view gets, so it is the last step of the trail.
+  if (descent) trail.push({ label: 'inside ' + descent.host.name, kind: 'descent' });
   return trail;
 }
 
@@ -4699,6 +4702,12 @@ function renderScopeBar() {
 // Restore the scope this crumb stands for: drop every narrowing applied after it.
 function scopeGoTo(i) {
   const trail = scopeTrail();
+  // Leaving a descent is not a filter change: it eases back out to the field it was
+  // holding, and rebuilding the graph would throw that field away.
+  if (trail.slice(i + 1).some(c => c.kind === 'descent')) {
+    endDescent();
+    if (trail.slice(i + 1).every(c => c.kind === 'descent')) return;
+  }
   let touchedCluster = false, touchedTheme = false;
   trail.slice(i + 1).forEach(c => {
     if (c.kind === 'cluster') { activeCluster = null; touchedCluster = true; }
@@ -5558,22 +5567,20 @@ function prefersReducedMotion() {
 // you are holding actually has an inside. A button offering a descent that cannot happen
 // would be worse than no button.
 function syncDescendBtn() {
-  const btn = document.getElementById('descendBtn');
-  if (!btn) return;
-  if (descent) {
-    btn.hidden = false;
-    btn.title = 'Come back up';
-    btn.setAttribute('aria-label', 'Come back up');
-    btn.querySelector('use').setAttribute('href', '#ic-up');
-    return;
-  }
-  const ok = focusedId && hasInside(focusedId) && onField(focusedId);
-  btn.hidden = !ok;
-  if (ok) {
-    btn.title = 'Descend into it — this one has a mapped inside';
-    btn.setAttribute('aria-label', 'Descend into it');
-    btn.querySelector('use').setAttribute('href', '#ic-down');
-  }
+  renderScopeBar();                 // the way back out is a crumb, and it just changed
+  const host = document.getElementById('descendHost');
+  if (!host) return;
+  // While you are inside something, the panel is showing whatever part you last picked,
+  // so it must not offer to descend again into the thing you are already in.
+  const ok = !descent && focusedId && hasInside(focusedId) && onField(focusedId);
+  if (!ok) { host.innerHTML = ''; return; }
+  const read = _anatomy[focusedId] && _anatomy[focusedId].kind !== 'recorded';
+  host.innerHTML = ubtnHtml(
+    'Descend into it', 'descend-into', focusedId, 'is-primary',
+    read ? 'Open it: the parts a real scene was read for, and how they stand'
+         : 'Open it: what is recorded as being inside it');
+  const b = host.querySelector('button');
+  if (b) b.onclick = (ev) => { ev.stopPropagation(); startDescent(focusedId); };
 }
 
 function requestRender() {
@@ -7264,8 +7271,6 @@ function initGraph(){
     requestRender();
   };
   document.getElementById('resetBtn').onclick = resetGraphView;
-  const dBtn = document.getElementById('descendBtn');
-  if (dBtn) dBtn.onclick = () => { if (descent) endDescent(); else if (focusedId) startDescent(focusedId); };
   document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
   // Escape has to work whether or not the canvas happens to hold focus — you can enter
   // an ego view by double-clicking without the canvas ever being focused, and a scope
@@ -7632,6 +7637,7 @@ async function selectEntity(id){
         <div class="uc-sum">${qEsc(sub)}</div>
       </div>`;
     }
+    html += `<div id="descendHost"></div>`;
     const lensText = (e.meta && (e.meta.note || e.meta.synopsis || e.meta.description)) || '';
     if (lensText) html += `<div class="note">${qEsc(lensText)}</div>`;
     else html += `<div class="empty">No pattern-lens description written yet for this entity.</div>`;
