@@ -662,6 +662,68 @@ Travaux are five locally coherent views with almost no gluing between them — t
 Navigator knows components, the Content graph knows entities, and neither knows the other
 exists.
 
+### The self-diagnosis re-run 2026-09-10 — the failing layer has moved
+
+Run against the live app nine days after the reading above, with the counts read from the
+deployed database rather than remembered. Everything in the 09-01 reading that was about the
+**ontological layer has changed in kind, not just in degree**: seven entity types instead of
+three (institution, family, city and group joined character, film and country); an ordered
+eight-rung scale ladder with real rung distance instead of three unordered labels, so a
+bridge is now a cross-*scale* fact and not a "different type" stand-in; containment
+(a character sits inside its film, an institution inside its city). 492 entities against 413.
+
+What the ontological layer still cannot see, and this is the honest remainder:
+
+- **Fragments inside an entity.** Containment nests one entity inside another; nothing yet
+  gives an entity *parts* — the fragment model of §1 is not in the schema at all.
+- **Time**, beyond a film's release year.
+- **Two rungs are empty.** The ladder has a *cell* rung and a *civilisation* rung with nobody
+  standing on them. So the immune system — the paradigm's own proof case (§5) — **cannot be
+  entered into the app as an entity**, and every vertical claim is untestable at both ends.
+- **A distinction that stopped distinguishing.** Every one of the 492 entities is marked
+  *grounded*. A flag that is always true draws no boundary; it is a distinction the app
+  still carries but can no longer make.
+
+**Semantic layer — this is now the failing one.** The counts improved (282 of 492 entities
+carry a tag, against 214 of 413; the two axes are scored on 161 and 46 entities against 93
+and 39) but the *kind* did not. 538 of 651 tags sit on exactly one entity, and — the real
+finding — **no tag knows what it stands against**. The generating-rule reading (§4) says a
+part means what it is in tension with, and that a semantic layer reducible to attaching
+independent labels has abandoned the generator. Every tag in the app is exactly that: an
+independent label with no opposite, no tension, no pair. The vocabulary grew; the rule was
+never installed.
+
+**Analogical layer — one real move, everything else starved by the layer below.** The
+scale-echo bridge (same axis position, different rung) is the app's first genuine cross-scale
+recognition. The entanglement edge is still a count of shared labels — and it *cannot* become
+recognition of a shared generating rule until the labels carry tension, because a count of
+matching words has nothing else to match on. Two moves shipped since 09-01 point the layer
+inward and are the fold working: the *gap measure* (where the corpus fails to connect — the
+app seeing its own holes) and the *horizontal move* (who else stands on this rung).
+
+**Gluing.** The chrome is glued now — Home, Mind, Flow, Content, Architecture share one
+frame — and *testimony in the ontology* links what Antoine has written to the entities it
+names, which is the first seam between the Room and the graph. The deeper seam holds: the
+Architecture Navigator still knows components and the graph knows entities, and **the
+platform is not an entity in its own database.** It maintains a boundary against its own
+dissolution, so by §1 it qualifies; yet it cannot be selected in its own graph, sits on no
+rung, and has no echoes. The app performs recognition for everything except itself — which
+is the exact pathology §7 names.
+
+**The decisions this fold produces** (the guard rail below demands them):
+
+1. **Give tags their opposition.** Each pattern named by what it stands against, as a pair
+   or a tension, not a bare label — this is the cheapest change that turns the semantic
+   layer from vocabulary into a rule, and it is the precondition for the entanglement edge
+   to ever mean more than word-matching. Free now, expensive after another thousand
+   independent tags are written.
+2. **Put something on the empty rungs**, starting with the immune case at *cell*: the
+   paradigm's proof case should be the first thing the app can hold at that scale.
+3. **Retire or restore the grounded flag** — either it divides the corpus or it goes.
+4. **Enter FMCNS itself as an entity** at the institution rung, with the Architecture
+   Navigator's components as its parts — which would also be the first entity with fragments,
+   and so the first test of the fragment model.
+
 ### Its own bugs are diagnostic, not merely annoying
 
 The recurring failure in this project's history — a task card reading *Live* while nothing

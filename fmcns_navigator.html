@@ -6500,7 +6500,9 @@ function paintGraph() {
     if (w < 0.02) continue;
     const p = wToS(n.x, n.y);
     if (p.x < -140 || p.x > gW + 140 || p.y < -40 || p.y > gH + 40) continue;
-    if (descent && n !== descent.host) continue;
+    // No labels from the field while you are inside something — not even the container's
+    // own, which landed on top of its parts. What you descended into is not in doubt.
+    if (descent) continue;
     const rank = (n.id === focusedId ? 3e6 : (spotlight && spotlight.has(n.id) ? 2e6 : 0))
       + (n.degree || 0) + (_lblPlaced.has(n.id) ? 0.5 : 0);
     cands.push({ n, p, w, rank });
