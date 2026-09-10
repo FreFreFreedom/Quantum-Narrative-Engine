@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Phases 0-4 DONE** 2026-09-09/10. Shipped and verified on production: the two looks, the fonts, the token system, the notice, one segmented control, the prose removal, plus four defects found by driving the app (the rail's foot moved its own buttons out from under the cursor, twice; the world map drew a band across itself; a `:has()` on body froze the renderer). Phase 1 finished with the two list menus onto the shared helper and every emoji out of the buttons; Phase 2 brought Flow from three bands to one, Content from two to one, and Architecture from fourteen controls to four. Phase 3 connected the realtime channel (the server had been broadcasting to nobody since the queue was built), put the polls to sleep in a hidden tab, debounced the search that rebuilt the graph per keystroke, made the 330KB of film metadata lazy, and escaped forty-one interpolations of text the app did not write. Phase 4 made the Room a reading surface: markdown renders (marked vendored inline, escaped first so the safety is the composition rather than a library option), the measure came down from ninety characters a line to seventy-five, the byline stopped being a tracked all-caps label in the reading face, Send carries the accent, and a thread row says which model is answering and how deep it is. Phases 5-6 still open: the card families, the rest of the remembered state, cleanup. |
+| Status | **ALL SIX PHASES DONE** 2026-09-09/10. Shipped and verified on production: the two looks, the fonts, the token system, the notice, one segmented control, the prose removal, plus four defects found by driving the app (the rail's foot moved its own buttons out from under the cursor, twice; the world map drew a band across itself; a `:has()` on body froze the renderer). Phase 1 finished with the two list menus onto the shared helper and every emoji out of the buttons; Phase 2 brought Flow from three bands to one, Content from two to one, and Architecture from fourteen controls to four. Phase 3 connected the realtime channel (the server had been broadcasting to nobody since the queue was built), put the polls to sleep in a hidden tab, debounced the search that rebuilt the graph per keystroke, made the 330KB of film metadata lazy, and escaped forty-one interpolations of text the app did not write. Phase 4 made the Room a reading surface: markdown renders (marked vendored inline, escaped first so the safety is the composition rather than a library option), the measure came down from ninety characters a line to seventy-five, the byline stopped being a tracked all-caps label in the reading face, Send carries the accent, and a thread row says which model is answering and how deep it is. Phase 5 put the last card families on the shared shell (two action builders became one, Home lost its tracked all-caps titles and typed arrows, a Mind thought got the reading measure) and the Flow remembers which list you were on. Phase 6 deleted eight functions nothing called, three unused constants and the CSS of two removed features — including an eighty-line renderer that returned on its first two lines because the elements it drew into stopped existing. |
 | Scope | The whole frontend, `fmcns_navigator.html` (19,537 lines at `594d394`) and its byte-identical copy `queue-server/public/index.html`; two font files under `queue-server/public/fonts/`; one optional backend route |
 | Cost | Zero model credits. Pure frontend work, no AI calls |
 | Ships as | Seven phases, each shippable on its own, shipped **in order, one at a time** |
@@ -434,6 +434,17 @@ Three places where the plan was wrong and the code was right:
 
 And one place the plan under-specified: the facet checkboxes were left un-debounced. A
 checkbox is one discrete action and should rebuild once; only the search box types.
+
+Two more, from Phase 5 and 6:
+
+- **The two text-clamp mechanisms both stay.** The plan said to keep the explicit
+  `more ▾` one and delete the click-to-expand-a-clamped-line one. They are not
+  duplicates: one is a long body you unfold, the other is a single cut-off line that is
+  itself the control. Converting the second to the first would make a summary line need
+  two clicks to read.
+- **The arch detail pane and Map side panel open state are still not persisted.** Both
+  only make sense with something selected, and both auto-open on selection, so restoring
+  "open" with nothing chosen would show an empty panel. Nothing to remember.
 
 ## Part 3 — Implementation, in seven phases
 
