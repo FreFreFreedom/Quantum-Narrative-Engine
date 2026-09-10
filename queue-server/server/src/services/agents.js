@@ -66,7 +66,7 @@ export function updateAgent(key, patch = {}) {
     if (k === 'max_parallel') v = Math.max(1, Math.min(4, parseInt(v, 10) || 1));
     if (k === 'provider' && !PROVIDERS.includes(v)) continue;
     if (k === 'role' && !ROLES.includes(v)) continue;
-    if (k === 'preset' && !['fast', 'standard', 'auto'].includes(v)) continue;  // never deep — modelPolicy.js MAX_TIER
+    if (k === 'preset' && !['fast', 'standard', 'auto'].includes(v)) continue;  // still never deep: an agent runs unattended — modelPolicy.js AUTO_MAX_TIER
     sets.push(`${k}=?`);
     vals.push(v);
   }

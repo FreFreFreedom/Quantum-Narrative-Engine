@@ -1,12 +1,20 @@
 #!/usr/bin/env node
-// never-deep-selftest.js — Antoine's standing rule (2026-08-23): standard (sonnet,
-// medium effort) is the ceiling everywhere Claude is plugged in, on both accounts.
-// Deep/opus/high is off the menu. No network, no model credits.
+// never-deep-selftest.js — the opus policy. No network, no model credits.
 //
-// WHY A TEST FOR A DEFAULT. This is a policy, not a one-off setting — the whole point
-// is he never has to reconfigure it. A default that regresses silently (a new caller
-// passing model:'opus', a merge that restores DEFAULT 'deep') is exactly the kind of
-// bug that would not show up until a $10+ run appeared in the quota bar.
+// The rule this file was written for (2026-08-23, "standard is the ceiling everywhere")
+// was LIFTED on 2026-09-09 at Antoine's explicit request, after he was shown both guards
+// and what a deep run had cost. The file keeps its name and its job; only the line it
+// defends has moved:
+//
+//   BEFORE: opus is unreachable, full stop.
+//   NOW:    opus is reachable when Antoine PICKS it, and unreachable when anything else
+//           does — a judge, an escalation, a typo, an undefined.
+//
+// WHY A TEST FOR A DEFAULT. This is a policy, not a one-off setting. A regression here
+// does not show up until a $10+ run appears in the quota bar — and this file earned its
+// keep within a minute of the ceiling being lifted, by catching capTier() falling back to
+// the ceiling on unrecognised input, which had been harmless only while the ceiling was
+// 'standard'.
 //
 // Run: npm run never-deep:selftest
 import { capTier, resolvePreset, escalate, TIERS } from '../server/src/services/modelPolicy.js';
@@ -24,30 +32,37 @@ function check(name, got, want) {
   else console.log(`✓ ${name}`);
 }
 
-console.log('\n— capTier clamps at standard —');
+console.log('\n— a tier he CHOOSES stands —');
 check('fast passes through', capTier('fast'), 'fast');
 check('standard passes through', capTier('standard'), 'standard');
-check('deep is clamped to standard', capTier('deep'), 'standard');
-check('garbage input clamps to standard', capTier('nonsense'), 'standard');
-check('undefined clamps to standard', capTier(undefined), 'standard');
+check('deep is no longer clamped', capTier('deep'), 'deep');
 
-console.log('\n— escalate never reaches deep —');
+console.log('\n— but nothing unrecognised may buy opus —');
+// THE ASSERTION THAT EARNED THIS FILE. While the ceiling was 'standard', capTier's
+// fallback for unknown input was the ceiling, and that was safe by accident. Raising the
+// ceiling turned the same line into "a typo costs opus". It must fall back to SAFE_TIER.
+check('garbage input falls back to standard', capTier('nonsense'), 'standard');
+check('undefined falls back to standard', capTier(undefined), 'standard');
+check('null falls back to standard', capTier(null), 'standard');
+
+console.log('\n— escalation still never reaches deep on its own —');
 check('fast escalates to standard', escalate('fast'), 'standard');
-// THE ASSERTION THAT MATTERS: before this rule, escalate('standard') was the main
-// road to 'deep' — a blocked task got retried on opus automatically, with no ask.
+// Unchanged by the lift, and deliberately so: a blocked task is reported, not silently
+// retried on opus. Antoine picks depth; evidence does not pick it for him.
 check('standard escalates to... standard, not deep', escalate('standard'), 'standard');
-check('deep (an old stored row) also stays at standard', escalate('deep'), 'standard');
+check('deep also stays at standard', escalate('deep'), 'standard');
 
-console.log('\n— PRESETS.deep cannot reach opus —');
-// Kept as a key (old rows still carry it), but must resolve to the same thing as
-// standard — a safety net for any caller that skips capTier and reads PRESETS directly.
-check('PRESETS.deep model is sonnet, not opus', PRESETS.deep.model, 'sonnet');
+console.log('\n— PRESETS.deep is opus at MEDIUM effort —');
+// He asked for opus at medium by name. Medium is what 'standard' already is, so the only
+// difference between the two tiers is the model.
+check('PRESETS.deep model is opus', PRESETS.deep.model, 'opus');
 check('PRESETS.deep effort is medium, not high', PRESETS.deep.effort, 'medium');
-check('presetFor("deep") matches presetFor("standard")', presetFor('deep'), presetFor('standard'));
-check('no PRESET anywhere still points at opus',
-  Object.values(PRESETS).some(p => p.model === 'opus'), false);
-check('no PRESET anywhere still asks for high effort',
+check('deep and standard are no longer the same thing',
+  JSON.stringify(presetFor('deep')) === JSON.stringify(presetFor('standard')), false);
+check('no PRESET asks for high effort anywhere',
   Object.values(PRESETS).some(p => p.effort === 'high'), false);
+check('only ONE preset reaches opus',
+  Object.values(PRESETS).filter(p => p.model === 'opus').length, 1);
 
 console.log('\n— enqueueAgentTask defaults to sonnet/medium, not opus/high —');
 // Read the signature rather than calling it — calling it would try to hit a real DB.
@@ -59,7 +74,7 @@ check('the default effort param is medium',
 check('no lingering opus/high default in the same signature',
   /function enqueueAgentTask\(\{[^}]*(model = 'opus'|effort = 'high')/.test(runnerSrc), false);
 
-console.log('\n— resolvePreset (the auto judge) never returns deep —');
+console.log('\n— resolvePreset (the auto judge) still never returns deep —');
 // deterministicGuess covers the free path with no model call; run every branch.
 check('a short question resolves to fast', await resolvePreset({ mode: 'question', prompt: 'x'.repeat(50) }), 'fast');
 check('an ordinary prompt resolves to standard', await resolvePreset({ mode: 'implement', prompt: 'x'.repeat(500) }), 'standard');

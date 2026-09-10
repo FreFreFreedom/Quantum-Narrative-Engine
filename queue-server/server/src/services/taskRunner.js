@@ -105,17 +105,21 @@ const BREVITY_INSTRUCTION = [
   'in the body of your reply ABOVE the summary section, never inside it.',
 ].join('');
 
-// THE SAFETY NET for the never-deep rule (see MAX_TIER in modelPolicy.js). 'deep' is
-// kept as a key because rows in work_prompts still carry it, but it now resolves to the
-// SAME model and effort as standard. So no path — an old row, a hand-written API call, a
-// stale cached judge reply — can reach opus or high effort any more, whether or not it
-// went through capTier() first. Deleting the key instead would silently fall through to
-// PRESETS.standard via presetFor(), which is the same outcome by accident rather than on
-// purpose; this says it.
+// 'deep' reaches opus again as of 2026-09-09. This key used to be the safety net for the
+// never-deep rule — it aliased to sonnet/medium so that even a stored preset:'deep' could
+// not spend the expensive tier. Antoine lifted that ceiling explicitly, having been shown
+// both guards and the $11.54 a single deep run once cost, and asked for opus at MEDIUM
+// effort by name — which is what this is. Not high: he said medium, and medium is what
+// 'standard' already means, so the difference between the two tiers is now the model
+// alone.
+//
+// What still protects him is upstream, in modelPolicy.js: the judge cannot answer 'deep',
+// and escalate() is capped at AUTO_MAX_TIER. Opus is reachable when he picks it and
+// unreachable when nothing did.
 export const PRESETS = {
   fast: { model: 'haiku', effort: 'low', label: 'Fast' },
   standard: { model: 'sonnet', effort: 'medium', label: 'Standard' },
-  deep: { model: 'sonnet', effort: 'medium', label: 'Standard' },
+  deep: { model: 'opus', effort: 'medium', label: 'Deep' },
 };
 export function presetFor(key) { return PRESETS[key] || PRESETS.standard; }
 

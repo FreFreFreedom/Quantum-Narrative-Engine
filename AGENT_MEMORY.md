@@ -288,10 +288,23 @@ wrong premises in real briefs.
 - **Every other Claude-calling app feature** (Idea Studio, world-look, suggestions,
   chat helpers, book/tag generation) — second Claude account first, falls back to
   main, then free. Never the reverse.
-- **Model ceiling: `standard` (sonnet, medium effort) — never `deep`/opus, anywhere,
-  on either account.** `fast` (haiku, low effort) is fine when a task is genuinely
-  simple. This is enforced in `services/modelPolicy.js` / `taskRunner.js`'s
-  `PRESETS`; don't manually request `opus` or `deep`.
+- **Model ceiling, CHANGED 2026-09-09.** It was `standard` (sonnet, medium) everywhere,
+  never `deep`/opus. Antoine lifted it explicitly, having been shown both guards and the
+  $11.54 a single deep run once cost. The line moved; it did not disappear:
+  - **A tier he PICKS stands.** An explicit `preset:'deep'` — `plan:send --preset deep`,
+    or the app — now genuinely runs **opus at medium effort** (`taskRunner.js#PRESETS`).
+    Medium, not high: that is what he asked for by name.
+  - **Nothing else may reach it.** `modelPolicy.js` keeps `AUTO_MAX_TIER = 'standard'` for
+    everything the system decides on its own — the `auto` judge still cannot answer
+    `deep`, `escalate()` still stops at standard so a blocked task is reported rather than
+    silently retried on opus, and unrecognised input falls back to `SAFE_TIER`, never to
+    the ceiling. **Background agents keep the standard ceiling too** (`agents.js`), because
+    they run unattended.
+  - So: don't request `deep` on his behalf, and don't route an automatic path to it. Ask.
+  - `fast` (haiku, low) is still right when a task is genuinely simple.
+  - `npm run never-deep:selftest` defends all of the above and is the reason the lift did
+    not ship a bug: raising the ceiling turned capTier's fallback into "a typo buys opus",
+    and the test caught it within a minute.
 - **Never spend real per-token money.** Subscriptions (Claude, OpenCode) only.
   `billingGuard.js` refuses metered API paths — don't route around it, and don't add
   a new Claude/provider call that skips it.
@@ -540,5 +553,5 @@ joined, so a fact stated once is known on both sides:
   explicitly.
 - Monitor any dispatched task (status + liveness) until it lands — a "running" status
   is not proof of real progress.
-- Model ceiling everywhere is `standard`/sonnet — never `deep`/opus (see "Model &
-  account lanes" above).
+- Model ceiling: `standard`/sonnet for anything automatic; `deep`/opus only when Antoine
+  picks it per task (changed 2026-09-09 — see "Model & account lanes" above).

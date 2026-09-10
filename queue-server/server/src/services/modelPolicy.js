@@ -19,21 +19,43 @@ import { generateText } from './ai/text.js';
 
 const TIERS = ['fast', 'standard', 'deep'];
 
-// THE CEILING. Antoine's standing instruction, 2026-08-23: never deep, anywhere Claude
-// is plugged in, on either account. Standard — sonnet at medium effort — is the most any
-// task gets, and 'fast' (haiku, low) is still fine when a task plainly does not need
-// medium. He should never have to set this per task, so it lives here as policy rather
-// than as a choice on a form.
+// THE CEILING, lifted 2026-09-09 at Antoine's explicit request, after being shown that
+// it was blocking him and what it had cost when it was last open ($11.54 of the
+// subscription window in a single run). It replaces his 2026-08-23 instruction, "never
+// deep, anywhere Claude is plugged in, on either account", which this constant enforced.
 //
-// Deep is not removed from TIERS: old rows in work_prompts still carry preset='deep',
-// and the escalate() valve below still needs an ordered list to walk. Instead every road
-// to it is capped — and as a last safety net PRESETS.deep in taskRunner.js now maps to
-// sonnet/medium too, so even a stored 'deep' cannot reach opus.
-export const MAX_TIER = 'standard';
-export function capTier(tier) {
+// WHAT CHANGED AND WHAT DID NOT. A tier he CHOOSES now stands: an explicit preset:'deep'
+// reaches opus, and PRESETS.deep in taskRunner.js resolves to opus at medium effort — the
+// combination he asked for by name. Every AUTOMATIC road to it stays shut, because "let me
+// pick opus for this task" is not "spend opus whenever something looks hard":
+//
+//   · the judge still cannot answer 'deep' — parseJudgeReply() below matches only
+//     fast|standard, his separate 2026-08-21 instruction, untouched;
+//   · deterministicGuess() never returns it;
+//   · escalate() is capped at AUTO_MAX_TIER, so a blocked task is still retried on
+//     standard and reported rather than quietly promoted to opus.
+//
+// So the expensive tier is reachable deliberately and unreachable accidentally.
+export const MAX_TIER = 'deep';
+
+// The ceiling for anything the system decides on its own. Deliberately NOT MAX_TIER: the
+// gap between the two constants IS the policy, and collapsing them would put opus back on
+// the automatic path where nobody chose it.
+export const AUTO_MAX_TIER = 'standard';
+
+// Where anything unrecognised lands: not the ceiling, not the floor. A broken judge, a
+// typo or an undefined must neither downgrade a task to haiku nor buy opus by accident.
+export const SAFE_TIER = 'standard';
+
+export function capTier(tier, ceiling = MAX_TIER) {
   const i = TIERS.indexOf(tier);
-  if (i === -1) return MAX_TIER;
-  return i > TIERS.indexOf(MAX_TIER) ? MAX_TIER : tier;
+  // Unrecognised input falls back to SAFE_TIER, never to the ceiling. This line used to
+  // read `return ceiling`, which was harmless only while the ceiling was 'standard' — the
+  // moment it rose to 'deep' on 2026-09-09 it meant undefined, null or a typo silently
+  // bought opus. Caught by never-deep:selftest within a minute of the change, which is
+  // the entire reason that file exists.
+  if (i === -1) return SAFE_TIER;
+  return i > TIERS.indexOf(ceiling) ? ceiling : tier;
 }
 
 // Above this, a task is long enough that it MIGHT be genuinely big — the only case
@@ -92,17 +114,20 @@ export async function resolvePreset({ mode, prompt }) {
   }
 }
 
-// Escalation valve, and now the main road to 'deep': after an auto-resolved task comes
-// back blocked, the next run tries one tier up rather than repeating the same
-// (apparently insufficient) tier. Depth reached this way is a response to evidence.
-// NOTE: this no longer reaches 'deep' — MAX_TIER caps it at standard. So the valve now
-// only ever promotes fast → standard, and a task that comes back blocked ON standard is
-// retried on standard rather than escalating. That is deliberate: a task failing at
-// standard is something to tell Antoine about, not something to quietly spend opus on.
+// Escalation valve: after an auto-resolved task comes back blocked, the next run tries one
+// tier up rather than repeating the same (apparently insufficient) tier. Depth reached
+// this way is a response to evidence.
+//
+// Capped at AUTO_MAX_TIER, not MAX_TIER, and it stayed capped when the ceiling was lifted
+// on 2026-09-09. So the valve still only promotes fast → standard, and a task that comes
+// back blocked ON standard is retried on standard rather than escalating. That is
+// deliberate and unchanged: a task failing at standard is something to tell Antoine about,
+// not something to quietly spend opus on. He now chooses opus per task; nothing chooses it
+// for him.
 export function escalate(tier) {
   const i = TIERS.indexOf(tier);
   if (i === -1) return 'standard';
-  return capTier(TIERS[Math.min(i + 1, TIERS.length - 1)]);
+  return capTier(TIERS[Math.min(i + 1, TIERS.length - 1)], AUTO_MAX_TIER);
 }
 
 export { TIERS };

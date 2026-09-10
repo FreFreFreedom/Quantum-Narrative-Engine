@@ -186,9 +186,11 @@ export async function createPrompt({
   // from the tier heuristic instead of asking a model to judge it: opus is reserved
   // for genuinely deep work, so an ordinary task cannot quietly cost 5× what it
   // should. Only claude-code uses presets (the other lanes carry a model id).
-  // capTier enforces the never-deep ceiling (modelPolicy.js MAX_TIER): a big task maps
-  // to standard now, not deep, and an explicit preset:'deep' from any caller is clamped
-  // on the way in so the stored row tells the truth about what will actually run.
+  // capTier clamps to modelPolicy.js MAX_TIER, which since 2026-09-09 is 'deep' — so an
+  // explicit preset:'deep' from a caller now survives and genuinely runs opus. What the
+  // heuristic decides on its own still tops out at standard (TIER_PRESET below), and the
+  // judge still cannot answer 'deep' at all, so an ordinary task cannot quietly cost 5×
+  // what it should. The stored row tells the truth about what will actually run either way.
   const TIER_PRESET = { mini: 'fast', standard: 'standard', deep: 'standard' };
   const usePreset = capTier(['fast', 'standard', 'deep'].includes(preset) ? preset : (TIER_PRESET[tier] || 'standard'));
   const id = randomUUID();
