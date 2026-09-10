@@ -740,6 +740,14 @@ is the exact pathology §7 names.
    Navigator's components as its parts — which would also be the first entity with fragments,
    and so the first test of the fragment model.
 
+**Acted on, 2026-09-10 (same day).** All four decisions are in the app: every tag is being
+given the tag it stands against (model-written, hand-editable, and an entity carrying both
+poles now shows that it *holds* the tension — the first measurable fragment inside an
+entity; entanglement counts a shared tension as a shared pattern); the grounded flag is
+gone; the immune system and its three parts stand on the cell rung; and FMCNS sits at the
+institution rung with its six territories inside, so the descent opens on both. The
+civilisation rung is still empty.
+
 ### Its own bugs are diagnostic, not merely annoying
 
 The recurring failure in this project's history — a task card reading *Live* while nothing

@@ -7103,6 +7103,14 @@ function renderLegend(){
     panel.addEventListener('toggle', () => {
       try { localStorage.setItem(LEGEND_KEY, panel.open ? '1' : '0'); } catch (e) {}
     });
+    // Open, it covers a corner of the graph. Anything else you touch — the canvas, a
+    // button, Escape — folds it back to the mark, so it never needs a second aimed click.
+    document.addEventListener('pointerdown', ev => {
+      if (panel.open && !panel.contains(ev.target)) panel.open = false;
+    }, true);
+    document.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape' && panel.open) panel.open = false;
+    });
   }
   // The landscape has no connections to key, so the first block says what the two node
   // shapes mean instead — which is the one thing about this view that is not self-evident.
