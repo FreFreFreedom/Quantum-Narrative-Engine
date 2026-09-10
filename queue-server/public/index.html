@@ -378,6 +378,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .theme-line:hover { color:var(--c-ink-2); }
 .theme-line b { color:var(--c-ink-3); font-weight:600; }
 .theme-line.active b { color:var(--c-brand); }
+.theme-line .far { color:var(--c-ink-5); }
+.theme-line .far:hover { color:var(--c-ink-2); text-decoration:underline; }
 /* ─── Exploration: continuum filter/sort controls + list view ─────────────── */
 .axisselect { width:100%; padding:5px 7px; border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); font-size:var(--fs-sm); color:var(--c-ink-2); margin-bottom:6px; font-family:inherit; }
 .axis-poles { display:flex; justify-content:space-between; font-size:var(--fs-2xs); color:var(--c-ink-4); margin-bottom:3px; }
@@ -3096,7 +3098,7 @@ async function boot() {
   // it must never be able to hold up or break the app coming online.
   checkStorageOnce();
   try {
-    const [entRes, clRes, axRes, facetRes, tcRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes, tcRes, gapRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
       // Tolerate an older backend that predates /facets rather than failing to boot.
       api('/api/ontology/facets').catch(() => null),
@@ -3104,12 +3106,16 @@ async function boot() {
       // cluster with no per-click round trip. Same tolerance — an older backend
       // without the route just means no cluster line.
       api('/api/ontology/tag-communities').catch(() => null),
+      // And the same grouping read for its holes, so the cluster line can also name
+      // what that cluster is furthest from. Same tolerance: no route, no far side.
+      api('/api/ontology/tag-gaps').catch(() => null),
     ]);
     ENTITIES = entRes.entities;
     ENTITIES.forEach(e => { byId[e.id] = e; });
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
     axRes.axes.forEach(a => AXES[a.key] = a);
     setTagCommunities(tcRes);
+    TAG_GAPS = (gapRes && gapRes.farthest) || {};
 
     FACETS = facetRes || {
       types: [...new Set(ENTITIES.map(e => e.type))].map(t => ({ value: t, n: ENTITIES.filter(e => e.type === t).length })),
@@ -3230,6 +3236,10 @@ function selectCluster(code) {
 let TAG_COMMUNITIES = { communities: [], byId: {}, tagCommunity: {} };
 let activeTagCommunity = null;  // { id, name, tags, tagSet } — the cluster narrowing the view
 let themeLineEntity = null;     // entity whose cluster line is currently on screen
+// What each cluster is furthest from (GET /api/ontology/tag-gaps): the thinnest
+// traffic in the whole tag graph, keyed by cluster id. Clusters too small to be a
+// side of a hole simply have no entry, and the line then names no far side.
+let TAG_GAPS = {};
 
 function setTagCommunities(res) {
   const communities = (res && res.communities) || [];
@@ -3266,7 +3276,14 @@ function themeLineHtml(e) {
   const others = communityCarrierCount(c, e.id);
   const on = !!(activeTagCommunity && activeTagCommunity.id === c.id);
   const rest = on ? ' · showing only these' : (others === 1 ? ' · 1 other entity' : ' · ' + others + ' other entities');
-  return `<div class="theme-line${on ? ' active' : ''}" data-community="${c.id}" data-lead="${qEscAttr(c.leadTag)}" title="Show only the entities in this theme cluster">Theme cluster · <b>${qEsc(c.name)}</b>${rest}</div>`;
+  // The other half of the same line: the cluster this one barely touches. Clicking it
+  // does what clicking the cluster does, but to the far side.
+  const far = TAG_GAPS[c.id];
+  const farTag = far && (TAG_COMMUNITIES.byId[far.id] || {}).tags;
+  const farHtml = farTag && farTag.length
+    ? ` · furthest from <span class="far" data-far="${far.id}" data-far-lead="${qEscAttr(farTag[0])}" title="${qEscAttr(far.name)} — show only the entities in the cluster this one barely touches">${qEsc(far.name.split(' / ')[0])}</span>`
+    : '';
+  return `<div class="theme-line${on ? ' active' : ''}" data-community="${c.id}" data-lead="${qEscAttr(c.leadTag)}" title="Show only the entities in this theme cluster">Theme cluster · <b>${qEsc(c.name)}</b>${rest}${farHtml}</div>`;
 }
 
 // Clicking it narrows every Content view to the entities carrying any of the cluster's
@@ -3305,6 +3322,13 @@ function afterThemeClusterChange() {
 function wireThemeLine() {
   document.querySelectorAll('.theme-line[data-community]').forEach(el => {
     el.onclick = () => toggleThemeCluster(el.getAttribute('data-community'), el.getAttribute('data-lead'));
+  });
+  // Nested inside the line's own click target, so it has to stop the click reaching it.
+  document.querySelectorAll('.theme-line .far[data-far]').forEach(el => {
+    el.onclick = (ev) => {
+      ev.stopPropagation();
+      toggleThemeCluster(el.getAttribute('data-far'), el.getAttribute('data-far-lead'));
+    };
   });
 }
 

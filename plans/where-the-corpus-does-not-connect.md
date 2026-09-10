@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-09 |
+| **DONE** | 2026-09-09 |
 
 ## Where you are
 
