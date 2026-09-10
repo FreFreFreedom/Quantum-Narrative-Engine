@@ -747,3 +747,17 @@ theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
   concurrent session's `git add -A` swept another session's half-written frontend and
   two agents' unfinished files into its commit and deployed them. Use a worktree
   (`oc task` / `EnterWorktree`) when another session is live in the repo.
+- **A background sweep on the shared free lane starves the app.** 2026-09-10: the Room
+  answered `generation_failed` all morning and every entity click came back
+  rate-limited. Cause was not the Room: `warmup.js` (books + first tag lens for every
+  entity) and `fillMissingTensions` were spending Google AI Studio's 20-requests-per-
+  minute free tier in seconds, so the router benched the model and an interactive turn
+  found no lane left to ask. Both now run on `provider: 'claude-side'` (the Mac helper
+  lane, second account, nothing waiting on it), concurrency 1. Rule for any new
+  background generation: it must not touch the lane a person's click uses. Person-facing
+  turns (Room chat/check/second, passage reading, book detail, tag pattern) carry
+  `claudeLastResort: true` — free lanes first, the Mac only after they all fail, and it
+  returns instantly when no runner is attached. `generateTextStream` forwards
+  `claudeLastResort` now; it used to swallow it. Also: a chain can end having asked
+  nobody (one keyed provider, all its models benched) — that used to return an empty
+  message the Room printed as a bare error code.
