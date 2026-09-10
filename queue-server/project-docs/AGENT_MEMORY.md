@@ -632,3 +632,13 @@ re-scans:
   in that library compares one structure to another.
 
 Nothing approved, nothing scoped.
+
+## Sending to the queue means watching it out loud (2026-09-10)
+
+Antoine sharpened the monitoring rule: reporting only the final result is not enough.
+Progress goes in the terminal **while the task runs** — every status change, a plain
+"still going, nothing wrong" when it is fine, a stall or dropped Mac runner the moment
+it happens. Silence reads to him as nobody watching. And when it lands, **use the
+feature instead of believing the card**: call the endpoint and check the number the plan
+named as its own success test. Full rule in `AGENTS.md`, "Watching a task you sent to
+the queue"; step 6 of the `send-plan` skill now points at it.
