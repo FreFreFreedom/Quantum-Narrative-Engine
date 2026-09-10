@@ -443,8 +443,12 @@ export function getComponents(db) {
 
 export function getQueueStatus(db) {
   const executionConfigured = !!(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.ANTHROPIC_API_KEY) && !!process.env.CLAUDE_BIN;
-  const completed = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='done'`).get().n;
-  const running = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='running'`).get().n;
+  // All three exclude deleted rows. `running` and `completed` did not until 2026-09-09,
+  // and `queued` on the next line always did — so a task deleted while it was running
+  // stayed in the running count FOREVER, and the app showed work in flight against an
+  // idle runner. Caught by waiting five minutes for a queue that was already free.
+  const completed = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='done' AND deleted_at IS NULL`).get().n;
+  const running = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='running' AND deleted_at IS NULL`).get().n;
   const queued = db.prepare(`SELECT COUNT(*) as n FROM work_prompts WHERE status='queued' AND deleted_at IS NULL`).get().n;
   return { executionConfigured, completedCount: completed, runningCount: running, queuedCount: queued, checkedAt: new Date().toISOString() };
 }
