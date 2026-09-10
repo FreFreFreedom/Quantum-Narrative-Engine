@@ -517,6 +517,34 @@ never spend time on local verification:
 This rule applies to live sessions with Antoine. Unattended overnight runs
 still never push (below).
 
+## Watching a task you sent to the queue (hard)
+
+**Sending is not finishing.** Any task handed to the Dispatch Queue — `send-plan.js`,
+the app's composer, any engine (main Claude, `--account side`, OpenCode, a free model) —
+is watched until it lands. Antoine asked for this 2026-08-26 and sharpened it
+2026-09-10; the sharpening is the part most sessions get wrong.
+
+**Speak while it runs, not only when it lands.** His words: *"I want feedback in the
+terminal, you know, not just at the end, but maybe throughout the progress if it's
+running well."* That means:
+
+- Every status change reported as it happens — queued → running → done / blocked /
+  cancelled. A `blocked` mid-run surfaces immediately, never in the final summary.
+- **And the good news too.** "Still running, runner up, 12 minutes in, nothing wrong" is
+  wanted. Silence reads to him as nobody watching.
+- Liveness, not just status: `running` is not proof of progress. If nothing has moved
+  for ~10 minutes, say so rather than staying quiet.
+- Whether his Mac runner is still connected (`/api/travaux/worker/status`). A dropped
+  runner is the usual reason a task looks busy and is not.
+
+**Never take the card's word for it.** "Live" is not proof — see the shipped-and-inert
+lesson. When it lands, use the feature: call the endpoint, check the number the plan
+named as its own success test, and report what it actually returned. If the plan named
+no such number, that was a fault in the plan; say so.
+
+Poll every 30–60s against production with the token recipe in CLAUDE.md. Never click
+through a browser to read live state.
+
 ## Autonomous overnight runs
 
 When implementation happens in an unattended run (see the `fmcns-overnight`

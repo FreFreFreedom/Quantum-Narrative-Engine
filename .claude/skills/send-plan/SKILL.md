@@ -53,7 +53,14 @@ to send it — don't wait to be asked.
    `--dry-run` prints the payload and sends nothing. `--preset fast|standard|deep` forces
    the model tier. `--again` allows a deliberate second copy. `--raw` is below.
 
-6. **Report back in plain English** (AGENTS.md "Working with Antoine"): it is in the
+6. **Watch it, out loud, until it lands.** Not optional and not only at the end — see
+   AGENTS.md, "Watching a task you sent to the queue". Poll status *and*
+   `/api/travaux/worker/status` every 30-60s; report each status change as it happens,
+   say plainly when it is simply going well, flag a stall or a dropped runner, and when
+   it finishes **use the feature rather than believing the card** — call the endpoint and
+   check the number the plan named as its success test.
+
+7. **Report back in plain English** (AGENTS.md "Working with Antoine"): it is in the
    queue, it will start now or is parked, and whether his Mac runner is on. The script
    prints all three — pass on what it says rather than guessing.
 
