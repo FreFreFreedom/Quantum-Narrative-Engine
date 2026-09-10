@@ -62,9 +62,14 @@ export const PROVIDERS = [
     baseUrl: 'https://api.cerebras.ai/v1',
     apiKeyEnv: 'CEREBRAS_API_KEY',
     limits: { rpm: 30, rpd: 14400 },
+    // Model ids re-read from the account's own /v1/models on 2026-09-10 — the two
+    // that used to be listed here (llama-3.3-70b, qwen-3-32b) answer
+    // model_not_found now. NOTE: this account's Cerebras plan answers
+    // "Payment required" on every one of these, so the lane cannot be used until
+    // that changes. Left correct rather than removed, since the key is set.
     models: [
-      { id: 'llama-3.3-70b', codingRank: 60, contextTokens: 128000 },
-      { id: 'qwen-3-32b', codingRank: 58, contextTokens: 32000 },
+      { id: 'gpt-oss-120b', codingRank: 68, contextTokens: 128000 },
+      { id: 'qwen-3.8-27b', codingRank: 60, contextTokens: 128000 },
     ],
   },
   {
