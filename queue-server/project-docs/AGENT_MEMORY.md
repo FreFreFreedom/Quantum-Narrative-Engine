@@ -543,6 +543,31 @@ joined, so a fact stated once is known on both sides:
 
 ---
 
+## The launchd runner needs `CLAUDE_BIN` set (2026-09-09)
+
+The runner is started by `~/Library/LaunchAgents/com.fmcns.queue-runner.plist`, whose
+`ProgramArguments` run `zsh -lc`. A login shell is **not** interactive, so it never reads
+`~/.zshrc` — and `~/.local/bin`, where `claude` actually lives, is added to PATH there.
+So every Claude lane on the runner died with `spawn claude ENOENT` while continuing to
+report itself **available** (the side-account check tests for the token, not for a
+runnable binary). Symptom from the outside: tasks silently fall through to the free
+models, and every `helper card:task` fails.
+
+Two halves, both needed:
+
+- `CLAUDE_BIN=/Users/antoinelambert/.local/bin/claude` in `queue-server/.env`. That file
+  is gitignored, so this is Mac-local and will not travel with a fresh clone.
+- `providers/claudeCode.js#resolveBin` now reads the variable **at call time**. It used
+  to capture it in a module-level `const`, and ESM hoists every `import` above the
+  importing module's own body — so `queue-runner.js`'s `loadEnvFile()` always ran after
+  this module was evaluated and the `.env` value could never take effect. `opencode.js`
+  had always read its own var lazily; the two now match.
+
+Check it in one line: `node -e 'import("./server/src/lib/loadEnvFile.js")...'` → 
+`resolveBin()` must print an absolute path, not the bare word `claude`.
+
+---
+
 ## Standing rules that apply to every engine, not just Claude
 
 - Free sources only for any research/investigation task — never sign up for a paid
