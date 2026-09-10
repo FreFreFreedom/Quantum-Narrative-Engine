@@ -2533,20 +2533,30 @@ button:active { transform: translateY(1px) scale(.99); }
             <button data-arch-layout="map" title="Circle-packed groups — click a group to zoom into it">Map</button>
             <button data-arch-layout="board" title="Concept → Planned → Building → Live → Retired. Drag a Concept or Retired card between those two columns; the rest the app fills in itself.">Board</button>
           </span>
-          <span class="arch-statusseg arch-segdivider" role="group" aria-label="Status filter">
-            <button class="active" data-arch-status="all" title="Show everything">All</button>
-            <button data-arch-status="issue" title="Only components whose prerequisites are missing">Needs work</button>
-            <button data-arch-status="speculative" title="Only Claude-proposed components">Speculative</button>
-            <button data-arch-status="built" title="Only built components">Built</button>
+          <select class="arch-focussel arch-segdivider" id="archFocusSel" title="Zoom into one territory — its dependencies stay visible as chips" aria-label="Focus territory"><option value="">Focus: all territories</option></select>
+          <!-- Fourteen controls used to sit on this row: four layouts, four statuses, the
+               focus select, four colour-by choices and the witness check. It wrapped to a
+               second band below about 1100px of pane width. What changed is only how they
+               are reached — the two four-button groups and the witness check are still
+               here, hidden, so initArchNav's handlers and their .active state are exactly
+               as they were, and the menus below press them. -->
+          <button class="ctrlbtn arch-segdivider" id="archFilterBtn" aria-haspopup="menu" title="What to show, and what the colours mean">Filter</button>
+          <button type="button" class="uicon" id="archMoreBtn" aria-haspopup="menu" title="Check which pieces are really in the app"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-more"></use></svg></button>
+          <span class="ctrl-hidden" aria-hidden="true">
+            <span class="arch-statusseg" role="group" aria-label="Status filter">
+              <button class="active" data-arch-status="all" title="Show everything">All</button>
+              <button data-arch-status="issue" title="Only components whose prerequisites are missing">Needs work</button>
+              <button data-arch-status="speculative" title="Only Claude-proposed components">Speculative</button>
+              <button data-arch-status="built" title="Only built components">Built</button>
+            </span>
+            <span class="arch-layersel" role="group" aria-label="Color by">
+              <button class="active" data-arch-layer="territory" title="Color by territory">Territory</button>
+              <button data-arch-layer="status" title="Color by build status">Status</button>
+              <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
+              <button data-arch-layer="act" title="The three acts — ontological, semantic, analogical. Groups the checklist by act too.">Layer</button>
+            </span>
+            <button class="ctrlbtn" id="archWitnessBtn" title="Check which pieces are really in the app right now. Free, and it also runs by itself every time something goes live.">Re-check</button>
           </span>
-          <select class="arch-focussel" id="archFocusSel" title="Zoom into one territory — its dependencies stay visible as chips" aria-label="Focus territory"><option value="">Focus: all territories</option></select>
-          <span class="arch-layersel arch-segdivider" role="group" aria-label="Color by">
-            <button class="active" data-arch-layer="territory" title="Color by territory">Territory</button>
-            <button data-arch-layer="status" title="Color by build status">Status</button>
-            <button data-arch-layer="evolution" title="Badge = latest version">Evolution</button>
-            <button data-arch-layer="act" title="The three acts — ontological, semantic, analogical. Groups the checklist by act too.">Layer</button>
-          </span>
-          <button class="ctrlbtn arch-segdivider" id="archWitnessBtn" title="Check which pieces are really in the app right now. Free, and it also runs by itself every time something goes live.">Re-check</button>
         </div>
       </div>
       <div id="archProposals" class="arch-proposals" hidden></div>
@@ -3430,6 +3440,47 @@ function syncColorByLabel() {
   const on = document.querySelector('.ctrlbtn[data-color].active');
   btn.textContent = 'Colour by: ' + (on ? on.textContent.trim() : 'Type');
 }
+/* The Architecture band's two menus. Same approach as the graph's: the groups stay in
+   the DOM and these press them, so nothing about how the filters work moved. The Filter
+   button carries a count when anything is actually narrowing the view, because a menu
+   that hides its state is a menu you have to open to read. */
+function syncArchFilterLabel() {
+  const btn = document.getElementById('archFilterBtn');
+  if (!btn) return;
+  const status = document.querySelector('.arch-statusseg button.active');
+  const narrowed = status && status.getAttribute('data-arch-status') !== 'all';
+  btn.textContent = narrowed ? 'Filter: ' + status.textContent.trim() : 'Filter';
+}
+(function wireArchBandMenus() {
+  const fBtn = document.getElementById('archFilterBtn');
+  if (fBtn) {
+    fBtn.onclick = () => {
+      const status = [...document.querySelectorAll('.arch-statusseg button')];
+      const layer = [...document.querySelectorAll('.arch-layersel button')];
+      const items = [];
+      for (const o of status) items.push({
+        label: o.textContent.trim(), title: o.title || '',
+        checked: o.classList.contains('active'),
+        on: () => { o.click(); setTimeout(syncArchFilterLabel, 0); },
+      });
+      items.push({ sep: true });
+      for (const o of layer) items.push({
+        label: 'Colour: ' + o.textContent.trim(), title: o.title || '',
+        checked: o.classList.contains('active'), on: () => o.click(),
+      });
+      openMenu(fBtn, items, { align: 'left' });
+    };
+    syncArchFilterLabel();
+  }
+  const mBtn = document.getElementById('archMoreBtn');
+  if (mBtn) {
+    mBtn.onclick = () => {
+      const w = document.getElementById('archWitnessBtn');
+      openMenu(mBtn, [w && { label: 'Re-check what is really there', title: w.title, disabled: w.disabled, on: () => w.click() }].filter(Boolean));
+    };
+  }
+})();
+
 (function wireGraphBandMenus() {
   const colorBtn = document.getElementById('colorByBtn');
   if (colorBtn) {
@@ -10081,16 +10132,20 @@ function renderAiSettings() {
   const cooldownNote = (id) => cd[id]?.active
     ? `<span class="ai-cooldown">cooling down ${Math.ceil(cd[id].seconds_remaining / 60)} min</span>` : '';
 
-  // Free API providers with a key set and not metered (subscriptions only).
-  const freeOpts = (aiFreeProviders?.providers || [])
-    .filter(p => p.keyPresent && !p.metered)
-    .map(p => `<option value="${p.id}">${p.label}</option>`).join('');
-  const freeOptgroup = freeOpts
-    ? `<optgroup label="Free API providers">${freeOpts}</optgroup>`
-    : '';
+  // Free API providers with a key set and not metered (subscriptions only). Built
+  // per row rather than once: without the row's own `selected`, a row already stored
+  // on a catalogue provider (document reading, on gemini-flash-latest) rendered with
+  // the FIRST option showing instead — and since one save writes every row, touching
+  // any other dropdown would have moved it off Gemini silently.
+  const freeProviderList = (aiFreeProviders?.providers || []).filter(p => p.keyPresent && !p.metered);
+  const freeOptgroupFor = (provider) => {
+    const opts = freeProviderList
+      .map(p => `<option value="${p.id}"${p.id === provider ? ' selected' : ''}>${p.label}</option>`).join('');
+    return opts ? `<optgroup label="Free API providers">${opts}</optgroup>` : '';
+  };
   // All provider ids this panel can render, so the synthetic "set outside" option
   // only appears when the stored provider is truly not represented.
-  const renderableIds = ['claude-side', 'claude-code', 'opencode', ...(aiFreeProviders?.providers || []).filter(p => p.keyPresent && !p.metered).map(p => p.id)];
+  const renderableIds = ['claude-side', 'claude-code', 'opencode', ...freeProviderList.map(p => p.id)];
 
   const rows = AI_FEATURES.map(f => {
     const cur = (aiSettings.defaults && aiSettings.defaults[f.key]) || {};
@@ -10111,7 +10166,7 @@ function renderAiSettings() {
             <option value="claude-side"${provider === 'claude-side' ? ' selected' : ''}>Claude — second account (your Mac)</option>
             <option value="claude-code"${provider === 'claude-code' ? ' selected' : ''}>Claude — main account</option>
             <option value="opencode"${provider === 'opencode' ? ' selected' : ''}>OpenCode (free)</option>
-            ${freeOptgroup}
+            ${freeOptgroupFor(provider)}
           </select>
         </td>
         <td><select class="ai-model-sel">${aiModelOptions(provider, cur.model)}</select></td>
