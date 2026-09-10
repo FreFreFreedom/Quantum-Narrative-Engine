@@ -7103,10 +7103,13 @@ function renderLegend(){
     panel.addEventListener('toggle', () => {
       try { localStorage.setItem(LEGEND_KEY, panel.open ? '1' : '0'); } catch (e) {}
     });
-    // Open, it covers a corner of the graph. Anything else you touch — the canvas, a
-    // button, Escape — folds it back to the mark, so it never needs a second aimed click.
+    // Open, it covers a corner of the graph. The next thing you touch — the canvas, a
+    // button, the key itself, Escape — folds it back to the mark, so getting rid of it
+    // never needs an aimed click.
+    // The mark itself is left to the native toggle — closing it here would only be
+    // undone by the click that follows.
     document.addEventListener('pointerdown', ev => {
-      if (panel.open && !panel.contains(ev.target)) panel.open = false;
+      if (panel.open && !ev.target.closest('#legend > summary')) panel.open = false;
     }, true);
     document.addEventListener('keydown', ev => {
       if (ev.key === 'Escape' && panel.open) panel.open = false;
