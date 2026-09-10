@@ -457,6 +457,40 @@ joined, so a fact stated once is known on both sides:
   pruning is skipped entirely on a tick whose notes request failed, so an unanswered
   query is never read as "he deleted everything".
 
+## The graph can move, and the descent is the first move built (2026-09-10)
+
+Motion in the Content graph is a real system, not decoration, and Antoine chose **the
+descent** as the first of the three navigation moves to build.
+
+- **What it does.** Hold an entity that has a mapped interior and one control appears in
+  the graph stage (`#descendBtn`). Pressing it eases the camera in, pushes the field
+  outward and almost out of sight, and resolves the entity's parts inside the boundary it
+  maintains. Escape or the same button returns to *exactly* the view you left, because
+  nothing was rebuilt — the field's old positions are carried on the nodes.
+- **Everything drawn is measured.** Parts, signed edge weights, the two camps and the
+  frustration all come from `anatomyFor()`; an opposition edge is heavy and solid, an
+  alliance light and dotted, at the weight the reading found. A part in neither camp is
+  drawn hollow outside the boundary.
+- **New backend piece:** `GET /api/ontology/entities/:id/anatomy`, and `anatomyFor()` now
+  merges the `<id>.names.json` file that had sat unread beside every graph file since the
+  anatomies were made — without it an interior could only be drawn with single-letter
+  codes.
+- **Only two entities have an inside** (`fam_maxson`, `f_dogville`), so the control is
+  absent almost everywhere, which is correct rather than broken.
+- **Traps.** The physics is stopped during a descent and restarted on exit; a force layout
+  fights a held ring. The camera target is computed ONCE at descent start — recomputing it
+  per frame eases toward a target that moves with the scale it depends on, and the interior
+  lands off to one side. All field labels are suppressed while inside, including the
+  container's own: the corpus holds real entities with the same names as the parts, so
+  without that you cannot tell the inside from the outside.
+- **Verifying motion in a browser is unreliable.** A tab that is not painting pauses the
+  animation loop, so any state read mid-flight looks stuck. Step the easing synchronously
+  and then paint, or judge it from the picture.
+
+The other two moves — horizontal, and the entanglement jump — are designed and not built.
+A throwaway demo of all three was made and deleted; the reasoning is in
+`plans/ui-redesign-instrument-chrome.md`.
+
 ## Queue/runner mechanics worth knowing before dispatching work
 
 - **A chain of dependent tasks must ship one at a time.** Each queue task branches
@@ -653,3 +687,25 @@ the runner's own started/stopped lines. They all route through one guarded funct
 **Do not set it again and do not offer Slack as a notification route.** The server-side
 `NOTIFY_WEBHOOK_URL` recap in `promptQueue.js#sendRecap` stays unset too. The runner
 reads the value once at startup, so the change lands on its next restart.
+---
+
+## The theme clusters are coarse now — and the real bottleneck is the tag vocabulary (2026-09-10)
+
+`detectCommunities` in `server/src/services/tagCommunities.js` is full multi-level
+Louvain (local-moving **plus** the aggregation phase). 651 tags now fall into **15**
+theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
+**35 of 105 pairs touching** instead of 156 of 4,278. Two things worth not re-deriving:
+
+- **A self-loop counts twice toward degree.** Super-nodes carry their community's
+  internal weight as a self-loop; count it once and the algorithm over-merges silently.
+  `npm run gaps:selftest` fails if that regresses — that is what its ring-of-clumps
+  case is for.
+- **The remaining ties at zero are a tagging problem, not a clustering one.** Only
+  **59 of 641 seed tags are carried by more than one entity** (214 entities, ~4.9 tags
+  each), so the co-occurrence graph is nearly a union of per-entity cliques. No
+  clustering can make most cluster pairs touch until tags are reused across entities.
+  Do not "fix" this with a threshold — thresholds are forbidden on the gap score.
+- `scripts/detect-tag-communities.js` no longer carries a second copy of the algorithm;
+  it imports the service's. `services/interactionGraph.js` shares the function too and
+  is unaffected — the frozen anatomy records in `data-seed/interiors/` still reproduce
+  byte-for-byte (that is why `detectCommunities` sorts its node order).
