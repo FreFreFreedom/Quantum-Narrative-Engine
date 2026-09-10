@@ -870,9 +870,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .room-turns { font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--c-ink-5); flex:none; }
 /* Delete stays hidden until the row is actually in play — hover, keyboard focus,
    or already selected — so the list reads as titles, not as a row of icons. */
-.room-row-acts { opacity:0; transition:opacity var(--t-fast) var(--ease); }
-.uc--row:hover .room-row-acts, .uc--row:focus-within .room-row-acts, .uc--row.is-sel .room-row-acts { opacity:1; }
-.room-row-acts .uicon { padding:2px 4px; }
+/* .room-row-acts went with the hover-delete it revealed: the ⋯ menu on the open
+   thread holds that action now, behind a rule. */
 .room-main { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; }
 /* One line, always. .tv-toolbar wraps by default, which in a squeezed middle
    column dropped the five toolbar icons onto a second row — a band created by
@@ -1020,7 +1019,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-convo .se-input { border-bottom:none; padding:6px 0; flex:1 1 6rem; min-width:6rem; }
 .room-convo .se-lanepick, .room-convo .se-lanemodel { min-width:0; }
 .room-convo .se-input:focus { border-bottom:none; }
-.room-convo .se-send { border-radius:var(--r-pill); width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none; }
+.room-convo .se-send { border-radius:var(--r-pill); width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; flex:none;
+  background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
+.room-convo .se-send:hover:not(:disabled) { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); opacity:.88; }
+.room-convo .se-send:disabled { background:var(--c-surface-3); border-color:transparent; color:var(--c-ink-4); opacity:1; }
 .room-convo .se-cmds { max-width:48rem; margin:6px auto 0; padding:0 18px; }
 /* Nothing but the Room hides these: a card's studio has no ＋ to bring them back
    with, so they stay where they were. */
@@ -1144,14 +1146,17 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   opacity:0; transition:opacity var(--t-fast) var(--ease); }
 .se-turn:hover .se-turnacts, .se-turnacts:focus-within { opacity:1; }
 .se-turnfork, .se-turnredo { background:none; border:none; cursor:pointer; color:var(--c-ink-5);
-  font-size:var(--fs-sm); line-height:1; padding:3px 6px; border-radius:var(--r-sm); transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
-.se-turnfork:hover, .se-turnredo:hover { color:var(--c-brand); background:var(--c-surface-2); }
+  font-family:var(--font-ui); font-size:var(--fs-sm); line-height:1; width:24px; height:24px;
+  display:inline-flex; align-items:center; justify-content:center; border-radius:var(--r-sm);
+  transition:color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
+.se-turnfork:hover, .se-turnredo:hover { color:var(--c-ink); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
 /* The lane picker and the ⋯ menu are on the shared .umenu now; these four rules were
    the last of the three hand-rolled menus. */
 .se-turn:first-child { border-top:none; padding-top:4px; }
-.se-who { font-size:var(--fs-2xs); text-transform:uppercase; letter-spacing:.08em; color:var(--c-ink-5); margin-bottom:3px; }
+.se-who { font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--c-ink-4); margin-bottom:4px;
+  display:flex; align-items:center; gap:7px; }
 .se-turn.you .se-who { color:var(--c-brand); }
 .se-body { font-size:var(--fs-base); line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--c-ink-2); }
 .se-turn.you .se-body { color:var(--c-ink); }
@@ -9064,16 +9069,12 @@ function renderRoomThreads() {
     return `<div class="uc uc--row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0">`
       + `<div class="uc-head"><span class="uc-title">${qEsc(t.title || 'Open conversation')}</span>`
       + (n ? `<span class="room-cap">${n}</span>` : '')
-      + `<span class="uc-acts room-row-acts"><button type="button" class="uicon is-danger" data-room-delete="${qEscAttr(t.id)}" title="Delete this thread" aria-label="Delete this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-trash"/></svg></button></span>`
       + `</div></div>`;
   }).join('');
   host.querySelectorAll('[data-room-thread]').forEach(el => {
     const pick = () => roomSelect(el.getAttribute('data-room-thread'));
     el.onclick = pick;
     el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
-  });
-  host.querySelectorAll('[data-room-delete]').forEach(b => {
-    b.onclick = (e) => { e.stopPropagation(); roomDeleteThread(b.getAttribute('data-room-delete')); };
   });
   const note = document.getElementById('roomThreadsNote');
   if (note) { note.textContent = roomThreadsNote; note.className = 'room-note' + (roomThreadsNote ? ' err' : ''); }
