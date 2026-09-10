@@ -3134,6 +3134,7 @@ async function boot() {
     // They live in the always-visible rail now, so they are wired here instead.
     initRailControls();
     restoreContentView();
+    connectRealtime();
     // initArchNav() used to run here on every boot; it now runs lazily from
     // switchCoreView('arch') the first time the Architecture view is opened.
     // Last, once the shell is up: go back to the mode he left the app in. Content
@@ -10492,6 +10493,97 @@ function renderAiSettings() {
   });
 }
 
+/* ─── The realtime channel, finally connected ──────────────────────────────────
+   The server has run a WebSocket on /ws since the queue was built: forty-one places
+   across taskRunner, promptQueue, conversations, mind, passages and the review runner
+   call broadcastAll(), and realtime.js's own header describes the client that
+   re-dispatches those messages. That client was never written. So the app polled every
+   four seconds for exactly the thing the server was already pushing to nobody, and a
+   finished task took up to four seconds to appear.
+
+   The socket does not replace the poll, it demotes it. qLoad already computes a change
+   fingerprint and only re-renders when something really moved, so every message here
+   goes through the same debounced qLoad rather than into a renderer — which means a
+   burst of twenty messages costs one render, and the app behaves identically if the
+   socket never connects at all. That is the property worth keeping: this is a speed-up,
+   never a dependency.
+
+   The token travels as a query parameter because a browser cannot set a header on a
+   WebSocket handshake — the server's verifyClient reads it there and refuses without it. */
+let wsConn = null, wsLive = false, wsRetry = 0, wsRetryTimer = null;
+let qLoadSoonTimer = null;
+function scheduleQLoad() {
+  if (qLoadSoonTimer) return;
+  qLoadSoonTimer = setTimeout(() => { qLoadSoonTimer = null; qLoad(); }, 300);
+}
+function coreOpen() {
+  const el = document.getElementById('coreApp');
+  return !!(el && el.classList.contains('open'));
+}
+function wsUrl() {
+  if (!TOKEN) return null;
+  const base = API_BASE || location.origin;
+  let u;
+  try { u = new URL(base); } catch (e) { return null; }
+  u.protocol = u.protocol === 'http:' ? 'ws:' : 'wss:';
+  u.pathname = '/ws';
+  u.search = '?token=' + encodeURIComponent(TOKEN);
+  return u.toString();
+}
+const WS_ROUTES = {
+  // Anything about the work queue: one debounced reload, whose own diff decides
+  // whether a single pixel changes.
+  'travaux:prompts:updated': scheduleQLoad,
+  'agent:task:updated': scheduleQLoad,
+  'agent:review:updated': scheduleQLoad,
+  'queue:updated': scheduleQLoad,
+  'task:ended': scheduleQLoad,
+  'ideas:updated': () => { scheduleQLoad(); if (coreOpen() && coreView === 'flow' && typeof loadIdeas === 'function') loadIdeas(); },
+  // The Room streams its own turn as it arrives, so this is only about the thread
+  // list — titles, new threads, deletions — and only while the Room is on screen.
+  'convos:updated': () => { if (coreOpen() && coreView === 'room' && typeof renderRoomThreads === 'function') renderRoomThreads(); },
+  'passages:updated': () => { if (coreOpen() && coreView === 'room' && typeof window.loadRoomPassages === 'function') window.loadRoomPassages(); },
+  'mind:updated': () => { if (coreOpen() && coreView === 'arch' && typeof archTab !== 'undefined' && archTab === 'mind' && typeof loadMind === 'function') loadMind(true); },
+  'worldlook:updated': () => { if (typeof window.refreshWorldPanels === 'function') window.refreshWorldPanels(); },
+  'agent:settings:updated': () => { if (document.getElementById('aiBody') && typeof loadAiSettings === 'function') loadAiSettings(); },
+  // The per-token stream of a running agent. Deliberately ignored: the card's log is
+  // read by qLoad, and re-rendering a list on every token would cost more than the
+  // four seconds it saves.
+  'agent:task:stream': null,
+  connected: null,
+};
+function connectRealtime() {
+  const url = wsUrl();
+  if (!url || wsConn) return;
+  let sock;
+  try { sock = new WebSocket(url); } catch (e) { return; }
+  wsConn = sock;
+  sock.onopen = () => { wsLive = true; wsRetry = 0; startQueuePolling(); };
+  sock.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch (e) { return; }
+    const fn = WS_ROUTES[msg && msg.type];
+    if (typeof fn === 'function') { try { fn(msg.payload); } catch (e) { console.error('[ws]', msg.type, e); } }
+  };
+  const down = () => {
+    if (wsConn !== sock) return;
+    wsConn = null; wsLive = false;
+    startQueuePolling();                       // back to the fast poll while we are blind
+    if (wsRetryTimer) return;
+    // 1s, 2s, 4s … capped at 30s. A dead socket must never become a busy loop.
+    const wait = Math.min(30000, 1000 * Math.pow(2, wsRetry++));
+    wsRetryTimer = setTimeout(() => { wsRetryTimer = null; if (!document.hidden) connectRealtime(); }, wait);
+  };
+  sock.onclose = down;
+  sock.onerror = down;
+}
+function disconnectRealtime() {
+  if (wsRetryTimer) { clearTimeout(wsRetryTimer); wsRetryTimer = null; }
+  const sock = wsConn;
+  wsConn = null; wsLive = false;
+  if (sock) { sock.onclose = null; sock.onerror = null; try { sock.close(); } catch (e) {} }
+}
+
 /* Polling sleeps while the tab is hidden. Both loops used to run at full rate forever in
    a background window — the queue every four seconds, the quota every thirty. Coming back
    takes one immediate reading of each, so what you see on return is current, not the
@@ -10500,8 +10592,10 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; }
     stopUsagePolling();
+    disconnectRealtime();
     return;
   }
+  connectRealtime();
   startQueuePolling();
   qLoad();
   startUsagePolling();
@@ -10511,7 +10605,11 @@ document.addEventListener('visibilitychange', () => {
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
   const flowVisible = coreView === 'flow' && document.getElementById('coreApp').classList.contains('open');
-  qPollTimer = setInterval(qLoad, flowVisible ? 4000 : 15000);
+  // With the socket up, the poll is only a safety net against a message we missed, so
+  // it drops to half a minute. With it down it is the only thing telling us anything,
+  // so it goes back to what it always was.
+  const every = wsLive ? 30000 : (flowVisible ? 4000 : 15000);
+  qPollTimer = setInterval(qLoad, every);
 }
 
 // Is the local runner attached? Tasks execute on Antoine's Mac, so a queue with
