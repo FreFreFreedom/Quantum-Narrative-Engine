@@ -487,6 +487,22 @@ descent** as the first of the three navigation moves to build.
   animation loop, so any state read mid-flight looks stuck. Step the easing synchronously
   and then paint, or judge it from the picture.
 
+- **Two kinds of inside, and the difference is drawn rather than written.** A *read*
+  anatomy (2 entities) has real parts, signed weights and camps from the balance test. A
+  *recorded* inside (21 entities with 2+ parts) is what `container_id` already says is
+  inside a thing, plus any `entity_relations` written between those parts — no camps,
+  because unsigned edges cannot be balance-tested, and each part keeps its own graph
+  colour. `GET /api/ontology/entities/:id/anatomy` prefers read, falls back to recorded,
+  404s otherwise. **269 entities have a container but only 21 hold two or more**; one part
+  is not an inside, so those are refused.
+- **The inside is workable, not a picture.** Parts and links are hit-tested there: a part
+  that is an entity opens its own panel and can be descended into again; a link opens a
+  panel saying what it is, with the recorded note. Only offered for an entity actually on
+  the field — `byId` holds every entity but only drawn ones have coordinates, and films
+  are unchecked by default, so descending into one showed an empty stage until guarded.
+- **A rebuild kills a descent outright** (`buildGraph` clears it): every node object is
+  replaced, so the held host would stop moving.
+
 The other two moves — horizontal, and the entanglement jump — are designed and not built.
 A throwaway demo of all three was made and deleted; the reasoning is in
 `plans/ui-redesign-instrument-chrome.md`.
