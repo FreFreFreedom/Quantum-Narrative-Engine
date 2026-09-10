@@ -5323,7 +5323,10 @@ async function startDescent(id) {
   const camps = Array.isArray(a.camps) ? a.camps : [];
   const campOf = (code) => camps[0] && camps[0].includes(code) ? 0
                         : camps[1] && camps[1].includes(code) ? 1 : -1;
-  const R = 132;                                   // the boundary, in world units
+  // The boundary, in world units, chosen so the whole interior fits the stage at the
+  // scale the descent settles on — a fixed radius ran the far parts off the edges.
+  const targetScale = Math.min(3.2, Math.max(1.7, camera.scale * 1.9));
+  const R = Math.max(70, Math.min(150, (Math.min(gW || 800, gH || 600) / 2) / targetScale * 0.62));
   const codes = a.nodes.slice();
   const parts = codes.map((code, i) => {
     const camp = campOf(code);
@@ -5355,7 +5358,7 @@ async function startDescent(id) {
     nd._px = nd.x + (dx / d) * 300; nd._py = nd.y + (dy / d) * 300;
   });
   if (typeof sim !== 'undefined' && sim && sim.stop) sim.stop();
-  camera.tScale = Math.min(3.2, Math.max(1.7, camera.scale * 1.9));
+  camera.tScale = targetScale;
   camera.tOn = host;
   syncDescendBtn();
   requestRender();
@@ -6334,7 +6337,8 @@ function paintGraph() {
     const standing = e.type === 'author' || showAllConnections ||
       (spotlight && (spotlight.has(e.a) || spotlight.has(e.b)));
     const band = standing ? 1 : 1 - bw.far;
-    const opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='author'?0.75:0.55)));
+    let opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='author'?0.75:0.55)));
+    if (descent) opacity *= 0.07 * (1 - descent.ring * 0.6);   // the field recedes as you go in
     const width = isThisEdge ? (e.type==='author'?2.6:2.2) : (e.type==='author'?1.6:1.3);
     if (opacity <= 0.004) return; // the SVG drew these at opacity 0; not drawing them is the same picture
     ctx.globalAlpha = opacity;
@@ -6356,7 +6360,9 @@ function paintGraph() {
   const farDot = FAR_DOT_PX / (s || 1);
   nodes.forEach(n => {
     const dimmed = spotlight && !spotlight.has(n.id);
-    const alpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
+    let alpha = dimmed ? (isPatternFocus ? 0.06 : 0.15) : 1;
+    // Inside a thing, everything but the thing itself goes almost out.
+    if (descent && n !== descent.host) alpha *= 0.1 * (1 - descent.ring * 0.55);
     // Landscape draws every entity as a uniform dot (no degree sizing); it only swells in
     // the near band to make room for a poster. The graph keeps its degree-sized nodes.
     const r = lsFlag ? landscapeNodeRadius(n, s, bw.near) : drawnRadius(n, bw.far, farDot), focused = n.id === focusedId;
@@ -6498,6 +6504,7 @@ function paintGraph() {
     if (w < 0.02) continue;
     const p = wToS(n.x, n.y);
     if (p.x < -140 || p.x > gW + 140 || p.y < -40 || p.y > gH + 40) continue;
+    if (descent && n !== descent.host) continue;
     const rank = (n.id === focusedId ? 3e6 : (spotlight && spotlight.has(n.id) ? 2e6 : 0))
       + (n.degree || 0) + (_lblPlaced.has(n.id) ? 0.5 : 0);
     cands.push({ n, p, w, rank });
