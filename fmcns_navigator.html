@@ -599,7 +599,6 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 #sysBtn .mode-pill-count { position:absolute; top:-4px; right:-4px; margin:0; min-width:15px; height:15px; padding:0 4px; font-size:var(--fs-2xs); border:2px solid var(--c-bg); }
 .qp-sec-title { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.05em; color:var(--c-ink-4); font-weight:600; margin-bottom:6px; }
 .qp-sec-title.asking { color:var(--c-violet); }
-.qp-empty { font-size:var(--fs-sm); color:var(--c-ink-4); border:1px dashed var(--c-border-2); border-radius:var(--r-md); padding:12px; text-align:center; }
 .qp-composer textarea { width:100%; border:1px solid var(--c-border-2); border-radius:var(--r-md); padding:8px 10px; font-size:var(--fs-base); resize:vertical; min-height:64px; font-family:inherit; box-sizing:border-box; }
 .qp-composer-row { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
 .qp-mode-seg { display:flex; gap:2px; }
@@ -634,7 +633,6 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .core-banner { font-size:var(--fs-xs); color:var(--c-ink-4); white-space:nowrap; }
 .core-serverpick { display:flex; align-items:center; gap:4px; font-size:var(--fs-xs); color:var(--c-ink-4); }
 .core-serverpick select { font-size:var(--fs-xs); padding:1px 4px; }
-.core-hbtn { padding:var(--sp-1) var(--sp-3); font-size:var(--fs-xs); }
 
 /* ---------- Claude usage strip (5h + weekly subscription limits) ----------
    Back by request (2026-08-18) now that the queue runs on the Claude Code
@@ -1490,13 +1488,13 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    its own full declaration — that is the consolidation design-system-pass.md
    promised and never made. Old class names are kept as aliases on purpose: a call
    site this pass missed still gets a properly drawn button. */
-.ubtn, .ctrlbtn, .core-hbtn, .arch-linkbtn, .arch-regenbtn, .sg-genbtn,
+.ubtn, .ctrlbtn, .arch-linkbtn, .arch-regenbtn, .sg-genbtn,
 .q-addbtn, .id-addbtn, .arch-buildbtn, .arch-specbtn,
 .bk-lib-row button, .bk-result-row button, .arch-actionrow button {
   border:1px solid var(--c-border-2); border-radius:var(--r-sm);
   background:var(--c-surface); color:var(--c-ink-2); font-family:inherit; cursor:pointer;
   transition:background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease); }
-.ubtn:hover, .ctrlbtn:hover, .core-hbtn:hover, .arch-linkbtn:hover,
+.ubtn:hover, .ctrlbtn:hover, .arch-linkbtn:hover,
 .arch-regenbtn:hover, .sg-genbtn:hover, .bk-lib-row button:hover,
 .bk-result-row button:hover, .arch-actionrow button:hover {
   background:var(--c-surface-2); color:var(--c-ink); border-color:var(--c-border-3); }
@@ -1504,7 +1502,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    like un-pressing it. */
 .ctrlbtn.active:hover { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .ubtn { height:24px; padding:0 var(--sp-2); font-size:var(--fs-xs); font-weight:var(--fw-medium); flex:none; }
-.ubtn:disabled, .ctrlbtn:disabled, .sg-genbtn:disabled, .core-hbtn:disabled { opacity:.55; cursor:default; }
+.ubtn:disabled, .ctrlbtn:disabled, .sg-genbtn:disabled { opacity:.55; cursor:default; }
 .ubtn.is-primary { background:var(--c-accent); border-color:var(--c-accent); color:var(--c-on-accent); }
 .ubtn.is-primary:hover { background:var(--c-accent); border-color:var(--c-accent); color:var(--c-on-accent); opacity:.88; }
 .ubtn.is-danger:hover { color:var(--c-danger); border-color:var(--c-danger); }
@@ -2171,11 +2169,11 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 
 /* ---------- Modern UI pass: one motion language, soft shadows, calmer type ---------- */
 button { -webkit-tap-highlight-color: transparent; }
-button, .ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button, .arch-ctxchip, .mind-actions button {
+button, .ctrlbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button, .arch-ctxchip, .mind-actions button {
   transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
 }
 button:active { transform: translateY(1px) scale(.99); }
-.ctrlbtn, .core-hbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button { border-radius: var(--r-md); }
+.ctrlbtn, .arch-viewbtns button, .flow-typecips button, .mind-toolbtns button, .q-place-seg button, .sg-filterbtns button, .arch-ask-inputrow button, .arch-zoombtns button { border-radius: var(--r-md); }
 /* (The resting shadow that used to be restated here is set once on .uc itself. It
    was listed again after .uc--row, which meant a hairline row carried a box's
    shadow — the one thing --row exists not to have.) */
@@ -2280,7 +2278,7 @@ button:active { transform: translateY(1px) scale(.99); }
   .right { --details-w:240px; }
   .right-inner { --pad:10px; }
   .map-sidepanel { width:210px; padding:10px; }
-  .ctrlbtn, .core-hbtn { padding:var(--sp-1) var(--sp-2); }
+  .ctrlbtn { padding:var(--sp-1) var(--sp-2); }
 }
 /* ---------- The views that get crushed, not just narrowed ----------
    Everything above only shrinks the fixed side rails, so on a 700px window
@@ -2292,9 +2290,6 @@ button:active { transform: translateY(1px) scale(.99); }
    820px: at full size the layout is the one that works. ---------- */
 @media (max-width: 820px) {
   .narrow-only { display:inline-flex; position:relative; z-index:var(--z-floating); }
-  /* Only the filters symbol lands on top of anything: it sits in the same top-left
-     corner as the panel's own "Filters" word, which steps aside for it. */
-  .left.open .left-head { padding-left:26px; }
   .left, .right, .map-sidepanel {
     position:absolute; top:0; bottom:0; z-index:var(--z-panel);
     box-shadow:var(--sh-md); transition:transform var(--t-med) var(--ease); }
@@ -2918,9 +2913,9 @@ button:active { transform: translateY(1px) scale(.99); }
       </svg>
       <div class="map-controls"><button class="ctrlbtn" id="mapResetBtn">Reset zoom</button><button type="button" class="uicon narrow-only" id="mapPanelBtn" title="Countries" aria-label="Show or hide the country panel" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"/></svg></button></div>
       <div class="map-legend">
-        <div class="map-legend-title" id="mapLegendTitle">Integration Continuum</div>
+        <div class="map-legend-title">Integration Continuum</div>
         <div class="map-legend-bar"></div>
-        <div class="map-legend-labels"><span id="mapLegendLo">Ascetic self-destruction</span><span id="mapLegendHi">Integrated accountability</span></div>
+        <div class="map-legend-labels"><span>Ascetic self-destruction</span><span>Integrated accountability</span></div>
       </div>
     </div>
   </div>
@@ -10210,7 +10205,6 @@ let qPrompts = [], qSelected = null, qPollTimer = null, qPaused = false;
 // "reset" every few seconds. A running task still re-renders every tick so its
 // progress bar stays live.
 let qLastSig = null;
-let qReviewsLastSig = null;
 let qConnFails = 0;
 // Execution-provider picker data (GET /api/travaux/providers): opencode model list
 // (free first) + provider liveness. Fetched once at init and again whenever the
@@ -14057,14 +14051,6 @@ function worldIdeaFullText(pick) {
   return lines.filter(Boolean).join('\n');
 }
 
-// ── Ideas from a world-look ──────────────────────────────────────────────────
-// These used to carry a 💬 of their own, which opened a window on that one idea.
-// The rule now is one box per card, and the card's box is the place to talk — an
-// idea is discussed there, alongside the thing that proposed it, rather than in a
-// conversation of its own with no surroundings. The position-based subject id is
-// kept because the server still addresses ideas that way when a conversation
-// rewrites one.
-function worldPickSubjectId(reportId, pi, i) { return `${reportId}~${pi}:${i}`; }
 
 // A world-look write (fold / more ideas / new framing) hands back the fresh
 // report, so every panel holding that report is updated from the answer itself
@@ -15087,15 +15073,6 @@ async function addIdea() {
   } catch (e) { notify('Error: ' + e.message, { kind: 'error' }); } finally { if (btn) btn.disabled = false; }
 }
 
-async function moveIdea(id, delta) {
-  const i = tvIdeas.findIndex(x => x.id === id);
-  const j = i + delta;
-  if (i < 0 || j < 0 || j >= tvIdeas.length) return;
-  const next = tvIdeas.slice();
-  [next[i], next[j]] = [next[j], next[i]];
-  tvIdeas = next; renderFlow();
-  try { await apiWrite('/api/travaux/ideas/reorder', 'POST', { ids: next.map(x => x.id) }); } catch (e) { await loadIdeas(); }
-}
 
 // ── Building blocks — evidence-backed discovery ─────────────────────────────────
 // Two independent views, an internal tab strip (bkView) inside the Building blocks
@@ -15983,19 +15960,6 @@ function archLifecycleNote(c) {
 }
 
 // Longest prereq chain, memoised. The visited set guards against a dependency cycle
-// (impossible in today's hand-written data, but authored nodes are coming).
-const _archDepthCache = {};
-function archDepth(c, visited) {
-  if (!c) return 0;
-  if (_archDepthCache[c.id] !== undefined) return _archDepthCache[c.id];
-  const seen = visited || new Set();
-  if (seen.has(c.id)) return 0;
-  seen.add(c.id);
-  const d = archPrereqs(c).reduce((m, p) => Math.max(m, archDepth(p, seen) + 1), 0);
-  seen.delete(c.id);
-  if (!visited) _archDepthCache[c.id] = d;
-  return d;
-}
 
 // ── "Not built" list — siftable view of every unbuilt tree component ────────
 // Smart order: buildable first, then Concept → Designed → Prototype, then
@@ -16914,7 +16878,7 @@ async function initArchNav() {
   stage.addEventListener('mousemove', (e) => {
     const node = e.target.closest('.arch-node');
     const id = node ? node.getAttribute('data-arch-id') : null;
-    if (id !== archHover) { archHover = id; if (archEdgesOn) drawArchDeps(); }
+    if (id !== archHover) archHover = id;
   });
   // No attach here: the canvas does not exist until a render has produced it, and
   // every render that draws the Map goes through archMapEnter(), which attaches.
@@ -17016,8 +16980,6 @@ function applyArchTransform() {
   if (canvas) canvas.style.transform = `translate(${archViewport.x}px, ${archViewport.y}px) scale(${archViewport.k})`;
 }
 
-const TT_STATE_COLORS = { built:'#2f7d63', buildable:'#c08a3e', locked:'#8a8378' };
-const TT_STATE_LABELS = { built:'built', buildable:'buildable now', locked:'locked' };
 
 // Badge color + text follow the chosen layer: territory color, build status, or
 // the latest version tag. Speculative nodes always read provisional.
@@ -17056,30 +17018,6 @@ function archCatalog() {
   }));
 }
 
-// The one idea door: every entry point funnels here. One AI call routes the idea
-// — a new speculative component in the tree, or a Seed. Never on page load.
-async function submitIdea(concept, statusEl) {
-  if (!concept) { statusEl.textContent = 'Describe the idea first.'; return null; }
-  statusEl.textContent = 'Thinking…';
-  try {
-    const out = await apiWrite('/api/architecture/ideas', 'POST', { concept, catalog: archCatalog() });
-    if (out.kind === 'node') {
-      await loadArchNodes();
-      renderArchStage();
-      selectArchNode(out.node.id); // speculative node, docked detail explains it
-    } else {
-      await loadIdeas();
-      statusEl.innerHTML = `Saved as a seed — <a href="#" class="core-handoff-link" data-seedjump>view it in the Flow</a>.`;
-      const a = statusEl.querySelector('[data-seedjump]');
-      if (a) a.onclick = (e) => { e.preventDefault(); setMode('core'); switchCoreView('flow'); };
-    }
-    return out;
-  } catch (e) {
-    const friendly = { concept_required:'An idea is required.', duplicate:'This idea is already in the tree.', unparseable:'Claude did not return a usable routing — retry.' };
-    statusEl.textContent = friendly[e.message] || (String(e.message).startsWith('HTTP') ? 'Could not reach the server.' : 'The model did not answer — retry.');
-    return null;
-  }
-}
 
 // Error-code → friendly line, shared by the ask flow.
 function archFriendlyError(e) {
@@ -17103,7 +17041,7 @@ async function askArchGraph() {
   try {
     const out = await apiWrite('/api/architecture/graph/ask', 'POST', { question: q, catalog: archCatalog() });
     archTrail = new Set(out.ids || []);
-    drawArchDeps();
+    archRedrawCurrent();
     answerEl.innerHTML = '';
     const txt = document.createElement('div');
     txt.textContent = out.answer || '';
@@ -17119,7 +17057,7 @@ async function askArchGraph() {
     };
     const clearBtn = document.createElement('button');
     clearBtn.textContent = 'Clear';
-    clearBtn.onclick = () => { archTrail = null; drawArchDeps(); answerEl.hidden = true; answerEl.innerHTML = ''; };
+    clearBtn.onclick = () => { archTrail = null; archRedrawCurrent(); answerEl.hidden = true; answerEl.innerHTML = ''; };
     tools.appendChild(taskBtn);
     tools.appendChild(clearBtn);
     answerEl.appendChild(tools);
@@ -17184,32 +17122,7 @@ function archStatsFor(nodes) {
   return { total: nodes.length, ...st };
 }
 
-// Components OUTSIDE a focused territory that touch it (its prerequisites, and
-// the things that depend on it) — rendered as chips so the focus keeps context.
-function archContextList(focusId) {
-  const inTerr = new Set(ARCH_DATA.filter(c => c.territory === focusId).map(c => c.id));
-  const pre = new Set(), post = new Set();
-  ARCH_DATA.forEach(c => {
-    (c.depends || []).forEach(d => {
-      if (inTerr.has(c.id) && !inTerr.has(d)) pre.add(d);
-      if (!inTerr.has(c.id) && inTerr.has(d)) post.add(c.id);
-    });
-  });
-  return { pre: [...pre], post: [...post] };
-}
 
-function archContextHtml(pre, post) {
-  if (!pre.length && !post.length) return '';
-  const chip = (id, kind) => {
-    const c = ARCH_BY_ID[id];
-    if (!c) return '';
-    return `<button class="arch-ctxchip" data-ctx="${id}" title="${kind === 'pre' ? 'Prerequisite of the focused territory — click to inspect' : 'Depends on the focused territory — click to inspect'}" style="border-color:${TERRITORY_COLORS[c.territory]}">${kind === 'pre' ? '← ' : '→ '}${c.name}</button>`;
-  };
-  return `<div class="arch-context">
-    ${pre.length ? '<span class="arch-context-label">Prerequisites</span>' + pre.map(x => chip(x, 'pre')).join('') : ''}
-    ${post.length ? '<span class="arch-context-label">Depended on by</span>' + post.map(x => chip(x, 'post')).join('') : ''}
-  </div>`;
-}
 
 function archFocusName(id) {
   const t = TERRITORIES.find(x => x.id === id);
@@ -17236,8 +17149,7 @@ function archRedrawCurrent() {
   // archDrawTree writes a fresh SVG at natural size, so the current zoom has to be
   // re-applied or every redraw (an edges toggle, a filter change) silently resets it.
   if (archLayout === 'techtree') { archDrawTree(); applyArchTransform(); }
-  else if (archLayout === 'list') archDrawChecklist();
-  else drawArchDeps();
+  else archDrawChecklist();
 }
 
 // Hover highlighting for Tech Tree. It only ever toggles a class / sets an
@@ -17318,17 +17230,6 @@ function archBuildTreeNodeEl(c, pool, focus, activeFocus, transform, labelW = 20
   return g;
 }
 
-function archUpdateHud(pool) {
-  const host = document.getElementById('archHud');
-  if (!host) return;
-  const total = pool.length;
-  const built = pool.filter(c => archNodeState(c) === 'built').length;
-  const pct = total ? Math.round((built / total) * 100) : 0;
-  host.innerHTML = `
-    <div class="arch-hud-label">${archFocus ? qEsc(archFocusName(archFocus)) : 'World'} progress</div>
-    <div class="arch-hud-bar"><div class="arch-hud-fill" style="width:${pct}%"></div></div>
-    <div class="arch-hud-count">${built}/${total} built</div>`;
-}
 
 // Depth = how many prerequisite "hops" stand between a component and being
 // buildable. Drives the Tech Tree's columns: build ORDER, not build status,
@@ -18418,67 +18319,6 @@ function archNeighbors(id) {
   return out;
 }
 
-// Dependency edges, drawn once into the canvas's own coordinate space. The canvas
-// is panned/zoomed as one unit, so edges always stay glued to their nodes. At
-// rest the lines are thin and faint; hovering or selecting a component lights up
-// its neighbourhood and fades everything else (Content Navigator focus feel).
-function drawArchDeps() {
-  const overlay = document.getElementById('archOverlay');
-  const canvas = document.getElementById('archCanvas');
-  if (!overlay || !canvas) return;
-  // Focus: hover (mouse) > trail (ask answer) > selection (click). The trail is
-  // the union of the answered components' neighbourhoods.
-  let trailSet = null;
-  if (archTrail && archTrail.size) {
-    trailSet = new Set();
-    archTrail.forEach(id => archNeighbors(id).forEach(x => trailSet.add(x)));
-  }
-  const focus = archHover ? archNeighbors(archHover) : (trailSet || (archSelected ? archNeighbors(archSelected) : null));
-  const activeFocus = !!(focus && focus.size);
-  document.querySelectorAll('.arch-node').forEach(n => {
-    const id = n.getAttribute('data-arch-id');
-    n.classList.toggle('arch-dim', activeFocus && !focus.has(id));
-    n.classList.toggle('arch-hot', !!(archTrail && archTrail.has(id)));
-  });
-  if (!archEdgesOn) { overlay.innerHTML = ''; return; }
-  overlay.setAttribute('width', canvas.scrollWidth);
-  overlay.setAttribute('height', canvas.scrollHeight);
-  const cr = canvas.getBoundingClientRect();
-  const X = r => (r.left - cr.left) / archViewport.k;
-  const Y = r => (r.top - cr.top) / archViewport.k;
-  let svgHtml = '<defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>';
-  ARCH_DATA.forEach(c => {
-    (c.depends || []).forEach(depId => {
-      const a = document.getElementById('archnode-' + depId);
-      const b = document.getElementById('archnode-' + c.id);
-      if (!a || !b) return;
-      const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
-      let d;
-      if (archLayout === 'tree') {
-        const x1 = X(ar) + ar.width / archViewport.k / 2, y1 = Y(ar) + ar.height / archViewport.k;
-        const x2 = X(br) + br.width / archViewport.k / 2, y2 = Y(br);
-        const cy = Math.max(20, (y2 - y1) * 0.45);
-        d = `M${x1},${y1} C${x1},${y1 + cy} ${x2},${y2 - cy} ${x2},${y2}`;
-      } else {
-        const x1 = X(ar) + ar.width / archViewport.k, y1 = Y(ar) + ar.height / archViewport.k / 2;
-        const x2 = X(br), y2 = Y(br) + br.height / archViewport.k / 2;
-        const cx = Math.max(24, (x2 - x1) * 0.4);
-        d = `M${x1},${y1} C${x1 + cx},${y1} ${x2 - cx},${y2} ${x2},${y2}`;
-      }
-      const dimLocked = !activeFocus && archLayout === 'tree' && archNodeState(c) === 'locked';
-      let stroke = 'var(--c-border-2)', width = '0.9', op = dimLocked ? 0.12 : 0.32;
-      if (activeFocus && (focus.has(c.id) || focus.has(depId))) { stroke = 'var(--c-ink)'; width = '1.5'; op = 0.95; }
-      else if (activeFocus) op = 0.05;
-      svgHtml += `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" opacity="${op}" marker-end="url(#arch-arrow)"/>`;
-    });
-  });
-  overlay.innerHTML = svgHtml;
-  if (activeFocus) {
-    document.querySelectorAll('.arch-node').forEach(n => {
-      if (!focus.has(n.getAttribute('data-arch-id'))) n.classList.add('arch-dim');
-    });
-  }
-}
 
 function selectArchNode(id) {
   archSelected = id;
