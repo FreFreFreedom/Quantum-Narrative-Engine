@@ -3318,7 +3318,11 @@ function renderPatternList() {
     el.appendChild(chip);
   });
 }
-document.getElementById('search').addEventListener('input', () => refreshView());
+let searchDebounce = null;
+document.getElementById('search').addEventListener('input', () => {
+  if (searchDebounce) clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => { searchDebounce = null; refreshView(); }, 200);
+});
 
 // Graph ⇄ Landscape ⇄ List. All three are driven by exactly the same filter state
 // (activeEntities), so switching never changes WHAT you're looking at, only how it's
@@ -4009,7 +4013,7 @@ function trailClear() {
 function renderTrail() {
   const host = document.getElementById('trailHost');
   if (!host) return;
-  const steps = trail.map(id => `<span class="trail-step" data-goto="${id}" title="${qEsc((byId[id] && byId[id].name) || id)}">${qEsc((byId[id] && byId[id].name) || id)}</span>`).join('<span class="trail-arrow">→</span>');
+  const steps = trail.map(id => `<span class="trail-step" data-goto="${id}" title="${qEscAttr((byId[id] && byId[id].name) || id)}">${qEsc((byId[id] && byId[id].name) || id)}</span>`).join('<span class="trail-arrow">→</span>');
   let html = trail.length
     ? `<div class="trail-path">${steps}</div>
        <div class="trail-row">
@@ -4021,7 +4025,7 @@ function renderTrail() {
     html += `<div class="trail-row"><input class="searchbox trail-title" id="trailTitle" placeholder="Name this walk…"><button class="trail-btn" id="trailConfirm">Save</button></div>`;
   }
   if (savedMaps.length) {
-    html += savedMaps.map(m => `<div class="trail-map" data-map="${m.id}" title="${qEsc(m.path.map(i => (byId[i] && byId[i].name) || i).join(' → '))}">
+    html += savedMaps.map(m => `<div class="trail-map" data-map="${m.id}" title="${qEscAttr(m.path.map(i => (byId[i] && byId[i].name) || i).join(' → '))}">
       <span class="trail-map-name">${qEsc(m.title)}</span><span class="trail-when">${m.path.length}</span>
       <button class="trail-x" data-mapdel="${m.id}" title="Forget this map" aria-label="Forget this map">✕</button>
     </div>`).join('');
@@ -4096,7 +4100,7 @@ function relationLineHtml(r, selfId) {
   // used rarely, so it earns an affordance on the thing it acts on and no permanent chrome.
   // A relation with a scene on file says so with a filled marker; one without is still
   // askable, and the question tells the Room to name the absence instead of writing one.
-  return `<div class="conn rel" data-goto="${otherId}" title="${qEsc(tip)}">
+  return `<div class="conn rel" data-goto="${otherId}" title="${qEscAttr(tip)}">
     <span class="rel-mark">${mark}</span>
     <span class="rel-body">${qEsc(otherName || otherId)}${r.at ? ` <span class="rel-when">${qEsc(r.at)}</span>` : ''}</span>
     <button class="rel-mirror" data-mirror="${r.id}" title="${r.moment ? 'Open this onto the scene it costs' : 'Ask what this costs — no scene is on file for it'}" aria-label="Open the Narrative Mirror on this relation">${r.moment ? '◉' : '◎'}</button>
@@ -4222,7 +4226,7 @@ async function loadRelations(id) {
     html += `<div class="section-title" style="color:var(--c-ink-3);">Loops (${loops.length})</div>`;
     html += loops.map(l => {
       const path = l.steps.map(s => byId[s.to] ? byId[s.to].name : s.to).join(' → ');
-      return `<div class="rel-loop" title="${qEsc('Returns to where it started. ' + l.datedSteps + ' dated steps.')}">
+      return `<div class="rel-loop" title="${qEscAttr('Returns to where it started. ' + l.datedSteps + ' dated steps.')}">
         <span class="rel-when">${qEsc(l.span[0])} → ${qEsc(l.span[1])}</span> ${qEsc(path)}
       </div>`;
     }).join('');
@@ -4316,7 +4320,7 @@ function posturesHtml(e) {
     list.map(p => {
       const span = p.until ? `${p.since}–${p.until}` : `${p.since} →`;
       const tip = [p.source, p.falsifier && 'Breaks if: ' + p.falsifier].filter(Boolean).join('\n');
-      return `<div class="posture" title="${qEsc(tip)}"><span class="posture-when">${qEsc(span)}</span>${qEsc(p.name)}</div>`;
+      return `<div class="posture" title="${qEscAttr(tip)}"><span class="posture-when">${qEsc(span)}</span>${qEsc(p.name)}</div>`;
     }).join('');
 }
 
@@ -4340,7 +4344,7 @@ function rungTitle(entity) {
   if (i === null) return '';
   const rung = ladder[i];
   const vocab = Object.values(rung.vocab || {}).join(' · ');
-  return ` title="${qEsc(rung.name + (vocab ? ' — ' + vocab : ''))}"`;
+  return ` title="${qEscAttr(rung.name + (vocab ? ' — ' + vocab : ''))}"`;
 }
 
 // Which continuum axis (if any) is currently constraining/ordering the view.
@@ -6626,7 +6630,7 @@ function NavCtrl(container, state, applyFn, opts = {}) {
     else if (e.key === '0') { e.preventDefault(); if (homeFn) homeFn(); else { state.x = 0; state.y = 0; state.scale = 1; } applyFn(); if (onZoom) onZoom(); }
     else if (e.key.toLowerCase() === 'f' && fitFn) { e.preventDefault(); fitFn(); if (onZoom) onZoom(); }
   });
-  container.focus({ preventScroll: true });
+  if (opts.autofocus) container.focus({ preventScroll: true });
   // dragMoved() is read by the content canvas mid-gesture to decide whether a
   // pointermove is a real drag yet. Additive to the returned object; no existing
   // caller looks at it.
@@ -7030,7 +7034,7 @@ async function selectEntity(id){
     } else if (e.type === 'film' && e.clusters && e.clusters.length) {
       // Films carry no archetype tags — their thematic clusters are the lenses
       // (cluster codes work as lens keys; the backend phrases the read accordingly).
-      html += `<div class="tagrow"><span class="tagrow-label">Themes</span>${e.clusters.map(c => `<span class="tag cluster-lens" data-cluster="${c}" title="${qEsc(CLUSTERS[c] ? CLUSTERS[c].name : c)}">${qEsc(clusterLensLabel(c))}</span>`).join('')}</div>`;
+      html += `<div class="tagrow"><span class="tagrow-label">Themes</span>${e.clusters.map(c => `<span class="tag cluster-lens" data-cluster="${c}" title="${qEscAttr(CLUSTERS[c] ? CLUSTERS[c].name : c)}">${qEsc(clusterLensLabel(c))}</span>`).join('')}</div>`;
       html += `<div id="lensHost"></div>`;
     }
     html += posturesHtml(e);
@@ -10488,6 +10492,22 @@ function renderAiSettings() {
   });
 }
 
+/* Polling sleeps while the tab is hidden. Both loops used to run at full rate forever in
+   a background window — the queue every four seconds, the quota every thirty. Coming back
+   takes one immediate reading of each, so what you see on return is current, not the
+   number from before you left. */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (qPollTimer) { clearInterval(qPollTimer); qPollTimer = null; }
+    stopUsagePolling();
+    return;
+  }
+  startQueuePolling();
+  qLoad();
+  startUsagePolling();
+  refreshCoreHeader();
+});
+
 function startQueuePolling() {
   if (qPollTimer) clearInterval(qPollTimer);
   const flowVisible = coreView === 'flow' && document.getElementById('coreApp').classList.contains('open');
@@ -11147,7 +11167,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   // card clears seen_at through the POST that already exists. Asked for 2026-08-23.
   const fresh = p.status === 'paused' && !p.seen_at;
   const titleHtml = reorderable
-    ? `<input class="q-title-inline${fresh ? ' unread' : ''}" data-pid="${p.id}" value="${qEsc(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
+    ? `<input class="q-title-inline${fresh ? ' unread' : ''}" data-pid="${p.id}" value="${qEscAttr(p.title || '')}" title="Rename — saves as you type" autocomplete="off">`
       + (fresh ? '<span class="q-unread-dot" title="New — you have not opened this one yet"></span>' : '')
     : `<span class="uc-title" title="${qEscAttr(p.title || '')}">${qEsc(p.title || '(untitled)')}</span>`;
   // A finished card carries a small dot in a fixed left gutter instead — always
@@ -11388,7 +11408,7 @@ document.addEventListener('click', (ev) => {
 // so it is never allowed to be jargon. `act` + `id` are what the single
 // delegated click handler on each list dispatches on.
 function iconBtn(icon, label, act, id, kind = '', extra = '') {
-  return `<button type="button" class="cardbtn${kind ? ' ' + kind : ''}" data-act="${act}" data-id="${qEsc(id)}" title="${qEsc(label)}" aria-label="${qEsc(label)}"${extra}><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-${icon}"/></svg></button>`;
+  return `<button type="button" class="cardbtn${kind ? ' ' + kind : ''}" data-act="${act}" data-id="${qEscAttr(id)}" title="${qEscAttr(label)}" aria-label="${qEscAttr(label)}"${extra}><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-${icon}"/></svg></button>`;
 }
 // Wraps a list of iconBtn()s; returns '' for an empty set so a card with no
 // available action does not grow an empty hairline rule.
@@ -11820,7 +11840,7 @@ function qWireQuestionBlock(host, onAnswer) {
 // for free instead of being the forgotten twin.
 function qReplyBoxHtml(idPrefix, { placeholder = 'Ask a question or reply — Enter sends, Shift+Enter for a new line…', chatOnly = false } = {}) {
   return `<div class="q-replybox2" data-prefix="${idPrefix}">
-    <textarea id="${idPrefix}Text" placeholder="${qEsc(placeholder)}"></textarea>
+    <textarea id="${idPrefix}Text" placeholder="${qEscAttr(placeholder)}"></textarea>
     <div class="q-replybox2-row">
       <button class="ctrlbtn" id="${idPrefix}Chat" title="${chatOnly ? 'Answers here in the thread, and passes your message to the running task.' : "Answer instantly, right here in the thread. Doesn't relaunch the task."}">${chatOnly ? 'Answer &amp; add to run' : 'Answer'}</button>
       ${chatOnly ? '' : `<button class="ctrlbtn" id="${idPrefix}Front" title="Sends your reply and relaunches the task right away (a real codebase edit).">Reply &amp; relaunch task</button>
@@ -12331,7 +12351,7 @@ const SG_CHIP_NONE = '<span class="sg-terr-chip none" title="No part of the app 
 function sgTerritoryChip(tid) {
   const t = TERRITORIES.find(x => x.id === tid);
   if (!t) return SG_CHIP_NONE;
-  return `<span class="sg-terr-chip" style="background:${TERRITORY_COLORS[tid]}" title="${qEsc(t.label + ' — ' + t.sub)}">${qEsc(SG_CHIP_SHORT[tid] || t.label)}</span>`;
+  return `<span class="sg-terr-chip" style="background:${TERRITORY_COLORS[tid]}" title="${qEscAttr(t.label + ' — ' + t.sub)}">${qEsc(SG_CHIP_SHORT[tid] || t.label)}</span>`;
 }
 
 // The chip for one suggestion. Kind is checked before territory, so a connector
@@ -12446,7 +12466,7 @@ function sgChipRowHtml(all) {
     // the list says it is empty and the button says it will generate for that part.
     const dead = n === 0 && key !== '';
     return `<button class="ctrlbtn nb-chip sg-terrchip${sgFilterTerr === key ? ' on' : ''}${dead ? ' dead' : ''}" data-sgterr="${key}"`
-      + `${key ? ` title="${qEsc(dead ? 'Nothing here yet — press this, then "Generate now" to ask for ideas about ' + label : chipTitle(key, label))}"` : ''}>`
+      + `${key ? ` title="${qEscAttr(dead ? 'Nothing here yet — press this, then "Generate now" to ask for ideas about ' + label : chipTitle(key, label))}"` : ''}>`
       + `${qEsc(label)} <span class="sg-chipn">${n}</span></button>`;
   }).join('');
   return `<div class="nb-chips sg-chiprow">${chips}</div>`;
@@ -12685,7 +12705,7 @@ function renderFlow() {
       html += flowSection('✨', 'Suggested by Claude', sg.length, `
         <div class="flow-genrow">
           <span class="flow-genhint">${tvSuggestions.filter(s => s.status === 'new').length} new — one click asks for more (uses the Claude API).</span>
-          <button class="ctrlbtn" id="flowGenBtn"${gen.disabled ? ' disabled' : ''} title="${qEsc(gen.disabled ? gen.why : (sgFilterTerr ? gen.note : 'Ask Claude for more work, spread across the whole app.'))}">${qEsc(gen.label)}</button>
+          <button class="ctrlbtn" id="flowGenBtn"${gen.disabled ? ' disabled' : ''} title="${qEscAttr(gen.disabled ? gen.why : (sgFilterTerr ? gen.note : 'Ask Claude for more work, spread across the whole app.'))}">${qEsc(gen.label)}</button>
           <button class="ctrlbtn" id="flowRewriteBtn" title="Redo world ideas written before they were held to their subject.">↻ Redo the old world ideas</button>
           <button class="ctrlbtn" id="flowSortOldBtn" title="Files the unplaced older suggestions into their territories.">⇅ Sort the old ones</button>
           <span id="flowGenStatus" class="flow-genstatus"></span>
@@ -13788,13 +13808,13 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
       ${worldFitBar(key, facts, isApplied)}
       <div class="wl-head">
-        <button class="wl-mark ${inGroup ? 'wl-radio' : ''}" data-action="${pickAction}" title="${qEsc(markTitle)}" ${isApplied ? 'disabled' : ''}>${mark}</button>
+        <button class="wl-mark ${inGroup ? 'wl-radio' : ''}" data-action="${pickAction}" title="${qEscAttr(markTitle)}" ${isApplied ? 'disabled' : ''}>${mark}</button>
         <span class="wl-title" data-worldexpand="${ek}">${qEsc(title)}</span>
         ${pick.stars ? `<span class="bk-stars">★ ${pick.stars}</span>` : ''}
-        <span class="q-inspire-tag" title="${qEsc(meta.title)}">${meta.tag}</span>
+        <span class="q-inspire-tag" title="${qEscAttr(meta.title)}">${meta.tag}</span>
         ${swapBtn}
         ${chips}
-        ${bestWhy !== undefined ? `<span class="wl-star" title="${qEsc(bestWhy ? 'Our pick — ' + bestWhy : 'Our pick.')}">⭐</span>` : ''}
+        ${bestWhy !== undefined ? `<span class="wl-star" title="${qEscAttr(bestWhy ? 'Our pick — ' + bestWhy : 'Our pick.')}">⭐</span>` : ''}
         <span class="wl-caret" data-worldexpand="${ek}" title="The full idea">${isOpen ? '▾' : '▸'}</span>
       </div>
       ${line ? `<div class="wl-line${isOpen ? ' open' : ''}" data-worldexpand="${ek}">${qEsc(line)}</div>` : ''}
@@ -13978,7 +13998,7 @@ function qInspireFullHtml(p, data) {
   const applyMeta = qInspireApplyMeta(p);
   return `
     <div class="q-inspire-toolbar">
-      <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="${qEsc(applyMeta.title)}">${applyMeta.label}</button>
+      <button class="ctrlbtn" data-action="inspire-apply" ${sel.size ? '' : 'disabled'} title="${qEscAttr(applyMeta.title)}">${applyMeta.label}</button>
     </div>
     ${legend}
     ${worldPartsHtml(report, { applied, sel, facts, scope: 'task:' + p.id })}`;
@@ -14475,11 +14495,28 @@ function startUsagePolling() {
 }
 function stopUsagePolling() { if (usagePollTimer) { clearInterval(usagePollTimer); usagePollTimer = null; } }
 
+/* One reading of the queue's own status, shared for a few seconds. Four places asked for
+   it independently — the rail's banner, the architecture header, the storage check and
+   the proposals bar — so switching into Core right after a poll fetched the same answer
+   three times inside a second. The window is shorter than the 30s refresh, so nothing
+   ever shows a staler number than it did before. */
+let queueStatusCache = { at: 0, value: null, inflight: null };
+const QUEUE_STATUS_TTL = 25000;
+async function getQueueStatus(force) {
+  const now = Date.now();
+  if (!force && queueStatusCache.value && now - queueStatusCache.at < QUEUE_STATUS_TTL) return queueStatusCache.value;
+  if (queueStatusCache.inflight) return queueStatusCache.inflight;
+  queueStatusCache.inflight = api('/api/architecture/queue-status')
+    .then((v) => { queueStatusCache = { at: Date.now(), value: v, inflight: null }; return v; })
+    .catch((e) => { queueStatusCache.inflight = null; throw e; });
+  return queueStatusCache.inflight;
+}
+
 // Shared header refresh: the arch/queue-status banner, which lives in the slim
 // header across all four sub-tabs.
 async function refreshCoreHeader() {
   loadUsage();
-  try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
+  try { archQueueStatus = await getQueueStatus(true); } catch (e) { archQueueStatus = null; }
   renderArchQueueBanner();
 }
 
@@ -14965,7 +15002,7 @@ function bkPickCard(pick, partIdx, pickIdx, recommended, facts = null) {
   const removedReason = facts?.removed.get(key);
   const isBest = facts?.bestOf.has(key);
   const dim = !!(group && !isBest);
-  const groupChip = group ? `<span class="q-inspire-alt-chip" title="${qEsc(group.note || 'These ideas are alternatives — you only need one.')}">🔄 Alternatives ${qEsc(group.id)}</span>` : '';
+  const groupChip = group ? `<span class="q-inspire-alt-chip" title="${qEscAttr(group.note || 'These ideas are alternatives — you only need one.')}">🔄 Alternatives ${qEsc(group.id)}</span>` : '';
   const title = pick.kind === 'proven' ? (pick.repo || 'Repo') : (pick.tree_target?.name || 'Proposal');
   // One obvious button — plant it — with the two repo verdicts behind the symbols
   // that slide out of the card's right edge.
@@ -15972,7 +16009,7 @@ function renderNotbuiltFlow() {
   host.innerHTML = `
     <div class="nb-toolbar" style="border-bottom:none;padding:4px 2px 10px;">
       <span class="arch-title">On the Horizon</span>
-      <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEsc(nbSearch)}">
+      <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEscAttr(nbSearch)}">
       <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>AI recommends order</button>
       <div class="nb-chips">${terrChips}</div>
       <div class="nb-chips">${readyChips}</div>
@@ -16270,7 +16307,7 @@ async function loadArchLiveData() {
     });
   } catch (e) { /* fall back silently to the static ARCH_DATA text */ }
   await loadArchNodes();
-  try { archQueueStatus = await api('/api/architecture/queue-status'); } catch (e) { archQueueStatus = null; }
+  try { archQueueStatus = await getQueueStatus(); } catch (e) { archQueueStatus = null; }
 }
 
 // Stored nodes (hand-authored + Claude-speculated) merged over the hardcoded trunk.
@@ -16388,7 +16425,7 @@ function renderArchProposals() {
         <div class="arch-proposal-main">
           <span class="arch-proposal-name">${qEsc(n.name)}</span>
           <span class="q-badge" style="background:#7a5ea8;">${archProposalSource(n)}</span>
-          ${n.sync_sha ? `<span class="q-badge" style="background:var(--c-ink-4);" title="${qEsc(n.sync_sha)}">${qEsc(n.sync_sha.slice(0, 8))}</span>` : ''}
+          ${n.sync_sha ? `<span class="q-badge" style="background:var(--c-ink-4);" title="${qEscAttr(n.sync_sha)}">${qEsc(n.sync_sha.slice(0, 8))}</span>` : ''}
           ${cardLineHtml('component', n.id, n.summary, n.what, 'arch-proposal-what')}
         </div>
         <div class="arch-proposal-actions">
@@ -16445,7 +16482,7 @@ function renderStorageWarn(storage) {
 // this the 30-second header poll keeps it current at no extra cost.
 async function checkStorageOnce() {
   try {
-    const s = await api('/api/architecture/queue-status');
+    const s = await getQueueStatus();
     renderStorageWarn(s && s.storage);
   } catch (e) { /* not signed in yet, or offline — the poll will get it */ }
 }
@@ -17125,7 +17162,7 @@ function archListRowHtml(c) {
   // Falls back to why the row is quiet, so a dimmed "live" row explains itself on
   // hover instead of just looking switched off.
   const waitText = unmet.length ? `Waiting on ${unmet.map(p => qEsc(p.name)).join(', ')}` : qEsc(archLifecycleNote(c));
-  return `<div class="${cls}" data-listrow="${c.id}" title="${qEsc(c.name)}${waitText ? ' — ' + waitText : ''}">
+  return `<div class="${cls}" data-listrow="${c.id}" title="${qEscAttr(c.name)}${waitText ? ' — ' + waitText : ''}">
       <span class="arch-list-icon">${icon}</span>
       <span class="arch-list-name" style="white-space:normal;overflow:visible;text-overflow:clip;">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
       <span class="arch-list-status">${qEsc(c.status || 'Concept')}</span>
@@ -17149,7 +17186,7 @@ function archDrawChecklist() {
     const isOpen = archFocus === t.id || !archListCollapsed[t.id];
     const pct = stats.total ? Math.round((stats.built / stats.total) * 100) : 0;
     html += `<div class="arch-list-section">
-      <div class="arch-list-head" data-listterr="${t.id}" title="${qEsc(t.sub || '')}">
+      <div class="arch-list-head" data-listterr="${t.id}" title="${qEscAttr(t.sub || '')}">
         <span class="arch-list-chevron">${isOpen ? '▾' : '▸'}</span>
         <span class="arch-list-title" style="color:${hue(t.id)}">${qEsc(t.label)}</span>
         <span class="arch-list-bar"><span class="arch-list-fill" style="width:${pct}%;background:${hue(t.id)}"></span></span>
@@ -17260,7 +17297,7 @@ function archBoardCardHtml(c, cell) {
   // The edge bar follows whichever lens is on — territory or act — the same palette
   // the tree, checklist and chips use, so one colour means one thing everywhere.
   const bar = (archLayer === 'act' ? LAYER_COLORS[archActOf(c)] : TERRITORY_COLORS[c.territory]) || 'var(--c-border)';
-  return `<div class="${cls}" data-bcard="${c.id}" ${movable ? 'draggable="true"' : ''} style="border-left-color:${bar}" title="${qEsc(title)}">
+  return `<div class="${cls}" data-bcard="${c.id}" ${movable ? 'draggable="true"' : ''} style="border-left-color:${bar}" title="${qEscAttr(title)}">
       <span class="arch-bcard-name">${qEsc((spec ? '✦ ' : '') + c.name)}</span>
       <div class="arch-bcard-meta"><span class="arch-bcard-status">${qEsc(c.status || 'Concept')}</span>${archCardActions(c)}</div>
     </div>`;
@@ -17285,7 +17322,7 @@ function archDrawBoard() {
     // something to put there; a hand click (archBoardFold) always wins over that.
     const folded = archBoardFold.has(col.id) ? archBoardFold.get(col.id) : (!col.manual && items.length === 0);
     return `<div class="arch-bcol${col.manual ? '' : ' is-derived'}${folded ? ' is-folded' : ''}" data-bcol="${col.id}">
-      <div class="arch-bcol-head" title="${qEsc(col.note)} — click to ${folded ? 'unfold' : 'fold'}.">
+      <div class="arch-bcol-head" title="${qEscAttr(col.note)} — click to ${folded ? 'unfold' : 'fold'}.">
         <span class="arch-bcol-title">${qEsc(col.label)}</span>
         <span class="arch-bcol-count">${items.length}</span>
         <span class="arch-bcol-chevron">${folded ? '▸' : '▾'}</span>
@@ -18164,7 +18201,7 @@ function renderArchDetail(id) {
   const cell = archBoardCell(c);
   let html = `<h2 class="arch-detail-head">Component<button id="archDetailClose" class="arch-detail-close" title="Close this panel" aria-label="Close component panel">✕</button></h2>
     <div class="arch-detail-name">${c.provenance === 'speculative' ? '✦ ' : ''}${c.name}</div>
-    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span title="${qEsc((ARCH_LAYERS.find(l => l.id === archActOf(c)) || {}).sub || '')}" style="color:${LAYER_COLORS[archActOf(c)]}">${qEsc(archActLabel(c))}</span> · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEsc(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
+    <div class="arch-detail-territory">${terr ? terr.label : c.territory} · <span title="${qEscAttr((ARCH_LAYERS.find(l => l.id === archActOf(c)) || {}).sub || '')}" style="color:${LAYER_COLORS[archActOf(c)]}">${qEsc(archActLabel(c))}</span> · <span style="color:${STATUS_COLORS[c.status]}">${c.status}</span>${LIFECYCLE_LABELS[cell.state] ? ` · <span title="${qEscAttr(cell.why)}">${LIFECYCLE_LABELS[cell.state]}</span>` : ''}</div>`;
   html += `<div class="arch-field"><div class="arch-field-label">What</div>${clampHtml(c.what, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Why</div>${clampHtml(c.why, 180, 'arch-field-body')}</div>
     <div class="arch-field"><div class="arch-field-label">Input → Output</div><div class="arch-io"><span class="a">${c.input || '—'}</span><span class="arrow">→</span><span class="a">${c.output || '—'}</span></div></div>
