@@ -79,6 +79,14 @@ export async function generateTension(database, tag, { gen = generateText } = {}
       label: `tag-tension:${tag}`,
       timeoutMs: TIMEOUT_MS,
       maxAttempts: MAX_ATTEMPTS,
+      // Deliberately NOT on the shared free lane. This is a background sweep over
+      // every tag in the vocabulary, and Google's free tier allows 20 requests a
+      // minute: the sweep used to spend that allowance in seconds and leave the
+      // whole model benched for a minute at a time, so a question asked in the
+      // Room found no lane left to ask. It goes straight to Claude on the Mac
+      // instead — a second-account call, no money, and nothing a person is
+      // waiting on. No runner attached simply means the tags fill later.
+      provider: 'claude-side',
       claudeLastResort: true,
     });
     const { against, why } = parseTension(out?.text);
@@ -89,7 +97,7 @@ export async function generateTension(database, tag, { gen = generateText } = {}
   try { return await attempt; } finally { _inflight.delete(tag); }
 }
 
-export async function fillMissingTensions(database = db, { limit = 2, gen } = {}) {
+export async function fillMissingTensions(database = db, { limit = 1, gen } = {}) {
   const tags = missingTags(database);
   if (!tags.length) return;
   console.log(`Tag tensions: ${tags.length} tag(s) to fill.`);
