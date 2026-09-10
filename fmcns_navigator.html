@@ -5358,8 +5358,13 @@ async function startDescent(id) {
     nd._px = nd.x + (dx / d) * 300; nd._py = nd.y + (dy / d) * 300;
   });
   if (typeof sim !== 'undefined' && sim && sim.stop) sim.stop();
-  camera.tScale = targetScale;
-  camera.tOn = host;
+  // Where the camera is going, decided now and not moved again: the interior's own
+  // extent, framed the way the graph frames anything else.
+  const ext = R * 1.9;
+  const k = Math.max(GRAPH_MIN_SCALE, Math.min(FIT_MAX_SCALE,
+              (Math.max(1, (gW || 800) - 60)) / (ext * 2), (Math.max(1, (gH || 600) - 60)) / (ext * 2)));
+  descent.from = { scale: camera.scale, x: camera.x, y: camera.y };
+  descent.to = { scale: k, x: (gW || 800) / 2 - k * host.x, y: (gH || 600) / 2 - k * host.y };
   syncDescendBtn();
   requestRender();
 }
@@ -5398,28 +5403,19 @@ function stepDescent() {
     if (Math.abs(nd.x - gx) > 0.4) busy = true;
   });
 
-  // The camera goes in, and comes back out.
-  if (camera.tScale) {
-    const want = descent.leaving ? (camera.preScale || 1) : camera.tScale;
-    if (!descent.leaving && !camera.preScale) camera.preScale = camera.scale;
-    camera.scale = ease(camera.scale, want);
-    if (camera.tOn) {
-      // gW/gH are the stage's own size in layout pixels, kept current by
-      // sizeGraphCanvas() on every frame and on every resize.
-      if (gW && gH) {
-        if (!descent.leaving && camera.preX === undefined) { camera.preX = camera.x; camera.preY = camera.y; }
-        const wx = descent.leaving ? (camera.preX ?? camera.x) : (gW / 2 - descent.host.x * camera.scale);
-        const wy = descent.leaving ? (camera.preY ?? camera.y) : (gH / 2 - descent.host.y * camera.scale);
-        camera.x = ease(camera.x, wx); camera.y = ease(camera.y, wy);
-      }
-    }
-    if (Math.abs(camera.scale - want) > 0.004) busy = true;
+  // The camera goes in, and comes back to exactly where it was.
+  if (descent.to && descent.from) {
+    const g = descent.leaving ? descent.from : descent.to;
+    camera.scale = ease(camera.scale, g.scale);
+    camera.x = ease(camera.x, g.x);
+    camera.y = ease(camera.y, g.y);
+    if (Math.abs(camera.scale - g.scale) > 0.004 || Math.abs(camera.x - g.x) > 0.5) busy = true;
+    if (typeof applyCamera === 'function') applyCamera();
   }
 
   if (!busy && descent.leaving) {
     nodes.forEach(nd => { delete nd._px; delete nd._py; delete nd._dx; delete nd._dy; });
     descent = null;
-    camera.preScale = undefined; camera.preX = undefined; camera.preY = undefined;
     if (typeof sim !== 'undefined' && sim && sim.alpha) sim.alpha(0.25).restart();
     syncDescendBtn();
     return true;
