@@ -71,9 +71,11 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
      order between the rail, the floating button and the drawer it opens is load-bearing:
      the button must sit UNDER the drawer (it steps aside by the drawer's width instead of
      hiding beneath it), and the rail must sit over the settings sheet. */
-  --z-base: 2; --z-stage: 6; --z-panel: 8; --z-floating: 9; --z-popover: 60;
-  --z-popover-top: 61; --z-sheet: 100; --z-pickbanner: 110; --z-rail: 120;
-  --z-sysbtn: 130; --z-drawer: 140; --z-preview: 200;
+  --z-base: 2; --z-stage: 6; --z-panel: 8; --z-floating: 9;
+  --z-sheet: 100; --z-pickbanner: 110; --z-rail: 120; --z-sysbtn: 130; --z-drawer: 140;
+  /* Above the rail and above the drawer, because a menu can be anchored inside either.
+     Below the preview bar, which must never be covered. */
+  --z-popover: 150; --z-popover-top: 151; --z-preview: 200;
 }
 
 /* ─── Look: Daylight atlas ──────────────────────────────────────────────────
@@ -11179,10 +11181,12 @@ function closeMenu() {
   if (el && el.parentNode) el.parentNode.removeChild(el);
   if (anchor) anchor.setAttribute('aria-expanded', 'false');
 }
+function menuIsOpen() { return !!(openMenuNow && openMenuNow.el && openMenuNow.el.isConnected); }
 function openMenu(anchor, items, opts) {
   const o = opts || {};
-  if (openMenuNow && openMenuNow.anchor === anchor) { closeMenu(); return null; }
+  const sameAnchor = menuIsOpen() && openMenuNow.anchor === anchor;
   closeMenu();
+  if (sameAnchor) return null;
   const el = document.createElement('div');
   el.className = 'umenu';
   el.setAttribute('role', 'menu');
