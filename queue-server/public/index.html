@@ -5340,7 +5340,10 @@ async function startDescent(id) {
   // The boundary, in world units, chosen so the whole interior fits the stage at the
   // scale the descent settles on — a fixed radius ran the far parts off the edges.
   const targetScale = Math.min(3.2, Math.max(1.7, camera.scale * 1.9));
-  const R = Math.max(70, Math.min(150, (Math.min(gW || 800, gH || 600) / 2) / targetScale * 0.62));
+  // Eight parts need a wider ring than four, or the names sit on top of each other.
+  const count = (a.kind === 'recorded' ? (a.parts || []).length : (a.nodes || []).length) || 1;
+  const room = Math.min(1.7, 0.85 + count * 0.11);
+  const R = Math.max(70, Math.min(220, (Math.min(gW || 800, gH || 600) / 2) / targetScale * 0.62 * room));
   // A read anatomy names its parts by the code the attribution used; a recorded one has
   // whole entities, which can be opened in their own right.
   const src = readKind ? (a.nodes || []) : (a.parts || []);
@@ -5522,16 +5525,25 @@ function paintDescent(ctx, s) {
 
   // Their names, in world space so they travel with the part rather than being placed by
   // the label pass — an interior is small enough that nothing collides.
-  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.textBaseline = 'middle';
   ctx.font = gFont(12 / s, 600);
   d.parts.forEach(p => {
     if (p.alpha < 0.1) return;
+    // Outward, on the side the part is on: left of the parts on the left, right of the
+    // ones on the right. Eight names on one ring have nowhere else to go.
+    const dx = p.x - host.x, dy = p.y - host.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const gap = (p.r || 8.5) + 7;
+    const lx = p.x + (dx / len) * gap, ly = p.y + (dy / len) * gap;
+    ctx.textAlign = dx >= 0 ? 'left' : 'right';
+    const txt = p.name.length > 26 ? p.name.slice(0, 25) + '…' : p.name;
     ctx.globalAlpha = p.alpha * ring;
     ctx.lineWidth = 3 / s; ctx.strokeStyle = stageC;
-    ctx.strokeText(p.name, p.x, p.y + 12);
+    ctx.strokeText(txt, lx, ly);
     ctx.fillStyle = p.outside ? ink3C : inkC;
-    ctx.fillText(p.name, p.x, p.y + 12);
+    ctx.fillText(txt, lx, ly);
   });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
 }
 
 function prefersReducedMotion() {
