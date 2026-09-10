@@ -701,6 +701,18 @@ matching words has nothing else to match on. Two moves shipped since 09-01 point
 inward and are the fold working: the *gap measure* (where the corpus fails to connect — the
 app seeing its own holes) and the *horizontal move* (who else stands on this rung).
 
+**Nothing drawn twice, said of the model.** The same three relations — shared author,
+entanglement, bridge — are computed in two separate places, once for the card's echoes over
+the whole corpus and once for the card's sections over the filtered pool, and the same
+relation carries two names depending on which computed it (*scale echo* in one, *Continuum
+bridge* in the other). What the Room learned shows on three surfaces; an idea shows on four.
+And of roughly seventy services, about fifteen do the seeing — the rest keep the app itself
+running. An entity whose apparatus for maintaining itself outweighs its apparatus for
+perceiving is not sick, but it is the shape §1 warns about: a boundary busier defending
+itself than looking out. The one place a relation is actually *stored* rather than recomputed
+from labels is the traced-relations table (Traced / Loops) — directed, timed, and the only
+edges in the app that are facts rather than coincidences of vocabulary.
+
 **Gluing.** The chrome is glued now — Home, Mind, Flow, Content, Architecture share one
 frame — and *testimony in the ontology* links what Antoine has written to the entities it
 names, which is the first seam between the Room and the graph. The deeper seam holds: the
