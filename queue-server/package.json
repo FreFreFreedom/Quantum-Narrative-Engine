@@ -29,6 +29,7 @@
     "scale:selftest": "node scripts/scale-ladder-selftest.js",
     "fences:anatomy": "node scripts/interior-fences.js",
     "relations:selftest": "node scripts/relations-selftest.js",
+    "peers:selftest": "node scripts/peers-selftest.js",
     "traffic:selftest": "node scripts/traffic-selftest.js",
     "queue:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-model-selftest.js",
     "gaps:selftest": "node scripts/taggaps-selftest.js",

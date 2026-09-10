@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as q from '../services/ontologyQuery.js';
 import * as rel from '../services/entityRelations.js';
 import * as men from '../services/entityMentions.js';
+import { peersOf } from '../services/peers.js';
 import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
@@ -74,6 +75,16 @@ export function ontologyRoutes(db) {
     } catch (e) {
       res.status(e.status || 500).json({ error: e.message });
     }
+  });
+
+  // The horizontal move: who else is on this entity's rung, and who is further along.
+  // Computed, never stored — a peer listing is a resemblance the app noticed, while a
+  // stored relation is a claim someone is answerable for. Two lists come back because
+  // "who else is here" and "who is doing it better" are different orderings.
+  router.get('/entities/:id/peers', (req, res) => {
+    const out = peersOf(db, req.params.id, { limit: Number(req.query.limit) || undefined });
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    res.json(out);
   });
 
   // What Antoine has written about this entity — plans/testimony-in-the-ontology.md.

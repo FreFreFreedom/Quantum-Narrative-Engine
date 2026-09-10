@@ -21,6 +21,7 @@
 
 import * as q from './ontologyQuery.js';
 import * as rel from './entityRelations.js';
+import { peersOf } from './peers.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -163,6 +164,11 @@ export const STUDIO_TOOLS = [
     description: "One entity's interior, where it has been mapped: who interacts with whom inside it, how heavily, and whether each relation is opposition or alliance — plus whether the signed network is BALANCED (splits cleanly into two camps) and its FRUSTRATION (how many relations must break for the split to be clean). Parts are opaque codes with a separate name map; the structure is the evidence, the names are only for reading it out. Very few entities have one.",
     input_schema: { type: 'object', properties: { entity_id: { type: 'string' } }, required: ['entity_id'] },
   },
+  {
+    name: 'horizontal_peers',
+    description: "The horizontal move: who else sits on this entity's rung of the scale ladder, and who is further along. Returns two orderings — `alongside` (most structurally alike first) and `furtherAlong` (biggest gap on a shared Integration Continuum axis first) — plus `difference`: what the peer furthest along holds that this one does not, as postures, shapes and tags. THE AXIS SCORE IS A HAND-ASSIGNED READING, NOT A MEASUREMENT: say so when you use it. 'Further along' means further toward integration on an axis a person scored — never that the peer is right. This is the move that answers 'who is doing this better, and what would we be importing'. A film has no peers; it is a medium and sits on no rung.",
+    input_schema: { type: 'object', properties: { entity_id: { type: 'string' } }, required: ['entity_id'] },
+  },
 ];
 
 // Row caps. Each of these results is re-sent with every subsequent round, so a
@@ -182,6 +188,9 @@ const CLUSTER_TAG_EXAMPLES = 4;
 // an anatomy is small per entity but every edge carries a sign tally, so it is capped by
 // edges rather than by entities.
 const RELATION_CAP = 40;
+// Peers are the widest of these results — each row carries axes, postures, shapes and tags
+// — and the individual rung holds 237 entities. Tighter than the rest, on purpose.
+const PEER_TOOL_CAP = 8;
 const LOOP_CAP = 20;
 const ANATOMY_EDGE_CAP = 120;
 const INTERIORS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../../data-seed/interiors');
@@ -345,6 +354,29 @@ export function dispatchStudioTool(db, name, input) {
         blur_survives: doc.blurB?.partition,
       };
     }
+    case 'horizontal_peers': {
+      const out = peersOf(db, args.entity_id, { limit: PEER_TOOL_CAP });
+      if (!out) return { error: 'not_found' };
+      if (out.rung === null) return { rung: null, reason: out.reason, alongside: [], furtherAlong: [] };
+      // Trimmed hard: the full record carries every axis, every posture and every tag for
+      // every peer, and this result is re-sent with each following round.
+      const slim = (p) => ({
+        name: p.name, id: p.id,
+        axes: p.axes.map((a) => `${a.name}: ${a.mine} → ${a.theirs} (${a.delta > 0 ? '+' : ''}${a.delta}, ${a.direction})`),
+        relations: `${p.relationProfile.total} stored (${p.relationProfile.down} down, ${p.relationProfile.up} up, ${p.relationProfile.horizontal} across, ${p.relationProfile.jump} jump)${p.relationProfile.inLoop ? ', in a loop' : ''}`,
+        postures: p.postures.map((x) => x.name),
+        sharedShapes: p.sharedShapes,
+        sharedTags: p.sharedTags,
+      });
+      return {
+        of: out.of.name,
+        rung: out.rung,
+        peerCount: out.peerCount,
+        alongside: out.alongside.slice(0, PEER_TOOL_CAP).map(slim),
+        furtherAlong: out.furtherAlong.slice(0, PEER_TOOL_CAP).map(slim),
+        difference: out.difference,
+      };
+    }
     case 'recall_memory': {
       const query = String(args.query || '').trim();
       if (!query) return { error: 'query_required' };
@@ -366,6 +398,8 @@ The project's content — search its entities (characters, films, countries are 
 The app itself — list the pieces it is built from and where each stands, read the tech tree of what it could become, and list recent work in its queue.
 
 What has been traced through the corpus — a separate kind of fact from what is in it. Entities sit on an ordered scale ladder (cell, individual, family, group, institution, city, nation, civilisation, planetary, cosmos); a film is a MEDIUM carrying testimony and sits on no rung, while the institutions, families and cities it testifies about are the entities. A policy is not a thing of its own: it is a dated POSTURE an institution holds, in that entity's detail. Beyond the computed echoes there are STORED RELATIONS — claims somebody made, each with a source and a falsifier — and LOOPS, which are chains of those that leave a rung and return to it with time moving forward. A few entities have a mapped INTERIOR: who interacts with whom inside them, signed opposition or alliance, and whether that splits cleanly into two camps. Ask the shape audit which rungs have never been looked at; the empty cells are the useful part.
+
+The third navigation move is now askable too: horizontal_peers gives the entities on the same rung as one you are looking at, ordered both by how alike they are and by who sits further toward integration, with a plain difference for the one furthest along. Its scores are hand-assigned readings rather than measurements, so report them as somebody's judgement and never as a fact about the world.
 
 When you report a stored relation, quote its falsifier — the claim is only worth as much as the thing that could break it. When you report an interior, the parts are codes with a separate name map: the structure is the evidence and the names are only for reading it out.
 

@@ -317,6 +317,14 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rel-mirror:hover { color:var(--c-accent); }
 .rel-loop { font-size:var(--fs-sm); padding:5px 8px; margin-bottom:4px; border-radius:var(--r-sm);
   background:var(--c-surface-2); border:1px solid var(--c-border); }
+/* The horizontal move. A peer row is not a traced claim, so it gets no left rule — the
+   number carries it: how far toward integration this one sits, on an axis someone scored. */
+.peer-group { font-size:var(--fs-xs, 10px); letter-spacing:.04em; text-transform:uppercase;
+  color:var(--c-ink-4); margin:6px 0 3px; }
+.peer-delta { font-variant-numeric:tabular-nums; color:var(--c-ink-3); flex-shrink:0;
+  min-width:34px; text-align:right; }
+.peer-diff { font-size:var(--fs-sm); color:var(--c-ink-3); padding:5px 8px; margin-top:4px;
+  border-radius:var(--r-sm); background:var(--c-surface-2); border:1px solid var(--c-border); }
 /* What Antoine has written about this entity. A <details> rather than a bespoke panel:
    the row is the quote, opening it is the note it came from. Native, so it costs no state
    and no second control. A proposal (a single-token name match) carries its two decisions
@@ -4307,6 +4315,59 @@ async function noteBody(title) {
   return noteBodies.get(title) || '';
 }
 
+// The horizontal move on the card — who else is on this entity's rung, and who sits
+// further toward integration. Two orderings, because "who else is here" and "who is doing
+// it better" are different questions and one list cannot answer both.
+//
+// The number is a HAND-ASSIGNED reading, not a measurement, and the tooltip says so every
+// time. Rendering a person's judgement as a fact is the failure this whole corpus is built
+// against — the falsifier discipline exists for exactly that reason.
+async function loadPeers(id) {
+  const host = document.getElementById('peerHost-' + id);
+  if (!host) return;
+  let d = null;
+  try { d = await api('/api/ontology/entities/' + encodeURIComponent(id) + '/peers'); }
+  catch (err) { console.error('peers fetch failed:', err); return; }
+  // Same stale-render guard as its neighbours: a slow answer for an entity already left
+  // must not paint over the one on screen.
+  if (!document.getElementById('peerHost-' + id)) return;
+  // A medium has no rung, and an entity alone on its rung has no peers. Both are true facts
+  // about the corpus, and an empty section is worse than no section (AGENTS.md).
+  if (!d || d.rung === null || (!d.alongside.length && !d.furtherAlong.length)) { host.innerHTML = ''; return; }
+
+  const row = (p, showDelta) => {
+    const a = p.axes[0];
+    const tip = [
+      a ? `${a.name}: ${a.mine} → ${a.theirs} (toward "${a.high}")` : 'Not scored on any axis this one is scored on.',
+      p.sharedShapes.length ? 'Shares: ' + p.sharedShapes.join(', ') : '',
+      p.postures.length ? 'Holds: ' + p.postures.map(x => x.name).join('; ') : '',
+      'A hand-assigned reading, not a measurement.',
+    ].filter(Boolean).join('\n');
+    return `<div class="conn peer" data-goto="${qEscAttr(p.id)}" title="${qEscAttr(tip)}">
+      <span class="peer-delta">${showDelta && a ? (a.delta > 0 ? '+' : '') + a.delta.toFixed(2) : '·'}</span>
+      <span class="rel-body">${qEsc(p.name)}</span>
+    </div>`;
+  };
+
+  let html = `<div class="section-title" style="color:var(--c-ink-3);">On this rung — ${qEsc(d.rung)} (${d.peerCount})</div>`;
+  if (d.furtherAlong.length) {
+    html += `<div class="peer-group">Further toward integration</div>`;
+    html += d.furtherAlong.slice(0, 5).map(p => row(p, true)).join('');
+  }
+  if (d.alongside.length) {
+    html += `<div class="peer-group">Most alike</div>`;
+    html += d.alongside.slice(0, 5).map(p => row(p, false)).join('');
+  }
+  if (d.difference && (d.difference.taggedThingsYouAreNot.length || d.difference.holdsPosturesYouDoNot.length || d.difference.carriesShapesYouDoNot.length)) {
+    const bits = [...d.difference.holdsPosturesYouDoNot, ...d.difference.carriesShapesYouDoNot, ...d.difference.taggedThingsYouAreNot];
+    html += `<div class="peer-diff" title="${qEscAttr(d.difference.caveat)}">${qEsc(d.difference.peer)} also: ${qEsc(bits.slice(0, 4).join(' · '))}</div>`;
+  }
+  host.innerHTML = html;
+  // Painted after selectEntity already wired every .conn on the card, so these wire their
+  // own or they are dead links (AGENTS.md).
+  host.querySelectorAll('.conn').forEach(el => { el.onclick = () => selectEntity(el.getAttribute('data-goto')); });
+}
+
 async function loadMentions(id) {
   const host = document.getElementById('menHost-' + id);
   if (!host) return;
@@ -7099,6 +7160,7 @@ async function selectEntity(id){
     html += testimonyHtml(e);
     html += `<div id="relHost-${e.id}"></div>`;
     html += `<div id="menHost-${e.id}"></div>`;
+    html += `<div id="peerHost-${e.id}"></div>`;
     if (e.type === 'film') {
       html += `<div id="tmdbBlock">${filmEnrichmentHtml(e, !!activeLensTag)}</div>`;
       const ccast = castConnections(e);
@@ -7135,6 +7197,7 @@ async function selectEntity(id){
     // permanently empty with no error to show for it.
     loadRelations(e.id);
     loadMentions(e.id);
+    loadPeers(e.id);
     document.querySelectorAll('.conn').forEach(elx => { elx.onclick = () => selectEntity(elx.getAttribute('data-goto')); });
     document.querySelectorAll('.tag[data-tag]').forEach(elx => { elx.onclick = () => toggleTagLens(e, elx.getAttribute('data-tag'), elx); });
     wireThemeLine();
