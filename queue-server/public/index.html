@@ -3133,6 +3133,7 @@ async function boot() {
     // which meant they did nothing until you had opened Core architecture once.
     // They live in the always-visible rail now, so they are wired here instead.
     initRailControls();
+    restoreContentView();
     // initArchNav() used to run here on every boot; it now runs lazily from
     // switchCoreView('arch') the first time the Architecture view is opened.
     // Last, once the shell is up: go back to the mode he left the app in. Content
@@ -3334,7 +3335,7 @@ function setContentView(v) {
   document.querySelector('.graph-stage').style.display = onCanvas ? '' : 'none';
   document.getElementById('listStage').style.display = v === 'list' ? 'flex' : 'none';
   // Colour-mode and the camera reset mean something on either canvas layout.
-  document.querySelectorAll('[data-color], #resetBtn')
+  document.querySelectorAll('[data-color], #resetBtn, #colorByBtn, #graphMoreBtn')
     .forEach(b => { b.style.display = onCanvas ? '' : 'none'; });
   // Bridges and show-all are edge controls, and the landscape has no edges to show.
   document.querySelectorAll('#toggleBridges, #toggleShowAll')
@@ -3351,8 +3352,14 @@ function setContentView(v) {
   if (onCanvas && wasLandscape !== landscapeOn()) reframeGraph();
 }
 document.getElementById('viewGraphBtn').onclick = () => setContentView('graph');
+// Saved from the buttons rather than from setContentView, because the sort control also
+// calls setContentView('list') as a side effect and that is not a choice he made.
 document.getElementById('viewLandscapeBtn').onclick = () => setContentView('landscape');
 document.getElementById('viewListBtn').onclick = () => setContentView('list');
+['viewGraphBtn', 'viewLandscapeBtn', 'viewListBtn'].forEach((id) => {
+  const b = document.getElementById(id);
+  if (b) b.addEventListener('click', saveContentView);
+});
 
 document.getElementById('axisSelect').addEventListener('change', (e) => {
   axisFilter.key = e.target.value;
@@ -3460,6 +3467,7 @@ document.querySelectorAll('.ctrlbtn[data-color]').forEach(b => {
     requestRender();
     renderLegend();
     syncColorByLabel();
+    saveContentView();
   };
 });
 
@@ -4631,7 +4639,21 @@ function axisComparator() {
 }
 
 // ---------- Exploration: list view ----------
+const CONTENT_VIEW_KEY = 'fmcns.contentView';
 let contentView = 'graph';
+function saveContentView() {
+  try { localStorage.setItem(CONTENT_VIEW_KEY, JSON.stringify({ view: contentView, color: colorMode })); } catch (e) {}
+}
+function restoreContentView() {
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(CONTENT_VIEW_KEY) || 'null'); } catch (e) {}
+  if (!v) return;
+  if (v.color) {
+    const b = document.querySelector('.ctrlbtn[data-color="' + v.color + '"]');
+    if (b) b.click();
+  }
+  if (v.view && v.view !== 'graph') setContentView(v.view);
+}
 
 function refreshView() {
   syncFiltersActive();
@@ -16487,10 +16509,10 @@ async function initArchNav() {
   if (archInited) return; archInited = true;
   syncArchControls();
   document.querySelectorAll('[data-arch-layout]').forEach(b => {
-    b.onclick = () => { archLayout = b.getAttribute('data-arch-layout'); syncArchControls(); renderArchStage(); };
+    b.onclick = () => { archLayout = b.getAttribute('data-arch-layout'); saveArchView(); syncArchControls(); renderArchStage(); };
   });
   document.querySelectorAll('[data-arch-layer]').forEach(b => {
-    b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); syncArchControls(); renderArchStage(); };
+    b.onclick = () => { archLayer = b.getAttribute('data-arch-layer'); saveArchView(); syncArchControls(); renderArchStage(); };
   });
   document.querySelectorAll('[data-arch-status]').forEach(b => {
     b.onclick = () => {
@@ -16754,9 +16776,13 @@ try {
   const v = JSON.parse(localStorage.getItem('fmcns.archView') || '{}');
   if (Array.isArray(v.collapsed)) archCollapsed = new Set(v.collapsed);
   if (Array.isArray(v.boardFold)) archBoardFold = new Map(v.boardFold);
+  // Layout and colour-by are kept for the same reason the status filter is not: they
+  // change how the same components look, and hide nothing.
+  if (v.layout) archLayout = v.layout;
+  if (v.layer) archLayer = v.layer;
 } catch (e) {}
 function saveArchView() {
-  try { localStorage.setItem('fmcns.archView', JSON.stringify({ collapsed: [...archCollapsed], boardFold: [...archBoardFold] })); } catch (e) {}
+  try { localStorage.setItem('fmcns.archView', JSON.stringify({ collapsed: [...archCollapsed], boardFold: [...archBoardFold], layout: archLayout, layer: archLayer })); } catch (e) {}
 }
 
 // The current pool of components: everything, or just one focused territory.
