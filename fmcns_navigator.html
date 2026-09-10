@@ -7104,13 +7104,16 @@ function renderLegend(){
       try { localStorage.setItem(LEGEND_KEY, panel.open ? '1' : '0'); } catch (e) {}
     });
     // Open, it covers a corner of the graph. The next thing you touch — the canvas, a
-    // button, the key itself, Escape — folds it back to the mark, so getting rid of it
+    // button, the panel itself, Escape — folds it back to the mark, so getting rid of it
     // never needs an aimed click.
-    // The mark itself is left to the native toggle — closing it here would only be
-    // undone by the click that follows.
-    document.addEventListener('pointerdown', ev => {
-      if (panel.open && !ev.target.closest('#legend > summary')) panel.open = false;
-    }, true);
+    // Two deliberate choices: the close waits for the whole press to finish (a
+    // pointerdown-time close pulls the element out from under a gesture the canvas is
+    // still tracking), and the mark itself is left to the native toggle, which would
+    // otherwise re-open what this just closed.
+    document.addEventListener('click', ev => {
+      const t = ev.target;
+      if (panel.open && !(t.closest && t.closest('#legend > summary'))) panel.open = false;
+    });
     document.addEventListener('keydown', ev => {
       if (ev.key === 'Escape' && panel.open) panel.open = false;
     });
