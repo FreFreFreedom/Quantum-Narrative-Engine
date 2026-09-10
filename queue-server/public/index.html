@@ -870,6 +870,9 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .room-turns { font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--c-ink-5); flex:none; }
 /* Delete stays hidden until the row is actually in play — hover, keyboard focus,
    or already selected — so the list reads as titles, not as a row of icons. */
+.room-row-sub { font-size:var(--fs-xs); color:var(--c-ink-4); margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.uc--row.is-sel .room-row-sub { color:var(--c-ink-3); }
 /* .room-row-acts went with the hover-delete it revealed: the ⋯ menu on the open
    thread holds that action now, behind a rule. */
 .room-main { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; }
@@ -9061,15 +9064,35 @@ function roomCardTitle(s) {
   return (local && local.title) || s.title || s.subject_id;
 }
 
+/* The one line under a thread's name: the lane it is pinned to, or nothing when it is on
+   Auto, and how many turns deep it is. The lane arrives as the stored override — the same
+   JSON the composer's picker writes — so this reads it rather than keeping a second copy. */
+const ROOM_LANE_SHORT = {
+  'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode',
+  'google-ai-studio': 'Google', openai: 'ChatGPT',
+};
+function roomThreadSub(t) {
+  const bits = [];
+  let lane = null;
+  try { lane = t.chat_override ? JSON.parse(t.chat_override) : null; } catch (e) {}
+  if (lane && lane.provider) bits.push(ROOM_LANE_SHORT[lane.provider] || lane.provider);
+  const turns = Number(t.turns) || 0;
+  if (turns) bits.push(turns + (turns === 1 ? ' turn' : ' turns'));
+  return bits.join(' · ');
+}
+
 function renderRoomThreads() {
   const host = document.getElementById('roomThreadList');
   if (!host) return;
   host.innerHTML = roomThreads.map(t => {
     const n = (t.subjects || []).filter(s => !(s.is_primary && s.subject_type === 'open')).length;
+    // Which model is answering, and how far in it is. Both were already on the row's
+    // data and neither was shown, so a list of four threads gave no way to tell the
+    // forty-eight-turn one on Gemini from the four-turn one on Auto.
     return `<div class="uc uc--row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0">`
       + `<div class="uc-head"><span class="uc-title">${qEsc(t.title || 'Open conversation')}</span>`
       + (n ? `<span class="room-cap">${n}</span>` : '')
-      + `</div></div>`;
+      + `</div><div class="room-row-sub">${qEsc(roomThreadSub(t))}</div></div>`;
   }).join('');
   host.querySelectorAll('[data-room-thread]').forEach(el => {
     const pick = () => roomSelect(el.getAttribute('data-room-thread'));
