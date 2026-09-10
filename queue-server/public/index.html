@@ -4670,11 +4670,14 @@ function restoreContentView() {
   let v = null;
   try { v = JSON.parse(localStorage.getItem(CONTENT_VIEW_KEY) || 'null'); } catch (e) {}
   if (!v) return;
-  if (v.color) {
+  // The view goes back FIRST. Pressing the colour button runs its own handler, which
+  // saves — and it would save the view it found rather than the one about to be
+  // restored, quietly rewriting "landscape" to "graph" on the way in.
+  if (v.view && v.view !== 'graph') setContentView(v.view);
+  if (v.color && v.color !== 'type') {
     const b = document.querySelector('.ctrlbtn[data-color="' + v.color + '"]');
     if (b) b.click();
   }
-  if (v.view && v.view !== 'graph') setContentView(v.view);
 }
 
 function refreshView() {
