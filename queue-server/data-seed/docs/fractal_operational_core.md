@@ -748,6 +748,16 @@ gone; the immune system and its three parts stand on the cell rung; and FMCNS si
 institution rung with its six territories inside, so the descent opens on both. The
 civilisation rung is still empty.
 
+*Measured the same evening, once the fill had finished.* Every one of the 659 tags now
+names what it stands against; for 407 of them the other pole is a tag already in the
+corpus. Forty-four entities hold both poles of a tension, where the morning's count was
+one. Counting a shared tension as a shared pattern joined 285 entities across roughly 940
+links that no common word could have drawn. Unmoved: 539 tags still sit on a single
+entity — a tension gives each a partner but not a second carrier — and the civilisation
+rung is empty. The semantic layer is no longer the one failing; the thin place is now
+the analogical layer's reach past the archive characters, where most of the new links
+land.
+
 ### Its own bugs are diagnostic, not merely annoying
 
 The recurring failure in this project's history — a task card reading *Live* while nothing
