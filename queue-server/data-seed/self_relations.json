@@ -1,0 +1,30 @@
+{
+  "_readme": "Hand-written relations between the platform's six territories, 2026-09-10. All six sit on the group rung, so these are horizontal; each carries a source and a falsifier and passes the same validator as an API-created relation.",
+  "shapes": {
+    "sh_upstream_bounds_downstream": "What an earlier stage lets through bounds what a later stage can do with it."
+  },
+  "relations": [
+    {
+      "from_id": "terr_perception",
+      "to_id": "terr_knowledge",
+      "move": "horizontal",
+      "shape": "sh_upstream_bounds_downstream",
+      "at": "2026-09-10",
+      "note": "What is perceived is what can be known: no tag, link or entity exists that some intake path did not first let in.",
+      "source_kind": "witness",
+      "source_ref": "AGENTS.md / architectureNodes.js territories",
+      "falsifier": "A knowledge row with no intake path behind it — not seeded, not mined, not written by hand — would break this."
+    },
+    {
+      "from_id": "terr_knowledge",
+      "to_id": "terr_reasoning",
+      "move": "horizontal",
+      "shape": "sh_upstream_bounds_downstream",
+      "at": "2026-09-10",
+      "note": "Reasoning works over the graph knowledge holds: echoes, loops and anatomies can only be computed from relations and tags already written down.",
+      "source_kind": "witness",
+      "source_ref": "AGENTS.md / architectureNodes.js territories",
+      "falsifier": "A computed echo or loop resting on no stored tag or relation would break this."
+    }
+  ]
+}

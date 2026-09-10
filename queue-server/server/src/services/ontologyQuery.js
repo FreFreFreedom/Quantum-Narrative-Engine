@@ -12,14 +12,13 @@ export function hydrate(db, row) {
   for (const c of db.prepare(`SELECT axis_key, value FROM entity_continuum WHERE entity_id=?`).all(row.id)) {
     continuum[c.axis_key] = c.value;
   }
-  return { ...row, clusters: JSON.parse(row.clusters || '[]'), grounded: !!row.grounded, meta: JSON.parse(row.meta || '{}'), tags, continuum };
+  return { ...row, clusters: JSON.parse(row.clusters || '[]'), meta: JSON.parse(row.meta || '{}'), tags, continuum };
 }
 
-export function searchEntities(db, { type, cluster, tag, name, grounded, source } = {}) {
+export function searchEntities(db, { type, cluster, tag, name, source } = {}) {
   let rows = db.prepare(`SELECT * FROM entities`).all();
   if (type) rows = rows.filter((r) => r.type === type);
   if (source) rows = rows.filter((r) => (r.source || 'archive') === source);
-  if (grounded !== undefined && grounded !== null) rows = rows.filter((r) => !!r.grounded === !!grounded);
   if (cluster) rows = rows.filter((r) => JSON.parse(r.clusters || '[]').includes(cluster));
   if (name) rows = rows.filter((r) => r.name.toLowerCase().includes(String(name).toLowerCase()));
   let hydrated = rows.map((r) => hydrate(db, r));

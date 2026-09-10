@@ -205,7 +205,7 @@ const NOW_COMPUTERS = {
   },
   'semantic-layer': (db) => {
     const films = db.prepare(`SELECT COUNT(*) as n FROM entities WHERE type='film'`).get().n;
-    const grounded = db.prepare(`SELECT COUNT(*) as n FROM entities WHERE type='film' AND grounded=1`).get().n;
+    const grounded = db.prepare(`SELECT COUNT(DISTINCT container_id) as n FROM entities WHERE type='character'`).get().n;
     const countries = db.prepare(`SELECT COUNT(*) as n FROM entities WHERE type='country'`).get().n;
     const taggedCountries = db.prepare(`
       SELECT COUNT(DISTINCT entity_id) as n FROM entity_tags

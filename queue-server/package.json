@@ -34,7 +34,8 @@
     "queue:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-model-selftest.js",
     "gaps:selftest": "node scripts/taggaps-selftest.js",
     "mind:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/mind-selftest.js",
-    "room:selftest": "node scripts/room-selftest.mjs"
+    "room:selftest": "node scripts/room-selftest.mjs",
+    "tensions:selftest": "node scripts/tensions-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",

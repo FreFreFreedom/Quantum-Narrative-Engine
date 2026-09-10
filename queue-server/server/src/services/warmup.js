@@ -11,13 +11,14 @@
 // Anthropic API rate limits rather than firing 60+ entities at once.
 
 import { searchEntities } from './ontologyQuery.js';
+import { fillMissingTensions } from './tagTensions.js';
 
 const CONCURRENCY = 2;
 const STAGGER_MS = 350;
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-async function runWithLimit(items, limit, worker) {
+export async function runWithLimit(items, limit, worker) {
   let cursor = 0;
   async function next() {
     while (cursor < items.length) {
@@ -46,6 +47,9 @@ export async function warmCaches(db, { getBooks, getTagLens }) {
     const firstTag = (e.tags || [])[0];
     if (firstTag && !cachedLensKeys.has(`${e.id}::${firstTag}`)) jobs.push({ kind: 'lens', entity: e, tag: firstTag });
   }
+
+  // Tag tensions ride the same warm-up: fire-and-forget, failures logged inside.
+  fillMissingTensions(db).catch((e) => console.error('Tag tensions warm-up failed:', e.message));
 
   if (!jobs.length) {
     console.log('Cache warm-up: nothing to do, all entities already cached.');

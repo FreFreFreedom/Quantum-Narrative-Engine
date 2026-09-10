@@ -1137,6 +1137,18 @@ export function initTagPatternSchema(db) {
   // regenerates (short, cheap) next time that tag's edge is clicked. Idempotent —
   // deletes zero rows once everything's already short.
   db.exec(`DELETE FROM tag_pattern_explanations WHERE length(explanation) > 300`);
+  // A tag is a bare label. The paradigm says a part means what it is in tension
+  // with — so every tag gets the tag it stands against. This row is that tension,
+  // model-written unless source='hand', and a hand row is never overwritten.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tag_tensions (
+      tag TEXT PRIMARY KEY,
+      against TEXT NOT NULL,
+      why TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'model',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 // ─── Architecture Navigator: live component state, evolution ladders, generated

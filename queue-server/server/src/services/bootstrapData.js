@@ -27,15 +27,15 @@ import { createRelation, validateRelation } from './entityRelations.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEED_DIR = resolve(__dirname, '../../../data-seed');
 
-function upsertEntity(db, { id, type, name, scale = 'individual', container_id = null, clusters = [], grounded = false, source = 'archive', meta = {} }) {
+function upsertEntity(db, { id, type, name, scale = 'individual', container_id = null, clusters = [], source = 'archive', meta = {} }) {
   db.prepare(`
-    INSERT INTO entities (id, type, name, scale, container_id, clusters, grounded, source, meta, updated_at)
-    VALUES (?,?,?,?,?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    INSERT INTO entities (id, type, name, scale, container_id, clusters, source, meta, updated_at)
+    VALUES (?,?,?,?,?,?,?,?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(id) DO UPDATE SET
       type=excluded.type, name=excluded.name, scale=excluded.scale, container_id=excluded.container_id,
-      clusters=excluded.clusters, grounded=excluded.grounded, source=excluded.source, meta=excluded.meta,
+      clusters=excluded.clusters, source=excluded.source, meta=excluded.meta,
       updated_at=excluded.updated_at
-  `).run(id, type, name, scale, container_id, JSON.stringify(clusters), grounded ? 1 : 0, source, JSON.stringify(meta));
+  `).run(id, type, name, scale, container_id, JSON.stringify(clusters), source, JSON.stringify(meta));
 }
 function setTags(db, entityId, tags) {
   db.prepare(`DELETE FROM entity_tags WHERE entity_id=?`).run(entityId);
@@ -72,15 +72,12 @@ export function migrateOntology(db) {
     `).run(key, name, low, high);
   }
   for (const [filmId, film] of Object.entries(seed.filmsIndex)) {
-    upsertEntity(db, { id: filmId, type: 'film', name: film.title, scale: 'film', clusters: film.clusters, grounded: false, meta: { year: film.year, auteurs: film.auteurs, synopsis: film.synopsis || '' } });
+    upsertEntity(db, { id: filmId, type: 'film', name: film.title, scale: 'film', clusters: film.clusters, meta: { year: film.year, auteurs: film.auteurs, synopsis: film.synopsis || '' } });
   }
-  const groundedFilmIds = new Set(seed.characters.map((c) => c.filmId));
-  for (const filmId of groundedFilmIds) db.prepare(`UPDATE entities SET grounded=1 WHERE id=?`).run(filmId);
-
   for (const ch of seed.characters) {
     upsertEntity(db, {
       id: ch.id, type: 'character', name: ch.name, scale: 'individual', container_id: ch.filmId,
-      clusters: ch.clusters, grounded: !!ch.grounded,
+      clusters: ch.clusters,
       meta: { note: ch.note, filmTitle: ch.filmTitle, filmYear: ch.filmYear, auteurs: ch.auteurs, synopsis: ch.synopsis },
     });
     setTags(db, ch.id, ch.tags);
@@ -88,12 +85,17 @@ export function migrateOntology(db) {
   }
   for (const c of seed.countries) {
     const id = 'country_' + c.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    upsertEntity(db, { id, type: 'country', name: c.name, scale: 'national', grounded: true, meta: { description: c.description || '' } });
+    upsertEntity(db, { id, type: 'country', name: c.name, scale: 'national', meta: { description: c.description || '' } });
     setTags(db, id, c.tags || []);
     setContinuum(db, id, { guilt_as_engine: c.guilt_as_engine });
   }
   const base = { films: Object.keys(seed.filmsIndex).length, characters: seed.characters.length, countries: seed.countries.length };
-  return { ...base, civic: migrateCivicCluster(db) };
+  return {
+    ...base,
+    civic: migrateCuratedCluster(db, 'civic_cluster.json', 'civic_relations.json', 'civicEntities'),
+    cell: migrateCuratedCluster(db, 'cell_cluster.json', 'cell_relations.json'),
+    self: migrateCuratedCluster(db, 'self_entity.json', 'self_relations.json'),
+  };
 }
 
 // The civic/justice cluster (plans/civic-structures-and-loops.md, Stage 2) lives in its
@@ -115,11 +117,13 @@ export function migrateOntology(db) {
 //     is the film they appear in, and it is deliberate: a civic entity is testified about
 //     by several works at once (Baltimore by both The Wire and The Corner), so the medium
 //     link has to be a list — meta.testimony — and cannot be the single container column.
+//     For the cell and self seeds, container means PART OF instead: the parts sit inside
+//     their whole, on the same or a lower rung, not on the next rung up.
 //
 // `source: 'curated'` keeps that provenance visible in the app's own facets rather than
 // letting hand-written rows pass as archive-derived ones (§11, "Provenance").
-export function migrateCivicCluster(db) {
-  const seedPath = resolve(SEED_DIR, 'civic_cluster.json');
+export function migrateCuratedCluster(db, clusterFile, relationsFile, entitiesKey = 'entities') {
+  const seedPath = resolve(SEED_DIR, clusterFile);
   if (!existsSync(seedPath)) return { skipped: true };
   const seed = JSON.parse(readFileSync(seedPath, 'utf8'));
 
@@ -132,24 +136,24 @@ export function migrateCivicCluster(db) {
   for (const [filmId, film] of Object.entries(seed.filmsIndex)) {
     upsertEntity(db, {
       id: filmId, type: 'film', name: film.title, scale: 'film', clusters: film.clusters,
-      grounded: true, source: 'curated',
+      source: 'curated',
       meta: { year: film.year, auteurs: film.auteurs, synopsis: film.synopsis || '', kind: film.kind || 'film' },
     });
   }
   for (const ch of seed.characters) {
     upsertEntity(db, {
       id: ch.id, type: 'character', name: ch.name, scale: 'individual', container_id: ch.filmId,
-      clusters: ch.clusters, grounded: !!ch.grounded, source: 'curated',
+      clusters: ch.clusters, source: 'curated',
       meta: { note: ch.note, filmTitle: ch.filmTitle, filmYear: ch.filmYear, auteurs: ch.auteurs, synopsis: ch.synopsis },
     });
     setTags(db, ch.id, ch.tags);
     setContinuum(db, ch.id, ch.continuum);
   }
-  for (const c of seed.civicEntities) {
+  for (const c of seed[entitiesKey]) {
     upsertEntity(db, {
       id: c.id, type: c.type, name: c.name, scale: c.scale, container_id: c.container || null,
-      clusters: c.clusters, grounded: true, source: 'curated',
-      meta: { note: c.note, testimony: c.testimony || [], postures: c.postures || [] },
+      clusters: c.clusters, source: 'curated',
+      meta: { note: c.note, testimony: c.testimony || [], postures: c.postures || [], ...(c.territory ? { territory: c.territory } : {}) },
     });
     setTags(db, c.id, c.tags);
     setContinuum(db, c.id, c.continuum);
@@ -158,8 +162,8 @@ export function migrateCivicCluster(db) {
     cluster: code,
     mediums: Object.keys(seed.filmsIndex).length,
     characters: seed.characters.length,
-    civicEntities: seed.civicEntities.length,
-    relations: seedCivicRelations(db),
+    entities: seed[entitiesKey].length,
+    relations: seedRelations(db, relationsFile),
   };
 }
 
@@ -172,8 +176,8 @@ export function migrateCivicCluster(db) {
 // Idempotent by content rather than by id, since the file has no ids: a relation with the
 // same two ends, move and date is updated in place instead of being inserted again. That
 // is what lets this run on every boot like the rest of the seeding.
-function seedCivicRelations(db) {
-  const p = resolve(SEED_DIR, 'civic_relations.json');
+function seedRelations(db, relationsFile) {
+  const p = resolve(SEED_DIR, relationsFile);
   if (!existsSync(p)) return { skipped: true };
   const { relations = [] } = JSON.parse(readFileSync(p, 'utf8'));
   let written = 0;
@@ -195,7 +199,7 @@ function seedCivicRelations(db) {
   }
   // Refusals are returned, never swallowed. A relation the validator rejects is a claim
   // that could not be stated honestly, and the boot log is where that belongs.
-  if (refused.length) console.warn(`[civic relations] refused ${refused.length}:\n  ${refused.join('\n  ')}`);
+  if (refused.length) console.warn(`[${relationsFile}] refused ${refused.length}:\n  ${refused.join('\n  ')}`);
   return { written, refused };
 }
 

@@ -10,6 +10,7 @@ import { makeBookDetailHandler } from '../services/bookDetail.js';
 import { enrichFilm, enrichAllFilms, listEnrichments, batchStatus } from '../services/filmEnrichment.js';
 import { getTagGaps } from '../services/tagGaps.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
+import { listTensions, setTension, generateTension } from '../services/tagTensions.js';
 
 // Two ends can be in the same loop; report it once.
 function dedupeLoops(loops) {
@@ -235,6 +236,26 @@ export function ontologyRoutes(db) {
     const book = req.body?.book;
     const out = await getBookDetail(entity, book, { force: !!req.body?.force });
     if (out.error) return res.status(out.error === 'invalid_book' ? 400 : 500).json(out);
+    res.json(out);
+  }));
+
+  // Tag tensions: the tag each tag stands against. Hand rows win over model rows.
+  router.get('/tags/tensions', (req, res) => res.json({ tensions: listTensions(db) }));
+
+  router.put('/tags/:tag/tension', (req, res) => {
+    const against = String(req.body?.against || '').trim();
+    const why = String(req.body?.why || '').trim();
+    if (!against || !why) return res.status(400).json({ error: 'against_and_why_required' });
+    res.json(setTension(db, req.params.tag, { against, why }, 'hand'));
+  });
+
+  router.post('/tags/:tag/tension/regenerate', asyncHandler(async (req, res) => {
+    const tag = req.params.tag;
+    const existing = db.prepare(`SELECT * FROM tag_tensions WHERE tag=?`).get(tag);
+    if (existing?.source === 'hand') return res.json({ ...existing, kept: 'hand' });
+    db.prepare(`DELETE FROM tag_tensions WHERE tag=?`).run(tag);
+    const out = await generateTension(db, tag);
+    if (out.error) return res.status(502).json(out);
     res.json(out);
   }));
 

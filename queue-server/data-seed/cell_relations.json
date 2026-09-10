@@ -1,0 +1,30 @@
+{
+  "_readme": "Hand-written relations inside the immune proof case, 2026-09-10. Same discipline as civic_relations.json: every relation carries a source and a falsifier and passes the same validator as one created through the API. All three parts sit on the cell rung, so these are horizontal.",
+  "shapes": {
+    "sh_self_bounds_defence": "What counts as self bounds what may be defended and remembered."
+  },
+  "relations": [
+    {
+      "from_id": "soma_thymus",
+      "to_id": "soma_regulatory_t_cell",
+      "move": "horizontal",
+      "shape": "sh_self_bounds_defence",
+      "at": "2026-09-10",
+      "note": "The thymus produces regulatory T cells; the boundary and its restraint are made in one place.",
+      "source_kind": "witness",
+      "source_ref": "fractal_operational_core.md §5 — The immune system is the proof case",
+      "falsifier": "Regulatory T cells maturing with no thymic selection at all would break this."
+    },
+    {
+      "from_id": "soma_thymus",
+      "to_id": "soma_memory_b_cell",
+      "move": "horizontal",
+      "shape": "sh_self_bounds_defence",
+      "at": "2026-09-10",
+      "note": "What the thymus admits as self bounds what memory may later recognise as foreign.",
+      "source_kind": "witness",
+      "source_ref": "fractal_operational_core.md §5 — The immune system is the proof case",
+      "falsifier": "A durable memory response against a shape the thymus had taught as self, with no autoimmunity, would break this."
+    }
+  ]
+}

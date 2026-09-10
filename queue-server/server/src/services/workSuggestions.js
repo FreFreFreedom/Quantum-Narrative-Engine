@@ -195,9 +195,8 @@ export function buildContextDigest(catalog = [], { territory = null } = {}) {
   const lines = [];
   try {
     const total = db.prepare(`SELECT COUNT(*) n FROM entities`).get().n;
-    const grounded = db.prepare(`SELECT COUNT(*) n FROM entities WHERE grounded=1`).get().n;
     const films = db.prepare(`SELECT COUNT(*) n FROM entities WHERE type='film'`).get().n;
-    lines.push(`Ontology: ${total} entities (${grounded} grounded), ${films} films.`);
+    lines.push(`Ontology: ${total} entities, ${films} films.`);
   } catch {}
   try {
     const clusters = db.prepare(`SELECT code, grounding_status FROM clusters`).all();

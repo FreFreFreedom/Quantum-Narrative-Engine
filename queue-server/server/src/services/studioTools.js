@@ -33,7 +33,7 @@ import { recallFacts } from './mind.js';
 export const STUDIO_TOOLS = [
   {
     name: 'search_entities',
-    description: 'Search/filter the project\'s entities by type, cluster, tag, name substring, or grounded status. Entity types include characters, films, countries, and — from the civic/justice corpus — institutions, families, cities and groups. A film is a MEDIUM (a record carrying testimony), not a thing that sits on the scale ladder; the institutions, families and cities it testifies about are the entities.',
+    description: 'Search/filter the project\'s entities by type, cluster, tag, name substring, or source (archive-mined vs. hand-curated). Entity types include characters, films, countries, and — from the civic/justice corpus — institutions, families, cities and groups. A film is a MEDIUM (a record carrying testimony), not a thing that sits on the scale ladder; the institutions, families and cities it testifies about are the entities.',
     input_schema: {
       type: 'object',
       properties: {
@@ -47,7 +47,7 @@ export const STUDIO_TOOLS = [
         cluster: { type: 'string', description: 'Cluster code, e.g. "I" or "II"' },
         tag: { type: 'string' },
         name: { type: 'string', description: 'Substring match on entity name' },
-        grounded: { type: 'boolean' },
+        source: { type: 'string', enum: ['archive', 'curated'], description: 'archive = mined from the source archive; curated = written by hand' },
       },
     },
   },
@@ -215,7 +215,7 @@ export function dispatchStudioTool(db, name, input) {
         // here — which is the mistake the removed enum made.
         ...(args.type ? {} : { types_in_use: q.listFacets(db).types.map((t) => `${t.value} (${t.n})`) }),
         entities: rows.slice(0, ENTITY_CAP).map((e) => ({
-          id: e.id, name: e.name, type: e.type, scale: e.scale, clusters: e.clusters, grounded: e.grounded,
+          id: e.id, name: e.name, type: e.type, scale: e.scale, clusters: e.clusters, source: e.source,
         })),
       };
     }

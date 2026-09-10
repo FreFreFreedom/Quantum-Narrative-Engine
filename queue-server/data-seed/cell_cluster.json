@@ -1,0 +1,77 @@
+{
+  "_readme": "Hand-curated, not archive-mined: the paradigm's proof case (fractal_operational_core.md, 'The immune system is the proof case') entering the app at the cell rung, written 2026-09-10. Container here means PART OF — the thymus and the two cell kinds sit inside the immune system on the same rung, not on the rung above it.",
+  "cluster": {
+    "code": "XIV",
+    "name": "The Immune Proof Case",
+    "grounding": {
+      "status": "curated",
+      "note": "Written by hand 2026-09-10 from fractal_operational_core.md 'The immune system is the proof case'."
+    }
+  },
+  "baseTags": ["self-non-self", "immune-memory"],
+  "filmsIndex": {},
+  "characters": [],
+  "entities": [
+    {
+      "id": "soma_immune_system",
+      "type": "soma",
+      "scale": "cell",
+      "name": "The immune system",
+      "note": "The entity that draws self against non-self, values threats, and remembers shapes — the three acts in a body.",
+      "container": null,
+      "testimony": [],
+      "clusters": ["XIV"],
+      "tags": ["self-non-self", "boundary-drawn-wrong", "immune-memory"],
+      "continuum": {},
+      "postures": [
+        {
+          "name": "Vaccination — an engineered analogical intervention: a harmless structural cousin shown so the real thing is recognised later.",
+          "since": null,
+          "until": null,
+          "source_kind": "witness",
+          "source": "fractal_operational_core.md §5 — The immune system is the proof case",
+          "falsifier": "A vaccine that protects with no structural likeness to the pathogen would break this."
+        }
+      ]
+    },
+    {
+      "id": "soma_thymus",
+      "type": "soma",
+      "scale": "cell",
+      "name": "The thymus",
+      "note": "Where the body teaches its cells which shapes are self; failure here is autoimmunity — a boundary drawn wrong at the cell rung.",
+      "container": "soma_immune_system",
+      "testimony": [],
+      "clusters": ["XIV"],
+      "tags": ["boundary-drawn-wrong", "exile-as-social-control"],
+      "continuum": { "guilt_as_engine": 0.25 },
+      "postures": []
+    },
+    {
+      "id": "soma_regulatory_t_cell",
+      "type": "soma",
+      "scale": "cell",
+      "name": "The regulatory T cell",
+      "note": "The part whose job is restraint: it stops the body attacking itself. Its absence is the purge turned inward.",
+      "container": "soma_immune_system",
+      "testimony": [],
+      "clusters": ["XIV"],
+      "tags": ["restraint-as-integration"],
+      "continuum": { "guilt_as_engine": 0.7 },
+      "postures": []
+    },
+    {
+      "id": "soma_memory_b_cell",
+      "type": "soma",
+      "scale": "cell",
+      "name": "The memory B cell",
+      "note": "Recognition of a pathogen never met, by its likeness to one already met — the analogical layer as tissue.",
+      "container": "soma_immune_system",
+      "testimony": [],
+      "clusters": ["XIV"],
+      "tags": ["immune-memory", "pattern-recognition-across-scale"],
+      "continuum": {},
+      "postures": []
+    }
+  ]
+}

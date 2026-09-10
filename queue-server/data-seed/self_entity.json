@@ -1,0 +1,113 @@
+{
+  "_readme": "Hand-curated, 2026-09-10: the platform itself as an entity on its own table — the fold in fractal_operational_core.md. Container here means PART OF: the six territories sit inside FMCNS on the rung below it.",
+  "cluster": {
+    "code": "XV",
+    "name": "The platform itself",
+    "grounding": {
+      "status": "curated",
+      "note": "The fold — a universal claim that exempts the claimant is refuted by the exemption (fractal_operational_core.md). Written by hand 2026-09-10."
+    }
+  },
+  "baseTags": ["prosthetic-analogical-layer", "self-model-vs-reality"],
+  "filmsIndex": {},
+  "characters": [],
+  "entities": [
+    {
+      "id": "inst_fmcns",
+      "type": "institution",
+      "scale": "institution",
+      "name": "FMCNS",
+      "note": "A prosthetic analogical layer that maintains a boundary against its own dissolution — and therefore an entity on its own table.",
+      "container": null,
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["prosthetic-analogical-layer", "self-model-vs-reality", "boundary-busier-defending-than-looking"],
+      "continuum": {},
+      "postures": []
+    },
+    {
+      "id": "terr_perception",
+      "type": "territory",
+      "scale": "group",
+      "name": "Perception",
+      "note": "How anything gets in.",
+      "container": "inst_fmcns",
+      "territory": "perception",
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["gaze-as-contract", "watched-watcher"],
+      "continuum": {},
+      "postures": []
+    },
+    {
+      "id": "terr_knowledge",
+      "type": "territory",
+      "scale": "group",
+      "name": "Knowledge",
+      "note": "The shared shape of the material, its tags and its cross-type links.",
+      "container": "inst_fmcns",
+      "territory": "knowledge",
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["memory-as-artifact", "knowledge-as-extraction"],
+      "continuum": {},
+      "postures": []
+    },
+    {
+      "id": "terr_reasoning",
+      "type": "territory",
+      "scale": "group",
+      "name": "Reasoning",
+      "note": "Working things out over the graph.",
+      "container": "inst_fmcns",
+      "territory": "reasoning",
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["pattern-recognition-across-scale", "moral-arithmetic"],
+      "continuum": {},
+      "postures": []
+    },
+    {
+      "id": "terr_experience",
+      "type": "territory",
+      "scale": "group",
+      "name": "Experience",
+      "note": "How it feels to explore.",
+      "container": "inst_fmcns",
+      "territory": "experience",
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["witness-as-transformation"],
+      "continuum": {},
+      "postures": []
+    },
+    {
+      "id": "terr_interface",
+      "type": "territory",
+      "scale": "group",
+      "name": "Interface",
+      "note": "What you touch.",
+      "container": "inst_fmcns",
+      "territory": "interface",
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["surface-as-boundary"],
+      "continuum": {},
+      "postures": []
+    },
+    {
+      "id": "terr_self",
+      "type": "territory",
+      "scale": "group",
+      "name": "Self",
+      "note": "The app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world.",
+      "container": "inst_fmcns",
+      "territory": "self",
+      "testimony": [],
+      "clusters": ["XV"],
+      "tags": ["self-model-vs-reality", "self-investigation-as-trap"],
+      "continuum": {},
+      "postures": []
+    }
+  ]
+}

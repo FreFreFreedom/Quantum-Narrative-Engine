@@ -705,7 +705,11 @@ app seeing its own holes) and the *horizontal move* (who else stands on this run
 entanglement, bridge — are computed in two separate places, once for the card's echoes over
 the whole corpus and once for the card's sections over the filtered pool, and the same
 relation carries two names depending on which computed it (*scale echo* in one, *Continuum
-bridge* in the other). What the Room learned shows on three surfaces; an idea shows on four.
+bridge* in the other). *Corrected later the same day:* what the Room learned shows on two
+surfaces (the Room's Mind pane and the Home teaser), and a third tab called *Mind* shows
+something else entirely — the architecture-intelligence feed; and an idea is drawn exactly
+once, but the word *idea* names four different tables (seeds, world-look reports, the GitHub
+library, board cards). The duplication was in the names, not the rows.
 And of roughly seventy services, about fifteen do the seeing — the rest keep the app itself
 running. An entity whose apparatus for maintaining itself outweighs its apparatus for
 perceiving is not sick, but it is the shape §1 warns about: a boundary busier defending

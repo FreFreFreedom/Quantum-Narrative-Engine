@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-10T05:00:51.562Z
+Generated: 2026-09-10T07:22:42.073Z
 
 ## Components
 
@@ -38,14 +38,14 @@ Generated: 2026-09-10T05:00:51.562Z
 
 ## Plan backlog
 
-- theme-clusters-are-too-small — PLANNED
+- theme-clusters-are-too-small — DONE
 - the-horizontal-move — **DONE** 2026-09-10
 - where-the-corpus-does-not-connect — DONE
 - gemini-in-ai-settings — **DONE** 2026-09-09
 - testimony-in-the-ontology — **PHASES 1-2 DONE** 2026-09-09 · phase 3 still gated on Antoine seeing phase 1's result
 - narrative-mirror — **DONE** 2026-09-09
 - cross-domain-healing-search — PLANNED
-- ui-redesign-instrument-chrome — **IN PROGRESS** 2026-09-09
+- ui-redesign-instrument-chrome — **DONE** 2026-09-10
 - civic-structures-and-loops — IN PROGRESS
 - command-center-dashboard — **DONE** 2026-09-09
 - entity-interior-first-anatomy — **DONE** 2026-09-07

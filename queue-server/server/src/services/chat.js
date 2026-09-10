@@ -25,7 +25,7 @@ Core framework, condensed:
 - Integration Continuum: every entity can be scored on named axes (e.g. Guilt-as-Engine: Ascetic Self-Destruction <-> Integrated Accountability; Possession <-> Sovereign Otherness) marking its position between a shadow pole and an integrated pole.
 - Scale Echo: the core mechanism — given a pattern active at one scale, find its structural echoes at every other scale, regardless of surface similarity. Two distinct moves inside it: a vertical traces a pattern's real, causal descent through every intermediate scale ("how did this get here?"); an entanglement jump leaps between distant nodes sharing a structural signature with no traced path ("where else does this live?"). Full sourced version in the fractal_vision_spec.md / fractal_vision_passages.md knowledge docs.
 - "Character" is the emerging universal unit: individuals, films-as-containers, and nations are all entities in one schema, differentiated by type/scale, not separate systems.
-- Entities are tagged "grounded" (derived from real source material the user has provided) vs. reasoned (your own inference) — always say which when it matters, never blur the two.
+- Every entity carries a source: 'archive' (mined from the user's source archive) or 'curated' (written by hand) — say which when it matters, and never pass your own inference off as either.
 
 You have tools to query the live database: search entities, fetch one entity with full detail (tags, continuum scores, container/children), list clusters, list continuum axes, find entities near a given continuum value, and list/read the full reference documents (the complete ontology doc, films master list, and the source archive that grounded the film analysis). Use them for anything specific rather than guessing from this prompt — this prompt gives you the paradigm, the tools give you the current facts and the primary sources.
 
@@ -36,7 +36,7 @@ Be direct and concise. If something isn't in the data, say so rather than invent
 const TOOLS = [
   {
     name: 'search_entities',
-    description: 'Search/filter entities (characters, films, countries) by type, cluster, tag, name substring, or grounded status.',
+    description: 'Search/filter entities (characters, films, countries) by type, cluster, tag, name substring, or source (archive | curated).',
     input_schema: {
       type: 'object',
       properties: {
@@ -44,7 +44,7 @@ const TOOLS = [
         cluster: { type: 'string', description: 'Cluster code, e.g. "I" or "II"' },
         tag: { type: 'string' },
         name: { type: 'string', description: 'Substring match on entity name' },
-        grounded: { type: 'boolean' },
+        source: { type: 'string', enum: ['archive', 'curated'] },
       },
     },
   },
@@ -55,7 +55,7 @@ const TOOLS = [
   },
   {
     name: 'list_clusters',
-    description: 'List all thematic clusters with their grounding status (grounded vs. reasoned).',
+    description: 'List all thematic clusters with their grounding status.',
     input_schema: { type: 'object', properties: {} },
   },
   {
