@@ -19514,7 +19514,11 @@ document.addEventListener('keydown', (e) => {
         if (hit && hit.src === raw) return hit.html;
       }
       try {
-        var out = marked.parse(qEsc(raw), { breaks: false, gfm: true });
+        // Escaping '<' and '&' is what makes a tag impossible; escaping '>' as well
+        // would also destroy every blockquote, because a quoted line starts with one.
+        // A '>' on its own cannot open anything, so it is left alone.
+        var safe = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        var out = marked.parse(safe, { breaks: false, gfm: true });
         if (cacheKey) {
           if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
           mdCache.set(cacheKey, { src: raw, html: out });
