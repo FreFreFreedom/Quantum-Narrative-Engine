@@ -7,6 +7,7 @@ import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
 import { makeBookDetailHandler } from '../services/bookDetail.js';
 import { enrichFilm, enrichAllFilms, listEnrichments, batchStatus } from '../services/filmEnrichment.js';
+import { getTagGaps } from '../services/tagGaps.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
 // Two ends can be in the same loop; report it once.
@@ -172,6 +173,10 @@ export function ontologyRoutes(db) {
     if (!out) return res.status(404).json({ error: 'unknown_tag' });
     res.json(out);
   });
+
+  // The same grouping read for its holes: which theme clusters barely touch
+  // (services/tagGaps.js). Ranked, never a verdict.
+  router.get('/tag-gaps', (req, res) => res.json(getTagGaps()));
 
   router.get('/clusters', (req, res) => res.json({ clusters: q.listClusters(db) }));
   router.get('/continuum-axes', (req, res) => res.json({ axes: q.listContinuumAxes(db) }));

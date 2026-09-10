@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-09T23:26:19.969Z
+Generated: 2026-09-10T03:52:15.618Z
 
 ## Components
 
@@ -38,8 +38,12 @@ Generated: 2026-09-09T23:26:19.969Z
 
 ## Plan backlog
 
-- narrative-mirror — PLANNED
+- where-the-corpus-does-not-connect — PLANNED
+- gemini-in-ai-settings — **DONE** 2026-09-09
+- testimony-in-the-ontology — **PHASES 1-2 DONE** 2026-09-09 · phase 3 still gated on Antoine seeing phase 1's result
+- narrative-mirror — **DONE** 2026-09-09
 - cross-domain-healing-search — PLANNED
+- ui-redesign-instrument-chrome — **IN PROGRESS** 2026-09-09
 - civic-structures-and-loops — IN PROGRESS
 - command-center-dashboard — **DONE** 2026-09-09
 - entity-interior-first-anatomy — **DONE** 2026-09-07
@@ -89,7 +93,7 @@ Generated: 2026-09-09T23:26:19.969Z
 - rotate-leaked-credentials — **Cleanup DONE · revocation deferred on purpose** (Antoine, 2026-08-21)
 - cards-one-system — **DONE** 2026-08-21 — shipped as `.ubtn`/`.uicon` plus the `⋯` menu, the one status pill and the "Details" fold; `.q-item`/`.flow-row`/`.stage-go` retired rather than left overriding. Three documented departures from the plan text are in the plan's own header.
 - cards-rest-and-narrow-screens — **DONE** 2026-08-21
-- design-system-pass — **IN PROGRESS** — **Phase 2 (buttons) DONE 2026-08-21** via [cards-one-system.md](cards-one-system.md) (shipped as `.ubtn`, not `.btn`); the cover `alt` text landed with it. Left: per-view responsive behaviour — **now owned by [cards-rest-and-narrow-screens.md](cards-rest-and-narrow-screens.md) Part B** — and keyboard access on the three graph views, which Antoine declined on 2026-08-21.
+- design-system-pass — **Phase 1 (tokens) DONE 2026-09-09** by [ui-redesign-instrument-chrome.md](ui-redesign-instrument-chrome.md) Phase 0 — the type scale, radii, stacking ladder and motion tokens are real and the literals are gone. **Phase 2 (buttons) DONE 2026-08-21** via [cards-one-system.md](cards-one-system.md) (shipped as `.ubtn`, not `.btn`); the cover `alt` text landed with it. Left: per-view responsive behaviour — **now owned by [cards-rest-and-narrow-screens.md](cards-rest-and-narrow-screens.md) Part B** — and keyboard access on the three graph views, which Antoine declined on 2026-08-21.
 - multi-agent-development-team — **~70% DONE · roster outstanding**
 - self-aware-platform — **Parts 1–6 DONE · 2 loose ends**
 - suggestions-that-keep-up-with-the-code — **DONE** — all four parts; `npm run ship:facts` proves the saving. Two checks (live probe transport, runner-offline) were left to the deploy
@@ -100,6 +104,7 @@ Generated: 2026-09-09T23:26:19.969Z
 - theme-follows-the-mac — **PLANNED** 2026-08-23
 - fractal-vision-paradigm — **DONE** 2026-08-26. Also fixed a contamination hazard: pages 1099-1101 are the answer key for two of the three films in [calibration-test.md](calibration-test.md), so both new docs joined its forbidden-files list with the reason stated inline. Wrote three follow-on plans (above, Open work) without implementing any.
 - script-coverage-test — **DONE** 2026-08-26. The plan's own premise was wrong — it described the corpus as heavy with Tarkovsky/Bresson/Dreyer/Béla Tarr; none of those are in `filmsIndex`, confirmed by grep. Findings report flags this and proceeds on the real 199-film list. No OpenSubtitles API key was available — all subtitle "found" results are from public listing pages, not the API itself; noted as a real gap for anyone building on this
+- obsidian-prior-art-findings — **DONE** 2026-09-09
 - tasks-start-without-waiting — DONE 2026-08-21. §6 (fanning the world-look out concurrently) deliberately **NOT** done — off the critical path once the gate went, and it risks benching the free lane; the analysis is kept in the plan
 - send-a-plan-from-the-terminal — DONE 2026-08-21
 - brainstorm-world-ideas — DONE 2026-08-20

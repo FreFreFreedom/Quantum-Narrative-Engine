@@ -26,6 +26,12 @@ export function bindTagCommunitiesDb(database) { db = database; }
 const EMPTY = { totalTags: 0, totalCommunities: 0, communities: [], tagCommunity: {} };
 
 let cached = null;
+// The graph the clustering was computed from, kept so a second reading of the SAME
+// grouping (services/tagGaps.js — what falls BETWEEN the clusters) can reach it
+// without rebuilding. Held beside the index rather than on it: getTagCommunities()'s
+// shape is read by three other modules and served as JSON, and two Maps would ride
+// into that payload as `{}`.
+let cachedGraph = { freq: new Map(), adjacency: new Map() };
 
 function buildGraph(tagLists) {
   const freq = new Map();      // tag -> number of entities carrying it
@@ -146,6 +152,7 @@ export function buildTagCommunities() {
     if (!db) throw new Error('no db bound');
     const tagLists = tagListsFromDb();
     const { freq, adjacency } = buildGraph(tagLists);
+    cachedGraph = { freq, adjacency };
     if (adjacency.size === 0) {
       cached = { ...EMPTY };
       console.log('[tag-communities] no tags in entity_tags — nothing to cluster');
@@ -197,6 +204,7 @@ export function buildTagCommunities() {
   } catch (e) {
     console.error('[tag-communities] build failed (serving an empty index):', e.message);
     cached = { ...EMPTY };
+    cachedGraph = { freq: new Map(), adjacency: new Map() };
   }
   return cached;
 }
@@ -206,6 +214,12 @@ export function buildTagCommunities() {
 export function getTagCommunities() {
   if (cached === null) buildTagCommunities();
   return cached;
+}
+
+// The co-occurrence graph behind the current index, built with it.
+export function getTagGraph() {
+  getTagCommunities();
+  return cachedGraph;
 }
 
 export function communityForTag(tag) {
