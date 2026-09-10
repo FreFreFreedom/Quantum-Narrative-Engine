@@ -4806,6 +4806,9 @@ function prettyLabel(map, v) {
 // One row list for both facet blocks. The checkbox is the ordinary toggle; the name
 // is a second, smaller move: show only this one. Pressing the name of the only kind
 // left on brings everything back, so isolating and returning are the same click.
+// What was on before the last solo, so pressing the name again gives back exactly
+// that rather than everything (films default off for a reason).
+const facetPrev = new WeakMap();
 function renderToggleList(host, items, labelMap, set) {
   host.innerHTML = '';
   const soloed = (v) => set.size === 1 && set.has(v);
@@ -4824,8 +4827,14 @@ function renderToggleList(host, items, labelMap, set) {
     const name = lab.querySelector('.tt-name');
     const solo = (ev) => {
       ev.preventDefault(); ev.stopPropagation();
-      if (soloed(value)) { items.forEach(i => set.add(i.value)); }
-      else { set.clear(); set.add(value); }
+      if (soloed(value)) {
+        const prev = facetPrev.get(set);
+        set.clear();
+        (prev && prev.length ? prev : items.map(i => i.value)).forEach(v => set.add(v));
+      } else {
+        facetPrev.set(set, [...set]);
+        set.clear(); set.add(value);
+      }
       renderFacets(); refreshView();
     };
     name.onclick = solo;
