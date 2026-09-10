@@ -25,6 +25,7 @@
     "ending:selftest": "node scripts/ending-selftest.js",
     "never-deep:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/never-deep-selftest.js",
     "notes:selftest": "node scripts/notes-selftest.js",
+    "mentions:selftest": "node scripts/mentions-selftest.js",
     "scale:selftest": "node scripts/scale-ladder-selftest.js",
     "fences:anatomy": "node scripts/interior-fences.js",
     "relations:selftest": "node scripts/relations-selftest.js",

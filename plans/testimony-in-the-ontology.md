@@ -2,7 +2,15 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-09 |
+| **PHASES 1-2 DONE, PHASE 3 NOT STARTED** | 2026-09-09 |
+
+Phases 1 and 2 shipped: `entity_mentions`, the matcher in
+`server/src/services/entityMentions.js`, the routes under `/api/ontology`, the entity-card
+section, the inline confirm/reject, and the Home card rows. `npm run mentions:selftest`
+covers the matcher and idempotency.
+
+**Phase 3 is deliberately unbuilt.** §7's own first line gates it: it may not begin until
+phase 1 has run over the real corpus and Antoine has looked at the result.
 
 ---
 
