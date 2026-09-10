@@ -642,3 +642,14 @@ it happens. Silence reads to him as nobody watching. And when it lands, **use th
 feature instead of believing the card**: call the endpoint and check the number the plan
 named as its own success test. Full rule in `AGENTS.md`, "Watching a task you sent to
 the queue"; step 6 of the `send-plan` skill now points at it.
+
+## No Slack pings (2026-09-10)
+
+Antoine turned them off: *"no slack ping plz.. remove those from the system."*
+`SLACK_WEBHOOK_URL` is blank in `queue-server/.env`, which silences every Slack path
+at once — finished/blocked tasks, ship and undo notices, "not published" warnings, and
+the runner's own started/stopped lines. They all route through one guarded function,
+`slackNotify` in `scripts/queue-runner.js`, so the empty variable *is* the removal.
+**Do not set it again and do not offer Slack as a notification route.** The server-side
+`NOTIFY_WEBHOOK_URL` recap in `promptQueue.js#sendRecap` stays unset too. The runner
+reads the value once at startup, so the change lands on its next restart.
