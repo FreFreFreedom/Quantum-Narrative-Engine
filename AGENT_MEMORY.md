@@ -653,3 +653,25 @@ the runner's own started/stopped lines. They all route through one guarded funct
 **Do not set it again and do not offer Slack as a notification route.** The server-side
 `NOTIFY_WEBHOOK_URL` recap in `promptQueue.js#sendRecap` stays unset too. The runner
 reads the value once at startup, so the change lands on its next restart.
+---
+
+## The theme clusters are coarse now — and the real bottleneck is the tag vocabulary (2026-09-10)
+
+`detectCommunities` in `server/src/services/tagCommunities.js` is full multi-level
+Louvain (local-moving **plus** the aggregation phase). 651 tags now fall into **15**
+theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
+**35 of 105 pairs touching** instead of 156 of 4,278. Two things worth not re-deriving:
+
+- **A self-loop counts twice toward degree.** Super-nodes carry their community's
+  internal weight as a self-loop; count it once and the algorithm over-merges silently.
+  `npm run gaps:selftest` fails if that regresses — that is what its ring-of-clumps
+  case is for.
+- **The remaining ties at zero are a tagging problem, not a clustering one.** Only
+  **59 of 641 seed tags are carried by more than one entity** (214 entities, ~4.9 tags
+  each), so the co-occurrence graph is nearly a union of per-entity cliques. No
+  clustering can make most cluster pairs touch until tags are reused across entities.
+  Do not "fix" this with a threshold — thresholds are forbidden on the gap score.
+- `scripts/detect-tag-communities.js` no longer carries a second copy of the algorithm;
+  it imports the service's. `services/interactionGraph.js` shares the function too and
+  is unaffected — the frozen anatomy records in `data-seed/interiors/` still reproduce
+  byte-for-byte (that is why `detectCommunities` sorts its node order).

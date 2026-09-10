@@ -188,6 +188,11 @@ are explicitly later phases (see "Known gaps" below and the removed items list a
   dependency-light frontend/scripts convention. Deterministic: node order is
   sorted, so re-running produces byte-identical output (checked — two runs
   differ only in the `generatedAt` timestamp).
+  - **Superseded 2026-09-10**: the aggregation phase was added, so this is now real
+    multi-level Louvain, and the script no longer carries its own copy — it imports
+    `detectCommunities` from `server/src/services/tagCommunities.js`. Single-level left
+    651 tags in 104 communities with a median size of 3, which made
+    `GET /api/ontology/tag-gaps` a field of ties at zero. It is 15 communities now.
 - **Result**: 106 communities over all 641 tags (no tag left unclustered), written
   to `queue-server/data-seed/tag_communities.json`. Sizes range from 2 tags up to
   64; the ten largest communities are named from their highest-weight tags

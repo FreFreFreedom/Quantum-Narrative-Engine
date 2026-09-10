@@ -1,18 +1,26 @@
 // services/tagCommunities.js — theme clusters over the LIVE tag graph.
 //
-// Same computation as scripts/detect-tag-communities.js (the algorithm is lifted
-// from it unchanged; that file's header documents the method and the reference
-// implementations it follows), with one difference that is the whole point: the
-// input is the `entity_tags` table rather than the seed JSON. The script's output,
+// Same computation as scripts/detect-tag-communities.js — that script now IMPORTS
+// detectCommunities from here rather than carrying a second copy, so the two cannot
+// drift — with one difference that is the whole point: the input is the `entity_tags`
+// table rather than the seed JSON. The script's output,
 // data-seed/tag_communities.json, is a frozen snapshot of one moment in August 2026
 // and NOTHING in the running app reads it — retag an entity and the next boot
 // re-clusters from the DB.
 //
 // Method, in one paragraph: tags are nodes; an edge (tag_a, tag_b) gains +1 weight
-// for every entity carrying both. Communities come from a single-level Louvain-style
-// greedy local-moving pass (no aggregation phase) — each tag starts alone, then
-// repeatedly moves to whichever neighbouring community gives the largest modularity
-// gain, until a full pass moves nothing.
+// for every entity carrying both. Communities come from multi-level Louvain — each
+// tag starts alone and repeatedly moves to whichever neighbouring community gives the
+// largest modularity gain until a full pass moves nothing (the local-moving pass),
+// then every community is collapsed into one super-node carrying its internal weight
+// as a self-loop and the same pass runs again on that smaller graph, until a level
+// merges nothing.
+//
+// The aggregation phase used to be skipped, and the header used to call that
+// deliberate. It was not defensible: 651 tags fell into 104 communities with a median
+// size of 3, only 156 of 4,278 cluster pairs touched at all, and everything reading
+// this — the entity panel's "theme cluster", services/tagGaps.js — was reading noise.
+// Three tags is not a theme. Fixed 2026-09-10.
 //
 // Built ONCE at boot and held in memory, in the spirit of services/projectMap.js:
 // it is pure arithmetic over a few thousand rows (no model calls, nothing to pay
@@ -59,13 +67,19 @@ function buildGraph(tagLists) {
   return { freq, adjacency };
 }
 
+// A self-loop is one end of the edge at each end of itself, so it counts TWICE toward
+// a node's degree — standard modularity, and load-bearing here: the aggregated graph's
+// super-nodes carry their community's internal weight as a self-loop, and counting it
+// once would silently understate every super-node's degree and quietly wreck the next
+// level's arithmetic. The raw tag graph has no self-loops (buildGraph refuses a === b),
+// so this is identical to a plain row sum at level 0.
 function weightedDegree(adjacency, node) {
   let sum = 0;
-  for (const w of adjacency.get(node).values()) sum += w;
+  for (const [neighbor, w] of adjacency.get(node).entries()) sum += (neighbor === node ? 2 * w : w);
   return sum;
 }
 
-export function detectCommunities(adjacency) {
+function localMoving(adjacency) {
   const nodes = [...adjacency.keys()].sort();
   const degree = new Map(nodes.map((n) => [n, weightedDegree(adjacency, n)]));
   const m = nodes.reduce((s, n) => s + degree.get(n), 0) / 2;
@@ -121,6 +135,60 @@ export function detectCommunities(adjacency) {
   }
 
   return community;
+}
+
+// One node per community: edges between two communities summed, and each community's
+// own internal weight kept as a SELF-LOOP on its super-node. Without that self-loop the
+// next level has no idea how much substance is already inside a super-node, and its
+// modularity is nonsense.
+function aggregateGraph(adjacency, community) {
+  const agg = new Map();
+  const row = (c) => {
+    if (!agg.has(c)) agg.set(c, new Map());
+    return agg.get(c);
+  };
+  for (const c of community.values()) row(c);
+
+  for (const [u, neighbours] of adjacency.entries()) {
+    for (const [v, w] of neighbours.entries()) {
+      if (v < u) continue; // each undirected edge once; a self-loop (v === u) is kept once
+      const cu = community.get(u);
+      const cv = community.get(v);
+      if (cu === cv) {
+        row(cu).set(cu, (row(cu).get(cu) || 0) + w);
+      } else {
+        row(cu).set(cv, (row(cu).get(cv) || 0) + w);
+        row(cv).set(cu, (row(cv).get(cu) || 0) + w);
+      }
+    }
+  }
+  return agg;
+}
+
+const MAX_LEVELS = 10;
+
+// Multi-level Louvain. Returns exactly what the single-level pass used to return —
+// Map<node, communityLabel>, the label being one of the original node names — so every
+// caller is untouched.
+export function detectCommunities(adjacency) {
+  let graph = adjacency;
+  // Sorted, like the local-moving pass's own node order: callers that group by this
+  // Map's iteration order (services/interactionGraph.js#partitionOf) get the same
+  // ordering they got from the single-level version, so the frozen anatomy records in
+  // data-seed/interiors still reproduce byte-for-byte.
+  const mapping = new Map([...adjacency.keys()].sort().map((n) => [n, n]));
+
+  for (let level = 0; level < MAX_LEVELS; level++) {
+    const part = localMoving(graph);
+    const merged = graph.size - new Set(part.values()).size;
+    // Unroll this level onto the original nodes before deciding to stop, so the last
+    // level's moves are never thrown away.
+    for (const [node, label] of mapping) mapping.set(node, part.get(label) ?? label);
+    if (merged === 0) break; // a level that merges nothing will merge nothing next time either
+    graph = aggregateGraph(graph, part);
+  }
+
+  return mapping;
 }
 
 function nameCommunity(tags, adjacency, freq) {
@@ -193,7 +261,7 @@ export function buildTagCommunities() {
     communities.forEach((c) => c.tags.forEach((t) => { tagCommunity[t] = c.id; }));
 
     cached = {
-      method: 'louvain-single-level-greedy-modularity',
+      method: 'louvain-multilevel-greedy-modularity',
       source: 'entity_tags',
       totalTags: adjacency.size,
       totalCommunities: communities.length,

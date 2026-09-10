@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-10T04:06:41.344Z
+Generated: 2026-09-10T05:00:51.562Z
 
 ## Components
 
@@ -38,7 +38,9 @@ Generated: 2026-09-10T04:06:41.344Z
 
 ## Plan backlog
 
-- where-the-corpus-does-not-connect — PLANNED
+- theme-clusters-are-too-small — PLANNED
+- the-horizontal-move — **DONE** 2026-09-10
+- where-the-corpus-does-not-connect — DONE
 - gemini-in-ai-settings — **DONE** 2026-09-09
 - testimony-in-the-ontology — **PHASES 1-2 DONE** 2026-09-09 · phase 3 still gated on Antoine seeing phase 1's result
 - narrative-mirror — **DONE** 2026-09-09

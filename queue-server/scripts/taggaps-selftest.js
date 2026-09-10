@@ -7,10 +7,15 @@
 //   2. the small-cluster rule — a two-tag cluster is a lone tag, not a hole, and it
 //      would otherwise flood the top of every ranking,
 //   3. the empty case — this runs off the boot-time index, so an empty graph must
-//      answer an empty list rather than throw.
+//      answer an empty list rather than throw,
+//   4. the clustering underneath it — the gap measure is only as good as the grain of
+//      the partition it reads, and a partition too fine makes every pair a tie at zero
+//      (the 104-communities-over-651-tags failure of 2026-09-10). So the multi-level
+//      Louvain that fixed it is pinned here too.
 
 import assert from 'node:assert/strict';
 import { gapsFrom } from '../server/src/services/tagGaps.js';
+import { detectCommunities } from '../server/src/services/tagCommunities.js';
 
 let passed = 0;
 function ok(name) { passed++; console.log(`  ✓ ${name}`); }
@@ -118,5 +123,44 @@ assert.deepEqual(gapsFrom(new Map(), idx).gaps, []);
 assert.deepEqual(gapsFrom(graph(edges), { communities: [], tagCommunity: {} }).gaps, []);
 assert.deepEqual(gapsFrom(null, null).gaps, []);
 ok('an empty graph or an empty index answers an empty list, never a throw');
+
+// ─── 4. the clustering is coarse enough to mean something ─────────────────────
+// Six dense clumps in a ring, plus ONE small pair hanging between two of them. The
+// local-moving pass alone leaves that pair standing as a community of its own — a
+// two-tag "theme", which is the exact failure this measure was drowning in. The
+// aggregation phase absorbs it into a neighbour, because at the aggregated scale
+// keeping it apart no longer pays.
+const ringEdges = [];
+const clique = (names, w) => {
+  for (let i = 0; i < names.length; i++) {
+    for (let j = i + 1; j < names.length; j++) ringEdges.push([names[i], names[j], w]);
+  }
+};
+const K = 6;
+for (let k = 0; k < K; k++) clique([0, 1, 2, 3].map((i) => `c${k}_${i}`), 5);
+for (let k = 0; k < K; k++) ringEdges.push([`c${k}_0`, `c${(k + 1) % K}_1`, 5]);
+ringEdges.push(['m1', 'm2', 5], ['m1', 'c0_2', 5], ['m2', 'c1_2', 5]);
+
+const parts = new Map();
+for (const [node, label] of detectCommunities(graph(ringEdges)).entries()) {
+  if (!parts.has(label)) parts.set(label, []);
+  parts.get(label).push(node);
+}
+const partitions = [...parts.values()].map((g) => g.sort());
+
+assert.ok(!partitions.some((g) => g.every((n) => n.startsWith('m'))));
+ok('the small clump between two dense ones is absorbed, not left standing alone');
+
+const homeOfM = partitions.find((g) => g.includes('m1'));
+assert.ok(homeOfM.includes('m2'));
+assert.ok(homeOfM.some((n) => n.startsWith('c')));
+ok('both of its tags land in the same real cluster');
+
+assert.equal(partitions.length, K);
+ok('six clumps and a stray come out as six themes, not seven');
+
+// The merge above is also the only free proof that a self-loop counts TWICE toward a
+// super-node's degree: count it once, the aggregated graph understates every super-node,
+// nothing merges, and this section fails.
 
 console.log(`\n${passed} checks passed — the gap measure holds.`);

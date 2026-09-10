@@ -12,17 +12,21 @@
 // editing either one changes nothing in the app.
 //
 // Method: tags are nodes; an edge (tag_a, tag_b) gets +1 weight for every entity
-// (character or country) that carries both tags. Communities are found with a
-// single-level Louvain-style greedy local-moving pass (no aggregation phase) —
-// each tag starts in its own community, then repeatedly moves to whichever
-// neighboring community yields the largest modularity gain, until a full pass
-// produces no more moves. This is the standard Louvain "phase 1" move rule; see
-// graphology-communities / jLouvain for the reference implementation this follows.
+// (character or country) that carries both tags. Communities are found with
+// multi-level Louvain — the greedy local-moving pass, then the aggregation phase
+// (each community collapsed to a super-node carrying its internal weight as a
+// self-loop) repeated until a level merges nothing. See graphology-communities /
+// jLouvain for the reference implementation this follows.
+//
+// The algorithm itself is NOT duplicated here any more: detectCommunities is imported
+// from server/src/services/tagCommunities.js, the copy the running app uses, so this
+// offline twin cannot drift away from it. (It still reads no DB and starts no server.)
 //
 // Run: node queue-server/scripts/detect-tag-communities.js
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { detectCommunities } from '../server/src/services/tagCommunities.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEED_PATH = resolve(__dirname, '../data-seed/fmcns_ontology.json');
@@ -61,64 +65,6 @@ function weightedDegree(adjacency, node) {
   let sum = 0;
   for (const w of adjacency.get(node).values()) sum += w;
   return sum;
-}
-
-function detectCommunities(adjacency) {
-  const nodes = [...adjacency.keys()].sort();
-  const degree = new Map(nodes.map((n) => [n, weightedDegree(adjacency, n)]));
-  const m = nodes.reduce((s, n) => s + degree.get(n), 0) / 2;
-
-  const community = new Map(nodes.map((n) => [n, n])); // tag -> community label (starts as itself)
-  const communityTot = new Map(nodes.map((n) => [n, degree.get(n)])); // sum of degrees of members
-
-  if (m === 0) return community; // no co-occurrence edges at all
-
-  let improved = true;
-  let pass = 0;
-  const MAX_PASSES = 100;
-
-  while (improved && pass < MAX_PASSES) {
-    improved = false;
-    pass++;
-    for (const node of nodes) {
-      const currentComm = community.get(node);
-      const kNode = degree.get(node);
-
-      // Remove node from its current community's totals for fair comparison.
-      communityTot.set(currentComm, communityTot.get(currentComm) - kNode);
-
-      // Weight from node into each neighboring community (k_i,in).
-      const neighborWeights = new Map();
-      for (const [neighbor, w] of adjacency.get(node).entries()) {
-        if (neighbor === node) continue;
-        const c = community.get(neighbor);
-        neighborWeights.set(c, (neighborWeights.get(c) || 0) + w);
-      }
-      // Staying put is always a candidate, even with zero cross-community neighbors.
-      if (!neighborWeights.has(currentComm)) neighborWeights.set(currentComm, 0);
-
-      let bestComm = currentComm;
-      let bestScore = -Infinity;
-      const candidates = [...neighborWeights.keys()].sort();
-      for (const c of candidates) {
-        const kIn = neighborWeights.get(c);
-        const totC = communityTot.get(c) || 0;
-        const score = kIn - (totC * kNode) / (2 * m);
-        if (score > bestScore + 1e-12) {
-          bestScore = score;
-          bestComm = c;
-        }
-      }
-
-      communityTot.set(bestComm, (communityTot.get(bestComm) || 0) + kNode);
-      if (bestComm !== currentComm) {
-        community.set(node, bestComm);
-        improved = true;
-      }
-    }
-  }
-
-  return community;
 }
 
 function nameCommunity(tags, adjacency, freq) {
@@ -173,7 +119,7 @@ export function run() {
     // regeneration instead of being silently dropped from the output.
     _note:
       'Snapshot only — NOT live data. The running app computes theme clusters from the entity_tags table at boot (server/src/services/tagCommunities.js) and reads this file nowhere. Regenerate with scripts/detect-tag-communities.js if you want the seed JSON\'s own clustering.',
-    method: 'louvain-single-level-greedy-modularity',
+    method: 'louvain-multilevel-greedy-modularity',
     generatedFrom: 'queue-server/data-seed/fmcns_ontology.json',
     generatedAt: new Date().toISOString(),
     totalTags: adjacency.size,
