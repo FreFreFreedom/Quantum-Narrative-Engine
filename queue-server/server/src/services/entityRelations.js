@@ -291,6 +291,33 @@ export function resolveMoment(moment) {
   return { entityId, source: doc.source, scope: doc.scope, from, to, turns };
 }
 
+/* An entity's inside when nobody has read a scene for it: the entities recorded as being
+   inside it, and whatever stored relations already hold between those. Nothing is
+   inferred — an entity is a part of this one because its container says so, and two parts
+   are linked because a relation between them was written down. Where nothing is written
+   down, the answer is the parts alone, and knowing who is inside without knowing how they
+   stand is information rather than a gap to fill.
+
+   This is a weaker thing than a read anatomy and must never be mistaken for one, so it
+   says so in `kind` and it carries no camps: camps come from a balance test over signed
+   edges, and these edges have no signs. Two entities have a read anatomy. Twenty-one have
+   two or more parts recorded, and about two hundred have one — one part is not an inside,
+   so those are refused. */
+export function recordedInside(db, entityId) {
+  const kids = db.prepare(
+    `SELECT id, name, type, scale FROM entities WHERE container_id = ? ORDER BY name`
+  ).all(entityId);
+  if (kids.length < 2) return null;
+  const ids = new Set(kids.map((k) => k.id));
+  const links = db.prepare(`
+    SELECT from_id, to_id, move, shape, note FROM entity_relations
+    WHERE deleted_at IS NULL AND from_id IN (${kids.map(() => '?').join(',')})
+                             AND to_id   IN (${kids.map(() => '?').join(',')})
+  `).all(...kids.map((k) => k.id), ...kids.map((k) => k.id))
+    .filter((r) => ids.has(r.from_id) && ids.has(r.to_id));
+  return { kind: 'recorded', parts: kids, links };
+}
+
 // One entity's mapped interior, or null. Most entities have none and that is the normal
 // case — an anatomy costs a careful read of a real scene, and two exist.
 export function anatomyFor(entityId) {

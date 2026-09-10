@@ -127,9 +127,14 @@ export function ontologyRoutes(db) {
   // One entity's mapped interior. Two exist, and that is the honest number — an anatomy
   // costs a careful read of a real scene. 404 is the normal answer.
   router.get('/entities/:id/anatomy', (req, res) => {
-    const a = rel.anatomyFor(req.params.id);
-    if (!a) return res.status(404).json({ error: 'no_interior' });
-    res.json({ anatomy: a });
+    // A read anatomy first, because it is the stronger answer: real parts, signed
+    // weights, a tested split. Failing that, what containment already records — which
+    // says who is inside without claiming to know how they stand.
+    const read = rel.anatomyFor(req.params.id);
+    if (read) return res.json({ anatomy: { kind: 'read', ...read } });
+    const recorded = rel.recordedInside(db, req.params.id);
+    if (recorded) return res.json({ anatomy: recorded });
+    return res.status(404).json({ error: 'no_interior' });
   });
 
   router.get('/relations/:relId/mirror', (req, res) => {

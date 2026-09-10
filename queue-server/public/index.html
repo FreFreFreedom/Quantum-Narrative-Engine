@@ -5320,6 +5320,7 @@ async function startDescent(id) {
   const a = await ensureAnatomy(id);
   if (!a || a === 'none') return;
 
+  const readKind = a.kind !== 'recorded';
   const camps = Array.isArray(a.camps) ? a.camps : [];
   const campOf = (code) => camps[0] && camps[0].includes(code) ? 0
                         : camps[1] && camps[1].includes(code) ? 1 : -1;
@@ -5327,25 +5328,37 @@ async function startDescent(id) {
   // scale the descent settles on — a fixed radius ran the far parts off the edges.
   const targetScale = Math.min(3.2, Math.max(1.7, camera.scale * 1.9));
   const R = Math.max(70, Math.min(150, (Math.min(gW || 800, gH || 600) / 2) / targetScale * 0.62));
-  const codes = a.nodes.slice();
-  const parts = codes.map((code, i) => {
-    const camp = campOf(code);
-    const outside = camp < 0;                      // no place in either camp
-    const ang = (i / Math.max(1, codes.length)) * Math.PI * 2 - Math.PI / 2;
+  // A read anatomy names its parts by the code the attribution used; a recorded one has
+  // whole entities, which can be opened in their own right.
+  const src = readKind ? (a.nodes || []) : (a.parts || []);
+  const parts = src.map((item, i) => {
+    const code = readKind ? item : item.id;
+    const camp = readKind ? campOf(code) : -2;     // -2: this kind has no camps at all
+    const outside = camp === -1;                   // read only: no place in either camp
+    const ang = (i / Math.max(1, src.length)) * Math.PI * 2 - Math.PI / 2;
     const rad = outside ? R * 1.75 : R * 0.62;
     return {
       code, camp, outside,
-      name: (a.names && a.names[code]) || code,
+      // A recorded part IS an entity, so it can be selected and descended into.
+      entityId: readKind ? (byId[code] ? code : null) : item.id,
+      kind: readKind ? null : item.type,
+      name: readKind ? ((a.names && a.names[code]) || code) : item.name,
       x: host.x, y: host.y,                        // born at the parent
       tx: host.x + Math.cos(ang) * rad,
       ty: host.y + Math.sin(ang) * rad * 0.82,
-      alpha: 0,
+      alpha: 0, r: outside ? 6.5 : 8.5,
     };
   });
-  const maxW = Math.max(1, ...(a.edges || []).map(e => e.weight || 1));
+  const rawEdges = readKind
+    ? (a.edges || [])
+    : (a.links || []).map(l => ({ a: l.from_id, b: l.to_id, sign: null, weight: 1, move: l.move, note: l.note }));
+  const maxW = Math.max(1, ...rawEdges.map(e => e.weight || 1));
   descent = {
-    host, parts, R,
-    edges: (a.edges || []).map(e => ({ a: e.a, b: e.b, opp: e.sign === 'opp', w: (e.weight || 1) / maxW })),
+    host, parts, R, readKind,
+    edges: rawEdges.map(e => ({
+      a: e.a, b: e.b, opp: e.sign === 'opp', unsigned: !e.sign,
+      w: (e.weight || 1) / maxW, move: e.move || null, note: e.note || null,
+    })),
     scope: a.scope || '', balanced: a.balanced, frustration: a.frustration,
     ring: 0, tRing: 1, busy: true,
   };
@@ -5415,7 +5428,7 @@ function stepDescent() {
 
   if (!busy && descent.leaving) {
     nodes.forEach(nd => { delete nd._px; delete nd._py; delete nd._dx; delete nd._dy; });
-    descent = null;
+    descent = null; descentPick = null; descentEdgePick = null;
     if (typeof sim !== 'undefined' && sim && sim.alpha) sim.alpha(0.25).restart();
     syncDescendBtn();
     return true;
@@ -5454,10 +5467,13 @@ function paintDescent(ctx, s) {
   d.edges.forEach(e => {
     const a = at(e.a), b = at(e.b);
     if (!a || !b) return;
-    ctx.globalAlpha = Math.min(a.alpha, b.alpha) * ring * (e.opp ? 0.85 : 0.6);
-    ctx.strokeStyle = e.opp ? oppC : allyC;
-    ctx.lineWidth = ((e.opp ? 1.1 : 0.8) + e.w * 2.4) / s;
-    ctx.setLineDash(e.opp ? [] : [2 / s, 3 / s]);
+    const lit = descentEdgePick && descentEdgePick.a === e.a && descentEdgePick.b === e.b;
+    ctx.globalAlpha = Math.min(a.alpha, b.alpha) * ring * (lit ? 1 : e.unsigned ? 0.45 : e.opp ? 0.85 : 0.6);
+    // Unsigned: we know these two are related and nothing about how they stand, so it is
+    // neither opposition nor alliance.
+    ctx.strokeStyle = lit ? accC : e.unsigned ? ink3C : e.opp ? oppC : allyC;
+    ctx.lineWidth = ((lit ? 2 : e.unsigned ? 0.9 : e.opp ? 1.1 : 0.8) + (e.unsigned ? 0 : e.w * 2.4)) / s;
+    ctx.setLineDash(e.unsigned || !e.opp ? [2 / s, 3 / s] : []);
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     ctx.setLineDash([]);
   });
@@ -5465,17 +5481,29 @@ function paintDescent(ctx, s) {
   // The parts. Camp by colour, and a part outside the boundary drawn hollow, the same
   // way the landscape draws an entity it could not place: the mark says "not inside".
   d.parts.forEach(p => {
-    const r = (p.outside ? 6.5 : 8.5);
+    const r = p.r || 8.5;
+    const held = p.entityId && p.entityId === descentPick;
     ctx.globalAlpha = p.alpha * ring;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     if (p.outside) {
-      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      // No place in either camp: hollow, the same mark the landscape uses for an entity
+      // it could not place.
       ctx.fillStyle = stageC; ctx.fill();
       ctx.strokeStyle = ink3C; ctx.lineWidth = 1.6 / s; ctx.stroke();
     } else {
-      const col = p.camp === 0 ? accC : gPaint('var(--c-plot-2)', '#6fa8dc');
-      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      // A recorded part keeps the colour it already has in the graph, so it reads as the
+      // same thing you can see outside. A read part takes its camp's colour.
+      const ent = p.entityId && byId[p.entityId];
+      const col = p.camp === 0 ? accC
+                : p.camp === 1 ? gPaint('var(--c-plot-2)', '#6fa8dc')
+                : (ent ? gPaint(nodeColor(ent), inkC) : ink3C);
       ctx.fillStyle = col; ctx.fill();
       ctx.strokeStyle = stageC; ctx.lineWidth = 1.6 / s; ctx.stroke();
+    }
+    if (held) {
+      ctx.globalAlpha = p.alpha * ring;
+      ctx.strokeStyle = accC; ctx.lineWidth = 1.8 / s;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r + 6 / s * s, 0, Math.PI * 2); ctx.stroke();
     }
   });
 
@@ -6765,11 +6793,90 @@ function graphShouldPan(ev) {
 function graphTap(ev) {
   if (!graphCtx()) return;
   const p = gStagePoint(ev), w = sToW(p.x, p.y);
+  // Inside a thing, what you are pointing at is its parts and the links between them.
+  if (descent) { descentTap(w.x, w.y); return; }
   const { spotlight } = graphSpotlight();
   const n = nodeAt(w.x, w.y);
   if (n) { kbCursorId = null; selectEntity(n.id); return; }
   const e = edgeAt(w.x, w.y, spotlight);
   if (e) selectEdgeConnection(e);
+}
+
+let descentPick = null, descentEdgePick = null;
+
+function descentTap(wx, wy) {
+  const d = descent;
+  // A part first: it is the smaller target and the one you are usually after.
+  let hitP = null, best = 22 / camera.scale;
+  d.parts.forEach(p => {
+    const dist = Math.hypot(p.x - wx, p.y - wy);
+    if (dist < Math.max(best, (p.r || 8.5) + 6)) { best = dist; hitP = p; }
+  });
+  if (hitP) {
+    descentEdgePick = null;
+    descentPick = hitP.entityId || null;
+    // A part that is a real entity opens like any other: its panel, its tags, its
+    // relations — and if it has an inside of its own, the descent offers itself again.
+    if (hitP.entityId && byId[hitP.entityId]) {
+      selectEntity(hitP.entityId);
+      ensureAnatomy(hitP.entityId).then(() => syncDescendBtn());
+    } else {
+      announceGraph(hitP.name + ' — a part of ' + d.host.name);
+    }
+    requestRender();
+    return;
+  }
+  // Then a link. Distance to the segment, in world units.
+  let hitE = null; best = 9 / camera.scale;
+  d.edges.forEach(e => {
+    const a = d.parts.find(x => x.code === e.a), b = d.parts.find(x => x.code === e.b);
+    if (!a || !b) return;
+    const vx = b.x - a.x, vy = b.y - a.y, L = vx * vx + vy * vy;
+    const t = L ? Math.max(0, Math.min(1, ((wx - a.x) * vx + (wy - a.y) * vy) / L)) : 0;
+    const dist = Math.hypot(a.x + vx * t - wx, a.y + vy * t - wy);
+    if (dist < best) { best = dist; hitE = e; }
+  });
+  if (hitE) {
+    descentPick = null; descentEdgePick = hitE;
+    const a = d.parts.find(x => x.code === hitE.a), b = d.parts.find(x => x.code === hitE.b);
+    // What this link actually is, said in the words the reading used: for a read anatomy
+    // the stance and how much of the scene it accounted for; for a recorded one the move
+    // that was written down.
+    const how = hitE.unsigned
+      ? (hitE.move ? hitE.move : 'related')
+      : (hitE.opp ? 'against each other' : 'holding together') + ', ' + Math.round(hitE.w * 100) + '% of the strongest here';
+    announceGraph(a.name + ' and ' + b.name + ' — ' + how);
+    showDescentLink(a, b, hitE);
+    requestRender();
+    return;
+  }
+  descentPick = null; descentEdgePick = null; requestRender();
+}
+
+// A link inside a thing gets the same treatment a connection outside it does: it is
+// written into the panel rather than left as a highlight you have to interpret.
+function showDescentLink(a, b, e) {
+  const host = document.getElementById(activeCardHost);
+  if (!host) return;
+  const how = e.unsigned
+    ? (e.move ? 'A ' + qEsc(e.move) + ' relation that was written down.' : 'Related — nothing recorded about how.')
+    : (e.opp ? 'Against each other' : 'Holding together')
+      + ' — ' + Math.round(e.w * 100) + '% of the strongest link inside ' + qEsc(descent.host.name) + '.';
+  // Built from the same pieces a connection outside the thing uses, so a link inside one
+  // reads the same way as a link between two.
+  let html = `<div class="section-title" style="color:var(--c-ink-3);">Inside ${qEsc(descent.host.name)}</div>`;
+  html += `<div class="lens-panel"><div class="lens-tag">${qEsc(a.name)} · ${qEsc(b.name)}</div><div>${how}</div></div>`;
+  if (e.note) html += `<div class="note">${qEsc(e.note)}</div>`;
+  html += `<div class="section-title" style="color:var(--c-ink-3);">The two parts</div>`;
+  html += [a, b].map(p => p.entityId && byId[p.entityId]
+    ? `<div class="conn" data-descent-goto="${qEscAttr(p.entityId)}"><span class="dot ent"></span>${qEsc(p.name)} <span style="opacity:.6;">(${qEsc(byId[p.entityId].type)})</span></div>`
+    : `<div class="conn" style="cursor:default;"><span class="dot"></span>${qEsc(p.name)}</div>`).join('');
+  if (descent.scope) html += `<div class="empty">Read from ${qEsc(descent.scope)}</div>`;
+  host.innerHTML = html;
+  host.querySelectorAll('[data-descent-goto]').forEach(el => {
+    el.onclick = () => selectEntity(el.getAttribute('data-descent-goto'));
+  });
+  if (typeof openDetails === 'function') openDetails();
 }
 
 function initGraphCanvas() {
