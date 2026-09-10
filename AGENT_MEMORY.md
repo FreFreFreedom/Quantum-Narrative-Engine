@@ -798,3 +798,12 @@ theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
   `claudeLastResort` now; it used to swallow it. Also: a chain can end having asked
   nobody (one keyed provider, all its models benched) — that used to return an empty
   message the Room printed as a bare error code.
+- **Three free lanes now, and they are not interchangeable** (2026-09-10). Keys in
+  Railway: `GOOGLE_AI_STUDIO_API_KEY`, `CEREBRAS_API_KEY`, `GROQ_API_KEY`. A Room turn
+  is ~100k chars (~27k tokens) because the voice, mind memory, project map, repo facts
+  and the last turns ride with every question. Cerebras takes that whole prompt (tested);
+  Groq's free tier stops at 7-8k tokens A MINUTE and refuses it with a 429 that looks
+  exactly like a spent quota — so catalogue models carry `tpmTokens` and `generateText`
+  skips a lane the prompt cannot fit, and a size refusal never benches a lane. Model ids
+  on both providers had gone stale and answered `model_not_found`; re-read them from the
+  provider's own `/v1/models` before trusting the catalogue.
