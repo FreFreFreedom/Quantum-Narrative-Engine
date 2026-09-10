@@ -606,3 +606,29 @@ whole-word, longest-first regex, no model call anywhere.
   is not proof of real progress.
 - Model ceiling: `standard`/sonnet for anything automatic; `deep`/opus only when Antoine
   picks it per task (changed 2026-09-09 — see "Model & account lanes" above).
+
+---
+
+## Prior art scanned: the Obsidian plugin library (2026-09-09)
+
+All 7,453 community plugins swept (registry JSON + download stats), two read from
+source. Full report: `plans/obsidian-prior-art-findings.md`. Short version, so nobody
+re-scans:
+
+- **InfraNodus** — thin client to a closed API, but the response field
+  `graphologyGraph` gives it away: **graphology** (MIT, npm, free) + Louvain
+  communities + betweenness centrality, and a "gap" is two communities barely
+  connected relative to their internal density. **Rebuildable here without their
+  key.** Their edges are word co-occurrence — a naming layer, so ours must run over
+  entities/relations instead. The thing to actually take is the reframe: absence is
+  their *default* view, not an option.
+- **ExcaliBrain** (MIT) — draws all three navigation moves at once around one focus:
+  parents/children (vertical), **computed** siblings (horizontal), friends (the free
+  axis). Every edge carries `DEFINED` vs `INFERRED` — a relation states its own
+  provenance. Two disciplines: a `reverseLinks` set so nothing draws twice, and
+  filters that hide rather than remove.
+- **The trap.** Smart Connections (1.2M downloads), Smart Lookup, Analogy — all
+  embeddings with a tunable cutoff. Disqualified by the nameless-interior rule. Nobody
+  in that library compares one structure to another.
+
+Nothing approved, nothing scoped.

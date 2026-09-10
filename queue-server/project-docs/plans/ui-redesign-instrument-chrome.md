@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Phases 0, 1 and 2 DONE** 2026-09-09. Shipped and verified on production: the two looks, the fonts, the token system, the notice, one segmented control, the prose removal, plus four defects found by driving the app (the rail's foot moved its own buttons out from under the cursor, twice; the world map drew a band across itself; a `:has()` on body froze the renderer). Phase 1 finished with the two list menus onto the shared helper and every emoji out of the buttons; Phase 2 brought Flow from three bands to one, Content from two to one, and Architecture from fourteen controls to four. Phases 3-6 still open: realtime and polling, the Room as a reading surface, cards and remembered state, cleanup. |
+| Status | **Phases 0, 1, 2 and 3 DONE** 2026-09-09. Shipped and verified on production: the two looks, the fonts, the token system, the notice, one segmented control, the prose removal, plus four defects found by driving the app (the rail's foot moved its own buttons out from under the cursor, twice; the world map drew a band across itself; a `:has()` on body froze the renderer). Phase 1 finished with the two list menus onto the shared helper and every emoji out of the buttons; Phase 2 brought Flow from three bands to one, Content from two to one, and Architecture from fourteen controls to four. Phase 3 connected the realtime channel (the server had been broadcasting to nobody since the queue was built), put the polls to sleep in a hidden tab, debounced the search that rebuilt the graph per keystroke, made the 330KB of film metadata lazy, and escaped forty-one interpolations of text the app did not write. Phases 4-6 still open: the Room as a reading surface (markdown that renders), cards and the rest of the remembered state, cleanup. |
 | Scope | The whole frontend, `fmcns_navigator.html` (19,537 lines at `594d394`) and its byte-identical copy `queue-server/public/index.html`; two font files under `queue-server/public/fonts/`; one optional backend route |
 | Cost | Zero model credits. Pure frontend work, no AI calls |
 | Ships as | Seven phases, each shippable on its own, shipped **in order, one at a time** |
@@ -414,6 +414,26 @@ Also true and worth knowing: **the font files reached the trunk inside a queue t
 commit**, not mine — a task shipped while they sat untracked and its `git add -A` swept
 them up. They are on `develop` and production serves all four, but that is the
 concurrency this plan's ground rules warn about, happening for real.
+
+## Deviations from this plan, and why
+
+Three places where the plan was wrong and the code was right:
+
+- **The architecture status filter is NOT persisted**, though Phase 2 said to persist it.
+  The note above `saveArchView` already explains what that cost the last time: one click
+  on "Built" months ago silently hid most of the graph on every later visit with nothing
+  on screen saying why. Layout and colour-by are kept, because they change how the same
+  components look and hide nothing. The same line is drawn in Content: view and colour are
+  remembered, the filters panel and the scope trail are not.
+- **`askingCount` is still drawn twice**, on the Flow tab chip and on the floating button.
+  The plan said to delete the chip. They answer different questions — which tab holds the
+  work, versus whether anything needs you while you are somewhere else — and the "nothing
+  drawn twice" rule is about navigation, not about a count in context.
+- **`tag-communities` still loads at boot** (47KB, in the parallel batch, no wall-clock
+  cost). Only `enrichments` was worth making lazy, at 330KB — larger than the entity list.
+
+And one place the plan under-specified: the facet checkboxes were left un-debounced. A
+checkbox is one discrete action and should rebuild once; only the search box types.
 
 ## Part 3 — Implementation, in seven phases
 
