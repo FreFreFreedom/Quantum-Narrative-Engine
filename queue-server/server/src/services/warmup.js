@@ -13,8 +13,15 @@
 import { searchEntities } from './ontologyQuery.js';
 import { fillMissingTensions } from './tagTensions.js';
 
-const CONCURRENCY = 2;
-const STAGGER_MS = 350;
+const CONCURRENCY = 1;
+const STAGGER_MS = 1500;
+// Where the warm-up asks. NOT the shared free lane: this sweep is hundreds of
+// calls over every entity, and the free tier allows twenty requests a minute —
+// so it used to keep that lane benched all day and every click Antoine made in
+// the app came back rate-limited. Claude on the Mac, second account, nothing a
+// person is waiting on. No runner attached means the caches simply fill later,
+// which is what already happened while the free lane was saturated.
+const WARM_PROVIDER = 'claude-side';
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
@@ -69,8 +76,8 @@ export async function warmCaches(db, { getBooks, getTagLens }) {
 
   await runWithLimit(jobs, CONCURRENCY, async (job) => {
     const out = job.kind === 'books'
-      ? await getBooks(job.entity, { force: false, feature: 'warmup' })
-      : await getTagLens(job.entity, job.tag, { force: false, feature: 'warmup' });
+      ? await getBooks(job.entity, { force: false, feature: 'warmup', provider: WARM_PROVIDER })
+      : await getTagLens(job.entity, job.tag, { force: false, feature: 'warmup', provider: WARM_PROVIDER });
     done++;
     if (out && out.error) {
       failed++;

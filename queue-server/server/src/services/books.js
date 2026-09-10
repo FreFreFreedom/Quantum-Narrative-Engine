@@ -57,13 +57,13 @@ async function lookupGoogleBooks(title, author) {
 }
 
 export function makeBooksHandler(db) {
-  return async function getBookSuggestions(entity, { force = false, feature = 'quick' } = {}) {
+  return async function getBookSuggestions(entity, { force = false, feature = 'quick', provider = null } = {}) {
     if (!force) {
       const cached = db.prepare(`SELECT suggestions FROM entity_book_suggestions WHERE entity_id=?`).get(entity.id);
       if (cached) { try { const books = JSON.parse(cached.suggestions); if (Array.isArray(books) && books.every((b) => b && typeof b.title === 'string')) return { books, cached: true }; } catch {} }
     }
     const out = await generateText({
-      prompt: buildPrompt(entity), feature, maxTokens: 1500, label: 'books',
+      prompt: buildPrompt(entity), feature, provider, maxTokens: 1500, label: 'books',
     });
     if (out.error) return out;
     const text = out.text;

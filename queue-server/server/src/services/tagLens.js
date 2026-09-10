@@ -70,7 +70,7 @@ function buildPrompt(entity, tag, kind, clusterName) {
 }
 
 export function makeTagLensHandler(db) {
-  return async function getTagLens(entity, tag, { force = false, feature = 'quick' } = {}) {
+  return async function getTagLens(entity, tag, { force = false, feature = 'quick', provider = null } = {}) {
     // A lens key is valid if it's one of the entity's own archetypal tags, or one
     // of its thematic cluster codes (films have no tags; clusters are their lenses).
     const isCluster = !(entity.tags || []).includes(tag) && (entity.clusters || []).includes(tag);
@@ -92,7 +92,7 @@ export function makeTagLensHandler(db) {
     const clusterRow = isCluster ? db.prepare(`SELECT name FROM clusters WHERE code=?`).get(tag) : null;
     const out = await generateText({
       prompt: buildPrompt(entity, tag, isCluster ? 'cluster' : 'tag', clusterRow ? clusterRow.name : null),
-      feature, maxTokens: 300, label: 'tagLens',
+      feature, provider, maxTokens: 300, label: 'tagLens',
     });
     if (out.error) return out;
     if (looksLikeJunk(out.text)) return { error: 'generation_unavailable' };
