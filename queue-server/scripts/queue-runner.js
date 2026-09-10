@@ -503,10 +503,16 @@ function classifyProviderError(text) {
 // balance) kills every model in that lane at once, so there is no point paying
 // a fresh attempt for each of them.
 function laneOf(modelId) {
+  // 'claude-main:' is the MAIN subscription used as the fallback for a task pinned
+  // to the second one. Its own lane, because the two accounts are separate banks:
+  // one being spent says nothing about the other, and a shared lane name would let
+  // the side account's ceiling close the main one too.
+  if (String(modelId).startsWith('claude-main:')) return 'claude-main';
   if (String(modelId).startsWith('claude:')) return 'claude';
   return String(modelId).startsWith('opencode-go/') ? 'go' : 'free';
 }
-const claudeModelOf = (id) => String(id).slice('claude:'.length);
+const isClaudeLane = (id) => laneOf(id) === 'claude' || laneOf(id) === 'claude-main';
+const claudeModelOf = (id) => String(id).slice(String(id).indexOf(':') + 1);
 
 // Rule 2: is there enough room in the Claude windows to start this task? Returns
 // null when the lane is clear, or a plain-English reason to skip it. Unknown usage
@@ -965,13 +971,15 @@ function runOnce({ task, model, cwd, branch }) {
 // process and its event shape differ (Claude's stream-json vs opencode's json).
 // Parsing is reused from the app's own provider module so there is one definition
 // of "what a Claude transcript event means".
-function runClaudeOnce({ task, model, effort, cwd, branch }) {
+function runClaudeOnce({ task, model, effort, cwd, branch, account = null }) {
   return new Promise((done) => {
     // A coding task can request the SECOND Claude account (work_prompts.account='side').
     // If so, hand that account's OAuth token to the spawned CLI. If the second account
     // is not configured on this runner, fail LOUDLY rather than silently falling back to
     // the main account and burning its quota by mistake — cost discipline (CLAUDE.md).
-    const onSide = task.account === 'side';
+    // `account` overrides the task's own pick: the chain uses it to carry a
+    // second-account task on to the main account when the small bank is spent.
+    const onSide = (account || task.account) === 'side';
     if (onSide && !SIDE_TOKEN) {
       done({
         outcome: 'blocked',
@@ -1159,13 +1167,24 @@ async function runTask(task) {
     // against THAT bank, not the main one. The helper-job path above already knew
     // this (see the note by the `side` check); coding tasks did not, so a busy main
     // account quietly sent every second-account task to the free models.
+    const cModel = task.model || 'sonnet';
     const skip = await claudeGate({ tier: task.task_tier, preset, account: task.account });
     if (skip) {
       console.log(yellow(`  Skipping the Claude lane — ${skip}.`));
-      console.log(dim('  Running on free models instead.'));
     } else {
-      chain.unshift(`claude:${task.model || 'sonnet'}`);
+      chain.unshift(`claude:${cModel}`);
     }
+    // A task on the SECOND account gets the main one behind it, before the free
+    // models. Two separate subscriptions with separate windows: the small bank
+    // running dry is no reason to drop a coding task onto a far weaker model, and
+    // it is the reason both accounts exist. Ordered after the side entry, so the
+    // small bank is still spent first.
+    if (task.account === 'side') {
+      const skipMain = await claudeGate({ tier: task.task_tier, preset, account: 'main' });
+      if (skipMain) console.log(yellow(`  The main account is not available as a backstop — ${skipMain}.`));
+      else chain.splice(skip ? 0 : 1, 0, `claude-main:${cModel}`);
+    }
+    if (!chain.some(isClaudeLane)) console.log(dim('  Running on free models instead.'));
   }
   const usable = chain.filter((m) => !isQuarantined(m));
   if (!usable.length) {
@@ -1198,10 +1217,12 @@ async function runTask(task) {
     if (deadLanes.has(laneOf(model))) continue;
 
     tried.push(model);
-    const isClaude = laneOf(model) === 'claude';
-    console.log(`  ${dim('→')} ${bold(isClaude ? `Claude (${claudeModelOf(model)})` : model)}`);
+    const isClaude = isClaudeLane(model);
+    const claudeAccount = laneOf(model) === 'claude-main' ? 'main' : (task.account || 'main');
+    const claudeShown = `Claude (${claudeModelOf(model)}${claudeAccount === 'side' ? ', 2nd account' : ''})`;
+    console.log(`  ${dim('→')} ${bold(isClaude ? claudeShown : model)}`);
     const r = isClaude
-      ? await runClaudeOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path, branch: wt.branch })
+      ? await runClaudeOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path, branch: wt.branch, account: claudeAccount })
       : await runOnce({ task, model, cwd: wt.path, branch: wt.branch });
 
     if (r.outcome === 'cancelled') { console.log(dim('  (cancelled server-side)')); return; }
@@ -1213,8 +1234,14 @@ async function runTask(task) {
       // quota bank, so a second Claude attempt buys nothing and spends more. Any
       // Claude failure closes the lane and hands the task to the free models.
       if (isClaude) {
-        deadLanes.add('claude');
-        console.log(dim('    (dropping to the free models — Claude gets one attempt per task)'));
+        // One attempt per BANK, not per Claude: every model on one subscription
+        // draws the same quota, so retrying there buys nothing — but the other
+        // account is a different bank and is still worth asking.
+        deadLanes.add(laneOf(model));
+        const nextIsClaude = usable.slice(tried.length).some((m) => isClaudeLane(m) && !deadLanes.has(laneOf(m)));
+        console.log(dim(nextIsClaude
+          ? '    (that account is done for now — trying the other one)'
+          : '    (dropping to the free models — each Claude account gets one attempt per task)'));
         continue;
       }
       if (r.fatal === 'quota' || r.fatal === 'billing') {
@@ -1248,7 +1275,7 @@ async function runTask(task) {
       report += `\n\n---\nRan on Claude ${claudeModelOf(model)} — drew about $${r.cost.toFixed(2)} worth of the subscription (covered by the plan, not billed).`;
     }
     const statusTxt = status === 'done' ? green('✓ done') : red('✗ blocked');
-    const shown = isClaude ? `Claude (${claudeModelOf(model)})` : model;
+    const shown = isClaude ? claudeShown : model;
     const costTxt = r.cost ? dim(isClaude ? ` — ${'$' + r.cost.toFixed(4)} of subscription quota (not billed)` : ` — $${r.cost.toFixed(4)}`) : '';
     console.log(`  ${statusTxt} on ${bold(shown)}${costTxt}`);
     // Save the work to git BEFORE reporting, so the result the server records

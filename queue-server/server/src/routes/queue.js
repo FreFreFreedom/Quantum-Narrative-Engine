@@ -8,7 +8,7 @@ import { latestReviewForPrompt } from '../services/reviewRunner.js';
 import { shipStateFor, shipStateForBlocked } from '../services/gitJobs.js';
 import { gapCountsByPrompt } from '../services/inspireLanding.js';
 import { getAiSettings, updateAiSettings } from '../services/ai/text.js';
-import { getProviderCatalog } from '../services/ai/catalog.js';
+import { getProviderCatalog, listProviders } from '../services/ai/catalog.js';
 import { feedCompletedToRecommender } from '../services/workSuggestions.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -73,6 +73,15 @@ export function queueRoutes() {
         available: !!process.env.OPENAI_API_KEY,
         models: openaiCatalog ? openaiCatalog.models.map((m) => ({ id: m.id, codingRank: m.codingRank })) : [],
       },
+      // Every other free provider whose key is set, so the Room's model picker
+      // offers a new lane the moment a key lands in the environment instead of
+      // waiting for someone to add a hardcoded option for it. Google and OpenAI
+      // keep their own blocks above — they were here first and the frontend reads
+      // them by name.
+      freeApi: listProviders({ availableOnly: true, includeMetered: false })
+        .filter((p) => p.id !== 'google-ai-studio')
+        .map((p) => ({ id: p.id, label: p.label, models: p.models.map((m) => ({ id: m.id, codingRank: m.codingRank })) }))
+        .filter((p) => p.models.length),
     });
   });
 

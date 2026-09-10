@@ -20358,7 +20358,18 @@ document.addEventListener('keydown', (e) => {
     var laneModel = host.querySelector('.se-lanemodel');
     var laneClear = host.querySelector('.se-lane-clear');
     if(lanePick){
-      ensureLaneCatalog().then(function(){ if(host.isConnected) fillEmbed(host, e, opts); });
+      ensureLaneCatalog().then(function(){
+        // The extra lanes are appended once, from the catalog — Cerebras, Groq and
+        // any later key. The five above are written into the markup because they
+        // predate this and the rest of the picker reads them by name.
+        freeApiLanes(laneCatalog).forEach(function(p){
+          if(lanePick.querySelector('option[value="' + p.id + '"]')) return;
+          var opt = document.createElement('option');
+          opt.value = p.id; opt.textContent = p.label;
+          lanePick.appendChild(opt);
+        });
+        if(host.isConnected) fillEmbed(host, e, opts);
+      });
       lanePick.onchange = function(){
         var v = lanePick.value;
         if(!v){ e.lane = null; }
@@ -20394,10 +20405,19 @@ document.addEventListener('keydown', (e) => {
       lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : { provider: null }
     ).catch(function(){});
   }
+  // The free providers beyond Google that have a key on the server (Cerebras,
+  // Groq, and whatever key lands next). Read from the catalog rather than listed
+  // here, so a new lane appears in the picker on its own.
+  function freeApiLanes(catalog){ return (catalog && catalog.freeApi) || []; }
+  function freeApiLane(provider, catalog){
+    return freeApiLanes(catalog).filter(function(p){ return p.id === provider; })[0] || null;
+  }
   function laneModelsFor(provider, catalog){
     if(provider === 'opencode') return ((catalog && catalog.opencode && catalog.opencode.models) || []).map(function(m){ return (m && m.id) || m; });
     if(provider === 'google-ai-studio') return ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return m.id; });
     if(provider === 'openai') return ((catalog && catalog.openai && catalog.openai.models) || []).map(function(m){ return m.id; });
+    var f = freeApiLane(provider, catalog);
+    if(f) return f.models.map(function(m){ return m.id; });
     return [];
   }
   // Why a lane is unpickable, in Antoine's words rather than a variable name.
@@ -20407,6 +20427,7 @@ document.addEventListener('keydown', (e) => {
     if(provider === 'opencode') return 'No OpenCode models are reachable right now.';
     if(provider === 'google-ai-studio') return 'Google is not set up on the server (no API key).';
     if(provider === 'openai') return 'ChatGPT is not set up on the server (no API key), or the monthly budget for it is switched off.';
+    if(!freeApiLane(provider, laneCatalog)) return 'That lane is not set up on the server (no API key).';
     return '';
   }
   function laneAvailable(provider, catalog){
@@ -20416,6 +20437,7 @@ document.addEventListener('keydown', (e) => {
     if(provider === 'opencode') return !!(catalog.opencode && catalog.opencode.available);
     if(provider === 'google-ai-studio') return !!(catalog.google && catalog.google.available);
     if(provider === 'openai') return !!(catalog.openai && catalog.openai.available);
+    if(freeApiLanes(catalog).length) return !!freeApiLane(provider, catalog);
     return true;
   }
 
@@ -20546,12 +20568,20 @@ document.addEventListener('keydown', (e) => {
     ['google-ai-studio', 'Google'],
     ['opencode', 'OpenCode'],
   ];
+  // Same list as the composer's picker: the catalogue lanes are appended rather
+  // than written down, so one key adds itself to both.
+  function reaskLanes(){
+    var extra = freeApiLanes(laneCatalog).map(function(p){ return [p.id, p.label]; });
+    return REASK_LANES.concat(extra.filter(function(row){
+      return !REASK_LANES.some(function(r){ return r[0] === row[0]; });
+    }));
+  }
   /* On the shared menu helper, which owns the positioning and the outside-click,
      scroll and Escape closes that this used to carry its own copy of. Lanes that
      cannot answer today stay visible and greyed, with the reason in words — hiding
      one makes it look as though the app never had it. */
   function openLaneMenu(btn, e, text, repaint){
-    var items = REASK_LANES.map(function(row){
+    var items = reaskLanes().map(function(row){
       var provider = row[0];
       var off = provider && !laneAvailable(provider, laneCatalog);
       return {

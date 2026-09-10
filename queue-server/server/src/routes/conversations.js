@@ -2,6 +2,7 @@
 // "universal-conversations-core-architecture"). Backed by services/conversations.js
 // and the subject registry in services/subjectContext.js.
 import { Router } from 'express';
+import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
@@ -14,7 +15,13 @@ import { asyncHandler } from '../lib/asyncHandler.js';
 // It was reachable only as Auto, which meant pinning any other lane was a one-way
 // door — added at Antoine's ask, 2026-09-09. The monthly cap in ai/text.js still
 // governs the spend; this only decides what may be asked for.
-const VALID_LANE_PROVIDERS = new Set(['claude-code', 'claude-side', 'opencode', 'google-ai-studio', 'openai']);
+// Any lane the router actually knows — the three named ones plus every provider
+// in the free catalogue, so a key added to the environment becomes pickable in
+// the Room without editing a list here. isKnownProvider is the same check
+// ai/text.js uses when it resolves a lane, so nothing can be pinned that the
+// generator would then refuse.
+const FIXED_LANE_PROVIDERS = new Set(['claude-code', 'claude-side', 'opencode']);
+const VALID_LANE_PROVIDERS = { has: (id) => FIXED_LANE_PROVIDERS.has(id) || isKnownProvider(id) };
 
 function isConvoError(out) {
   return out && typeof out === 'object' && out.error && !out.ok;

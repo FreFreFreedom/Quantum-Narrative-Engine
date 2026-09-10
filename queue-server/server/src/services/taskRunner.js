@@ -797,8 +797,43 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
 
       const currentProviderId = provider.id;
       const currentModel = currentProviderId === 'opencode' ? (t.run_model || t.provider_model || t.model || '') : t.model;
-      const currentEntry = currentProviderId === 'opencode' ? `opencode:${currentModel}` : currentModel;
+      const currentAccount = currentProviderId === 'claude-code' ? accountOf(t) : null;
+      const currentEntry = currentProviderId === 'opencode'
+        ? `opencode:${currentModel}`
+        : (currentAccount === 'side' ? `claude-side:${currentModel}` : currentModel);
       const triedList = Array.from(new Set([...(t.tried_models || [t.model]), currentEntry]));
+
+      // The second Claude account ran out — but the MAIN one is a whole separate
+      // subscription with its own window, and the free models are far weaker than
+      // either. So before dropping to the free floor, the same task, model,
+      // worktree and session move to the main account. Only once: the entry above
+      // records which account was spent, so a main-account ceiling falls through
+      // to OpenCode as it always did. This is the whole reason both accounts exist
+      // — a coding task should not stop because the small bank is empty.
+      if (currentProviderId === 'claude-code' && currentAccount === 'side'
+          && !triedList.includes(t.model) && !isExhausted('claude-code', t.model)) {
+        try { recordExhaustion({ providerId: 'claude-side', model: t.model, detectedBy: 'queue', errText: limit.label, scope: 'session' }); }
+        catch (e) { console.error('quota ledger: recordExhaustion failed —', e.message); }
+        try {
+          if (db && t.work_prompt_id) db.prepare(`UPDATE work_prompts SET account='main' WHERE id=?`).run(t.work_prompt_id);
+        } catch (e) { console.error('[taskRunner] could not move the task to the main account —', e.message); }
+        const moved = updateTask(taskId, {
+          tried_models: triedList, status: 'in_progress', started_at: new Date().toISOString(),
+        });
+        if (moved) broadcastTask(moved);
+        appendStreamChunk(taskId, { kind: 'system', text: `The second Claude account is out of its window — carrying on on the main account, same task.` });
+        let sidePrompt = '';
+        try { sidePrompt = readFileSync(EXEC_PROMPT(taskId), 'utf8'); } catch {}
+        runDetachedExecution(taskId, sidePrompt, {
+          model: t.model,
+          tools: t.mode === 'question' ? READONLY_TOOLS : EXEC_TOOLS,
+          cwd: t.worktree_path || undefined,
+          resumeSessionId: sessionId,
+          lane, provider: 'claude-code', account: 'main', question: t.mode === 'question',
+        });
+        cleanup();
+        return;
+      }
 
       // Skip Claude tier fallback (all share same quota bank) — go straight to the
       // OpenCode model chain. Record this exhaustion in the ledger, resolve
@@ -812,7 +847,9 @@ export function monitorExecution(taskId, knownPid = null, { lane = 'exec' } = {}
           if (currentProviderId === 'claude-code') {
             let usage = null;
             try { usage = await getClaudeUsage(); } catch {}
-            evt = recordExhaustion({ providerId: 'claude-code', model: t.model, detectedBy: 'queue', errText: limit.label, subscriptionUsage: usage });
+            // Bench the account that actually ran, not always the main one — the
+            // ledger is what the app shows and what the router routes around.
+            evt = recordExhaustion({ providerId: currentAccount === 'side' ? 'claude-side' : 'claude-code', model: t.model, detectedBy: 'queue', errText: limit.label, subscriptionUsage: usage });
           } else {
             evt = recordExhaustion({ providerId: 'opencode', model: currentModel, detectedBy: 'queue', errText: limit.label });
           }
