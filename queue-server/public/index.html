@@ -1068,12 +1068,8 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-turnfork:hover, .se-turnredo:hover { color:var(--c-brand); background:var(--c-surface-2); }
 /* Which model should answer it again. Same fixed-position treatment as the quote
    popover, and closed by the same page-level mousedown. */
-.se-lane-menu { position:fixed; z-index:var(--z-popover-top); background:var(--c-bg, #fff); border:1px solid var(--c-border); border-radius:var(--r-md);
-  padding:3px; box-shadow:0 4px 14px rgba(0,0,0,.16); display:flex; flex-direction:column; min-width:140px; }
-.se-lane-menu button { background:none; border:none; text-align:left; cursor:pointer; font-family:inherit; font-size:var(--fs-sm);
-  color:var(--c-ink); padding:4px 9px; border-radius:var(--r-sm); white-space:nowrap; }
-.se-lane-menu button:hover { background:var(--c-border); }
-.se-lane-menu button:disabled { opacity:.35; cursor:default; }
+/* The lane picker and the ⋯ menu are on the shared .umenu now; these four rules were
+   the last of the three hand-rolled menus. */
 .se-turn:first-child { border-top:none; padding-top:4px; }
 .se-who { font-size:var(--fs-2xs); text-transform:uppercase; letter-spacing:.08em; color:var(--c-ink-5); margin-bottom:3px; }
 .se-turn.you .se-who { color:var(--c-brand); }
@@ -2093,6 +2089,14 @@ button:active { transform: translateY(1px) scale(.99); }
    5x11, 5x14, 6x12) and three radii. One geometry, one hover, one lit state.
    The lit state re-declares its own hover, or touching a chosen segment makes it look
    unchosen — the same trap the file already warns about for the panel pins. */
+/* A word button may carry one icon before its label. Line-height stays on the text so
+   the glyph never changes the row's height, and the icon is sized off the type scale
+   rather than in absolute pixels. */
+.ctrlbtn > .ic, .ubtn > .ic, .id-addbtn > .ic, .qp-pick-btn > .ic, .wl-use > .ic,
+.flow-typecips button > .ic, #archFlowBtn > .ic, [data-arch-edges] > .ic {
+  width:1.05em; height:1.05em; flex:none; margin-right:.42em; vertical-align:-.16em;
+  fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+[data-arch-edges] > .ic, .q-mic-btn > .ic { margin-right:0; }
 .ctrlbtn,
 .qp-mode-seg button,
 .flow-typecips button,
@@ -2291,6 +2295,13 @@ button:active { transform: translateY(1px) scale(.99); }
   <symbol id="ic-cards" viewBox="0 0 16 16"><path d="M5.4 4.6V3.6a1.4 1.4 0 0 1 1.4-1.4h5.6a1.4 1.4 0 0 1 1.4 1.4v5.6a1.4 1.4 0 0 1-1.4 1.4H11"/><rect x="2.2" y="4.6" width="8.8" height="9.2" rx="1.4"/></symbol>
   <symbol id="ic-chevron-left" viewBox="0 0 16 16"><path d="M10 3.5 5.5 8 10 12.5"/></symbol>
   <symbol id="ic-chevron-right" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></symbol>
+  <symbol id="ic-film" viewBox="0 0 16 16"><rect x="2.2" y="3.4" width="11.6" height="9.2" rx="1.2"/><path d="M5.4 3.4v9.2M10.6 3.4v9.2M2.2 8h11.6"/></symbol>
+  <symbol id="ic-edges" viewBox="0 0 16 16"><path d="M2 11c2.4 0 2.4-6 4.8-6s2.4 6 4.8 6 2.4-3 2.4-3"/></symbol>
+  <symbol id="ic-bulb" viewBox="0 0 16 16"><path d="M6.2 11.6h3.6M6.6 13.6h2.8"/><path d="M8 2.4a3.8 3.8 0 0 0-2.2 6.9c.3.2.5.6.5 1h3.4c0-.4.2-.8.5-1A3.8 3.8 0 0 0 8 2.4z"/></symbol>
+  <symbol id="ic-mic" viewBox="0 0 16 16"><rect x="6" y="2.2" width="4" height="7" rx="2"/><path d="M3.8 7.4a4.2 4.2 0 0 0 8.4 0M8 11.6v2.2"/></symbol>
+  <symbol id="ic-build" viewBox="0 0 16 16"><path d="M2.2 13.4h11.6M3.6 13.4V6.6l4.4-3 4.4 3v6.8M6.6 13.4V9.4h2.8v4"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2 13.6 13.6"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.6"/><path d="M8 .8v2.2M8 13v2.2M.8 8h2.2M13 8h2.2"/></symbol>
   <symbol id="ic-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2"/><path d="M8 1.4v1.8M8 12.8v1.8M1.4 8h1.8M12.8 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3"/></symbol>
   <symbol id="ic-moon" viewBox="0 0 16 16"><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></symbol>
   <symbol id="ic-look" viewBox="0 0 16 16"><path d="M8 1.8A6.2 6.2 0 1 0 8 14.2c1 0 1.6-.6 1.6-1.4s-.5-1.2-1.1-1.4c-.7-.2-1-.6-1-1.2 0-.7.6-1.3 1.4-1.3h1.5a3.4 3.4 0 0 0 3.4-3.4c0-2-2.3-3.7-6.8-3.7z"/><circle cx="5.4" cy="6.2" r="1"/><circle cx="8" cy="4.8" r="1"/><circle cx="10.6" cy="6" r="1"/></symbol>
@@ -2457,7 +2468,7 @@ button:active { transform: translateY(1px) scale(.99); }
       <button class="ctrlbtn" id="toggleBridges" title="Green dotted links between two different kinds of thing — a character and a film, say — that score almost the same on a continuum axis">Bridges: on</button>
       <button class="ctrlbtn" id="toggleShowAll" title="Draw every link at once, instead of only the ones touching whatever you are hovering or have selected">Show all connections</button>
       <button class="ctrlbtn" id="resetBtn" title="Back to the whole graph, centred — clears the zoom, the pan and any ego scope">Reset view</button>
-      <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)">🎬 Enrich all films</button>
+      <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)"><svg class="ic" aria-hidden="true"><use href="#ic-film"></use></svg>Enrich all films</button>
       <span id="enrichStatus" style="font-size:10.5px;color:var(--c-ink-4);"></span>
       <span id="graphInfo" style="margin-left:auto;font-size:10.5px;color:var(--c-ink-4);"></span>
       <button type="button" class="uicon narrow-only" id="rightRailBtn" title="Details" aria-label="Show or hide the detail panel" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
@@ -2527,7 +2538,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
             <button data-arch-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
             <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>
-            <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>
+            <button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines"><svg class="ic" aria-hidden="true"><use href="#ic-edges"></use></svg></button>
           </div>
         </div>
         <div class="ws-archdetail" id="archRight" data-src="CORE ARCHITECTURE → graph zone → selected component detail (docked, auto-hides) | fmcns_navigator.html: selectArchNode()/renderArchDetail() | backend: services/architecture.js">
@@ -2571,7 +2582,7 @@ button:active { transform: translateY(1px) scale(.99); }
             <button data-ftype="suggestions">Suggestions</button>
             <button data-ftype="seeds">Seeds</button>
             <button data-ftype="done">✓ Done</button>
-            <button data-ftype="landed" title="World ideas you picked that did not end up usable">💡 Ideas dropped<span class="core-tab-count" id="coreCountLanded"></span></button>
+            <button data-ftype="landed" title="World ideas you picked that did not end up usable"><svg class="ic" aria-hidden="true"><use href="#ic-bulb"></use></svg>Ideas dropped<span class="core-tab-count" id="coreCountLanded"></span></button>
           </span>
           <span class="flow-sg-filters" id="flowSgFilters">
             <span class="sg-filterbtns" role="group" aria-label="Suggestion status filter">
@@ -2591,8 +2602,8 @@ button:active { transform: translateY(1px) scale(.99); }
             <div class="q-row">
               <button class="q-addbtn" id="qAddBtn">Add to queue</button>
               <button class="ctrlbtn" id="qSetAsideBtn" title="Create the task without marking it ready — it waits in Parked until you mark it ready">Set aside</button>
-              <button class="ctrlbtn" id="qMoreToggle" title="Rare options — everything here has a smart default">⚙ More</button>
-              <button class="ctrlbtn q-mic-btn" id="qMicBtn" title="Dictate the task by voice" style="display:none;">🎤</button>
+              <button class="ctrlbtn" id="qMoreToggle" title="Rare options — everything here has a smart default"><svg class="ic" aria-hidden="true"><use href="#ic-settings"></use></svg>More</button>
+              <button class="ctrlbtn q-mic-btn" id="qMicBtn" title="Dictate the task by voice" style="display:none;"><svg class="ic" aria-hidden="true"><use href="#ic-mic"></use></svg></button>
             </div>
             <div id="qAdvanced" style="display:none;margin-top:4px;">
               <input class="q-input" id="qPromptTitle" placeholder="Title (leave blank — auto-generated)">
@@ -2654,7 +2665,7 @@ button:active { transform: translateY(1px) scale(.99); }
                   <button data-pl="first">First</button>
                   <button class="active" data-pl="last">Last</button>
                 </span>
-                <button class="ctrlbtn" id="shapeFirstBtn" title="Open this text in the Idea Studio, discuss and shape it, then queue the result">💬 Shape it in conversation first</button>
+                <button class="ctrlbtn" id="shapeFirstBtn" title="Open this text in the Idea Studio, discuss and shape it, then queue the result"><svg class="ic" aria-hidden="true"><use href="#ic-chat"></use></svg>Shape it in conversation first</button>
               </div>
             </div>
             <div id="qAddErr" class="q-err"></div>
@@ -8729,39 +8740,20 @@ window.addEventListener('scroll', killRoomTypeMenu, true);
 // the row where the everyday ones live. Same shape as the Room's other menu (the
 // re-ask lane picker): fixed position under the button, closed by a mousedown
 // anywhere that is not inside it, and closed by a scroll.
-let roomMoreMenu = null;
-function killRoomMoreMenu() {
-  if (roomMoreMenu && roomMoreMenu.parentNode) roomMoreMenu.parentNode.removeChild(roomMoreMenu);
-  roomMoreMenu = null;
-}
+/* The ⋯ menu, on the shared helper. It used to build its own element, position itself,
+   and carry its own outside-click and scroll listeners — the third copy of that in the
+   file. What it gains for free is the rule above Delete: a destructive row was flush
+   against "Name it by what it is about", one mis-aimed pixel away. */
+function killRoomMoreMenu() { if (typeof closeMenu === 'function') closeMenu(); }
 function openRoomMoreMenu(btn) {
-  if (roomMoreMenu) { killRoomMoreMenu(); return; }
   if (!roomSel) return;
-  const rows = [
-    ['Rename it yourself', roomBeginRename],
-    ['Name it by what it is about', () => roomRetitleThread(roomSel)],
-    ['Delete this thread', () => roomDeleteThread(roomSel), true],
-  ];
-  roomMoreMenu = document.createElement('div');
-  roomMoreMenu.className = 'se-lane-menu';
-  rows.forEach(([label, fn, danger]) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = label;
-    if (danger) b.style.color = 'var(--c-danger)';
-    b.onclick = (ev) => { ev.stopPropagation(); killRoomMoreMenu(); fn(); };
-    roomMoreMenu.appendChild(b);
-  });
-  const r = btn.getBoundingClientRect();
-  roomMoreMenu.style.left = Math.max(6, Math.min(window.innerWidth - 210, r.right - 200)) + 'px';
-  roomMoreMenu.style.top = Math.min(window.innerHeight - 120, r.bottom + 4) + 'px';
-  roomMoreMenu.onmousedown = (ev) => ev.stopPropagation();
-  document.body.appendChild(roomMoreMenu);
+  openMenu(btn, [
+    { label: 'Rename it yourself', on: roomBeginRename },
+    { label: 'Name it by what it is about', on: () => roomRetitleThread(roomSel) },
+    { sep: true },
+    { label: 'Delete this thread', danger: true, on: () => roomDeleteThread(roomSel) },
+  ]);
 }
-document.addEventListener('mousedown', (ev) => {
-  if (roomMoreMenu && !roomMoreMenu.contains(ev.target)) killRoomMoreMenu();
-}, true);
-window.addEventListener('scroll', killRoomMoreMenu, true);
 
 // Name it by what it is about. The automatic pass already runs after the first
 // exchange and again at the fifth, but only while the name is still the machine's
@@ -9051,7 +9043,7 @@ function renderRoomIdeas() {
   }
   if (!roomIdeasReports.length) {
     host.innerHTML = `<div class="tv-empty">
-      <button type="button" class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
+      <button type="button" class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here."><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Look at the world</button>
     </div>`;
     return;
   }
@@ -13066,7 +13058,7 @@ function qRenderDetail(p) {
     <div class="arch-field"><div class="arch-field-label">${stopped ? 'What it was meant to do' : 'Purpose'}</div><div class="arch-field-body" id="qPurposeBody">${p.summary ? qPurposeHtml(p.summary) : '<span class="q-purpose-preview">Being written…</span>'}</div></div>
     ${p.mode === 'implement' ? `
     <div class="arch-field">
-      <div class="arch-field-label">Inspired by — the world's ideas <button class="ctrlbtn" id="qAddWorldIdeaBtn" style="font-size:11px;padding:2px 8px;margin-left:8px;" title="Add your own bold idea to this task's world-look">✨ Add world idea</button></div>
+      <div class="arch-field-label">Inspired by — the world's ideas <button class="ctrlbtn" id="qAddWorldIdeaBtn" style="font-size:11px;padding:2px 8px;margin-left:8px;" title="Add your own bold idea to this task's world-look"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Add world idea</button></div>
       <div id="qInspireHost">${qInspireHtml(p)}</div>
     </div>` : ''}
     ${p.mode === 'implement' ? '<div id="qLandedHost"></div>' : ''}
@@ -13192,7 +13184,7 @@ function qInspireHtml(p) {
     const note = p.inspire_state === 'skipped'
       ? (p.inspire_error || 'This task runs on a plain plan — the world-look was skipped.')
       : 'This task has not looked at the world yet, so it will not start until it does (or you skip the search).';
-    return `<div class="tv-empty">${note}<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">✨ Look at what exists before you start</button>${p.inspire_state !== 'skipped' ? '<button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button>' : ''}</div>`;
+    return `<div class="tv-empty">${note}<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Look at what exists before you start</button>${p.inspire_state !== 'skipped' ? '<button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button>' : ''}</div>`;
   }
   if (['pending', 'reviewing'].includes(p.inspire_state) && qStageStuck(p)) {
     return `<div class="tv-empty">This step stopped part-way — the server restarted while it was running, so nothing is working on it any more. Resetting it lets the task carry on.<br><button class="ctrlbtn" data-action="unstick" style="margin-top:8px;">Reset this step</button></div>`;
@@ -13458,7 +13450,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
   // the chat as a plain message, so it can be talked over with full context instead
   // of just a title. Never rendered elsewhere — useIdea is opt-in per caller.
   const useBtn = useIdea
-    ? `<button type="button" class="wl-use" data-action="worldlook-use" title="Drop this idea into the chat, in full, so you can question it there">💬 use this idea</button>`
+    ? `<button type="button" class="wl-use" data-action="worldlook-use" title="Drop this idea into the chat, in full, so you can question it there"><svg class="ic" aria-hidden="true"><use href="#ic-chat"></use></svg>use this idea</button>`
     : '';
   return `
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
@@ -13995,7 +13987,7 @@ function flowWorldPanelHtml(source, id, { useIdea = false } = {}) {
     return `${legend}${worldPartsHtml(e.report, { sel, facts, pickAction: 'flowworld-pick', scope: source + ':' + id, useIdea })}`;
   }
   return `<div class="tv-empty">
-    <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here.">✨ Look at the world</button>
+    <button class="ctrlbtn" data-action="flowworld-start" title="One pass, cached — real projects, hidden products, bold ideas, right here."><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Look at the world</button>
   </div>`;
 }
 // Panel for the expanded suggestion/seed card. Re-renders in place after picks
@@ -14694,8 +14686,8 @@ function renderBkReportView(report) {
     <div class="tv-toolbar-top" style="margin-top:10px;">
       <button class="id-addbtn" id="bkBackBtn">← All reports</button>
       <span class="arch-title" style="font-size:13px;">"${report.idea_text}"</span>
-      ${isProject ? `<button class="id-addbtn" id="bkPlantProjectBtn">🏗️ Create project</button>` : ''}
-      <button class="id-addbtn" data-action="save-seed">⇩ Save as seed</button>
+      ${isProject ? `<button class="id-addbtn" id="bkPlantProjectBtn"><svg class="ic" aria-hidden="true"><use href="#ic-build"></use></svg>Create project</button>` : ''}
+      <button class="id-addbtn" data-action="save-seed"><svg class="ic" aria-hidden="true"><use href="#ic-seed"></use></svg>Save as seed</button>
     </div>
     ${legend}
     ${report.parts.map((part, i) => bkPartSection(part, i, report, facts)).join('')}
@@ -15649,7 +15641,7 @@ function renderNotbuiltFlow() {
     <div class="nb-toolbar" style="border-bottom:none;padding:4px 2px 10px;">
       <span class="arch-title">On the Horizon</span>
       <input class="nb-search" id="nbSearch" placeholder="Search components…" autocomplete="off" value="${qEsc(nbSearch)}">
-      <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project">✨ AI recommends order</button>
+      <button class="ctrlbtn" id="nbAiOrderBtn" title="One AI call — ranks the list by best next move for the project"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>AI recommends order</button>
       <div class="nb-chips">${terrChips}</div>
       <div class="nb-chips">${readyChips}</div>
     </div>
@@ -17620,7 +17612,7 @@ function renderArchStage() {
       <button data-arch-zoom="out" title="Zoom out" aria-label="Zoom out">−</button>
       <button data-arch-zoom="in" title="Zoom in" aria-label="Zoom in">+</button>
       <button data-arch-zoom="fit" title="Fit the graph to the screen" aria-label="Fit the graph to the screen">⌂</button>
-      ${archLayout === 'techtree' ? `<button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines">∿</button>` : ''}
+      ${archLayout === 'techtree' ? `<button data-arch-edges id="archEdgesBtn" title="Dependency lines: on" aria-label="Toggle dependency lines"><svg class="ic" aria-hidden="true"><use href="#ic-edges"></use></svg></button>` : ''}
     </div>` : ''}`;
   wireArchStageControls();
   document.querySelectorAll('[data-arch-id]').forEach(n => { n.onclick = (e) => { if (e.target.closest && e.target.closest('.cardbtn')) return; selectArchNode(n.getAttribute('data-arch-id')); }; });
@@ -17930,7 +17922,7 @@ function renderArchDetail(id) {
   html += `<div class="arch-actionrow">
       <button id="archAskBtn">✦ Ask about this</button>
       <button id="archQueueBtn">📋 Queue custom prompt</button>
-      <button id="archFlowBtn">🔎 Show related in Flow</button>
+      <button id="archFlowBtn"><svg class="ic" aria-hidden="true"><use href="#ic-search"></use></svg>Show related in Flow</button>
     </div>
     <div id="archStudioHost"></div>
     <div id="archQueueHost"></div>`;
@@ -18194,7 +18186,7 @@ function renderQueuePanel() {
           <button class="${qpMode === 'implement' ? 'active' : ''}" data-qpmode="implement">Implement</button>
           <button class="${qpMode === 'question' ? 'active' : ''}" data-qpmode="question">Question</button>
         </div>
-        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn" title="Click anything on the page and it comes back as a chip here">${qpPickActive ? '✕ Stop' : (qpPicked.length ? '🎯 ＋' : '🎯 Point')}</button>
+        <button class="qp-pick-btn${qpPickActive ? ' active' : ''}" id="qpPickBtn" title="Click anything on the page and it comes back as a chip here">${qpPickActive ? '<svg class="ic" aria-hidden="true"><use href="#ic-x"></use></svg>Stop' : '<svg class="ic" aria-hidden="true"><use href="#ic-target"></use></svg>' + (qpPicked.length ? '＋' : 'Point')}</button>
         <button class="qp-toggle${qpJumpLine ? ' active' : ''}" id="qpJumpBtn" aria-pressed="${qpJumpLine}" title="Put this at the front of the queue instead of the end">⤒ First</button>
         <span class="qp-status" id="qpStatus"></span>
         <button class="qp-submit" id="qpSubmit" title="⌘/Ctrl + Enter">Add</button>
@@ -19268,11 +19260,7 @@ document.addEventListener('keydown', (e) => {
   // last one, and an explicit pick rather than the lane tag's fixed three-way cycle
   // (his ask, 2026-09-09). The re-answer is a new turn at the end of the thread:
   // nothing in the history is rewritten, so both answers stay side by side.
-  var laneMenu = null;
-  function killLaneMenu(){
-    if(laneMenu && laneMenu.parentNode) laneMenu.parentNode.removeChild(laneMenu);
-    laneMenu = null;
-  }
+  function killLaneMenu(){ if(window.closeMenu) window.closeMenu(); }
   var REASK_LANES = [
     ['', 'Auto'],
     ['openai', 'ChatGPT'],
@@ -19281,46 +19269,31 @@ document.addEventListener('keydown', (e) => {
     ['google-ai-studio', 'Google'],
     ['opencode', 'OpenCode'],
   ];
+  /* On the shared menu helper, which owns the positioning and the outside-click,
+     scroll and Escape closes that this used to carry its own copy of. Lanes that
+     cannot answer today stay visible and greyed, with the reason in words — hiding
+     one makes it look as though the app never had it. */
   function openLaneMenu(btn, e, text, repaint){
-    killLaneMenu();
-    var r = btn.getBoundingClientRect();
-    laneMenu = document.createElement('div');
-    laneMenu.className = 'se-lane-menu';
-    REASK_LANES.forEach(function(row){
+    var items = REASK_LANES.map(function(row){
       var provider = row[0];
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = row[1];
-      // Greyed rather than hidden: a lane that is off today is still worth seeing,
-      // and laneOffReason already says why in words.
       var off = provider && !laneAvailable(provider, laneCatalog);
-      b.disabled = !!off;
-      if(off) b.title = laneOffReason(provider);
-      b.onclick = function(ev){
-        ev.stopPropagation();
-        killLaneMenu();
-        if(e.busy) return;
-        var lane = null;
-        if(provider){
-          var models = laneModelsFor(provider, laneCatalog);
-          var model = models.length ? models[0] : null;
-          lane = { provider: provider, model: model, account: null };
+      return {
+        label: row[1],
+        disabled: !!off,
+        title: off ? laneOffReason(provider) : '',
+        on: function(){
+          if(e.busy) return;
+          var lane = null;
+          if(provider){
+            var models = laneModelsFor(provider, laneCatalog);
+            lane = { provider: provider, model: models.length ? models[0] : null, account: null };
+          }
+          sendTurn(e, text, repaint, null, lane);
         }
-        sendTurn(e, text, repaint, null, lane);
       };
-      laneMenu.appendChild(b);
     });
-    laneMenu.style.left = Math.max(6, Math.min(window.innerWidth - 160, r.right - 150)) + 'px';
-    laneMenu.style.top = Math.min(window.innerHeight - 190, r.bottom + 4) + 'px';
-    laneMenu.onmousedown = function(ev){ ev.stopPropagation(); };
-    document.body.appendChild(laneMenu);
+    window.openMenu(btn, items);
   }
-  // Same trap as the quote popover above, same fix: every entry in this menu is a
-  // child of it, so an unconditional kill on mousedown would swallow every pick.
-  document.addEventListener('mousedown', function(ev){
-    if(laneMenu && !laneMenu.contains(ev.target)) killLaneMenu();
-  }, true);
-  window.addEventListener('scroll', killLaneMenu, true);
 
   // Chapters: a place in a long answer you meant to come back to. Saved on the
   // server, not in this browser, because the whole point is that it is still there
