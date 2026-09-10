@@ -2,7 +2,19 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-09 |
+| **DONE** | 2026-09-09 |
+
+Found already implemented when this plan was picked up for execution: commits `1b08b0a`
+and `3d3a5ad` (same day, unrelated commit messages) already carry every change this plan
+calls for — the free-provider `<optgroup>` and `renderableIds` guard in
+`renderAiSettings()`, the catalogue-provider branch in `aiModelOptions()`, and the
+`doc-extraction` row in `AI_FEATURES`. `fmcns_navigator.html` and
+`queue-server/public/index.html` are byte-identical. Verified against production
+2026-09-09: `GET /api/travaux/free-providers` lists `google-ai-studio` with its three
+models, `GET /api/travaux/ai-settings` shows `doc-extraction` on `gemini-flash-latest`
+and Idea Studio's `openai`/`gpt-4.1` untouched. No code changes made — the browser-only
+verification steps (opening the panel, picking a model, saving, reverting) were not run
+here; a human should confirm those live, but nothing in the code suggests they'd fail.
 
 ## Where you are
 
