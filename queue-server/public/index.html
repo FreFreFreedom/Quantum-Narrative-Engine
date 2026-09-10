@@ -2143,6 +2143,17 @@ button:active { transform: translateY(1px) scale(.99); }
 .ctrlbtn:disabled, .qp-mode-seg button:disabled, .flow-typecips button:disabled,
 .arch-viewbtns button:disabled, .mind-toolbtns button:disabled, .sg-filterbtns button:disabled {
   opacity:.5; cursor:default; }
+/* An icon button is not a segment. The selectors above reach every button inside those
+   containers, which gave the ⋯ in the Architecture band a segment's border and 22px of
+   side padding inside a 24px box — the icon had two pixels to live in and the button
+   rendered as an empty rectangle. */
+.arch-viewbtns .uicon, .flow-controls .uicon, .graph-controls .uicon,
+.arch-toolbar .uicon, .tv-toolbar .uicon {
+  width:24px; height:24px; padding:0; border:none; background:none; border-radius:var(--r-sm); }
+.arch-viewbtns .uicon:hover, .flow-controls .uicon:hover, .graph-controls .uicon:hover,
+.arch-toolbar .uicon:hover, .tv-toolbar .uicon:hover {
+  background:var(--c-surface-2); color:var(--c-ink); }
+
 /* The placement toggle is the one joined group — a single pill split by hairlines
    rather than separate buttons, so its children give up their own outer edges. */
 .q-place-seg button { border:none; border-radius:0; }
