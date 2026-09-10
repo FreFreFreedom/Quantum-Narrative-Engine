@@ -463,6 +463,14 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-foot .usage-none { white-space:normal; line-height:1.35; }
 .rail-foot .usage-alert { white-space:normal; line-height:1.35; }
 .usage-seeall { align-self:flex-start; padding:0; border:none; background:none; color:var(--c-ink-4); font-size:var(--fs-xs); cursor:pointer; }
+/* In the rail, the read-out is a glance: the two windows that actually run out, and a
+   warning when one is close. The month's paid total, the cache figure and the link to
+   AI Settings all come out — AI Settings holds every one of them and its button is the
+   row directly above this. Drawing them here as well was what made the foot grow by
+   230px on hover, which moved the buttons under the foot out from under the cursor. */
+.rail-foot .usage-seeall,
+.rail-foot .usage-cache-hint,
+.rail-foot .usage-spend { display:none; }
 .usage-seeall:hover { color:var(--c-ink); text-decoration:underline; }
 /* collapsed: the bars alone. A nearly-spent quota still has to be noticeable,
    so they stay — only the words go. */
