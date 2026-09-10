@@ -62,8 +62,12 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
   --fs-2xs: 9.5px; --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-base: 13px;
   --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px;
   --fw-normal: 400; --fw-medium: 600;
-  /* Reading measure. Long prose stops here however wide the window gets. */
-  --measure: 68ch;
+  /* Reading measure. Long prose stops here however wide the window gets.
+     In ch, so it follows whichever face the reader has chosen — ch is the width of the
+     digit zero, which runs wider than average lowercase, so this lands near seventy-five
+     characters a line rather than the fifty-six it reads as. 68ch, tried first, measured
+     out at about ninety characters and read like a spreadsheet. */
+  --measure: 56ch;
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
   --r-xs: 4px; --r-sm: 6px; --r-md: 9px; --r-lg: 14px; --r-pill: 999px;
   --t-fast: 140ms; --t-med: 220ms; --t-slow: 350ms; --ease: cubic-bezier(.2,.7,.3,1);
