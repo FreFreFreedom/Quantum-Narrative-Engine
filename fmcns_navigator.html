@@ -5071,6 +5071,9 @@ function computeEdges(pool) {
 }
 
 function buildGraph() {
+  // A descent cannot survive a rebuild: every node object is replaced, so the host it
+  // holds would stop moving and its ghost positions would sit on objects nothing reads.
+  if (descent) { descent = null; descentPick = null; descentEdgePick = null; }
   const pool = activeEntities();
   computeCentroids(pool);
   // In Landscape the pool's geography is computed first (cached per entity set), because
@@ -5107,6 +5110,8 @@ function buildGraph() {
     return n;
   });
   nodes.forEach(n => byId[n.id]=n);
+  // What is on the field just changed, so whether a descent is on offer may have too.
+  if (typeof syncDescendBtn === 'function') syncDescendBtn();
   if (ls) {
     // The landscape has NO edges — not hidden ones, none. Everything downstream that
     // reads `edges` (the edge pass, edgeAt(), edgeVisible()) therefore falls silent on
@@ -5314,9 +5319,17 @@ async function ensureAnatomy(id) {
 
 function hasInside(id) { return _anatomy[id] && _anatomy[id] !== 'none'; }
 
+function onField(id) {
+  const nd = byId[id];
+  return !!(nd && Number.isFinite(nd.x) && Number.isFinite(nd.y) && nodes.indexOf(nd) !== -1);
+}
+
 async function startDescent(id) {
   const host = byId[id];
-  if (!host || descent) return;
+  // It has to be on the field. byId holds every entity, but only the ones the filters are
+  // drawing have a position, and a descent into a thing with no coordinates is an empty
+  // stage. Films are unchecked by default, so this is ordinary rather than an edge case.
+  if (!host || descent || !onField(id)) return;
   const a = await ensureAnatomy(id);
   if (!a || a === 'none') return;
 
@@ -5538,7 +5551,7 @@ function syncDescendBtn() {
     btn.querySelector('use').setAttribute('href', '#ic-up');
     return;
   }
-  const ok = focusedId && hasInside(focusedId);
+  const ok = focusedId && hasInside(focusedId) && onField(focusedId);
   btn.hidden = !ok;
   if (ok) {
     btn.title = 'Descend into it — this one has a mapped inside';
