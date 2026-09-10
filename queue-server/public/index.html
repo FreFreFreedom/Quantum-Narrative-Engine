@@ -746,7 +746,10 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .mind-empty { padding:0 14px 14px; font-size:var(--fs-sm); color:var(--c-ink-4); }
 /* The thought cards keep the pane's own left/right inset; the card itself is .uc. */
 .mind-list { padding:0 14px; }
-.mind-card-meta { font-size:var(--fs-2xs); color:var(--c-ink-4); margin-top:1px; }
+.mind-card-meta { font-size:var(--fs-xs); color:var(--c-ink-4); margin-top:1px; }
+/* A thought is a paragraph he reads, not a field he scans, and it was running the full
+   width of a thousand-pixel pane. The reading face, and a measure. */
+#archMindPane .uc-sum { font-family:var(--font-read); font-size:var(--fs-base); line-height:1.6; max-width:var(--measure); }
 .mind-reason { display:flex; gap:6px; margin-top:7px; }
 .mind-reason input { flex:1; border:1px solid var(--c-border-2); border-radius:var(--r-sm); padding:4px 8px; font-size:var(--fs-xs); font-family:inherit; background:var(--c-surface); color:var(--c-ink); }
 .mind-reason button { padding:3px 9px; border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface-2); font-size:var(--fs-xs); cursor:pointer; }
@@ -774,7 +777,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .ws-home.open { display:block; }
 .home-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; padding:14px; align-content:start; }
 .home-card { border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-surface); padding:11px 12px; min-width:0; }
-.home-card h3 { margin:0 0 7px; font-size:var(--fs-sm); font-weight:600; letter-spacing:.02em; color:var(--c-ink-4); text-transform:uppercase; display:flex; align-items:baseline; gap:6px; }
+.home-card h3 { margin:0 0 8px; font-size:var(--fs-md); font-weight:var(--fw-medium); color:var(--c-ink-3);
+  display:flex; align-items:baseline; gap:6px; }
 .home-n { font-size:var(--fs-xl); font-weight:600; color:var(--c-ink); line-height:1; margin-bottom:6px; }
 .home-n.zero { color:var(--c-ink-5); font-weight:400; }
 .home-sub { font-size:var(--fs-sm); color:var(--c-ink-4); margin-bottom:8px; }
@@ -782,8 +786,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .home-row:first-of-type { border-top:none; }
 .home-row .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .home-row .n { color:var(--c-ink-5); font-size:var(--fs-sm); flex:none; }
-.home-tag { font-size:var(--fs-xs); color:var(--c-ink-5); border:1px solid var(--c-border); border-radius:var(--r-xs); padding:0 4px; flex:none; }
-.home-go { background:none; border:none; padding:6px 0 0; margin:0; cursor:pointer; color:var(--c-accent); font-family:inherit; font-size:var(--fs-sm); }
+/* The same pill shape the rest of the app uses to say what kind of thing a row is. */
+.home-tag { font-size:var(--fs-xs); color:var(--c-ink-3); background:var(--c-surface-2);
+  border-radius:var(--r-pill); padding:1px 8px; flex:none; }
+.home-go { background:none; border:none; padding:7px 0 0; margin:0; cursor:pointer; color:var(--c-accent);
+  font-family:inherit; font-size:var(--fs-sm); font-weight:var(--fw-medium); }
 .home-go:hover { text-decoration:underline; }
 .home-empty { font-size:var(--fs-sm); color:var(--c-ink-5); }
 /* ── The room to think in (Core → Room) ────────────────────────────────────────
@@ -1874,6 +1881,9 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 /* building blocks */
 #bkViewBtns { margin-top:6px; }
 .bk-lib-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--c-border); font-size:var(--fs-sm); }
+/* Star counts in a column read against each other, so they get one width per digit and
+   sit in a fixed gutter instead of wherever the name before them happened to end. */
+.bk-lib-row .bk-stars { font-variant-numeric:tabular-nums; flex:none; min-width:62px; text-align:right; }
 .bk-lib-row:first-of-type { border-top:none; }
 .bk-lib-text { flex:1; min-width:0; font-weight:600; color:var(--c-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bk-lib-meta { color:var(--c-ink-4); font-size:var(--fs-xs); flex-shrink:0; }
@@ -3238,6 +3248,7 @@ async function boot() {
     // They live in the always-visible rail now, so they are wired here instead.
     initRailControls();
     restoreContentView();
+    restoreFlowView();
     connectRealtime();
     // initArchNav() used to run here on every boot; it now runs lazily from
     // switchCoreView('arch') the first time the Architecture view is opened.
@@ -4823,6 +4834,7 @@ function axisComparator() {
 
 // ---------- Exploration: list view ----------
 const CONTENT_VIEW_KEY = 'fmcns.contentView';
+const FLOW_VIEW_KEY = 'fmcns.flowView';
 let contentView = 'graph';
 function saveContentView() {
   try { localStorage.setItem(CONTENT_VIEW_KEY, JSON.stringify({ view: contentView, color: colorMode })); } catch (e) {}
@@ -8136,6 +8148,18 @@ const CORE_VIEW_PANES = { flow: 'corePaneFlow' };
 // Flow view state: type filter, search text, folded Done section, and the item
 // currently open in the shared right-zone detail pane.
 let flowType = 'all', flowSearch = '', flowDoneOpen = false, flowGroupOpen = new Set(), flowSideSel = null;
+function saveFlowView() {
+  try { localStorage.setItem(FLOW_VIEW_KEY, flowType); } catch (e) {}
+}
+function restoreFlowView() {
+  let v = null;
+  try { v = localStorage.getItem(FLOW_VIEW_KEY); } catch (e) {}
+  if (!v || v === 'all') return;
+  const btn = document.querySelector('#flowTypeBtns button[data-ftype="' + v + '"]');
+  if (!btn) return;
+  flowType = v;
+  document.querySelectorAll('#flowTypeBtns button').forEach((x) => x.classList.toggle('active', x === btn));
+}
 // Inspiration panel state: rendered HTML per task (avoids refetching on every
 // 4s poll), the human's un-applied selections, and the in-flight guard.
 let qInspireCache = {}, qInspireSel = {};
@@ -8233,6 +8257,7 @@ function initCore() {
         if (btn) {
           try {
             flowType = btn.getAttribute('data-ftype');
+            saveFlowView();
             await renderFlow();
           } catch (err) {
             console.error('Flow tab switch error:', err);
@@ -8431,7 +8456,7 @@ function renderHome() {
     b += homeRows(waiting.slice(0, 6), (r) => '<div class="home-row"' + (r[2] ? ' data-home-entity="' + qEscAttr(r[2]) + '" style="cursor:pointer;"' : '') + '><span class="home-tag">' + r[0] + '</span><span class="t" title="' + qEscAttr(r[1] || '') + '">' + qEsc(r[1] || '(untitled)') + '</span></div>');
     if (n.total) {
       const more = n.total - Math.min(6, waiting.length);
-      b += '<button type="button" class="home-go" data-home-go="flow">' + (more > 0 ? more + ' more in Flow →' : 'Open Flow →') + '</button>';
+      b += '<button type="button" class="home-go" data-home-go="flow">' + (more > 0 ? more + ' more in Flow' : 'Open Flow') + '</button>';
     }
     cards.push(homeCard('Waiting on you', b));
   }
@@ -8444,7 +8469,7 @@ function renderHome() {
     if (typeof nextUpErr !== 'undefined' && nextUpErr) b += '<div class="home-empty">' + qEsc(nextUpErr) + '</div>';
     else if (!picks.length) b += '<div class="home-empty">Nothing ranked yet.</div>';
     else b += picks.slice(0, 3).map((p, i) => '<div class="home-row"><span class="n">' + (i + 1) + '</span><span class="t" title="' + qEscAttr(p.reason || '') + '">' + qEsc(p.name || '') + '</span></div>').join('');
-    if (picks.length) b += '<button type="button" class="home-go" data-home-go="flow">See the order →</button>';
+    if (picks.length) b += '<button type="button" class="home-go" data-home-go="flow">See the order</button>';
     cards.push(homeCard('What to build next', b));
   }
 
@@ -8455,7 +8480,7 @@ function renderHome() {
     let b = '<div class="home-n' + (l.total ? '' : ' zero') + '">' + l.total + '</div>';
     b += '<div class="home-sub">' + (l.vision ? l.vision + ' of them the paradigm' : 'nothing filed as the paradigm yet') + '</div>';
     b += homeRows(l.recent, (f) => '<div class="home-row"><span class="home-tag">' + qEsc(f.kind || '') + '</span><span class="t" title="' + qEscAttr(f.text || '') + '">' + qEsc(f.text || '') + '</span></div>');
-    b += '<button type="button" class="home-go" data-home-go="room">Open the Room →</button>';
+    b += '<button type="button" class="home-go" data-home-go="room">Open the Room</button>';
     cards.push(homeCard('What the Room has learned', b));
   }
 
@@ -8466,17 +8491,18 @@ function renderHome() {
     let b = '<div class="home-n' + (u.count ? '' : ' zero') + '">' + u.count + '</div>';
     b += '<div class="home-sub">' + (u.count ? 'with turns the memory has not read' : 'every thread is absorbed') + '</div>';
     b += homeRows(u.threads, (t) => '<div class="home-row"><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span><span class="n">' + t.behind + ' behind</span></div>');
-    if (u.count) b += '<button type="button" class="home-go" data-home-go="room">Open the Room →</button>';
+    if (u.count) b += '<button type="button" class="home-go" data-home-go="room">Open the Room</button>';
     cards.push(homeCard('Not yet remembered', b));
   }
 
   // 5. Walks kept through the ontology. Invisible everywhere else once set down.
   const w = homeData.walks;
   if (w) {
-    let b = w.length
-      ? homeRows(w, (m) => '<div class="home-row"><span class="t" title="' + qEscAttr(m.title || '') + '">' + qEsc(m.title || '(untitled)') + '</span><span class="n">' + m.steps + ' steps</span></div>')
-      : '';
-    cards.push(homeCard('Walks you kept', b));
+    // Rendered only when a walk exists. An empty card here was five things drawn to
+    // say one, which is the rule this screen was built on.
+    if (w.length) {
+      cards.push(homeCard('Walks you kept', homeRows(w, (m) => '<div class="home-row"><span class="t" title="' + qEscAttr(m.title || '') + '">' + qEsc(m.title || '(untitled)') + '</span><span class="n">' + m.steps + ' steps</span></div>')));
+    }
   }
 
   host.innerHTML = cards.join('');
