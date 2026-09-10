@@ -1,7 +1,22 @@
 # Where the corpus does not connect — the gap measure
 
-**Status: PLANNED.** Not a green light. Written 2026-09-09 out of
-`plans/obsidian-prior-art-findings.md`.
+| Status | Date |
+|---|---|
+| **PLANNED** | 2026-09-09 |
+
+## Where you are
+
+FMCNS is a private research app: a Node/Express backend in `queue-server/` (entry
+`server/src/index.js`, SQLite via `node:sqlite`) and one single-file vanilla-JS
+frontend, `fmcns_navigator.html`, mirrored to `queue-server/public/index.html`. No
+build step, no test suite, no linter — `node --check <file>` is the sanity check.
+
+The corpus is ~492 entities (characters, films, countries, institutions…), each
+carrying archetypal tags in the `entity_tags` table. At every boot those tags are
+grouped into theme clusters. This plan adds a second reading of that same grouping.
+
+**Line numbers and function names below were true on 2026-09-09 and drift.** Verify
+each against the current code before editing; report anything that moved.
 
 ## Why
 
@@ -84,7 +99,34 @@ interface" before touching the chrome.
 - `entity_relations`. Too few rows today.
 - Anything embedding-shaped.
 
+## Traps
+
+- **`getTagCommunities()`'s returned shape is read by three other modules**
+  (`services/ontologyQuery.js`, `services/architecture.js`,
+  `routes/ontology.js`). Add fields; never rename or remove one.
+- **`detectCommunities` is also used by `services/interactionGraph.js`.** Do not
+  change its signature or behaviour — this plan only *calls* it.
+- **`buildTagCommunities()` runs on the boot path** and its own header says it must
+  never be able to break it. Keep the try/catch discipline: every failure returns an
+  empty result and logs.
+- **The communities are cached in memory, not stored.** The gap pass must live in the
+  same cache lifetime, not recompute per request.
+- Communities are labelled `C1, C2…` by size, so the ids are stable across a rebuild
+  only if the corpus has not changed. Do not persist a gap keyed by id alone — key it
+  by the tag sets or the names.
+
+## How to verify (there is no test suite)
+
+1. `node --check` every file touched.
+2. `npm run gaps:selftest` — the new script, offline, no credits.
+3. Boot locally: `JWT_SECRET=dev ADMIN_PASSWORD=dev npm start` from `queue-server/`,
+   then log in for a token and `GET /api/ontology/tag-gaps`. The local DB is a stale
+   dev copy — a thin result there is expected, not a bug. Confirm the shape, and check
+   the boot log's `[tag-communities]` line still reports its cluster count.
+4. Open the served app at `http://localhost:<port>/` and look at an entity's detail
+   panel for the new line. Drive the live app; do not verify by reading the diff.
+
 ## Done when
 
-`npm run gaps:selftest` passes, `GET /api/ontology/tag-gaps` returns a ranked list
-against the live corpus, and the entity panel names one.
+`npm run gaps:selftest` passes, `GET /api/ontology/tag-gaps` returns a ranked list,
+and an entity's detail panel names what its cluster is furthest from.
