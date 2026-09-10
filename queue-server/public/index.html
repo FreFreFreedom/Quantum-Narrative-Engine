@@ -264,6 +264,10 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    every one. Which of those are drawn depends on the semantic-zoom band — see
    updateBands(). Kept in one place there rather than half here, half there. */
 .legend { position:absolute; left:12px; bottom:12px; background:rgb(var(--c-surface-rgb) / .92); border:1px solid var(--c-border); border-radius:var(--r-md); padding:9px 11px; font-size:var(--fs-xs); z-index:var(--z-stage); width:230px; max-height:70%; overflow-y:auto; }
+.legend:not([open]) { width:auto; padding:5px 9px; }
+.legend > summary { list-style:none; cursor:pointer; font-size:var(--fs-2xs); text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); }
+.legend > summary::-webkit-details-marker { display:none; }
+.legend[open] > summary { margin-bottom:6px; }
 .legend .section-label { font-size:var(--fs-2xs); text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); margin:7px 0 4px; }
 .legend .section-label:first-child { margin-top:0; }
 .legend .row { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
@@ -2608,7 +2612,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <button id="descendBtn" hidden aria-label="Descend into it"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-down"></use></svg></button>
         <button id="resetBtn" title="Back to the whole graph, centred — clears the zoom, the pan and any ego scope" aria-label="Fit the whole graph">⌂</button>
       </div>
-      <div class="legend" id="legend"></div>
+      <details class="legend" id="legend"><summary>Key</summary><div id="legendBody"></div></details>
       <div id="graphLive" class="sr-only" aria-live="polite"></div>
     </div>
     <div class="list-stage" id="listStage" data-src="Content navigator → list view of entities | fmcns_navigator.html: renderList() (~line 937)">
@@ -6949,11 +6953,20 @@ function layoutAndDraw(){
   renderPatternList();
 }
 
+const LEGEND_KEY = 'fmcns_legend_open';
 function renderLegend(){
   // Called from the theme observer as well as from the view code, and that observer can
   // fire before the ontology has loaded — so bail rather than throw on a half-built page.
-  const box = document.getElementById('legend');
-  if (!box) return;
+  const panel = document.getElementById('legend');
+  const box = document.getElementById('legendBody');
+  if (!box || !panel) return;
+  if (!panel.dataset.wired) {
+    panel.dataset.wired = '1';
+    try { panel.open = localStorage.getItem(LEGEND_KEY) === '1'; } catch (e) {}
+    panel.addEventListener('toggle', () => {
+      try { localStorage.setItem(LEGEND_KEY, panel.open ? '1' : '0'); } catch (e) {}
+    });
+  }
   // The landscape has no connections to key, so the first block says what the two node
   // shapes mean instead — which is the one thing about this view that is not self-evident.
   let html;
