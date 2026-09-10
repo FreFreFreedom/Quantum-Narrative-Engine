@@ -22,6 +22,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { triggerNoteMirror } from './noteMirror.js';
+import { triggerMentionScan } from './entityMentions.js';
 
 // Basenames of the files in data-seed/docs. Kept in sync with
 // bootstrapData.js#KNOWLEDGE_DESCRIPTIONS.
@@ -93,6 +94,9 @@ export function createKnowledgeNote(db, { title, description = '', content } = {
   // which has no DB access — picks this note up on its next worktree. See
   // services/noteMirror.js.
   triggerNoteMirror(db);
+  // And point the note at the entities it names (entityMentions.js) — same fire-and-forget
+  // contract: a scan that fails must never turn into a note that did not save.
+  triggerMentionScan(db, 'note', finalTitle, body);
 
   return { title: finalTitle, description: desc, chars: body.length };
 }
@@ -107,5 +111,6 @@ export function updateKnowledgeNote(db, title, { description = '', content } = {
     UPDATE knowledge_docs SET description=?, content=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
     WHERE title=?
   `).run(String(description || '').trim().replace(/\s+/g, ' ').slice(0, 400), String(content || ''), title);
+  triggerMentionScan(db, 'note', title, String(content || ''));
   return { title, description: String(description || '').trim().slice(0, 400), chars: String(content || '').length };
 }

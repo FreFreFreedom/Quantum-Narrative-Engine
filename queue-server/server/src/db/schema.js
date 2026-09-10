@@ -889,6 +889,46 @@ export function initOntologySchema(db) {
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_to ON entity_relations(to_id, deleted_at)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_relations_shape ON entity_relations(shape, deleted_at)`); } catch {}
 
+  // What Antoine has written, pointed at the entities it names — plans/testimony-in-the-ontology.md.
+  //
+  // A note and a harvested fact are FIXED RECORDS, so neither may ever become a row in
+  // `entities` (fractal_operational_core.md §1: "mediums are not entities"). They are
+  // testimony. Testimony attaches to an entity and may propose a relation; it never
+  // becomes a node. If a future change finds itself inserting a note into `entities`, it
+  // has taken a wrong turn.
+  //
+  // ONE ROW PER (entity, testimony), not per occurrence: `hits` plus one representative
+  // `quote` is everything the screen needs, and it makes the unique index the whole
+  // idempotency mechanism — a rescan is DELETE-the-proposals + INSERT OR IGNORE.
+  //
+  // Two shortcuts that were considered and are wrong:
+  //   • NOT convo_subjects. Its left-hand side is always a conversation with an FK to
+  //     `convos`; a note is a knowledge_docs row and a fact is a mind_facts row. Reusing
+  //     it means inventing a conversation id that does not exist.
+  //   • NOT entities.meta. bootstrapData.js rewrites `meta` on EVERY boot, which is
+  //     exactly why tmdb_enrichments is its own table. Same precedent, same reason.
+  //
+  // `status` is the decision, and a 'rejected' row is load-bearing: its continued
+  // presence is what stops the next rescan resurrecting the match. Never delete one.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_mentions (
+      id          TEXT PRIMARY KEY,
+      entity_id   TEXT NOT NULL REFERENCES entities(id),
+      source_type TEXT NOT NULL,                   -- 'note' | 'fact'
+      source_id   TEXT NOT NULL,                   -- knowledge_docs.title | mind_facts.id
+      matched     TEXT NOT NULL,                   -- the name exactly as it appeared
+      quote       TEXT NOT NULL,                   -- the sentence it sat in
+      tier        TEXT NOT NULL,                   -- 'multiword' | 'single'
+      status      TEXT NOT NULL DEFAULT 'linked',  -- 'linked' | 'proposed' | 'rejected'
+      hits        INTEGER NOT NULL DEFAULT 1,
+      created_at  TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      decided_at  TEXT
+    )
+  `);
+  try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_entity_mentions_uniq ON entity_mentions(entity_id, source_type, source_id)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_mentions_entity ON entity_mentions(entity_id, status)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_mentions_status ON entity_mentions(status)`); } catch {}
+
   // A walk somebody kept — plans/civic-structures-and-loops.md, Stage 5.
   //
   // Navigating this corpus produces a path: an entity, the relation followed out of it,

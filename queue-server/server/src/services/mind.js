@@ -19,6 +19,8 @@ import { randomUUID } from 'node:crypto';
 import { generateText } from './ai/text.js';
 import { broadcastAll } from '../realtime.js';
 import { triggerMindMirror } from './mindMirror.js';
+import { triggerMentionScan } from './entityMentions.js';
+import { STOPWORDS } from '../lib/stopwords.js';
 
 let db = null;
 export function bindMindDb(database) { db = database; }
@@ -30,6 +32,17 @@ export function bindMindDb(database) { db = database; }
 // runner's job (scripts/queue-runner.js#mirrorToRepo); production has no git.
 function mirrorOut() {
   try { triggerMindMirror(db); } catch (e) { console.error('[mind] mirror trigger failed:', e?.message || e); }
+}
+
+// Point this fact at the entities it names (entityMentions.js). Same discipline as
+// mirrorOut above: called after the row landed, result ignored, failures logged — a fact
+// that saved and did not scan is fine, a scan that lost a fact is not. The facts side
+// yields almost nothing on its own and is scanned only because it is two lines.
+function scanMentions(id) {
+  try {
+    const f = getFact(id);
+    if (f) triggerMentionScan(db, 'fact', id, [f.text, f.detail].filter(Boolean).join('\n'));
+  } catch (e) { console.error('[mind] mention scan failed:', e?.message || e); }
 }
 
 // 'vision' is the paradigm itself — what the platform IS and why — as opposed to
@@ -48,13 +61,7 @@ const MAX_FACTS = 300;
 const HARVEST_AFTER_TURNS = 3;
 const BLOCK_CAP = 4000;
 // Stopwords dropped before normalising a fact for the deterministic dedup check.
-const STOPWORDS = new Set([
-  'a', 'an', 'the', 'i', 'my', 'me', 'we', 'our', 'you', 'it', 'its',
-  'is', 'are', 'was', 'were', 'am', 'do', 'does', 'did', 'have', 'has', 'had',
-  'to', 'of', 'in', 'on', 'for', 'and', 'or', 'but', 'this', 'that', 'these',
-  'those', 'with', 'as', 'at', 'be', 'been', 'being', 'will', 'would', 'should',
-  'can', 'could', 'about', 'he', 'she', 'they', 'them', 'his', 'her', 'their',
-]);
+// The list itself lives in lib/stopwords.js — entityMentions.js needs the same one.
 
 // Lowercase, strip punctuation, drop stopwords — two facts that normalise to the
 // same string are the same fact. Deterministic, no model call.
@@ -99,6 +106,7 @@ export function saveFact({ kind, text, detail = null, sourceConvoId = null, sour
     db.prepare(`INSERT INTO mind_facts (id, kind, text, detail, weight, source_convo_id, source_note, hits, created_at, updated_at, active) VALUES (?,?,?,?,1,?,?,0,?,?,1)`)
       .run(id, k, String(text).slice(0, 240), detail ? String(detail).slice(0, 4000) : null, sourceConvoId, sourceNote, now, now);
     mirrorOut();
+    scanMentions(id);
     return getFact(id);
   } catch (e) {
     return { error: e.message || 'save_failed' };
@@ -128,6 +136,7 @@ export function reviseFact(id, { text, detail, kind } = {}) {
     db.prepare(`UPDATE mind_facts SET text=?, detail=?, kind=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
       .run(newText, newDetail, newKind, id);
     mirrorOut();
+    scanMentions(id);
     return getFact(id);
   } catch (e) { return { error: e.message || 'revise_failed' }; }
 }

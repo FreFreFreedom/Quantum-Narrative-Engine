@@ -568,6 +568,32 @@ Check it in one line: `node -e 'import("./server/src/lib/loadEnvFile.js")...'` �
 
 ---
 
+## His own writing now points at the ontology (2026-09-09)
+
+`entity_mentions` links a note (or a harvested fact) to the entities it names —
+`services/entityMentions.js`, surfaced as **"What you've said about this"** on the entity
+card and folded into Home's "Waiting on you". Free and deterministic: a case-sensitive,
+whole-word, longest-first regex, no model call anywhere.
+
+- **A note is testimony, never a node.** Nothing here writes to `entities`, and nothing
+  should — `fractal_operational_core.md` §1, mediums are not entities. If a future task
+  finds itself inserting a note into `entities`, it has taken a wrong turn.
+- One row per **(entity, source)** with a hit count, and the unique index is the whole
+  idempotency mechanism. A **rejected row is never deleted** — its presence is what stops
+  the next rescan proposing the same match again.
+- A single-token name lands as a **proposal**, judged inline beside its quote; multi-word
+  lands linked. A character in the corpus is literally named **She**, and it is
+  unmatchable short of coreference resolution — that recall loss is accepted, don't get
+  clever about it.
+- Measured against the real corpus (492 entities × 7 notes): **26 entities light up**, six
+  titles carry most of the mass, and it all comes from one conversation. 466 entities show
+  nothing, which is a true fact about the corpus and not a bug.
+- `POST /api/ontology/mentions/rescan` walks every note and fact; **run it once after this
+  deploys**, since nothing scans on boot. `npm run mentions:selftest` covers the matcher
+  and the idempotency with no DB, network or credits.
+- **Phase 3 of `plans/testimony-in-the-ontology.md` (relation proposals from a model) is
+  deliberately unbuilt** — the plan gates it on Antoine seeing phase 1's result first.
+
 ## Standing rules that apply to every engine, not just Claude
 
 - Free sources only for any research/investigation task — never sign up for a paid

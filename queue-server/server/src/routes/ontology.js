@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as q from '../services/ontologyQuery.js';
 import * as rel from '../services/entityRelations.js';
+import * as men from '../services/entityMentions.js';
 import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
@@ -72,6 +73,33 @@ export function ontologyRoutes(db) {
     } catch (e) {
       res.status(e.status || 500).json({ error: e.message });
     }
+  });
+
+  // What Antoine has written about this entity — plans/testimony-in-the-ontology.md.
+  // A note is testimony, never a node: these rows point at an entity and stop there.
+  router.get('/entities/:id/mentions', (req, res) => {
+    if (!q.getEntity(db, req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json({ mentions: men.mentionsFor(db, req.params.id) });
+  });
+
+  // Walk every note and every active fact. Manual, never on boot: boot already reseeds the
+  // ontology, and this is also how a redeploy that added entities picks up older text.
+  router.post('/mentions/rescan', (req, res) => res.json(men.rescanAll(db)));
+
+  // Single-token matches, waiting for one confirming click. Measured over the real corpus
+  // this is about five rows, once.
+  router.get('/review', (req, res) => res.json({ mentions: men.listProposed(db, req.query.limit) }));
+
+  router.post('/mentions/:id/confirm', (req, res) => {
+    try { res.json({ mention: men.decideMention(db, req.params.id, 'linked') }); }
+    catch (e) { res.status(e.status || 500).json({ error: e.message }); }
+  });
+
+  // A rejected row is kept, not deleted — its presence is what stops the next rescan
+  // proposing the same match again.
+  router.post('/mentions/:id/reject', (req, res) => {
+    try { res.json({ mention: men.decideMention(db, req.params.id, 'rejected') }); }
+    catch (e) { res.status(e.status || 500).json({ error: e.message }); }
   });
 
   router.delete('/relations/:relId', (req, res) => {

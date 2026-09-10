@@ -30,6 +30,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listFacts } from './mind.js';
 import { listOpenConvos } from './conversations.js';
 import { listSavedMaps } from './entityRelations.js';
+import { listProposed, countProposed } from './entityMentions.js';
 
 let db = null;
 export function bindDashboardDb(database) { db = database; }
@@ -66,13 +67,21 @@ function needsYou() {
   // the Flow card that owns a suggestion, and pure cost on a screen that only wants
   // to count them.
   const suggestions = listSuggestions({ status: 'new', flagShipped: false });
+  // Single-token name matches in his own notes, waiting for one confirming click
+  // (plans/testimony-in-the-ontology.md). Folded into this card rather than given one of
+  // its own: it is the same question the card already asks — what is waiting on you — and
+  // a new card for five rows, once, is a horizontal band spent on nothing.
+  const mentionCount = countProposed(db);
+  const mentions = listProposed(db, 5);
   return {
-    total: blocked.length + seeds.length + suggestions.length,
+    total: blocked.length + seeds.length + suggestions.length + mentionCount,
     blocked,
     seeds: seeds.slice(0, 5).map((i) => ({ id: i.id, title: i.title })),
     seedCount: seeds.length,
     suggestions: suggestions.slice(0, 5).map((s) => ({ id: s.id, title: s.title })),
     suggestionCount: suggestions.length,
+    mentions: mentions.map((m) => ({ id: m.id, entity_id: m.entity_id, title: m.entity_name, quote: m.quote })),
+    mentionCount,
   };
 }
 
