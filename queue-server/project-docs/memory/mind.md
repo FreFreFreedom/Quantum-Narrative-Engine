@@ -12,7 +12,6 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## About Antoine
 
-- Policies are a universal concept across all scales — not just civic entities. Families, organizations, any entity has 'policies' (behavioral patterns) that trickle down and propagate.
 - Analogy is a morphogenetic operator—the generative mechanism by which archetypal patterns create and propagate across scales in the ontology
 
 ## What he likes and dislikes
@@ -28,6 +27,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## Decisions he has made
 
+- The platform must nail the fundamental pattern — interior anatomy, one-behind-many, relational ontology — before building anything else. Paradigm first, features after. — The owner's explicit sequence demand: if the paradigm is self-similarity all the way down, the one pattern that repeats at every scale is the load-bearing element. If it is wrong, everything built on it is decoration. If right, everything else follows. The connection-vs-freedom axis must be validated as the core pattern, interior-exterior self-similarity confirmed, and the 'no entities, only relations' ontology established before the platform implements features. The touchstone: 'Out of all things, One; and out of One, all things.' This is not a philosophical nicety — the owner considers the quality of the entire platform contingent on getting this right.
 - Any narrative medium (fiction, non-fiction, film, series, real events) is valid input for the platform — the engine should ignore medium boundaries and compare structural anatomy directly.
 - Fractal politics is clearly the future of political analysis — owner's firm conviction, not just exploration.
 - Core platform mechanics are Scale Mirrors (find archetypal twins), Fractal Navigation Depth (self-similar zoom), Scale Echo (pattern propagation outward), Resonance Ring (every entity where a pattern lives, connected) — These four work synergistically to enable cross-scale resonance queries and pattern matching across entity kinds
