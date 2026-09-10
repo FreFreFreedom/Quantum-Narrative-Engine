@@ -6991,8 +6991,23 @@ function mapProject(lon, lat) {
   const y = (60 - lat) * (MVBH / 150);
   return [x, y];
 }
+/* A country whose outline crosses the date line used to be drawn as one continuous
+   path, so the step from +179° to -179° was rendered as a line all the way back across
+   the world: Russia painted a band over the whole map, and Fiji and Antarctica each drew
+   a hairline. The projection here is a plain crop rather than a real projection, so it
+   has no notion of wrapping — the fix is to break the ring wherever two neighbouring
+   points are more than half a world apart and start a new sub-path, which leaves each
+   side of the date line as its own closed shape. */
 function mapRingPath(ring) {
-  return ring.map((pt, i) => (i === 0 ? "M" : "L") + mapProject(pt[0], pt[1]).join(",")).join(" ") + " Z";
+  let d = '', open = false;
+  for (let i = 0; i < ring.length; i++) {
+    const pt = ring[i];
+    const jumped = i > 0 && Math.abs(pt[0] - ring[i - 1][0]) > 180;
+    if (jumped && open) { d += ' Z'; open = false; }
+    d += (open ? ' L' : (d ? ' M' : 'M')) + mapProject(pt[0], pt[1]).join(',');
+    open = true;
+  }
+  return d + (open ? ' Z' : '');
 }
 function mapGeomToPath(geom) {
   if (geom.type === "Polygon") return geom.coordinates.map(mapRingPath).join(" ");
