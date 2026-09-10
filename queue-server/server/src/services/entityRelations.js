@@ -300,10 +300,20 @@ export function anatomyFor(entityId) {
   try {
     const d = JSON.parse(readFileSync(file, 'utf8'));
     const b = d.structuralBalance || {};
+    // The graph names its parts by the code the attribution used — 't', 'r', 'l'. The
+    // names file beside it says who those are, and until now only the scene reader
+    // looked at it, so nothing could draw an interior with people in it.
+    let names = {};
+    const nf = resolve(INTERIORS_DIR, entityId + '.names.json');
+    if (nf.startsWith(INTERIORS_DIR) && existsSync(nf)) {
+      try { names = JSON.parse(readFileSync(nf, 'utf8')); } catch { names = {}; }
+    }
     return {
       scope: d.scope,
+      source: d.source,
       nodes: d.graph?.nodes || [],
       edges: d.graph?.edges || [],
+      names,
       balanced: b.balanced,
       frustration: b.frustration,
       camps: b.bestSplit,

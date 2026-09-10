@@ -124,6 +124,14 @@ export function ontologyRoutes(db) {
   // the verified lines behind the claim. Every quote returned has already passed a
   // byte-for-byte check against its source file, which is why nothing here can hand the
   // Room an invented line.
+  // One entity's mapped interior. Two exist, and that is the honest number — an anatomy
+  // costs a careful read of a real scene. 404 is the normal answer.
+  router.get('/entities/:id/anatomy', (req, res) => {
+    const a = rel.anatomyFor(req.params.id);
+    if (!a) return res.status(404).json({ error: 'no_interior' });
+    res.json({ anatomy: a });
+  });
+
   router.get('/relations/:relId/mirror', (req, res) => {
     const r = rel.getRelation(db, req.params.relId);
     if (!r) return res.status(404).json({ error: 'not_found' });

@@ -406,6 +406,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 /* The graph's home button, in the stage rather than in the band — same corner and same
    shape as the architecture map's, which had it right first. */
 .graph-homebtn { right:14px; bottom:14px; }
+.graph-homebtn .ic { width:15px; height:15px; display:block; fill:none; stroke:currentColor;
+  stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+/* The one control that offers a descent. It only exists while the thing being held has a
+   mapped inside, so it is never an offer the app cannot keep. */
+#descendBtn { color:var(--c-accent); }
 .list-stage { display:none; flex:1; overflow-y:auto; padding:2px 2px 10px; }
 .list-summary { font-size:var(--fs-xs); color:var(--c-ink-4); padding:4px 2px 8px; }
 .lgroup { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-5); margin:12px 0 6px; padding-bottom:3px; border-bottom:1px solid var(--c-surface-3); }
@@ -2600,6 +2605,7 @@ button:active { transform: translateY(1px) scale(.99); }
     <div class="graph-stage" data-src="Content navigator → main graph (zones/edges/nodes/labels) | fmcns_navigator.html: #graphCanvas 2D renderer — paintGraph()/requestRender(), three cross-fading semantic-zoom bands in updateBands() (far: cluster regions + uniform dots + vertical edges only / mid: today's picture / near: labels on everything), collision-avoided haloed labels in paintGraph() pass 4, TMDb posters + country flags clipped into the nodes past 2.5x in paintNodeImagery(), degree-sized nodes via nodeRadius(), d3-force layout in runLayout(), quadtree hit-testing + node drag/pin + Tab keyboard nav in setupGraphPointer(), legend in renderLegend() | ALSO the Landscape view (the embedding map), which is this same canvas, renderer and camera laid out by MEANING instead of by connection — no edges are drawn at all, nearness IS the statement: landscapeBuild() gives every entity a sparse vector over the theme communities (each tag's community, weighted by how rare that community is) plus the tags at least two entities share, takes cosine similarity, and keeps the top LS_K neighbours as invisible forceLink springs; installLayoutForces('landscape') swaps the graph's forces for those springs; an entity with no themes at all is parked honestly on an outer ring at its roman-numeral cluster's anchor (landscapeGeometry()), drawn hollow and named by the same cluster-region pass. The matrix is cached per active entity set in LS and never recomputed on a redraw | backend: GET /api/ontology/entities, /api/ontology/clusters, /api/ontology/tag-communities (services/tagCommunities.js)">
       <canvas id="graphCanvas"></canvas>
       <div class="arch-zoombtns graph-homebtn">
+        <button id="descendBtn" hidden aria-label="Descend into it"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-down"></use></svg></button>
         <button id="resetBtn" title="Back to the whole graph, centred — clears the zoom, the pan and any ego scope" aria-label="Fit the whole graph">⌂</button>
       </div>
       <div class="legend" id="legend"></div>
@@ -5275,6 +5281,245 @@ let needsRender = false, renderRAF = null;
 // in the same (world) units.
 const DASH_NONE = [], DASH_ENT = [4, 3], DASH_BRIDGE = [1.5, 2.5];
 
+/* ─── The descent ──────────────────────────────────────────────────────────────
+   Going down a rung is the model's first navigation move, and until now it looked
+   exactly like every other click: a panel changed. Here it is a movement. The thing you
+   chose grows, the rest of the field is pushed outward and dimmed rather than deleted,
+   and its parts resolve INSIDE it, within the boundary it maintains — which is what the
+   model says an entity is.
+
+   Everything drawn is measured, not decorated. The parts are the ones a real scene was
+   read for; an edge is heavy when those two are in opposition and light when they are
+   allied, at the weight the reading actually found; the two camps are the split the
+   balance test produced; and a part with no place in either camp sits outside the
+   boundary, because that is what the interior says about it.
+
+   Two entities have an inside today and that is the honest number — an anatomy costs a
+   careful read of a real scene. Everything else simply has no descent available, and the
+   control does not appear.
+
+   The physics is stopped while you are down there. A force layout would fight the ring,
+   and a descent is a held position, not a settling one. */
+let descent = null;            // { host, parts, edges, camps, ... } or null
+const _anatomy = {};           // id -> anatomy | 'none', memoised: two exist, most are 'none'
+
+async function ensureAnatomy(id) {
+  if (_anatomy[id] !== undefined) return _anatomy[id];
+  try {
+    const d = await api('/api/ontology/entities/' + encodeURIComponent(id) + '/anatomy');
+    _anatomy[id] = (d && d.anatomy) || 'none';
+  } catch (e) { _anatomy[id] = 'none'; }
+  return _anatomy[id];
+}
+
+function hasInside(id) { return _anatomy[id] && _anatomy[id] !== 'none'; }
+
+async function startDescent(id) {
+  const host = byId[id];
+  if (!host || descent) return;
+  const a = await ensureAnatomy(id);
+  if (!a || a === 'none') return;
+
+  const camps = Array.isArray(a.camps) ? a.camps : [];
+  const campOf = (code) => camps[0] && camps[0].includes(code) ? 0
+                        : camps[1] && camps[1].includes(code) ? 1 : -1;
+  const R = 132;                                   // the boundary, in world units
+  const codes = a.nodes.slice();
+  const parts = codes.map((code, i) => {
+    const camp = campOf(code);
+    const outside = camp < 0;                      // no place in either camp
+    const ang = (i / Math.max(1, codes.length)) * Math.PI * 2 - Math.PI / 2;
+    const rad = outside ? R * 1.75 : R * 0.62;
+    return {
+      code, camp, outside,
+      name: (a.names && a.names[code]) || code,
+      x: host.x, y: host.y,                        // born at the parent
+      tx: host.x + Math.cos(ang) * rad,
+      ty: host.y + Math.sin(ang) * rad * 0.82,
+      alpha: 0,
+    };
+  });
+  const maxW = Math.max(1, ...(a.edges || []).map(e => e.weight || 1));
+  descent = {
+    host, parts, R,
+    edges: (a.edges || []).map(e => ({ a: e.a, b: e.b, opp: e.sign === 'opp', w: (e.weight || 1) / maxW })),
+    scope: a.scope || '', balanced: a.balanced, frustration: a.frustration,
+    ring: 0, tRing: 1, busy: true,
+  };
+  // The field gives way: pushed out along its own bearing from the host, and dimmed to
+  // almost nothing. Nothing is removed, so coming back up is a return and not a rebuild.
+  nodes.forEach(nd => {
+    nd._dx = nd.x; nd._dy = nd.y;                  // where it was, to come back to
+    if (nd === host) return;
+    const dx = nd.x - host.x, dy = nd.y - host.y, d = Math.hypot(dx, dy) || 1;
+    nd._px = nd.x + (dx / d) * 300; nd._py = nd.y + (dy / d) * 300;
+  });
+  if (typeof sim !== 'undefined' && sim && sim.stop) sim.stop();
+  camera.tScale = Math.min(3.2, Math.max(1.7, camera.scale * 1.9));
+  camera.tOn = host;
+  syncDescendBtn();
+  requestRender();
+}
+
+function endDescent() {
+  if (!descent) return;
+  descent.tRing = 0; descent.busy = true; descent.leaving = true;
+  requestRender();
+}
+
+// One easing step for whatever the descent is doing. Called from the render loop, so it
+// rides the dirty-flag rAF the graph already has rather than starting a second timer.
+function stepDescent() {
+  if (!descent) return false;
+  const reduced = prefersReducedMotion && prefersReducedMotion();
+  const f = reduced ? 1 : 0.13;
+  let busy = false;
+  const ease = (a, b) => a + (b - a) * f;
+
+  descent.ring = ease(descent.ring, descent.tRing);
+  if (Math.abs(descent.ring - descent.tRing) > 0.004) busy = true; else descent.ring = descent.tRing;
+
+  descent.parts.forEach(p => {
+    const gx = descent.leaving ? descent.host.x : p.tx;
+    const gy = descent.leaving ? descent.host.y : p.ty;
+    p.x = ease(p.x, gx); p.y = ease(p.y, gy);
+    p.alpha = ease(p.alpha, descent.leaving ? 0 : 1);
+    if (Math.abs(p.x - gx) > 0.4 || Math.abs(p.alpha - (descent.leaving ? 0 : 1)) > 0.01) busy = true;
+  });
+
+  nodes.forEach(nd => {
+    if (nd === descent.host || nd._px === undefined) return;
+    const gx = descent.leaving ? nd._dx : nd._px;
+    const gy = descent.leaving ? nd._dy : nd._py;
+    nd.x = ease(nd.x, gx); nd.y = ease(nd.y, gy);
+    if (Math.abs(nd.x - gx) > 0.4) busy = true;
+  });
+
+  // The camera goes in, and comes back out.
+  if (camera.tScale) {
+    const want = descent.leaving ? (camera.preScale || 1) : camera.tScale;
+    if (!descent.leaving && !camera.preScale) camera.preScale = camera.scale;
+    camera.scale = ease(camera.scale, want);
+    if (camera.tOn) {
+      // gW/gH are the stage's own size in layout pixels, kept current by
+      // sizeGraphCanvas() on every frame and on every resize.
+      if (gW && gH) {
+        if (!descent.leaving && camera.preX === undefined) { camera.preX = camera.x; camera.preY = camera.y; }
+        const wx = descent.leaving ? (camera.preX ?? camera.x) : (gW / 2 - descent.host.x * camera.scale);
+        const wy = descent.leaving ? (camera.preY ?? camera.y) : (gH / 2 - descent.host.y * camera.scale);
+        camera.x = ease(camera.x, wx); camera.y = ease(camera.y, wy);
+      }
+    }
+    if (Math.abs(camera.scale - want) > 0.004) busy = true;
+  }
+
+  if (!busy && descent.leaving) {
+    nodes.forEach(nd => { delete nd._px; delete nd._py; delete nd._dx; delete nd._dy; });
+    descent = null;
+    camera.preScale = undefined; camera.preX = undefined; camera.preY = undefined;
+    if (typeof sim !== 'undefined' && sim && sim.alpha) sim.alpha(0.25).restart();
+    syncDescendBtn();
+    return true;
+  }
+  descent.busy = busy;
+  return busy;
+}
+
+/* What the interior looks like. Nothing here is invented: the parts are the ones a real
+   scene was read for, an edge's weight is the weight that reading found, its colour says
+   opposition or alliance, the two camps are the split the balance test produced, and a
+   part outside the boundary is one that belongs to neither camp. */
+function paintDescent(ctx, s) {
+  const d = descent, host = d.host, ring = d.ring;
+  if (ring < 0.01) return;
+  const inkC   = gPaint('var(--c-ink)', '#e4eee9');
+  const ink3C  = gPaint('var(--c-ink-3)', '#a3b8b3');
+  const ink5C  = gPaint('var(--c-ink-5)', '#5f7773');
+  const stageC = gPaint('var(--c-stage)', '#0b1516');
+  const oppC   = gPaint('var(--c-danger)', '#f07a6a');
+  const allyC  = gPaint('var(--c-brand)', '#6fcfa0');
+  const accC   = gPaint('var(--c-accent)', '#f0965a');
+
+  // The boundary the thing maintains against its own dissolution. Dashed, because it is
+  // a claim the entity keeps making rather than a wall that is simply there.
+  ctx.globalAlpha = ring * 0.55;
+  ctx.strokeStyle = ink5C; ctx.lineWidth = 1 / s;
+  ctx.setLineDash([4 / s, 6 / s]);
+  ctx.beginPath(); ctx.arc(host.x, host.y, d.R, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const at = (code) => d.parts.find(p => p.code === code);
+
+  // Strain between the parts. Opposition is heavy and solid, alliance light and dotted,
+  // and the thickness is the weight the reading measured — not a uniform line.
+  d.edges.forEach(e => {
+    const a = at(e.a), b = at(e.b);
+    if (!a || !b) return;
+    ctx.globalAlpha = Math.min(a.alpha, b.alpha) * ring * (e.opp ? 0.85 : 0.6);
+    ctx.strokeStyle = e.opp ? oppC : allyC;
+    ctx.lineWidth = ((e.opp ? 1.1 : 0.8) + e.w * 2.4) / s;
+    ctx.setLineDash(e.opp ? [] : [2 / s, 3 / s]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // The parts. Camp by colour, and a part outside the boundary drawn hollow, the same
+  // way the landscape draws an entity it could not place: the mark says "not inside".
+  d.parts.forEach(p => {
+    const r = (p.outside ? 6.5 : 8.5);
+    ctx.globalAlpha = p.alpha * ring;
+    if (p.outside) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = stageC; ctx.fill();
+      ctx.strokeStyle = ink3C; ctx.lineWidth = 1.6 / s; ctx.stroke();
+    } else {
+      const col = p.camp === 0 ? accC : gPaint('var(--c-plot-2)', '#6fa8dc');
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = stageC; ctx.lineWidth = 1.6 / s; ctx.stroke();
+    }
+  });
+
+  // Their names, in world space so they travel with the part rather than being placed by
+  // the label pass — an interior is small enough that nothing collides.
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.font = gFont(12 / s, 600);
+  d.parts.forEach(p => {
+    if (p.alpha < 0.1) return;
+    ctx.globalAlpha = p.alpha * ring;
+    ctx.lineWidth = 3 / s; ctx.strokeStyle = stageC;
+    ctx.strokeText(p.name, p.x, p.y + 12);
+    ctx.fillStyle = p.outside ? ink3C : inkC;
+    ctx.fillText(p.name, p.x, p.y + 12);
+  });
+}
+
+function prefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+// The control lives in the stage, beside the home button, and appears only when the thing
+// you are holding actually has an inside. A button offering a descent that cannot happen
+// would be worse than no button.
+function syncDescendBtn() {
+  const btn = document.getElementById('descendBtn');
+  if (!btn) return;
+  if (descent) {
+    btn.hidden = false;
+    btn.title = 'Come back up';
+    btn.setAttribute('aria-label', 'Come back up');
+    btn.querySelector('use').setAttribute('href', '#ic-up');
+    return;
+  }
+  const ok = focusedId && hasInside(focusedId);
+  btn.hidden = !ok;
+  if (ok) {
+    btn.title = 'Descend into it — this one has a mapped inside';
+    btn.setAttribute('aria-label', 'Descend into it');
+    btn.querySelector('use').setAttribute('href', '#ic-down');
+  }
+}
+
 function requestRender() {
   needsRender = true;
   if (!renderRAF) renderRAF = requestAnimationFrame(renderFrame);
@@ -5288,7 +5533,8 @@ function renderFrame() {
   // it has long since stopped dirtying the canvas. Only if the frame actually drew,
   // though — a stage with no size (list view) would otherwise spin the loop on a fade
   // that can never advance because nothing is calling updateBands().
-  if (paintGraph() && bandWeights().fading) requestRender();
+  const moving = stepDescent();
+  if (paintGraph() && (bandWeights().fading || moving)) requestRender();
 }
 
 // ---------- Semantic zoom: three bands ----------
@@ -6176,6 +6422,9 @@ function paintGraph() {
   });
   ctx.globalAlpha = 1;
 
+  // --- the interior, still in world space: drawn over the field it pushed aside ---
+  if (descent) paintDescent(ctx, s);
+
   // --- screen space: labels ---
   // The transform is reset and every label position projected by hand, so text stays
   // a constant size at every zoom instead of ballooning to 16x with the geometry.
@@ -6480,6 +6729,9 @@ function setupGraphPointer() {
       // An ego scope is the thing you most want out of, so it goes first — and it goes
       // all the way out, however many levels deep you walked. The breadcrumb is how you
       // step back one level.
+      // Coming back up goes first: while you are inside a thing, that is the thing you
+      // most want out of.
+      if (descent) { ev.preventDefault(); endDescent(); return; }
       if (egoStack.length) { ev.preventDefault(); exitEgo(); return; }
       // Same staging as the ego scope above: the panel goes away first and the node stays
       // picked. A second Escape then clears the selection.
@@ -6862,6 +7114,8 @@ function initGraph(){
     requestRender();
   };
   document.getElementById('resetBtn').onclick = resetGraphView;
+  const dBtn = document.getElementById('descendBtn');
+  if (dBtn) dBtn.onclick = () => { if (descent) endDescent(); else if (focusedId) startDescent(focusedId); };
   document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
   // Escape has to work whether or not the canvas happens to hold focus — you can enter
   // an ego view by double-clicking without the canvas ever being focused, and a scope
@@ -7181,6 +7435,9 @@ function continuumHtml(e){
 
 async function selectEntity(id){
   focusedId = id;
+  // Does this one have a mapped inside? Asked once per entity and remembered; almost
+  // every answer is no, and the control simply stays hidden.
+  ensureAnatomy(id).then(() => { if (focusedId === id) syncDescendBtn(); });
   syncRightPanelOpen();
   themeLineEntity = null;
   activeLensTag = null;
