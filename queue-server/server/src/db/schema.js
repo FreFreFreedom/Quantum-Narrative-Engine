@@ -532,6 +532,10 @@ function initSchema(db) {
   // all: every setting there feeds the text helpers only (found 2026-08-23).
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_default_provider TEXT NOT NULL DEFAULT ''`); } catch {}
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_default_model TEXT NOT NULL DEFAULT ''`); } catch {}
+  // How hard the model is asked to think on a queue task, when Antoine sets it in AI
+  // Settings. Only Claude has an effort dial; '' means "use the tier's own effort"
+  // (taskRunner.js#PRESETS), which is what every task did before 2026-09-09.
+  try { db.exec(`ALTER TABLE ai_settings ADD COLUMN queue_default_effort TEXT NOT NULL DEFAULT ''`); } catch {}
   // One-time migration flag: "Suggestions de Claude" used to generate in
   // French (workSuggestions.js's prompts were literally written in French).
   // Once fixed, the old French-language cached rows in work_suggestions need

@@ -34,7 +34,7 @@ import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pick
 import { listAgents, pickAgentFor } from './agents.js';
 import { draftPlan, tierForTask } from './taskPlanner.js';
 import { gatherRepoFacts } from './repoProbe.js';
-import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday, queueDefaultEngine } from './ai/text.js';
+import { generateText, recordSideCall, sideCallBudgetLimit, sideCallsToday, queueDefaultEngine, CLAUDE_QUEUE_MODELS } from './ai/text.js';
 import { USER_FACING_STYLE } from './ai/style.js';
 import { eagerCardLine, clearCardLine } from './cardLines.js';
 import { runInspiration, getReport, inspirationDigestFor, reviewInspiration, storeReportReview } from './codeDiscovery.js';
@@ -113,6 +113,30 @@ function broadcast() { broadcastAll('travaux:prompts:updated', {}); }
 // from a Claude-Code preset tier — opencode and ai-router both work this way.
 function usesModelPicker(provider) {
   return provider === 'opencode' || provider === 'ai-router';
+}
+
+// What this row will actually run on. One function because the same three lines were
+// written out at each of the three dispatch sites, and a rule that lives in three places
+// is a rule that will soon be two rules.
+//
+// Precedence, most specific first:
+//   1. the model named on the task itself (provider_model),
+//   2. the standing choice in AI Settings — Claude only; opencode's own default is
+//      already folded into provider_model at creation,
+//   3. the tier's model and effort (taskRunner.js#PRESETS), which is what every task
+//      used before either of the first two existed.
+//
+// The runner needs no changes to honour any of this: scripts/queue-runner.js builds its
+// Claude chain from `task.model` and hands `task.effort` to runClaudeOnce already.
+// `q` is injected so this stays a pure function of (row, settings) and can be checked
+// without a database — see scripts/queue-model-selftest.js.
+export function runModelFor(row, q = queueDefaultEngine()) {
+  if (usesModelPicker(row.provider)) return { model: row.provider_model, effort: null };
+  const tier = presetFor(effectivePreset(row));
+  const model = row.provider_model
+    || (CLAUDE_QUEUE_MODELS.includes(q.model) ? q.model : null)
+    || tier.model;
+  return { model, effort: q.effort || tier.effort };
 }
 
 function heuristicTitle(text) {
@@ -236,6 +260,13 @@ export async function createPrompt({
   // The standing model from AI Settings, used only when this task didn't name one.
   // It was validated as spend-free when saved; re-checked at dispatch by the runner.
   if (!useModel && useProvider === 'opencode' && queueDefaults.model) useModel = queueDefaults.model;
+  // Same for Claude, as of 2026-09-09: a model he pinned in AI Settings is written onto
+  // the row at creation, so the stored task says which model will run rather than
+  // leaving it to be re-derived from the tier at dispatch. An explicit provider_model on
+  // the request still wins — this only fills a blank.
+  if (!useModel && useProvider === 'claude-code' && CLAUDE_QUEUE_MODELS.includes(queueDefaults.model)) {
+    useModel = queueDefaults.model;
+  }
   if (useProvider === 'opencode' && !useModel) {
     // No model chosen — remember the best available default at creation time, so
     // the sync execution path never has to discover it lazily. Free-only plan:
@@ -1231,7 +1262,7 @@ function reclaimRunning(row) {
 
 function syncPendingTask(row) {
   if (!isPending(row)) return;
-  const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const { model, effort } = runModelFor(row);
   updatePendingAgentTask(row.agent_task_id, { title: row.title, description: row.prompt, mode: row.mode, model, effort });
 }
 
@@ -1538,7 +1569,7 @@ function sessionOfParent(row) {
 }
 
 function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
-  const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const { model, effort } = runModelFor(row);
   const useAgentKey = agentKey || row.agent_key || 'dev1';
   let resume = null;
   let worktreePath = null;
@@ -1980,7 +2011,7 @@ export function clearContext(id) {
 function relaunchWithThread(row) {
   const messages = listMessages(row.id);
   const isOpen = row.provider === 'opencode';
-  const { model, effort } = usesModelPicker(row.provider) ? { model: row.provider_model, effort: null } : presetFor(effectivePreset(row));
+  const { model, effort } = runModelFor(row);
   const overThreshold = (row.context_turns || 0) >= contextResetThresholdFor(row);
   const overBudget = overContextBudget(row);
   const activeSession = isOpen ? row.opencode_session_id : row.session_id;

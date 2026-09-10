@@ -10117,7 +10117,34 @@ async function loadAiSettings() {
 // so nothing offered here can be refused on save. Built by a function rather than
 // inline because the dropdown has to be refilled when the engine changes, and when the
 // model list arrives late.
-function aiQueueModelOptions(selected) {
+// Claude is picked by tier name, not by a catalogue id — the runner turns `task.model`
+// into `claude:<name>` itself. Kept beside the OpenCode list rather than in a second
+// function because the caller's question is the same one either way: what may this
+// backend be pinned to?
+const AI_QUEUE_CLAUDE_MODELS = [
+  ['haiku', 'Haiku — fastest, cheapest'],
+  ['sonnet', 'Sonnet — the everyday model'],
+  ['opus', 'Opus — strongest, and by far the most expensive'],
+];
+const AI_QUEUE_EFFORTS = [
+  ['low', 'Low — answer quickly'],
+  ['medium', 'Medium — the usual'],
+  ['high', 'High — think longer before writing'],
+];
+function aiQueueIsClaude(provider) { return provider === 'claude-code' || provider === 'claude-side'; }
+
+function aiQueueEffortOptions(selected) {
+  return `<option value=""${selected ? '' : ' selected'}>Auto</option>`
+    + AI_QUEUE_EFFORTS.map(([v, label]) =>
+      `<option value="${v}"${v === selected ? ' selected' : ''}>${label}</option>`).join('');
+}
+
+function aiQueueModelOptions(selected, provider) {
+  if (aiQueueIsClaude(provider)) {
+    return `<option value=""${selected ? '' : ' selected'}>Auto — from the task's speed</option>`
+      + AI_QUEUE_CLAUDE_MODELS.map(([v, label]) =>
+        `<option value="${v}"${v === selected ? ' selected' : ''}>${label}</option>`).join('');
+  }
   const models = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/'));
   const auto = `<option value="">Auto</option>`;
   // An empty list is not the same as "nothing chosen", and used to look identical to it.
@@ -10287,7 +10314,9 @@ function renderAiSettings() {
   const qd = aiSettings.queue || {};
   const qdProvider = qd.defaultProvider || '';
   const qdModel = qd.defaultModel || '';
-  const qdModelOpts = aiQueueModelOptions(qdModel);
+  const qdEffort = qd.defaultEffort || '';
+  const qdModelOpts = aiQueueModelOptions(qdModel, qdProvider);
+  const qdIsClaude = aiQueueIsClaude(qdProvider);
   const queueDefaultRow = `
     <tr class="ai-row-queue">
       <td><div class="ai-feature-name">Coding tasks</div><div class="ai-feature-note">The queue — what actually writes the code</div></td>
@@ -10299,7 +10328,10 @@ function renderAiSettings() {
           <option value="opencode"${qdProvider === 'opencode' ? ' selected' : ''}>OpenCode</option>
         </select>
       </td>
-      <td><select id="aiQueueModel"${qdProvider === 'opencode' ? '' : ' disabled'}>${qdModelOpts}</select></td>
+      <td>
+        <select id="aiQueueModel"${qdProvider === 'opencode' || qdIsClaude ? '' : ' disabled'}>${qdModelOpts}</select>
+        <select id="aiQueueEffort" class="ai-effort-sel"${qdIsClaude ? '' : ' hidden'} title="How long the model is asked to think before it writes. Claude only.">${aiQueueEffortOptions(qdEffort)}</select>
+      </td>
     </tr>`;
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
     .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -10338,15 +10370,22 @@ function renderAiSettings() {
   const qpSel = document.getElementById('aiQueueProvider');
   if (qpSel) qpSel.onchange = async () => {
     const ms = document.getElementById('aiQueueModel');
+    const es = document.getElementById('aiQueueEffort');
     if (!ms) return;
+    const claude = aiQueueIsClaude(qpSel.value);
+    if (es) es.hidden = !claude;
+    // Model ids do not survive a backend change — 'sonnet' means nothing to OpenCode and
+    // an OpenCode id means nothing to Claude — so the pick resets rather than carrying
+    // a value the new lane would silently drop on save.
+    if (claude) { ms.innerHTML = aiQueueModelOptions('', 'claude-code'); ms.disabled = false; return; }
     if (qpSel.value !== 'opencode') { ms.disabled = true; ms.value = ''; return; }
-    ms.innerHTML = aiQueueModelOptions(ms.value);
+    ms.innerHTML = aiQueueModelOptions(ms.value, 'opencode');
     ms.disabled = false;
     // Still nothing to offer: ask the server rather than leaving a dropdown that says
     // only "Auto" and never recovers.
     if (!(qProviders.opencode?.models || []).length) {
       await loadProviders().catch(() => null);
-      ms.innerHTML = aiQueueModelOptions(ms.value);
+      ms.innerHTML = aiQueueModelOptions(ms.value, 'opencode');
     }
   };
 
@@ -10391,8 +10430,13 @@ function renderAiSettings() {
     const qmEl = document.getElementById('aiQueueModel');
     if (qpEl) {
       queue = queue || {};
+      const qeEl = document.getElementById('aiQueueEffort');
+      const claude = aiQueueIsClaude(qpEl.value);
       queue.defaultProvider = qpEl.value;
-      queue.defaultModel = (qpEl.value === 'opencode' && qmEl) ? qmEl.value : '';
+      // Claude used to be blanked here unconditionally, which is why pinning a model to
+      // it never stuck even once the dropdown was enabled.
+      queue.defaultModel = ((qpEl.value === 'opencode' || claude) && qmEl) ? qmEl.value : '';
+      queue.defaultEffort = (claude && qeEl) ? qeEl.value : '';
     }
     try {
       const personaEl = document.getElementById('aiStudioPersona');

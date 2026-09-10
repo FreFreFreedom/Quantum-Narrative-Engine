@@ -30,6 +30,7 @@
     "fences:anatomy": "node scripts/interior-fences.js",
     "relations:selftest": "node scripts/relations-selftest.js",
     "traffic:selftest": "node scripts/traffic-selftest.js",
+    "queue:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-model-selftest.js",
     "mind:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/mind-selftest.js",
     "room:selftest": "node scripts/room-selftest.mjs"
   },

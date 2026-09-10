@@ -39,10 +39,10 @@ const TOOL_RESULT_CAP = 8000;
 const NO_TOOLS_NOTE = '\n\nNote: the lookup tools are unavailable on this backend for this answer — work from the context above, and say plainly when you do not know something rather than implying you checked.';
 
 const SETTINGS_CACHE_TTL = 30_000;
-let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30, defaultProvider: '', defaultModel: '' }, intel: {} };
+let settingsCache = { at: 0, defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30, defaultProvider: '', defaultModel: '', defaultEffort: '' }, intel: {} };
 
 function loadAiSettings() {
-  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30, defaultProvider: '', defaultModel: '' }, intel: {} };
+  if (!db) return { defaults: {}, policy: 'auto_free', health: {}, cooldown: {}, queue: { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30, defaultProvider: '', defaultModel: '', defaultEffort: '' }, intel: {} };
   const now = Date.now();
   if (settingsCache.at && now - settingsCache.at < SETTINGS_CACHE_TTL) {
     return settingsCache;
@@ -50,7 +50,7 @@ function loadAiSettings() {
   const row = db.prepare(`SELECT * FROM ai_settings WHERE id='global'`).get();
   if (!row) return settingsCache;
   const studioPersona = typeof row.studio_persona === 'string' ? row.studio_persona : '';
-  let queue = { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30, defaultProvider: '', defaultModel: '' };
+  let queue = { goBudgetUsd: 0.33, autoShip: true, costCapUsd: 0.1, sideCallBudget: 30, defaultProvider: '', defaultModel: '', defaultEffort: '' };
   if (typeof row.queue_go_budget_usd === 'number' && Number.isFinite(row.queue_go_budget_usd)) {
     queue.goBudgetUsd = row.queue_go_budget_usd;
   }
@@ -71,6 +71,7 @@ function loadAiSettings() {
   // behaviour (provider from the task's size, model from the free floor).
   queue.defaultProvider = typeof row.queue_default_provider === 'string' ? row.queue_default_provider : '';
   queue.defaultModel = typeof row.queue_default_model === 'string' ? row.queue_default_model : '';
+  queue.defaultEffort = typeof row.queue_default_effort === 'string' ? row.queue_default_effort : '';
   let intel = {};
   try { intel = JSON.parse(row.intel_json || '{}'); } catch {}
   try {
@@ -166,7 +167,21 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
     if (typeof queue.defaultModel === 'string') {
       const m = queue.defaultModel.trim();
       if (m === '') nextQueue.defaultModel = '';
+      // A Claude model is a legal standing choice as of 2026-09-09. It is not checked
+      // against isSpendFree() because that asks "is this OpenCode model free to run",
+      // which a Claude tier name can never satisfy — so before this branch existed,
+      // saving 'sonnet' here was silently discarded and the panel disabled the picker
+      // rather than admit it. Claude runs on a subscription, so the spend rule that
+      // guard enforces does not apply to it; what governs cost here is the model
+      // itself, which is why it is his to choose and not something a default picks.
+      else if (CLAUDE_QUEUE_MODELS.includes(m)) nextQueue.defaultModel = m;
       else if (/^[\w.:@\/-]{1,120}$/.test(m) && isSpendFree(m)) nextQueue.defaultModel = m;
+    }
+    // Effort is Claude-only — no OpenCode model takes it. '' means "whatever the tier
+    // says" (taskRunner.js#PRESETS), which is the behaviour every task had before.
+    if (typeof queue.defaultEffort === 'string') {
+      const e = queue.defaultEffort.trim();
+      if (e === '' || CLAUDE_EFFORTS.includes(e)) nextQueue.defaultEffort = e;
     }
   }
   let nextIntel = { ...(current.intel || {}) };
@@ -196,8 +211,8 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
   const nextPersona = typeof studioPersona === 'string'
     ? studioPersona.slice(0, PERSONA_CAP)
     : (current.studioPersona || '');
-  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, side_call_budget=?, queue_default_provider=?, queue_default_model=?, intel_json=?, studio_persona=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
-    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, nextQueue.sideCallBudget, nextQueue.defaultProvider || '', nextQueue.defaultModel || '', JSON.stringify(nextIntel), nextPersona);
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, quota_policy=?, queue_go_budget_usd=?, queue_auto_ship=?, queue_cost_cap_usd=?, side_call_budget=?, queue_default_provider=?, queue_default_model=?, queue_default_effort=?, intel_json=?, studio_persona=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(nextDefaults), nextPolicy, nextQueue.goBudgetUsd, nextQueue.autoShip ? 1 : 0, nextQueue.costCapUsd, nextQueue.sideCallBudget, nextQueue.defaultProvider || '', nextQueue.defaultModel || '', nextQueue.defaultEffort || '', JSON.stringify(nextIntel), nextPersona);
   return getAiSettings();
 }
 
@@ -205,8 +220,15 @@ export function updateAiSettings({ defaults: defaultsPatch, policy, queue, intel
 // means "unset" — createPrompt then falls back to the tier heuristic it always used.
 export function queueDefaultEngine() {
   const q = loadAiSettings().queue || {};
-  return { provider: q.defaultProvider || '', model: q.defaultModel || '' };
+  return { provider: q.defaultProvider || '', model: q.defaultModel || '', effort: q.defaultEffort || '' };
 }
+
+// The Claude models and effort levels the queue may be pinned to. The runner already
+// accepts both per task — scripts/queue-runner.js builds its chain from `task.model`
+// and passes `task.effort` straight to runClaudeOnce — so nothing downstream needed
+// changing when these became settable; the choice simply had nowhere to be made.
+export const CLAUDE_QUEUE_MODELS = ['haiku', 'sonnet', 'opus'];
+export const CLAUDE_EFFORTS = ['low', 'medium', 'high'];
 
 // Cheap live read of the auto-ship gate for the review runner (no cache-reset
 // dance): true = an approved review merges itself; false = human click only.
