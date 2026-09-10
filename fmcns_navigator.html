@@ -19499,11 +19499,27 @@ document.addEventListener('keydown', (e) => {
      Escaped first, then parsed. See the note above the vendored parser for why that order
      is the whole safety argument. His own messages stay on the plain path — they are what
      he typed, and an asterisk he typed is an asterisk. */
-  function fmtBody(text, asMarkdown){
+  /* Parsed once per message, then remembered. The transcript is rebuilt in full on every
+     repaint — and during a streaming answer that is once per animation frame — so parsing
+     every message each time meant re-parsing the whole conversation sixty times a second.
+     A saved message never changes, so its id is a safe key; the live buffer has no id and
+     is the only thing parsed on a frame. The cache is keyed on the text as well, so an
+     edited or re-asked message is never served a stale rendering. */
+  var mdCache = new Map();
+  function fmtBody(text, asMarkdown, cacheKey){
     var raw = String(text == null ? '' : text);
     if (asMarkdown && typeof marked !== 'undefined' && marked.parse) {
+      if (cacheKey) {
+        var hit = mdCache.get(cacheKey);
+        if (hit && hit.src === raw) return hit.html;
+      }
       try {
-        return marked.parse(qEsc(raw), { breaks: false, gfm: true });
+        var out = marked.parse(qEsc(raw), { breaks: false, gfm: true });
+        if (cacheKey) {
+          if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
+          mdCache.set(cacheKey, { src: raw, html: out });
+        }
+        return out;
       } catch (e) { /* fall through to the plain path rather than lose the answer */ }
     }
     var t = qEsc(raw);
@@ -20387,7 +20403,7 @@ document.addEventListener('keydown', (e) => {
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
-                    : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(m.text, !you) + '</div>')
+                    : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(m.text, !you, m.id || null) + '</div>')
            +  actsHtml
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.
