@@ -30,6 +30,50 @@ export function setTension(database, tag, { against, why }, source = 'hand') {
   return database.prepare(`SELECT * FROM tag_tensions WHERE tag=?`).get(tag);
 }
 
+// Repairs rows already stored with the template word as their partner. Idempotent and
+// free: it re-reads what is on the row and never calls a model. Anything it cannot
+// recover is left alone rather than blanked, so a hand fix is still possible.
+export function repairTensions(database = db) {
+  const rows = database.prepare(`SELECT tag, against, why FROM tag_tensions WHERE against IN ('against','why','tag','pattern','partner')`).all();
+  // the vocabulary is the proof a recovered partner is real: every tag anything carries,
+  // plus every tag that already has a tension row of its own
+  const vocab = new Set([
+    ...database.prepare(`SELECT DISTINCT tag FROM entity_tags`).all().map((r) => r.tag),
+    ...database.prepare(`SELECT tag FROM tag_tensions`).all().map((r) => r.tag),
+  ]);
+  const isKnown = (t) => vocab.has(t);
+  let fixed = 0, stuck = 0;
+  for (const r of rows) {
+    const { against, why } = recover({ against: r.against, why: r.why }, isKnown);
+    if (!against || against === r.against) { stuck++; continue; }
+    database.prepare(`UPDATE tag_tensions SET against=?, why=? WHERE tag=?`).run(against, why || r.why, r.tag);
+    fixed++;
+  }
+  if (rows.length) console.log(`[tag-tension] repaired ${fixed} of ${rows.length} template-word rows` + (stuck ? `, ${stuck} left alone` : ''));
+  return { seen: rows.length, fixed, stuck };
+}
+
+// An opposition ought to run both ways: if A stands against B, B stands against A. Only
+// 18 of 659 pairs did. This writes the mirror for any partner that has no row of its own,
+// which is 252 of them, and never overwrites an existing row or a hand-written one.
+export function mirrorTensions(database = db) {
+  const rows = database.prepare(`SELECT tag, against, why FROM tag_tensions WHERE against <> ''`).all();
+  const have = new Set(rows.map((r) => r.tag));
+  let added = 0;
+  for (const r of rows) {
+    // never mirror a row the repair could not rescue: its partner is the template word,
+    // and mirroring it would coin "against" as a tag in its own right
+    if (TEMPLATE_WORDS.has(r.against)) continue;
+    if (!r.against || have.has(r.against)) continue;
+    have.add(r.against);
+    database.prepare(`INSERT INTO tag_tensions (tag, against, why, source) VALUES (?,?,?,'mirror')
+      ON CONFLICT(tag) DO NOTHING`).run(r.against, r.tag, r.why || '');
+    added++;
+  }
+  if (added) console.log(`[tag-tension] mirrored ${added} oppositions that ran only one way`);
+  return { added };
+}
+
 function missingTags(database) {
   return database.prepare(`SELECT DISTINCT tag FROM entity_tags WHERE tag NOT IN (SELECT tag FROM tag_tensions) ORDER BY tag`).all().map((r) => r.tag);
 }
@@ -45,12 +89,58 @@ export function parseTension(raw) {
   let text = String(raw || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```[a-z]*|\*\*/g, '').trim();
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
   let pipe = [...lines].reverse().find((l) => l.includes('|') && !/against\|why/i.test(l));
-  if (pipe) { const i = pipe.indexOf('|'); return { against: slug(pipe.slice(0, i)), why: pipe.slice(i + 1).trim().slice(0, 200) }; }
+  if (pipe) { const i = pipe.indexOf('|'); return recover({ against: slug(pipe.slice(0, i)), why: pipe.slice(i + 1).trim().slice(0, 200) }); }
   const a = text.match(/against\s*[:=]\s*([^\n|]+)/i), w = text.match(/why\s*[:=]\s*([^\n]+)/i);
-  if (a && w) return { against: slug(a[1]), why: w[1].trim().slice(0, 200) };
+  if (a && w) return recover({ against: slug(a[1]), why: w[1].trim().slice(0, 200) });
   const last = lines[lines.length - 1] || '';
   const m = last.match(/^([a-z0-9][a-z0-9 _-]{1,60}?)\s+[—–-]+\s+(.{10,})$/i);
-  if (m) return { against: slug(m[1]), why: m[2].trim().slice(0, 200) };
+  if (m) return recover({ against: slug(m[1]), why: m[2].trim().slice(0, 200) });
+  return { against: '', why: '' };
+}
+
+// The words of the template are not an answer. Told to "reply in the form against|why",
+// some models write the literal word — `against|episodic-accountability — because ...` —
+// which parses to against:"against" with the real partner at the head of the sentence.
+// 206 of 659 rows in production were stored that way. Recover rather than re-ask: the
+// answer is already there, one field to the right.
+const TEMPLATE_WORDS = new Set(['against', 'why', 'tag', 'pattern', 'partner']);
+
+// A recovered partner has to look like one. A tag already in the vocabulary is proof;
+// otherwise it must at least be hyphenated and long enough to be a coined tag rather
+// than the first word of a truncated sentence. Without this, `why: "bodily-"` recovers
+// as the partner "bodily", which is worse than leaving the row alone.
+// A tag already in the vocabulary is proof. Failing that — the prompt does allow coining a
+// new one — it must at least be hyphenated and long enough to be a coined tag rather than
+// the first word of a truncated sentence. Being strict about the vocabulary alone threw
+// away eight genuinely coined partners; the either/or keeps them and still rejects
+// `why: "bodily-"`, which would otherwise recover as the partner "bodily".
+const plausible = (cand, isKnown) =>
+  !!cand && ((isKnown && isKnown(cand)) || (cand.includes('-') && cand.length >= 8));
+
+export function recover({ against, why }, isKnown) {
+  if (!TEMPLATE_WORDS.has(against)) return { against, why };
+  const text = String(why || '').trim();
+  const take = (cand, rest) => ({ against: cand, why: (rest && rest.trim().length >= 10 ? rest.trim() : text).slice(0, 200) });
+
+  // the whole reply landed in the second field, pipe and all: partner|sentence
+  const bar = text.indexOf('|');
+  if (bar > 0) {
+    const cand = slug(text.slice(0, bar));
+    if (plausible(cand, isKnown)) return take(cand, text.slice(bar + 1));
+  }
+  // the partner is the head of the sentence, up to a dash, a colon or "because"
+  const m = text.match(/^([a-z0-9][a-z0-9 _-]{1,60}?)\s*(?:[—–-]{1,2}\s+|:\s+|,?\s+because\b)(.*)$/i);
+  if (m) {
+    const cand = slug(m[1]);
+    if (plausible(cand, isKnown)) return take(cand, m[2]);
+  }
+  // a bare slug on its own, with no sentence after it
+  const bare = text.match(/^([a-z0-9][a-z0-9_-]{2,60})$/i);
+  if (bare) {
+    const cand = slug(bare[1]);
+    if (plausible(cand, isKnown)) return { against: cand, why: '' };
+  }
+  // the partner was never written down separately — leave the row for a person
   return { against: '', why: '' };
 }
 
@@ -72,7 +162,8 @@ export async function generateTension(database, tag, { gen = generateText } = {}
         carriers.length ? `Entities carrying it:\n${carriers.join('\n')}` : '',
         `Full tag vocabulary: ${vocab}`,
         'Name the pattern this tag stands against — the one it is in tension with. Prefer an existing tag from the vocabulary; coin a new lowercase-hyphenated one only if none fits. Then one sentence saying why, under 200 characters.',
-        'Reply with exactly one line in the form: against|why',
+        'Reply with exactly one line: the tag it stands against, a pipe, then the sentence. Like this:',
+        'duty-over-desire|Desire claims the self as its own where duty hands it to someone else, so each is the price of the other.',
       ].filter(Boolean).join('\n\n'),
       feature: 'summary',
       maxTokens: 400,

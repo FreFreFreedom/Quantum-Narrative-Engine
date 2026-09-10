@@ -1636,3 +1636,104 @@ lose. Every claim in the civic corpus carries one.
 - The **horizontal** move (§9's cheapest, *who else is holding this stance, and better?*) is now
   expressible and has exactly one instance in the data. It remains the most under-used of the
   three moves.
+
+## 20. One pattern, and the continuum turns out to be a fold (added 2026-09-10, forming)
+
+Antoine's move, made in conversation on 2026-09-10 while redesigning the Content section, and
+recorded here before it is settled because two parts of it are still open and the rest already
+changes what the app should compute.
+
+The claim is that the many patterns collapse. Not into a shorter list — into **one**:
+**connection against freedom**. Belonging against becoming. Every entity, at every rung, stands
+somewhere on it, and the narrower reductions people reach for are special cases rather than
+rivals — the narcissist and the codependent are one position on this split, described from
+inside it.
+
+### The words become the names of dispositions
+
+The 651 tags are not independent labels and never were. A word is the name a disposition takes
+at a particular place on the one pattern, at a particular scale. `exile-through-duty`,
+`inherited-duty` and `boundary-drawn-wrong` are the same region of the split wearing three
+scale-dialects, which is why the vocabulary translation table of §3 — shadow, scapegoat, exile,
+aspect — stops being a curiosity and becomes a consequence. The table was the collapse showing
+through before anyone had named what was collapsing.
+
+This is consistent with §18's hardest rule rather than a breach of it. The word is still a
+readout and still forbidden from reaching the matcher; what changes is that the readout is now
+positional. It tells you where on the split a thing sits, which is a fact about structure, where
+before it told you only that somebody had once used this phrase here.
+
+The app has already half-built this without anyone noticing. `services/tagTensions.js` gives
+every tag one partner it stands against and a sentence saying why — §4's generating rule applied
+to the vocabulary — and 659 rows sit in production. A third of them are malformed and only
+eighteen pairs point back at each other, so the oppositions are currently one-directional
+assertions rather than a structure. Repaired, they are the material for asking whether all those
+oppositions are faces of one, which is the test this section does not yet run.
+
+### Integration is not the top of a slope
+
+This corrects the Integration Continuum as implemented, and it is the part with immediate
+consequences for the schema.
+
+If the pattern is connection against freedom, integration cannot sit at one end of it, because
+both ends are failures and they are opposite failures. A thing collapsed into connection has no
+self left to bring. A thing collapsed into freedom has nothing left to belong to. Holding both is
+not further along the line; it is the middle of it.
+
+So `guilt_as_engine`, running from ascetic self-destruction up to integrated accountability, is
+two questions wearing one coat: where between the sides a thing sits, and how much of both it can
+hold. Two entities can score identically and be nothing alike — one holding both sides at that
+position, the other having exiled one of them — and a single number cannot say which. The score is
+not wrong, it is underdetermined, and 161 hand-assigned readings are real testimony that should be
+kept and read differently rather than discarded.
+
+The second question is the one the interior work already answers. A clean split with an exiled camp
+is low integration whatever the position, and §19's two anatomies are exactly that measurement made
+twice.
+
+### Inside and outside are complements, not mirrors
+
+Antoine's formulation was that an entity's interior reflects its exterior, at every scale and not
+only for people: the relations inside reflect the relations outside. The sharper form, which is his
+own mechanism followed one step further, is that the repressed side is projected outward — so inside
+and outside should be **opposite** exactly where the repression sits, and alike everywhere else.
+
+An entity that has exiled its need for freedom will be surrounded by things carrying freedom on its
+behalf. Where inside and outside merely agree, nothing was repressed. This turns a resemblance into
+a prediction the platform can check against its own corpus, which is the difference between a
+principle and an instrument.
+
+### An event is the exiled side forcing its way back
+
+§5 records that an event is an entity-state at an intensity of internal conflict rather than a node
+type of its own. This says which intensity. An event is the moment the pattern reaches a place where
+the exiled side can no longer stay hidden — not something that happens to an entity, but the split
+arriving at the surface. The crystallisation Antoine describes is the split becoming visible, and it
+is nameable precisely because the vocabulary is positional: the name an event takes is the name of
+the disposition at the position where it broke.
+
+The schema consequence is unchanged and worth restating because it keeps coming back: still no
+`event` node type.
+
+### There are no entities, only what a thing relates to
+
+§18 established this inside an entity — a part has no identity except its relations to the other
+parts. This records that it holds outside too. A thing is what it relates to, at every rung, and the
+ladder is therefore not levels of things but levels of relating. That is the same generating rule run
+at one more scale, which is the only kind of consistency this paradigm is allowed to claim.
+
+### What is not settled
+
+Two things, and Antoine has deliberately left them open.
+
+Whether holding both sides is truly the midpoint of the line, or a state off the line altogether —
+a thing that has both is arguably not between the two collapses but somewhere the line cannot
+reach.
+
+And whether each end carries one name or two: connection and freedom as the two goods, or
+connection-becoming-engulfment and freedom-becoming-isolation, so that the word itself tells you
+how far out a thing has gone.
+
+He also declined, for now, the test that would decide the first claim: taking the 113 words that
+actually link two entities and asking how many are faces of connection against freedom, with the
+residue naming the second pattern. The thinking comes first.

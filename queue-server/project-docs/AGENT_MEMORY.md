@@ -725,3 +725,39 @@ theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
   it imports the service's. `services/interactionGraph.js` shares the function too and
   is unaffected — the frozen anatomy records in `data-seed/interiors/` still reproduce
   byte-for-byte (that is why `detectCommunities` sorts its node order).
+
+## Tags carry what they stand against (2026-09-10)
+
+- `tag_tensions` gives every tag the tag it stands against (`against`, `why`, `source`
+  model|hand). Model rows are written by `services/tagTensions.js` through the free lane
+  with the helper lane as last resort; a hand row (PUT `/api/ontology/tags/:tag/tension`)
+  is never overwritten. `POST /api/ontology/tags/tensions/fill` restarts the background
+  fill after a redeploy — 659 tags, slow, idempotent. `npm run tensions:selftest`.
+- In the page, `TENSIONS` loads with the facets; `heldTensions(e)` lists the pairs an
+  entity carries both poles of (the first measurable fragment inside an entity), and
+  `sharedPatterns(a, b)` — used by `computeEntanglement` — counts a shared tension as a
+  shared pattern. **Tensions must never sign a recorded-inside link**: the descent's rule
+  is that nothing is inferred there.
+- `grounded` is dead (was 1 on every row); provenance is `source`. The card has one
+  relations block (`relationsBlockHtml`, scope remembered in `fmcns.relScope`) and one
+  name per relation (`RELATION_NAMES`). Seeds `cell_cluster.json` and `self_entity.json`
+  put the immune system on the cell rung and FMCNS itself at the institution rung, each
+  the container of its parts, so the descent opens on both.
+- **Two terminal sessions committing in the same checkout is hazardous**: at 03:25 a
+  concurrent session's `git add -A` swept another session's half-written frontend and
+  two agents' unfinished files into its commit and deployed them. Use a worktree
+  (`oc task` / `EnterWorktree`) when another session is live in the repo.
+- **A background sweep on the shared free lane starves the app.** 2026-09-10: the Room
+  answered `generation_failed` all morning and every entity click came back
+  rate-limited. Cause was not the Room: `warmup.js` (books + first tag lens for every
+  entity) and `fillMissingTensions` were spending Google AI Studio's 20-requests-per-
+  minute free tier in seconds, so the router benched the model and an interactive turn
+  found no lane left to ask. Both now run on `provider: 'claude-side'` (the Mac helper
+  lane, second account, nothing waiting on it), concurrency 1. Rule for any new
+  background generation: it must not touch the lane a person's click uses. Person-facing
+  turns (Room chat/check/second, passage reading, book detail, tag pattern) carry
+  `claudeLastResort: true` — free lanes first, the Mac only after they all fail, and it
+  returns instantly when no runner is attached. `generateTextStream` forwards
+  `claudeLastResort` now; it used to swallow it. Also: a chain can end having asked
+  nobody (one keyed provider, all its models benched) — that used to return an empty
+  message the Room printed as a bare error code.
