@@ -16642,8 +16642,6 @@ async function loadArchNodes() {
     };
     ARCH_DATA.push(node); ARCH_BY_ID[n.id] = node;
   });
-  // Depths are memoised, and the tree's shape just changed.
-  for (const k in _archDepthCache) delete _archDepthCache[k];
 }
 
 // ── Self-updating tree: pending proposals ────────────────────────────────────
