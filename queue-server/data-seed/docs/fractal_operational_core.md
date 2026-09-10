@@ -1744,18 +1744,19 @@ parts. This records that it holds outside too. A thing is what it relates to, at
 ladder is therefore not levels of things but levels of relating. That is the same generating rule run
 at one more scale, which is the only kind of consistency this paradigm is allowed to claim.
 
-### What is not settled
+### Settled the same day
 
-Two things, and Antoine has deliberately left them open.
+Two things were left open when this section was written and Antoine closed both within the hour.
 
-Whether holding both sides is truly the midpoint of the line, or a state off the line altogether —
-a thing that has both is arguably not between the two collapses but somewhere the line cannot
-reach.
+**Holding both sides is the midpoint of the line**, not a state off it. So the line is one line:
+the two collapses at its ends, integration at its centre, and a position on it means something
+as soon as you also know how much of each side is actually held. The alternative — that a thing
+holding both is somewhere the line cannot reach — is rejected.
 
-And whether each end carries one name or two: connection and freedom as the two goods, or
-connection-becoming-engulfment and freedom-becoming-isolation, so that the word itself tells you
-how far out a thing has gone.
+**Each end carries one name: connection and freedom.** The ends name what is wanted, not what has
+gone wrong. How far out a thing has gone is the second reading and not folded into the name, which
+keeps the two questions of the fold apart in the vocabulary as well as in the measurement.
 
-He also declined, for now, the test that would decide the first claim: taking the 113 words that
-actually link two entities and asking how many are faces of connection against freedom, with the
-residue naming the second pattern. The thinking comes first.
+What he did decline, for now, is the test that would put the first claim under strain: taking the
+113 words that actually link two entities and asking how many are faces of connection against
+freedom, with whatever refuses to collapse naming the second pattern. The thinking comes first.
