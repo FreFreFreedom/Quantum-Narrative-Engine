@@ -1805,6 +1805,10 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .bk-result-row button { padding:3px 8px; font-size:var(--fs-xs); flex-shrink:0; }
 
 .arch-viewbtns { display:flex; gap:6px; margin-left:auto; align-items:center; }
+/* Architecture's controls now fit in a quarter of the row, so pushing them to the right
+   left the whole left side of the band empty and put the layout picker nowhere near the
+   list it reorders. They sit above their own content. */
+.arch-toolbar .arch-viewbtns { margin-left:0; flex-wrap:wrap; row-gap:4px; }
 .arch-viewbtns button { padding:5px 11px; border-radius:var(--r-sm); border:1px solid var(--c-border-2); background:var(--c-surface); font-size:var(--fs-sm); cursor:pointer; }
 .arch-viewbtns button.active { background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink); }
 .arch-layoutseg, .arch-layersel { display:flex; gap:6px; }
