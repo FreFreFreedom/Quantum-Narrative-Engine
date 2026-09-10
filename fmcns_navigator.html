@@ -11117,8 +11117,6 @@ function openMenu(anchor, items, opts) {
   el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(6, r.top - h - 4) : r.bottom + 4) + 'px';
   anchor.setAttribute('aria-expanded', 'true');
   openMenuNow = { el, anchor };
-  const first = el.querySelector('.umenu-item:not(:disabled)');
-  if (first) first.focus();
   return closeMenu;
 }
 document.addEventListener('mousedown', (ev) => {
@@ -11127,7 +11125,12 @@ document.addEventListener('mousedown', (ev) => {
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && openMenuNow) { ev.stopPropagation(); closeMenu(); }
 }, true);
-window.addEventListener('scroll', () => { if (openMenuNow) closeMenu(); }, true);
+window.addEventListener('scroll', (ev) => {
+  if (!openMenuNow) return;
+  const t = ev.target;
+  const isPage = !t || t === document || t === document.documentElement || t === document.body;
+  if (isPage || (t.contains && t.contains(openMenuNow.anchor))) closeMenu();
+}, true);
 /* The one notice. Thirty-two failures were reported with notify(, { kind: 'error' }), which stops the whole
    app dead to say "Error: fetch failed" and cannot be read alongside the thing that
    failed. This says the same thing in a line at the foot of the window, next to the work,
