@@ -1249,7 +1249,7 @@ function noticeFor(turn, existingNotice) {
 
 // The streaming turn, now laned. `turn` is the resolveTurn() decision; its
 // feature/model drive the generation, and repoFacts (if any) ride in the prompt.
-async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null) {
+async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = null, signal = null) {
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
   const ctx = await convoContext(convo);
@@ -1304,6 +1304,11 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
       console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
     },
   });
+  // Stopped from the Room while this was being written: save nothing, learn
+  // nothing from it. The caller removes the question too.
+  // ponytail: the model call itself runs to its end; thread `signal` into the
+  // provider fetches if a cancelled paid-lane answer ever costs enough to matter.
+  if (signal?.aborted) return { error: 'cancelled' };
   if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
@@ -1926,7 +1931,7 @@ Respond with ONLY this JSON object and nothing else:
 // onToken, when supplied by the route, turns the ordinary text turn into a
 // streamed one. Slash commands stay non-streamed: they are structured actions
 // (plan, handoff, fold) whose value is the finished artefact, not the typing.
-export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined } = {}) {
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, signal = null } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -1986,6 +1991,7 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   if (onStatus) { try { onStatus('Working out where to send this…'); } catch {} }
   const turn = await resolveTurn({ convoId, text: trimmed, lastAssistantText: lastUserText(convoId), override: effectiveOverride });
 
+  if (signal?.aborted) return { error: 'cancelled' };
   // implement: propose, do not dispatch. The frontend draws the three buttons.
   if (turn.intent === 'implement') return runImplementProposal(convoId, turn);
   // code_read: a read-only helper job on the runner, not a facts-only answer.
@@ -1999,8 +2005,9 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
     .run(mid, convoId, 'user', 'chat', sendText);
   const out = onToken
-    ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus)
+    ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal)
     : await runChatTurn(convoId, userId, turn);
+  if (out.error === 'cancelled') db.prepare(`DELETE FROM convo_messages WHERE id=?`).run(mid);
   if (out.error) return out;
   out.laneTag = out.laneTag || turn.lane?.tag || null;
   out.intent = turn.intent;

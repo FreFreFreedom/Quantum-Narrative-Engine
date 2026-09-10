@@ -19842,8 +19842,14 @@ document.addEventListener('keydown', (e) => {
     if(repaint) repaint();
     var sentAt = e.msgs.length;
     e.stream = '';
+    // Changing one's mind right after Enter is ordinary. The stop button aborts
+    // this request; the server drops the turn on its side, so the thread stays
+    // as if nothing had been asked, and the words go back into the box.
+    e.abort = new AbortController();
+    e.cancelled = false;
     return fetch(API_BASE + '/api/convos/' + e.convoId + '/message', {
       method: 'POST',
+      signal: e.abort.signal,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + TOKEN,
@@ -19895,16 +19901,29 @@ document.addEventListener('keydown', (e) => {
         if(repaint) repaint();
       })
       .catch(function(){
+        e.stream = '';
+        if(e.cancelled){
+          // Stopped on purpose: take the question back out of the thread and
+          // hand it back to the box, edited or not. Nothing to wait for.
+          if(e.msgs[sentAt - 1] && e.msgs[sentAt - 1].role === 'user') e.msgs.splice(sentAt - 1, 1);
+          e.draft = text; e.draftForce = true; saveDraft(e);
+          return;
+        }
         // A good answer can take well over a minute, and the connection in front
         // of the server is cut long before that — so a failed POST says nothing
         // about whether the turn failed. Watch the conversation itself instead.
         // Partial streamed text is dropped here on purpose: the poll below returns
         // the whole saved message, and keeping both would duplicate it.
-        e.stream = '';
         return awaitTurn(e, sentAt, repaint);
       })
       .then(function(){ e.busy = false; e.phase = ''; if(repaint) repaint(); });
     return true;
+  }
+
+  function stopTurn(e){
+    if(!e.busy || !e.abort) return;
+    e.cancelled = true;
+    e.abort.abort();
   }
 
   // Read the response body. Two shapes are accepted from one call: NDJSON (one
@@ -20295,8 +20314,10 @@ document.addEventListener('keydown', (e) => {
     input.oninput = function(){ e.draft = input.value; saveDraft(e); grow(input); };
     input.onkeydown = function(ev){
       if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); say(input.value); }
+      if(ev.key === 'Escape' && e.busy){ ev.preventDefault(); stopTurn(e); }
     };
-    send.onclick = function(){ say(input.value); };
+    // One button, two jobs: send while idle, stop while an answer is on its way.
+    send.onclick = function(){ if(e.busy) stopTurn(e); else say(input.value); };
     host.querySelectorAll('[data-se-act]').forEach(function(b){
       b.onclick = function(ev){
         ev.stopPropagation();
@@ -20816,10 +20837,11 @@ document.addEventListener('keydown', (e) => {
     });
 
     var box = host.querySelector('.se-input');
-    if(box && document.activeElement !== box && box.value !== (e.draft || '')){
+    if(box && (e.draftForce || document.activeElement !== box) && box.value !== (e.draft || '')){
       box.value = e.draft || '';
       grow(box);
     }
+    e.draftForce = false;
 
     // Manual model picker (plan "chat-model-picker") — reflect e.lane into the
     // select(s) + clear button without stealing focus mid-interaction.
@@ -20863,7 +20885,10 @@ document.addEventListener('keydown', (e) => {
       if(turnsEl) turnsEl.textContent = n ? n + (n === 1 ? ' question' : ' questions') : '';
     }
     host.querySelector('.se-cost').innerHTML = costLine(e);
-    host.querySelector('.se-send').disabled = !!e.busy || !e.convoId;
+    var sendBtn = host.querySelector('.se-send');
+    sendBtn.disabled = !e.convoId;
+    sendBtn.textContent = e.busy ? '■' : '↵';
+    sendBtn.title = e.busy ? 'Stop (Esc)' : 'Send (Enter)';
 
     var cmds = host.querySelector('.se-cmds');
     cmds.innerHTML = '';

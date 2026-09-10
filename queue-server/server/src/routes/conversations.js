@@ -214,21 +214,24 @@ export function conversationsRoutes() {
       try { res.write(JSON.stringify(obj) + '\n'); res.flush?.(); } catch {}
     };
 
-    // If the reader hangs up we stop writing, but we do NOT abort the model turn:
-    // conversations.js saves the assistant message itself, so a closed browser
-    // still ends with the answer in the thread rather than a half-turn.
-    let clientGone = false;
-    req.on('aborted', () => { clientGone = true; });
+    // If the reader hangs up before the answer is written, the turn is cancelled:
+    // the Room's stop button (and only that — a finished response also fires
+    // 'close', harmlessly) cuts the request, and conversations.js then drops the
+    // question instead of saving an answer nobody waited for.
+    const cancel = new AbortController();
+    const clientGone = () => cancel.signal.aborted;
+    res.on('close', () => { if (!res.writableFinished) cancel.abort(); });
 
     try {
       const out = await convos.sendMessage(req.params.id, {
         text: req.body?.text,
         userId: req.user?.id,
         override,
-        onToken: (t) => { if (!clientGone) write({ type: 'token', text: t }); },
+        signal: cancel.signal,
+        onToken: (t) => { if (!clientGone()) write({ type: 'token', text: t }); },
         // Progress lines. Same channel as the tokens, different type — an older
         // cached frontend ignores an unknown type, so this cannot break one.
-        onStatus: (m) => { if (!clientGone) write({ type: 'status', text: String(m || '') }); },
+        onStatus: (m) => { if (!clientGone()) write({ type: 'status', text: String(m || '') }); },
       });
       write({ type: 'done', ...out });
     } catch (e) {
