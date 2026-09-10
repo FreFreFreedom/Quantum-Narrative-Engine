@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<title>FMCNS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
 /* A look is one complete set of colour tokens, chosen by hand from the rail. This runs
@@ -145,6 +146,15 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
   --c-plot-7: #7e8fb0; --c-plot-8: #c9b06a;
 }
 * { box-sizing: border-box; }
+/* Keyboard focus, once, for every control family the app has. Three rules covered 222
+   buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
+.ubtn:focus-visible, .uicon:focus-visible, .uchip:focus-visible, .ctrlbtn:focus-visible,
+.rail-item:focus-visible, .umenu-item:focus-visible, .notice-act:focus-visible, .notice-x:focus-visible,
+.room-tabs button:focus-visible, .nb-chip:focus-visible, .trail-btn:focus-visible, .home-go:focus-visible,
+.qp-mode-seg button:focus-visible, .flow-typecips button:focus-visible, .q-place-seg button:focus-visible,
+.arch-viewbtns button:focus-visible, .mind-toolbtns button:focus-visible, .sg-filterbtns button:focus-visible,
+.tag:focus-visible, .pattern-chip:focus-visible, .scope-crumb:focus-visible, .conn:focus-visible {
+  outline:2px solid var(--c-ring); outline-offset:2px; }
 body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:var(--font-ui); font-size:var(--fs-base); line-height:1.5; -webkit-font-smoothing:antialiased; }
 /* Numbers that sit in a column line up. Counts, costs and durations are read against
    each other, so they get the same width per digit wherever they appear. */
@@ -857,6 +867,24 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .room-convo .se-body { line-height:1.62; }
 /* The one popup menu. Anchored under its button by openMenu(), never wider than the
    window, and a rule above any destructive row so it cannot be hit by accident. */
+/* The notice sits at the foot of the window, over the work rather than in front of it.
+   It steps aside for the build panel the same way the floating button does, so it can
+   never land on top of the thing it is reporting about. */
+.notice-host { position:fixed; left:0; right:0; bottom:0; z-index:var(--z-popover); display:flex; justify-content:center;
+  pointer-events:none; padding:0 14px 14px; transition:right var(--t-med) var(--ease); }
+body:has(#sysBtn.on) .notice-host { right:var(--qp-w, 420px); }
+.notice { pointer-events:auto; display:flex; align-items:center; gap:10px; max-width:min(560px, 100%);
+  padding:8px 8px 8px 12px; border-radius:var(--r-md); background:var(--c-surface); color:var(--c-ink-2);
+  border:1px solid var(--c-border-2); box-shadow:var(--sh-md); font-size:var(--fs-base); }
+.notice.is-error { border-color:var(--c-danger); background:var(--c-danger-tint); color:var(--c-ink); }
+.notice-msg { min-width:0; overflow-wrap:anywhere; }
+.notice-act { flex:none; background:none; border:1px solid var(--c-border-2); color:var(--c-ink);
+  border-radius:var(--r-sm); padding:3px 9px; font-family:inherit; font-size:var(--fs-sm); font-weight:var(--fw-medium); cursor:pointer; }
+.notice-act:hover { background:var(--c-hover-wash); }
+.notice-x { flex:none; width:24px; height:24px; display:flex; align-items:center; justify-content:center;
+  background:none; border:none; border-radius:var(--r-sm); color:var(--c-ink-4); cursor:pointer; }
+.notice-x:hover { background:var(--c-hover-wash); color:var(--c-ink); }
+.notice-x .ic { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; }
 .umenu { position:fixed; z-index:var(--z-popover-top); min-width:168px; max-width:280px; padding:4px;
   background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:var(--sh-md); }
 .umenu-item { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer;
@@ -2058,10 +2086,47 @@ button:active { transform: translateY(1px) scale(.99); }
 .uc { animation: fmcnsRise .24s var(--ease) backwards; }
 .ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
 #mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
-.ctrlbtn { font-size:var(--fs-sm); padding:5px 11px; }
-.arch-viewbtns button { font-size:var(--fs-sm); padding:6px 12px; }
-.flow-typecips button { font-size:var(--fs-sm); padding:5px 11px; }
-.mind-toolbtns button { font-size:var(--fs-sm); padding:6px 12px; }
+/* ─── One segmented control ────────────────────────────────────────────────────
+   Every row of mutually exclusive choices in the app: the Content view picker, the
+   Architecture layouts and layers, the Flow filters, the suggestion filters, the build
+   panel's mode, the placement toggle. They had six geometries between them (4x8, 5x10,
+   5x11, 5x14, 6x12) and three radii. One geometry, one hover, one lit state.
+   The lit state re-declares its own hover, or touching a chosen segment makes it look
+   unchosen — the same trap the file already warns about for the panel pins. */
+.ctrlbtn,
+.qp-mode-seg button,
+.flow-typecips button,
+.q-place-seg button,
+.arch-viewbtns button,
+.mind-toolbtns button,
+.sg-filterbtns button {
+  padding:5px 11px; font-size:var(--fs-sm); font-family:inherit; line-height:1.35;
+  border:1px solid var(--c-border-2); border-radius:var(--r-sm);
+  background:var(--c-surface); color:var(--c-ink-3); cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.ctrlbtn:hover:not(.active):not(:disabled),
+.qp-mode-seg button:hover:not(.active):not(:disabled),
+.flow-typecips button:hover:not(.active):not(:disabled),
+.q-place-seg button:hover:not(.active):not(:disabled),
+.arch-viewbtns button:hover:not(.active):not(:disabled),
+.mind-toolbtns button:hover:not(.active):not(:disabled),
+.sg-filterbtns button:hover:not(.active):not(:disabled) {
+  background:var(--c-surface-2); color:var(--c-ink); }
+.ctrlbtn.active, .ctrlbtn.active:hover,
+.qp-mode-seg button.active, .qp-mode-seg button.active:hover,
+.flow-typecips button.active, .flow-typecips button.active:hover,
+.q-place-seg button.active, .q-place-seg button.active:hover,
+.arch-viewbtns button.active, .arch-viewbtns button.active:hover,
+.mind-toolbtns button.active, .mind-toolbtns button.active:hover,
+.sg-filterbtns button.active, .sg-filterbtns button.active:hover {
+  background:var(--c-ink-solid); color:var(--c-on-solid); border-color:var(--c-ink-solid); }
+.ctrlbtn:disabled, .qp-mode-seg button:disabled, .flow-typecips button:disabled,
+.arch-viewbtns button:disabled, .mind-toolbtns button:disabled, .sg-filterbtns button:disabled {
+  opacity:.5; cursor:default; }
+/* The placement toggle is the one joined group — a single pill split by hairlines
+   rather than separate buttons, so its children give up their own outer edges. */
+.q-place-seg button { border:none; border-radius:0; }
+.q-place-seg button + button { border-left:1px solid var(--c-border-2); }
 .q-item-title { font-size:var(--fs-base); }
 .arch-ask-inputrow input { font-size:var(--fs-base); padding:8px 11px; }
 .arch-ask-inputrow button { font-size:var(--fs-base); padding:8px 13px; }
@@ -2235,7 +2300,6 @@ button:active { transform: translateY(1px) scale(.99); }
 
 <div id="loginGate" class="loginbox">
   <h2 style="margin-top:0;">FMCNS Fractal Navigator</h2>
-  <p>Enter the app password to load live data.</p>
   <input type="password" id="loginPw" placeholder="Password"><br>
   <button id="loginBtn">Connect</button>
   <div id="loginErr" style="color:var(--c-danger);margin-top:8px;font-size:12px;"></div>
@@ -2686,7 +2750,6 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="studio-modal" style="width:640px;max-height:76vh;">
     <div class="studio-head">
       <div style="display:flex;flex-direction:column;gap:1px;">
-        <span class="studio-eyebrow">Core</span>
         <span class="studio-title">AI Settings</span>
       </div>
       <div class="studio-actions"><button id="aiSheetCloseBtn" title="Close">✕</button></div>
@@ -3782,7 +3845,7 @@ function renderTrail() {
          ${trail.length > 1 ? `<button class="trail-btn" id="trailSave">Keep</button>` : ''}
          <button class="trail-btn" id="trailClear">Clear</button>
        </div>`
-    : '<div class="empty">Open an entity and the walk records itself.</div>';
+    : '';
   if (trailSaving) {
     html += `<div class="trail-row"><input class="searchbox trail-title" id="trailTitle" placeholder="Name this walk…"><button class="trail-btn" id="trailConfirm">Save</button></div>`;
   }
@@ -7953,7 +8016,7 @@ function renderHome() {
   if (w) {
     let b = w.length
       ? homeRows(w, (m) => '<div class="home-row"><span class="t" title="' + qEscAttr(m.title || '') + '">' + qEsc(m.title || '(untitled)') + '</span><span class="n">' + m.steps + ' steps</span></div>')
-      : '<div class="home-empty">No walks kept yet.</div>';
+      : '';
     cards.push(homeCard('Walks you kept', b));
   }
 
@@ -9921,7 +9984,7 @@ function renderFreeProvidersSection() {
   return `
     <div class="ai-fp-section">
       <div class="ai-fp-title">Providers &amp; quota</div>
-      <div class="ai-fp-sub">Free fallback models the router (services/ai/router.js) can reach for once the Claude Code subscription is exhausted, ordered by coding-intelligence rank.${earliest ? ` Next reset: ${fmtCountdown(earliest)}.` : ''}</div>
+      <div class="ai-fp-sub" title="Reached for only once the Claude Code subscription is exhausted, in this order.">Free models, in the order they are tried.${earliest ? ` Next reset: ${fmtCountdown(earliest)}.` : ''}</div>
       <table class="ai-fp-table">
         <thead><tr><th>Provider</th><th>Model</th><th>Rank</th><th>Status</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="4">No free providers configured.</td></tr>'}</tbody>
@@ -10011,11 +10074,10 @@ function renderAiSettings() {
     </table>
     ${cd['claude-side']?.active
       ? `<div class="usage-alert" style="margin-top:6px;">2nd Claude account: quota exhausted</div>`
-      : `<div class="ai-fp-sub" style="margin-top:6px;">Everything starts on your <strong>second</strong> Claude subscription &mdash; the smaller bank, spent first on purpose. When it runs out for the next few hours the same question is asked again on your <strong>main</strong> account, and only if that is out too does it drop to a free model. Second-account jobs run on your Mac, so the runner has to be on; if its token isn&rsquo;t set they go straight to the main account.</div>`}
+      : `<div class="ai-fp-sub" style="margin-top:6px;" title="Order: the second Claude subscription first (the smaller bank, spent first on purpose), then the main one when it runs out for a few hours, then a free model only if both are out. Second-account jobs run on your Mac, so the runner has to be attached.">Second account first, then main, then free</div>`}
     <details class="ai-voice">
       <summary>How Idea Studio thinks</summary>
-      <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" placeholder="Leave empty for a plain, neutral assistant — no personality.">${qEsc(aiSettings.studioPersona || '')}</textarea>
-      <div class="ai-voice-note">This is the lens your brainstorming conversations think through &mdash; the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest (use the real project data, invent nothing, say when something already exists), so you can rewrite it freely without breaking anything. Leave it empty for a plain assistant with no persona. Only affects Idea Studio conversations, not the shorter system answers.</div>
+      <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" title="The lens your brainstorming conversations think through: the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest, so rewriting it breaks nothing. Empty means no persona at all." placeholder="Leave empty for a plain, neutral assistant — no personality.">${qEsc(aiSettings.studioPersona || '')}</textarea>
     </details>
     <details class="ai-adv">
       <summary>Advanced (JSON)</summary>
@@ -10456,7 +10518,7 @@ async function qAction(action, id, btn) {
         break;
     }
   } catch (e) {
-    alert('Error: ' + e.message);
+    notify('Error: ' + e.message, { kind: 'error' });
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -10490,7 +10552,7 @@ async function sgAction(action, id, btn) {
       await apiWrite(`/api/travaux/suggestions/${id}/dismiss`, 'POST', {});
       await loadSuggestions();
     }
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { notify('Error: ' + e.message, { kind: 'error' }); }
   finally { if (btn) btn.disabled = false; }
 }
 
@@ -10522,7 +10584,7 @@ async function seedAction(action, id, btn) {
       renderFlow();
       try { await apiWrite(`/api/travaux/ideas/${id}`, 'DELETE'); } catch (e) { await loadIdeas(); }
     }
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { notify('Error: ' + e.message, { kind: 'error' }); }
   finally { if (btn) btn.disabled = false; }
 }
 
@@ -10914,6 +10976,53 @@ document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && openMenuNow) { ev.stopPropagation(); closeMenu(); }
 }, true);
 window.addEventListener('scroll', () => { if (openMenuNow) closeMenu(); }, true);
+/* The one notice. Thirty-two failures were reported with notify(, { kind: 'error' }), which stops the whole
+   app dead to say "Error: fetch failed" and cannot be read alongside the thing that
+   failed. This says the same thing in a line at the foot of the window, next to the work,
+   and never blocks. An error stays until dismissed, because a failure that vanishes on
+   its own was never reported; anything else clears itself. One optional action, for the
+   cases where the answer is simply "try again". confirm() is deliberately left alone —
+   for a destructive action the browser's own dialog is the right tool and costs nothing. */
+let noticeTimer = null;
+function notify(text, opts) {
+  const o = opts || {};
+  const kind = o.kind || 'info';
+  let host = document.getElementById('noticeHost');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'noticeHost';
+    host.className = 'notice-host';
+    document.body.appendChild(host);
+  }
+  host.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'notice is-' + kind;
+  el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+  const msg = document.createElement('span');
+  msg.className = 'notice-msg';
+  msg.textContent = String(text == null ? '' : text);
+  el.appendChild(msg);
+  if (o.action && o.onAction) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'notice-act'; b.textContent = o.action;
+    b.onclick = () => { clearNotice(); o.onAction(); };
+    el.appendChild(b);
+  }
+  const x = document.createElement('button');
+  x.type = 'button'; x.className = 'notice-x'; x.title = 'Dismiss'; x.setAttribute('aria-label', 'Dismiss');
+  x.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-x"></use></svg>';
+  x.onclick = clearNotice;
+  el.appendChild(x);
+  host.appendChild(el);
+  if (noticeTimer) { clearTimeout(noticeTimer); noticeTimer = null; }
+  if (kind !== 'error') noticeTimer = setTimeout(clearNotice, 4200);
+}
+function clearNotice() {
+  if (noticeTimer) { clearTimeout(noticeTimer); noticeTimer = null; }
+  const host = document.getElementById('noticeHost');
+  if (host) host.innerHTML = '';
+}
+window.notify = notify;
 window.openMenu = openMenu;
 window.closeMenu = closeMenu;
 
@@ -12306,7 +12415,7 @@ function renderFlow() {
   // stopPropagation inside it wins over "toggle the card".
   qWireQuestionBlock(host, async (id, text, placement) => {
     try { await qReply(id, text, placement); }
-    catch (e) { alert('Could not send: ' + e.message); }
+    catch (e) { notify('Could not send: ' + e.message, { kind: 'error' }); }
   });
   host.querySelectorAll('.uc[data-qid]').forEach(el => {
     const id = el.getAttribute('data-qid');
@@ -12399,7 +12508,7 @@ function renderFlow() {
         await apiWrite(`/api/travaux/prompts/${b.getAttribute('data-qplay')}`, 'PATCH', { status: 'queued' });
         await apiWrite('/api/travaux/prompts/advance', 'POST');
         await qLoad();
-      } catch (err) { b.disabled = false; alert('Error: ' + err.message); }
+      } catch (err) { b.disabled = false; notify('Error: ' + err.message, { kind: 'error' }); }
     };
   });
   // The suggestion filter chips. Assigns rather than toggles, so clicking one is
@@ -12897,7 +13006,7 @@ document.addEventListener('click', async (e) => {
     if (qSelected && qSelected.id) qLandedFill(qSelected.id);
   } catch (err) {
     btn.disabled = false; btn.textContent = was;
-    alert('Could not queue it: ' + err.message);
+    notify('Could not queue it: ' + err.message, { kind: 'error' });
   }
 });
 
@@ -13010,7 +13119,7 @@ function qRenderDetail(p) {
   const stopAfterChk = document.getElementById('qStopAfterChk');
   if (stopAfterChk) stopAfterChk.onchange = async () => {
     try { await apiWrite(`/api/travaux/prompts/${p.id}`, 'PATCH', { stop_after: stopAfterChk.checked }); await qLoad(); }
-    catch (e) { stopAfterChk.checked = !stopAfterChk.checked; alert('Error: ' + e.message); }
+    catch (e) { stopAfterChk.checked = !stopAfterChk.checked; notify('Error: ' + e.message, { kind: 'error' }); }
   };
   const addWorldIdeaBtn = document.getElementById('qAddWorldIdeaBtn');
   if (addWorldIdeaBtn) addWorldIdeaBtn.onclick = () => qWorldIdeaModal(p.id, () => qInspireReRender(p));
@@ -13022,7 +13131,7 @@ function qRenderDetail(p) {
       await apiWrite(`/api/travaux/prompts/${p.id}/unstick`, 'POST', {});
       qInspireCache[p.id] = null;
       await qLoad();
-    } catch (err) { b.disabled = false; b.textContent = 'Reset and continue'; alert('Error: ' + err.message); }
+    } catch (err) { b.disabled = false; b.textContent = 'Reset and continue'; notify('Error: ' + err.message, { kind: 'error' }); }
   });
   host.querySelector('[data-action="skip-plan-detail"]')?.addEventListener('click', async (e) => {
     const b = e.currentTarget;
@@ -13030,7 +13139,7 @@ function qRenderDetail(p) {
     try {
       await apiWrite(`/api/travaux/prompts/${p.id}/skip-plan`, 'POST', {});
       await qLoad();
-    } catch (err) { b.disabled = false; b.textContent = 'Skip plan / Start now'; alert('Error: ' + err.message); }
+    } catch (err) { b.disabled = false; b.textContent = 'Skip plan / Start now'; notify('Error: ' + err.message, { kind: 'error' }); }
   });
   if (!p.summary) qSummarize(p);
   qWireInspire(p);
@@ -13606,9 +13715,9 @@ function qWorldIdeaModal(taskId, onSaved) {
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Save idea';
       if (e.message === 'no_report') {
-        alert('This task has no world-look yet. Run one first (click "✨ Look at what exists"), then add your idea.');
+        notify('This task has no world-look yet. Run one first (click "✨ Look at what exists"), then add your idea.', { kind: 'error' });
       } else {
-        alert('Could not save: ' + e.message);
+        notify('Could not save: ' + e.message, { kind: 'error' });
       }
     }
   };
@@ -13671,7 +13780,7 @@ function qWireInspireButtons(p) {
           qSelected = qPrompts.find(x => x.id === result.id) || null;
           renderFlow();
         }
-      } catch (e) { applyBtn.disabled = false; applyBtn.textContent = meta.label; alert('Error: ' + e.message); }
+      } catch (e) { applyBtn.disabled = false; applyBtn.textContent = meta.label; notify('Error: ' + e.message, { kind: 'error' }); }
     };
   }
 }
@@ -13717,7 +13826,7 @@ function qWireInspire(p) {
             await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/refresh`, 'POST', {});
             qInspireCache[p.id] = null;
             await qLoad();
-          } catch (e) { b.disabled = false; b.textContent = '✨ Look at what exists before you start'; alert('Error: ' + e.message); }
+          } catch (e) { b.disabled = false; b.textContent = '✨ Look at what exists before you start'; notify('Error: ' + e.message, { kind: 'error' }); }
         };
       });
       host.querySelectorAll('[data-action="unstick"]').forEach(b => {
@@ -13727,7 +13836,7 @@ function qWireInspire(p) {
             await apiWrite(`/api/travaux/prompts/${p.id}/unstick`, 'POST', {});
             qInspireCache[p.id] = null;
             await qLoad();
-          } catch (e) { b.disabled = false; b.textContent = 'Reset this step'; alert('Error: ' + e.message); }
+          } catch (e) { b.disabled = false; b.textContent = 'Reset this step'; notify('Error: ' + e.message, { kind: 'error' }); }
         };
       });
       host.querySelectorAll('[data-action="inspire-skip"]').forEach(b => {
@@ -13737,7 +13846,7 @@ function qWireInspire(p) {
             await apiWrite(`/api/travaux/prompts/${p.id}/inspiration/skip`, 'POST', {});
             qInspireCache[p.id] = null;
             await qLoad();
-          } catch (e) { b.disabled = false; b.textContent = 'Start without inspiration'; alert('Error: ' + e.message); }
+          } catch (e) { b.disabled = false; b.textContent = 'Start without inspiration'; notify('Error: ' + e.message, { kind: 'error' }); }
         };
       });
     }
@@ -14279,7 +14388,7 @@ async function addIdea() {
   try {
     await apiWrite('/api/travaux/ideas', 'POST', { title, notes });
     await loadIdeas();
-  } catch (e) { alert('Error: ' + e.message); } finally { if (btn) btn.disabled = false; }
+  } catch (e) { notify('Error: ' + e.message, { kind: 'error' }); } finally { if (btn) btn.disabled = false; }
 }
 
 async function moveIdea(id, delta) {
@@ -14401,7 +14510,7 @@ function renderDiscoverResults(queryId) {
     row.querySelectorAll('[data-fb]').forEach(btn => btn.onclick = async () => {
       btn.disabled = true;
       try { await apiWrite('/api/discovery/feedback', 'POST', { repo_full_name: repo, verdict: btn.getAttribute('data-fb') }); await loadDiscoverResults(queryId, false); }
-      catch (e) { btn.disabled = false; alert('Error: ' + e.message); }
+      catch (e) { btn.disabled = false; notify('Error: ' + e.message, { kind: 'error' }); }
     });
   });
 }
@@ -14454,7 +14563,7 @@ function renderBkLibrary() {
     const id = b.closest('.bk-lib-row').getAttribute('data-report-id');
     b.disabled = true; b.textContent = '…';
     try { await bkOpenReportById(id); }
-    catch (e) { b.disabled = false; b.textContent = 'Open'; alert('Error: ' + e.message); }
+    catch (e) { b.disabled = false; b.textContent = 'Open'; notify('Error: ' + e.message, { kind: 'error' }); }
   });
 }
 
@@ -14596,7 +14705,7 @@ function renderBkReportView(report) {
   if (seedBtn) seedBtn.onclick = async () => {
     seedBtn.disabled = true; seedBtn.textContent = '…';
     try { await bkSaveReportAsSeed(report); seedBtn.textContent = '✓ Saved as a seed — view in Flow'; }
-    catch (e) { seedBtn.disabled = false; seedBtn.textContent = '⇩ Save as seed'; alert('Error: ' + e.message); }
+    catch (e) { seedBtn.disabled = false; seedBtn.textContent = '⇩ Save as seed'; notify('Error: ' + e.message, { kind: 'error' }); }
   };
   const projectBtn = document.getElementById('bkPlantProjectBtn');
   if (projectBtn) projectBtn.onclick = async () => {
@@ -14605,7 +14714,7 @@ function renderBkReportView(report) {
       await apiWrite('/api/discovery/plant-project', 'POST', { report_id: report.id });
       projectBtn.textContent = '✓ Project planted';
       await loadArchNodes();
-    } catch (e) { projectBtn.disabled = false; projectBtn.textContent = '🏗️ Create project'; alert('Error: ' + e.message); }
+    } catch (e) { projectBtn.disabled = false; projectBtn.textContent = '🏗️ Create project'; notify('Error: ' + e.message, { kind: 'error' }); }
   };
   // Every button on every pick card, in one delegated handler (see cardActs). The
   // card itself carries which part and which pick it is, so the handler does not
@@ -14625,13 +14734,13 @@ function renderBkReportView(report) {
           await apiWrite('/api/discovery/plant', 'POST', { report_id: report.id, part_index: partIdx, pick_index: pickIdx });
           b.textContent = '✓ Planted';
           await loadArchNodes();
-        } catch (err) { b.disabled = false; b.textContent = 'Plant in tree'; alert('Error: ' + err.message); }
+        } catch (err) { b.disabled = false; b.textContent = 'Plant in tree'; notify('Error: ' + err.message, { kind: 'error' }); }
         return;
       }
       if (b.dataset.act === 'bk-useful' || b.dataset.act === 'bk-not-useful') {
         b.disabled = true;
         try { await apiWrite('/api/discovery/feedback', 'POST', { repo_full_name: pick.repo, verdict: b.dataset.act === 'bk-useful' ? 'useful' : 'not_useful' }); }
-        catch (err) { b.disabled = false; alert('Error: ' + err.message); }
+        catch (err) { b.disabled = false; notify('Error: ' + err.message, { kind: 'error' }); }
       }
     };
   });
@@ -15341,7 +15450,7 @@ function wireNbLanded(host) {
         qLoad();
       } catch (err) {
         b.disabled = false; b.textContent = was;
-        alert('Could not queue it: ' + err.message);
+        notify('Could not queue it: ' + err.message, { kind: 'error' });
       }
     };
   });
@@ -15410,7 +15519,7 @@ function wireNbUnreachable(host) {
       // task carries the same space/mode/preset as one typed by hand.
       const p = await queuePromptDirect(it.task.title, it.task.prompt, null, null);
       if (p) { b.textContent = '✓ In the queue'; renderNotbuilt(); }
-      else { b.disabled = false; b.textContent = 'Build the way to use it'; alert('Could not reach the server.'); }
+      else { b.disabled = false; b.textContent = 'Build the way to use it'; notify('Could not reach the server.', { kind: 'error' }); }
     };
   });
 }
@@ -15445,7 +15554,7 @@ function wireNbUnplanted(host) {
         nbUnplanted = (nbUnplanted || []).filter(x => !(x.report_id === report_id && x.part_index === part_index && x.pick_index === pick_index));
         await loadArchNodes();
         renderNotbuilt();
-      } catch (e) { b.disabled = false; b.textContent = 'Plant in tree'; alert('Error: ' + e.message); }
+      } catch (e) { b.disabled = false; b.textContent = 'Plant in tree'; notify('Error: ' + e.message, { kind: 'error' }); }
     };
   });
 }
@@ -15760,7 +15869,7 @@ async function nbAiOrder() {
   try {
     const out = await apiWrite('/api/architecture/rank-unbuilt', 'POST', { items });
     nbOrder = out.order || null;
-  } catch (e) { alert('Could not get an AI order: ' + e.message); }
+  } catch (e) { notify('Could not get an AI order: ' + e.message, { kind: 'error' }); }
   btn.disabled = false; btn.textContent = '✨ AI recommends order';
   renderNotbuilt();
 }
@@ -15924,7 +16033,7 @@ async function witnessRecheck() {
       : 'Checked just now.';
     btn.disabled = false;
     setTimeout(() => { if (btn.textContent.startsWith('✓')) btn.textContent = 'Re-check'; }, 6000);
-  } catch (e) { restore(); alert('Error: ' + e.message); }
+  } catch (e) { restore(); notify('Error: ' + e.message, { kind: 'error' }); }
 }
 
 function renderArchProposals() {
@@ -15971,13 +16080,13 @@ function renderArchProposals() {
       try {
         await apiWrite(`/api/architecture/proposals/${id}/accept`, 'POST', {});
         await loadArchProposals(); await loadArchNodes(); renderArchStage();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { notify('Error: ' + e.message, { kind: 'error' }); }
     };
     row.querySelector('[data-act="reject"]').onclick = async () => {
       try {
         await apiWrite(`/api/architecture/proposals/${id}/reject`, 'POST', {});
         await loadArchProposals(); await loadArchNodes(); renderArchStage();
-      } catch (e) { alert('Error: ' + e.message); }
+      } catch (e) { notify('Error: ' + e.message, { kind: 'error' }); }
     };
   });
   const syncBtn = document.getElementById('archSyncNowBtn');
@@ -15987,7 +16096,7 @@ function renderArchProposals() {
       const out = await apiWrite('/api/architecture/tree/sync', 'POST', {});
       syncBtn.textContent = out.created ? `✓ ${out.created} new` : (out.skipped ? '✓ Nothing new' : '✓ Done');
       await loadArchProposals(); await loadArchNodes(); renderArchStage();
-    } catch (e) { syncBtn.disabled = false; syncBtn.textContent = 'Sync now'; alert('Error: ' + e.message); }
+    } catch (e) { syncBtn.disabled = false; syncBtn.textContent = 'Sync now'; notify('Error: ' + e.message, { kind: 'error' }); }
   };
 }
 
@@ -18113,7 +18222,7 @@ function renderQueuePanel() {
     if (!p) return;
     qWireQuestionBlock(card, async (id, text, placement) => {
       try { await qReply(id, text, placement); }
-      catch (e) { alert('Could not send: ' + e.message); }
+      catch (e) { notify('Could not send: ' + e.message, { kind: 'error' }); }
     });
     qWireReplyBox(card, 'qp' + p.id, (text, placement) => qReply(p.id, text, placement));
   });
@@ -19666,7 +19775,7 @@ document.addEventListener('keydown', (e) => {
       // standing rule against explaining itself — so there it says only where it is.
       html += '<div class="se-note">' + (e.type === 'open'
         ? 'Nothing said yet.'
-        : 'Nothing said yet. Push this, argue with it, or ask to be interrogated — nothing is queued or run from here.') + '</div>';
+        : 'Nothing said yet.') + '</div>';
     }
     // Something to say that is not part of the conversation — "still opening", say.
     if(e.note) html += '<div class="se-note">' + qEsc(e.note) + '</div>';
@@ -19689,7 +19798,7 @@ document.addEventListener('keydown', (e) => {
       var notes = (document.getElementById('qPromptText').value || '').trim();
       apiWrite('/api/travaux/ideas', 'POST', { title: title, notes: notes })
         .then(function(idea){ openSeedInFlow(idea.id); })
-        .catch(function(err){ alert('Could not create the idea: ' + err.message); });
+        .catch(function(err){ notify('Could not create the idea: ' + err.message, { kind: 'error' }); });
     };
   });
 })();
