@@ -12,7 +12,9 @@ export function hydrate(db, row) {
   for (const c of db.prepare(`SELECT axis_key, value FROM entity_continuum WHERE entity_id=?`).all(row.id)) {
     continuum[c.axis_key] = c.value;
   }
-  return { ...row, clusters: JSON.parse(row.clusters || '[]'), meta: JSON.parse(row.meta || '{}'), tags, continuum };
+  // `grounded` is a dead column (schema.js) — kept in the table, never in an entity row.
+  const { grounded, ...rest } = row;
+  return { ...rest, clusters: JSON.parse(row.clusters || '[]'), meta: JSON.parse(row.meta || '{}'), tags, continuum };
 }
 
 export function searchEntities(db, { type, cluster, tag, name, source } = {}) {
