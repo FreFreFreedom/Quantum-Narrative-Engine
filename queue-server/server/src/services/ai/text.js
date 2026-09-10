@@ -727,12 +727,24 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // because pickChain() -> listModels() defaults includeMetered:false (see catalog.js, "The
   // one metered exception"). Re-check that if this loop ever changes again.
   let attempted = 0;
+  // Rough token count, the same 3.6-chars-a-token rule promptCharBudget uses.
+  const promptTokens = Math.ceil(String(prompt || '').length / 3.6);
 
   for (const attempt of fullChain) {
     if (attempted >= maxAttempts) break;
     const { provider: p, model: m } = attempt;
     if (router.isExhausted(p, m) || router.isExhausted(p, '')) {
       failures.push(`${p}:${m}:cooldown`);
+      continue;
+    }
+    // A lane whose per-minute token ceiling is smaller than the prompt cannot
+    // ever take it — Groq's free tier stops at 7-8k tokens a minute and a Room
+    // turn is nearer 27k. Asking anyway wastes an attempt and comes back as a
+    // 429, which used to be read as a spent quota and benched the whole lane for
+    // the rest of the day over a prompt that was simply too big.
+    const tpm = getModelCatalog(p, m)?.tpmTokens;
+    if (tpm && promptTokens + maxTokens > tpm) {
+      failures.push(`${p}:${m}:prompt-too-big-for-lane`);
       continue;
     }
     if (isStalled(p, m)) {
@@ -761,7 +773,10 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     failures.push(`${p}:${m}:${errMsg}`);
 
     if (isStall(errMsg)) markStalled(p, m);
-    if (detectQuotaLimit(p, errMsg)) {
+    // "Request too large" arrives as a 429 like a spent allowance does, and it is
+    // nothing of the kind: the lane is fine, this one prompt did not fit. Benching
+    // it took Groq out for twelve hours the first time it saw a Room turn.
+    if (detectQuotaLimit(p, errMsg) && !/request too large|reduce your message size|too many tokens|context length/i.test(errMsg)) {
       router.recordExhaustion({ providerId: p, model: m, detectedBy: 'text', errText: errMsg });
     }
   }

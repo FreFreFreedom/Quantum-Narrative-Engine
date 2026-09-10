@@ -55,10 +55,16 @@ export const PROVIDERS = [
     // gpt-oss thinks before it answers and the thinking eats the output budget:
     // ask for 20 tokens and the reply is an empty string with no error at all —
     // which reads exactly like a broken lane. Nothing here asks for less than 150.
+    // `tpmTokens` is the free tier's TOKENS-PER-MINUTE ceiling, which is far
+    // smaller than the context window and is the number that actually decides
+    // whether a lane can take a prompt: a Room turn is ~27k tokens and Groq's
+    // free tier stops at 7-8k per minute, so every one of these refused it. Read
+    // off the refusals themselves, 2026-09-10. generateText skips a lane whose
+    // ceiling the prompt cannot fit rather than burning an attempt on it.
     models: [
-      { id: 'openai/gpt-oss-120b', codingRank: 68, contextTokens: 128000 },
-      { id: 'qwen/qwen3.8-27b', codingRank: 62, contextTokens: 128000 },
-      { id: 'openai/gpt-oss-20b', codingRank: 50, contextTokens: 128000 },
+      { id: 'openai/gpt-oss-120b', codingRank: 68, contextTokens: 128000, tpmTokens: 8000 },
+      { id: 'qwen/qwen3.8-27b', codingRank: 62, contextTokens: 128000, tpmTokens: 7000 },
+      { id: 'openai/gpt-oss-20b', codingRank: 50, contextTokens: 128000, tpmTokens: 8000 },
     ],
   },
   {
@@ -69,9 +75,9 @@ export const PROVIDERS = [
     limits: { rpm: 30, rpd: 14400 },
     // Model ids re-read from the account's own /v1/models on 2026-09-10 — the two
     // that used to be listed here (llama-3.3-70b, qwen-3-32b) answer
-    // model_not_found now. NOTE: this account's Cerebras plan answers
-    // "Payment required" on every one of these, so the lane cannot be used until
-    // that changes. Left correct rather than removed, since the key is set.
+    // model_not_found now. Both of these answered, including a 25k-token prompt,
+    // so this lane can carry a Room turn — which Groq's free tier cannot.
+    // gemma-4-31b is listed by /v1/models and refuses every call: not here.
     models: [
       { id: 'gpt-oss-120b', codingRank: 68, contextTokens: 128000 },
       { id: 'qwen-3.8-27b', codingRank: 60, contextTokens: 128000 },
