@@ -28,6 +28,7 @@
     "mentions:selftest": "node scripts/mentions-selftest.js",
     "scale:selftest": "node scripts/scale-ladder-selftest.js",
     "fences:anatomy": "node scripts/interior-fences.js",
+    "dogville:anatomy": "node scripts/interior-dogville.js",
     "relations:selftest": "node scripts/relations-selftest.js",
     "peers:selftest": "node scripts/peers-selftest.js",
     "traffic:selftest": "node scripts/traffic-selftest.js",

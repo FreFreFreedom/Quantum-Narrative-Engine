@@ -1637,6 +1637,28 @@ lose. Every claim in the civic corpus carries one.
   expressible and has exactly one instance in the data. It remains the most under-used of the
   three moves.
 
+### Corrected 2026-09-10: Dogville signed, and the mediator reading does not survive it
+
+This section read Dogville's hub as **a mediator holding a symmetric tension with somewhere to
+land**, against Troy as a gate. That reading came from the unsigned graph, because Dogville had
+no signs to read. It now does — the scene was run again with a stance on every turn, under the
+identical rule this section declared — and two things change.
+
+The town does **not** split cleanly. Frustration 1: one tie contradicts the best available
+division, where the Maxson household's four ties contradict nothing. So the sharpest difference
+between the corpus's only two interiors is not what their hubs do but **whether the thing holds
+together at all**, and the two sit on opposite sides of that.
+
+And Tom is no more a mediator than Troy is. His two heavy ties are both opposed — thirteen of
+sixteen exchanges with Chuck, nine of fourteen with Grace — and his allied ties carry two
+exchanges apiece. The distinction the earlier reading drew was real in the data it had and does
+not survive the data it lacked, which is the ordinary way of these things.
+
+The best split is the finding worth keeping: **{Ben, Tom Sr., Tom} against {Chuck, Grace,
+Martha}**. Grace lands with the man who will lead her ruin and against the man arguing for her
+life. Whatever the town's division is, it is not the townspeople against the outsider, and the
+camp line was computed from signed exchanges alone with nobody's name in front of it.
+
 ## 20. One pattern, and the continuum turns out to be a fold (added 2026-09-10, forming)
 
 Antoine's move, made in conversation on 2026-09-10 while redesigning the Content section, and

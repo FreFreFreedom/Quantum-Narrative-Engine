@@ -1,474 +1,586 @@
 {
   "entity": "f_dogville",
-  "scope": "blocks 220-345 of the corpus subtitle (acceptance meeting + Elm Street walk)",
+  "medium": "f_dogville",
+  "source": "data-seed/subtitles/f_dogville.srt",
+  "scope": "subtitle blocks 220-345 (the acceptance meeting and the walk down Elm Street)",
   "gapThreshold": 3,
   "turnsAttributed": 93,
-  "turnsDroppedUnattributable": 9,
+  "turnsByStance": {
+    "none": 6,
+    "neu": 35,
+    "opp": 38,
+    "ally": 14
+  },
+  "turnsDroppedNoCue": [
+    268,
+    271,
+    272,
+    276,
+    277,
+    278,
+    279,
+    280,
+    281
+  ],
   "turnsFailedVerbatimCheck": 0,
+  "cueClassesRecorded": false,
   "turns": [
     {
       "block": 220,
       "speaker": "t",
+      "stance": null,
       "quote": "What if I said you could stay here?"
     },
     {
       "block": 221,
       "speaker": "g",
+      "stance": "neu",
       "quote": "Here?"
     },
     {
       "block": 222,
       "speaker": "g",
+      "stance": "opp",
       "quote": "But even if you meant it, it's impossible."
     },
     {
       "block": 223,
       "speaker": "g",
+      "stance": "opp",
       "quote": "It's very small town, I have to hide.\nPeople will ask questions."
     },
     {
       "block": 224,
       "speaker": "t",
+      "stance": "opp",
       "quote": "Well, it might not matter.\nNot if they all wanted to help you too."
     },
     {
       "block": 225,
       "speaker": "g",
+      "stance": "opp",
       "quote": "Are you saying that everybody\nin this town is like you?"
     },
     {
       "block": 226,
       "speaker": "t",
+      "stance": "opp",
       "quote": "They're good people.\nYou know, they're honest people."
     },
     {
       "block": 227,
       "speaker": "t",
+      "stance": "neu",
       "quote": "They've all been in need themselves."
     },
     {
       "block": 228,
       "speaker": "t",
+      "stance": "neu",
       "quote": "They might well turn you down, but..."
     },
     {
       "block": 229,
       "speaker": "t",
+      "stance": "neu",
       "quote": "I think it would be worth\nthe trouble to ask."
     },
     {
       "block": 230,
       "speaker": "g",
+      "stance": "opp",
       "quote": "But I got nothing to offer them in return."
     },
     {
       "block": 231,
       "speaker": "t",
+      "stance": "opp",
       "quote": "No, I think you have\nplenty to offer Dogville."
     },
     {
       "block": 242,
       "speaker": "f",
+      "stance": null,
       "quote": "Now I'm sure that you wish us well, Tom,"
     },
     {
       "block": 243,
       "speaker": "f",
+      "stance": "neu",
       "quote": "but um.. of any town, I believe this one\nhas a very fine sense of community."
     },
     {
       "block": 244,
       "speaker": "f",
+      "stance": "neu",
       "quote": "Living side by side we\nall know one another."
     },
     {
       "block": 245,
       "speaker": "f",
+      "stance": "neu",
       "quote": "I'm a pretty fair judge\nof character myself."
     },
     {
       "block": 246,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Honestly, Tom, you've done it again."
     },
     {
       "block": 247,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Made us come here to listen\nto a lot of nonsense."
     },
     {
       "block": 248,
       "speaker": "c",
+      "stance": "opp",
       "quote": "What do you think you are,\nsome kind of philosopher?"
     },
     {
       "block": 249,
       "speaker": "t",
+      "stance": "opp",
       "quote": "Observant, that's what I am."
     },
     {
       "block": 250,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Lazy, I would say.\nWe shovel snow together."
     },
     {
       "block": 251,
       "speaker": "t",
+      "stance": "opp",
       "quote": "We shovel snow together?"
     },
     {
       "block": 252,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Yeah."
     },
     {
       "block": 253,
       "speaker": "t",
+      "stance": "opp",
       "quote": "Every household clears\ntheir own front walk."
     },
     {
       "block": 254,
       "speaker": "c",
+      "stance": "ally",
       "quote": "Yeah, I gotta allow that Tom's right on that.\nIf roads don't get cleared properly..."
     },
     {
       "block": 255,
       "speaker": "c",
+      "stance": "opp",
       "quote": "I'm sorry Tom, you're going to have to\ncome up with something better than that."
     },
     {
       "block": 256,
       "speaker": "t",
+      "stance": "opp",
       "quote": "But the whole country would be better served with\na greater attitude of openness and accenpance."
     },
     {
       "block": 257,
       "speaker": "c",
+      "stance": "opp",
       "quote": "You're suggesting that we all\nwouldn't help out if someone needed help."
     },
     {
       "block": 258,
       "speaker": "t",
+      "stance": "opp",
       "quote": "No, that's not the point.\nThat's not the point."
     },
     {
       "block": 259,
       "speaker": "t",
+      "stance": "neu",
       "quote": "We care for human beings up here."
     },
     {
       "block": 260,
       "speaker": "c",
+      "stance": "opp",
       "quote": "We would probably never find out."
     },
     {
       "block": 267,
       "speaker": "t",
+      "stance": null,
       "quote": "Allow me to introduce Grace.\nGrace, these are the citizens of Dogville."
     },
     {
       "block": 269,
       "speaker": "f",
+      "stance": "neu",
       "quote": "Tom has told us about\nyour predicament, Miss."
     },
     {
       "block": 270,
       "speaker": "g",
+      "stance": "neu",
       "quote": "I really don't want to put any of you\nin jeopardy."
     },
     {
       "block": 273,
       "speaker": "b",
+      "stance": "opp",
       "quote": "I, I don't know if that's such a good idea.\nThe transportation\nbusiness would uh..."
     },
     {
       "block": 274,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Ben!"
     },
     {
       "block": 275,
       "speaker": "b",
+      "stance": "opp",
       "quote": "These men, they have powerful connections,\neven with the police."
     },
     {
       "block": 282,
       "speaker": "t",
+      "stance": null,
       "quote": "She has a telephone."
     },
     {
       "block": 283,
       "speaker": "t",
+      "stance": "neu",
       "quote": "tell the town if people were coming."
     },
     {
       "block": 284,
       "speaker": "m",
+      "stance": "opp",
       "quote": "But Tom, I chime the hours, what if\npeople get confused with all the ringing?"
     },
     {
       "block": 285,
       "speaker": "t",
+      "stance": "opp",
       "quote": "Come now, Martha. Surely we can use our\nold bell to save a life, if need be."
     },
     {
       "block": 286,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Why should we?"
     },
     {
       "block": 287,
       "speaker": "t",
+      "stance": "opp",
       "quote": "Because we care, Chuck.\nWe care for other human beings."
     },
     {
       "block": 288,
       "speaker": "c",
+      "stance": "opp",
       "quote": "No, that ain't what I mean."
     },
     {
       "block": 289,
       "speaker": "c",
+      "stance": "opp",
       "quote": "How do we know that this woman is\ntelling us the truth?"
     },
     {
       "block": 290,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Maybe these gangsters did shoot at her, but\nthat don't make her somebody to be trusted."
     },
     {
       "block": 291,
       "speaker": "g",
+      "stance": "ally",
       "quote": "He is right.\nWhy would you trust me?"
     },
     {
       "block": 292,
       "speaker": "f",
+      "stance": "ally",
       "quote": "I trust you!"
     },
     {
       "block": 293,
       "speaker": "c",
+      "stance": "opp",
       "quote": "Tom, we're not gangsters."
     },
     {
       "block": 294,
       "speaker": "c",
+      "stance": "opp",
       "quote": "We mind our own business\nwe don't ask nothin' from nobody."
     },
     {
       "block": 295,
       "speaker": "t",
+      "stance": "opp",
       "quote": "So at last you admit it!"
     },
     {
       "block": 296,
       "speaker": "c",
+      "stance": "ally",
       "quote": "If only there were some way,\nwe wouldn't doubt the young lady's word."
     },
     {
       "block": 297,
       "speaker": "c",
+      "stance": "neu",
       "quote": "Some way to know her.."
     },
     {
       "block": 298,
       "speaker": "c",
+      "stance": "ally",
       "quote": "Then I think we would all ignore the risk."
     },
     {
       "block": 299,
       "speaker": "t",
+      "stance": "ally",
       "quote": "But there is a way!\nYou said it yourself."
     },
     {
       "block": 300,
       "speaker": "t",
+      "stance": "neu",
       "quote": "By living side by side with her."
     },
     {
       "block": 301,
       "speaker": "t",
+      "stance": "ally",
       "quote": "Dad, you are such a fine\njudge of character."
     },
     {
       "block": 302,
       "speaker": "t",
+      "stance": "ally",
       "quote": "How long would it take a good man\nlike you to unmask her?"
     },
     {
       "block": 303,
       "speaker": "t",
+      "stance": "neu",
       "quote": "A week? Maybe two?"
     },
     {
       "block": 304,
       "speaker": "t",
+      "stance": "ally",
       "quote": "Surely we can offer her two weeks."
     },
     {
       "block": 305,
       "speaker": "t",
+      "stance": "neu",
       "quote": "And if after that time so much as\none man cries out 'BE GONE!'"
     },
     {
       "block": 306,
       "speaker": "t",
+      "stance": "ally",
       "quote": "I promise I'll happily send her\npacking herself."
     },
     {
       "block": 307,
       "speaker": "f",
+      "stance": "ally",
       "quote": "Well, if Master Tom thinks this is right\nfor us, and for the\ncommunity,"
     },
     {
       "block": 308,
       "speaker": "f",
+      "stance": "ally",
       "quote": "then that will do for me.\nHe might be young, but his heart is right."
     },
     {
       "block": 309,
       "speaker": "f",
+      "stance": "ally",
       "quote": "And I've known his heart\nfor as long las it's been beating."
     },
     {
       "block": 315,
       "speaker": "t",
+      "stance": null,
       "quote": "Well, this is where Olivia and June live."
     },
     {
       "block": 316,
       "speaker": "t",
+      "stance": "neu",
       "quote": "June is a cripple... They live here as\na token of my dad's broadmindedness."
     },
     {
       "block": 317,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Chuck and Vera have seven children\nand they hate each other."
     },
     {
       "block": 318,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Next door we have the Hensons. They make a living from grinding\nedges off cheap glasses to try to make them look expensive."
     },
     {
       "block": 319,
       "speaker": "t",
+      "stance": "neu",
       "quote": "And here we have Jack McKay.\nNow, Jack McKay is blind and the whole town knows it."
     },
     {
       "block": 320,
       "speaker": "t",
+      "stance": "neu",
       "quote": "But he thinks he can hide it\nby never leaving his house."
     },
     {
       "block": 321,
       "speaker": "t",
+      "stance": "neu",
       "quote": "In the old stable Ben keeps his truck."
     },
     {
       "block": 322,
       "speaker": "t",
+      "stance": "neu",
       "quote": "He drinks and he visits the whorehouse\nonce a month and he is ashamed of it."
     },
     {
       "block": 323,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Martha she runs the mission house until the new\npreacher comes which will just never happen."
     },
     {
       "block": 324,
       "speaker": "t",
+      "stance": "neu",
       "quote": "That leaves Ma Ginger and Gloria.\nThey run this really expensive store,"
     },
     {
       "block": 325,
       "speaker": "t",
+      "stance": "neu",
       "quote": "where they exploit the fact\nthat nobody leaves town."
     },
     {
       "block": 326,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Used to leave to go vote,\nbut since they put on the registration fee,"
     },
     {
       "block": 327,
       "speaker": "t",
+      "stance": "neu",
       "quote": "about a day's wage for these people, they\ndon't feel the democratic need any more."
     },
     {
       "block": 328,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Those awful figurines say more about\nthe people in this town, than many words."
     },
     {
       "block": 329,
       "speaker": "g",
+      "stance": "opp",
       "quote": "If this is the town that you love, then you\nreally have a strange way of showing it."
     },
     {
       "block": 330,
       "speaker": "t",
+      "stance": "opp",
       "quote": "All I see, is a beautiful little town\nin the midst of magnificent mountains."
     },
     {
       "block": 331,
       "speaker": "t",
+      "stance": "neu",
       "quote": "A place where people have hopes and\ndreams even under the hardest conditions."
     },
     {
       "block": 332,
       "speaker": "t",
+      "stance": "opp",
       "quote": "And seven figurines that\nare not awful at all."
     },
     {
       "block": 336,
       "speaker": "t",
+      "stance": null,
       "quote": "They are keeping an eye on you."
     },
     {
       "block": 337,
       "speaker": "t",
+      "stance": "neu",
       "quote": "If you love them already,\nthey might need a little persuading."
     },
     {
       "block": 338,
       "speaker": "t",
+      "stance": "neu",
       "quote": "You've got two weeks\nto get them to accept you."
     },
     {
       "block": 339,
       "speaker": "g",
+      "stance": "opp",
       "quote": "You make it sound like\nwe are playing a game."
     },
     {
       "block": 340,
       "speaker": "t",
+      "stance": "opp",
       "quote": "It is. We are. Isn't saving your life\nworth a little game?"
     },
     {
       "block": 341,
       "speaker": "g",
+      "stance": "neu",
       "quote": "What do you want me to do?"
     },
     {
       "block": 342,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Do you mind physical labour?"
     },
     {
       "block": 343,
       "speaker": "g",
+      "stance": "ally",
       "quote": "No!"
     },
     {
       "block": 344,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Dogville has offered you two weeks."
     },
     {
       "block": 345,
       "speaker": "t",
+      "stance": "neu",
       "quote": "Now you offer them..."
     }
   ],
@@ -485,47 +597,101 @@
       {
         "a": "b",
         "b": "g",
-        "weight": 1
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
       },
       {
         "a": "b",
         "b": "c",
-        "weight": 2
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
       },
       {
         "a": "c",
         "b": "f",
-        "weight": 2
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
       },
       {
         "a": "c",
         "b": "t",
-        "weight": 16
+        "weight": 16,
+        "sign": "opp",
+        "stances": {
+          "opp": 13,
+          "ally": 3,
+          "neu": 0
+        }
       },
       {
         "a": "c",
         "b": "g",
-        "weight": 1
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
       },
       {
         "a": "f",
         "b": "t",
-        "weight": 2
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
       },
       {
         "a": "f",
         "b": "g",
-        "weight": 2
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
       },
       {
         "a": "g",
         "b": "t",
-        "weight": 14
+        "weight": 14,
+        "sign": "opp",
+        "stances": {
+          "opp": 9,
+          "ally": 1,
+          "neu": 4
+        }
       },
       {
         "a": "m",
         "b": "t",
-        "weight": 2
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
       }
     ]
   },
@@ -539,6 +705,27 @@
       "t"
     ]
   ],
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 9,
+    "balanced": false,
+    "frustration": 1,
+    "violations": [
+      "f-g (ally)"
+    ],
+    "bestSplit": [
+      [
+        "b",
+        "f",
+        "t"
+      ],
+      [
+        "c",
+        "g",
+        "m"
+      ]
+    ]
+  },
   "blurA": {
     "minWeight": 2,
     "graph": {
