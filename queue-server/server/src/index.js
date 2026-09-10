@@ -26,6 +26,7 @@ import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
 import { warmCaches } from './services/warmup.js';
+import { repairTensions, mirrorTensions } from './services/tagTensions.js';
 import { startPreGen } from './services/preGen.js';
 import { makeBooksHandler } from './services/books.js';
 import { makeTagLensHandler } from './services/tagLens.js';
@@ -200,6 +201,18 @@ try {
 // read an empty table on the first boot after a deploy. Pure arithmetic, no model
 // calls, and it answers an empty index rather than throwing.
 buildTagCommunities();
+
+// Tag tensions: repair rows that stored the template word as their partner, and write
+// the missing half of an opposition that only ran one way. Both are pure SQL over data
+// already on disk — no model call, no network, no credit — and both are no-ops once the
+// data is clean. Deliberately NOT inside the warm-up: that whole block sits behind
+// PREGEN_ENABLED, which exists to gate calls that cost money, and putting a free repair
+// behind it meant the repair never ran in production at all.
+try {
+  const rep = repairTensions(db);
+  if (rep.seen) console.log(`[boot] tag tensions: ${rep.fixed} repaired, ${rep.stuck} left for a person`);
+  mirrorTensions(db);
+} catch (e) { console.error('Tag tension repair failed:', e.message); }
 
 // Regenerate the shared-knowledge briefing (.agents/current-state.md) at boot
 // (plan Part 6). Best-effort — it needs a git repo; on Railway there is none.

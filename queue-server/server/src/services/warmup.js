@@ -11,7 +11,7 @@
 // Anthropic API rate limits rather than firing 60+ entities at once.
 
 import { searchEntities } from './ontologyQuery.js';
-import { fillMissingTensions, repairTensions, mirrorTensions } from './tagTensions.js';
+import { fillMissingTensions } from './tagTensions.js';
 
 const CONCURRENCY = 1;
 const STAGGER_MS = 1500;
@@ -56,11 +56,9 @@ export async function warmCaches(db, { getBooks, getTagLens }) {
   }
 
   // Tag tensions ride the same warm-up: fire-and-forget, failures logged inside.
-  // The two repairs run first and are free — no model call, no network. They fix rows
-  // that stored the template word as their partner, and write the missing half of an
-  // opposition that only ran one way. Both are no-ops once the data is clean.
-  try { repairTensions(db); mirrorTensions(db); }
-  catch (e) { console.error('Tag tension repair failed:', e.message); }
+  // The two free repairs are NOT here — they run unconditionally at boot in index.js,
+  // because this whole function is behind PREGEN_ENABLED and a repair that costs
+  // nothing should not be gated by the switch that guards spending.
   fillMissingTensions(db).catch((e) => console.error('Tag tensions warm-up failed:', e.message));
 
   if (!jobs.length) {

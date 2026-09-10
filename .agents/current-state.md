@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-10T07:22:42.073Z
+Generated: 2026-09-10T20:20:39.128Z
 
 ## Components
 
@@ -38,6 +38,7 @@ Generated: 2026-09-10T07:22:42.073Z
 
 ## Plan backlog
 
+- self-diagnosis-fixes — **DONE** 2026-09-10
 - theme-clusters-are-too-small — DONE
 - the-horizontal-move — **DONE** 2026-09-10
 - where-the-corpus-does-not-connect — DONE
