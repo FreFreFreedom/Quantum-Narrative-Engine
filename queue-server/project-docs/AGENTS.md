@@ -438,6 +438,31 @@ if you had to add anything to make it self-contained, say what. He asked for thi
 standing (2026-08-22) because he cannot tell from the outside whether a queued
 task will land well, and a thin plan wastes a whole run before anyone notices.
 
+**Every engine, every conversation, no exception for "small" (restated 2026-09-09
+at his request).** Four more things a plan must carry, each learned by watching a
+plan nearly go out without them:
+
+- **The measurements you actually took, with their numbers.** If you probed the
+  data to decide the design — how many rows match, what the false-positive rate
+  is, whether a rule costs recall — put the results in the plan and say "do not
+  redo these". The agent cannot re-run your reasoning, and a plan that asserts
+  "this will work" without the number invites it to be re-litigated or, worse,
+  quietly contradicted.
+- **The honest yield, including what will disappoint.** Say how thin the result
+  will be and why that is a true fact about the data rather than a bug. Without
+  it, an agent meeting a disappointing number loosens a rule to make it look
+  better, and ships something worse than nothing.
+- **The existing functions to reuse, by path.** Name them — `services/x.js#fn` —
+  or the agent writes a second one beside the first. A stoplist, a mirror, a
+  validator: this repo already has each of them once.
+- **The traps that silently corrupt data**, spelled out as traps. Not "be
+  careful" — the specific wrong turn and what it breaks downstream.
+
+And when a plan's shape is dictated by something written down — a definition in
+`data-seed/docs/`, a rule in this file — **quote the source in the plan and say
+it is not to be designed around.** An agent that meets a constraint without its
+reason will treat it as an obstacle.
+
 ### Ship directly — no local test phase (hard)
 
 Antoine reviews quality by using the app. When he asks for a change and says
