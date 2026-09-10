@@ -5523,6 +5523,7 @@ function buildLevel(a, anchor) {
     ring: 0, tRing: 1, depth: descentStack.length,
     cam: { scale: k, x: (gW || 800) / 2 - k * anchor.x, y: (gH || 600) / 2 - k * anchor.y },
     back: { scale: camera.scale, x: camera.x, y: camera.y },   // the view to return to
+    camSettled: false, camFlightAt: gNow(),
   };
 }
 
@@ -5575,7 +5576,7 @@ async function startDescent(id) {
 // Up one level, not all the way out.
 function endDescent() {
   if (!descent) return;
-  descent.leaving = true; descent.tRing = 0;
+  descent.leaving = true; descent.tRing = 0; descent.camSettled = false; descent.camFlightAt = gNow();
   descent.parts.forEach(p => { p.tAlpha = 0; });
   requestRender();
 }
@@ -5617,13 +5618,21 @@ function stepDescent() {
     if (Math.abs(nd.x - gx) > 0.4) busy = true;
   });
 
-  // The camera goes to the level you are in, and back to where that level came from.
-  const goal = descent.leaving ? descent.back : descent.cam;
-  camera.scale = ease(camera.scale, goal.scale);
-  camera.x = ease(camera.x, goal.x);
-  camera.y = ease(camera.y, goal.y);
-  if (Math.abs(camera.scale - goal.scale) > 0.004 || Math.abs(camera.x - goal.x) > 0.5) busy = true;
-  if (typeof applyCamera === 'function') applyCamera();
+  // The camera flies to the level you are in, and back to where that level came from —
+  // then it is yours. Steering it on every frame meant a drag inside was undone the
+  // instant it was made; and calling applyCamera here stamped the flight as a user move,
+  // so nothing could tell the two apart. A move of yours mid-flight also ends the flight.
+  if (!descent.camSettled) {
+    const goal = descent.leaving ? descent.back : descent.cam;
+    if (gLastUserCameraMove > descent.camFlightAt) descent.camSettled = true;
+    else {
+      camera.scale = ease(camera.scale, goal.scale);
+      camera.x = ease(camera.x, goal.x);
+      camera.y = ease(camera.y, goal.y);
+      if (Math.abs(camera.scale - goal.scale) > 0.004 || Math.abs(camera.x - goal.x) > 0.5) busy = true;
+      else descent.camSettled = true;
+    }
+  }
 
   if (!busy && descent.leaving) {
     descentStack.pop();
