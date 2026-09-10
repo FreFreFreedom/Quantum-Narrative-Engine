@@ -32,6 +32,7 @@ export function makeTagPatternHandler(db) {
     const examples = searchEntities(db, { tag }).slice(0, 4);
     const out = await generateText({
       prompt: buildPrompt(tag, examples), feature: 'quick', maxTokens: 150, label: 'tagPattern',
+      claudeLastResort: true,
     });
     if (out.error) return out;
     const text = out.text;

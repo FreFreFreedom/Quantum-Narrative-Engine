@@ -84,6 +84,10 @@ export async function readPassage(id, { force = false } = {}) {
     maxTokens: 320,
     allowLongOutput: true,
     timeoutMs: 90_000,
+    // Someone pressed a button and is waiting: if every free lane is resting,
+    // ask Claude on the Mac rather than show a failure. No runner attached means
+    // this returns at once, so the ordinary path is unchanged.
+    claudeLastResort: true,
   });
   if (out.error || !out.text) return { error: out.error || 'generation_failed', message: out.message };
 

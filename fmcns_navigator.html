@@ -19867,7 +19867,7 @@ document.addEventListener('keydown', (e) => {
         if(d.error && !d.ok){
           var msg = d.error === 'no_plan'
             ? 'No plan yet — ask for the brief first, then send it to the queue.'
-            : (d.message || 'Something went wrong (' + d.error + ').');
+            : (d.message || d.text || 'Something went wrong (' + d.error + ').');
           e.msgs.push({ role: 'assistant', kind: 'chat', text: msg });
         } else if(d.prompt){
           e.promptId = (d.prompt.id || d.prompt.prompt_id) || e.promptId;

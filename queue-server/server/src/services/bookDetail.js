@@ -35,6 +35,9 @@ export function makeBookDetailHandler(db) {
     }
     const out = await generateText({
       prompt: buildPrompt(entity, book), feature: 'quick', maxTokens: 220, label: 'bookDetail',
+      // Clicked on demand, never pre-generated in bulk — so the Mac's Claude is a
+      // fair last resort when the free lanes are all resting.
+      claudeLastResort: true,
     });
     if (out.error) return out;
     const text = out.text;

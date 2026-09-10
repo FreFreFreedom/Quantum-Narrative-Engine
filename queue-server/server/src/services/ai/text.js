@@ -779,7 +779,13 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     failures.push(`claude-helper:${viaClaude?.message || 'unavailable'}`);
   }
 
-  const message = plainFailure(failures.join(' | '), timeoutMs);
+  // A chain can end without a single request being sent: one keyed free provider,
+  // every one of its models benched by the ledger. `failures` then holds only
+  // cooldown notes (or nothing at all), and the caller used to get an empty
+  // message — which the Room printed as a bare error code.
+  const message = attempted
+    ? (plainFailure(failures.join(' | '), timeoutMs) || 'That answer did not come back. Nothing was lost — send it again.')
+    : 'Every free lane is resting right now — they come back on their own. Wait a minute and send it again, or pick another model in the dropdown.';
   console.error(`[${label}] all backends failed — ${message}`);
   return { error: 'generation_failed', message };
 }
@@ -1107,6 +1113,11 @@ export async function generateTextStream({
   // moves to a new phase (a lookup, a retry on another lane). The Room shows it
   // where the three dots used to sit alone, so a minute of silence says what it
   // is doing. Never required — every caller may leave it null.
+  // Forwarded to generateText: with only one free provider keyed, a rate-limited
+  // Google leaves the chain empty and a person watching the Room gets nothing.
+  // The helper lane costs no money and returns instantly when no runner is
+  // attached, so it is the right last resort for a turn someone is waiting on.
+  claudeLastResort = false, helperWaitMs = null,
   cacheKey = null, tailReminder = null, onStatus = null,
 }) {
   const { defaults } = loadAiSettings();
@@ -1122,7 +1133,7 @@ export async function generateTextStream({
   // Not pointed at a metered lane → ordinary generateText, no notice needed:
   // nothing was promised and nothing was downgraded.
   if (!isMeteredProvider(providerId)) {
-    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder , onStatus });
+    const r = await generateText({ prompt, feature, maxTokens, label, model: hasExplicitProvider ? model : explicitModel, provider: hasExplicitProvider ? providerId : null, account: explicitAccount, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs });
     if (r?.text && onToken) onToken(r.text);
     return r;
   }
@@ -1132,7 +1143,7 @@ export async function generateTextStream({
   const fallback = async (notice) => {
     console.warn(`[${label}] paid lane unavailable — ${notice}`);
     if (onStatus) { try { onStatus('The paid lane is unavailable — answering on the free lane…'); } catch {} }
-    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus });
+    const r = await generateText({ prompt, feature: null, maxTokens, label, model: null, timeoutMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, tailReminder, onStatus, claudeLastResort, helperWaitMs });
     if (r?.text && onToken) onToken(r.text);
     return r?.text ? { ...r, notice } : { error: r?.error || 'generation_failed', message: r?.message, notice };
   };

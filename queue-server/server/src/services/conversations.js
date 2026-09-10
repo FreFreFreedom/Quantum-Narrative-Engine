@@ -1188,7 +1188,7 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
 
 async function runRoutedTurn({ convo, ctx, instruction = null, model, maxTokens, feature, label, includeProjectContext = true }) {
   const prompt = buildTurnPrompt({ convo, ctx, instruction, includeProjectContext });
-  return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000 });
+  return generateText({ prompt, feature, label, model, maxTokens, allowLongOutput: true, timeoutMs: 150_000, helperWaitMs: 120_000, claudeLastResort: true });
 }
 
 // The lookup tools, bound to this server's db. Passed to the CHAT turns only —
@@ -1290,6 +1290,11 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // for the times a question genuinely needs it, not a target.
     maxTokens,
     allowLongOutput: true, timeoutMs: 150_000, onToken, onStatus,
+    // Free lanes first, as everywhere else; but a person is watching this one, so
+    // if every free lane is rate-limited the question goes to Claude on the Mac
+    // rather than coming back as an error. Costs nothing when no runner is
+    // attached — runHelperJob returns at once in that case.
+    claudeLastResort: true, helperWaitMs: 120_000,
     // Stable per conversation, not per turn, so every turn of one thread hits
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
@@ -1333,7 +1338,7 @@ async function runChatTurn(convoId, userId, turn) {
     maxTokens,
     label: 'conversations:chat', tailReminder: voiceTailReminder(),
     allowLongOutput: true, timeoutMs: 150_000,
-    cacheKey: convoId,
+    cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
   });
   if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
@@ -1436,7 +1441,7 @@ async function runCheckTurn(convoId) {
   });
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: checkTokens,
-    label: 'conversations:check', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId,
+    label: 'conversations:check', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000, cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
   });
   if (result.error) return result;
   const laneTag = tagFromVia(result.via, lane.tag);
@@ -1467,7 +1472,7 @@ async function runSecondTurn(convoId) {
   const result = await generateTextStream({
     prompt, feature: lane.feature, model: null, maxTokens: secondTokens,
     label: 'conversations:second', tailReminder: voiceTailReminder(), allowLongOutput: true, timeoutMs: 150_000,
-    tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId,
+    tools: studioTools(), dispatchTool: studioDispatch, cacheKey: convoId, claudeLastResort: true, helperWaitMs: 120_000,
   });
   if (result.error) return result;
   const laneTag = tagFromVia(result.via, lane.tag);
