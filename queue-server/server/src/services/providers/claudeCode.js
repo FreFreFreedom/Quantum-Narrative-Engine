@@ -17,10 +17,16 @@ import { shq } from '../shellQuote.js';
 export const id = 'claude-code';
 export const label = 'Claude Code';
 
-const CLAUDE_BIN = process.env.CLAUDE_BIN || 'claude';
-
+// Read at call time, not at module load. ESM hoists every `import` above the
+// importing module's own body, so queue-runner.js's loadEnvFile() runs AFTER
+// this module has been evaluated — a CLAUDE_BIN set in .env was captured as
+// undefined and could never take effect. Under launchd that was fatal rather
+// than cosmetic: the plist runs `zsh -lc`, which never reads .zshrc, so ~/.local/bin
+// is off PATH and every Claude lane on the runner died with `spawn claude ENOENT`
+// while still reporting itself available. opencode.js#resolveBin already reads
+// its own env var lazily; this now matches it. Found 2026-09-09.
 export function resolveBin() {
-  return CLAUDE_BIN;
+  return process.env.CLAUDE_BIN || 'claude';
 }
 
 export function spawnEnv(extra = {}) {
