@@ -4336,7 +4336,10 @@ async function loadPeers(id) {
   if (!d || d.rung === null || (!d.alongside.length && !d.furtherAlong.length)) { host.innerHTML = ''; return; }
 
   const row = (p, showDelta) => {
-    const a = p.axes[0];
+    // leadAxis, never axes[0]: the server decides which axis ranked this peer, so the
+    // number printed here is the number the list was ordered by. Reading axes[0] instead
+    // is how this shipped wrong the first time.
+    const a = p.leadAxis;
     const tip = [
       a ? `${a.name}: ${a.mine} → ${a.theirs} (toward "${a.high}")` : 'Not scored on any axis this one is scored on.',
       p.sharedShapes.length ? 'Shares: ' + p.sharedShapes.join(', ') : '',

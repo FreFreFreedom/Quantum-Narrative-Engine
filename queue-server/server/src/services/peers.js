@@ -146,7 +146,17 @@ export function peersOf(db, entityId, { limit = PEER_CAP } = {}) {
       // because it is cheap signal between two entities that are already comparable.
       sharedTags: theirTags.filter((t) => myTags.has(t)),
     };
-  });
+  }).map((p) => ({
+    ...p,
+    // The axis this peer is RANKED on, decided here so a caller cannot rank by one number
+    // and print another. It shipped broken for exactly that reason: the card rendered
+    // axes[0] while the sort used the largest delta, so an entity scored on two axes was
+    // ordered by one and labelled with the other — Macbeth ranked at +0.65 and displayed
+    // +0.12. One place decides, and everything downstream reads it.
+    leadAxis: p.axes.length
+      ? p.axes.reduce((best, a) => (a.delta > best.delta ? a : best), p.axes[0])
+      : null,
+  }));
 
   const alongside = [...peers]
     .map((p) => ({ ...p, alikeness: alikeness(mine, p) }))
@@ -154,10 +164,9 @@ export function peersOf(db, entityId, { limit = PEER_CAP } = {}) {
     .sort((a, b) => b.alikeness - a.alikeness || a.name.localeCompare(b.name))
     .slice(0, limit);
 
-  const bestDelta = (p) => p.axes.reduce((m, a) => Math.max(m, a.delta), -Infinity);
   const furtherAlong = [...peers]
-    .filter((p) => p.axes.some((a) => a.delta > 0))
-    .sort((a, b) => bestDelta(b) - bestDelta(a) || a.name.localeCompare(b.name))
+    .filter((p) => p.leadAxis && p.leadAxis.delta > 0)
+    .sort((a, b) => b.leadAxis.delta - a.leadAxis.delta || a.name.localeCompare(b.name))
     .slice(0, limit);
 
   return {
@@ -184,7 +193,10 @@ function differenceFrom(db, entityId, peer, myTags, myProfile, myPostures) {
   return {
     peer: peer.name,
     peerId: peer.id,
-    onAxis: peer.axes.filter((a) => a.delta > 0).map((a) => `${a.name} ${a.mine} → ${a.theirs} (+${a.delta.toFixed(2)}, toward "${a.high}")`),
+    // Lead first, so the sentence names the same axis the ranking did.
+    onAxis: [peer.leadAxis, ...peer.axes.filter((a) => a !== peer.leadAxis)]
+      .filter((a) => a && a.delta > 0)
+      .map((a) => `${a.name} ${a.mine} → ${a.theirs} (+${a.delta.toFixed(2)}, toward "${a.high}")`),
     holdsPosturesYouDoNot: peer.postures.filter((p) => !myPostureNames.has(p.name)).map((p) => p.name),
     carriesShapesYouDoNot: peer.relationProfile.shapes.filter((s) => !myProfile.shapes.includes(s)),
     taggedThingsYouAreNot: tagsOf(db, peer.id).filter((t) => !myTags.has(t)),

@@ -90,6 +90,21 @@ assert.equal(cops.furtherAlong[0].axes.find((a) => a.key === 'guilt').direction,
 assert.equal(cops.alongside[0].id, 'office', 'and "who else is here" is a different order: the shared shape wins');
 assert.deepEqual(cops.alongside[0].sharedShapes, ['sh_prey']);
 
+// ── the number shown is the number sorted on ────────────────────────────────
+// This shipped wrong once: the card printed axes[0] while the sort used the largest
+// delta, so a peer scored on two axes was ordered by one number and labelled with
+// another. `leadAxis` is the single decision, and the ranking must agree with it.
+ent('twoaxis', 'institution', 'institution', 'Scored on both');
+score('twoaxis', 'guilt', 0.2);   // +0.02 from cops — small
+score('twoaxis', 'poss', 0.9);    // +0.70 from cops — the real gap
+const two = peersOf(db, 'cops').furtherAlong.find((p) => p.id === 'twoaxis');
+assert.equal(two.leadAxis.key, 'poss', 'the lead is the biggest gap, not the first axis listed');
+assert.equal(two.leadAxis.delta, 0.7);
+assert.notEqual(two.axes[0].key, 'poss', 'and axes[0] really is a different axis, so this test bites');
+const order = peersOf(db, 'cops').furtherAlong.map((p) => p.leadAxis.delta);
+assert.deepEqual(order, [...order].sort((a, b) => b - a), 'the list is ordered by the number it shows');
+assert.match(peersOf(db, 'cops').difference.onAxis[0], /Possession/, 'and the difference names that axis first');
+
 // every axis says a person assigned it
 for (const p of cops.furtherAlong) for (const a of p.axes) assert.equal(a.source, 'assigned');
 
