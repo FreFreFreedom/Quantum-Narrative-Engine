@@ -562,6 +562,43 @@ A throwaway demo of all three was made and deleted; the reasoning is in
   "runs on your Mac") — ship the control, put mechanism in a tooltip if it must be
   said at all. Full explanation belongs in chat/commit messages, not the UI.
 
+## The one pattern, and the two interiors (2026-09-10)
+
+`fractal_operational_core.md` **§20** is new and marked *forming*: relationship dynamics
+collapse to **one pattern, connection against freedom**; the 651 tags are the names
+dispositions take at places along it; and **the Integration Continuum is a fold, not a
+slope** — both ends are failures, holding both sides is the middle, so `guilt_as_engine` is
+two questions wearing one coat and a single float cannot say which. Also: inside and outside
+are **complements** (the repressed side is projected outward), which makes it checkable. Two
+things are deliberately unsettled — whether holding both is the midpoint or off the line, and
+whether each end takes one name or two. **Antoine declined the collapse test for now**; do not
+run it unless he asks.
+
+- **`services/tagTensions.js` already gives every tag one opposite it stands against** — 659
+  rows, model-written, served at `GET /api/ontology/tags/tensions`. Nobody had recorded that
+  this existed. It is the substrate the one-pattern work needs.
+- **It was a third corrupt and is now repaired.** Told to reply `against|why`, models wrote the
+  literal word: 211 rows stored `against: "against"` with the real partner at the head of the
+  sentence. `recover()` handles the four real shapes and a boot repair rescued **163**; the
+  other 48 never had a partner written separately and are left for a person, not guessed.
+  Oppositions also ran one way only (18 of 659 mutual); the missing halves are written and
+  marked `source='mirror'`. Live: 48 malformed, 132 mutual.
+- **Put a free repair on the unconditional boot path, never in `warmup.js`.** That whole
+  function sits behind `PREGEN_ENABLED`, which gates *spending* and is off in production — a
+  repair placed there silently never runs. Cost one deploy to learn.
+- **Dogville now carries signs** (`npm run dogville:anatomy`), so the corpus's only two
+  interiors are finally comparable. **It does not split cleanly** — frustration 1 — where the
+  Maxson household does, and that is the sharpest difference between them. §19's reading of
+  Tom as *a mediator* does **not** survive signing (both his heavy ties are opposed); that
+  section is corrected in place. Cue classes were not back-filled, so Dogville has no
+  sensitivity re-run and its graph must be taken whole.
+- The anatomy handle that `plans/cross-domain-healing-search.md` waits on is now testable
+  against two comparable graphs. Still unbuilt.
+
+Full design: `~/.claude/plans/so-the-vision-of-whimsical-pillow.md` (approved 2026-09-10) —
+Content and the Room become one surface, the picture follows the conversation, and the
+interior is the headline.
+
 ## Open / unfinished threads (don't start unless asked)
 
 - Two queue tasks have sat **paused** since 2026-08-10: an IMSDb script connector +
