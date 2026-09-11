@@ -9326,7 +9326,11 @@ function initRoom() {
   // in two different classes — .peek for the hover, .collapsed/.open for the
   // click — so they cannot fight: what a click opened, the mouse leaving can
   // never take away, and a peek never survives a click either way.
-  const ROOM_PEEK_MS = 320;
+  // How long a peeked panel waits after the mouse leaves. It is a grace period for
+  // one thing only — crossing the small gap between the button and the panel — so it
+  // is as short as that crossing allows. At 320ms the panel hung around long after
+  // the pointer had gone and the closing read as vague; at 140 it follows the mouse.
+  const ROOM_PEEK_MS = 140;
   // The in-panel chevron is gone: the toolbar button already opens and shuts this
   // column, and two controls for one thing is one too many in a 290px column.
   const zones = [
@@ -9394,19 +9398,48 @@ function initRoom() {
     z.panel.classList.add('peek');
     syncZoneBtns();
   };
-  const unpeekSoon = (z) => {
+  // Only one thing holds a peek open once the mouse has gone: a text field inside it
+  // that is actually being typed in. This used to be "anything inside has focus",
+  // which sounds the same and is not — a click leaves focus behind on whatever was
+  // clicked, so once a row or a button in the panel had been touched the panel stayed
+  // up for good and the mouse leaving did nothing at all.
+  const peekHeldByTyping = (z) => {
+    const a = document.activeElement;
+    return !!a && z.panel.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName || '');
+  };
+  // Where the pointer actually is, rather than where the last event said it went.
+  // `mouseleave` fires on the way to a child in some layouts, and a menu opened from
+  // inside the panel sits outside it in the DOM — the hit test answers both.
+  const pointerIsOn = (z, ev) => {
+    const el = ev && ev.clientX != null ? document.elementFromPoint(ev.clientX, ev.clientY) : null;
+    // A menu opened from a row is drawn on the body, not inside the panel, so it has
+    // to be named here or reaching for "Delete" would close the list under it.
+    if (el) return z.panel.contains(el) || z.btn.contains(el) || !!el.closest('.umenu');
+    return z.panel.matches(':hover') || z.btn.matches(':hover');
+  };
+  const peekHeld = (z) => peekHeldByTyping(z)
+    || (menuIsOpen() && openMenuNow && z.panel.contains(openMenuNow.anchor));
+  const unpeekSoon = (z, ev) => {
     if (!z.panel.classList.contains('peek')) return;
     stopPeekTimer(z);
     z.timer = setTimeout(() => {
       z.timer = null;
-      // Still in use — the pointer went into the panel or back onto its button, or
-      // something inside has focus — so wait another beat rather than snatching
-      // away a half-typed filter box.
-      if (z.panel.matches(':hover') || z.panel.contains(document.activeElement)
-          || z.btn.matches(':hover')) { unpeekSoon(z); return; }
+      if (pointerIsOn(z, ev) || peekHeld(z)) { unpeekSoon(z); return; }
       z.panel.classList.remove('peek');
     }, ROOM_PEEK_MS);
   };
+  // The decisive close. A mouse can leave a panel without ever firing mouseleave on
+  // it — moving fast, or crossing into an element that was re-drawn under the
+  // pointer — and then the panel just sat there. This watches the pointer itself and
+  // shuts any peeked panel the moment it is genuinely somewhere else. Cheap: it does
+  // nothing at all unless something is peeked.
+  document.addEventListener('mousemove', (ev) => {
+    for (const z of zones) {
+      if (!z.panel.classList.contains('peek')) continue;
+      if (pointerIsOn(z, ev) || peekHeld(z)) { stopPeekTimer(z); continue; }
+      if (!z.timer) unpeekSoon(z, ev);
+    }
+  }, { passive: true });
   const toggleZone = (z) => {
     dropAllPeeks();
     if (isRoomNarrow()) {
