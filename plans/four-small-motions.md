@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED 2026-09-11 |
+| **Status** | DONE (3 of 4) 2026-09-11 — the cross-fade shipped, was found broken, was fixed, and Antoine then asked for it to be removed outright (not a bug complaint — he just doesn't want it). Reverted the same day. The other three stayed. |
 | **Scope** | Frontend only — `fmcns_navigator.html` (+ the mandatory `cp` to `queue-server/public/index.html` before any deploy that ships this — see AGENTS.md). No backend change, no new endpoint, no model call, zero added cost. |
 | **Origin** | Four of six moves from the Motion Shelf (built live in a terminal session, not saved to the repo — this plan is the durable record) that Antoine picked by name: the card lift, the mode cross-fade, the anchored-popup open, and Room answers arriving a beat at a time. |
 | **Shared rule** | Reuse the app's own motion tokens — `--t-fast: 140ms`, `--t-med: 220ms`, `--t-slow: 350ms`, `--ease: cubic-bezier(.2,.7,.3,1)` (`fmcns_navigator.html:73`) — and the existing global `prefers-reduced-motion` kill switch (`:176`, and `REDUCED_MOTION` at `:6039`). No new easing curve, no new duration scale. |
@@ -35,7 +35,16 @@ showed once you look past the label.
 mentioned here only so it isn't assumed to be included; do it as a one-line
 follow-up once this lands, not bundled in.
 
-## 2. Modes cross-fade, not jump-cut
+## 2. Modes cross-fade, not jump-cut — REVERTED
+
+Built, shipped, found broken (the leaving panel squeezed the row instead of
+dissolving — a CSS specificity bug, `#mapApp`/`#coreApp`'s own id-level
+`position:relative` beat the plain `.mode-leaving` class), fixed and verified
+live. Antoine then said he doesn't like it and asked for it out — not a
+complaint about the fix, a preference against the feature itself. Reverted:
+`setMode` is back to the plain hard switch it was before this plan, and the
+`.mode-leaving` rule/`transition` addition are gone. Left in this plan as the
+record of what was tried, once fixed, and why it isn't there.
 
 **Where:** `setMode(m)` at `fmcns_navigator.html:8884`. It hard-switches three
 panels — `#app` (`display: flex`/`none`), `#mapApp` and `#coreApp` (`.open`

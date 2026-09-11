@@ -2366,22 +2366,7 @@ button:active { transform: translateY(1px) scale(.99); }
 @keyframes fmcnsFade { from { opacity:0; } to { opacity:1; } }
 .uc { animation: fmcnsRise .24s var(--ease) backwards; }
 .ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
-#mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); transition: opacity var(--t-fast) var(--ease); }
-/* The mode being left, mid cross-fade — see setMode(). Its display only
-   actually flips off once this finishes, so it overlaps the incoming panel's
-   own fmcnsFade-in above instead of vanishing on the same frame. */
-/* Pulled out of the flex row for the duration of the fade: #app/#mapApp/#coreApp
-   are siblings in .app-shell's flex row, so leaving one at display:flex while the
-   incoming one also shows would squeeze both to half-width instead of one
-   dissolving into the other. position:fixed removes it from that row and holds
-   it over the same viewport rect the row already occupies.
-   Compounded with the id (#app.mode-leaving, not just .mode-leaving): #mapApp and
-   #coreApp each set position:relative directly on their id selector, which beats
-   a bare class on specificity alone — the plain-class version of this rule was
-   silently overridden on exactly the two panels that needed it, so leaving Map or
-   Architecture never actually detached from the row; leaving Content (.wrap sets
-   position:relative as a class, not on #app's id) happened to work by accident. */
-#app.mode-leaving, #mapApp.mode-leaving, #coreApp.mode-leaving { opacity:0; position:fixed; inset:0; pointer-events:none; }
+#mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
 /* ─── One segmented control ────────────────────────────────────────────────────
    Every row of mutually exclusive choices in the app: the Content view picker, the
    Architecture layouts and layers, the Flow filters, the suggestion filters, the build
@@ -8936,25 +8921,9 @@ function setMode(m) {
     b.classList.toggle('active', m === mode);
     b.setAttribute('aria-selected', String(m === mode));
   });
-  // Content/Map/Architecture cross-fade instead of jump-cutting. The incoming
-  // panel shows right away and fades itself in (the fmcnsFade animation, just
-  // above); whichever panel was showing gets a short fade-out first
-  // (.mode-leaving) and only actually hides once that finishes, so the two
-  // overlap instead of one vanishing the instant the other appears.
-  const MODE_PANEL_ID = { content: 'app', map: 'mapApp', core: 'coreApp' };
-  Object.keys(MODE_PANEL_ID).forEach((mode) => {
-    if (mode === m) return;
-    const el = document.getElementById(MODE_PANEL_ID[mode]);
-    const shown = mode === 'content' ? el.style.display !== 'none' : el.classList.contains('open');
-    if (!shown) return;
-    const hide = () => { if (mode === 'content') el.style.display = 'none'; else el.classList.remove('open'); };
-    if (REDUCED_MOTION) { hide(); return; }
-    el.classList.add('mode-leaving');
-    setTimeout(() => { el.classList.remove('mode-leaving'); hide(); }, 140);
-  });
-  if (m === 'content') document.getElementById('app').style.display = 'flex';
-  if (m === 'map') document.getElementById('mapApp').classList.add('open');
-  if (m === 'core') document.getElementById('coreApp').classList.add('open');
+  document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
+  document.getElementById('mapApp').classList.toggle('open', m==='map');
+  document.getElementById('coreApp').classList.toggle('open', m==='core');
   activeCardHost = m==='map' ? 'mapCardHost' : 'cardHost';
   if (m==='map') initMap();
   if (m==='core') initCore(); else teardownCore();
