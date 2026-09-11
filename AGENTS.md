@@ -419,6 +419,27 @@ thing you are looking at is the thing you would hit.
 **No explaining inside the app.** Ship the control, not the paragraph. Helper text
 belongs in a `title` tooltip or nowhere.
 
+**Every sidebar is draggable, and comes back exactly as it was left (hard, Antoine
+2026-09-11).** His words: *"whenever we have a sidebar, I want it to be adjustable and
+this setting saved — so if we adjust it and come back later, that's the same adjustment
+that is still there. If the bar is closed it's going to be closed, if it's open it's
+going to be open."* Two separate things are kept per panel: **how wide** and **whether
+it was open**. A new side panel is not finished until it has both.
+
+Use `initSideResize({ panel, handle, prop, key, min, max, grows })` — one helper, all
+four panels on it. Adding a fifth is one row in `initSidebarWidths()` plus a
+`<div class="side-resize side-resize--left|--right">` inside the panel. Do not hand-roll
+a second drag.
+
+The rule that makes it work: **the width goes into a CSS custom property, never an
+inline `width`.** An inline width outranks every class rule, so it beats a collapsed
+panel's own `width:0` — the Attached column used to clear and restore its inline style
+on every collapse to work around exactly that, which is two states fighting over one
+property. With a variable the class says whether the panel is open and the variable says
+how wide "open" means, and they cannot contradict each other. Below 821px the property is
+removed entirely: there every panel is a fixed-width overlay, and a remembered 460px
+column would cover the screen.
+
 **A sprite icon needs its stroke declared by whatever contains it.** Every symbol in
 `#ic-*` is drawn as an unfilled stroke, and nothing in the file sets that globally —
 each container repeats `fill:none; stroke:currentColor; stroke-width:1.5` in its own

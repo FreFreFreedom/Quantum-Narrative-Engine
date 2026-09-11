@@ -843,14 +843,27 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
-.room-threads { width:250px; min-width:220px; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
-.room-cards { position:relative; width:290px; min-width:250px; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
-/* Drag handle for the resizable width (plan "room-sidebar-fixes") — a thin strip
-   over the panel's left border, hidden while the panel is collapsed since there
-   is nothing to resize then. */
-.room-cards-resize { position:absolute; top:0; left:-3px; bottom:0; width:6px; cursor:col-resize; z-index:var(--z-base); }
-.room-cards-resize:hover, .room-cards-resize.is-dragging { background:var(--c-border-2); }
-.room-cards.collapsed .room-cards-resize { display:none; }
+.room-threads { width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+.room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+/* ── Every sidebar is draggable, and remembers its width ──────────────────────
+   Antoine's standing rule for the whole app (AGENTS.md → "Designing the app's own
+   interface"): any side panel can be dragged wider or narrower, the width is kept,
+   and so is whether it was left open or shut.
+   A thin strip over the panel's own border. Hidden while the panel is collapsed —
+   there is nothing to resize then, and a handle floating over the conversation
+   would be a control with nothing behind it. */
+.side-resize { position:absolute; top:0; bottom:0; width:6px; cursor:col-resize; z-index:var(--z-base);
+  transition:background var(--t-fast) var(--ease); }
+.side-resize--right { right:-3px; }   /* panel on the left, handle on its right edge */
+.side-resize--left  { left:-3px; }    /* panel on the right, handle on its left edge */
+.side-resize:hover, .side-resize.is-dragging { background:var(--c-border-2); }
+.collapsed > .side-resize { display:none; }
+/* Content's two panels are a 44px spine until they are pinned, and only the pinned
+   state is a real column with an edge worth dragging. Unpinned, the handle would sit
+   on the spine's edge and resize something that is not on screen. */
+.left:not(.pinned) > .side-resize, .right:not(.pinned) > .side-resize { display:none; }
+/* Narrow, every panel is a fixed-width overlay with nothing to drag. */
+@media (max-width: 820px) { .side-resize { display:none; } }
 /* Collapsed on a wide window: the inline column shrinks to nothing so the
    conversation takes the room. The panel only ever holds a thin gap now, and
    the toolbar "Threads"/"Attached" buttons remain to bring it back. */
@@ -869,10 +882,10 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    --room-topbar is measured from the toolbar itself (syncRoomTopbar) rather than
    written here as a number, so it cannot go stale when the bar changes. */
 .room-threads.collapsed.peek { position:absolute; top:var(--room-topbar, 0px); left:0; bottom:0; z-index:var(--z-panel);
-  width:250px; min-width:0; max-width:92vw; padding:14px;
+  width:var(--threads-w, 250px); min-width:0; max-width:92vw; padding:14px;
   border-right-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
 .room-cards.collapsed.peek { position:absolute; top:var(--room-topbar, 0px); right:0; bottom:0; z-index:var(--z-panel);
-  width:290px; min-width:0; max-width:92vw; padding:14px;
+  width:var(--cards-w, 290px); min-width:0; max-width:92vw; padding:14px;
   border-left-color:var(--c-border); border-top:1px solid var(--c-border); box-shadow:var(--sh-md); }
 /* One tab row instead of five headings. Wraps to a second line rather than
    scrolling sideways — a column this narrow can spare 18px of height far more
@@ -2617,6 +2630,7 @@ button:active { transform: translateY(1px) scale(.99); }
 </aside>
   <div class="wrap" id="app">
   <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls(); collapsed-to-a-spine hover/pin behaviour in initFilterPanel()/syncFiltersActive() | backend: GET /api/ontology/facets, /api/ontology/clusters">
+    <div class="side-resize side-resize--right" id="filtersResize" title="Drag to resize"></div>
     <div class="left-inner">
       <div class="left-head">
         <button type="button" class="uicon panel-pin" id="filtersPin" aria-pressed="false" title="Keep the filters open (or press ] )" aria-label="Keep the filters open"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
@@ -2699,6 +2713,7 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
   <div class="right">
+    <div class="side-resize side-resize--left" id="detailsResize" title="Drag to resize"></div>
     <div class="right-inner">
       <div class="right-head">
         <button type="button" class="uicon panel-pin" id="detailsPin" aria-pressed="false" title="Keep the details open (or press \ )" aria-label="Keep the details open"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-nodes"/></svg></button>
@@ -2904,6 +2919,7 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
     <div class="ws-room" id="wsRoom" data-src="CORE ARCHITECTURE → Room: the roaming conversations (threads | the conversation | the attached cards) | fmcns_navigator.html: initRoom()/loadRoom()/renderRoom(), painted by studioEmbed() | backend: /api/convos/open, /api/convos/:id/subjects, /api/convos/:id/rename, services/conversations.js">
       <div class="room-threads" id="roomThreads">
+        <div class="side-resize side-resize--right" id="roomThreadsResize" title="Drag to resize"></div>
         <div class="room-newrow">
           <button type="button" class="ubtn ubtn--pill is-primary room-newbtn" id="roomNewBtn">＋ New chat</button>
           <button type="button" class="uicon room-collapse-btn" id="roomThreadsCollapse" title="Collapse the thread list" aria-label="Collapse the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg></button>
@@ -2932,7 +2948,7 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-convo" id="roomConvo"></div>
       </div>
       <div class="room-cards" id="roomCards">
-        <div class="room-cards-resize" id="roomCardsResize" title="Drag to resize"></div>
+        <div class="side-resize side-resize--left" id="roomCardsResize" title="Drag to resize"></div>
         <!-- One column, five things in it. They used to be five stacked sections,
              each with its own heading and its own fold-away chevron — six controls
              and five headings before any content, in a 290px column. A tab strip
@@ -3318,6 +3334,9 @@ async function boot() {
     // Same reason as the rail: the pin is applied before the shell is shown, so a
     // filters panel the user keeps open never flashes collapsed on load.
     applyFiltersPinned(filtersArePinned());
+    // Every sidebar's kept width, applied before the shell is shown so none of them
+    // flashes at its default width first.
+    initSidebarWidths();
     initFilterPanel();
     initDetailPanel();
     initNarrowPanels();
@@ -9128,20 +9147,86 @@ function setRoomTabCount(id, n) {
 // conversation it came from, and the shelf is the same shelf whichever thread is open.
 let roomPassages = [];
 let roomPassagesOpen = new Set();
-const ROOM_CARDS_WIDTH_KEY = 'fmcns_room_cards_width';
-const ROOM_CARDS_MIN_W = 250, ROOM_CARDS_MAX_W = 480;
-// Applies the saved custom width, or lets the CSS default/collapsed/narrow rules
-// take over — an inline style would otherwise outrank .room-cards.collapsed's own
-// width:0 (plan "room-sidebar-fixes"), so this clears it whenever the panel is
-// collapsed or the layout is the narrow overlay one, which has its own fixed width.
-function applyRoomCardsWidth() {
-  const panel = document.getElementById('roomCards');
-  if (!panel) return;
-  const narrow = window.matchMedia('(max-width: 819px)').matches;
-  if (narrow || panel.classList.contains('collapsed')) { panel.style.width = ''; return; }
-  let saved = null;
-  try { saved = Number(localStorage.getItem(ROOM_CARDS_WIDTH_KEY)); } catch (e) {}
-  panel.style.width = (saved && saved >= ROOM_CARDS_MIN_W && saved <= ROOM_CARDS_MAX_W) ? saved + 'px' : '';
+// ── Draggable sidebars ───────────────────────────────────────────────────────
+// Antoine's standing rule, given 2026-09-11 for the whole app and written into
+// AGENTS.md: every side panel can be dragged to the width he wants, that width is
+// kept, and so is whether he left it open or shut.
+//
+// The width is written as a CSS CUSTOM PROPERTY, never as an inline `width`. That is
+// the whole trick. An inline width outranks every class rule, so it beats a collapsed
+// panel's own `width:0` — the Attached column used to work around exactly that by
+// clearing its inline style on every collapse and putting it back afterwards, which
+// is two states fighting over one property. A variable keeps them apart: the class
+// says whether the panel is open, the variable says how wide open means.
+//
+// Above the narrow breakpoint only. Below it every panel is a fixed-width overlay,
+// and a remembered 460px column would cover the whole screen.
+const SIDE_WIDE = '(min-width: 821px)';
+function initSideResize({ panel, handle, prop, key, min, max, grows }) {
+  if (!panel || !handle) return () => {};
+  const wide = () => window.matchMedia(SIDE_WIDE).matches;
+  const read = () => { try { return Number(localStorage.getItem(key)) || 0; } catch (e) { return 0; } };
+  const apply = () => {
+    const w = read();
+    // Out of range, unset, or a narrow window: hand the width back to the stylesheet,
+    // which has a default for every breakpoint.
+    if (!wide() || !(w >= min && w <= max)) panel.style.removeProperty(prop);
+    else panel.style.setProperty(prop, w + 'px');
+  };
+  let dragging = false, startX = 0, startW = 0;
+  handle.addEventListener('mousedown', (e) => {
+    if (!wide() || panel.classList.contains('collapsed')) return;
+    dragging = true;
+    startX = e.clientX;
+    startW = panel.getBoundingClientRect().width;
+    handle.classList.add('is-dragging');
+    // Without this the drag selects the text it passes over, which then highlights
+    // half the conversation the moment the mouse is let go.
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    // A panel on the left grows as the mouse goes right; one on the right grows as
+    // it goes left. `grows` says which, so one function serves both sides.
+    const delta = grows === 'right' ? (e.clientX - startX) : (startX - e.clientX);
+    panel.style.setProperty(prop, Math.min(max, Math.max(min, startW + delta)) + 'px');
+  });
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('is-dragging');
+    document.body.style.userSelect = '';
+    try { localStorage.setItem(key, String(Math.round(panel.getBoundingClientRect().width))); } catch (e) {}
+  });
+  // Crossing the breakpoint puts the kept width back, or takes it away.
+  window.addEventListener('resize', apply);
+  apply();
+  return apply;
+}
+
+// The four sidebars, all on the one helper. A new one joins by adding a row here and
+// a handle div in its markup — nothing else.
+let applyRoomCardsWidth = () => {};
+function initSidebarWidths() {
+  const el = (id) => document.getElementById(id);
+  const q = (sel) => document.querySelector(sel);
+  applyRoomCardsWidth = initSideResize({
+    panel: el('roomCards'), handle: el('roomCardsResize'),
+    prop: '--cards-w', key: 'fmcns_room_cards_width', min: 250, max: 480, grows: 'left',
+  });
+  initSideResize({
+    panel: el('roomThreads'), handle: el('roomThreadsResize'),
+    prop: '--threads-w', key: 'fmcns_room_threads_width', min: 200, max: 420, grows: 'right',
+  });
+  initSideResize({
+    panel: q('.left'), handle: el('filtersResize'),
+    prop: '--filters-w', key: 'fmcns_filters_width', min: 180, max: 420, grows: 'right',
+  });
+  initSideResize({
+    panel: q('.right'), handle: el('detailsResize'),
+    prop: '--details-w', key: 'fmcns_details_width', min: 280, max: 560, grows: 'left',
+  });
 }
 
 // The height of the Room's toolbar, published to CSS so a peeked side panel can
@@ -9381,37 +9466,8 @@ function initRoom() {
     syncZoneBtns();
   });
   syncZoneBtns();
-  // Resizable width (plan "room-sidebar-fixes"): a drag handle on the panel's own
-  // left border. Only meaningful in the wide, inline-column layout — the narrow
-  // breakpoint gives the panel a fixed overlay width of its own.
-  const resizeHandle = document.getElementById('roomCardsResize');
-  if (resizeHandle) {
-    let dragging = false, startX = 0, startW = 0;
-    resizeHandle.addEventListener('mousedown', (e) => {
-      if (isRoomNarrow() || cards.classList.contains('collapsed')) return;
-      dragging = true;
-      startX = e.clientX;
-      startW = cards.getBoundingClientRect().width;
-      resizeHandle.classList.add('is-dragging');
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!dragging) return;
-      // The panel sits on the right edge, with the handle on its left border, so
-      // dragging left (a shrinking clientX) grows it.
-      const w = Math.min(ROOM_CARDS_MAX_W, Math.max(ROOM_CARDS_MIN_W, startW - (e.clientX - startX)));
-      cards.style.width = w + 'px';
-    });
-    window.addEventListener('mouseup', () => {
-      if (!dragging) return;
-      dragging = false;
-      resizeHandle.classList.remove('is-dragging');
-      document.body.style.userSelect = '';
-      try { localStorage.setItem(ROOM_CARDS_WIDTH_KEY, String(Math.round(cards.getBoundingClientRect().width))); } catch (e) {}
-    });
-  }
-  applyRoomCardsWidth();
+  // The drag handles for all four sidebars live on one shared helper now — see
+  // initSidebarWidths(), called from boot().
   // Every sub-section stacked in the Attached column — Attached itself, Mind,
   // Extraction, Ideas — can be shut on its own, independent of the others and of
   // the whole panel (roomCardsCollapse). The choice is remembered per browser,
