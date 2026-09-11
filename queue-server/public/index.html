@@ -9181,7 +9181,10 @@ let roomNote = '', roomNoteErr = false, roomThreadsNote = '';
 // The picker's own copies of the two lists the Flow owns. Fetched here rather
 // than by calling loadSuggestions(), which also kicks off a world-look sync per
 // suggestion — work the picker has no use for.
-let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null, roomPickNotes = null;
+let roomPickIdeas = null, roomPickSuggestions = null, roomPickPlans = null, roomPickNotes = null,
+    roomPickFiles = null;   // was assigned in four places and declared in none, so reading it
+                            // before the picker had ever been opened threw, and the throw took
+                            // the attached-card list down with it
 const ROOM_SEL_KEY = 'fmcns_room_thread';
 // Whether each side zone is being kept open. Not saved before this, so shutting
 // the thread list to read something long meant shutting it again on every

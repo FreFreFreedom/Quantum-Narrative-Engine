@@ -1,0 +1,8 @@
+[     200ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://www.chromium.org/developers/design-documents/create-amazing-password-forms) %o @ https://quantum-narrative-engine-production.up.railway.app/:0
+[     639ms] ReferenceError: roomPickFiles is not defined
+    at roomPickRows (https://quantum-narrative-engine-production.up.railway.app/:11019:3)
+    at roomCardTitle (https://quantum-narrative-engine-production.up.railway.app/:9801:17)
+    at https://quantum-narrative-engine-production.up.railway.app/:10185:49
+    at Array.map (<anonymous>)
+    at renderRoomCards (https://quantum-narrative-engine-production.up.railway.app/:10182:13)
+    at loadRoomSubjects (https://quantum-narrative-engine-production.up.railway.app/:9778:3)
