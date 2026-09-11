@@ -925,7 +925,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
   border-bottom:1px solid var(--c-border); color:var(--c-ink-5);
   transition:border-color var(--t-fast) var(--ease); }
 .room-search:focus-within { border-bottom-color:var(--c-border-3); }
-.room-search .ic { width:13px; height:13px; flex:none; }
+/* The sprite's symbols are drawn as strokes, and nothing in this file sets that
+   globally — each container states it. Without these four the magnifier's circle
+   fills solid and its handle disappears, leaving a dot beside the field. */
+.room-search .ic { width:13px; height:13px; flex:none; display:block;
+  fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 /* type=search paints its own box and its own clear button in WebKit; this is a line
    under a field, not a box, so both are turned off rather than styled around. */
 .room-search input { flex:1; min-width:0; border:none; background:none; color:var(--c-ink);
@@ -953,7 +957,8 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
   color:var(--c-ink-4); border-radius:var(--r-sm); cursor:pointer; opacity:0;
   display:inline-flex; align-items:center; justify-content:center;
   transition:opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
-.room-rowmore .ic { width:14px; height:14px; }
+.room-rowmore .ic { width:14px; height:14px; display:block;
+  fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
 .room-row:hover .room-rowmore, .room-row.is-sel .room-rowmore { opacity:1; }
 .room-rowmore:focus-visible, .room-rowmore[aria-expanded="true"] { opacity:1; }
 .room-rowmore:hover { background:var(--c-surface-3); color:var(--c-ink); }
