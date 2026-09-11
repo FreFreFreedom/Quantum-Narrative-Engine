@@ -1002,16 +1002,20 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    identical icons reads as a row of icons, not as five different things.
    The hairline under it stays: without it the name sits straight on the first line
    of the answer and the two read as one paragraph. */
-.room-toolbar { gap:8px; flex-wrap:nowrap; padding:3px 10px; }
+.tv-toolbar.room-toolbar { gap:8px; flex-wrap:nowrap; padding:3px 10px; }
 .room-toolbar .uicon { width:24px; height:24px; }
 .room-toolbar .uicon .ic { width:14px; height:14px; }
-.room-titlebtn { display:flex; align-items:center; gap:5px; flex:1; min-width:0;
+.room-titlebtn { display:flex; align-items:center; gap:5px; flex:0 1 auto; min-width:0; max-width:100%;
   padding:3px 7px; border:1px solid transparent; border-radius:var(--r-sm);
   background:none; color:inherit; font:inherit; text-align:left; cursor:pointer;
   transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
 .room-titlebtn:hover:not(:disabled) { background:var(--c-surface); border-color:var(--c-border); }
 .room-titlebtn[aria-expanded="true"] { background:var(--c-surface-2); border-color:var(--c-border-2); }
 .room-titlebtn:disabled { cursor:default; opacity:.55; }
+/* The name hugs its text, so something has to take the slack and hold the attached
+   toggle against the right edge. The count does it — no spacer element for a job a
+   margin already does. */
+.room-toolbar .room-turns { margin-right:auto; padding-left:2px; }
 .room-titlechev { flex:none; font-size:9px; color:var(--c-ink-5); }
 .room-titlebtn:hover .room-titlechev { color:var(--c-ink-3); }
 .room-toolbar .room-turns { white-space:nowrap; }
