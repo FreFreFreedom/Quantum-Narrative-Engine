@@ -9201,6 +9201,40 @@ const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 
 function setRoomTabCount(id, n) {
   const el = document.getElementById(id);
   if (el) el.textContent = n ? String(n) : '';
+  syncRoomTabs();
+}
+
+/* A tab appears only while its pane holds something — his own rule, that an empty
+   section is worse than no section, applied to the strip itself. Five tabs in a 290px
+   column needed two rows to say that four of them were empty; Extraction was blank
+   unless a file was being read, which is nearly always.
+
+   The tab you are standing on always stays, whatever it holds, or the strip would
+   drop the thing you are looking at from under you. */
+const ROOM_TAB_HAS = {
+  attached: () => roomAttachedCards().length > 0 || roomPickOpen,
+  passages: () => roomPassages.length > 0,
+  ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning,
+  mind: () => roomMind.length > 0,
+  extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
+};
+function syncRoomTabs() {
+  const strip = document.getElementById('roomTabs');
+  if (!strip) return;
+  strip.querySelectorAll('[data-room-pane]').forEach((b) => {
+    const k = b.getAttribute('data-room-pane');
+    const has = ROOM_TAB_HAS[k];
+    let keep = true;
+    try { keep = !has || has(); } catch (e) { keep = true; }
+    b.hidden = !keep && !b.classList.contains('active');
+  });
+  // Attached is the one that can end up with no tab and nowhere to go back to, since
+  // its cards now live against the composer. If the strip would be empty, it stays.
+  const anyShown = [...strip.querySelectorAll('[data-room-pane]')].some(b => !b.hidden);
+  if (!anyShown) {
+    const first = strip.querySelector('[data-room-pane="attached"]');
+    if (first) first.hidden = false;
+  }
 }
 // The kept lines. Global rather than per-thread on purpose: a passage outlives the
 // conversation it came from, and the shelf is the same shelf whichever thread is open.
@@ -10151,6 +10185,7 @@ function renderRoomCards() {
   const slots = Math.max(1, roomMax - 1);
   const count = document.getElementById('roomCardCount');
   if (count) count.textContent = roomSel ? cards.length + '/' + slots : '';
+  syncRoomTabs();
   const add = document.getElementById('roomAttachBtn');
   if (add) {
     add.disabled = !roomSel || (!roomPickOpen && cards.length >= slots);
@@ -10295,6 +10330,7 @@ function wireMindWhy(root) {
 }
 
 function renderRoomMind() {
+  syncRoomTabs();
   const list = document.getElementById('roomMindList');
   const count = document.getElementById('roomMindCount');
   if (!list) return;

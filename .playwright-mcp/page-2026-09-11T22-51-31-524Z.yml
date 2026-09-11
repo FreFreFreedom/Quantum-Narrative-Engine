@@ -1,0 +1,4 @@
+- generic [ref=f4e2]:
+  - heading "FMCNS Fractal Navigator" [level=2] [ref=f4e3]
+  - textbox "Password" [ref=f4e4]: Ljozb8zri30012!
+  - button "Connect" [ref=f4e5] [cursor=pointer]
