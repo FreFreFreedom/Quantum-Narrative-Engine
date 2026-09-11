@@ -994,7 +994,26 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 /* One line, always. .tv-toolbar wraps by default, which in a squeezed middle
    column dropped the five toolbar icons onto a second row — a band created by
    the very row meant to save one. The title gives up its width instead. */
-.room-toolbar { gap:8px; flex-wrap:nowrap; }
+/* ── The Room's top bar ───────────────────────────────────────────────────────
+   Antoine chose this from mockups (B and D): 46px of band came down to 34, and five
+   icons in a row came down to two. The conversation's NAME is the button — click it
+   for rename, star, fork, start fresh, type, delete — which is where every one of
+   those belongs, since each acts on this thread and nothing else. A row of five
+   identical icons reads as a row of icons, not as five different things.
+   The hairline under it stays: without it the name sits straight on the first line
+   of the answer and the two read as one paragraph. */
+.room-toolbar { gap:8px; flex-wrap:nowrap; padding:3px 10px; }
+.room-toolbar .uicon { width:24px; height:24px; }
+.room-toolbar .uicon .ic { width:14px; height:14px; }
+.room-titlebtn { display:flex; align-items:center; gap:5px; flex:1; min-width:0;
+  padding:3px 7px; border:1px solid transparent; border-radius:var(--r-sm);
+  background:none; color:inherit; font:inherit; text-align:left; cursor:pointer;
+  transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
+.room-titlebtn:hover:not(:disabled) { background:var(--c-surface); border-color:var(--c-border); }
+.room-titlebtn[aria-expanded="true"] { background:var(--c-surface-2); border-color:var(--c-border-2); }
+.room-titlebtn:disabled { cursor:default; opacity:.55; }
+.room-titlechev { flex:none; font-size:9px; color:var(--c-ink-5); }
+.room-titlebtn:hover .room-titlechev { color:var(--c-ink-3); }
 .room-toolbar .room-turns { white-space:nowrap; }
 .room-toolbar .arch-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .room-toolacts { display:flex; align-items:center; gap:2px; flex:none; }
@@ -2939,14 +2958,13 @@ button:active { transform: translateY(1px) scale(.99); }
       <div class="room-main">
         <div class="tv-toolbar room-toolbar">
           <button type="button" class="uicon" id="roomThreadsBtn" title="Threads" aria-label="Show or hide the thread list" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-queue"/></svg></button>
-          <span class="arch-title" id="roomTitle"></span>
+          <button type="button" class="room-titlebtn" id="roomTitleBtn" aria-haspopup="menu" title="Everything about this conversation">
+            <span class="arch-title" id="roomTitle"></span>
+            <span class="room-titlechev" aria-hidden="true">▾</span>
+          </button>
           <input class="room-renamebox" id="roomRenameBox" hidden aria-label="Thread name" autocomplete="off">
           <span class="room-turns" id="roomTurns"></span>
           <span class="room-toolacts">
-            <button type="button" class="uicon" id="roomTypeBtn" title="Font and text size" aria-label="Font and text size" aria-haspopup="menu">Aa</button>
-            <button type="button" class="uicon" id="roomFreshBtn" title="Start fresh — what you said so far is folded into a short recap" aria-label="Start fresh">⟳</button>
-            <button type="button" class="uicon" id="roomForkBtn" title="Fork this thread — the same conversation so far, carried into a new one" aria-label="Fork this thread"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-fork"/></svg></button>
-            <button type="button" class="uicon" id="roomMoreBtn" title="More" aria-label="More actions for this thread" aria-haspopup="menu"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-more"></use></svg></button>
             <button type="button" class="uicon" id="roomCardsBtn" title="Attached cards" aria-label="Show or hide the attached cards" aria-expanded="true"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-cards"/></svg></button>
           </span>
         </div>
@@ -9269,23 +9287,12 @@ function initRoom() {
       thq.value = ''; roomThreadQ = ''; renderRoomThreads();
     };
   }
-  document.getElementById('roomForkBtn').onclick = () => roomForkThread(roomSel);
-  // Start fresh lives in the toolbar now. The button it stands for is still the
-  // conversation's own (studioEmbed paints it), so this presses that rather than
-  // reaching into resetConvo with a second copy of its state.
-  document.getElementById('roomFreshBtn').onclick = () => {
-    const b = document.querySelector('#roomConvo [data-se-act="reset"]');
-    if (b) b.click();
-  };
-  // Rename, name-it-for-me and delete are the rare ones, and delete used to sit
-  // a pixel from Fork in a row of five icons. One ⋯ instead.
-  document.getElementById('roomMoreBtn').onclick = (ev) => {
+  // The thread's name IS the menu. Everything that acts on this conversation — rename,
+  // star, fork, start fresh, type, delete — hangs off the one thing on screen that
+  // names it, instead of five identical icons in a row.
+  document.getElementById('roomTitleBtn').onclick = (ev) => {
     ev.stopPropagation();
     openRoomMoreMenu(ev.currentTarget);
-  };
-  document.getElementById('roomTypeBtn').onclick = (ev) => {
-    ev.stopPropagation();
-    openRoomTypeMenu(ev.currentTarget);
   };
   applyRoomType();
   const box = document.getElementById('roomRenameBox');
@@ -9878,10 +9885,8 @@ function renderRoomHead() {
   // A disabled button never gets the mouseleave that would end a peek, so losing
   // the thread has to end it here instead.
   if (!t) { const cardsEl = document.getElementById('roomCards'); if (cardsEl) cardsEl.classList.remove('peek'); }
-  ['roomForkBtn', 'roomMoreBtn', 'roomFreshBtn'].forEach((id) => {
-    const b = document.getElementById(id);
-    if (b) b.disabled = !t;
-  });
+  const titleBtn = document.getElementById('roomTitleBtn');
+  if (titleBtn) titleBtn.disabled = !t;
   const turns = document.getElementById('roomTurns');
   if (turns && !t) turns.textContent = '';
   if (!t) { roomEndRename(); killRoomMoreMenu(); }
@@ -9979,13 +9984,32 @@ window.addEventListener('scroll', killRoomTypeMenu, true);
    file. What it gains for free is the rule above Delete: a destructive row was flush
    against "Name it by what it is about", one mis-aimed pixel away. */
 function killRoomMoreMenu() { if (typeof closeMenu === 'function') closeMenu(); }
+// How many questions deep the open thread is, read off the conversation the Room is
+// already painting rather than kept a second time.
+function roomTurnCount() {
+  const el = document.querySelector('#roomConvo .se-count');
+  return el ? (Number(el.textContent) || 0) : 0;
+}
 function openRoomMoreMenu(btn) {
   if (!roomSel) return;
+  const t = roomThreads.find(x => x.id === roomSel) || {};
+  const turns = roomTurnCount();
+  // Two rows appear only when they would do something. Fork carries a conversation
+  // across, and there is nothing to carry from an empty one; Start fresh folds what
+  // has been said into a recap, and below a few turns there is nothing worth folding
+  // and the recap costs more than it saves. A control that cannot act is not shown.
   openMenu(btn, [
     { label: 'Rename it yourself', on: roomBeginRename },
     { label: 'Name it by what it is about', on: () => roomRetitleThread(roomSel) },
-    { label: Number((roomThreads.find(x => x.id === roomSel) || {}).starred) ? 'Remove the star' : 'Star this thread',
+    { label: Number(t.starred) ? 'Remove the star' : 'Star this thread',
       on: () => roomToggleStar(roomSel) },
+    (turns > 0 || turns >= 4) ? { sep: true } : null,
+    turns > 0 ? { label: 'Fork it — carry this conversation into a new one',
+      on: () => roomForkThread(roomSel) } : null,
+    turns >= 4 ? { label: 'Start fresh — fold what was said into a short recap',
+      on: roomStartFresh } : null,
+    { sep: true },
+    { label: 'Font and text size', on: () => openRoomTypeMenu(btn) },
     { sep: true },
     { label: 'Delete this thread', danger: true, on: () => roomDeleteThread(roomSel) },
   ]);
@@ -9996,7 +10020,7 @@ function openRoomMoreMenu(btn) {
 // — so this is how a thread he renamed once, or an old one, gets a real name.
 async function roomRetitleThread(id) {
   if (!id) return;
-  const btn = document.getElementById('roomMoreBtn');
+  const btn = document.getElementById('roomTitleBtn');
   if (btn) btn.disabled = true;
   try {
     await apiWrite('/api/convos/' + encodeURIComponent(id) + '/retitle', 'POST', {});
@@ -10009,12 +10033,20 @@ async function roomRetitleThread(id) {
   }
 }
 
+// Start fresh: fold what has been said into a short recap and carry on in the same
+// thread. The button it stands for is the conversation's own (studioEmbed paints it),
+// so this presses that rather than keeping a second copy of its state.
+function roomStartFresh() {
+  const b = document.querySelector('#roomConvo [data-se-act="reset"]');
+  if (b) b.click();
+}
+
 // Fork: carry this conversation, as it stands, into a new thread and open it.
 // Nothing is taken away from the original — this is a branch, not a move — so it
 // needs no confirm; the way back is the thread list, and Delete is next door.
 async function roomForkThread(id) {
   if (!id) return;
-  const btn = document.getElementById('roomForkBtn');
+  const btn = document.getElementById('roomTitleBtn');
   if (btn) btn.disabled = true;
   try {
     const out = await apiWrite('/api/convos/' + encodeURIComponent(id) + '/fork', 'POST', {});
@@ -10614,7 +10646,7 @@ async function roomNewThread() {
 function roomBeginRename() {
   const t = roomThreads.find(x => x.id === roomSel);
   if (!t) return;
-  const title = document.getElementById('roomTitle');
+  const title = document.getElementById('roomTitleBtn');
   const box = document.getElementById('roomRenameBox');
   box.value = t.title || '';
   box.hidden = false;
@@ -10624,7 +10656,7 @@ function roomBeginRename() {
 }
 
 function roomEndRename() {
-  const title = document.getElementById('roomTitle');
+  const title = document.getElementById('roomTitleBtn');
   const box = document.getElementById('roomRenameBox');
   if (!box || !title) return;
   box.hidden = true;
@@ -21194,9 +21226,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     host.querySelector('.se-count').textContent = n ? String(n) : '';
     // In the Room the head is hidden, so the count says what it means up in the
     // toolbar beside the thread's name instead of sitting on a strip of its own.
+    // Past ten only, and as a bare number. Below ten the count says nothing he cannot
+    // already feel from the scrollbar, and spelling out "13 questions" beside a name
+    // that is already being clipped spends the width on the wrong half of the bar.
     if(host.id === 'roomConvo'){
       var turnsEl = document.getElementById('roomTurns');
-      if(turnsEl) turnsEl.textContent = n ? n + (n === 1 ? ' question' : ' questions') : '';
+      if(turnsEl){
+        turnsEl.textContent = n >= 10 ? String(n) : '';
+        turnsEl.title = n ? n + (n === 1 ? ' question' : ' questions') : '';
+      }
     }
     host.querySelector('.se-cost').innerHTML = costLine(e);
     var sendBtn = host.querySelector('.se-send');
