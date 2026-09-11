@@ -1126,7 +1126,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-idea-round-head:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .room-idea-round-head .ic { width:12px; height:12px; flex:none; }
 .room-idea-round-body { padding:0 8px 8px; }
-.room-idea-usegroup { margin-bottom:8px; }
+.room-idea-usegroup { margin-bottom:8px; margin-right:6px; }
 .room-cardfilter { margin-bottom:8px; }
 .room-cardfilter .searchbox { margin-bottom:6px; }
 .room-chiprow { display:flex; flex-wrap:wrap; gap:5px; }
@@ -10208,6 +10208,7 @@ function roomIdeaRoundHtml(report, idx) {
     const facts = qInspireReviewFacts(report.review);
     const groupBtn = selList.length
       ? `<button type="button" class="ctrlbtn room-idea-usegroup" data-room-idea-usegroup="${qEscAttr(report.id)}">Use ${selList.length} selected idea${selList.length === 1 ? '' : 's'}</button>`
+        + `<button type="button" class="ctrlbtn room-idea-usegroup" data-room-idea-savegroup="${qEscAttr(report.id)}" title="Keep them as seeds, to come back to later">Save ${selList.length} selected idea${selList.length === 1 ? '' : 's'}</button>`
       : '';
     body = groupBtn + worldPartsHtml(report, { sel, facts, pickAction: 'room-idea-pick', scope: 'room-idea:' + report.id, useIdea: true });
   }
@@ -10255,7 +10256,30 @@ function roomIdeasHostClick(ev) {
     return;
   }
   const groupBtn = ev.target.closest('[data-room-idea-usegroup]');
-  if (groupBtn) roomUseIdeaGroup(groupBtn.getAttribute('data-room-idea-usegroup'));
+  if (groupBtn) { roomUseIdeaGroup(groupBtn.getAttribute('data-room-idea-usegroup')); return; }
+  const saveBtn = ev.target.closest('[data-room-idea-savegroup]');
+  if (saveBtn) roomSaveIdeaGroup(saveBtn.getAttribute('data-room-idea-savegroup'), saveBtn);
+}
+
+// Keep the ticked ideas: one seed each in the Seeds notebook, so a world idea
+// worth a second look survives the conversation that produced it.
+async function roomSaveIdeaGroup(reportId, btn) {
+  const report = roomIdeasReports.find(r => r.id === reportId);
+  const sel = roomIdeaSelFor(reportId);
+  if (!report || !sel.length) return;
+  const t = roomThreads.find((x) => x.id === roomSel);
+  const from = t && t.title ? `\n\n(Came out of a look at the world in the Room conversation "${t.title}".)` : '';
+  const picks = sel.map(key => report.parts?.[key.part_index]?.picks?.[key.pick_index]).filter(Boolean);
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    for (const pick of picks) {
+      await apiWrite('/api/travaux/ideas', 'POST', { title: worldPickTitle(pick).slice(0, 120), notes: worldIdeaFullText(pick) + from });
+    }
+    notify(`Saved ${picks.length} idea${picks.length === 1 ? '' : 's'} as seeds.`);
+    roomIdeaSel[reportId] = [];
+    loadIdeas();
+  } catch (err) { notify('Could not save: ' + err.message, { kind: 'error' }); }
+  renderRoomIdeas();
 }
 
 // Antoine's addition mid-plan: select several ideas in one round and ask the
