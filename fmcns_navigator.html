@@ -1368,6 +1368,18 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-quoted:hover button { opacity:1; }
 .se-quoted button:hover { color:var(--c-danger); opacity:1; }
 /* Take them all off at once, once there is more than one to take off. */
+/* A carried passage on a message already sent. One grey line, folded to its
+   first line however long the passage is, sitting above the words he typed and
+   never inside them. Clicking it walks back to the answer it came from. */
+.se-qfold { display:flex; align-items:baseline; gap:6px; max-width:80%; margin:0 0 5px; padding:2px 0 2px 8px;
+  border:none; border-left:2px solid var(--c-brand); background:none; font-family:var(--font-read);
+  font-size:var(--fs-sm); line-height:1.45; color:var(--c-ink-4); text-align:left; cursor:default; }
+.se-qfold.can-jump { cursor:pointer; }
+.se-qfold.can-jump:hover { color:var(--c-ink-2); }
+.se-qfold-n { flex:none; min-width:13px; height:13px; border-radius:var(--r-xs); background:var(--c-border);
+  color:var(--c-ink-4); font-family:var(--font-ui); font-size:var(--fs-2xs); line-height:13px; text-align:center; }
+.se-qfold-txt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.se-qfold.open .se-qfold-txt { white-space:normal; max-height:40vh; overflow:auto; }
 .se-quotes-clear { align-self:flex-start; background:none; border:none; cursor:pointer; font-family:inherit; font-size:var(--fs-xs);
   color:var(--c-ink-5); padding:1px 0 4px; }
 .se-quotes-clear:hover { color:var(--c-danger); }
@@ -20089,6 +20101,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.notice) out.notice = meta.notice;
         if (meta.checked) out.checked = meta.checked;
         if (meta.answered) out.answered = meta.answered;
+        if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
       }
       return out;
     });
@@ -20128,11 +20141,18 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // laneOverride: a lane for THIS send only, without disturbing the conversation's
   // sticky pick — what "answer this again on another model" needs. Undefined means
   // the sticky pick, exactly as before; null means Auto for this one turn.
-  function sendTurn(e, text, repaint, onDone, laneOverride){
+  function sendTurn(e, text, repaint, onDone, laneOverride, carried){
     text = String(text || '').trim();
     if(!text || !e.convoId || e.busy) return false;
     e.busy = true; e.draft = ''; e.note = ''; e.phase = '';
-    e.msgs.push({ role: 'user', kind: 'chat', text: text });
+    // `text` still carries the quoted passages folded in — that is what the model
+    // reads. `carried` keeps them apart for the screen, so his own message shows
+    // only the words he typed, with the passages as a folded line above it.
+    var typed = carried && carried.body ? String(carried.body).trim() : '';
+    var carriedQuotes = carried && carried.quotes && carried.quotes.length ? carried.quotes.slice() : null;
+    e.msgs.push({ role: 'user', kind: 'chat', text: text,
+      body: carriedQuotes && typed ? typed : undefined,
+      quotes: carriedQuotes && typed ? carriedQuotes : undefined });
     if(repaint) repaint();
     var sentAt = e.msgs.length;
     e.stream = '';
@@ -20156,9 +20176,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // (plan "chat-model-picker"). e.lane undefined (not loaded yet) omits the
       // key entirely, so the server falls back to whatever is already stored.
       body: JSON.stringify((function(){
+        var payload = { text: text };
+        if(carriedQuotes && typed){ payload.quotes = carriedQuotes; payload.body = typed; }
         var lane = laneOverride !== undefined ? laneOverride : e.lane;
-        if(laneOverride === undefined && e.lane === undefined) return { text: text };
-        return { text: text, override: lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : null };
+        if(laneOverride === undefined && e.lane === undefined) return payload;
+        payload.override = lane ? { provider: lane.provider, model: lane.model || null, account: lane.account || null } : null;
+        return payload;
       })()),
     })
       .then(function(r){ return readTurn(r, e, repaint); })
@@ -20343,7 +20366,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var at = -1;
     for(var i = 0; i < e.msgs.length; i++){ if(e.msgs[i].id === messageId){ at = i; break; } }
     if(at < 0) return;
-    var text = e.msgs[at].text || '';
+    // Only the words he typed come back to the box; the passages he had carried
+    // come back as chips, so a rewound question is editable rather than a wall of
+    // quoted text with his own sentence buried at the bottom.
+    var msg = e.msgs[at];
+    var text = msg.body || msg.text || '';
+    if(msg.quotes && msg.quotes.length) e.quotes = msg.quotes.slice();
     e.msgs = e.msgs.slice(0, at);
     e.marks = (e.marks || []).filter(function(mk){ return e.msgs.some(function(m){ return m.id === mk.message_id; }); });
     e.draft = text; e.draftForce = true; saveDraft(e);
@@ -20609,7 +20637,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       if(e.busy || !String(text || '').trim()) return;
       // Clear only once the message is actually on its way. Losing what someone
       // typed is worse than any error message.
-      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone)){
+      if(sendTurn(e, withQuote(e, text), repaint, opts.onDone, undefined,
+                  { body: text, quotes: (e.quotes || []).slice() })){
         input.value = ''; e.quotes = []; e.draft = '';
         saveDraft(e);
         grow(input);
@@ -21120,6 +21149,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         qbar.innerHTML = '';
       }
     }
+    // The folded quote lines on sent messages. Same move as the composer chips:
+    // go and read the passage where it was said, lit up in place.
+    log.querySelectorAll('[data-qjump]').forEach(function(el){
+      el.onclick = function(ev){
+        ev.stopPropagation();
+        var parts = String(el.getAttribute('data-qjump')).split(':');
+        var m = e.msgs[Number(parts[0])];
+        var q = m && m.quotes && m.quotes[Number(parts[1])];
+        if(!q) return;
+        var where = quoteMsg(q);
+        // No source message to walk back to (an answer that was still streaming
+        // when it was quoted): open the line in place rather than doing nothing.
+        if(!where){ el.classList.toggle('open'); return; }
+        jumpToPassage(log, where, quoteText(q));
+      };
+    });
     wireQuotePick(log, e, repaintHere);
 
     // The chapters strip. Above the composer with the quotes, because both are
@@ -21334,10 +21379,27 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
                  + (m.id ? '<button type="button" class="se-turnfork" data-se-fork="' + qEsc(m.id) + '" title="Branch from here — a new thread with everything up to this message and nothing after it">⑂</button>' : '')
                  + '</div>';
       }
+      // A carried passage is its own thing above the message, never inside it:
+      // one folded grey line per quote, and clicking it walks back to the answer
+      // it was taken from and lights the passage up there.
+      var foldHtml = '';
+      if (you && m.quotes && m.quotes.length) {
+        foldHtml = m.quotes.map(function(q, qi){
+          var qt = (typeof q === 'string' ? q : (q && q.text) || '');
+          var where = (typeof q === 'string' ? null : (q && q.msgId) || null);
+          return '<button type="button" class="se-qfold' + (where ? ' can-jump' : '')
+               + '" data-qjump="' + idx + ':' + qi + '"'
+               + (where ? ' title="Go back to where this was said"' : ' title="The passage this question is about"')
+               + '>' + (m.quotes.length > 1 ? '<span class="se-qfold-n">' + (qi + 1) + '</span>' : '')
+               + '<span class="se-qfold-txt">\u201c' + qEsc(qt) + '\u201d</span></button>';
+        }).join('');
+      }
+      var shown = (you && m.body) ? m.body : m.text;
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
            +  '<div class="se-who">' + who + tagHtml + '</div>'
+           +  foldHtml
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
-                    : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(m.text, !you, m.id || null) + '</div>')
+                    : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(shown, !you, m.id || null) + '</div>')
            +  actsHtml
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.

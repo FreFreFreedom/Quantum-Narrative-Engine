@@ -211,7 +211,7 @@ export function conversationsRoutes() {
         : null);
 
     if (!wantsStream) {
-      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override });
+      const out = await convos.sendMessage(req.params.id, { text: req.body?.text, userId: req.user?.id, override, quotes: req.body?.quotes, body: req.body?.body });
       if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
       return res.json(out);
     }
@@ -241,6 +241,11 @@ export function conversationsRoutes() {
         text: req.body?.text,
         userId: req.user?.id,
         override,
+        // Carried passages, kept apart from the words he typed: the model still
+        // gets them inside `text`, but the screen draws them as a folded line
+        // above his message instead of repeating them inside it.
+        quotes: req.body?.quotes,
+        body: req.body?.body,
         signal: cancel.signal,
         onToken: (t) => { if (!clientGone()) write({ type: 'token', text: t }); },
         // Progress lines. Same channel as the tokens, different type — an older

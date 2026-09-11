@@ -1957,7 +1957,7 @@ Respond with ONLY this JSON object and nothing else:
 // onToken, when supplied by the route, turns the ordinary text turn into a
 // streamed one. Slash commands stay non-streamed: they are structured actions
 // (plan, handoff, fold) whose value is the finished artefact, not the typing.
-export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, signal = null } = {}) {
+export async function sendMessage(convoId, { text, userId = 'antoine', onToken = null, onStatus = null, override = undefined, signal = null, quotes = null, body = null } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -2028,8 +2028,20 @@ export async function sendMessage(convoId, { text, userId = 'antoine', onToken =
   // prefix — the lane is chosen by the router, not by the words in the prompt.
   const sendText = turn.intent === 'forced' ? (turn.lane.forcedQuestion || trimmed) : trimmed;
   const mid = randomUUID();
-  db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text) VALUES (?,?,?,?,?)`)
-    .run(mid, convoId, 'user', 'chat', sendText);
+  // `text` keeps the carried passages folded in, so the model and every later
+  // reader of the transcript see what the question was about. `meta` keeps the
+  // two apart for the screen: the words he typed, and the passages as their own
+  // thing, so a long quote is never repeated inside his own message.
+  const quoteList = Array.isArray(quotes)
+    ? quotes
+      .map((q) => (typeof q === 'string' ? { text: q, msgId: null } : { text: String(q?.text || ''), msgId: q?.msgId || null }))
+      .filter((q) => q.text)
+      .slice(0, 20)
+    : [];
+  const typed = String(body || '').trim();
+  const userMeta = quoteList.length && typed ? JSON.stringify({ quotes: quoteList, body: typed }) : null;
+  db.prepare(`INSERT INTO convo_messages (id, convo_id, role, kind, text, meta) VALUES (?,?,?,?,?,?)`)
+    .run(mid, convoId, 'user', 'chat', sendText, userMeta);
   const out = onToken
     ? await runChatTurnStreaming(convoId, userId, onToken, turn, onStatus, signal)
     : await runChatTurn(convoId, userId, turn);
