@@ -14,6 +14,13 @@ and it uses the same endpoint the app itself uses (`POST /api/travaux/prompts`).
 he should not have to remember this exists. When a plan is approved in the terminal, offer
 to send it — don't wait to be asked.
 
+## Two hard rules, every time (restated by Antoine 2026-09-11)
+
+1. **The plan must stand alone** before it is sent, with no exception for a small one,
+   and you say so out loud each time. AGENTS.md, "A plan sent to the queue must stand alone".
+2. **You watch it until it lands and then prove the result works** by using the feature,
+   not by reading the card. AGENTS.md, "Watching a task you sent to the queue".
+
 ## The workflow
 
 0. **Write it to be read cold.** The agent that runs this task never sees the

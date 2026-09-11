@@ -451,6 +451,12 @@ palettes from the 2026-09-09 UI session are hex values in
 
 ### A plan sent to the queue must stand alone (hard)
 
+**Restated as an unconditional rule 2026-09-11, in Antoine's words:** *"it needs to
+be the case each time we send the plan to the task queue."* There is no small plan,
+no obvious plan, and no plan whose author will still be around to explain it. Before
+the send command runs, read the plan file once as a stranger would and say out loud
+whether it stands alone. If it does not, fix it first — never send and then explain.
+
 The agent that picks a task off the queue **never sees the conversation that
 produced the plan.** It gets the plan file and nothing else. So a plan written as
 "the two corrections we discussed" or "finish what I described above" is not a
@@ -551,6 +557,15 @@ no such number, that was a fault in the plan; say so.
 
 Poll every 30–60s against production with the token recipe in CLAUDE.md. Never click
 through a browser to read live state.
+
+**The turn is not over when the task says done.** Restated 2026-09-11 at Antoine's
+request, alongside the stand-alone rule above — he asked for both as hard rules, in
+the same breath, because they are the two halves of handing work to the queue. A
+session that sent a task keeps watching it and then **proves the result works** by
+using the feature itself: call the endpoint, load the page, check the number the plan
+named. Report what it actually returned, including "it did not work". Stopping at
+"the card says done" is not finishing, and it is how a shipped-and-inert change reaches
+him unnoticed.
 
 ## Autonomous overnight runs
 
