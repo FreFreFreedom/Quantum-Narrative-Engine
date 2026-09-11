@@ -76,7 +76,7 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
      the button must sit UNDER the drawer (it steps aside by the drawer's width instead of
      hiding beneath it), and the rail must sit over the settings sheet. */
   --z-base: 2; --z-stage: 6; --z-panel: 8; --z-floating: 9;
-  --z-sheet: 100; --z-pickbanner: 110; --z-rail: 120; --z-sysbtn: 130; --z-drawer: 140;
+  --z-sheet: 100; --z-rail: 120; --z-sysbtn: 130; --z-drawer: 140;
   /* Above the rail and above the drawer, because a menu can be anchored inside either.
      Below the preview bar, which must never be covered. */
   --z-popover: 150; --z-popover-top: 151; --z-preview: 200;
@@ -617,7 +617,15 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    Width is dragged from the left edge and remembered (QP_W_KEY). */
 .queue-panel { position:fixed; top:0; right:0; bottom:0; width:var(--qp-w,420px); min-width:320px; max-width:100vw; background:var(--c-surface); border-left:1px solid var(--c-border); box-shadow:var(--sh-md); z-index:var(--z-drawer); display:flex; flex-direction:column; }
 .queue-panel[hidden] { display:none; }
-.queue-panel-resize { position:absolute; left:-3px; top:0; bottom:0; width:7px; cursor:ew-resize; z-index:var(--z-base); }
+/* The panel makes room instead of covering the page: .app-shell is the one top-level
+   flex row, so a right margin shrinks rail + content cleanly and everything stays
+   clickable. No transition — the resize grip drags --qp-w live and a transition would
+   lag behind the pointer.
+   ponytail: viewport @media only — with the panel open the content column is narrower
+   than the window, so rules like isRoomNarrow()'s 819px breakpoint still read the
+   window. Container queries if that ever bites. */
+body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
+.queue-panel-resize { position:absolute; left:0; top:0; bottom:0; width:6px; cursor:ew-resize; z-index:var(--z-base); }
 .queue-panel-resize:hover, .queue-panel-resize.dragging { background:var(--c-accent); opacity:.45; }
 .queue-panel-head { display:flex; align-items:center; gap:8px; height:44px; padding:0 8px 0 14px; border-bottom:1px solid var(--c-border); flex-shrink:0; }
 .queue-panel-icon { font-size:var(--fs-md); color:var(--c-ink-3); }
@@ -677,7 +685,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .qp-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--c-border); border-radius:var(--r-md); margin-bottom:6px; font-size:var(--fs-sm); background:var(--c-surface); }
 .qp-row .qp-num { color:var(--c-ink-4); font-size:var(--fs-xs); width:16px; flex-shrink:0; text-align:right; }
 .qp-row .qp-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--c-ink-2); }
-@media (max-width: 520px) { .queue-panel { width:100%; } }
+@media (max-width: 520px) { .queue-panel { width:100%; } body.qp-open .app-shell { margin-right:0; } }
 
 /* ---------- CORE ARCHITECTURE shell (merged Architecture/Seeds/Suggestion Engine/Dispatch Queue) ---------- */
 #coreApp { flex:1; display:none; flex-direction:column; min-height:0; }
@@ -19480,7 +19488,6 @@ let qpMode = 'implement';
 let qpPicked = []; // ordered list of pointed-element descriptions (add order preserved)
 let qpJumpLine = false; // "put it first" — module-level so a re-render keeps the choice
 let qpPickActive = false;
-let qpPickBanner = null;
 
 // An empty section is a heading and a dashed box saying nothing — three of them
 // stacked was the whole panel when the queue was quiet. A section that holds
@@ -19597,6 +19604,10 @@ async function qpSubmitTask() {
 // Element picker for the composer — a stripped copy of what "Modifier le système" already
 // does (see the describe/hover/click trio below the widget's script), specific to this
 // panel's own DOM ids so it doesn't fight the other picker if both existed mid-migration.
+// The click lands on a deep <span> or <svg>; the thing worth naming is the control around it.
+// ponytail: closest() can overshoot to a big container when nothing nearer is named --
+// the caption shows what will be captured before you click, and chips are removable.
+const qpPickTarget = (t) => (t && t.closest && t.closest('button,a,[role],[id],[data-src],[data-testid],[aria-label],[title],[name],[placeholder]')) || t;
 function qpDescribeEl(el) {
   const parts = [];
   ['id', 'data-src', 'data-testid', 'aria-label', 'placeholder', 'name', 'title'].forEach(k => {
@@ -19613,11 +19624,10 @@ function qpDescribeEl(el) {
 }
 function qpIsOurs(t) {
   return document.getElementById('queuePanel').contains(t)
-    || document.getElementById('sysBtn').contains(t)
-    || (qpPickBanner && qpPickBanner.contains(t));
+    || document.getElementById('sysBtn').contains(t);
 }
 function qpHover(e) {
-  const t = e.target;
+  const t = qpPickTarget(e.target);
   if (!t || t.nodeType !== 1 || qpIsOurs(t)) return;
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
   const r = t.getBoundingClientRect();
@@ -19626,16 +19636,31 @@ function qpHover(e) {
   hl.className = 'fw-hover-hl';
   hl.style.left = r.left + 'px'; hl.style.top = r.top + 'px';
   hl.style.width = r.width + 'px'; hl.style.height = r.height + 'px';
+  // The caption names exactly what a click would capture, so there is nothing to learn.
+  const cap = document.createElement('span');
+  cap.textContent = qpDescribeEl(t);
+  hl.appendChild(cap);
   document.body.appendChild(hl);
 }
 function qpClick(e) {
-  const t = e.target;
-  if (qpIsOurs(t)) return;
+  const t = qpPickTarget(e.target);
+  if (!t || qpIsOurs(t)) return;
   e.preventDefault();
   e.stopPropagation();
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
+  // ponytail: the graph and the map are each one <canvas>, so a pick inside them can
+  // only ever say "the graph". Upgrade path: ask the renderer which node is under the
+  // cursor. Not built now.
   qpPicked.push(qpDescribeEl(t));
-  qpStopPicking();
+  renderQueuePanel(); // pointing stays on: the chip list is the feedback
+}
+// Surfaces that act on mouse-down (the graph canvas pans, a menu opens, the drag grips
+// start dragging) must not react while pointing -- intercepting click alone is not enough.
+const QP_SWALLOW = ['mousedown', 'pointerdown', 'mouseup', 'pointerup', 'dblclick', 'contextmenu'];
+function qpSwallow(e) {
+  if (qpIsOurs(e.target)) return;
+  e.preventDefault();
+  e.stopPropagation();
 }
 function qpStopPicking() {
   if (!qpPickActive) return;
@@ -19643,23 +19668,21 @@ function qpStopPicking() {
   document.removeEventListener('mouseover', qpHover, true);
   document.removeEventListener('click', qpClick, true);
   document.removeEventListener('keydown', qpEscListener, true);
-  if (qpPickBanner) { qpPickBanner.remove(); qpPickBanner = null; }
+  QP_SWALLOW.forEach(n => document.removeEventListener(n, qpSwallow, true));
+  document.body.classList.remove('qp-picking');
   document.querySelectorAll('.fw-hover-hl').forEach(x => x.remove());
   renderQueuePanel();
 }
 function qpTogglePicking() {
   if (qpPickActive) { qpStopPicking(); return; }
   qpPickActive = true;
-  // Nothing to hide: the panel is not modal, so the page underneath is already
-  // reachable and you can see your picks land in the list while you point.
-  qpPickBanner = document.createElement('div');
-  qpPickBanner.className = 'fw-pick-banner';
-  qpPickBanner.innerHTML = '<span>🎯 Point at an element — click it to capture</span><button id="qpPickSkip">Skip</button>';
-  document.body.appendChild(qpPickBanner);
-  qpPickBanner.querySelector('#qpPickSkip').onclick = qpStopPicking;
+  // No banner: the crosshair cursor and the panel's own red Stop button say it already.
+  document.body.classList.add('qp-picking');
   document.addEventListener('mouseover', qpHover, true);
   document.addEventListener('click', qpClick, true);
   document.addEventListener('keydown', qpEscListener, true);
+  QP_SWALLOW.forEach(n => document.addEventListener(n, qpSwallow, true));
+  renderQueuePanel(); // the button turns red and says Stop straight away
 }
 function qpEscListener(e) { if (qpPickActive && e.key === 'Escape') { e.stopPropagation(); qpStopPicking(); } }
 
@@ -19741,12 +19764,20 @@ document.addEventListener('keydown', (e) => {
    to host. The bubble, its panel and its ~270-line script were deleted — the
    Room is where you talk to a model, and the bottom-right corner now belongs to
    the one button that opens the build panel (#sysBtn). */
-.fw-pick-banner { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: var(--c-ink-solid); color: var(--c-on-solid); padding: 8px 14px; border-radius:var(--r-md); font-size:var(--fs-base); z-index:var(--z-pickbanner); box-shadow: 0 4px 16px rgba(0,0,0,.3); }
-.fw-pick-banner button { border: 1px solid var(--c-border-2); background: transparent; color: inherit; border-radius:var(--r-sm); padding: 3px 10px; font-size:var(--fs-sm); cursor: pointer; }
 .fw-hover-hl { position: fixed; border: 1.5px solid var(--c-accent); border-radius:var(--r-xs); pointer-events: none; z-index:var(--z-sheet); }
+/* The name of what you are about to capture, under the box it frames — no banner,
+   no horizontal band. Always below, so there is no viewport-edge case. */
+.fw-hover-hl > span { position:absolute; top:100%; left:-1.5px; max-width:60vw; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; background:var(--c-accent); color:var(--c-on-solid);
+  font-size:var(--fs-2xs); padding:1px 5px; border-radius:0 0 var(--r-xs) var(--r-xs); }
+/* While pointing, nothing may slide over the thing you are aiming at. */
+body.qp-picking, body.qp-picking * { cursor: crosshair !important; }
+body.qp-picking .railbar:not(.pinned):hover .rail-inner { width:52px; box-shadow:none; }
+body.qp-picking .room-cards.collapsed.peek, body.qp-picking .room-threads.collapsed.peek { display:none; }
 
 /* ── Idea Studio — conversational task creation ─────────────────────────── */
 .studio-overlay { position:fixed; inset:0; background:rgba(42,38,33,.35); z-index:var(--z-sheet); display:flex; align-items:center; justify-content:center; padding:18px; }
+body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
 .studio-modal { background:var(--c-bg); border:1px solid var(--c-border); border-radius:var(--r-lg); box-shadow:0 12px 40px rgba(0,0,0,.28); width:720px; max-width:100%; height:80vh; max-height:820px; display:flex; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; color:var(--c-ink); overflow:hidden; }
 .studio-head { padding:12px 16px; border-bottom:1px solid var(--c-border); display:flex; align-items:center; gap:10px; }
 .studio-head .studio-eyebrow { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.06em; color:var(--c-ink-4); }
