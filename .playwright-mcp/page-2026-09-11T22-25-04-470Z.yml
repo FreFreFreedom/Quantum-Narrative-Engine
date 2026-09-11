@@ -1,0 +1,84 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - strong [ref=f1e3]: The right side
+    - generic [ref=f1e4]:
+      - button "1 · Four views" [pressed] [ref=f1e5] [cursor=pointer]
+      - button "2 · Hands at the question" [ref=f1e6] [cursor=pointer]
+      - button "3 · Graph always" [ref=f1e7] [cursor=pointer]
+      - button "4 · Stacked" [ref=f1e8] [cursor=pointer]
+      - button "5 · Nothing, until you reach" [ref=f1e9] [cursor=pointer]
+    - generic [ref=f1e10]:
+      - button "Daylight" [pressed] [ref=f1e11] [cursor=pointer]
+      - button "Darkroom" [ref=f1e12] [cursor=pointer]
+  - generic [ref=f1e13]:
+    - heading "Five ways to arrange the right side" [level=1] [ref=f1e14]
+    - paragraph [ref=f1e15]: "All five hold the same four things: what is in your hands, the graph, the ideas the app offers, and a way to reach into the other parts of the app without leaving the conversation. Nothing on the right ever acts by itself — every control on it hands you something."
+    - paragraph [ref=f1e16]: "Taking an idea is silent: it lands in your hands, no question written, nothing sent. What is in your hands becomes what the next question is about, opens what the app is allowed to look up, and holds its place in the graph while the talk drifts."
+  - generic [ref=f1e18]:
+    - generic [ref=f1e19]: 1 · four views, one at a time — 328px wide, nothing permanent
+    - generic [ref=f1e20]:
+      - navigation [ref=f1e21]:
+        - generic [ref=f1e22]: F
+        - generic [ref=f1e23]: ◉
+        - generic [ref=f1e24]: ◇
+        - generic [ref=f1e25]: ⌂
+        - generic [ref=f1e26]: ≡
+      - generic [ref=f1e27]:
+        - generic [ref=f1e28]:
+          - generic [ref=f1e29]:
+            - generic [ref=f1e30]: You
+            - paragraph [ref=f1e31]: I keep coming back to Troy — the way he draws the line around his own house.
+          - generic [ref=f1e32]:
+            - generic [ref=f1e33]: QNE
+            - paragraph [ref=f1e34]: "The line is the thing itself. The Maxson household splits cleanly in two, and the split is not the household: Troy and Bono on one side, Lyons and Rose on the other. The fence he builds through the play does not enclose the people the split encloses."
+          - generic [ref=f1e35]:
+            - generic [ref=f1e36]: You
+            - paragraph [ref=f1e37]: and that is the same cut the sanitation department makes?
+          - generic [ref=f1e38]:
+            - generic [ref=f1e39]: QNE
+            - paragraph [ref=f1e40]: Somebody wrote that down in 1957. The department draws its boundary by who drives; Troy draws his by who is inside the yard. One shape, two rungs apart.
+        - generic [ref=f1e42]:
+          - textbox "Ask, or think out loud…" [ref=f1e43]: why does this keep happening at every scale
+          - button "Send" [ref=f1e44] [cursor=pointer]
+      - generic [ref=f1e45]:
+        - generic [ref=f1e46]:
+          - button "Hands 4" [ref=f1e47] [cursor=pointer]
+          - button "Graph" [pressed] [ref=f1e48] [cursor=pointer]
+          - button "Ideas 19" [ref=f1e49] [cursor=pointer]
+          - button "Reach" [ref=f1e50] [cursor=pointer]
+        - generic [ref=f1e51]:
+          - generic [ref=f1e52]: The graph, around this conversation
+          - generic [ref=f1e53]:
+            - button "1 word" [ref=f1e54] [cursor=pointer]
+            - button "2 words" [pressed] [ref=f1e55] [cursor=pointer]
+            - button "3 words" [ref=f1e56] [cursor=pointer]
+            - button "Open it whole" [ref=f1e57] [cursor=pointer]
+          - img [ref=f1e58]:
+            - generic [ref=f1e82] [cursor=pointer]
+            - generic [ref=f1e83] [cursor=pointer]: The Maxson household
+            - generic [ref=f1e84] [cursor=pointer]
+            - generic [ref=f1e85] [cursor=pointer]: Pittsburgh Sanitati…
+            - generic [ref=f1e86] [cursor=pointer]
+            - generic [ref=f1e87] [cursor=pointer]: Pittsburgh
+            - generic [ref=f1e88] [cursor=pointer]
+            - generic [ref=f1e89] [cursor=pointer]: Troy and Bono's tru…
+            - generic [ref=f1e90] [cursor=pointer]
+            - generic [ref=f1e91] [cursor=pointer]
+            - generic [ref=f1e92] [cursor=pointer]
+            - generic [ref=f1e93] [cursor=pointer]
+            - generic [ref=f1e94] [cursor=pointer]
+            - generic [ref=f1e95] [cursor=pointer]
+            - generic [ref=f1e96] [cursor=pointer]
+            - generic [ref=f1e97] [cursor=pointer]
+            - generic [ref=f1e98] [cursor=pointer]
+            - generic [ref=f1e99] [cursor=pointer]
+            - generic [ref=f1e100] [cursor=pointer]
+            - generic [ref=f1e101]: 23 links · 15 of 492 shown
+          - generic [ref=f1e102]: Solid lines are what contains what. Dashed lines are words in common, thicker for more. Ringed dots are the four things this conversation named; the rest are their nearest neighbours. Every dot is a door, and taking one puts it in your hands.
+    - paragraph [ref=f1e104]: Cheapest and quietest. One panel, one thing at a time, nothing drawn twice. The cost is that what is in your hands — the thing that changes the meaning of everything you type — is invisible whenever you are looking at anything else.
+  - generic [ref=f1e105]:
+    - heading "What happens to the five tabs you have" [level=1] [ref=f1e106]
+    - paragraph [ref=f1e107]: Right now the right side is Attached, Mind, Extraction, Passages and World look. The trouble is not that there are five — it is that four of them keep things under three different rules and none of them says so. Attached and World look belong to this conversation. Passages and Mind are global and follow you everywhere. And Extraction is blank unless a file is being read, which is almost always.
+    - paragraph [ref=f1e108]: "So five becomes three. Hands is everything this conversation is about — the cards you attached, a line you kept, an idea you took, an entity you pinned. Graph is the picture. Offered is everything the app is proposing, which is world ideas and signals in one place instead of two. Extraction stops being a tab and becomes what it is: something a file does while you are reading it. Mind stops being a tab too — standing facts are not something you visit, they are something the app always knows, and it can say so in a line."
+    - paragraph [ref=f1e109]: "Two things would have to be built for Hands to mean anything: an entity has to become attachable, which it is not today, and a kept line has to be attachable, which it also is not. Both are small."
+    - paragraph [ref=f1e110]: "Everything shown is real: your own world ideas in their own words, your own signals, your own kept line."

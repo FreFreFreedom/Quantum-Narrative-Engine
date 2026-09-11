@@ -1,0 +1,2 @@
+[     302ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://www.chromium.org/developers/design-documents/create-amazing-password-forms) %o @ https://quantum-narrative-engine-production.up.railway.app/:0
+[     460ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://quantum-narrative-engine-production.up.railway.app/favicon.ico:0

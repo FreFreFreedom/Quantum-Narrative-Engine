@@ -10373,7 +10373,7 @@ function roomIdeaRoundHtml(report, idx) {
   if (isOpen) {
     const facts = qInspireReviewFacts(report.review);
     const groupBtn = selList.length
-      ? `<button type="button" class="ctrlbtn room-idea-usegroup" data-room-idea-usegroup="${qEscAttr(report.id)}">Use ${selList.length} selected idea${selList.length === 1 ? '' : 's'}</button>`
+      ? `<button type="button" class="ctrlbtn room-idea-usegroup" data-room-idea-usegroup="${qEscAttr(report.id)}">Take ${selList.length} selected idea${selList.length === 1 ? '' : 's'}</button>`
         + `<button type="button" class="ctrlbtn room-idea-usegroup" data-room-idea-savegroup="${qEscAttr(report.id)}" title="Keep them as seeds, to come back to later">Save ${selList.length} selected idea${selList.length === 1 ? '' : 's'}</button>`
       : '';
     body = groupBtn + worldPartsHtml(report, { sel, facts, pickAction: 'room-idea-pick', scope: 'room-idea:' + report.id, useIdea: true });
@@ -10420,8 +10420,7 @@ function roomIdeasHostClick(ev) {
   if (useBtn && report) {
     const card = useBtn.closest('.q-inspire-card');
     if (!card) return;
-    const pick = report.parts?.[Number(card.getAttribute('data-partidx'))]?.picks?.[Number(card.getAttribute('data-pickidx'))];
-    if (pick) roomUseIdea(worldIdeaFullText(pick));
+    roomTakeIdea(report.id, Number(card.getAttribute('data-partidx')), Number(card.getAttribute('data-pickidx')));
     return;
   }
   const groupBtn = ev.target.closest('[data-room-idea-usegroup]');
@@ -10456,19 +10455,23 @@ async function roomSaveIdeaGroup(reportId, btn) {
 // own with no framing. Reuses the same wl-mark selection mechanism the "pick one
 // / add if you want" boxes already use elsewhere (applyInspireToggle) rather
 // than building a new one.
-function roomUseIdeaGroup(reportId) {
+async function roomUseIdeaGroup(reportId) {
   const report = roomIdeasReports.find(r => r.id === reportId);
   const sel = roomIdeaSelFor(reportId);
   if (!report || !sel.length) return;
-  const texts = sel.map((key, n) => {
+  // One after another, not all at once: each attach is a write the server may refuse
+  // once the thread is full, and the refusal has to be readable rather than five of
+  // them racing. roomAttach already turns the cap into a line in the panel.
+  for (const key of sel) {
     const pick = report.parts?.[key.part_index]?.picks?.[key.pick_index];
-    return pick ? `Idea ${n + 1}:\n${worldIdeaFullText(pick)}` : '';
-  }).filter(Boolean);
-  if (!texts.length) return;
-  const message = texts.join('\n\n---\n\n')
-    + '\n\n---\n\nCompare these ideas: do they work well together (synergy), do they overlap or substitute for each other, and which fits this app best?';
-  roomUseIdea(message, { raw: true });
+    if (!pick) continue;
+    await roomTakeIdea(reportId, key.part_index, key.pick_index, { quiet: true });
+  }
   roomIdeaSel[reportId] = []; roomIdeasRemember();
+  roomNote = sel.length === 1 ? 'In your hands. Ask about it when you like.'
+    : sel.length + ' of them are in your hands now. Ask about them when you like.';
+  roomNoteErr = false;
+  renderRoomCards();
   renderRoomIdeas();
 }
 
@@ -10490,11 +10493,30 @@ function roomIdeaTextSeed() {
 // send path — no intent flag, so turnRouter.js classifies it exactly like
 // anything else typed into the box. `raw` skips the "Idea: " prefix for the
 // group-compare message above, which already frames itself.
-function roomUseIdea(text, { raw = false } = {}) {
-  const t = roomThreads.find((x) => x.id === roomSel) || null;
-  if (!t || !window.studioLend || !text) return;
-  const e = window.studioLend.entry('open', t.subject_id);
-  window.studioLend.send(e, raw ? text : 'Idea: ' + text, renderRoomConvo, () => loadRoom());
+/* Taking an idea puts it in this conversation and asks nothing. It used to compose a
+   turn and fire it on the spot — no draft, no chance to edit, and the question the app
+   would have asked for you was never shown. Antoine's rule, 2026-09-11: an idea the app
+   offers should arrive as material, not as an action.
+
+   `world_pick` is already a registered subject type (services/subjectContext.js), so the
+   idea travels as an attached card and reaches every later turn in full, with its own
+   description written by that spec — which is more than pasting its text into a message
+   ever did. The id shape is the one parseWorldPickId reads. */
+function roomWorldPickId(reportId, partIndex, pickIndex) {
+  return reportId + '~' + partIndex + ':' + pickIndex;
+}
+
+async function roomTakeIdea(reportId, partIndex, pickIndex, { quiet = false } = {}) {
+  if (!roomSel) return;
+  await roomAttach('world_pick', roomWorldPickId(reportId, partIndex, pickIndex));
+  if (quiet) return;
+  // Land on the pane that now holds it, so taking something is visibly somewhere.
+  // Pressing the tab rather than setting state: which pane is showing lives in a
+  // closure inside initRoom() along with the code that applies and remembers it,
+  // and reaching past that would be a second place that decides the same thing.
+  document.querySelector('#roomTabs [data-room-pane="attached"]')?.click();
+  if (!roomNoteErr) roomNote = 'In your hands. Ask about it when you like.';
+  renderRoomCards();
 }
 
 // ── Section-by-section PDF extraction (plan "pdf-section-extraction") ────────
@@ -14996,7 +15018,7 @@ function worldRowHtml(pick, pi, i, { applied, sel, facts, pickAction, scope, rep
   // the chat as a plain message, so it can be talked over with full context instead
   // of just a title. Never rendered elsewhere — useIdea is opt-in per caller.
   const useBtn = useIdea
-    ? `<button type="button" class="wl-use" data-action="worldlook-use" title="Drop this idea into the chat, in full, so you can question it there"><svg class="ic" aria-hidden="true"><use href="#ic-chat"></use></svg>use this idea</button>`
+    ? `<button type="button" class="wl-use" data-action="worldlook-use" title="Put it in this conversation. Nothing is asked and nothing is sent — ask about it yourself when you like"><svg class="ic" aria-hidden="true"><use href="#ic-chat"></use></svg>take it</button>`
     : '';
   return `
     <div class="wl-row q-inspire-card ${isSel ? 'q-inspire-sel' : ''} ${isApplied ? 'q-inspire-applied' : ''} ${removed ? 'q-inspire-removed' : ''}" data-partidx="${pi}" data-pickidx="${i}">
