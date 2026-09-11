@@ -39,7 +39,7 @@ function entityExists(db, id) {
 
 // Returns null when the reading is allowed to be written, or a sentence saying why not.
 // Exported so a caller (a route, a script, a selftest) gets the same answer the writer would.
-export function validateAnatomy(db, { entity_id, reading, answer, points_at, source_ref, falsifier, source_kind }) {
+export function validateSignature(db, { entity_id, reading, answer, points_at, source_ref, falsifier, source_kind }) {
   if (!entity_id) return 'entity_id is required.';
   if (!entityExists(db, entity_id)) return `No entity ${entity_id}.`;
   if (!READINGS.includes(reading)) return `reading must be one of ${READINGS.join(', ')}.`;
@@ -58,31 +58,31 @@ export function validateAnatomy(db, { entity_id, reading, answer, points_at, sou
   return null;
 }
 
-export function setAnatomy(db, input) {
-  const problem = validateAnatomy(db, input);
+export function setSignature(db, input) {
+  const problem = validateSignature(db, input);
   if (problem) { const e = new Error(problem); e.status = 400; throw e; }
   const { entity_id, reading, answer, points_at = null, source_kind = 'witness', source_ref, falsifier, created_by = 'antoine' } = input;
   db.prepare(`
-    INSERT INTO entity_anatomy (entity_id, reading, answer, points_at, source_kind, source_ref, falsifier, created_by)
+    INSERT INTO entity_signature (entity_id, reading, answer, points_at, source_kind, source_ref, falsifier, created_by)
     VALUES (?,?,?,?,?,?,?,?)
     ON CONFLICT(entity_id, reading) DO UPDATE SET
       answer=excluded.answer, points_at=excluded.points_at, source_kind=excluded.source_kind,
       source_ref=excluded.source_ref, falsifier=excluded.falsifier, created_by=excluded.created_by,
       created_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
   `).run(entity_id, reading, answer, points_at, source_kind, source_ref, falsifier, created_by);
-  return anatomyFor(db, entity_id);
+  return signatureFor(db, entity_id);
 }
 
-export function deleteAnatomy(db, entity_id, reading) {
-  const r = db.prepare(`DELETE FROM entity_anatomy WHERE entity_id=? AND reading=?`).run(entity_id, reading);
+export function deleteSignature(db, entity_id, reading) {
+  const r = db.prepare(`DELETE FROM entity_signature WHERE entity_id=? AND reading=?`).run(entity_id, reading);
   return r.changes > 0;
 }
 
 // All readings for one entity, keyed by reading name, with the two blanks left absent
 // rather than filled with a placeholder — the caller decides how a blank should read.
-export function anatomyFor(db, entity_id) {
+export function signatureFor(db, entity_id) {
   const rows = db.prepare(`SELECT reading, answer, points_at, source_kind, source_ref, falsifier, created_at
-    FROM entity_anatomy WHERE entity_id=?`).all(entity_id);
+    FROM entity_signature WHERE entity_id=?`).all(entity_id);
   const byReading = {};
   for (const r of rows) byReading[r.reading] = r;
   return {
@@ -97,11 +97,11 @@ export function anatomyFor(db, entity_id) {
 // times in urban justice and zero times in university faculties." A count over
 // (reading × rung), so an empty cell reads as a place nobody has looked rather than a zero.
 // Mirrors shapeByRungAudit() in entityRelations.js, same shape, different table.
-export function anatomyByRungAudit(db) {
+export function signatureByRungAudit(db) {
   const rungs = SCALE_LADDER.map((r) => r.key);
   const rows = db.prepare(`
     SELECT a.reading, e.scale, COUNT(*) n
-    FROM entity_anatomy a JOIN entities e ON e.id = a.entity_id
+    FROM entity_signature a JOIN entities e ON e.id = a.entity_id
     GROUP BY a.reading, e.scale
   `).all();
   const cells = {};

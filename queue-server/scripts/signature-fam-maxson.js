@@ -1,4 +1,4 @@
-// scripts/anatomy-fam-maxson.js — plans/anatomy-replaces-tags.md, Part 1.
+// scripts/signature-fam-maxson.js — plans/anatomy-replaces-tags.md, Part 1.
 //
 // The one entity, done end to end, before any batch — the rule §14c states and the two
 // interiors already honoured. fam_maxson is the household: it already carries a mapped
@@ -11,12 +11,12 @@
 // blank rather than be guessed, which is the whole point of the falsifier discipline.
 //
 // This is a hand pass, not a model call — same precedent as scripts/interior-fences.js.
-// Run: node scripts/anatomy-fam-maxson.js   (needs the server's db; run against the same
+// Run: node scripts/signature-fam-maxson.js   (needs the server's db; run against the same
 // DB_PATH the server boots with, so the rows are there on the next boot)
 
 import { DatabaseSync } from 'node:sqlite';
 import { initOntologySchema } from '../server/src/db/schema.js';
-import { setAnatomy, anatomyFor } from '../server/src/services/entityAnatomy.js';
+import { setSignature, signatureFor } from '../server/src/services/entitySignature.js';
 
 const DB_PATH = process.env.DB_PATH || 'data/queue.db';
 const db = new DatabaseSync(DB_PATH);
@@ -73,8 +73,8 @@ const READ = [
 ];
 
 for (const r of READ) {
-  setAnatomy(db, r);
+  setSignature(db, r);
   console.log(`  ${r.entity_id} / ${r.reading} -> ${r.points_at}`);
 }
 
-console.log('\nfam_maxson anatomy:', JSON.stringify(anatomyFor(db, 'fam_maxson'), null, 1));
+console.log('\nfam_maxson signature:', JSON.stringify(signatureFor(db, 'fam_maxson'), null, 1));

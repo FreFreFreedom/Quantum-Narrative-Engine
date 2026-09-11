@@ -954,8 +954,15 @@ export function initOntologySchema(db) {
   //
   // NOT entities.meta: bootstrapData.js rewrites meta on every boot (same reason entity_mentions
   // and tmdb_enrichments are their own tables, not a meta field).
+  // A rename, not a fresh table: this table shipped for one afternoon as `entity_anatomy`
+  // before the collision with the pre-existing interior route (also called "anatomy", a
+  // different concept — the signed graph, not these four readings) was caught. Production
+  // had already written real rows under the old name; renaming in place keeps them rather
+  // than starting the table over. A no-op after the first boot that has run it.
+  try { db.exec(`ALTER TABLE entity_anatomy RENAME TO entity_signature`); } catch {}
+
   db.exec(`
-    CREATE TABLE IF NOT EXISTS entity_anatomy (
+    CREATE TABLE IF NOT EXISTS entity_signature (
       entity_id   TEXT NOT NULL REFERENCES entities(id),
       reading     TEXT NOT NULL,   -- locus_of_exile | load_shift | sovereignty_reversal | loop_dynamics
       answer      TEXT NOT NULL,
@@ -968,7 +975,7 @@ export function initOntologySchema(db) {
       PRIMARY KEY (entity_id, reading)
     )
   `);
-  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_anatomy_reading ON entity_anatomy(reading)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_signature_reading ON entity_signature(reading)`); } catch {}
 
   // A walk somebody kept — plans/civic-structures-and-loops.md, Stage 5.
   //

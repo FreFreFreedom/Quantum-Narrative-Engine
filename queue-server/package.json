@@ -37,7 +37,7 @@
     "mind:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/mind-selftest.js",
     "room:selftest": "node scripts/room-selftest.mjs",
     "tensions:selftest": "node scripts/tensions-selftest.js",
-    "anatomy:selftest": "node scripts/anatomy-selftest.js"
+    "signature:selftest": "node scripts/signature-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",
