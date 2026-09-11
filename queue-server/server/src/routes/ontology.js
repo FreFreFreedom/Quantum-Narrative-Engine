@@ -14,6 +14,7 @@ import { getTagGaps } from '../services/tagGaps.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { listTensions, setTension, generateTension, fillMissingTensions } from '../services/tagTensions.js';
 import { signatureFor, setSignature, deleteSignature, signatureByRungAudit } from '../services/entitySignature.js';
+import { spectrumFor, compareEntities } from '../services/graphSpectrum.js';
 
 // Two ends can be in the same loop; report it once.
 function dedupeLoops(loops) {
@@ -178,6 +179,20 @@ export function ontologyRoutes(db) {
     const recorded = rel.recordedInside(db, req.params.id);
     if (recorded) return res.json({ anatomy: recorded });
     return res.status(404).json({ error: 'no_interior' });
+  });
+
+  // The spectral fingerprint of a read anatomy — needs a mapped interior, same 404 as
+  // above when there isn't one. See graphSpectrum.js for what it means.
+  router.get('/entities/:id/spectrum', (req, res) => {
+    const s = spectrumFor(req.params.id);
+    if (!s) return res.status(404).json({ error: 'no_interior' });
+    res.json({ spectrum: s });
+  });
+
+  router.get('/spectral-compare', (req, res) => {
+    const { a, b } = req.query;
+    if (!a || !b) return res.status(400).json({ error: 'a and b are both required.' });
+    res.json(compareEntities(a, b));
   });
 
   router.get('/relations/:relId/mirror', (req, res) => {
