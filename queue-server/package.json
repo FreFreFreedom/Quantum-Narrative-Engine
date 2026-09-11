@@ -38,7 +38,8 @@
     "room:selftest": "node scripts/room-selftest.mjs",
     "tensions:selftest": "node scripts/tensions-selftest.js",
     "signature:selftest": "node scripts/signature-selftest.js",
-    "bonesearch:selftest": "node scripts/bonesearch-selftest.js"
+    "bonesearch:selftest": "node scripts/bonesearch-selftest.js",
+    "splitscreen:selftest": "node scripts/splitscreen-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",

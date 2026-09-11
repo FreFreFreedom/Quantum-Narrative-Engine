@@ -4,6 +4,7 @@ import * as rel from '../services/entityRelations.js';
 import * as men from '../services/entityMentions.js';
 import { peersOf } from '../services/peers.js';
 import { boneSearch } from '../services/boneSearch.js';
+import { createScenePair, getScenePair, listScenePairs, deleteScenePair } from '../services/splitScreen.js';
 import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
@@ -217,6 +218,29 @@ export function ontologyRoutes(db) {
   // Which anatomies have been asserted at which rungs, and which cells are empty. The
   // empty cells are the output worth having.
   router.get('/shape-audit', (req, res) => res.json(rel.shapeByRungAudit(db)));
+
+  // The split screen — plans/anatomy-replaces-tags.md, Part 4. Two verified scenes and a
+  // written reading of what they share. GET resolves both moments fresh on every call —
+  // the verified quotes live in data-seed/interiors/, this table only ever points at them.
+  router.get('/scene-pairs', (req, res) => res.json({ pairs: listScenePairs(db) }));
+
+  router.get('/scene-pairs/:id', (req, res) => {
+    const pair = getScenePair(db, req.params.id);
+    if (!pair) return res.status(404).json({ error: 'not_found' });
+    res.json({ pair });
+  });
+
+  router.post('/scene-pairs', (req, res) => {
+    try {
+      res.status(201).json({ pair: createScenePair(db, req.body) });
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  router.delete('/scene-pairs/:id', (req, res) => {
+    res.json({ deleted: deleteScenePair(db, req.params.id) });
+  });
 
   // Saved maps — a walk kept so it can be returned to and deepened.
   router.get('/maps', (req, res) => res.json({ maps: rel.listSavedMaps(db) }));

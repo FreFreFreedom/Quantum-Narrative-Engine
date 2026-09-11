@@ -977,6 +977,39 @@ export function initOntologySchema(db) {
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_signature_reading ON entity_signature(reading)`); } catch {}
 
+  // The split screen — plans/anatomy-replaces-tags.md, Part 4; fractal_operational_core.md §21.
+  //
+  // Two verified scenes, side by side, with a written common reading of what they share.
+  // Each `moment` is the same string entityRelations.js#resolveMoment already parses —
+  // "<entityId>#<fromBlock>-<toBlock>" — so a scene here is never anything but a real,
+  // byte-checked range of turns that already exists in data-seed/interiors/. There is no
+  // path from this table back into that check: a moment that does not resolve is refused
+  // by the service before the row is written, the same way a relation is refused before
+  // its row is written.
+  //
+  // Same falsifiability discipline as entity_relations and entity_signature, and for the
+  // identical reason: "these two scenes rhyme" is exactly the kind of claim that costs
+  // nothing to assert and everything to take back once it has shaped a reading. A source
+  // and a falsifier are required, not optional.
+  //
+  // NOT a third copy of the moment-resolution logic — moment_a and moment_b are strings,
+  // resolved on read by calling resolveMoment() from entityRelations.js, so a change to how
+  // a moment is parsed only ever has to change in one place.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS scene_pairs (
+      id TEXT PRIMARY KEY,
+      moment_a TEXT NOT NULL,
+      moment_b TEXT NOT NULL,
+      reading TEXT NOT NULL,
+      source_kind TEXT NOT NULL DEFAULT 'witness',
+      source_ref TEXT NOT NULL,
+      falsifier TEXT NOT NULL,
+      created_by TEXT,
+      created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+
   // A walk somebody kept — plans/civic-structures-and-loops.md, Stage 5.
   //
   // Navigating this corpus produces a path: an entity, the relation followed out of it,

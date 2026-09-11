@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-11T23:33:26.331Z
+Generated: 2026-09-11T23:39:33.301Z
 
 ## Components
 
@@ -39,6 +39,7 @@ Generated: 2026-09-11T23:33:26.331Z
 ## Plan backlog
 
 - anatomy-replaces-tags — **PLANNED** 2026-09-11
+- four-small-motions — **PLANNED** 2026-09-11
 - queue-panel-and-element-picker — **DONE** 2026-09-11
 - self-diagnosis-fixes — **DONE** 2026-09-10
 - theme-clusters-are-too-small — DONE
