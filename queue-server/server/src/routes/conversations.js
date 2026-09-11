@@ -179,6 +179,13 @@ export function conversationsRoutes() {
     res.json(out);
   });
 
+  // POST /api/convos/:id/star — keep a thread above the date groups, or let it go.
+  router.post('/:id/star', (req, res) => {
+    const out = convos.setConvoStar(req.params.id, !!req.body?.starred);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
   // POST /api/convos/:id/message — one user turn (or a command like /plan, /handoff).
   //
   // Two response shapes from one endpoint:

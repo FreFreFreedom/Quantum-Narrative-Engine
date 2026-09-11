@@ -913,6 +913,50 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .room-row-sub { font-size:var(--fs-xs); color:var(--c-ink-4); margin-top:1px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .uc--row.is-sel .room-row-sub { color:var(--c-ink-3); }
+/* ── The thread list ──────────────────────────────────────────────────────────
+   One line a row, grouped by when it was last touched, with a search over the
+   names and a star for the few that should stay above the groups. Antoine chose
+   this shape from mockups against what the three chat apps do.
+   A row used to be two lines — the name, then "lane · N turns" — so the column
+   held six conversations where it now holds a dozen, and the lane is a fact you
+   want while you are IN a thread, not while you are hunting for one. It reads off
+   the toolbar of the open thread instead, where it already lived. */
+.room-search { display:flex; align-items:center; gap:7px; margin:0 0 4px; padding:0 2px 6px;
+  border-bottom:1px solid var(--c-border); color:var(--c-ink-5);
+  transition:border-color var(--t-fast) var(--ease); }
+.room-search:focus-within { border-bottom-color:var(--c-border-3); }
+.room-search .ic { width:13px; height:13px; flex:none; }
+/* type=search paints its own box and its own clear button in WebKit; this is a line
+   under a field, not a box, so both are turned off rather than styled around. */
+.room-search input { flex:1; min-width:0; border:none; background:none; color:var(--c-ink);
+  font:inherit; font-size:var(--fs-base); padding:3px 0; appearance:none; -webkit-appearance:none; }
+.room-search input::-webkit-search-decoration,
+.room-search input::-webkit-search-cancel-button { -webkit-appearance:none; }
+.room-search input::placeholder { color:var(--c-ink-5); }
+.room-search input:focus { outline:none; }
+/* Deliberately not sticky: a 250px column that pins a heading gives up a row to it
+   for the whole scroll, and there are never enough groups to lose your place. */
+.room-grp { font-size:var(--fs-xs); font-weight:600; color:var(--c-ink-5); padding:13px 6px 4px; }
+.room-grp:first-child { padding-top:2px; }
+.room-row { display:flex; align-items:center; gap:7px; height:30px; padding:0 6px;
+  border-radius:var(--r-sm); color:var(--c-ink-2); cursor:pointer; white-space:nowrap;
+  transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.room-row:hover { background:var(--c-surface); color:var(--c-ink); }
+.room-row.is-sel { background:var(--c-surface-2); color:var(--c-ink); font-weight:600; }
+.room-row .rt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.room-row .rstar { flex:none; color:var(--c-accent); font-size:10px; line-height:1; }
+/* The ⋯ acts on THIS row. Rename and delete used to reach only the thread already
+   open, so acting on any other one meant opening it first. Hidden until the row is
+   in play — hover, keyboard focus, its own menu open, or selected — so the list
+   reads as a column of names rather than a column of icons. */
+.room-rowmore { flex:none; width:20px; height:20px; padding:0; border:none; background:none;
+  color:var(--c-ink-4); border-radius:var(--r-sm); cursor:pointer; opacity:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.room-rowmore .ic { width:14px; height:14px; }
+.room-row:hover .room-rowmore, .room-row.is-sel .room-rowmore { opacity:1; }
+.room-rowmore:focus-visible, .room-rowmore[aria-expanded="true"] { opacity:1; }
+.room-rowmore:hover { background:var(--c-surface-3); color:var(--c-ink); }
 /* .room-row-acts went with the hover-delete it revealed: the ⋯ menu on the open
    thread holds that action now, behind a rule. */
 .room-main { flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; }
@@ -2850,6 +2894,10 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-newrow">
           <button type="button" class="ubtn ubtn--pill is-primary room-newbtn" id="roomNewBtn">＋ New chat</button>
           <button type="button" class="uicon room-collapse-btn" id="roomThreadsCollapse" title="Collapse the thread list" aria-label="Collapse the thread list"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chevron-left"/></svg></button>
+        </div>
+        <div class="room-search">
+          <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-search"/></svg>
+          <input id="roomThreadSearch" type="search" placeholder="Search your chats" aria-label="Search your chats" autocomplete="off">
         </div>
         <div id="roomThreadList"></div>
         <div id="roomThreadsNote" class="room-note"></div>
@@ -9097,6 +9145,20 @@ function initRoom() {
   if (roomInited) return;
   roomInited = true;
   document.getElementById('roomNewBtn').onclick = roomNewThread;
+  // Filtering a list of a few dozen names is a substring test — no debounce, because
+  // there is no layout being rebuilt behind it, only these rows.
+  const thq = document.getElementById('roomThreadSearch');
+  if (thq) {
+    thq.oninput = () => { roomThreadQ = thq.value; renderRoomThreads(); };
+    // Escape clears the filter before it reaches the Room's own Escape handlers, so
+    // the key does the nearest thing first rather than closing the panel out from
+    // under a half-typed search.
+    thq.onkeydown = (ev) => {
+      if (ev.key !== 'Escape' || !thq.value) return;
+      ev.stopPropagation();
+      thq.value = ''; roomThreadQ = ''; renderRoomThreads();
+    };
+  }
   document.getElementById('roomForkBtn').onclick = () => roomForkThread(roomSel);
   // Start fresh lives in the toolbar now. The button it stands for is still the
   // conversation's own (studioEmbed paints it), so this presses that rather than
@@ -9586,40 +9648,108 @@ function roomCardTitle(s) {
   return (local && local.title) || s.title || s.subject_id;
 }
 
-/* The one line under a thread's name: the lane it is pinned to, or nothing when it is on
-   Auto, and how many turns deep it is. The lane arrives as the stored override — the same
-   JSON the composer's picker writes — so this reads it rather than keeping a second copy. */
-const ROOM_LANE_SHORT = {
-  'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode',
-  'google-ai-studio': 'Google', openai: 'ChatGPT',
-};
-function roomThreadSub(t) {
-  const bits = [];
-  let lane = null;
-  try { lane = t.chat_override ? JSON.parse(t.chat_override) : null; } catch (e) {}
-  if (lane && lane.provider) bits.push(ROOM_LANE_SHORT[lane.provider] || lane.provider);
-  const turns = Number(t.turns) || 0;
-  if (turns) bits.push(turns + (turns === 1 ? ' turn' : ' turns'));
-  return bits.join(' · ');
+/* What is typed into the search over thread names. Not remembered between visits on
+   purpose: a filter you cannot see the cause of is how a list comes back looking empty. */
+let roomThreadQ = '';
+
+// Which heading a thread sits under. Whole days apart, not hours: a thread touched at
+// 00:05 and one touched at 23:50 the same day both read as "Today", which is how a
+// person remembers it and is not what a plain hours-ago subtraction would say.
+function roomThreadGroup(iso) {
+  const d = new Date(iso || 0);
+  if (isNaN(d.getTime())) return 'Earlier';
+  const midnight = (x) => { const y = new Date(x); y.setHours(0, 0, 0, 0); return y.getTime(); };
+  const now = new Date();
+  const days = Math.round((midnight(now) - midnight(d)) / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return 'Previous 7 days';
+  if (days < 30) return 'Previous 30 days';
+  return d.toLocaleDateString(undefined, {
+    month: 'long',
+    ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+  });
+}
+
+// What the ⋯ on a row offers. Every one of these already existed and could only be
+// reached from the toolbar of the thread already open — so acting on any other thread
+// meant opening it first, which is the opposite of what a list is for.
+function openRoomRowMenu(btn, id) {
+  const t = roomThreads.find(x => x.id === id);
+  if (!t) return;
+  openMenu(btn, [
+    { label: 'Rename it yourself', on: () => { roomSelect(id); roomBeginRename(); } },
+    { label: 'Name it by what it is about', on: () => roomRetitleThread(id) },
+    { label: Number(t.starred) ? 'Remove the star' : 'Star this thread', on: () => roomToggleStar(id) },
+    { sep: true },
+    { label: 'Delete this thread', danger: true, on: () => roomDeleteThread(id) },
+  ]);
+}
+
+// Starred first, then the date groups. The row moves the moment it is clicked and
+// only rolls back if the server refuses — waiting on the round trip to redraw makes
+// a star feel like it did not take.
+async function roomToggleStar(id) {
+  const t = roomThreads.find(x => x.id === id);
+  if (!t) return;
+  const on = !Number(t.starred);
+  t.starred = on ? 1 : 0;
+  renderRoomThreads();
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(id) + '/star', 'POST', { starred: on });
+  } catch (e) {
+    t.starred = on ? 0 : 1;
+    roomThreadsNote = 'Could not star this thread.';
+    renderRoomThreads();
+  }
 }
 
 function renderRoomThreads() {
   const host = document.getElementById('roomThreadList');
   if (!host) return;
-  host.innerHTML = roomThreads.map(t => {
-    const n = (t.subjects || []).filter(s => !(s.is_primary && s.subject_type === 'open')).length;
-    // Which model is answering, and how far in it is. Both were already on the row's
-    // data and neither was shown, so a list of four threads gave no way to tell the
-    // forty-eight-turn one on Gemini from the four-turn one on Auto.
-    return `<div class="uc uc--row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0">`
-      + `<div class="uc-head"><span class="uc-title">${qEsc(t.title || 'Open conversation')}</span>`
-      + (n ? `<span class="room-cap">${n}</span>` : '')
-      + `</div><div class="room-row-sub">${qEsc(roomThreadSub(t))}</div></div>`;
-  }).join('');
+  const q = roomThreadQ.trim().toLowerCase();
+  const shown = q
+    ? roomThreads.filter(t => String(t.title || 'Open conversation').toLowerCase().includes(q))
+    : roomThreads;
+
+  // One row: the name, a star when it carries one, and the ⋯. No lane and no turn
+  // count — see the note on .room-row in the stylesheet.
+  const rowHtml = (t) => `<div class="room-row${t.id === roomSel ? ' is-sel' : ''}" data-room-thread="${qEscAttr(t.id)}" role="button" tabindex="0" title="${qEscAttr(t.title || 'Open conversation')}">`
+    + `<span class="rt">${qEsc(t.title || 'Open conversation')}</span>`
+    + (Number(t.starred) ? '<span class="rstar" aria-label="Starred">★</span>' : '')
+    + `<button type="button" class="room-rowmore" data-room-more="${qEscAttr(t.id)}" aria-label="More for this thread" aria-haspopup="menu" title="Rename, star or delete"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-more"/></svg></button>`
+    + `</div>`;
+
+  // While searching, the date headings are noise — the list is already short and the
+  // question is "which one", not "when". One flat run of matches instead.
+  let html;
+  if (q) {
+    html = shown.length ? shown.map(rowHtml).join('')
+      : '<div class="tv-empty">Nothing by that name.</div>';
+  } else {
+    const starred = shown.filter(t => Number(t.starred));
+    const rest = shown.filter(t => !Number(t.starred));
+    const parts = [];
+    if (starred.length) parts.push('<div class="room-grp">Starred</div>' + starred.map(rowHtml).join(''));
+    let group = null;
+    // `rest` arrives newest-first from the server, so walking it in order emits each
+    // heading exactly once and in the right order with no sorting of my own.
+    rest.forEach(t => {
+      const g = roomThreadGroup(t.updated_at);
+      if (g !== group) { parts.push(`<div class="room-grp">${qEsc(g)}</div>`); group = g; }
+      parts.push(rowHtml(t));
+    });
+    html = parts.join('');
+  }
+  host.innerHTML = html;
+
   host.querySelectorAll('[data-room-thread]').forEach(el => {
     const pick = () => roomSelect(el.getAttribute('data-room-thread'));
-    el.onclick = pick;
+    el.onclick = (ev) => { if (!ev.target.closest('[data-room-more]')) pick(); };
     el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+  });
+  host.querySelectorAll('[data-room-more]').forEach(el => {
+    el.onclick = (ev) => { ev.stopPropagation(); openRoomRowMenu(el, el.getAttribute('data-room-more')); };
   });
   const note = document.getElementById('roomThreadsNote');
   if (note) { note.textContent = roomThreadsNote; note.className = 'room-note' + (roomThreadsNote ? ' err' : ''); }
@@ -9740,6 +9870,8 @@ function openRoomMoreMenu(btn) {
   openMenu(btn, [
     { label: 'Rename it yourself', on: roomBeginRename },
     { label: 'Name it by what it is about', on: () => roomRetitleThread(roomSel) },
+    { label: Number((roomThreads.find(x => x.id === roomSel) || {}).starred) ? 'Remove the star' : 'Star this thread',
+      on: () => roomToggleStar(roomSel) },
     { sep: true },
     { label: 'Delete this thread', danger: true, on: () => roomDeleteThread(roomSel) },
   ]);

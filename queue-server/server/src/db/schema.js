@@ -1616,6 +1616,12 @@ export function initConversationsSchema(db) {
   // NULL when the conversation is on Auto. Read by conversations.js#getChatLane.
   try { db.exec(`ALTER TABLE convos ADD COLUMN chat_override TEXT`); } catch {}
 
+  // Starred threads (the Room's thread list): the few conversations he keeps coming
+  // back to, held above the date groups instead of sinking as newer ones arrive.
+  // Deliberately not a separate table — it is one bit per conversation, and a join
+  // to read it would be more machinery than the fact deserves.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN starred INTEGER NOT NULL DEFAULT 0`); } catch {}
+
   // "Start fresh" (plan "start-fresh-keep-conversation-visible"): the timestamp
   // of the last manual compaction. When set, transcriptOf() sends only the recap
   // plus messages newer than this to the model, instead of the whole transcript

@@ -582,6 +582,17 @@ export function renameConvo(id, title) {
   return { ok: true, convo: getConvo(id) };
 }
 
+// Starred, or not. `updated_at` is deliberately NOT touched: starring is not activity,
+// and bumping it would jump the thread to the top of Today the moment it was starred.
+export function setConvoStar(id, starred) {
+  if (!db) return { error: 'no_db' };
+  const convo = getConvo(id);
+  if (!convo) return { error: 'not_found' };
+  db.prepare(`UPDATE convos SET starred=? WHERE id=?`).run(starred ? 1 : 0, id);
+  broadcastAll('convos:updated', { convoId: id });
+  return { ok: true, convo: getConvo(id) };
+}
+
 export function resetConvoContext(id) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(id);
