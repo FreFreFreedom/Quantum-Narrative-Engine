@@ -3,6 +3,7 @@ import * as q from '../services/ontologyQuery.js';
 import * as rel from '../services/entityRelations.js';
 import * as men from '../services/entityMentions.js';
 import { peersOf } from '../services/peers.js';
+import { boneSearch } from '../services/boneSearch.js';
 import { makeBooksHandler } from '../services/books.js';
 import { makeTagLensHandler } from '../services/tagLens.js';
 import { makeTagPatternHandler } from '../services/tagPattern.js';
@@ -111,6 +112,19 @@ export function ontologyRoutes(db) {
   // "who else is here" and "who is doing it better" are different orderings.
   router.get('/entities/:id/peers', (req, res) => {
     const out = peersOf(db, req.params.id, { limit: Number(req.query.limit) || undefined });
+    if (!out) return res.status(404).json({ error: 'not_found' });
+    res.json(out);
+  });
+
+  // Search by bone — plans/anatomy-replaces-tags.md, Part 2; fractal_operational_core.md §21.
+  // "They do not share a single word. But their anatomy is identical." Unlike /peers, this is
+  // not restricted to one rung: two entities match here across any distance on the ladder,
+  // on the strength of a shared SHAPE (a structural category, not a tag) recorded on a
+  // written relation touching each. The acceptance test is on screen, not just in the code:
+  // each match says whether it shares a tag with the query — the ones that do not are the
+  // stronger evidence.
+  router.get('/entities/:id/bone-search', (req, res) => {
+    const out = boneSearch(db, req.params.id, { limit: Number(req.query.limit) || undefined });
     if (!out) return res.status(404).json({ error: 'not_found' });
     res.json(out);
   });
