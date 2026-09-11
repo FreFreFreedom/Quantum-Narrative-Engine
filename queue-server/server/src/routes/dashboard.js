@@ -1,4 +1,11 @@
 // Routes for the Command Center (plan "command-center-dashboard").
+//
+// NOT CURRENTLY CALLED BY ANYTHING. The Home screen this fed was removed from the
+// app on 2026-09-11 — everything it summarised is the view that owns it (stopped
+// tasks and seeds in Flow, what the Room learned in the Room, kept walks in the
+// Trail), so a screen that repeated all three was the same rows drawn twice. Left
+// in place rather than deleted: it is one small file with no cost, and it is the
+// natural backing for anything that wants a one-request overview later.
 // Thin router behind requireAuth, same shape as every other route file: it holds no
 // logic, it calls services/dashboard.js.
 import { Router } from 'express';

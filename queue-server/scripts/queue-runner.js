@@ -557,15 +557,23 @@ async function claudeGate({ tier, preset, account }) {
 // the entire duration of every task, which is exactly when it matters. The
 // stream flush carries it too now. getClaudeUsage() caches for 60s, so this is
 // one real read per minute however often we flush.
-// Only the MAIN account is reported. The second account's own quota used to ride
-// along here, but Anthropic rate-limits that reading for this account with a
-// ~45-minute back-off, so it was permanently unreadable — and now that nothing
-// decides anything from it (the account is simply spent to its ceiling), reading
-// it at all was cost with no answer.
+// Both accounts are reported. The second one's reading used to be dropped here
+// because nothing decided anything from it — now the rail draws it beside the
+// first, so it is worth asking for again. Anthropic rate-limits that endpoint
+// hard, and getSideClaudeUsage() already backs off on its own (ten minutes after
+// a 429, three otherwise), so this costs at most one real read per few minutes
+// however often the runner polls. An unreadable account simply reports nothing
+// and the rail draws a dash — never a zero, which would read as "spent".
 async function usageForReport() {
   let usage = null;
   try { usage = await getClaudeUsage(); } catch { /* unknown — nothing to report */ }
-  return usage || null;
+  if (!usage) return null;
+  let side = null;
+  try {
+    const s = await getSideClaudeUsage();
+    if (s && s.subscriptionAvailable) side = { session: s.session, week: s.week, subscriptionAvailable: true };
+  } catch { /* unknown — the rail shows a dash */ }
+  return { ...usage, side };
 }
 
 // ─── Claude helper lane ───────────────────────────────────────────────────────

@@ -374,11 +374,11 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
     const usage = (!local.subscriptionAvailable && fromRunner?.subscriptionAvailable)
       ? { ...fromRunner, source: 'runner' }
       : { ...local, source: 'server' };
-    // The paid OpenAI lane, so the strip can show it beside the build quota. The
-    // second Claude account no longer reports a quota at all: Anthropic rate-limits
-    // that reading with a ~45-minute back-off, and nothing decides anything from it
-    // any more — that account is simply spent to its ceiling, then work moves to the
-    // main one (see ai/text.js).
+    // The paid OpenAI lane, so the read-out can show it beside the two accounts. The
+    // second Claude account's own windows ride along inside the runner's payload as
+    // `side` and pass straight through the spread below — only the Mac holds that
+    // token, so the container could never read them itself. Absent is normal:
+    // Anthropic rate-limits that endpoint hard, and the rail draws a dash.
     let openai = null;
     try { openai = await openAiCapState(); } catch {}
     res.json({

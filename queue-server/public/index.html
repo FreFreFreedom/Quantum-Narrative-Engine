@@ -156,7 +156,7 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
    buttons before this. Only :focus-visible, so a mouse click never draws a ring. */
 .ubtn:focus-visible, .uicon:focus-visible, .uchip:focus-visible, .ctrlbtn:focus-visible,
 .rail-item:focus-visible, .umenu-item:focus-visible, .notice-act:focus-visible, .notice-x:focus-visible,
-.room-tabs button:focus-visible, .nb-chip:focus-visible, .trail-btn:focus-visible, .home-go:focus-visible,
+.room-tabs button:focus-visible, .nb-chip:focus-visible, .trail-btn:focus-visible,
 .qp-mode-seg button:focus-visible, .flow-typecips button:focus-visible, .q-place-seg button:focus-visible,
 .arch-viewbtns button:focus-visible, .mind-toolbtns button:focus-visible, .sg-filterbtns button:focus-visible,
 .tag:focus-visible, .pattern-chip:focus-visible, .scope-crumb:focus-visible, .conn:focus-visible {
@@ -164,8 +164,8 @@ window.FMCNS_LOOK_NIGHT = 'darkroom';
 body { margin:0; background:var(--c-bg-2); color:var(--c-ink); font-family:var(--font-ui); font-size:var(--fs-base); line-height:1.5; -webkit-font-smoothing:antialiased; }
 /* Numbers that sit in a column line up. Counts, costs and durations are read against
    each other, so they get the same width per digit wherever they appear. */
-.home-n, .home-row .n, .uq-row, .trail-when, .posture-when, .rel-when, .core-tab-count,
-.room-tabcount, .q-cost, .bk-stars, .home-behind { font-variant-numeric: tabular-nums; }
+.uq-row, .trail-when, .posture-when, .rel-when, .core-tab-count,
+.room-tabcount, .q-cost, .bk-stars { font-variant-numeric: tabular-nums; }
 * { scrollbar-width:thin; scrollbar-color:var(--c-border-3) transparent; }
 ::-webkit-scrollbar { width:10px; height:10px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -471,7 +471,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    thing that actually widens — so an unpinned peek floats OVER the content and
    the page never reflows under the mouse. */
 /* z-index above .studio-overlay (10000) so the side rail — and the Queue
-   button on it — stays clickable even while a modal (AI Settings, etc.) is
+   button on it — stays clickable even while a modal (Settings, etc.) is
    open; otherwise the overlay's full-viewport dim layer sits on top of the
    rail and swallows the click. */
 .railbar { position:relative; width:52px; flex:none; z-index:var(--z-rail); }
@@ -503,78 +503,73 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    blocks used to cost three clicks across two different bars. */
 .rail-sep { flex:none; height:1px; margin:6px 7px; background:var(--c-border); }
 /* When the rail runs out of height, the destination list is what yields — never the
-   foot. Expanding the rail makes the quota strip appear, which grew the foot by about
-   sixty pixels inside a column that clips: the Look and AI Settings buttons dropped past
+   foot. Expanding the rail makes the read-out appear, which grew the foot by about
+   sixty pixels inside a column that clips: the Look and Settings buttons dropped past
    the bottom edge, so the button you were reaching for moved out of the window as the
    rail opened under your cursor. Found by reaching for it. */
 .rail-nav { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:2px; }
-.rail-foot { flex:0 0 auto; margin-top:auto; display:flex; flex-direction:column; gap:2px; padding-top:6px; border-top:1px solid var(--c-border); }
-.rail-row { cursor:default; }
-.rail-row:hover { background:none; }
-.rail-foot #serverToggle { max-width:110px; font-size:var(--fs-xs); }
-.rail-foot .core-banner, .rail-foot .q-pausebadge { padding:0 7px; font-size:var(--fs-xs); overflow:hidden; text-overflow:ellipsis; }
-/* collapsed: the settings keep their symbol but shed their words. The usage bars
-   deliberately stay visible — a nearly-spent quota must still be noticeable. */
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .core-banner,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .q-pausebadge { display:none; }
-/* The quota summary in the rail: one line per lane — building, thinking, paid —
-   each the tightest limit in that lane. The name and the figure share a row, the
-   bar spans underneath and widens with the panel, because the original strip was
-   built for a 46px bar the full width of the window and simply cannot fit a
-   232px column. The full breakdown lives in AI Settings (.uq-panel below). */
-/* The quota read-out is the only thing in the foot that is information rather than a
-   control, so it is the only thing allowed to go. Expanded, it runs to five rows and
-   about 230px, which is taller than the space the foot gets on a short window — so it
-   sits last and clips, and Pause, the server pick, AI Settings and Look are always
-   reachable. The full read-out is one click away in AI Settings, which holds all of it. */
-/* The read-out is the last thing in the foot and its height is FIXED, in both states.
-   That is the whole point: the foot's height decides where the four buttons above it
-   start, so a strip that asks for its natural height moves Pause, the server pick, AI
-   Settings and Look by three hundred pixels the moment the rail opens — out from under
-   the cursor that was reaching for them. Fixed here, the buttons never move at all.
-   Two windows fit exactly; a limit warning is clipped, and says the same thing as the
-   pause badge two rows up. */
-.rail-foot #usageStripHost { padding:4px 7px 2px; order:2; flex:0 0 auto; height:92px; overflow:hidden; }
-.rail-foot > *:not(#usageStripHost) { order:1; flex:0 0 auto; }
-.rail-foot .usage-strip { flex-direction:column; align-items:stretch; gap:6px; }
-.rail-foot .usage-group { display:flex; flex-direction:column; gap:4px; }
-.rail-foot .usage-groupname { font-size:var(--fs-xs); font-weight:var(--fw-medium); text-transform:uppercase; letter-spacing:.04em; color:var(--c-ink-4); }
-/* Two lines per window: the figure above, the bar and its reset time below. */
-.rail-foot .usage-item { display:grid; grid-template-columns:1fr auto; grid-template-areas:'label pct' 'bar reset'; align-items:center; gap:2px 6px; }
-.rail-foot .usage-item .ui-label { grid-area:label; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rail-foot .usage-item .usage-pct, .rail-foot .usage-item .usage-money { grid-area:pct; white-space:nowrap; }
-.rail-foot .usage-bar { grid-area:bar; width:auto; }
-.rail-foot .usage-item .usage-reset { display:block; grid-area:reset; white-space:nowrap; font-size:var(--fs-xs); }
-/* the reset time has nowhere to go in a column — it is already in the tooltip */
-.rail-foot .usage-stale { display:none; }
-.rail-foot .usage-none { white-space:normal; line-height:1.35; }
-.rail-foot .usage-alert { white-space:normal; line-height:1.35; }
-.usage-seeall { align-self:flex-start; padding:0; border:none; background:none; color:var(--c-ink-4); font-size:var(--fs-xs); cursor:pointer; }
-/* In the rail, the read-out is a glance: the two windows that actually run out, and a
-   warning when one is close. The month's paid total, the cache figure and the link to
-   AI Settings all come out — AI Settings holds every one of them and its button is the
-   row directly above this. Drawing them here as well was what made the foot grow by
-   230px on hover, which moved the buttons under the foot out from under the cursor. */
-.rail-foot .usage-seeall,
-.rail-foot .usage-cache-hint,
-.rail-foot .usage-spend { display:none; }
-.usage-seeall:hover { color:var(--c-ink); text-decoration:underline; }
-/* collapsed: the bars alone. A nearly-spent quota still has to be noticeable,
-   so they stay — only the words go. */
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-groupname,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-reset,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .ui-label,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-pct,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-money,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-item .usage-cache-hint,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-none,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-alert,
-.railbar:not(.pinned):not(:hover):not(:focus-within) .usage-seeall { display:none; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-strip { gap:3px; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-group { gap:3px; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot .usage-bar { height:4px; }
+.rail-foot { flex:0 0 auto; margin-top:auto; display:flex; flex-direction:column; gap:0; padding-top:10px; }
+/* Settings and Look share one row when there is width for it, and stack when there
+   is not — two icons side by side say as much as two rows and cost half the height. */
+.rail-btnrow { display:flex; gap:2px; padding:4px 0 0; }
+.rail-btnrow .rail-item { flex:1; width:auto; justify-content:center; padding:0; gap:0; }
+.railbar.pinned .rail-btnrow .rail-item,
+.railbar:hover .rail-btnrow .rail-item,
+.railbar:focus-within .rail-btnrow .rail-item { justify-content:flex-start; padding:0 7px; gap:10px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow { flex-direction:column; }
 
-/* ---------- The full quota breakdown (AI Settings) ---------- */
+/* ---------- The quota read-out in the rail ---------- */
+/* Two accounts down, two windows across, the money on a last line. Every figure is
+   what is LEFT of that window, the hairline under it is the same quantity drawn, and
+   its colour slides along one ramp — sea green full, sand at half, the app's own
+   orange nearly gone — so the colour is never a separate thing to learn. The time is
+   when that window comes back.
+   The height is FIXED in both states, and that is the whole point: the foot decides
+   where the two buttons above it start, so a read-out that asks for its natural
+   height moves Settings and Look out from under the cursor the moment the rail opens.
+   Shut, the grid is replaced by two short bars — the five-hour window of each
+   account — with the month's spend underneath. */
+.rail-foot #usageStripHost { flex:0 0 auto; height:104px; overflow:hidden; padding:0 3px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot #usageStripHost { padding:0 2px; }
+.uq-grid { display:flex; flex-direction:column; }
+.uq-head { display:grid; grid-template-columns:1fr 46px 46px; gap:6px; padding:0 4px 4px;
+  font-size:var(--fs-2xs); letter-spacing:.06em; text-transform:uppercase; color:var(--c-ink-5); }
+.uq-head span:not(:first-child) { text-align:center; }
+.uq-line { display:grid; grid-template-columns:1fr 46px 46px; gap:6px; align-items:start;
+  padding:4px; font-size:var(--fs-sm); color:var(--c-ink-3); }
+.uq-who { padding-top:1px; overflow:hidden; text-overflow:ellipsis; }
+.uq-cell { display:flex; flex-direction:column; gap:3px; align-items:center; min-width:0; }
+.uq-cell .uq-pct { font-size:var(--fs-sm); color:var(--c-ink-2); font-variant-numeric:tabular-nums; }
+.uq-cell .uq-line-bar { width:100%; height:3px; border-radius:2px; background:var(--c-surface-3); overflow:hidden; }
+.uq-cell .uq-line-bar i { display:block; height:100%; border-radius:2px; }
+.uq-cell .uq-in { font-size:var(--fs-2xs); color:var(--c-ink-5); font-variant-numeric:tabular-nums; }
+.uq-cell.uq-blank .uq-pct { color:var(--c-ink-5); }
+.uq-money { display:flex; justify-content:space-between; align-items:baseline; gap:6px;
+  padding:6px 4px 0; margin-top:2px; border-top:1px solid var(--c-border);
+  font-size:var(--fs-xs); color:var(--c-ink-5); }
+/* The money is a figure, not a warning — spending is not a state to be alarmed by,
+   so it takes no colour from the ramp and none of its own. */
+.uq-money b { font-size:var(--fs-sm); font-weight:var(--fw-medium); color:var(--c-ink-2); font-variant-numeric:tabular-nums; }
+/* Shut: two short bars, the five-hour window only, named above each, spend beneath.
+   No figures — at 52px a percentage is four characters of noise, and the bar already
+   says the one thing worth knowing from across the room. */
+.uq-shut { display:flex; flex-direction:column; gap:8px; padding:4px 2px 2px; }
+.uq-shut .uq-b { display:flex; flex-direction:column; gap:3px; }
+.uq-shut .uq-b span { font-size:7.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--c-ink-5); text-align:center; line-height:1; }
+.uq-shut .uq-b i { display:block; height:4px; border-radius:3px; background:var(--c-surface-3);
+  overflow:hidden; position:relative; }
+.uq-shut .uq-b i em { position:absolute; inset:0 auto 0 0; border-radius:3px; }
+.uq-shut .uq-spend { text-align:center; font-size:var(--fs-2xs); color:var(--c-ink-5); font-variant-numeric:tabular-nums; }
+/* Only one of the two forms is ever drawn; the rail's own state picks which. */
+.uq-grid { display:none; }
+.uq-shut { display:none; }
+.railbar.pinned .uq-grid, .railbar:hover .uq-grid, .railbar:focus-within .uq-grid { display:flex; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .uq-shut { display:flex; }
+.uq-none { padding:6px 4px; font-size:var(--fs-xs); color:var(--c-ink-5); line-height:1.35; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .uq-none { display:none; }
+
+/* ---------- The full quota breakdown (Settings) ---------- */
 /* All three lanes, named for what they do rather than which account they are. */
 .ai-quota { margin-bottom:var(--sp-4); }
 /* same weight as the feature table's column headings, so the sheet reads as one */
@@ -621,6 +616,24 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .queue-panel-close { border:none; background:none; cursor:pointer; font-size:var(--fs-md); color:var(--c-ink-4); padding:5px 8px; border-radius:var(--r-md); flex-shrink:0; }
 .queue-panel-close:hover { background:var(--c-surface-2); color:var(--c-ink); }
 .queue-panel-body { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:14px; }
+/* Pause sits in the head of the panel it pauses, as an icon: the word only appears
+   where there is room for it. It turns amber when the queue is actually paused. */
+.queue-panel-pause { display:inline-flex; align-items:center; gap:6px; border:none; background:none;
+  cursor:pointer; color:var(--c-ink-4); padding:4px 7px; border-radius:var(--r-md); font-size:var(--fs-sm);
+  font-family:inherit; flex-shrink:0; }
+.queue-panel-pause:hover { background:var(--c-surface-2); color:var(--c-ink); }
+.queue-panel-pause svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.5;
+  stroke-linecap:round; stroke-linejoin:round; }
+.queue-panel-pause .rail-label { display:none; }
+.queue-panel-pause.warm { background:var(--c-amber-tint); color:var(--c-warn); }
+.queue-panel-pause.warm .rail-label { display:inline; }
+/* One line at the foot of the panel, and only when it has something to say. */
+.queue-panel-foot { flex:none; padding:7px 14px; border-top:1px solid var(--c-border);
+  font-size:var(--fs-xs); color:var(--c-ink-4); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.queue-panel-foot:empty { display:none; }
+/* Paused has to be visible without opening the panel, which is what the pause badge
+   in the rail used to do. The button already steps aside for the panel. */
+#sysBtn.paused { background:var(--c-amber); color:var(--c-on-amber); opacity:1; }
 /* The app's one floating control. Small and quiet until something waits on you. */
 #sysBtn { position:fixed; bottom:14px; right:14px; width:30px; height:30px; border-radius:50%; background:var(--c-ink-solid); color:var(--c-on-solid); border:none; padding:0; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:var(--z-sysbtn); box-shadow:var(--sh-sm); opacity:.5; transition:opacity var(--t-fast) var(--ease); }
 #sysBtn:hover, #sysBtn.on { opacity:1; }
@@ -802,26 +815,6 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    that is nowhere else — what is waiting, what was learned, what was left open.
    Cards, not a table: each is a short summary with a way in, and any card that grows
    past a handful of rows has become the view that owns it and should link instead. */
-.ws-home { flex:1; min-width:0; min-height:0; display:none; overflow:auto; }
-.ws-home.open { display:block; }
-.home-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; padding:14px; align-content:start; }
-.home-card { border:1px solid var(--c-border); border-radius:var(--r-md); background:var(--c-surface); padding:11px 12px; min-width:0; }
-.home-card h3 { margin:0 0 8px; font-size:var(--fs-md); font-weight:var(--fw-medium); color:var(--c-ink-3);
-  display:flex; align-items:baseline; gap:6px; }
-.home-n { font-size:var(--fs-xl); font-weight:600; color:var(--c-ink); line-height:1; margin-bottom:6px; }
-.home-n.zero { color:var(--c-ink-5); font-weight:400; }
-.home-sub { font-size:var(--fs-sm); color:var(--c-ink-4); margin-bottom:8px; }
-.home-row { display:flex; gap:7px; align-items:baseline; padding:3px 0; border-top:1px solid var(--c-border); font-size:var(--fs-sm); min-width:0; }
-.home-row:first-of-type { border-top:none; }
-.home-row .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.home-row .n { color:var(--c-ink-5); font-size:var(--fs-sm); flex:none; }
-/* The same pill shape the rest of the app uses to say what kind of thing a row is. */
-.home-tag { font-size:var(--fs-xs); color:var(--c-ink-3); background:var(--c-surface-2);
-  border-radius:var(--r-pill); padding:1px 8px; flex:none; }
-.home-go { background:none; border:none; padding:7px 0 0; margin:0; cursor:pointer; color:var(--c-accent);
-  font-family:inherit; font-size:var(--fs-sm); font-weight:var(--fw-medium); }
-.home-go:hover { text-decoration:underline; }
-.home-empty { font-size:var(--fs-sm); color:var(--c-ink-5); }
 /* ── The room to think in (Core → Room) ────────────────────────────────────────
    Third Core sub-view, same three-zone shape as the rest of the workspace — but
    here the middle zone is the whole point: a conversation with real vertical room
@@ -1673,7 +1666,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .q-replybox2-row { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
 .q-detail-row { display:flex; gap:14px; font-size:var(--fs-xs); color:var(--c-ink-3); margin-bottom:12px; flex-wrap:wrap; }
 
-/* ---------- AI Settings sub-tab ---------- */
+/* ---------- Settings sheet ---------- */
 .ai-body { flex:1; overflow-y:auto; padding:16px; max-width:720px; }
 .ai-policy-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
 .ai-policy-row select { font-size:var(--fs-sm); padding:5px 8px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); }
@@ -2492,10 +2485,6 @@ button:active { transform: translateY(1px) scale(.99); }
            bar — a hierarchy that existed only to be redrawn twice. The top bar is
            gone, so the rail carries them itself: an icon each, so a collapsed rail
            still shows all of them and which one you are in. -->
-      <button class="rail-item" data-rail-sub="home" role="tab" aria-selected="false" title="Home — what is waiting on you, what the Room learned, where you left off">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-home"/></svg>
-        <span class="rail-label">Home</span><span id="railCountHome" class="mode-pill-count"></span>
-      </button>
       <button class="rail-item" data-rail-sub="graph" role="tab" aria-selected="false" title="The architecture graph">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-layers"/></svg>
         <span class="rail-label">Architecture</span>
@@ -2517,31 +2506,22 @@ button:active { transform: translateY(1px) scale(.99); }
         <span class="rail-label">Room</span>
       </button>
     </div>
+    <!-- The foot carries one read-out and two buttons, and nothing else. Pause and the
+         queue status line moved to the build panel — the queue's own surface — and the
+         server pick moved into Settings, which is where a knob touched twice a year
+         belongs. What is left is the only thing here that is information. -->
     <div class="rail-foot">
-      <div id="usageStripHost" data-src="Side rail → Claude usage (5h + weekly) | fmcns_navigator.html: loadUsage(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
-      <span id="archQueueBanner" class="core-banner" data-src="Side rail → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></span>
-      <span id="queuePauseBadge" class="q-pausebadge" style="display:none;"></span>
-      <button class="rail-item rail-btn" id="queuePauseBtn" title="Pause the task queue">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use id="queuePauseIc" href="#ic-pause"/></svg>
-        <span class="rail-label">Pause queue</span>
-      </button>
-      <span class="rail-item rail-row core-serverpick" title="Which server this page talks to. Switching reloads.">
-        <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-refresh"/></svg>
-        <span class="rail-label">
-          <select id="serverToggle">
-            <option value="local">local</option>
-            <option value="production">production</option>
-          </select>
-        </span>
-      </span>
-      <button class="rail-item rail-btn" id="aiSheetBtn" title="AI Settings — which model handles what, and what happens when the paid one runs out">
-        <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-settings"></use></svg>
-        <span class="rail-label">AI Settings</span>
-      </button>
-      <button class="rail-item rail-btn" id="themeToggleBtn" aria-haspopup="menu" title="Look" aria-label="Look">
-        <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-look" id="lookIconUse"></use></svg>
-        <span class="rail-label">Look</span>
-      </button>
+      <div id="usageStripHost" data-src="Side rail → the quota read-out (both Claude accounts + the paid lane) | fmcns_navigator.html: loadUsage(), usageRailHtml(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
+      <div class="rail-btnrow">
+        <button class="rail-item rail-btn" id="aiSheetBtn" title="Settings — which model handles what, which server this page talks to, and what happens when the paid one runs out">
+          <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-settings"></use></svg>
+          <span class="rail-label">Settings</span>
+        </button>
+        <button class="rail-item rail-btn" id="themeToggleBtn" aria-haspopup="menu" title="Look" aria-label="Look">
+          <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-look" id="lookIconUse"></use></svg>
+          <span class="rail-label">Look</span>
+        </button>
+      </div>
     </div>
   </div>
 </nav>
@@ -2554,10 +2534,18 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="queue-panel-resize" id="queuePanelResize" title="Drag to resize"></div>
   <div class="queue-panel-head">
     <span class="queue-panel-title">Dispatch Queue</span>
+    <!-- Pause lives with the queue it pauses. It kept its id, its icon <use> and its
+         .rail-label span because the poller writes all three by id; only the styling
+         and the place changed. -->
+    <button class="queue-panel-pause" id="queuePauseBtn" title="Pause the task queue">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><use id="queuePauseIc" href="#ic-pause"/></svg>
+      <span class="rail-label">Pause queue</span>
+    </button>
     <a href="#" id="queuePanelOpenPage" class="queue-panel-openpage">Full page →</a>
     <button id="queuePanelClose" class="queue-panel-close" title="Close (Esc)" aria-label="Close">✕</button>
   </div>
   <div class="queue-panel-body" id="queuePanelBody"></div>
+  <div class="queue-panel-foot" id="archQueueBanner" data-src="Build panel → queue execution status | fmcns_navigator.html: renderArchQueueBanner(), qLoad() | backend: GET /api/architecture/queue-status"></div>
 </aside>
   <div class="wrap" id="app">
   <div class="left" data-src="Content navigator → filters sidebar (types/source/search/axis/clusters/patterns) | fmcns_navigator.html: renderFacets(), renderClusterList(), renderPatternList(), renderAxisControls(); collapsed-to-a-spine hover/pin behaviour in initFilterPanel()/syncFiltersActive() | backend: GET /api/ontology/facets, /api/ontology/clusters">
@@ -2735,9 +2723,6 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="tv-body" id="tvBodyMind"></div>
       </div>
-    </div>
-    <div class="ws-home" id="wsHome" data-src="CORE ARCHITECTURE → Home: the command centre. What is waiting on you, what the Room has learned, threads the memory has not absorbed, and the walks you kept | fmcns_navigator.html: loadHome(), renderHome() | backend: GET /api/dashboard, services/dashboard.js; the ranked list rides the existing POST /api/architecture/next">
-      <div class="home-grid" id="homeGrid"></div>
     </div>
     <div class="ws-flow" id="wsFlow" data-src="CORE ARCHITECTURE → workspace center zone: the Flow (one aggregated list — questions, running, ready, suggested, seeds, parked, done; finished cards carry an amber ✨ N badge when a picked world idea isn't usable yet) + the New-prompt composer | fmcns_navigator.html: renderFlow(), flowQueueRow() idea-gap badge, qLoad()/startQueuePolling(), loadSuggestions()/loadIdeas() | backend: routes/travaux.js, routes/queue.js (idea_gaps), services/inspireLanding.js">
       <div id="corePaneFlow" class="core-pane" data-src="CORE ARCHITECTURE → Flow | fmcns_navigator.html: renderFlow() into #tvBodyFlow, item detail into the right zone | backend: services/promptQueue.js, services/suggestions.js, services/workIdeas.js">
@@ -2925,11 +2910,11 @@ button:active { transform: translateY(1px) scale(.99); }
     </div>
   </div>
 </div>
-<div id="aiSheetRoot" class="studio-overlay" style="display:none;" data-src="CORE ARCHITECTURE → ⚙ → AI Settings sheet | fmcns_navigator.html: renders into #aiBody, loadAiSettings()/renderAiSettings() | backend: GET/PUT /api/travaux/ai-settings, GET /api/travaux/providers, services/ai/text.js">
+<div id="aiSheetRoot" class="studio-overlay" style="display:none;" data-src="CORE ARCHITECTURE → ⚙ → Settings sheet | fmcns_navigator.html: renders into #aiBody, loadAiSettings()/renderAiSettings() | backend: GET/PUT /api/travaux/ai-settings, GET /api/travaux/providers, services/ai/text.js">
   <div class="studio-modal" style="width:640px;max-height:76vh;">
     <div class="studio-head">
       <div style="display:flex;flex-direction:column;gap:1px;">
-        <span class="studio-title">AI Settings</span>
+        <span class="studio-title">Settings</span>
       </div>
       <div class="studio-actions"><button id="aiSheetCloseBtn" title="Close">✕</button></div>
     </div>
@@ -3273,7 +3258,7 @@ async function boot() {
     // rail stays live in every mode, not only inside Core architecture.
     startQueuePolling();
     qLoad();
-    // Pause queue, Server and AI Settings used to be wired inside initCore(),
+    // Settings used to be wired inside initCore(),
     // which meant they did nothing until you had opened Core architecture once.
     // They live in the always-visible rail now, so they are wired here instead.
     initRailControls();
@@ -4525,7 +4510,6 @@ async function loadMentions(id) {
     try { await apiWrite('/api/ontology/mentions/' + encodeURIComponent(mid) + '/' + verb, 'POST', {}); }
     catch (err) { console.error('mention decision failed:', err); return; }
     loadMentions(id);
-    if (typeof loadHome === 'function') loadHome(true);
   };
   host.querySelectorAll('[data-men-yes]').forEach((b) => { b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); decide(b.getAttribute('data-men-yes'), 'confirm'); }; });
   host.querySelectorAll('[data-men-no]').forEach((b) => { b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); decide(b.getAttribute('data-men-no'), 'reject'); }; });
@@ -8714,7 +8698,7 @@ function initNarrowPanels() {
   });
   sync();
 }
-// Pause queue / Server / AI Settings + the usage bars. Called from boot().
+// Settings, Look and the quota read-out. Called from boot().
 function initRailControls() {
   const pause = document.getElementById('queuePauseBtn');
   if (pause) pause.onclick = qTogglePause;
@@ -8722,7 +8706,7 @@ function initRailControls() {
   const aiRoot = document.getElementById('aiSheetRoot');
   if (ai) ai.onclick = () => { aiRoot.style.display = 'flex'; loadAiSettings(); };
   // The closer has to be wired next to the opener. It used to live in initCore(),
-  // which meant opening AI Settings from the rail without having visited Core
+  // which meant opening Settings from the rail without having visited Core
   // first gave you a sheet with a dead ✕ and no way out.
   const aiClose = document.getElementById('aiSheetCloseBtn');
   if (aiClose) aiClose.onclick = () => { aiRoot.style.display = 'none'; };
@@ -8732,19 +8716,6 @@ function initRailControls() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && aiRoot && aiRoot.style.display === 'flex') aiRoot.style.display = 'none';
   });
-  // "Server: local / production" — writes the shared key both constants read,
-  // then reloads so every fetch lands on the new backend. Initial value mirrors
-  // what the constants resolved to before this element existed.
-  const serverSel = document.getElementById('serverToggle');
-  if (serverSel) {
-    const saved = localStorage.getItem('fmcns_api_base');
-    const effective = saved || ((location.hostname === 'localhost' || location.protocol === 'file:') ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
-    serverSel.value = effective === 'http://localhost:3000' ? 'local' : 'production';
-    serverSel.onchange = () => {
-      localStorage.setItem('fmcns_api_base', serverSel.value === 'local' ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
-      location.reload();
-    };
-  }
   // The four Architecture destinations, straight from the rail — including from
   // another mode, which is why this cannot live in initCore(): the rail is
   // visible before Core has ever been opened.
@@ -8797,7 +8768,7 @@ const CORE_VIEW_KEY = 'fmcns_core_view';
 let coreView = (function(){
   try {
     var v = localStorage.getItem(CORE_VIEW_KEY);
-    return (v === 'arch' || v === 'flow' || v === 'room' || v === 'home') ? v : 'arch';
+    return (v === 'arch' || v === 'flow' || v === 'room') ? v : 'arch';
   } catch (e) { return 'arch'; }
 })();
 let coreInited = false;
@@ -8985,7 +8956,6 @@ function renderWorkspace() {
   // would open the Flow zone underneath the Room as well.
   document.getElementById('wsFlow').classList.toggle('open', v === 'flow');
   document.getElementById('wsRoom').classList.toggle('open', v === 'room');
-  document.getElementById('wsHome').classList.toggle('open', v === 'home');
   Object.keys(CORE_VIEW_PANES).forEach(p => document.getElementById(CORE_VIEW_PANES[p]).classList.toggle('open', p === v));
   syncRailSub();
 }
@@ -9012,7 +8982,7 @@ function syncRailSub() {
 // clicks here rather than each mapping the names itself.
 function goCoreDest(dest) {
   if (!document.getElementById('coreApp').classList.contains('open')) setMode('core');
-  if (dest === 'home' || dest === 'flow' || dest === 'room') switchCoreView(dest);
+  if (dest === 'flow' || dest === 'room') switchCoreView(dest);
   else { archTab = dest; switchCoreView('arch'); }
 }
 
@@ -9036,149 +9006,7 @@ function switchCoreView(v) {
   if (v === 'arch') { initArchNav(); setArchTab(archTab); }
   if (v === 'flow') { loadSuggestions(); loadIdeas(); renderFlow(); loadProviders(); loadAgents(); loadNextUp(); }
   if (v === 'room') { initRoom(); loadRoom(); }
-  // Home reuses loadNextUp() rather than fetching the ranking itself: the ranked
-  // list needs the component catalogue, which lives in this file and not in the
-  // database, so /api/architecture/next is a POST the browser has to make. One
-  // caller, two readers.
-  if (v === 'home') { loadHome(); loadNextUp(); }
   if (coreInited) startQueuePolling(); // rate depends on which view is now active
-}
-
-// ---------- Home (Core → Home): the command centre ----------
-// One screen answering "what is happening, what is stuck, what is waiting on me",
-// which until now meant reading the runner's log file or asking a terminal session.
-//
-// What is NOT here is the point. The rail's foot already carries the queue line
-// (#archQueueBanner: paused/running/queued, auto-ship, today's spend, the helper
-// budget, the storage warning) and the usage strip, on every view. Drawing either
-// again here would be the same numbers twice — the rule in AGENTS.md this app has
-// already been bitten by. So Home carries only what is nowhere else.
-//
-// Every card is a summary with a way in. A card that grows past a handful of rows
-// has become the view that owns that data and should be a link instead.
-let homeData = null;
-let homeErr = '';
-
-async function loadHome(quiet) {
-  if (!quiet) homeErr = '';
-  try {
-    homeData = await api('/api/dashboard');
-    homeErr = '';
-  } catch (e) {
-    // Say so rather than rendering empty cards, which read as "there is nothing
-    // waiting on you" — the one wrong answer this screen can give.
-    homeErr = 'Could not read the dashboard just now.';
-  }
-  renderHome();
-}
-
-function homeRows(items, render) {
-  if (!items || !items.length) return '';
-  return items.map(render).join('');
-}
-
-function homeCard(title, body) {
-  return '<div class="home-card"><h3>' + qEsc(title) + '</h3>' + body + '</div>';
-}
-
-function renderHome() {
-  const host = document.getElementById('homeGrid');
-  if (!host) return;
-  if (homeErr) { host.innerHTML = '<div class="home-card"><div class="home-empty">' + qEsc(homeErr) + '</div></div>'; return; }
-  if (!homeData) { host.innerHTML = ''; return; }
-
-  const cards = [];
-
-  // 1. Waiting on you. Stopped tasks, seeds never planted, suggestions never
-  // answered — three lists that have never been counted in one place.
-  const n = homeData.needsYou;
-  if (n) {
-    let b = '<div class="home-n' + (n.total ? '' : ' zero') + '">' + n.total + '</div>';
-    b += '<div class="home-sub">' + (n.total ? 'stopped, unplanted or unanswered' : 'nothing is waiting') + '</div>';
-    // Six rows, hard. Five of each kind came to thirteen on the first real load,
-    // and a card that long has stopped being a summary and become the Flow view
-    // with worse controls — the rule this screen is built on. Stopped tasks first:
-    // they are the ones that are actually stuck.
-    // A name found in his own writing that needs one confirming click lands here too
-    // (plans/testimony-in-the-ontology.md) rather than on a card of its own: it is the
-    // same question, and five rows once is not worth a horizontal band forever. These
-    // rows are clickable — the entity is where the quote is, and the quote is the only
-    // thing that makes the match judgeable.
-    const waiting = [].concat(
-      (n.blocked || []).map((t) => ['stopped', t.title, null]),
-      (n.seeds || []).map((t) => ['seed', t.title, null]),
-      (n.suggestions || []).map((t) => ['idea', t.title, null]),
-      (n.mentions || []).map((t) => ['named', t.title + ' — ' + t.quote, t.entity_id]),
-    );
-    b += homeRows(waiting.slice(0, 6), (r) => '<div class="home-row"' + (r[2] ? ' data-home-entity="' + qEscAttr(r[2]) + '" style="cursor:pointer;"' : '') + '><span class="home-tag">' + r[0] + '</span><span class="t" title="' + qEscAttr(r[1] || '') + '">' + qEsc(r[1] || '(untitled)') + '</span></div>');
-    if (n.total) {
-      const more = n.total - Math.min(6, waiting.length);
-      b += '<button type="button" class="home-go" data-home-go="flow">' + (more > 0 ? more + ' more in Flow' : 'Open Flow') + '</button>';
-    }
-    cards.push(homeCard('Waiting on you', b));
-  }
-
-  // 2. What to build next. Rendered from the SAME nextUp the Flow view loads —
-  // three rows and a way in, never the whole list.
-  {
-    const picks = (typeof nextUp !== 'undefined' && nextUp && nextUp.picks) || [];
-    let b = '';
-    if (typeof nextUpErr !== 'undefined' && nextUpErr) b += '<div class="home-empty">' + qEsc(nextUpErr) + '</div>';
-    else if (!picks.length) b += '<div class="home-empty">Nothing ranked yet.</div>';
-    else b += picks.slice(0, 3).map((p, i) => '<div class="home-row"><span class="n">' + (i + 1) + '</span><span class="t" title="' + qEscAttr(p.reason || '') + '">' + qEsc(p.name || '') + '</span></div>').join('');
-    if (picks.length) b += '<button type="button" class="home-go" data-home-go="flow">See the order</button>';
-    cards.push(homeCard('What to build next', b));
-  }
-
-  // 3. What the Room has learned. The vision split is the number that matters:
-  // the paradigm accumulating is the thing nothing else in the app says out loud.
-  const l = homeData.learned;
-  if (l) {
-    let b = '<div class="home-n' + (l.total ? '' : ' zero') + '">' + l.total + '</div>';
-    b += '<div class="home-sub">' + (l.vision ? l.vision + ' of them the paradigm' : 'nothing filed as the paradigm yet') + '</div>';
-    b += homeRows(l.recent, (f) => mindFactRowHtml(f));
-    b += '<button type="button" class="home-go" data-home-go="room">Open the Room</button>';
-    cards.push(homeCard('What the Room has learned', b));
-  }
-
-  // 4. Threads the memory has not caught up with. `behind` is his messages the
-  // harvest has not read — thinking the app does not have yet.
-  const u = homeData.unharvested;
-  if (u) {
-    let b = '<div class="home-n' + (u.count ? '' : ' zero') + '">' + u.count + '</div>';
-    b += '<div class="home-sub">' + (u.count ? 'with turns the memory has not read' : 'every thread is absorbed') + '</div>';
-    b += homeRows(u.threads, (t) => '<div class="home-row"><span class="t" title="' + qEscAttr(t.title || '') + '">' + qEsc(t.title || '(untitled)') + '</span><span class="n">' + t.behind + ' behind</span></div>');
-    if (u.count) b += '<button type="button" class="home-go" data-home-go="room">Open the Room</button>';
-    cards.push(homeCard('Not yet remembered', b));
-  }
-
-  // 5. Walks kept through the ontology. Invisible everywhere else once set down.
-  const w = homeData.walks;
-  if (w) {
-    // Rendered only when a walk exists. An empty card here was five things drawn to
-    // say one, which is the rule this screen was built on.
-    if (w.length) {
-      cards.push(homeCard('Walks you kept', homeRows(w, (m) => '<div class="home-row"><span class="t" title="' + qEscAttr(m.title || '') + '">' + qEsc(m.title || '(untitled)') + '</span><span class="n">' + m.steps + ' steps</span></div>')));
-    }
-  }
-
-  host.innerHTML = cards.join('');
-  wireMindWhy(host);
-  host.querySelectorAll('[data-home-go]').forEach((btn) => {
-    btn.onclick = () => goCoreDest(btn.getAttribute('data-home-go'));
-  });
-  host.querySelectorAll('[data-home-entity]').forEach((row) => {
-    row.onclick = () => { setMode('content'); selectEntity(row.getAttribute('data-home-entity')); };
-  });
-
-  // The rail badge counts only what is genuinely waiting — never the totals of the
-  // other cards, which would make a quiet day look busy.
-  const badge = document.getElementById('railCountHome');
-  if (badge) {
-    const total = (homeData.needsYou && homeData.needsYou.total) || 0;
-    badge.textContent = total ? String(total) : '';
-    badge.classList.toggle('on', total > 0);
-  }
 }
 
 // ---------- The room to think in (Core → Room) ----------
@@ -11034,7 +10862,23 @@ function qProviderUi() {
 // do is worse than no control. The orchestrator that would have driven it is recorded
 // as cancelled in plans/multi-agent-development-team.md.)
 
-// ---------- AI Settings sub-tab ----------
+// "Server: local / production" — writes the shared key both constants read, then
+// reloads so every fetch lands on the new backend. Called from renderAiSettings()
+// rather than at boot: the sheet rebuilds its own markup on every open, so a handler
+// bound once at startup would be attached to an element that no longer exists.
+function wireServerToggle() {
+  const sel = document.getElementById('serverToggle');
+  if (!sel) return;
+  const saved = localStorage.getItem('fmcns_api_base');
+  const effective = saved || ((location.hostname === 'localhost' || location.protocol === 'file:') ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
+  sel.value = effective === 'http://localhost:3000' ? 'local' : 'production';
+  sel.onchange = () => {
+    localStorage.setItem('fmcns_api_base', sel.value === 'local' ? 'http://localhost:3000' : 'https://quantum-narrative-engine-production.up.railway.app');
+    location.reload();
+  };
+}
+
+// ---------- Settings sheet ----------
 // Per-work-type default model + the quota policy that decides what happens when
 // the paid Claude subscription runs out — backed by services/ai/text.js's
 // ai_settings row (GET/PUT /api/travaux/ai-settings). Health dots and the
@@ -11072,7 +10916,7 @@ async function loadAiSettings() {
       api('/api/travaux/ai-settings'),
       // Test the model LIST, not the key: qProviders is initialised with an empty
       // opencode object, so `qProviders.opencode` has always been truthy and this
-      // never fetched anything. Opening AI Settings before the Queue tab therefore
+      // never fetched anything. Opening Settings before the Queue tab therefore
       // showed "OpenCode unreachable" and an empty model dropdown on a perfectly
       // healthy install (found 2026-08-23).
       qProviders.opencode?.models?.length ? Promise.resolve() : loadProviders(),
@@ -11339,7 +11183,19 @@ function renderAiSettings() {
     </details>
     <span class="ai-savemsg" id="aiSaveMsg"></span>
     ${renderFreeProvidersSection()}
+    <!-- Which backend this page talks to. It used to sit in the rail, on every screen,
+         for a knob that matters only when a local server is running — and a page served
+         from localhost already talks to itself with no switch at all. -->
+    <div class="ai-policy-row" style="margin-top:10px;">
+      <label style="font-size:11px;color:var(--c-ink-3);">Server this page talks to:</label>
+      <select id="serverToggle">
+        <option value="local">local</option>
+        <option value="production">production</option>
+      </select>
+    </div>
   `;
+
+  wireServerToggle();
 
   const qpSel = document.getElementById('aiQueueProvider');
   if (qpSel) qpSel.onchange = async () => {
@@ -11708,9 +11564,15 @@ async function qLoad() {
   qAnnounceEndings(nextPrompts);
   qPrompts = nextPrompts;
   qPaused = !!data.queue_paused;
-  const badge = document.getElementById('queuePauseBadge');
-  badge.style.display = qPaused ? '' : 'none';
-  badge.textContent = 'Queue paused' + (data.queue_paused_reason ? ` — ${data.queue_paused_reason}` : '');
+  // Paused has to be legible without opening anything, so the build button itself
+  // goes amber — it is on every screen, where the rail's old badge was one more line
+  // in a foot that had no room for it.
+  const sys = document.getElementById('sysBtn');
+  if (sys) {
+    sys.classList.toggle('paused', qPaused);
+    if (qPaused) sys.title = 'Queue paused' + (data.queue_paused_reason ? ` — ${data.queue_paused_reason}` : '') + ' — open to resume';
+    else sys.title = 'Change the app — describe it, point at what you mean, send it (⌘/Ctrl+/)';
+  }
   // Write into the label, never over the button: textContent here used to delete
   // the icon and the .rail-label wrapper with it, which is why the words spilled
   // across a collapsed rail instead of fading out with everything else.
@@ -13164,7 +13026,6 @@ async function loadNextUp(quiet) {
     // so without this the card had already rendered "Nothing ranked yet" by the time
     // the answer arrived and nothing redrew it — which is what driving the live app
     // showed and reading the diff did not. One caller, two readers.
-    if (typeof coreView !== 'undefined' && coreView === 'home') renderHome();
   }
 }
 
@@ -15617,7 +15478,7 @@ function spendBarHtml(label, cap, hint) {
 // said plainly rather than drawn as an empty bar.
 //
 // Two audiences, one fetch. The rail gets a summary — the tightest limit in each
-// window of each, with the time until it comes back — AI Settings adds the
+// window of each, with the time until it comes back — Settings adds the
 // model-scoped weekly limit on top, since that sheet is already the full picture.
 let lastUsage = null;
 
@@ -15658,7 +15519,7 @@ function usageFullRow(label, bucket) {
   </div>`;
 }
 
-// The full three-lane breakdown, rendered into AI Settings.
+// The full three-lane breakdown, rendered into Settings.
 function usageFullHtml(u) {
   if (!u) return '<div class="uq-note">No reading yet.</div>';
   const build = [
@@ -15681,39 +15542,93 @@ function usageFullHtml(u) {
   </div>`;
 }
 
+// ── The rail read-out: two accounts, two windows each, and the money ───────────
+// Every figure here is what is LEFT, never what is spent — the reading that answers
+// "can I start something now". The hairline under it is the same quantity drawn, and
+// its colour is one continuous ramp rather than three named states: sea green while
+// there is plenty, sand around half, the app's own orange as it runs out. Nothing to
+// learn, because the colour and the number say the same thing twice.
+//
+// The money is deliberately outside that ramp and takes no colour at all. Spending is
+// not a warning — it is a fact, and colouring it would make every glance at the rail
+// look like something was wrong.
+const UQ_RAMP = [[240,150,90], [216,184,120], [111,182,164]]; // out → half → full
+function uqColour(leftPct) {
+  const t = Math.max(0, Math.min(100, leftPct)) / 100;
+  const [a, b] = t < 0.5 ? [UQ_RAMP[0], UQ_RAMP[1]] : [UQ_RAMP[1], UQ_RAMP[2]];
+  const k = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+  return `rgb(${a.map((v, n) => Math.round(v + (b[n] - v) * k)).join(',')})`;
+}
+// The endpoint reports utilisation — how much is GONE — so every reader here turns it
+// round once, in one place, rather than each caller remembering to.
+function uqLeft(bucket) {
+  const p = bucket && bucket.utilizationPct;
+  return typeof p === 'number' ? Math.max(0, Math.min(100, Math.round(100 - p))) : null;
+}
+function uqCell(bucket) {
+  const left = uqLeft(bucket);
+  if (left == null) return '<span class="uq-cell uq-blank"><span class="uq-pct">—</span></span>';
+  const back = fmtResetIn(bucket.resetsAt);
+  return `<span class="uq-cell" title="${left}% left${back ? `, back in ${back}` : ''}">
+    <span class="uq-pct">${left}%</span>
+    <span class="uq-line-bar"><i style="width:${left}%;background:${uqColour(left)}"></i></span>
+    <span class="uq-in">${back || '—'}</span></span>`;
+}
+function uqRow(name, usage) {
+  return `<div class="uq-line"><span class="uq-who">${name}</span>${uqCell(usage && usage.session)}${uqCell(usage && usage.week)}</div>`;
+}
+// Shut: the five-hour window of each account as a short bar, named above it. A
+// percentage at 52px is four characters of noise; the bar says the one thing that
+// matters from across the room.
+function uqShutBar(name, usage) {
+  const left = uqLeft(usage && usage.session);
+  const fill = left == null ? '' : `<em style="width:${left}%;background:${uqColour(left)}"></em>`;
+  return `<span class="uq-b" title="${name}: ${left == null ? 'no reading' : left + '% of five hours left'}">
+    <span>${name}</span><i>${fill}</i></span>`;
+}
+
 async function loadUsage() {
   const host = document.getElementById('usageStripHost');
   let u;
   try { u = await api('/api/agent/usage'); } catch (e) { if (host) host.innerHTML = ''; return; }
   lastUsage = u;
-  // If AI Settings is open, its breakdown refreshes with the same reading.
+  // If Settings is open, its breakdown refreshes with the same reading.
   const full = document.getElementById('usageFullHost');
   if (full) full.innerHTML = usageFullHtml(u);
   if (!host) return;
 
-  // The build account, both windows, with the time until each one comes back. The
-  // paid lane has no window — it is a monthly ceiling. The second account has no bar:
-  // Anthropic will not let us read its quota, and nothing depends on that number —
-  // it is spent to its ceiling and the main account takes over (see ai/text.js).
-  const rows = [
-    usageRailGroup('Building', 'The account that runs your tasks.', u.session, u.week),
-    spendBarHtml('Paid', u.openai, 'Real money spent on Idea Studio this month, against your monthly ceiling.'),
-  ].filter(Boolean).join('');
+  // PA is the account that runs the work; Antoine is the second subscription. Its
+  // reading arrives under `side` from the runner — the only machine holding that
+  // token — and is simply absent when Anthropic is rate-limiting it, which it does
+  // hard. An absent account draws a dash, never a zero: a zero would read as "spent".
+  const pa = u;
+  const ant = u.side || null;
+  const haveAny = uqLeft(pa.session) != null || uqLeft(pa.week) != null
+    || (ant && (uqLeft(ant.session) != null || uqLeft(ant.week) != null));
 
-  if (!rows) {
+  if (!haveAny) {
     const today = fmtTokens(u.today && u.today.totalTokens);
-    host.innerHTML = `<div class="usage-strip"><span class="usage-none" title="Attach the local runner (npm run runner) and the limits appear here.">Limits unavailable${today !== '0' ? ` · ${today} tokens today` : ''}</span></div>`;
+    host.innerHTML = `<div class="uq-none" title="Attach the local runner (npm run runner) and the limits appear here.">No reading${today !== '0' ? ` · ${today} tokens today` : ''}</div>`;
     return;
   }
-  const hot = [u.session, u.week, u.weekScoped].filter(b => b && b.severity && b.severity !== 'normal');
-  const alert = u.schedulerLimitResetAt
-    ? 'Limit reached — the queue is paused and resumes automatically at reset.'
-    : (hot.length ? 'Close to a limit — the queue will hand new work to the free models.' : '');
-  host.innerHTML = `<div class="usage-strip">${rows}
-    <button type="button" class="usage-seeall" id="usageSeeAll">See all &rarr;</button>
-    ${alert ? `<span class="usage-alert">${alert}</span>` : ''}</div>`;
-  const seeAll = document.getElementById('usageSeeAll');
-  if (seeAll) seeAll.onclick = () => { document.getElementById('aiSheetBtn')?.click(); };
+
+  const cap = u.openai;
+  const money = cap && typeof cap.spentUsd === 'number'
+    ? `<div class="uq-money" title="Real money spent this month, against your ceiling."><span>OpenAI</span><b>$${cap.spentUsd.toFixed(2)}</b></div>`
+    : '';
+
+  host.innerHTML = `
+    <div class="uq-grid">
+      <div class="uq-head"><span></span><span>5 h</span><span>Week</span></div>
+      ${uqRow('PA', pa)}
+      ${uqRow('Antoine', ant)}
+      ${money}
+    </div>
+    <div class="uq-shut">
+      ${uqShutBar('PA', pa)}
+      ${uqShutBar('Ant', ant)}
+      ${cap && typeof cap.spentUsd === 'number' ? `<span class="uq-spend" title="Spent this month">$${cap.spentUsd.toFixed(2)}</span>` : ''}
+    </div>`;
 }
 
 // ── Suggestions de Claude ──────────────────────────────────────────────────────
@@ -17509,22 +17424,28 @@ function renderArchQueueBanner() {
   const dotColor = s.paused ? '#b8860b' : (s.executionConfigured ? '#4f9d7a' : 'var(--c-ink-4)');
   // The queue status line (plan "auto-ship" item 4): what Antoine checks before
   // he ships his own work, so his edits never clash with a running task.
-  const parts = [`Queue ${s.paused ? 'paused' : 'wired'}`];
+  // Only what could change what you do next. "Queue wired", "auto-ship on" and the
+  // helper count were three things that are true almost always — a line you stop
+  // reading is a line that is not there. Quiet queue, nothing running, nothing spent:
+  // the line renders empty and the foot hides itself.
+  const parts = [];
+  if (s.paused) parts.push('Paused' + (s.pausedReason ? ` — ${s.pausedReason}` : ''));
   if (s.runningCount) parts.push(`${s.runningCount} running`);
   if (s.queuedCount) parts.push(`${s.queuedCount} queued`);
-  parts.push(`auto-ship ${s.autoShip ? 'on' : 'off'}`);
-  if (s.todayCostUsd != null) parts.push(`today ~$${s.todayCostUsd.toFixed(2)}`);
-  if (s.sideCallsToday != null && s.sideBudget != null) parts.push(`helpers ${s.sideCallsToday}/${s.sideBudget} today`);
+  if (!s.autoShip) parts.push('auto-ship off');
+  if (s.todayCostUsd) parts.push(`$${s.todayCostUsd.toFixed(2)} today`);
+  if (!s.executionConfigured) parts.push('no runner attached');
   // Figures, not explanations. This used to carry three sentences about how the
   // cost cap, the helper budget and auto-ship work — a hover you cannot skim,
   // hanging off a line you only glance at.
   const detail = [
-    s.pausedReason ? `Paused: ${s.pausedReason}` : '',
     `${s.completedCount} done`,
+    s.autoShip ? 'auto-ship on' : '',
+    s.sideCallsToday != null && s.sideBudget != null ? `helpers ${s.sideCallsToday}/${s.sideBudget} today` : '',
     s.costCapUsd != null ? `cap $${s.costCapUsd.toFixed(2)}/task` : '',
     s.memFreeMb != null ? `${s.memFreeMb} MB free` : '',
   ].filter(Boolean).join(' · ');
-  el.innerHTML = `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}`;
+  el.innerHTML = parts.length ? `<span style="color:${dotColor}">${dot}</span> ${parts.join(' · ')}` : '';
   el.title = detail;
 }
 
