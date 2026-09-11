@@ -843,7 +843,7 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
    unconditionally because that breakpoint positions the panels against it. */
 .ws-room { flex:1; min-width:0; min-height:0; display:none; position:relative; }
 .ws-room.open { display:flex; }
-.room-threads { width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+.room-threads { position:relative; width:var(--threads-w, 250px); min-width:0; flex-shrink:0; border-right:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 .room-cards { position:relative; width:var(--cards-w, 290px); min-width:0; flex-shrink:0; border-left:1px solid var(--c-border); background:var(--c-bg); overflow-y:auto; overflow-x:hidden; padding:14px; transition:width var(--t-med) var(--ease), min-width var(--t-med) var(--ease), padding var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
 /* ── Every sidebar is draggable, and remembers its width ──────────────────────
    Antoine's standing rule for the whole app (AGENTS.md → "Designing the app's own
@@ -857,6 +857,11 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
 .side-resize--right { right:-3px; }   /* panel on the left, handle on its right edge */
 .side-resize--left  { left:-3px; }    /* panel on the right, handle on its left edge */
 .side-resize:hover, .side-resize.is-dragging { background:var(--c-border-2); }
+/* A panel's width is animated so that opening and closing glides. Under a drag that
+   same transition makes the edge lag the mouse and rubber-band toward it, which feels
+   like the handle is on elastic. The panel follows the pointer exactly while dragging
+   and gets its glide back the moment it is let go. */
+.is-resizing { transition:none !important; }
 .collapsed > .side-resize { display:none; }
 /* Content's two panels are a 44px spine until they are pinned, and only the pinned
    state is a real column with an edge worth dragging. Unpinned, the handle would sit
@@ -9173,13 +9178,14 @@ function initSideResize({ panel, handle, prop, key, min, max, grows }) {
     if (!wide() || !(w >= min && w <= max)) panel.style.removeProperty(prop);
     else panel.style.setProperty(prop, w + 'px');
   };
-  let dragging = false, startX = 0, startW = 0;
+  let dragging = false, startX = 0, startW = 0, live = 0;
   handle.addEventListener('mousedown', (e) => {
     if (!wide() || panel.classList.contains('collapsed')) return;
     dragging = true;
     startX = e.clientX;
-    startW = panel.getBoundingClientRect().width;
+    startW = live = panel.getBoundingClientRect().width;
     handle.classList.add('is-dragging');
+    panel.classList.add('is-resizing');
     // Without this the drag selects the text it passes over, which then highlights
     // half the conversation the moment the mouse is let go.
     document.body.style.userSelect = 'none';
@@ -9190,14 +9196,20 @@ function initSideResize({ panel, handle, prop, key, min, max, grows }) {
     // A panel on the left grows as the mouse goes right; one on the right grows as
     // it goes left. `grows` says which, so one function serves both sides.
     const delta = grows === 'right' ? (e.clientX - startX) : (startX - e.clientX);
-    panel.style.setProperty(prop, Math.min(max, Math.max(min, startW + delta)) + 'px');
+    live = Math.min(max, Math.max(min, startW + delta));
+    panel.style.setProperty(prop, live + 'px');
   });
   window.addEventListener('mouseup', () => {
     if (!dragging) return;
     dragging = false;
     handle.classList.remove('is-dragging');
+    panel.classList.remove('is-resizing');
     document.body.style.userSelect = '';
-    try { localStorage.setItem(key, String(Math.round(panel.getBoundingClientRect().width))); } catch (e) {}
+    // The width that was ASKED for, not the one measured off the element. Measuring
+    // reads whatever the width transition happens to be part-way through, so a quick
+    // drag used to store the width it started from and the panel sprang back on the
+    // next load.
+    try { localStorage.setItem(key, String(Math.round(live))); } catch (e) {}
   });
   // Crossing the breakpoint puts the kept width back, or takes it away.
   window.addEventListener('resize', apply);
