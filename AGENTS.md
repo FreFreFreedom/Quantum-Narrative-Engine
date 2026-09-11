@@ -419,6 +419,13 @@ thing you are looking at is the thing you would hit.
 **No explaining inside the app.** Ship the control, not the paragraph. Helper text
 belongs in a `title` tooltip or nowhere.
 
+**A sprite icon needs its stroke declared by whatever contains it.** Every symbol in
+`#ic-*` is drawn as an unfilled stroke, and nothing in the file sets that globally —
+each container repeats `fill:none; stroke:currentColor; stroke-width:1.5` in its own
+`.something .ic` rule. Give a new icon only a width and a height and it renders
+filled and strokeless: a magnifier becomes a solid dot, an arrow becomes a blob. It
+passes every check and looks like a missing icon. Copy `.uicon .ic` when adding one.
+
 **Verify by driving the live app, not by reading the diff.** Three of the bugs in
 that pass — an empty Room from one stale identifier, a toolbar wrapping to a second
 row, a composer whose text box had zero width — all passed every syntax check and
