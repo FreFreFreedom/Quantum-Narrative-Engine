@@ -1390,6 +1390,23 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-cursor { display:inline-block; margin-left:1px; color:var(--c-ink-4); animation:seBlink 1s var(--ease) infinite; }
 /* The composer is a line, not a box: one rule underneath that darkens on focus. */
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
+/* What the next question is about. One row, above the box, because a thing the
+   question is about belongs beside the question and not in a panel you have to go
+   and look at. Empty means nothing attached, and an empty row is no row. */
+.se-aboutbar { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:6px; }
+.se-aboutbar:empty { display:none; }
+.se-aboutbar .se-about-l { font-size:var(--fs-2xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); margin-right:2px; }
+.se-about { display:inline-flex; align-items:center; gap:5px; max-width:15rem; padding:2px 4px 2px 8px;
+  border:1px solid var(--c-amber); background:var(--c-amber-tint); color:var(--c-ink-2);
+  border-radius:var(--r-sm); font-size:var(--fs-xs); }
+.se-about .k { color:var(--c-amber); font-size:var(--fs-2xs); text-transform:uppercase; letter-spacing:.05em; }
+.se-about .t { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.se-about button { appearance:none; border:0; background:transparent; color:var(--c-ink-4); cursor:pointer;
+  font:inherit; line-height:1; padding:2px 3px; border-radius:var(--r-xs); }
+.se-about button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
+.se-aboutbar .se-about-add { border:1px dashed var(--c-border-3); background:transparent; color:var(--c-ink-4);
+  border-radius:var(--r-sm); font:inherit; font-size:var(--fs-xs); padding:3px 8px; cursor:pointer; }
+.se-aboutbar .se-about-add:hover { border-color:var(--c-ink-5); color:var(--c-ink-3); }
 .se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:inherit; font-size:var(--fs-base); line-height:1.5; color:var(--c-ink); resize:none; }
 .se-input:focus { outline:none; border-bottom-color:var(--c-ink-4); }
 .se-input::placeholder { color:var(--c-ink-5); }
@@ -10181,6 +10198,53 @@ function renderRoomCards() {
   if (roomPickOpen) renderRoomPick();
   const note = document.getElementById('roomCardsNote');
   if (note) { note.textContent = roomNote; note.className = 'room-note' + (roomNoteErr ? ' err' : ''); }
+  renderRoomAbout();
+}
+
+/* The Room owns what a thread is about, so the Room fills the strip the composer
+   offers. Only threads get one: the embed is shared with suggestion cards and the
+   like, and nothing else has attached subjects to show. */
+window.studioAboutBar = function (bar, opts) {
+  const mine = opts && opts.type === 'open' && roomSel
+    && (roomThreads.find(t => t.id === roomSel) || {}).subject_id === opts.subjectId;
+  if (!mine) { bar.innerHTML = ''; return; }
+  const cards = roomAttachedCards();
+  const slots = Math.max(1, roomMax - 1);
+  bar.innerHTML = (cards.length ? '<span class="se-about-l">about</span>' : '')
+    + cards.map(c => '<span class="se-about" title="' + qEscAttr(roomCardTitle(c)) + '">'
+        + '<span class="k">' + qEsc(c.label || c.subject_type) + '</span>'
+        + '<span class="t">' + qEsc(roomCardTitle(c)) + '</span>'
+        + '<button type="button" data-about-off-type="' + qEscAttr(c.subject_type) + '"'
+        + ' data-about-off-id="' + qEscAttr(c.subject_id) + '"'
+        + ' title="Take it out of this conversation" aria-label="Take it out">✕</button></span>').join('')
+    + (cards.length < slots
+        ? '<button type="button" class="se-about-add" title="Put something in this conversation">'
+          + (cards.length ? '＋' : '＋ what is this about?') + '</button>'
+        : '');
+  bar.querySelectorAll('[data-about-off-id]').forEach(b => {
+    b.onclick = (ev) => {
+      ev.stopPropagation();
+      roomDetach(b.getAttribute('data-about-off-type'), b.getAttribute('data-about-off-id'));
+    };
+  });
+  const add = bar.querySelector('.se-about-add');
+  if (add) add.onclick = (ev) => {
+    ev.stopPropagation();
+    // The picker already exists, in the Attached pane, with its own search and its
+    // own sources. Pressing the tab and opening it beats a second picker here.
+    document.querySelector('#roomTabs [data-room-pane="attached"]')?.click();
+    roomPickOpen = true;
+    renderRoomCards();
+    document.getElementById('roomPickSearch')?.focus();
+  };
+};
+
+/* Repaint the strip without repainting the whole answer — attaching or detaching
+   changes one row, and rebuilding the transcript to show it would lose the scroll. */
+function renderRoomAbout() {
+  const bar = document.querySelector('#roomConvo .se-aboutbar');
+  const t = roomThreads.find(x => x.id === roomSel);
+  if (bar && t) window.studioAboutBar(bar, { type: 'open', subjectId: t.subject_id });
 }
 
 // ── The Room's shared memory (plan "room-shared-memory") ───────────────────────
@@ -20594,6 +20658,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +   '<div class="se-log"></div>'
         +   '<span class="se-cost"></span>'
         +   '<div class="se-markbar"></div>'
+        +   '<div class="se-aboutbar"></div>'
         +   '<div class="se-quotebar"></div>'
         +   '<div class="se-compose">'
         +     '<button type="button" class="se-more" data-se-act="cmds" title="What else this conversation can do" aria-label="What else this conversation can do">＋</button>'
@@ -21123,6 +21188,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
 
     // A passage carried from an answer into the next question. Painted here so it
     // survives a repaint mid-answer, same as the draft does.
+    // What this conversation is about, shown against the box it is about to be asked
+    // in. The embed does not know what is attached — the Room does — so it offers the
+    // strip and whoever owns the subject fills it. Painted here rather than by the
+    // owner alone so it survives a repaint mid-answer, exactly like the draft and the
+    // carried passages do.
+    var abar = host.querySelector('.se-aboutbar');
+    if(abar && typeof window.studioAboutBar === 'function'){
+      try { window.studioAboutBar(abar, opts); } catch(err) { abar.innerHTML = ''; }
+    }
+
     var qbar = host.querySelector('.se-quotebar');
     if(qbar){
       if(e.quotes && e.quotes.length){
