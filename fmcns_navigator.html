@@ -10465,13 +10465,9 @@ async function roomUseIdeaGroup(reportId) {
   for (const key of sel) {
     const pick = report.parts?.[key.part_index]?.picks?.[key.pick_index];
     if (!pick) continue;
-    await roomTakeIdea(reportId, key.part_index, key.pick_index, { quiet: true });
+    await roomTakeIdea(reportId, key.part_index, key.pick_index);
   }
   roomIdeaSel[reportId] = []; roomIdeasRemember();
-  roomNote = sel.length === 1 ? 'In your hands. Ask about it when you like.'
-    : sel.length + ' of them are in your hands now. Ask about them when you like.';
-  roomNoteErr = false;
-  renderRoomCards();
   renderRoomIdeas();
 }
 
@@ -10506,17 +10502,13 @@ function roomWorldPickId(reportId, partIndex, pickIndex) {
   return reportId + '~' + partIndex + ':' + pickIndex;
 }
 
-async function roomTakeIdea(reportId, partIndex, pickIndex, { quiet = false } = {}) {
+async function roomTakeIdea(reportId, partIndex, pickIndex) {
   if (!roomSel) return;
   await roomAttach('world_pick', roomWorldPickId(reportId, partIndex, pickIndex));
-  if (quiet) return;
-  // Land on the pane that now holds it, so taking something is visibly somewhere.
-  // Pressing the tab rather than setting state: which pane is showing lives in a
-  // closure inside initRoom() along with the code that applies and remembers it,
-  // and reaching past that would be a second place that decides the same thing.
-  document.querySelector('#roomTabs [data-room-pane="attached"]')?.click();
-  if (!roomNoteErr) roomNote = 'In your hands. Ask about it when you like.';
-  renderRoomCards();
+  // Nothing else. Taking one used to jump you to the Attached pane, which reads well
+  // in a plan and badly in the hand: it throws you out of the list you were reading
+  // after every single take. The count on the tab moves and the row you took lights
+  // up, both already in view, and that is the whole of the feedback needed.
 }
 
 // ── Section-by-section PDF extraction (plan "pdf-section-extraction") ────────
