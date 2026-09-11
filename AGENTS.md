@@ -579,6 +579,15 @@ no such number, that was a fault in the plan; say so.
 Poll every 30–60s against production with the token recipe in CLAUDE.md. Never click
 through a browser to read live state.
 
+**Say it the moment it lands — he must never have to ask.** Added 2026-09-11 after a
+task finished and the session stayed quiet until Antoine typed *"so ?"*: *"you didn't
+tell me when it was done."* The finish is the one moment that must never be silent. When
+the watch sees `done` / `blocked` / `cancelled`, announce it in the terminal straight
+away, ring the bell so it reaches him in another window (see the desktop-notification
+note in his memory: OSC 777 to the session's own pty), and only then go and verify. Do
+not wait for the verification to be complete before saying it finished, and do not wait
+for his next message. A watch that ends without a spoken result is the same as no watch.
+
 **The turn is not over when the task says done.** Restated 2026-09-11 at Antoine's
 request, alongside the stand-alone rule above — he asked for both as hard rules, in
 the same breath, because they are the two halves of handing work to the queue. A

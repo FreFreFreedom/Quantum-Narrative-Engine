@@ -20,6 +20,8 @@ to send it — don't wait to be asked.
    and you say so out loud each time. AGENTS.md, "A plan sent to the queue must stand alone".
 2. **You watch it until it lands and then prove the result works** by using the feature,
    not by reading the card. AGENTS.md, "Watching a task you sent to the queue".
+3. **You announce the finish the second it happens**, with a bell, before verifying and
+   without being asked. He must never be the one to ask whether it is done.
 
 ## The workflow
 
