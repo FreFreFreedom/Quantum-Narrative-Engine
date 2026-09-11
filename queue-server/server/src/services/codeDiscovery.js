@@ -442,28 +442,28 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
   const subject = TERRITORY_IDS.includes(parsed0?.subject) ? parsed0.subject : '';
   const subjectNote = String(parsed0?.subject_note || '').trim().slice(0, 200);
 
-  const builtParts = [];
-  for (const part of parts) {
+  // The parts are independent, so they run side by side — a look used to wait for
+  // each part's searches and picks call before starting the next, which made every
+  // look roughly three times longer than its slowest part. Within a part, the (at
+  // most two) GitHub searches run together too; a failed search just drops out.
+  const builtParts = await Promise.all(parts.map(async (part) => {
     const partDescription = String(part.description || lookText).trim();
     const queries = (part.queries || []).filter(q => q && q.q).slice(0, 2);
+    const outs = await Promise.all(queries.map(q => getResults(db, queryHash(q.q), q.q, { forceRefresh })));
     const resultsByQuery = [];
-    for (const q of queries) {
-      const qId = queryHash(q.q);
-      const out = await getResults(db, qId, q.q, { forceRefresh });
-      if (!out.error) resultsByQuery.push({ q, why: q.why, results: out.results || [] });
-    }
+    queries.forEach((q, i) => { if (!outs[i].error) resultsByQuery.push({ q, why: q.why, results: outs[i].results || [] }); });
     const pass2 = await generateTextByFeature({ prompt: buildInspirePicksPrompt(partDescription, resultsByQuery, { taskText: lookText, subject, subjectNote }), feature: 'inspire', maxTokens: 1600, label: 'inspire-picks', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
     const parsed2 = pass2.error ? null : parseJsonObject(pass2.text);
     const picks = (parsed2?.picks || []).filter(p => p && ['open', 'hidden', 'bold'].includes(p.kind));
     const recommendedIndex = Number.isInteger(parsed2?.recommended_index) && parsed2.recommended_index < picks.length ? parsed2.recommended_index : 0;
-    builtParts.push({
+    return {
       name: part.name || partDescription.slice(0, 40),
       description: partDescription,
       queries,
       picks,
       recommended_index: picks.length ? recommendedIndex : 0,
-    });
-  }
+    };
+  }));
 
   if (!builtParts.some(p => p.picks.length)) {
     return { error: 'unparseable', message: 'The model did not return usable inspiration for any part.' };
