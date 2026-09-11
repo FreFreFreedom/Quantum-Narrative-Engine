@@ -1357,7 +1357,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    all there, so nothing has to be gone looking for. */
 .se-quoted-text { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .se-quoted:hover { color:var(--c-ink-3); }
-.se-quoted:hover .se-quoted-text { -webkit-line-clamp:unset; overflow:visible; }
+.se-quoted:hover .se-quoted-text { -webkit-line-clamp:unset; overflow:auto; max-height:40vh; }
 .se-quoted.can-jump .se-quoted-text { cursor:pointer; }
 .se-quoted.can-jump:hover .se-quoted-text { text-decoration:underline; text-decoration-color:var(--c-border); text-underline-offset:2px; }
 /* The ✕ was hidden until hover and he could not tell a quote could be taken off
@@ -20791,7 +20791,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         var r = range.getBoundingClientRect();
         if(!r || (!r.width && !r.height)) return;
         var msgId = turnEl.getAttribute('data-msg-id');
-        var passage = text.replace(/\s+/g, ' ').slice(0, 1200);
+        // No practical ceiling: a selection is deliberate, and cutting one midway
+        // is exactly what Antoine hit. 100k is a runaway guard, not a limit anyone
+        // can reach by selecting inside one answer.
+        var passage = text.replace(/\s+/g, ' ').slice(0, 100000);
         quotePop = document.createElement('div');
         quotePop.className = 'se-quote-pop';
         quotePop.onmousedown = function(ev){ ev.preventDefault(); ev.stopPropagation(); };

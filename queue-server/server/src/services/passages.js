@@ -24,7 +24,9 @@ import { broadcastAll } from '../realtime.js';
 let db = null;
 export function bindPassagesDb(database) { db = database; }
 
-const MAX_TEXT = 2000;
+const MAX_TEXT = 100000;      // a runaway guard, not a limit a real selection reaches
+const MAX_READING_INPUT = 6000; // what the reading call is allowed to see, so a long
+                                // passage is stored whole but never sent whole
 
 export function listPassages({ limit = 200 } = {}) {
   if (!db) return [];
@@ -78,7 +80,7 @@ export async function readPassage(id, { force = false } = {}) {
 
   const context = row.source_title ? `\n\nIt came out of a conversation called "${row.source_title}".` : '';
   const out = await generateText({
-    prompt: `${READING_PROMPT}${paradigmVoiceBlock({ lengthRuleWins: true })}\n\n=== THE LINE ===\n"${row.text}"${context}`,
+    prompt: `${READING_PROMPT}${paradigmVoiceBlock({ lengthRuleWins: true })}\n\n=== THE LINE ===\n"${row.text.slice(0, MAX_READING_INPUT)}"${context}`,
     feature: 'summary',
     label: 'passages:reading',
     maxTokens: 320,

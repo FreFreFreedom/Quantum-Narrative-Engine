@@ -629,7 +629,7 @@ export function addMark(convoId, { messageId, snippet = '', label = '' } = {}) {
   if (!getConvo(convoId)) return { error: 'not_found' };
   const mid = String(messageId || '').trim();
   if (!mid) return { error: 'empty' };
-  const text = String(snippet || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+  const text = String(snippet || '').replace(/\s+/g, ' ').trim().slice(0, 100000);
   // The label is what shows in the strip, so it falls back to the first words of
   // the passage — a chapter with no name is still worth having.
   const name = (String(label || '').trim() || text).slice(0, 80) || 'Chapter';
