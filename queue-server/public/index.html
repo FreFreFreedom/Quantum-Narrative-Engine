@@ -1109,7 +1109,21 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .notice-x:hover { background:var(--c-hover-wash); color:var(--c-ink); }
 .notice-x .ic { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; }
 .umenu { position:fixed; z-index:var(--z-popover-top); min-width:168px; max-width:280px; padding:4px;
-  background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:var(--sh-md); }
+  background:var(--c-surface); border:1px solid var(--c-border-2); border-radius:var(--r-md); box-shadow:var(--sh-md);
+  opacity:0; transform:scale(.96) translateY(-4px); transform-origin:top left;
+  transition:opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
+.umenu[data-align="right"] { transform-origin:top right; }
+.umenu.is-shown { opacity:1; transform:none; }
+/* The Content-mode detail card lifting in, instead of popping fully-formed. See
+   armCardEnter() — this class is added to whatever #cardHost's write just put
+   there, by a MutationObserver, so every render path gets it for free. */
+@keyframes card-in { from { opacity:0; transform:translateY(4px) scale(.985); } to { opacity:1; transform:none; } }
+.card-enter { animation:card-in var(--t-med) var(--ease); }
+/* A Room answer that arrived whole (no token stream) revealing a beat at a
+   time instead of dropping in in one frame. See fillEmbed()'s freshMsgIdx
+   handling — this only ever touches the message that just arrived, once. */
+@keyframes reveal-beat-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.reveal-beat { animation:reveal-beat-in var(--t-med) var(--ease) backwards; }
 .umenu-item { display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer;
   font-family:inherit; font-size:var(--fs-base); color:var(--c-ink-2); padding:6px 10px 6px 22px;
   border-radius:var(--r-sm); position:relative; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2352,7 +2366,11 @@ button:active { transform: translateY(1px) scale(.99); }
 @keyframes fmcnsFade { from { opacity:0; } to { opacity:1; } }
 .uc { animation: fmcnsRise .24s var(--ease) backwards; }
 .ws-archdetail.open { animation: fmcnsSlideIn .22s var(--ease); }
-#mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); }
+#mapApp, #coreApp, #app { animation: fmcnsFade .25s var(--ease); transition: opacity var(--t-fast) var(--ease); }
+/* The mode being left, mid cross-fade — see setMode(). Its display only
+   actually flips off once this finishes, so it overlaps the incoming panel's
+   own fmcnsFade-in above instead of vanishing on the same frame. */
+.mode-leaving { opacity:0; }
 /* ─── One segmented control ────────────────────────────────────────────────────
    Every row of mutually exclusive choices in the app: the Content view picker, the
    Architecture layouts and layers, the Flow filters, the suggestion filters, the build
@@ -8450,6 +8468,22 @@ function mapResetZoom() {
   renderMapCard(null);
 }
 
+// A card lifts in rather than just appearing. One observer instead of touching
+// every place that writes into #cardHost (there are half a dozen, scattered
+// across entity/cluster/descent-link rendering) — whatever lands as its first
+// child gets the entrance, no matter which of them wrote it.
+(function armCardEnter() {
+  const host = document.getElementById('cardHost');
+  if (!host || !window.MutationObserver) return;
+  new MutationObserver(() => {
+    const child = host.firstElementChild;
+    if (!child) return;
+    child.classList.remove('card-enter');
+    void child.offsetWidth; // restart the animation on every fresh render
+    child.classList.add('card-enter');
+  }).observe(host, { childList: true });
+})();
+
 // ---------- Mode switch ----------
 let activeCardHost = 'cardHost';
 document.getElementById('modeContentBtn').onclick = () => setMode('content');
@@ -8891,9 +8925,25 @@ function setMode(m) {
     b.classList.toggle('active', m === mode);
     b.setAttribute('aria-selected', String(m === mode));
   });
-  document.getElementById('app').style.display = m==='content' ? 'flex' : 'none';
-  document.getElementById('mapApp').classList.toggle('open', m==='map');
-  document.getElementById('coreApp').classList.toggle('open', m==='core');
+  // Content/Map/Architecture cross-fade instead of jump-cutting. The incoming
+  // panel shows right away and fades itself in (the fmcnsFade animation, just
+  // above); whichever panel was showing gets a short fade-out first
+  // (.mode-leaving) and only actually hides once that finishes, so the two
+  // overlap instead of one vanishing the instant the other appears.
+  const MODE_PANEL_ID = { content: 'app', map: 'mapApp', core: 'coreApp' };
+  Object.keys(MODE_PANEL_ID).forEach((mode) => {
+    if (mode === m) return;
+    const el = document.getElementById(MODE_PANEL_ID[mode]);
+    const shown = mode === 'content' ? el.style.display !== 'none' : el.classList.contains('open');
+    if (!shown) return;
+    const hide = () => { if (mode === 'content') el.style.display = 'none'; else el.classList.remove('open'); };
+    if (REDUCED_MOTION) { hide(); return; }
+    el.classList.add('mode-leaving');
+    setTimeout(() => { el.classList.remove('mode-leaving'); hide(); }, 140);
+  });
+  if (m === 'content') document.getElementById('app').style.display = 'flex';
+  if (m === 'map') document.getElementById('mapApp').classList.add('open');
+  if (m === 'core') document.getElementById('coreApp').classList.add('open');
   activeCardHost = m==='map' ? 'mapCardHost' : 'cardHost';
   if (m==='map') initMap();
   if (m==='core') initCore(); else teardownCore();
@@ -12614,8 +12664,11 @@ function openMenu(anchor, items, opts) {
     el.appendChild(b);
   }
   el.onmousedown = (ev) => ev.stopPropagation();
+  el.setAttribute('data-align', o.align === 'left' ? 'left' : 'right');
   document.body.appendChild(el);
   // Measured after insertion, because the width depends on the longest label.
+  // Measured before the entrance class lands, too — .is-shown only changes
+  // opacity/transform, never size, but this stays the honest order.
   const r = anchor.getBoundingClientRect();
   const w = el.offsetWidth, h = el.offsetHeight;
   const left = o.align === 'left' ? r.left : r.right - w;
@@ -12623,6 +12676,7 @@ function openMenu(anchor, items, opts) {
   el.style.top = (r.bottom + 4 + h > window.innerHeight ? Math.max(6, r.top - h - 4) : r.bottom + 4) + 'px';
   anchor.setAttribute('aria-expanded', 'true');
   openMenuNow = { el, anchor };
+  requestAnimationFrame(() => el.classList.add('is-shown'));
   return closeMenu;
 }
 document.addEventListener('mousedown', (ev) => {
@@ -20163,6 +20217,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       loaded: false, loading: false,  // `loaded` gates the refetch, so a repaint costs nothing
       open: false, busy: false, draft: '', err: '', note: '',
       stream: '',                     // the answer as it arrives, before it becomes a msgs entry
+      freshMsgIdx: null,              // index of an answer that arrived whole (no token stream)
+                                       // and should reveal a beat at a time on its one first render
     };
     return cache[key];
   }
@@ -20319,7 +20375,14 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             : 'Sent — the plan is now a task, set aside in the Dispatch Queue for you to approve.' });
           if(onDone) onDone();
         } else if(d.text){
+          // e.stream only holds anything if readTurn actually saw token events —
+          // a lane that answered in one shot (plain JSON, no NDJSON) leaves it
+          // empty, and that's exactly the case with nothing to make it feel like
+          // it arrived: mark it so the next render reveals it a beat at a time
+          // instead of dropping the whole answer in in one frame.
+          var arrivedWhole = !e.stream;
           e.msgs.push({ role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
+          if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // A roaming thread can pick up its title from this very turn (the first
           // exchange), so the list needs to come back the same way /fold or
           // /handoff already trigger it — every other subject type keeps its own
@@ -21191,6 +21254,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     var was = log.scrollTop;
     log.innerHTML = logHtml(e);
     log.scrollTop = atBottom ? log.scrollHeight : was;
+    // An answer that arrived whole (see sendTurn's arrivedWhole) gets to reveal
+    // itself a beat at a time, once — on its rendered blocks (paragraphs, list
+    // items…), never on the raw markdown source, so nothing about how it reads
+    // changes. Cleared right after so scrolling back to it later, or any later
+    // repaint, shows it as plain, already-settled text.
+    if (e.freshMsgIdx != null) {
+      var freshTurn = log.querySelector('.se-turn[data-fresh]');
+      var freshBody = freshTurn && freshTurn.querySelector('.se-body');
+      if (freshBody) {
+        Array.prototype.slice.call(freshBody.children, 0, 6).forEach(function(el, i){
+          el.classList.add('reveal-beat');
+          el.style.animationDelay = (i * 90) + 'ms';
+        });
+      }
+      e.freshMsgIdx = null;
+    }
     log.querySelectorAll('[data-se-jump]').forEach(function(a){
       a.onclick = function(ev){ ev.preventDefault(); jumpToQueueItem(a.getAttribute('data-se-jump')); };
     });
@@ -21526,7 +21605,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('');
       }
       var shown = (you && m.body) ? m.body : m.text;
-      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + '>'
+      html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  foldHtml
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
