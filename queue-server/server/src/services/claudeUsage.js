@@ -265,18 +265,30 @@ export async function getClaudeUsage() {
 // reads utilizationPct, so the shape below is all it needs, and it matches
 // getClaudeUsage()'s so callers can treat both identically.
 let _sideCache = null;
+// The last reading that actually came back, kept so a throttle does not blank the
+// account. Anthropic rate-limits this endpoint hard for the second token — a 429 is
+// the normal answer, not the exception — so without this the rail would show a dash
+// most of the time for an account whose numbers barely move between reads. Same
+// treatment the main account already gets, same half-hour ceiling: past that the
+// reading is too old to show and the dash is the honest answer again.
+let _lastSideSub = null;
 
 export async function getSideClaudeUsage() {
   if (_sideCache && Date.now() - _sideCache.at < _sideCache.ttl) return _sideCache.data;
 
   const token = process.env.CLAUDE_SIDE_OAUTH_TOKEN || null;
-  const { data: sub, throttled } = await fetchUsageForToken(token);
+  const { data: fresh, throttled } = await fetchUsageForToken(token);
+  const now = Date.now();
+  if (fresh) _lastSideSub = { at: now, data: fresh };
+  const recovered = !fresh && _lastSideSub && (now - _lastSideSub.at) < SUB_STALE_MAX_MS ? _lastSideSub : null;
+  const sub = fresh || recovered?.data || null;
 
   const data = {
     session: sub?.session ?? { utilizationPct: null, resetsAt: null, severity: null },
     week: sub?.week ?? { utilizationPct: null, resetsAt: null, severity: null },
     weekScoped: sub?.weekScoped ?? null,
     extraUsageEnabled: sub?.extraUsageEnabled ?? false,
+    subscriptionStale: !!recovered,
     // Same contract as the main read: false means "unknown", and every caller must
     // treat unknown as permission to run. The usage endpoint rate-limits hard per
     // machine (both tokens have sat on 429 for 25+ minutes at a time), so a gate
@@ -285,9 +297,10 @@ export async function getSideClaudeUsage() {
     generatedAt: new Date().toISOString(),
   };
 
-  const ttl = data.subscriptionAvailable
-    ? CACHE_TTL_MS
-    : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS);
-  _sideCache = { at: Date.now(), data, ttl };
+  // The back-off follows the FRESH read, not the recovered one. Keyed on
+  // subscriptionAvailable it would see the last good value, call that success, and
+  // come back in three minutes — asking an endpoint that just told us to stop.
+  const ttl = fresh ? CACHE_TTL_MS : (throttled ? THROTTLED_CACHE_TTL_MS : FAILED_CACHE_TTL_MS);
+  _sideCache = { at: now, data, ttl };
   return data;
 }
