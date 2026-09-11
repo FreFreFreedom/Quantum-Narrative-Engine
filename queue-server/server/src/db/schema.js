@@ -933,6 +933,43 @@ export function initOntologySchema(db) {
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_mentions_entity ON entity_mentions(entity_id, status)`); } catch {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_mentions_status ON entity_mentions(status)`); } catch {}
 
+  // Anatomy replaces vocabulary — fractal_operational_core.md §21, plans/anatomy-replaces-tags.md.
+  //
+  // A tag is a membership claim: present or absent, nothing more askable of it. Each of these
+  // four readings is a question whose answer POINTS AT A PART of the entity — which is why they
+  // compose where tags cannot, and why they are stored one row per (entity, reading) rather than
+  // as a free-form label.
+  //
+  //   locus_of_exile        — which part is pushed outside the perimeter so the rest can look orderly
+  //   load_shift             — when this entity decides, where the real work of enduring it lands
+  //   sovereignty_reversal   — the point where the thing built to protect becomes the threat
+  //   loop_dynamics          — how the output of the lowest scale re-enters as the input of the highest
+  //
+  // Same falsifiability discipline as entity_relations (this file, above): a reading without a
+  // source and a falsifier is not a finding, it is an assertion, and the two tables are refused
+  // by the same rule in their respective services. `points_at` is an entity id or an interior
+  // part code (the opaque letters in data-seed/interiors/*.graph.json) — never a name, per §18:
+  // naming must never feed the matcher, and a part code is exactly what keeps a name from
+  // leaking into this table the way the two-file interior format keeps it out of the graph.
+  //
+  // NOT entities.meta: bootstrapData.js rewrites meta on every boot (same reason entity_mentions
+  // and tmdb_enrichments are their own tables, not a meta field).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS entity_anatomy (
+      entity_id   TEXT NOT NULL REFERENCES entities(id),
+      reading     TEXT NOT NULL,   -- locus_of_exile | load_shift | sovereignty_reversal | loop_dynamics
+      answer      TEXT NOT NULL,
+      points_at   TEXT,            -- an entity id, or an interior part code — never a name
+      source_kind TEXT NOT NULL DEFAULT 'witness',
+      source_ref  TEXT NOT NULL,
+      falsifier   TEXT NOT NULL,
+      created_by  TEXT,
+      created_at  TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      PRIMARY KEY (entity_id, reading)
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_anatomy_reading ON entity_anatomy(reading)`); } catch {}
+
   // A walk somebody kept — plans/civic-structures-and-loops.md, Stage 5.
   //
   // Navigating this corpus produces a path: an entity, the relation followed out of it,

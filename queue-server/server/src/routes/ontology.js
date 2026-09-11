@@ -11,6 +11,7 @@ import { enrichFilm, enrichAllFilms, listEnrichments, batchStatus } from '../ser
 import { getTagGaps } from '../services/tagGaps.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { listTensions, setTension, generateTension, fillMissingTensions } from '../services/tagTensions.js';
+import { anatomyFor, setAnatomy, deleteAnatomy, anatomyByRungAudit } from '../services/entityAnatomy.js';
 
 // Two ends can be in the same loop; report it once.
 function dedupeLoops(loops) {
@@ -77,6 +78,32 @@ export function ontologyRoutes(db) {
       res.status(e.status || 500).json({ error: e.message });
     }
   });
+
+  // The four readings that replace a tag — fractal_operational_core.md §21,
+  // plans/anatomy-replaces-tags.md. Same shape as /relations: a GET that returns whatever
+  // exists (missing readings are absent, not null-filled — a blank is a finding, not an
+  // apology), a POST that refuses without a source and a falsifier the same way a relation
+  // does, and a DELETE for taking one back.
+  router.get('/entities/:id/anatomy', (req, res) => {
+    if (!q.getEntity(db, req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json(anatomyFor(db, req.params.id));
+  });
+
+  router.post('/entities/:id/anatomy', (req, res) => {
+    try {
+      res.status(201).json(setAnatomy(db, { ...req.body, entity_id: req.params.id }));
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  router.delete('/entities/:id/anatomy/:reading', (req, res) => {
+    res.json({ deleted: deleteAnatomy(db, req.params.id, req.params.reading) });
+  });
+
+  // The blind-spot report — a count over (reading × rung), so an empty cell is a place
+  // nobody has looked rather than a rendering gap. Same shape as /shape-audit below.
+  router.get('/anatomy-audit', (req, res) => res.json(anatomyByRungAudit(db)));
 
   // The horizontal move: who else is on this entity's rung, and who is further along.
   // Computed, never stored — a peer listing is a resemblance the app noticed, while a
