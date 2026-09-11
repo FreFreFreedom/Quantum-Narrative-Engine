@@ -900,6 +900,9 @@ body.qp-open .app-shell { margin-right: var(--qp-w, 420px); }
   border-radius:var(--r-pill); background:none; color:var(--c-ink-4); font:inherit; font-size:var(--fs-xs); text-transform:uppercase;
   letter-spacing:.05em; cursor:pointer; transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .room-tabs button:hover { background:var(--c-surface-2); color:var(--c-ink); }
+/* display:inline-flex above beats the browser's own [hidden] rule, so a tab the
+   strip has hidden kept drawing itself. */
+.room-tabs button[hidden] { display:none; }
 .room-tabs button.active { background:var(--c-surface-2); color:var(--c-ink); border-color:var(--c-border-2); }
 .room-tabcount { font-family:var(--font-mono); font-size:var(--fs-2xs); color:var(--c-ink-5); letter-spacing:0; }
 .room-tabs button.active .room-tabcount { color:var(--c-ink-4); }
