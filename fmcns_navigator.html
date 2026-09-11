@@ -5006,18 +5006,45 @@ function renderList() {
 // measurable fragment inside an entity. And two entities are entangled when they share a
 // tension, not only when they share a word: either pole of the same pair counts.
 let TENSIONS = {};                       // tag -> { tag, against, why, source }
+// tag -> the pair keys that tag touches, by either pole, built once with the table.
+// tensionKeys used to walk EVERY tension row for every tag of every entity, and
+// sharedPatterns asks it twice for every pair of entities in the pool. At 700 rows and
+// 300 entities that is half a billion string sorts to draw the graph once — seconds of
+// frozen page on boot and on every filter click, growing worse as the tension table
+// filled itself in. An index and a memo turn the same answer into a lookup.
+let TENSION_PAIRS = new Map();
+let _tensionKeyCache = new WeakMap();    // an entity's tags array -> its pair keys
+const NO_TENSION_KEYS = new Set();
+function buildTensionIndex() {
+  TENSION_PAIRS = new Map();
+  const add = (tag, key) => {
+    const s = TENSION_PAIRS.get(tag);
+    if (s) s.add(key); else TENSION_PAIRS.set(tag, new Set([key]));
+  };
+  Object.values(TENSIONS).forEach(x => {
+    if (!x || !x.tag || !x.against) return;
+    const key = pairKey(x.tag, x.against);
+    add(x.tag, key); add(x.against, key);
+  });
+  // The memo is keyed on tags arrays, which survive a graph rebuild — so it has to be
+  // thrown away whenever the table behind it changes.
+  _tensionKeyCache = new WeakMap();
+}
 function setTensions(res) {
   TENSIONS = {};
   ((res && res.tensions) || []).forEach(t => { TENSIONS[t.tag] = t; });
+  buildTensionIndex();
 }
 function pairKey(a, b) { return [a, b].sort().join(' ↔ '); }
 // Every pair an entity touches, by either pole: tag→its against, and against→its tag.
 function tensionKeys(e) {
-  const out = new Set();
-  (e.tags || []).forEach(t => {
-    if (TENSIONS[t]) out.add(pairKey(t, TENSIONS[t].against));
-    Object.values(TENSIONS).forEach(x => { if (x.against === t) out.add(pairKey(x.tag, t)); });
-  });
+  const tags = e.tags;
+  if (!tags || !tags.length) return NO_TENSION_KEYS;
+  let out = _tensionKeyCache.get(tags);
+  if (out) return out;
+  out = new Set();
+  tags.forEach(t => { const s = TENSION_PAIRS.get(t); if (s) s.forEach(k => out.add(k)); });
+  _tensionKeyCache.set(tags, out);
   return out;
 }
 function heldTensions(e) {
@@ -8064,7 +8091,7 @@ function wireTensionEdit(entity, tag) {
       if (!against || !why) return;
       try {
         const row = await apiWrite('/api/ontology/tags/' + encodeURIComponent(tag) + '/tension', 'PUT', { against, why });
-        if (row && row.tag) TENSIONS[row.tag] = row;
+        if (row && row.tag) { TENSIONS[row.tag] = row; buildTensionIndex(); }
         selectEntity(entity.id);
       } catch (err) { line.textContent = 'Could not save.'; }
     };
@@ -10143,9 +10170,16 @@ window.addEventListener('mind:updated', () => { loadRoomMind(); });
 let roomIdeasReports = [];       // every round for this thread, newest first
 let roomIdeasRunning = false;
 let roomIdeasStartedAt = 0;
-let roomIdeasOpen = new Set();   // report ids currently expanded
-const roomIdeaSel = {};          // reportId -> [{part_index,pick_index}, ...] ticked in that round
+// Ticks and open/closed rounds survive a refresh or a walk out of the Room —
+// report ids are unique across threads, so one store covers every conversation.
+const ROOM_IDEAS_KEY = 'fmcns_room_ideas_state';
+const roomIdeasState = (() => { try { return JSON.parse(localStorage.getItem(ROOM_IDEAS_KEY)) || {}; } catch { return {}; } })();
+roomIdeasState.open = roomIdeasState.open || {};  // reportId -> true/false, only once toggled by hand
+roomIdeasState.sel = roomIdeasState.sel || {};    // reportId -> [{part_index,pick_index}, ...] ticked in that round
+function roomIdeasRemember() { try { localStorage.setItem(ROOM_IDEAS_KEY, JSON.stringify(roomIdeasState)); } catch {} }
+const roomIdeaSel = roomIdeasState.sel;
 function roomIdeaSelFor(id) { return roomIdeaSel[id] || (roomIdeaSel[id] = []); }
+function roomIdeaIsOpen(id, idx) { return id in roomIdeasState.open ? !!roomIdeasState.open[id] : idx === 0; }
 
 async function loadRoomIdeas() {
   const want = roomSel;
@@ -10157,8 +10191,7 @@ async function loadRoomIdeas() {
     roomIdeasRunning = !!data.running;
     roomIdeasStartedAt = roomIdeasRunning ? (roomIdeasStartedAt || Date.now()) : 0;
     // The newest round opens by default; older ones stay however the user last
-    // left them (collapsed the first time they appear).
-    if (roomIdeasReports[0]) roomIdeasOpen.add(roomIdeasReports[0].id);
+    // left them (collapsed the first time they appear) — see roomIdeaIsOpen.
   } catch (e) { if (roomSel === want) { roomIdeasReports = []; roomIdeasRunning = false; } }
   renderRoomIdeas();
 }
@@ -10198,7 +10231,7 @@ function renderRoomIdeas() {
 // world-look surface does; only the per-round selection state (for the group
 // "use N selected ideas" button) and the round header are new.
 function roomIdeaRoundHtml(report, idx) {
-  const isOpen = roomIdeasOpen.has(report.id);
+  const isOpen = roomIdeaIsOpen(report.id, idx);
   const selList = roomIdeaSelFor(report.id);
   const sel = new Set(selList.map(x => x.part_index + ':' + x.pick_index));
   const when = report.created_at ? new Date(report.created_at).toLocaleString() : '';
@@ -10228,7 +10261,9 @@ function roomIdeasHostClick(ev) {
   const toggle = ev.target.closest('[data-room-idea-toggle]');
   if (toggle) {
     const id = toggle.getAttribute('data-room-idea-toggle');
-    if (roomIdeasOpen.has(id)) roomIdeasOpen.delete(id); else roomIdeasOpen.add(id);
+    const idx = roomIdeasReports.findIndex(r => r.id === id);
+    roomIdeasState.open[id] = !roomIdeaIsOpen(id, idx);
+    roomIdeasRemember();
     renderRoomIdeas();
     return;
   }
@@ -10244,6 +10279,7 @@ function roomIdeasHostClick(ev) {
     const key = { part_index: Number(card.getAttribute('data-partidx')), pick_index: Number(card.getAttribute('data-pickidx')) };
     const facts = qInspireReviewFacts(report.review);
     applyInspireToggle(roomIdeaSelFor(reportId), key, facts);
+    roomIdeasRemember();
     renderRoomIdeas();
     return;
   }
@@ -10276,7 +10312,7 @@ async function roomSaveIdeaGroup(reportId, btn) {
       await apiWrite('/api/travaux/ideas', 'POST', { title: worldPickTitle(pick).slice(0, 120), notes: worldIdeaFullText(pick) + from });
     }
     notify(`Saved ${picks.length} idea${picks.length === 1 ? '' : 's'} as seeds.`);
-    roomIdeaSel[reportId] = [];
+    roomIdeaSel[reportId] = []; roomIdeasRemember();
     loadIdeas();
   } catch (err) { notify('Could not save: ' + err.message, { kind: 'error' }); }
   renderRoomIdeas();
@@ -10299,7 +10335,7 @@ function roomUseIdeaGroup(reportId) {
   const message = texts.join('\n\n---\n\n')
     + '\n\n---\n\nCompare these ideas: do they work well together (synergy), do they overlap or substitute for each other, and which fits this app best?';
   roomUseIdea(message, { raw: true });
-  roomIdeaSel[reportId] = [];
+  roomIdeaSel[reportId] = []; roomIdeasRemember();
   renderRoomIdeas();
 }
 
@@ -10465,7 +10501,7 @@ function roomSelect(id) {
   roomNote = ''; roomNoteErr = false;
   // Reset before renderRoom() paints, so the outgoing thread's rounds never flash
   // under the newly-selected one while loadRoomIdeas() is still in flight.
-  roomIdeasReports = []; roomIdeasRunning = false; roomIdeasOpen = new Set();
+  roomIdeasReports = []; roomIdeasRunning = false;
   roomExtractStatus = null; roomExtractChunks = [];
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');
