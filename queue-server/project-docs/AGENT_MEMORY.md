@@ -807,3 +807,26 @@ theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
   skips a lane the prompt cannot fit, and a size refusal never benches a lane. Model ids
   on both providers had gone stale and answered `model_not_found`; re-read them from the
   provider's own `/v1/models` before trusting the catalogue.
+
+## The graph froze because the tension table grew (2026-09-11)
+
+`tensionKeys(entity)` in the frontend walked **every row of TENSIONS** for **every tag of
+the entity**, and `sharedPatterns(a, b)` calls it twice — for every pair in the pool.
+`computeEdges` is O(n²) over pairs, so the real cost was
+`pool² × tags × tensionRows` string sorts: at 293 entities and 708 tension rows that is
+half a billion `pairKey` calls to draw the graph **once**. Measured against production
+data: **34.6 seconds per graph build**, and a build runs on boot and on every filter
+toggle or search pause. The app looked "slow after the password screen" and "buggy in
+Content" for exactly this reason.
+
+It got worse silently. Nothing in the frontend changed — the **tension table filled
+itself in** (the background sweep that fills `tag_tensions` went from a handful of rows to
+708), so a cost that was invisible at 20 rows became a freeze at 708. **Any per-call scan
+of a table a background job is still filling is a time bomb.** Look for the same shape
+before adding one.
+
+Fixed by indexing the table once (`TENSION_PAIRS`: tag → the pair keys that tag touches,
+rebuilt in `setTensions` and after a hand-saved tension) plus a `WeakMap` memo keyed on the
+entity's **tags array** — that array survives a graph rebuild, where the entity object does
+not, because `buildGraph` spreads new node objects from `ENTITIES`. Same answers for all
+293 entities, 34.6s → 28ms.

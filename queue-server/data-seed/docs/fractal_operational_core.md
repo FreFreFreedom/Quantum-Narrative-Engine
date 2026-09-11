@@ -1760,3 +1760,218 @@ keeps the two questions of the fold apart in the vocabulary as well as in the me
 What he did decline, for now, is the test that would put the first claim under strain: taking the
 113 words that actually link two entities and asking how many are faces of connection against
 freedom, with whatever refuses to collapse naming the second pattern. The thinking comes first.
+
+## 21. Anatomy replaces vocabulary — from the civic-and-justice conversation (added 2026-09-11)
+
+Written from the Room conversation *"Fractal reasoning across civic and justice narratives (fork)"*,
+which Antoine pointed at as the fullest statement of the vision. It does not replace §20; it supplies
+the operations §20's one pattern is supposed to be read through, and it settles what takes the place
+of the tag system.
+
+### A policy is the frozen posture an entity takes toward its own vulnerability
+
+The conversation defines a civic structure three times and then dissolves the category upward. The
+form that survives:
+
+> A policy is the frozen posture an entity takes toward its own vulnerability. Every entity — an
+> individual psyche, a marriage, an extended family, a street corner gang, a precinct, a municipal
+> agency, a sovereign nation — maintains its boundary by adopting rules of intake, rejection,
+> punishment, and protection. They are not merely similar. They are the exact same operation carried
+> out with different amounts of mass.
+
+And the mechanism underneath it:
+
+> A policy is the mechanism an entity invents when it ceases to be present in real time and
+> substitutes a rule for its own attention. That automated refusal of attention is what trickles down.
+
+So *civic structure* is not a new node type. It is the ontological act — boundary-drawing — named at
+civic scale, and **policy is its recorded output**: a posture any entity holds at any rung, with four
+sides worth recording separately — permeability, accountability, attention, recourse. **Scale is a
+property of mass, not of pattern.**
+
+### The instrument, stated plainly
+
+> An engine that treats human organization as a single continuous surface folding across scales,
+> capable of taking any narrative, statute, or behavior, laying bare its structural anatomy, and
+> showing where that exact pattern is silently repeating in another body miles away or rungs down the
+> ladder of scale.
+
+And the negative claim that defines the empty ground, which is the strictest design constraint in the
+conversation:
+
+> Every current tool — including the most advanced language models — treats analogy as illustration, a
+> decorative gesture, rather than as a primary operator: a mechanism that *does something* to the data
+> it touches, that reorganizes the ontology when it fires. An analogical engine where the output is not
+> a ranked list of similar items but a re-drawing of the map itself does not exist. It has not been
+> proposed in any serious form.
+
+**A ranked list is, by this definition, a failure to build the instrument.** No method for the map
+redraw is given anywhere in the conversation, and none exists here. Record it as the open problem it
+is rather than quietly shipping a ranked list and calling it done.
+
+### Anatomy replaces vocabulary. This retires the tag system.
+
+> The platform cannot be built around keywords, categories, or traditional metadata. If you tag a film
+> with "racism," "justice," and "family drama," you have placed it in a taxonomy that blinds the system
+> to its anatomy. **Taxonomy groups things by what they are called; anatomy connects things by how their
+> parts move against one another.**
+
+> Two entities can share not one single word and have identical anatomy. That is label-matching, and it
+> surfaces the obvious while remaining structurally blind to the profound. **If two things share
+> vocabulary, someone already noticed.**
+
+And why vocabulary is an active barrier rather than a neutral one:
+
+> A physician and a historian would never think they study the same thing, because the institutional
+> vocabularies of medicine and politics are designed to prevent exactly this recognition. The engine's
+> job is to dissolve that barrier — not by translating words, but by ignoring them entirely and
+> comparing anatomy directly.
+
+**What replaces a tag: four readings, and they are not labels.** A tag is a membership claim, and the
+only question askable of it is present or absent. Each of these four is a question whose answer points
+*at a part of the entity*, which is why they compose and tags do not:
+
+1. **Locus of exile** — what element is pushed outside the perimeter so the rest can imagine itself
+   orderly.
+2. **Load shift** — when the entity makes a decision, where the real work of endurance lands.
+3. **Sovereignty reversal** — the point at which the mechanism built to provide safety inverts into the
+   primary source of threat.
+4. **Loop dynamics** — how the output of the lowest scale re-enters as the input of the highest.
+
+The 651 words are not deleted. Under §20 they are the names dispositions take along the one pattern;
+under this section they are **the readout of an anatomy, never the thing that does the matching.**
+Naming stays where §18 put it: an exit.
+
+### The pattern library collapses into one tree
+
+Antoine's own turn, and it retires the library-of-many-patterns that the earlier half of the same
+conversation had been building:
+
+> The pattern library is no longer a wild garden of many beasts; it is a single tree, and every branch
+> is an instance of the One Pattern bending, turning, healing or breaking at a specific rung, in a
+> specific medium, with distinct consequences.
+
+> If we define thoroughly one thing, it should repeat everywhere. A lot of our platform will be based
+> on how well we nail this particular element.
+
+Per node, five readings rather than a score: where it sits on the axis, **the mechanism by which
+resolution is attempted** (does it project the repressed pole onto an other, or hold the tension, or
+build a ritual to metabolise it), **how well both poles are held — not as static compromise but as a
+living dance that can withstand crisis**, the echo outward into law and ritual, and the return inward.
+
+That third one is the sharpest correction to the Integration Continuum in the whole file: **a midpoint
+cannot tell a healthy tension-holder from a numb compromise.** Integration is a capability, not a
+position.
+
+### There are no entities
+
+Antoine, and it contradicts §1 in its own favour:
+
+> There is no entities basically, it's just like we define ourselves based on what we relate to — it
+> changes fundamentally what we consider as an entity.
+
+> Identity is made only of relations, boundaries, flows. What is an object? Nothing but a temporary
+> fix, a condensation, a phase change in the continuum of relatedness. **An entity is the sum, at that
+> cut in the mesh, of what it excludes and what it accepts.**
+
+Self-maintenance survives but is re-founded: an entity is not a thing that *has* a boundary, it is a
+cut in the mesh characterised by **what it excludes**. The consequence for the schema is concrete —
+**the locus of exile becomes an entity's primary key, not a derived attribute**, and a civic structure
+and an entity become the same object read at two resolutions. §1's exclusion of mediums survives
+untouched: a film excludes nothing, so it is a record rather than an entity.
+
+### An event is a crystallisation
+
+> Events are not random incursions, but the moment where a structural tension is made flesh… a point of
+> high density, where the pattern condenses into something visible, a scar or a bone that tells the tale
+> of balance, repression, or transformation along the fundamental axis.
+
+Same conclusion as §2 and **still no `event` node type** — but a better model than "an intensity
+reading": entity and event are both condensations of the same field, differing in how long they hold.
+Entity is stable enough to earn a noun; event is a pulse.
+
+### The interior must mirror the exterior — and that is a test, not a metaphor
+
+Antoine:
+
+> Whenever we go inside an entity, this anatomy should reflect the external anatomy. The relationships
+> inside reflect the relationship outside.
+
+> A system with a citizen/exile fracture at the sociopolitical level will always have an equivalent
+> fracture in its own institutions, its cities, its companies, its families, its psyches. The act of
+> making a pariah is the outside mirror of the interior's inability to metabolize contradiction.
+
+**This supplies the validation rule §14c never had.** A generated interior whose anatomy does not match
+the entity's independently-known exterior posture is wrong by construction and must be rejected. It
+turns the hallucination problem from unverifiable into checkable against a second source, and it works
+as a generator too: the exterior posture is a prior for what the interior must contain.
+
+Note the sharpening against §20, which said inside and outside are *complements* where repression
+sits. Both hold: alike in anatomy, opposite at the point of repression. Where they are alike
+everywhere and opposite nowhere, nothing was repressed.
+
+### Horizontal is disqualified as a source of remedy
+
+§9 calls the horizontal move the cheapest of the three and names *which country has the policy worth
+importing* as its live question. This conversation attacks exactly that:
+
+> Police departments across the world share the same fundamental blind spots. They are built out of the
+> same institutional assumptions; looking at one to fix another is like looking at a mirror to see what
+> is behind your head.
+
+Horizontal stays true for **measurement** — two cities' numbers side by side. It is disqualified for
+**remedy**. The importable mechanism comes from a foreign domain at a foreign scale.
+
+### A fourth move: the graft
+
+Not vertical (no rung path), not horizontal (different domain), not a jump (a jump only asserts
+kinship). The graft **moves a mechanism and predicts its rejection**:
+
+> These become not just metaphors, but operable blueprints… beware — these are the institutional
+> antibodies likely to be activated. Here's how, in another place, the experiment was destroyed by
+> downstream resistance.
+
+Two worked cases carry it, and both should be the seed entries of any mechanism library: **the gut's
+coating antibody** (containment and buffering rather than extermination — and *The Wire*'s Hamsterdam
+read as someone implementing it without the vocabulary, destroyed by the institutions above him), and
+**the nurse log** (the fallen tree the new forest eats — confession as the rotting log, with Northern
+Ireland's strategic amnesia as the negative case).
+
+This closes the hole §11 already recorded: the three acts stop at understanding while the platform's
+purpose is change. **The fourth act is transposition, and its unit of work is the graft plus the
+immune response.**
+
+### The vertical move gets an acceptance test
+
+> Crucially, the lines of force never break.
+
+Demonstrated across five rungs, ending in a body — a federal minimum passing through state courts,
+into a precinct's overtime structure, across a family's threshold as an order from an uncle to a
+nephew, and terminating as a knot in that nephew's stomach in a prison library. **Adopt that sentence
+as the acceptance test for any vertical navigation feature.** Anything that skips a rung is not the
+feature.
+
+And the jump gets a better statement than §9's: patterns in favelas and Rust Belt cities **never
+copied, only called forth by the same pressure.**
+
+### Two sentences to keep as rhetoric and never as a specification
+
+> There are no more unintended consequences — only consequences unveiled.
+
+> The system takes on the task of accounting for all suffering.
+
+Total consequence-visibility is not achievable, and claiming it invites exactly the fabricated-resonance
+failure §11 warns about. The whole register of this conversation is systemic, and read alone it slides
+toward *no one is responsible* — so **anything imported from it must be paired with §8's double
+reading**: distributed micro-participation *and* specific amplifying choices.
+
+### The ethic, which is a design constraint
+
+> Its true ethic is to be a prosthetic scaffolding that trains human consciousness to see fractally
+> without the machine.
+
+> Justice is the restoration of fractal coherence… how many echoes return home, how many wounds are
+> metabolized instead of repeated, how many exiles are called back from the desert.
+
+Note the contradiction with §7 and resolve it deliberately rather than by drift: §7's prosthesis is
+permanent, this one has an exit condition.
