@@ -2370,7 +2370,12 @@ button:active { transform: translateY(1px) scale(.99); }
 /* The mode being left, mid cross-fade — see setMode(). Its display only
    actually flips off once this finishes, so it overlaps the incoming panel's
    own fmcnsFade-in above instead of vanishing on the same frame. */
-.mode-leaving { opacity:0; }
+/* Pulled out of the flex row for the duration of the fade: #app/#mapApp/#coreApp
+   are siblings in .app-shell's flex row, so leaving one at display:flex while the
+   incoming one also shows would squeeze both to half-width instead of one
+   dissolving into the other. position:fixed removes it from that row and holds
+   it over the same viewport rect the row already occupies. */
+.mode-leaving { opacity:0; position:fixed; inset:0; pointer-events:none; }
 /* ─── One segmented control ────────────────────────────────────────────────────
    Every row of mutually exclusive choices in the app: the Content view picker, the
    Architecture layouts and layers, the Flow filters, the suggestion filters, the build
