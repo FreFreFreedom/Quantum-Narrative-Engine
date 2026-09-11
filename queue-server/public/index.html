@@ -523,11 +523,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-item { flex:0 0 auto; width:100%; }
 
 /* ---------- The quota read-out in the rail ---------- */
-/* Two accounts down, two windows across, the money on a last line. Every figure is
-   what is LEFT of that window, the hairline under it is the same quantity drawn, and
-   its colour slides along one ramp — sea green full, sand at half, the app's own
-   orange nearly gone — so the colour is never a separate thing to learn. The time is
-   when that window comes back.
+/* Two accounts down, two windows across, the money on a last line. The figure is what
+   is LEFT of that window; the hairline under it fills with what has been USED, so the
+   rail grows heavier as the day is spent rather than draining away. Colour follows the
+   figure — sea green with room, sand at half, the app's own orange nearly out — so a
+   long orange line says the same thing twice. The time is when that window comes back.
    The height is FIXED in both states, and that is the whole point: the foot decides
    where the two buttons above it start, so a read-out that asks for its natural
    height moves Settings and Look out from under the cursor the moment the rail opens.
@@ -15569,13 +15569,18 @@ function uqLeft(bucket) {
   const p = bucket && bucket.utilizationPct;
   return typeof p === 'number' ? Math.max(0, Math.min(100, Math.round(100 - p))) : null;
 }
+// The figure is what is left; the line is what has been used. They run opposite ways
+// on purpose — the number answers "can I start something", the line fills up as the
+// window is spent, so the rail gets visibly heavier through the day instead of
+// quietly draining. The colour follows the figure, not the line: it warms as the
+// room runs out, so a long orange bar means both things at once.
 function uqCell(bucket) {
   const left = uqLeft(bucket);
   if (left == null) return '<span class="uq-cell uq-blank"><span class="uq-pct">—</span></span>';
   const back = fmtResetIn(bucket.resetsAt);
-  return `<span class="uq-cell" title="${left}% left${back ? `, back in ${back}` : ''}">
+  return `<span class="uq-cell" title="${left}% left, ${100 - left}% used${back ? `, back in ${back}` : ''}">
     <span class="uq-pct">${left}%</span>
-    <span class="uq-line-bar"><i style="width:${left}%;background:${uqColour(left)}"></i></span>
+    <span class="uq-line-bar"><i style="width:${100 - left}%;background:${uqColour(left)}"></i></span>
     <span class="uq-in">${back || '—'}</span></span>`;
 }
 function uqRow(name, usage) {
@@ -15586,7 +15591,7 @@ function uqRow(name, usage) {
 // matters from across the room.
 function uqShutBar(name, usage) {
   const left = uqLeft(usage && usage.session);
-  const fill = left == null ? '' : `<em style="width:${left}%;background:${uqColour(left)}"></em>`;
+  const fill = left == null ? '' : `<em style="width:${100 - left}%;background:${uqColour(left)}"></em>`;
   return `<span class="uq-b" title="${name}: ${left == null ? 'no reading' : left + '% of five hours left'}">
     <span>${name}</span><i>${fill}</i></span>`;
 }
