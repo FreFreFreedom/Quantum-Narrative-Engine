@@ -520,7 +520,14 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
    it, so the click landed on nothing. Caught by driving the collapsed state, which is
    the state the pointer is actually in. */
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow { flex-direction:column; }
-.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-item { flex:0 0 auto; width:100%; }
+/* Collapsed, these two sit in the same column of icons as every destination above
+   them, which means the same 7px inset — not centred in their own button. Centring
+   them looked right in a diff and wrong on screen: the label is only faded, not
+   removed, so it still took 21px of the button and pushed each icon 7px left of the
+   ones above it. Dropped from the layout here, and the whole column lines up. */
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-item {
+  flex:0 0 auto; width:100%; justify-content:flex-start; padding:0 7px; }
+.railbar:not(.pinned):not(:hover):not(:focus-within) .rail-btnrow .rail-label { display:none; }
 
 /* ---------- The quota read-out in the rail ---------- */
 /* Two accounts down, two windows across, the money on a last line. The figure is what
@@ -2503,7 +2510,7 @@ button:active { transform: translateY(1px) scale(.99); }
       </button>
       <button class="rail-item" data-rail-sub="flow" role="tab" aria-selected="false" title="Flow — tasks, suggestions and ideas">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-bolt"/></svg>
-        <span class="rail-label">Flow</span><span id="railCountFlow" class="mode-pill-count"></span>
+        <span class="rail-label">Flow</span>
       </button>
       <button class="rail-item" data-rail-sub="room" role="tab" aria-selected="false" title="Room — a place to think, with cards pulled in when they matter">
         <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-chat"/></svg>
@@ -11589,17 +11596,9 @@ async function qLoad() {
     const ic = document.getElementById('queuePauseIc');
     if (ic) ic.setAttribute('href', qPaused ? '#ic-play' : '#ic-pause');
   }
-  // "Work still waiting" is the useful count — finished/cancelled items no longer move
-  // the number, so it stops meaning something once the list never shrinks.
-  const activeCount = qPrompts.filter(p => Q_ACTIVE_STATUSES.includes(p.status)).length;
-  const railCountEl = document.getElementById('railCountFlow');
-  if (railCountEl) {
-    railCountEl.textContent = activeCount || '';
-    // A pill, like the Queue's, rather than a number after the word — a number
-    // after the word is invisible on a collapsed rail, where the label is
-    // clipped; the pill moves onto the icon instead.
-    railCountEl.classList.toggle('on', activeCount > 0);
-  }
+  // The rail no longer carries a count on Flow. It said how many items were in a list
+  // you were about to open anyway, and a number that is almost always there stops
+  // being read. The build button already goes amber when something actually wants you.
   // "Waiting for you" count — how many tasks have an unanswered question.
   const askingCount = qPrompts.filter(qIsAsking).length;
   const askCountEl = document.getElementById('coreCountAsking');
