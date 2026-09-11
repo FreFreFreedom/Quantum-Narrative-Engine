@@ -2374,8 +2374,14 @@ button:active { transform: translateY(1px) scale(.99); }
    are siblings in .app-shell's flex row, so leaving one at display:flex while the
    incoming one also shows would squeeze both to half-width instead of one
    dissolving into the other. position:fixed removes it from that row and holds
-   it over the same viewport rect the row already occupies. */
-.mode-leaving { opacity:0; position:fixed; inset:0; pointer-events:none; }
+   it over the same viewport rect the row already occupies.
+   Compounded with the id (#app.mode-leaving, not just .mode-leaving): #mapApp and
+   #coreApp each set position:relative directly on their id selector, which beats
+   a bare class on specificity alone — the plain-class version of this rule was
+   silently overridden on exactly the two panels that needed it, so leaving Map or
+   Architecture never actually detached from the row; leaving Content (.wrap sets
+   position:relative as a class, not on #app's id) happened to work by accident. */
+#app.mode-leaving, #mapApp.mode-leaving, #coreApp.mode-leaving { opacity:0; position:fixed; inset:0; pointer-events:none; }
 /* ─── One segmented control ────────────────────────────────────────────────────
    Every row of mutually exclusive choices in the app: the Content view picker, the
    Architecture layouts and layers, the Flow filters, the suggestion filters, the build
