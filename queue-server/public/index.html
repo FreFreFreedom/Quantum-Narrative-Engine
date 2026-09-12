@@ -232,6 +232,11 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .pattern-chip:hover { background:var(--c-surface-3); }
 .pattern-chip.active { background:var(--c-info); color:var(--c-on-info); }
 .searchbox { width:100%; padding:6px 8px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); font-size:var(--fs-sm); margin-bottom:6px; }
+.search-wrap { position:relative; }
+.search-suggest { position:absolute; left:0; right:0; top:100%; margin-top:-4px; background:var(--c-bg); border:1px solid var(--c-border); border-radius:var(--r-sm); box-shadow:var(--sh-md); max-height:260px; overflow-y:auto; z-index:20; }
+.search-suggest .sug { padding:6px 8px; cursor:pointer; display:flex; align-items:baseline; gap:6px; font-size:var(--fs-sm); }
+.search-suggest .sug .sug-type { opacity:.55; font-size:.85em; white-space:nowrap; }
+.search-suggest .sug:hover, .search-suggest .sug.active { background:var(--c-surface-2); }
 .mid { flex:1; display:flex; flex-direction:column; min-width:0; }
 .graph-controls { padding:7px 16px; border-bottom:1px solid var(--c-border); background:var(--c-bg); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .ctrl-label { font-size:var(--fs-xs); color:var(--c-ink-4); text-transform:uppercase; letter-spacing:.04em; }
@@ -314,6 +319,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .section-title.author { color:var(--c-warn); }
 .section-title.ent { color:var(--c-violet); }
 .section-title.bridge { color:var(--c-brand); }
+.section-title.deep { color:var(--c-info); }
 .relhead { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .relscope { display:inline-flex; gap:2px; }
 .relscope .ctrlbtn { padding:1px 8px; font-size:var(--fs-2xs); text-transform:none; letter-spacing:0; }
@@ -328,7 +334,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .conn { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; border-radius:var(--r-sm); margin-bottom:4px; cursor:pointer; background:var(--c-surface); border:1px solid var(--c-border); font-size:var(--fs-sm); }
 .conn:hover { background:var(--c-surface-2); }
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
-.dot.author { background:var(--c-amber); } .dot.ent { background:var(--c-plot-5); } .dot.bridge { background:var(--c-brand); } .dot.deep { background:var(--c-amber); }
+.dot.author { background:var(--c-amber); } .dot.ent { background:var(--c-plot-5); } .dot.bridge { background:var(--c-brand); } .dot.deep { background:var(--c-info); }
 .dot.film { background:var(--c-plot-2); }
 /* A dated rule an institution holds. The date carries the weight, so it leads. */
 .posture { display:flex; gap:8px; align-items:baseline; padding:5px 8px; border-radius:var(--r-sm); margin-bottom:4px;
@@ -450,6 +456,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .echo-kind.author { background:var(--c-warn-tint); color:var(--c-warn); }
 .echo-kind.ent { background:var(--c-violet-tint); color:var(--c-violet); }
 .echo-kind.bridge { background:var(--c-success-tint); color:var(--c-brand); }
+.echo-kind.deep { background:var(--c-info-tint); color:var(--c-info); }
 .echo-why { color:var(--c-ink-4); font-size:var(--fs-2xs); }
 .bwrap { display:flex; gap:9px; }
 .bcover { width:36px; height:54px; object-fit:cover; border-radius:var(--r-xs); flex-shrink:0; background:var(--c-surface-3); }
@@ -2718,7 +2725,10 @@ button:active { transform: translateY(1px) scale(.99); }
       <h2>Trail</h2>
       <div id="trailHost"></div>
       <h2>Search</h2>
-      <input class="searchbox" id="search" placeholder="Search entities...">
+      <div class="search-wrap">
+        <input class="searchbox" id="search" placeholder="Search entities...">
+        <div id="searchSuggest" class="search-suggest" hidden></div>
+      </div>
       <h2>Axis</h2>
       <select class="axisselect" id="axisSelect"><option value="">No axis filter</option></select>
       <div id="axisControls" style="display:none;">
@@ -3644,6 +3654,54 @@ let searchDebounce = null;
 document.getElementById('search').addEventListener('input', () => {
   if (searchDebounce) clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => { searchDebounce = null; refreshView(); }, 200);
+  renderSearchSuggest();
+});
+
+// A short dropdown of matching entity names as you type — a name typed whole still has to
+// wait for refreshView's debounce and a scan of the whole filtered pool; this answers
+// straight from ENTITIES so picking one is instant, and works even while the graph is
+// filtered to something that would otherwise hide the match.
+let searchSugActive = -1;
+function searchSuggestions(q) {
+  const query = q.trim().toLowerCase();
+  if (!query) return [];
+  const starts = [], contains = [];
+  for (const e of ENTITIES) {
+    const name = (e.name || '').toLowerCase();
+    if (!name.includes(query)) continue;
+    (name.startsWith(query) ? starts : contains).push(e);
+  }
+  return [...starts, ...contains].slice(0, 8);
+}
+function renderSearchSuggest() {
+  const host = document.getElementById('searchSuggest');
+  const items = searchSuggestions(document.getElementById('search').value);
+  if (!items.length) { host.hidden = true; host.innerHTML = ''; searchSugActive = -1; return; }
+  if (searchSugActive >= items.length) searchSugActive = items.length - 1;
+  host.innerHTML = items.map((e, i) => `<div class="sug${i === searchSugActive ? ' active' : ''}" data-id="${qEscAttr(e.id)}">${qEsc(e.name)} <span class="sug-type">(${qEsc(rungLabel(e) || e.type)})</span></div>`).join('');
+  host.hidden = false;
+  host.querySelectorAll('.sug').forEach((el) => { el.onclick = () => pickSearchSuggestion(el.getAttribute('data-id')); });
+}
+function pickSearchSuggestion(id) {
+  const host = document.getElementById('searchSuggest');
+  host.hidden = true; host.innerHTML = ''; searchSugActive = -1;
+  document.getElementById('search').value = '';
+  refreshView();
+  selectEntity(id);
+}
+document.getElementById('search').addEventListener('keydown', (ev) => {
+  const host = document.getElementById('searchSuggest');
+  if (host.hidden) return;
+  const items = [...host.querySelectorAll('.sug')];
+  if (ev.key === 'ArrowDown') { ev.preventDefault(); searchSugActive = Math.min(searchSugActive + 1, items.length - 1); renderSearchSuggest(); }
+  else if (ev.key === 'ArrowUp') { ev.preventDefault(); searchSugActive = Math.max(searchSugActive - 1, 0); renderSearchSuggest(); }
+  else if (ev.key === 'Enter') { if (searchSugActive >= 0 && items[searchSugActive]) { ev.preventDefault(); pickSearchSuggestion(items[searchSugActive].getAttribute('data-id')); } }
+  else if (ev.key === 'Escape') { host.hidden = true; host.innerHTML = ''; searchSugActive = -1; }
+});
+document.addEventListener('click', (ev) => {
+  const host = document.getElementById('searchSuggest');
+  if (!host || host.hidden) return;
+  if (!ev.target.closest('.search-wrap')) { host.hidden = true; host.innerHTML = ''; }
 });
 
 // Graph ⇄ Landscape ⇄ List. All three are driven by exactly the same filter state
@@ -5223,8 +5281,26 @@ function sharedPatterns(a, b) {
 // checked `typeof ov === 'number'`, the other `ov !== undefined`). Now there is one: the
 // three helpers below, over whatever pool the caller names. Strength and wording are
 // unchanged so nothing on screen moves.
+// Deliberately ignores `pool` — a mapped-interior match is a fact about these two
+// entities, true or false regardless of any type/source filter, and there are so few of
+// them right now that hiding one behind "Films are off by default" would make the whole
+// feature look like it does nothing.
+function computeDeepConnections(e) {
+  return SPECTRAL_EDGES
+    .filter(edge => edge.a === e.id || edge.b === e.id)
+    .map(edge => ({ o: byId[edge.a === e.id ? edge.b : edge.a], distance: edge.distance }))
+    .filter(x => x.o);
+}
+
 function computeEchoes(e, limit = 8, pool = ENTITIES) {
   const out = [];
+  // Listed first and weighted to win any tie: a deep connection is a read structure, the
+  // other three are surface facts about the corpus. If both exist for the same pair, the
+  // deep one is the one worth a person's attention.
+  computeDeepConnections(e).forEach(({ o, distance }) => out.push({
+    o, kind: 'deep', strength: 500 - distance,
+    why: `insides ring alike — distance ${distance.toFixed(2)}, lower is closer`,
+  }));
   const auteurs = (e.meta && e.meta.auteurs) || [];
   computeSharedAuthor(e, pool).forEach(o => {
     const shared = ((o.meta && o.meta.auteurs) || []).filter(a => auteurs.includes(a));
@@ -5267,7 +5343,7 @@ function relationsBlockHtml(e) {
       </span></div>`;
   html += `<div id="relBlock-${e.id}">`;
   if (!rels.length) html += `<div class="empty">${relScope === 'all' ? 'No relations anywhere in the corpus.' : 'No relations in this view.'}</div>`;
-  for (const kind of ['author', 'ent', 'bridge']) {
+  for (const kind of ['deep', 'author', 'ent', 'bridge']) {
     const rows = rels.filter(r => r.kind === kind);
     if (!rows.length) continue; // an empty section is worse than no section
     html += `<div class="section-title ${kind}">${RELATION_NAMES[kind]} (${rows.length})</div>`;
