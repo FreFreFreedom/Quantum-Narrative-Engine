@@ -50,6 +50,10 @@ export const PROVIDERS = [
     baseUrl: 'https://api.groq.com/openai/v1',
     apiKeyEnv: 'GROQ_API_KEY',
     limits: { rpm: 30, rpd: 14400 },
+    // Same reason as Cerebras: gpt-oss thinks before it answers and the thinking is charged
+    // to the answer's budget, so the lane always asks for low reasoning. The note below
+    // ("nothing here asks for less than 150") was the old workaround for it.
+    thinksByDefault: true,
     // Read from the account's own /v1/models and each one answered, 2026-09-10.
     // The three llama/deepseek ids that used to sit here are gone from Groq.
     // gpt-oss thinks before it answers and the thinking eats the output budget:

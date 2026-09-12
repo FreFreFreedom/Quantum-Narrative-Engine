@@ -42,6 +42,25 @@ import { analyseTurns } from './interactionGraph.js';
 // going faster does not fail gracefully, it refuses every remaining window of the film.
 export const TRAFFIC_PROVIDER = 'cerebras';
 export const TRAFFIC_MODEL = 'gpt-oss-120b';
+
+// The lanes this may use, in order, and NOTHING else — Antoine's instruction 2026-09-12:
+// a bulk read that runs for hours must never wander onto the Claude subscription, which is
+// reserved for the queue. Both entries are free tiers with their own separate allowances,
+// so when Cerebras's hourly ceiling is reached the batch keeps going on Groq instead of
+// stopping. Each is named explicitly, and generateText gives an explicitly-named provider
+// no cross-provider fallback tail of its own, which is what makes this list exhaustive
+// rather than merely a preference.
+export const TRAFFIC_LANES = [
+  { provider: 'cerebras', model: 'gpt-oss-120b' },
+  { provider: 'groq', model: 'openai/gpt-oss-120b' },
+  // Last resort, added on Antoine's instruction 2026-09-12 ("use the opencode lanes also,
+  // whenever you are out"). Slower and less reliable than the two above — several of its
+  // free models stall rather than answer, which is why it is last and not first — but a
+  // window read slowly is worth more than a window skipped, and both ceilings above reset
+  // only on the hour or the day. Model left null so the lane picks its own current free
+  // one: the ids there change often enough that pinning one is how this breaks silently.
+  { provider: 'opencode', model: null },
+];
 export const WINDOW_CHARS = 12000;
 export const WINDOW_PAUSE_MS = 15000;
 const MAX_TOKENS = 4000;
@@ -171,19 +190,30 @@ export async function extractTraffic(sourceText, {
   const text = String(sourceText || '').replace(/\r\n/g, '\n');
   if (!text.trim()) return { error: 'empty_source' };
   const windows = windowsOf(text);
+  // Every refusal these two lanes give is a per-minute or per-day ceiling, and both say so
+  // in the same breath as "try again in 38s". Giving up on the window loses a whole stretch
+  // of the film for the sake of a wait shorter than the pause between windows anyway — so a
+  // window that fails on both lanes sleeps out the minute and asks once more. A second
+  // failure is taken at face value and the window is dropped, counted, and reported.
   const ask = callModel || (async (prompt) => {
-    const out = await generateText({
-      prompt, feature: 'doc-extraction', provider: TRAFFIC_PROVIDER, model: TRAFFIC_MODEL,
-      maxTokens: MAX_TOKENS, label: 'traffic-extraction',
-      // Without this, runAttempt's soft cap silently rewrites MAX_TOKENS down to 800 —
-      // a rule meant for short side-calls, and the single reason this extraction looked
-      // flaky for so long. One window's answer is a JSON array of dozens of turns; at 800
-      // tokens a thinking model spends the whole budget thinking and returns an empty
-      // string, and a non-thinking one returns an array truncated mid-object. Both read
-      // as "the model found nothing here" rather than as a budget that was too small.
-      allowLongOutput: true,
-    });
-    return out?.text || '';
+    for (let round = 0; round < 2; round++) {
+      if (round) await new Promise((r) => setTimeout(r, 65_000));
+      for (const lane of TRAFFIC_LANES) {
+        const out = await generateText({
+          prompt, feature: 'doc-extraction', provider: lane.provider, model: lane.model,
+          maxTokens: MAX_TOKENS, label: 'traffic-extraction',
+          // Without this, runAttempt's soft cap silently rewrites MAX_TOKENS down to 800 —
+          // a rule meant for short side-calls, and the single reason this extraction looked
+          // flaky for so long. One window's answer is a JSON array of dozens of turns; at
+          // 800 tokens a thinking model spends the whole budget thinking and returns an
+          // empty string, and a non-thinking one returns an array truncated mid-object.
+          // Both read as "the model found nothing here" rather than as too small a budget.
+          allowLongOutput: true,
+        });
+        if (out?.text) return out.text;
+      }
+    }
+    return '';
   });
 
   const allTurns = [];
