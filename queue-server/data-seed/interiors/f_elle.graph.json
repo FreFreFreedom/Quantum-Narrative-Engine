@@ -1,0 +1,4203 @@
+{
+  "entity": "f_elle",
+  "source": "data-seed/scripts/f_elle.txt",
+  "scope": "the whole script, machine-extracted (52 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (INTO PHONE)",
+      "quote": "...Yes, I’d like two pieces of the",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (INTO PHONE)",
+      "quote": "Hamachi, as well... and what",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (INTO PHONE)",
+      "quote": "exactly is the “Holiday Roll?”",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I fell off my bike.",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "That bike?",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "And you see why.",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "The music’s what makes it so great.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "It’s arguably cruelty to animals.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Nah- you think?",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Is this a MacDonald’s or something?",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You look quite handsome.",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT (CONT’D)",
+      "quote": "Josie's got all kinds of ideas",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Nice, huh?",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "A little too nice, don't you think?",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "A little uncomfortable, maybe.",
+      "block": 15
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOSIE",
+      "quote": "Yeah. Uncomfortable.",
+      "block": 16
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOSIE",
+      "quote": "That's our problem.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "APARTMENT MANAGER",
+      "quote": "Hey, hey, hey!",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT’D)",
+      "quote": "But you knew that.",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Hold on.",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I was going to ask- have you\n               experienced any incidents recently?",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "Incidents?",
+      "block": 22
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You know what I mean.",
+      "block": 23
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "A man threw a slice of pizza at me\n               from his car. It missed. Also, I felt\n               a couple of eyes on me in the market,\n               perhaps. But I always feel that.",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I just wonder if isn’t starting\n               again. A new cycle.",
+      "block": 25
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "You don’t know? Tru Tv just made a\n               new “special documentary” about\n               your father. They’re repeating it\n               all hours, every day. That’s why\n               it’s fresh on people’s minds.",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "(reeling)\n               I didn’t know. I don’t watch TV.",
+      "block": 27
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "Has something happened to you?",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "No. Nothing really. Just looks from\n          people on the street. The usual.",
+      "block": 29
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "It’s because of his parole hearing.\n          That’s their excuse for dredging\n          the whole thing up again. Your\n          father’s going before the panel in\n          two days...",
+      "block": 30
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You don’t miss a beat.",
+      "block": 31
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "I want you to come with me.",
+      "block": 32
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "They will never let him out. Thank\n          God. This parole hearing is nothing\n          but a kabuki exercise just like you\n          asking me to go with you when you\n          know I’d rather claw my own eyes out.",
+      "block": 33
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "IRENE",
+      "quote": "How long are you going to hang onto\n          this hatred?",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "I will never see him again. Not in\n          this world or... well, there is no\n          other world, so I’ll just leave it\n          at that.",
+      "block": 35
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "IRENE",
+      "quote": "There isn’t much time left,\n          Michelle. He’s ill. Look..\n              (pulling a PHOTO from her\n               purse, like a weapon)\n          Just look. Are you afraid to look\n          at your own father?",
+      "block": 36
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "There. Put it away now.",
+      "block": 37
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "IRENE",
+      "quote": "You’re not like all the others,\n               Michelle, people who only know the\n               monster from TV. You know the man.\n               He’s just a man.",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "And he’s a monster. You think\n               there’s a contradiction there?\n               Look, I’m done. I’ll see you later.",
+      "block": 39
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "IRENE",
+      "quote": "Just be careful. Some people aren’t\n               content with throwing rude things\n               from passing cars.",
+      "block": 40
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I understand you can’t make a\n               prognosis over the phone. I was\n               just exploring whether, in fact,\n               treating birds was something that\n               was possible.",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VET",
+      "quote": "We’re talking about a wild bird?",
+      "block": 42
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Yes. An ordinary brown bird.",
+      "block": 43
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VET",
+      "quote": "Like a sparrow?",
+      "block": 44
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Sparrows are pretty, aren’t they?",
+      "block": 45
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VET",
+      "quote": "Well, that’s subjective.",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Is it?",
+      "block": 47
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VET",
+      "quote": "Honestly, ma’am, I wouldn’t even\n               know how to intubate a sparrow- or\n               whatever it is.",
+      "block": 48
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Do sleeping pills work on birds?",
+      "block": 49
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "REPORTER (ON TV)",
+      "quote": "Have you talked to your father?",
+      "block": 50
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "We have to stop meeting like this.",
+      "block": 51
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "What were you thinking?",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Don’t rub them.",
+      "block": 53
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "It’s a friend’s.",
+      "block": 54
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "A friend’s.",
+      "block": 55
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "Her name’s Hélène.",
+      "block": 56
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Hélène?",
+      "block": 57
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "That dent was barely visible.",
+      "block": 58
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "She’s a friend, Michelle.",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You don’t have to spare my feelings.",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You don’t.",
+      "block": 61
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "Ok. So, I’m not.",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Is she a student?",
+      "block": 63
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "A grad student.",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I guess it was inevitable.",
+      "block": 65
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "But she read your book, didn’t she?",
+      "block": 66
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "This jealously is insane...",
+      "block": 67
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’m Richard’s ex. Michelle.",
+      "block": 68
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HÉLÈNE",
+      "quote": "Oh, oh, oh... nice to meet you.",
+      "block": 69
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Hope it’s ok barging in on you like\n          this. I just wanted to apologize to\n          you. Face to face...",
+      "block": 70
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HÉLÈNE",
+      "quote": "For what?",
+      "block": 71
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Your car window. I feel terrible...",
+      "block": 72
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HÉLÈNE",
+      "quote": "No, no- please. Richard explained\n          it to me.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Really? What was his explanation?",
+      "block": 74
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HÉLÈNE",
+      "quote": "(a beat, confused)\n          It was an accident.",
+      "block": 75
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "It was. It was an accident...\n          Anyway, it was a great excuse to\n          finally meet you.",
+      "block": 76
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HÉLÈNE",
+      "quote": "No, no, it’s fine. This is great.\n          It’s great to finally meet you. I\n          was thinking... I was hoping...",
+      "block": 77
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "At least, Richard won’t have to\n          introduce us now. We got the\n          awkwardness out of the way.",
+      "block": 78
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HÉLÈNE",
+      "quote": "Was there awkwardness?",
+      "block": 79
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Well...",
+      "block": 80
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HÉLÈNE",
+      "quote": "I mean, of course, I’m sure there\n          would be... I guess there is... was.",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "But we’ve survived it.",
+      "block": 82
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HÉLÈNE",
+      "quote": "We should get together some time.",
+      "block": 83
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "We should... In fact, I’m having a\n          Christmas party next week. You\n          should come. You have to come.",
+      "block": 84
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HÉLÈNE",
+      "quote": "(smiling)\n          If I have to.",
+      "block": 85
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "I’ll call Richard and give him all\n          the details... Anyway, I should let\n          you get back...",
+      "block": 86
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HÉLÈNE",
+      "quote": "Well, very nice to meet you.\n              (seeing Michelle,\n               sweating, almost faint)\n          Would you like some water?",
+      "block": 87
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "I’m fine, thanks. Very nice to meet\n          you.",
+      "block": 88
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCENT (CONT’D)",
+      "quote": "Guess he’s hungry.",
+      "block": 89
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "VINCENT (CONT’D)",
+      "quote": "We’ll give you a minute.",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOSIE",
+      "quote": "No. It’s alright.",
+      "block": 91
+    },
+    {
+      "speaker": "p11",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "NURSE",
+      "quote": "That’s amazing.",
+      "block": 92
+    },
+    {
+      "speaker": "p11",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "NURSE",
+      "quote": "I did.",
+      "block": 93
+    },
+    {
+      "speaker": "p11",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "NURSE",
+      "quote": "Oh my.",
+      "block": 94
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "A “prowler”?",
+      "block": 95
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You fought with him?",
+      "block": 96
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Did you see his face?",
+      "block": 97
+    },
+    {
+      "speaker": "p12",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "Pat, you should go in with her.",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’m sure it’s not necessary.",
+      "block": 99
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE (CONT’D)",
+      "quote": "I have pepper spray.",
+      "block": 100
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Everything seems to be ok.",
+      "block": 101
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Well, thank you. I appreciate it.",
+      "block": 102
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "PATRICK",
+      "quote": "Thank you for salvaging my pride.",
+      "block": 103
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Anytime.",
+      "block": 104
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’m a grandmother.",
+      "block": 105
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "PATRICK",
+      "quote": "Oh? ...Congratulations.",
+      "block": 106
+    },
+    {
+      "speaker": "p13",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KURT",
+      "quote": "Yes?",
+      "block": 107
+    },
+    {
+      "speaker": "p1",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I like your sweater. Do you ski?",
+      "block": 108
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello, all!",
+      "block": 109
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Promise you’ll kill me. If I ever...",
+      "block": 110
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "At the very first sign, kill me.",
+      "block": 111
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Scrabble!",
+      "block": 112
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh. Very funny.",
+      "block": 113
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You can’t avoid me all night.",
+      "block": 114
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I disagree.",
+      "block": 115
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s no hardship.",
+      "block": 116
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We’re just sitting down.",
+      "block": 117
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’ll say grace, if everybody likes.",
+      "block": 118
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Please.",
+      "block": 119
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Amen.",
+      "block": 120
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Amen!",
+      "block": 121
+    },
+    {
+      "speaker": "p15",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "So, Patrick, what do you do?",
+      "block": 122
+    },
+    {
+      "speaker": "p15",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh, why’s that?",
+      "block": 123
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Or ever, really.",
+      "block": 124
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Or ever.",
+      "block": 125
+    },
+    {
+      "speaker": "p16",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Rafe.",
+      "block": 126
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "God bless us one and all.",
+      "block": 127
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I guess this is as good a time as\n          any. I have an announcement. Cue\n          the drum-roll... Rafe and I are\n          engaged to be married.",
+      "block": 128
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hope everybody’s ok with blueberries.\n               Josie put a ton in this. They’re not\n               even in the official recipe.",
+      "block": 129
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It was an experiment.",
+      "block": 130
+    },
+    {
+      "speaker": "p12",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s almost midnight. Do you mind\n               if I put on the mass?",
+      "block": 131
+    },
+    {
+      "speaker": "p1",
+      "to": "p12",
+      "stance": "ally",
+      "cue": null,
+      "quote": "By all means.",
+      "block": 132
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Taking off already?",
+      "block": 133
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s my fault. I have family\n               obligations.",
+      "block": 134
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "ally",
+      "cue": null,
+      "quote": "This was wonderful, though,\n               Michelle. Really. Next time’s our\n               turn. You’ll come to us.",
+      "block": 135
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": null,
+      "quote": "That’ll be wonderful, but there’s no\n               reason to rush it.",
+      "block": 136
+    },
+    {
+      "speaker": "p10",
+      "to": "p9",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Let us handle it, Richard. We’ll\n               have lunch together first, Michelle\n               and I. Just the two of us. Take\n               things one step at a time.",
+      "block": 137
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I agree.",
+      "block": 138
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, great.",
+      "block": 139
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Drive safe.",
+      "block": 140
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Your idiotic flirting with the\n               banker - was that for my benefit?",
+      "block": 141
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Are you going to make a scene in my\n               home, Robert? Is this the kind of\n               thing I can expect now?",
+      "block": 142
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "We can talk later.",
+      "block": 143
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hold on... Your prop.",
+      "block": 144
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Close the book, ring the bell, blow\n               out the candle.",
+      "block": 145
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What’s that?",
+      "block": 146
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What kind of Catholic are you? You\n               never heard the rite of\n               excommunication?",
+      "block": 147
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Have you?",
+      "block": 148
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "From time to time.",
+      "block": 149
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I guess I can see why.",
+      "block": 150
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You’ve heard about the twenty-seven\n          people. You may not know about the\n          pets. They get short shrift. Six\n          dogs, a couple of cats. He spared a\n          hamster for some obscure reason.\n          You can’t make this shit up.",
+      "block": 151
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "We don’t have to talk about this,\n          Michelle",
+      "block": 152
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Wow.",
+      "block": 153
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, huh?",
+      "block": 154
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Are you aware how brutal you were\n               to me at dinner?",
+      "block": 155
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, I am. And that was just the\n               beginning.",
+      "block": 156
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "You become so cruel when confronted",
+      "block": 157
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROBERT",
+      "quote": "You dodged my question.",
+      "block": 158
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ROBERT",
+      "quote": "You never quit smoking.",
+      "block": 159
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Move, Robert.",
+      "block": 160
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "What’s going on?",
+      "block": 161
+    },
+    {
+      "speaker": "p11",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "NURSE",
+      "quote": "Miss, you have to go outside.",
+      "block": 162
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Josie...",
+      "block": 163
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOSIE",
+      "quote": "Leave me alone!",
+      "block": 164
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Here it is. After all that!",
+      "block": 165
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Did you hear me, Vincent?",
+      "block": 166
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Yeah, sure, but... what?",
+      "block": 167
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Whose is he, if he’s not mine?",
+      "block": 168
+    },
+    {
+      "speaker": "p15",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Vincent?!",
+      "block": 169
+    },
+    {
+      "speaker": "p2",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "I... just... You’re a cunt.",
+      "block": 170
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "The “Summoning” cut-scene needs to\n               come later.",
+      "block": 171
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "We don’t have time to argue. The\n               player needs to encounter Kira in her\n               repressed, schoolteacher persona\n               before her Dark Rebirth, otherwise\n               there’s nothing titillating about her\n               transformation.",
+      "block": 172
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Got a minute?",
+      "block": 173
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I found this on Kurt’s private\n               server. It looks like he’s into\n               crushing.",
+      "block": 174
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "What’s “crushing?”",
+      "block": 175
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "What it sounds like. As you see...",
+      "block": 176
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "(reading off screen)\n               “Sammantha gardens?”",
+      "block": 177
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "It’s disturbing. Not exactly a\n               smoking gun, though.",
+      "block": 178
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I guess not.",
+      "block": 179
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Good work. Keep on it.",
+      "block": 180
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’d like a consultation.",
+      "block": 181
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "The creature sodomizing me...\n               doesn’t he look like Kevin, a\n               little?",
+      "block": 182
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "A little around the eyes... Yes.",
+      "block": 183
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Yes.",
+      "block": 184
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Oh, I didn’t know it was you.",
+      "block": 185
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "You’re probably mad.",
+      "block": 186
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "At this moment, I’m mostly curious.",
+      "block": 187
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I guess I have to tell you.",
+      "block": 188
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Yes, you do.",
+      "block": 189
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I was never going to show it to\n          anyone. Phillip Kwan ripped the\n          animation off my computer,\n          converted it to an .MVK and sent it\n          to everyone in the office.",
+      "block": 190
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "But you created it?",
+      "block": 191
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Why?",
+      "block": 192
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Personal amusement... It started\n          out as an idea for a game that\n          incorporated true crime footage...\n          then it got weird. But nobody would\n          have seen it if it wasn’t for\n          fucking Phillip Kwan- who deserves\n          to be fired, if I’m getting fired.",
+      "block": 193
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Take out your penis.",
+      "block": 194
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Show me your penis and I might nor\n          fire you.",
+      "block": 195
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I thought you were Jewish.",
+      "block": 196
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Well no.",
+      "block": 197
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Put it away. The man I’m looking\n          for doesn’t have a foreskin.",
+      "block": 198
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Am I fired?",
+      "block": 199
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "I want every bit of this destroyed\n               and you’re going to sign a non-\n               disclosure agreement that I’ll\n               draft for you. Then we’ll see.",
+      "block": 200
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Get out of my house!",
+      "block": 201
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Out! Get out!",
+      "block": 202
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "“May the New Year bring you the\n                courage to break all your\n                resolutions early!”",
+      "block": 203
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Have you talked to Vincent?",
+      "block": 204
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Last week. He was in tears about\n          how they didn’t have money for\n          groceries.",
+      "block": 205
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You’re loaning them money?",
+      "block": 206
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "A little. Nothing.",
+      "block": 207
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "You shouldn’t do that, Anna.",
+      "block": 208
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "For that, yes.",
+      "block": 209
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "What are you doing?",
+      "block": 210
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Fine... do it. You’re pathetic.",
+      "block": 211
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "ROBERT",
+      "quote": "Take that back.",
+      "block": 212
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Are you for real? Blackmail?",
+      "block": 213
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Alright. Wednesday.",
+      "block": 214
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "ROBERT",
+      "quote": "You can’t rewrite history.",
+      "block": 215
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Fuck you.",
+      "block": 216
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Fuck you. Fuck you. Fuck you.",
+      "block": 217
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT’D)",
+      "quote": "Let her go.",
+      "block": 218
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "Josie...",
+      "block": 219
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Vincent, be quiet.",
+      "block": 220
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOSIE",
+      "quote": "I had to take the RER here.",
+      "block": 221
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "It was always about the baby,\n                wasn’t it? He’s what you were in it\n                for.",
+      "block": 222
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "I could be a good father, I know it.",
+      "block": 223
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’ll make mostaccioli for dinner.",
+      "block": 224
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Those are so full of salt.",
+      "block": 225
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Michelle, hey. How’s your knee?",
+      "block": 226
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "How’s your hand?",
+      "block": 227
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "We were just talking about whether\n                it matters if a chocolate chip\n                cookie comes from Lithuania. I say\n                it does.",
+      "block": 228
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "PATRICK",
+      "quote": "I’m skeptical, I guess.",
+      "block": 229
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’m withholding judgement.",
+      "block": 230
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Vincent says you guys haven’t\n                eaten... Rebecca took off on a road\n                trip with her parents and left me\n                with like a metric ton of Lasagna\n                I’ll never eat by myself.\n                    (gestures with wine)\n                I was getting this to go with it.",
+      "block": 231
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "VINCENT",
+      "quote": "Sounds good to me.",
+      "block": 232
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Where did Rebecca and her parents\n                go?",
+      "block": 233
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "They went to see the Pope in\n                Santiago de Compostella. They’re\n                driving. Insane if you ask me.",
+      "block": 234
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "The Le Quesnoy Family.",
+      "block": 235
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCENT",
+      "quote": "The Pope’s going to give mass at\n                the cathedral. I have a hard time\n                imagining him barefoot. It’s so\n                weird to think he’s, like, a real\n                person, with feet.",
+      "block": 236
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Careful there, sport.",
+      "block": 237
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "He’s out.",
+      "block": 238
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "His eyes were bigger than his\n                liver.",
+      "block": 239
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "It’s a wood boiler. I installed it\n                myself.",
+      "block": 240
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Sounds like a job.",
+      "block": 241
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "It was. It holds fifty liters.\n                Works by inverted flame combustion.",
+      "block": 242
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Inverted flame combustion? That\n                sounds like a made-up thing.",
+      "block": 243
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "PATRICK",
+      "quote": "Finally, something you don’t know.",
+      "block": 244
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK (CONT’D)",
+      "quote": "It’s in the basement.",
+      "block": 245
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Of course it is.",
+      "block": 246
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Would you like to see it?",
+      "block": 247
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Yes.",
+      "block": 248
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (to herself)",
+      "quote": "It’s just you and me now.",
+      "block": 249
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "What?",
+      "block": 250
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "No!",
+      "block": 251
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT’D)",
+      "quote": "Vincent’s upstairs.",
+      "block": 252
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Yes, Vincent’s upstairs.",
+      "block": 253
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It doesn’t work like that. For me.",
+      "block": 254
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It has to be... like before.",
+      "block": 255
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Thank you for dinner.",
+      "block": 256
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Anytime.",
+      "block": 257
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are you looking at?",
+      "block": 258
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Sure",
+      "block": 259
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is that granny?!",
+      "block": 260
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I didn’t know you took ballet.",
+      "block": 261
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’d die if I tried that now.",
+      "block": 262
+    },
+    {
+      "speaker": "p1",
+      "to": "p13",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Well done.",
+      "block": 263
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "ally",
+      "cue": null,
+      "quote": "That is a good idea.",
+      "block": 264
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What is it?",
+      "block": 265
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Robert’s fucking someone.",
+      "block": 266
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You know that?",
+      "block": 267
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I imagine I always knew abstractly.",
+      "block": 268
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "And now..?",
+      "block": 269
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "That’s all.",
+      "block": 270
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You missed Anna. She’s in\n               Anguoulême today.",
+      "block": 271
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "neu",
+      "cue": null,
+      "quote": "But you knew that.",
+      "block": 272
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You gave the impression you wanted\n               to go on like nothing happened...\n               If I’m being insensitive, I’m\n               sorry, but that’s my thing, right?",
+      "block": 273
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I appreciate you staying in\n               character.",
+      "block": 274
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "And, you know, a big part of my\n               role is being unpredictable. Don’t\n               scream.",
+      "block": 275
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "I know you’re a wilting flower but\n               you can still touch it... Can’t you?",
+      "block": 276
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hold on.",
+      "block": 277
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I was going to ask- have you",
+      "block": 278
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "experienced any incidents recently?",
+      "block": 279
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Incidents?",
+      "block": 280
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You know what I mean.",
+      "block": 281
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "A man threw a slice of pizza at me\n               from his car. It missed. Also, I felt\n               a couple of eyes on me in the market,\n               perhaps. But I always feel that.",
+      "block": 282
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I just wonder if isn’t starting\n               again. A new cycle.",
+      "block": 283
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You don’t know? Tru Tv just made a\n               new “special documentary” about\n               your father. They’re repeating it\n               all hours, every day. That’s why\n               it’s fresh on people’s minds.",
+      "block": 284
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I didn’t know. I don’t watch TV.",
+      "block": 285
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Has something happened to you?",
+      "block": 286
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No. Nothing really. Just looks from\n          people on the street. The usual.",
+      "block": 287
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s because of his parole hearing.\n          That’s their excuse for dredging\n          the whole thing up again. Your\n          father’s going before the panel in\n          two days...",
+      "block": 288
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You don’t miss a beat.",
+      "block": 289
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I want you to come with me.",
+      "block": 290
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "They will never let him out. Thank\n          God. This parole hearing is nothing\n          but a kabuki exercise just like you\n          asking me to go with you when you\n          know I’d rather claw my own eyes out.",
+      "block": 291
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "How long are you going to hang onto\n          this hatred?",
+      "block": 292
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I will never see him again. Not in\n          this world or... well, there is no\n          other world, so I’ll just leave it\n          at that.",
+      "block": 293
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "There isn’t much time left,\n          Michelle. He’s ill. Look..",
+      "block": 294
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just look. Are you afraid to look\n          at your own father?",
+      "block": 295
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "There. Put it away now.",
+      "block": 296
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You’re not like all the others,\n               Michelle, people who only know the\n               monster from TV. You know the man.\n               He’s just a man.",
+      "block": 297
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "And he’s a monster. You think\n               there’s a contradiction there?\n               Look, I’m done. I’ll see you later.",
+      "block": 298
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just be careful. Some people aren’t\n               content with throwing rude things\n               from passing cars.",
+      "block": 299
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How’d you get out there, numbskull?",
+      "block": 300
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I understand you can’t make a\n               prognosis over the phone. I was\n               just exploring whether, in fact,",
+      "block": 301
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "Is that gonna help? Do you know\n          what you’re doing?",
+      "block": 302
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "It’s on the pepper spray label. It\n          says to do this in case of contact\n          with eyes...",
+      "block": 303
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "You know I’ve always had a morbid\n          fear of going blind!",
+      "block": 304
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "You’re fine. I didn’t recognize the\n          car! Whose car is that anyway?",
+      "block": 305
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "(hesitant)\n          It’s a friend’s.",
+      "block": 306
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "(stops nursing, wary)\n          A friend’s.",
+      "block": 307
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "Her name’s Hélène.",
+      "block": 308
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Hélène?",
+      "block": 309
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "I had to borrow her car. Mine’s in",
+      "block": 310
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "That dent was barely visible.",
+      "block": 311
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "She’s a friend, Michelle.",
+      "block": 312
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "You don’t have to spare my feelings.",
+      "block": 313
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "I’m not... Why would I? Why would I",
+      "block": 314
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "even have to justify anything?",
+      "block": 315
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You don’t.",
+      "block": 316
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "Ok. So, I’m not.",
+      "block": 317
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Is she a student?",
+      "block": 318
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "A grad student.",
+      "block": 319
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I guess it was inevitable.",
+      "block": 320
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "She’s not my student. She’s a",
+      "block": 321
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "teaching assistant in a Virginia",
+      "block": 322
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "Woolf seminar. The Critical Studies",
+      "block": 323
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "department, a different department.",
+      "block": 324
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "But she read your book, didn’t she?",
+      "block": 325
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "Yes, she has. And she did tell me",
+      "block": 326
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "how deeply it affected her and I",
+      "block": 327
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "did melt inside. OK? It all went",
+      "block": 328
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "RICHARD",
+      "quote": "down just like you’re picturing it.",
+      "block": 329
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "It is a little amusing, actually-",
+      "block": 330
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "the way I picture it.",
+      "block": 331
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "This jealously is insane...",
+      "block": 332
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "I’m just concerned. Richard, this is",
+      "block": 333
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "what I’ve dreaded. I never worried",
+      "block": 334
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "about the ones with big tits. The",
+      "block": 335
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "ones who read Virginia Woolf will",
+      "block": 336
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "chew you up and spit you out.",
+      "block": 337
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "RICHARD",
+      "quote": "Michelle, you’re the dangerous one.",
+      "block": 338
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Well, if you see anything, hear\n               anything, just give a holler.",
+      "block": 339
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’m a grandmother.",
+      "block": 340
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Oh? ...Congratulations.",
+      "block": 341
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "KURT",
+      "quote": "Yes?",
+      "block": 342
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I like your sweater. Do you ski?",
+      "block": 343
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "KURT",
+      "quote": "I do. I’ll take you some time if\n               you like.",
+      "block": 344
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Kevin, you target shoot, right?",
+      "block": 345
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Yes.",
+      "block": 346
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "The point is you own guns?",
+      "block": 347
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "A couple.",
+      "block": 348
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Can you teach me?",
+      "block": 349
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Now I don’t pull, I squeeze, right?\n               I saw that in a few different\n               movies.",
+      "block": 350
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "You just pull the trigger.",
+      "block": 351
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "In a real situation, that would do.",
+      "block": 352
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "In a real situation, he’d probably\n               be moving faster.",
+      "block": 353
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "True.",
+      "block": 354
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Try the .44 .",
+      "block": 355
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Kevin, I also wanted to talk to you\n               because I’ve got an off-the-books\n               assignment for you.",
+      "block": 356
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "A black op?",
+      "block": 357
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I want to find out who created the\n               animation in that email. You know\n               the one I’m talking about.",
+      "block": 358
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Michelle... I want to help but\n               that’s a for-real major violation.",
+      "block": 359
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Trust me, it’s only a metaphorical\n               violation.\n                   (hits target in the head)\n               But I do appreciate how you might\n               feel about it. That’s why I’m\n               offering you ten thousand dollars,\n               off the books. This would be just\n               between us. Our thing.",
+      "block": 360
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "You know, you go through people’s\n               things, people are going to have\n               some embarrassing stuff.",
+      "block": 361
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Understood. My gaze is completely\n               non-judgemental.",
+      "block": 362
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Think we got enough illumination\n               here?",
+      "block": 363
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "The Infant’s head has to light up.",
+      "block": 364
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Hey, Rebecca.",
+      "block": 365
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "Hey.",
+      "block": 366
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "This is beautiful.",
+      "block": 367
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "I love this scene. This is where it\n               all started.",
+      "block": 368
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "It is... I know this is kind of\n               rudely last minute but I’m having a\n               little Christmas get-together\n               tomorrow night...",
+      "block": 369
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "It would be theoretically possible\n               to serve Richard’s lady love one of\n               these with a toothpick embedded deep\n               inside.",
+      "block": 370
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "You could just poison her.",
+      "block": 371
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "She’d see it coming. I’m sure she’s\n               already got me pegged as some kind\n               of Medea figure.",
+      "block": 372
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "She’s not a classics major",
+      "block": 373
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICHARD",
+      "quote": "For Your Pleasure, red vinyl! ...Hey!",
+      "block": 374
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "They should just take their cocks\n          out and measure.",
+      "block": 375
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "The way Robert loves to relive his",
+      "block": 376
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Wow.",
+      "block": 377
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Yeah, huh?",
+      "block": 378
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT’D)",
+      "quote": "Jesus...?",
+      "block": 379
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "IRENE",
+      "quote": "Go see him.",
+      "block": 380
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Unresponsive... meaning?",
+      "block": 381
+    },
+    {
+      "speaker": "p18",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "She is comatose.",
+      "block": 382
+    },
+    {
+      "speaker": "p1",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "How long?",
+      "block": 383
+    },
+    {
+      "speaker": "p1",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "This is real?",
+      "block": 384
+    },
+    {
+      "speaker": "p18",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "DOCTOR",
+      "quote": "Excuse me?",
+      "block": 385
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Did you see Richard with Hélène?",
+      "block": 386
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ANNA",
+      "quote": "I did. Lie down.",
+      "block": 387
+    },
+    {
+      "speaker": "p1",
+      "to": "p14",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "What are you doing?!",
+      "block": 388
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ROBERT",
+      "quote": "Anna’s gone to the office.",
+      "block": 389
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ROBERT",
+      "quote": "I’m sorry if I misjudged.",
+      "block": 390
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ROBERT",
+      "quote": "Right.",
+      "block": 391
+    },
+    {
+      "speaker": "p14",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "ROBERT",
+      "quote": "You’re serious?!",
+      "block": 392
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "This is as good as anywhere, I\n               guess. The wind's blowing out.",
+      "block": 393
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I didn’t want to disturb you but I\n          just got home and saw all your\n          shutters are open. The weather’s\n          turning fast. Half your windows are\n          gonna get blown out.",
+      "block": 394
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "That wouldn’t be good.",
+      "block": 395
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I know it probably sounds like I’m\n          being chicken little or something\n          but it'll amaze you what the winds\n          can do up here.",
+      "block": 396
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "No, I’ve seen it. You should’ve\n          been here in ‘99. It was like the\n          end of the world.",
+      "block": 397
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I believe it. You’re probably going\n          to need a hand.",
+      "block": 398
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Yes, probably. Thank you.",
+      "block": 399
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Your mother’s funeral was today?",
+      "block": 400
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "There was no service. We just...",
+      "block": 401
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I’m very sorry, Michelle.",
+      "block": 402
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I never counted but I think there’s\n               something like twenty windows in\n               this house.",
+      "block": 403
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "The wind’s from the west. We’ll do\n               that side.",
+      "block": 404
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I wasn’t expecting anyone.",
+      "block": 405
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "That looks like a ‘43 Grumman\n               Wildcat.",
+      "block": 406
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I wouldn’t know.",
+      "block": 407
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I’ve always thought about\n               rebuilding a vintage aircraft like\n               that. Taking it to Paris.",
+      "block": 408
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "You fly?",
+      "block": 409
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "No. But you got to have a dream,\n               right?",
+      "block": 410
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK (CONT’D)",
+      "quote": "Almost done.",
+      "block": 411
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Shit.",
+      "block": 412
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I’m sorry.",
+      "block": 413
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Idiot!",
+      "block": 414
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "The “Summoning” cut-scene needs to\n               come later.",
+      "block": 415
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "(cutting him off)",
+      "block": 416
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "(MORE)",
+      "block": 417
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT'D)",
+      "quote": "We don’t have time to argue. The",
+      "block": 418
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT'D)",
+      "quote": "player needs to encounter Kira in her",
+      "block": 419
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT'D)",
+      "quote": "repressed, schoolteacher persona",
+      "block": 420
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT'D)",
+      "quote": "before her Dark Rebirth, otherwise",
+      "block": 421
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT'D)",
+      "quote": "there’s nothing titillating about her",
+      "block": 422
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (CONT'D)",
+      "quote": "transformation.",
+      "block": 423
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Got a minute?",
+      "block": 424
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I found this on Kurt’s private",
+      "block": 425
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "What’s “crushing?”",
+      "block": 426
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "What it sounds like. As you see...",
+      "block": 427
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE (reading off screen)",
+      "quote": "“Sammantha gardens?”",
+      "block": 428
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I guess not.",
+      "block": 429
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Good work. Keep on it.",
+      "block": 430
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’d like a consultation.",
+      "block": 431
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "A little around the eyes... Yes.",
+      "block": 432
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Yes.",
+      "block": 433
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Oh, I didn’t know it was you.",
+      "block": 434
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN (CONT’D)",
+      "quote": "You’re probably mad.",
+      "block": 435
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "At this moment, I’m mostly curious.",
+      "block": 436
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I guess I have to tell you.",
+      "block": 437
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Yes, you do.",
+      "block": 438
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "But you created it?",
+      "block": 439
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Why?",
+      "block": 440
+    },
+    {
+      "speaker": "p1",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Take out your penis.",
+      "block": 441
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Well no.",
+      "block": 442
+    },
+    {
+      "speaker": "p17",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Am I fired?",
+      "block": 443
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "Get out of my house!",
+      "block": 444
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "opp",
+      "cue": "MICHELLE (CONT’D)",
+      "quote": "Out! Get out!",
+      "block": 445
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "Michelle.",
+      "block": 446
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "You found a buyer?",
+      "block": 447
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "ally",
+      "cue": "REBECCA",
+      "quote": "I took a little bit of a hit but\n                not bad. My realtor did a wonderful\n                job - I can give you his name, if\n                you like. If you ever...",
+      "block": 448
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "I’m not going anywhere.",
+      "block": 449
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "So much crap piles up.",
+      "block": 450
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "I wanted you to know I’m very sorry\n                for what you’ve been through.",
+      "block": 451
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "REBECCA",
+      "quote": "I claim to have faith. What’s it\n                for, if not to get through times\n                like this... Patrick was a good man\n                but he had a tortured soul.",
+      "block": 452
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "ally",
+      "cue": "REBECCA (CONT’D)",
+      "quote": "I’m sincerely glad you were able to\n                give him what he needed. For a\n                while, anyway.",
+      "block": 453
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MICHELLE",
+      "quote": "Good luck.",
+      "block": 454
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "I heard you were here.",
+      "block": 455
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Physically, anyway.",
+      "block": 456
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "We’re going ahead with Richard’s\n                project?",
+      "block": 457
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "I’m going to let him fool around for\n                a while... I expected him to throw\n                my charity back in my face but he\n                didn’t. Something’s gone out of him.",
+      "block": 458
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Robert showed up drunk at the\n                office this morning. Security\n                escorted him out... What did you\n                see in him anyway?",
+      "block": 459
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "It was more about happenstance,\n                opportunity... I just wanted to get\n                laid.",
+      "block": 460
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "opp",
+      "cue": "ANNA",
+      "quote": "That’s no excuse. It was very\n                shabby.",
+      "block": 461
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MICHELLE",
+      "quote": "It was that and worse.",
+      "block": 462
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "ally",
+      "cue": "ANNA",
+      "quote": "Vincent’s grown up. It’s just the\n                two of us now. And I’m stuck with\n                that mausoleum of a house... I’m\n                going to sell it... I was thinking\n                I could move in with you, for a\n                while.",
+      "block": 463
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MICHELLE",
+      "quote": "Oh.",
+      "block": 464
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 21,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 19
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 48,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 7,
+          "ally": 3,
+          "neu": 38
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 61,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 8,
+          "neu": 50
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 43,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 10,
+          "neu": 31
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 23,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 14,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p11",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p12",
+        "weight": 19,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 5,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p14",
+        "weight": 16,
+        "sign": "opp",
+        "stances": {
+          "opp": 8,
+          "ally": 1,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p17",
+        "weight": 44,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 2,
+          "neu": 38
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p15",
+        "weight": 28,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 3,
+          "neu": 21
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p18",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p17",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 4,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p15",
+        "p16",
+        "p17",
+        "p18",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p14"
+      ]
+    ]
+  }
+}
