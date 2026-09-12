@@ -1,0 +1,451 @@
+{
+  "entity": "f_the_revenant",
+  "source": "data-seed/scripts/f_the_revenant.txt",
+  "scope": "the whole script, machine-extracted (20 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "I'm Hugh Glass of...",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "We don't serve niggers.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "Of the Rocky Mountain Fur Company\n           on my way to Fort Union.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "I don't care if you was with Lewis\n           and Clark headed for the new world.\n           We don't serve niggers.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "All I need is a horse and enough\n           supplies to...",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "TRAPPER",
+      "quote": "Ice musta froze up his ears, `cause\n           he ain't listenin' to you, Cees.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "...to get me to Fort Union. I can\n           sign a draft made good by Captain\n           Henry.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "What the fuck happened to your\n           face, boy? You try to slice all\n           the black off?\n           81.",
+      "block": 8
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAPPER #2",
+      "quote": "Maybe we oughta help him do it\n           right.",
+      "block": 9
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "FAT TRAPPER",
+      "quote": "Best get on your way, boy.",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "I'm Hugh Glass of the Rocky\n           Mountain Fur Company, and all I\n           need is...",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "(to the trappers)\n           Do you believe this shit?",
+      "block": 12
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "FAT TRAPPER",
+      "quote": "Hell, I warned ya.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "All I need...",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS (CONT'D)",
+      "quote": "...is a horse and enough supplies\n           to get me to Fort Union.",
+      "block": 15
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS (CONT'D)",
+      "quote": "And this shooter here. All made\n           good by Captain Henry and The Rocky\n           Mountain Fur Company.",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "Shoot him, goddammit!\n           82.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAPPER #2",
+      "quote": "I can't get a clear look.",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "Shoot `em both!",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUNTY MAN",
+      "quote": "Get after the son of a bitch!",
+      "block": 20
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAPPER #2",
+      "quote": "It's cold as hell, Cees.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "FAT TRAPPER",
+      "quote": "And he did say to put it all on the\n           Rocky Mountain tab.",
+      "block": 22
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "STUBBY BILL",
+      "quote": "Jesus Christ.",
+      "block": 23
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIDGER",
+      "quote": "I'm sorry.",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "GLASS",
+      "quote": "You took everything I had... left\n           me to die.",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS (CONT'D)",
+      "quote": "Why?",
+      "block": 26
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIDGER",
+      "quote": "I was scared of dyin'.",
+      "block": 27
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIDGER",
+      "quote": "But every day since, I've wished I\n           had.",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "There wasn't no `Ree that night,\n           was there?",
+      "block": 29
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIDGER",
+      "quote": "No.",
+      "block": 30
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HENRY",
+      "quote": "Hugh. Wait.",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLASS",
+      "quote": "Where's Fitzgerald and my rifle?",
+      "block": 32
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HENRY",
+      "quote": "Deserted two days ago. Along with\n           about five hundred dollars of\n           company money.",
+      "block": 33
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HENRY",
+      "quote": "Let's get some coffee to warm you\n           up.",
+      "block": 34
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HENRY",
+      "quote": "I wanna hear what happened.",
+      "block": 35
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIDGER",
+      "quote": "Wait. Please!",
+      "block": 36
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 7,
+        "sign": "opp",
+        "stances": {
+          "opp": 5,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 3,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8"
+      ],
+      [
+        "p2",
+        "p3"
+      ]
+    ]
+  }
+}
