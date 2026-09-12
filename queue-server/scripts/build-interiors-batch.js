@@ -124,18 +124,24 @@ function claimLock() {
   return true;
 }
 
-async function main() {
-  mkdirSync(INTERIORS_DIR, { recursive: true });
-  if (!claimLock()) return;
-  const ontology = JSON.parse(readFileSync(ONTOLOGY_FILE, 'utf8'));
+// An overnight run, not a one-shot. Antoine's instruction 2026-09-12: keep going all night
+// on the free lanes, never the Claude subscription, and come back to a lane the moment it
+// works again. So this sweeps the remaining films, and when a sweep ends with some still
+// unbuilt — every free lane refusing, which is what a daily cap looks like — it waits and
+// sweeps again rather than exiting. A film that failed earlier is simply still missing an
+// interior, so the next sweep picks it up with no bookkeeping: the files on disk ARE the
+// state. Nothing here retries in a tight loop; the wait between sweeps is long enough that
+// a spent daily allowance has a real chance to have reset.
+const SWEEP_REST_MS = 20 * 60 * 1000;
+
+async function sweep(ontology, limitN) {
   const todo = Object.keys(ontology.filmsIndex)
     .filter((id) => sourceFor(id))
     .filter((id) => !existsSync(resolve(INTERIORS_DIR, id + '.graph.json')))
-    .slice(0, limit);
+    .slice(0, limitN);
+  if (!todo.length) return { todo: 0, done: 0, failed: 0 };
 
-  say(`batch starting — ${todo.length} film(s) with raw material and no interior yet`);
-  if (dry) { todo.forEach((id) => console.log('  would build', id, '—', ontology.filmsIndex[id].title)); return; }
-
+  say(`sweep starting — ${todo.length} film(s) still without an interior`);
   let done = 0, failed = 0;
   for (let i = 0; i < todo.length; i++) {
     const id = todo[i];
@@ -144,21 +150,46 @@ async function main() {
       const r = await buildOne(id, ontology.filmsIndex[id]);
       if (r.ok) {
         done += 1;
-        say(`✓ ${id} — ${r.nodes} parts, ${r.edges} bonds, ${r.turns} turns (${r.rejected}% of what it proposed thrown out)`);
+        say(`\u2713 ${id} — ${r.nodes} parts, ${r.edges} bonds, ${r.turns} turns (${r.rejected}% of what it proposed thrown out)`);
       } else {
         failed += 1;
-        say(`✗ ${id} — ${r.why}`);
+        say(`\u2717 ${id} — ${r.why}`);
       }
     } catch (e) {
       failed += 1;
-      say(`✗ ${id} — ${e.message}`);
+      say(`\u2717 ${id} — ${e.message}`);
     }
     if (i < todo.length - 1) {
       const rest = MIN_GAP_MS - (Date.now() - started);
-      if (rest > 0) { say(`   waiting ${Math.round(rest / 1000)}s before the next one (hourly ceiling)`); await sleep(rest); }
+      if (rest > 0) await sleep(rest);
     }
   }
-  say(`batch finished — ${done} built, ${failed} skipped, ${todo.length - done - failed} not reached`);
+  return { todo: todo.length, done, failed };
+}
+
+async function main() {
+  mkdirSync(INTERIORS_DIR, { recursive: true });
+  if (!claimLock()) return;
+  const ontology = JSON.parse(readFileSync(ONTOLOGY_FILE, 'utf8'));
+
+  if (dry) {
+    Object.keys(ontology.filmsIndex)
+      .filter((id) => sourceFor(id))
+      .filter((id) => !existsSync(resolve(INTERIORS_DIR, id + '.graph.json')))
+      .slice(0, limit)
+      .forEach((id) => console.log('  would build', id, '—', ontology.filmsIndex[id].title));
+    return;
+  }
+
+  let built = 0;
+  for (let round = 1; ; round++) {
+    const r = await sweep(ontology, limit);
+    built += r.done;
+    if (!r.todo) { say(`nothing left — every film with a script has an interior (${built} built this run)`); return; }
+    if (r.done === 0 && r.failed === 0) { say('nothing attempted; stopping'); return; }
+    say(`sweep ${round} done — ${r.done} built, ${r.failed} still refused; resting ${Math.round(SWEEP_REST_MS / 60000)} min before trying those again`);
+    await sleep(SWEEP_REST_MS);
+  }
 }
 
 main();

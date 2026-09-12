@@ -1,0 +1,2109 @@
+{
+  "entity": "f_the_last_of_the_mohicans",
+  "source": "data-seed/scripts/f_the_last_of_the_mohicans.txt",
+  "scope": "the whole script, machine-extracted (14 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "We're sorry to kill you, Brother.",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "Forgive us. I do honor to your courage and",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "speed, your strength ...",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "Halloo! John Cameron!",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "Alexandria! Set three more places.",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "How is Chingachgook, then?",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "The Master of Life is good. Another year pass ...",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "How is it with you, John?",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "Gettin' along. Yes, it is.",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "Nathaniel.",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Hello John. Cleared another quarter, I see.",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "Yes, I did.",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "UNCAS",
+      "quote": "Your farm good to you this year, John?",
+      "block": 13
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "It was a good year for corn.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "You take much fur?",
+      "block": 15
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Tradin' your skins in Castleton?",
+      "block": 16
+    },
+    {
+      "speaker": "p3",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "So what is it, Jack? What brings you up here?",
+      "block": 17
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Folks here goin' to join in that fight?",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "We'll see in the morning ...",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Few'd deny that? Where you headin'?",
+      "block": 20
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAMES",
+      "quote": "A son like me?",
+      "block": 21
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEXANDRIA",
+      "quote": "That's what he's doin' to his mama ...",
+      "block": 22
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "IAN",
+      "quote": "How far up the valley?",
+      "block": 23
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "ally",
+      "cue": "LIEUTENANT",
+      "quote": "To Fort William Henry.",
+      "block": 24
+    },
+    {
+      "speaker": "p10",
+      "to": "p9",
+      "stance": "ally",
+      "cue": "COLONIAL #1",
+      "quote": "... two days from here.",
+      "block": 25
+    },
+    {
+      "speaker": "p9",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "LIEUTENANT",
+      "quote": "It should be enough to remind you France is \n\t\t\tthe enemy.",
+      "block": 26
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Your enemy ...",
+      "block": 27
+    },
+    {
+      "speaker": "p9",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "What did you say?",
+      "block": 28
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "I said ... France is your enemy. Not ours.",
+      "block": 29
+    },
+    {
+      "speaker": "p9",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "Really? Do you want them to overrun all \n\t\t\tNew York colony?",
+      "block": 30
+    },
+    {
+      "speaker": "p9",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "Will you men help us stop the French?",
+      "block": 31
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "... and while they are cooped up in your fort, \n\t\t\twhat if the French send war parties to raid \n\t\t\ttheir homes?",
+      "block": 32
+    },
+    {
+      "speaker": "p8",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "IAN",
+      "quote": "What then, Lieutenant?",
+      "block": 33
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "For your own homes, for king, for country, that's \n\t\t\twhy you men ought to join this fight!",
+      "block": 34
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "You do what you want with your own scalp.\n\t\t\tDo not be tellin' us what to do\n\t\t\twith ours.",
+      "block": 35
+    },
+    {
+      "speaker": "p9",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "LIEUTENANT",
+      "quote": "You, sir! You call yourself a loyal subject?",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "... No ... Do not call myself much of a subject \n\t\t\tat all.",
+      "block": 37
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "COLONIAL #2",
+      "quote": "Nathaniel's right. But if I got to fight, figure I'll \n\t\t\ttry and do it fifty miles north of here instead of \n\t\t\tmy bean field.",
+      "block": 38
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "AD LIBS",
+      "quote": "Yes. Yeah. No ...",
+      "block": 39
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMERON",
+      "quote": "I am stayin' on my farm. And any man who goes,\n\t\t\this family is welcome to fort-up with us 'til he \n\t\t\tcomes back.",
+      "block": 40
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Boys. My sense of it is enough of us will join-up to \n\t\t\tfill the county's levy. But only if General Webb \n\t\t\taccepts a few terms I got in mind ...",
+      "block": 41
+    },
+    {
+      "speaker": "p12",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "AD LIBS",
+      "quote": "Webb? what's that, Jack ...?",
+      "block": 42
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "IAN",
+      "quote": "You boys marchin' with us? What do you say?",
+      "block": 43
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "UNCAS",
+      "quote": "We had our say, Ian.",
+      "block": 44
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Will you consider that?",
+      "block": 45
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "CORA",
+      "quote": "Yes. Yes, I will.",
+      "block": 46
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Duncan!",
+      "block": 47
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": "HEYWARD",
+      "quote": "My God, you've grown up.",
+      "block": 48
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "We leave in the morning?!",
+      "block": 49
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": "HEYWARD",
+      "quote": "Yes, miss.",
+      "block": 50
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "My God, Alice.",
+      "block": 51
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "It can be dangerous ...",
+      "block": 52
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Atten-shun!",
+      "block": 53
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Shoulder arms!",
+      "block": 54
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Form two companies of nine ... MARCH!!",
+      "block": 55
+    },
+    {
+      "speaker": "p13",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Are you alright?",
+      "block": 56
+    },
+    {
+      "speaker": "p15",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Can we rest soon?",
+      "block": 57
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": "HEYWARD",
+      "quote": "Absolutely.",
+      "block": 58
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "You there, Scout!",
+      "block": 59
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Excuse me. What did you say?",
+      "block": 60
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "ally",
+      "cue": "MAGUA",
+      "quote": "Magua say: \"Yes. Good idea.\"",
+      "block": 61
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Form company! Left face! March!",
+      "block": 62
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Company make ready!",
+      "block": 63
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Present!!",
+      "block": 64
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Fire!!",
+      "block": 65
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Load! Prime!",
+      "block": 66
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBROSE",
+      "quote": "Present! Present!",
+      "block": 67
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "opp",
+      "cue": "CORA",
+      "quote": "No, Duncan!",
+      "block": 68
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "... case your aim is any better'n your judgment.",
+      "block": 69
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Sergeant Major!",
+      "block": 70
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Major!",
+      "block": 71
+    },
+    {
+      "speaker": "p18",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "SERGEANT MAJOR",
+      "quote": "Sir!",
+      "block": 72
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": "HEYWARD",
+      "quote": "Thank you, Sergeant Major. Thank the men.",
+      "block": 73
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "SERGEANT MAJOR",
+      "quote": "Atten-hut!",
+      "block": 74
+    },
+    {
+      "speaker": "p14",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Alice ... ",
+      "block": 75
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "I'm sorry, I didn't mean to ... ",
+      "block": 76
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "I see ... ",
+      "block": 77
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "I am sorry, Duncan ... ",
+      "block": 78
+    },
+    {
+      "speaker": "p19",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "MUNRO",
+      "quote": "What did you see, Major?",
+      "block": 79
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "You're a liar!",
+      "block": 80
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "And the blood is on your hands!",
+      "block": 81
+    },
+    {
+      "speaker": "p19",
+      "to": "p13",
+      "stance": "opp",
+      "cue": "MUNRO",
+      "quote": "I'll have none of that!",
+      "block": 82
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "opp",
+      "cue": "MUNRO",
+      "quote": "You forget yourself!",
+      "block": 83
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "We are not forgettin' Webb's promise!",
+      "block": 84
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "opp",
+      "cue": "MUNRO",
+      "quote": "This interview's over! The militia stays!",
+      "block": 85
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": "HEYWARD",
+      "quote": "That is sedition! Treason!",
+      "block": 86
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "That is the truth!",
+      "block": 87
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": "HEYWARD",
+      "quote": "I ought to have you whipped from this fort!",
+      "block": 88
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "IAN",
+      "quote": "But we are under English military authority.",
+      "block": 89
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "A COLONIAL",
+      "quote": "Should've skinned outta this long ago.",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": "p11",
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "I'll cover them from the top of the casement.",
+      "block": 91
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "You're not coming with us?",
+      "block": 92
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Got a reason to stay.",
+      "block": 93
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "SERGEANT MAJOR",
+      "quote": "Right - about face! March! First rank present!",
+      "block": 94
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Fire!",
+      "block": 95
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Fire!",
+      "block": 96
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Fire!",
+      "block": 97
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Cora!",
+      "block": 98
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MUNRO",
+      "quote": "Cora! Alice!",
+      "block": 99
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "No!",
+      "block": 100
+    },
+    {
+      "speaker": "p14",
+      "to": "p13",
+      "stance": "opp",
+      "cue": "CORA",
+      "quote": "Stop it!!",
+      "block": 101
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "REDCOAT #1",
+      "quote": "Can't ... keep it up ...",
+      "block": 102
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Pull!",
+      "block": 103
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "How long?",
+      "block": 104
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Only chance we got is ...",
+      "block": 105
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "... to get more distance on 'em and go",
+      "block": 106
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Pull!!",
+      "block": 107
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Pull ...!",
+      "block": 108
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "REDCOAT #2",
+      "quote": "Spent.",
+      "block": 109
+    },
+    {
+      "speaker": "p3",
+      "to": "p13",
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Head for ... for the white water.",
+      "block": 110
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": "HEYWARD",
+      "quote": "Do you hear me, sir!",
+      "block": 111
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "If you ever fall ... into British hands ...",
+      "block": 112
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "What white water?",
+      "block": 113
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Here's where it gets tricky ...",
+      "block": 114
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "the falls.",
+      "block": 115
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Where do we go from here?",
+      "block": 116
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "We don't.",
+      "block": 117
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "I don't understand!",
+      "block": 118
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "This is it, as far as we can go ... If we're ",
+      "block": 119
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "lucky, they'll be figurin' we can't have ",
+      "block": 120
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "come this way and must've beached our ",
+      "block": 121
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "canoes and headed cross land. If we're ",
+      "block": 122
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "very lucky, they'll figure we went over ",
+      "block": 123
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Then what?",
+      "block": 124
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "And if we're unlucky?",
+      "block": 125
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Any powder?",
+      "block": 126
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "HAWKEYE",
+      "quote": "Only one or two loads.",
+      "block": 127
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Are we safe?",
+      "block": 128
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Maybe ...",
+      "block": 129
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Our father? Did you see my father?",
+      "block": 130
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Tell me!",
+      "block": 131
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "CORA",
+      "quote": "Say nothing to Alice ...!",
+      "block": 132
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Uncas ...",
+      "block": 133
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Yes. Go ahead.",
+      "block": 134
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Yes.",
+      "block": 135
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Yes.",
+      "block": 136
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Yes.",
+      "block": 137
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "What the bloody hell plan is this?",
+      "block": 138
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Yes. I want you to go.",
+      "block": 139
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "... never doubt what you are doing.",
+      "block": 140
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGUA",
+      "quote": "Gifts?",
+      "block": 141
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Three, four oxen ... much wampum.",
+      "block": 142
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGUA",
+      "quote": "Wampum?",
+      "block": 143
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "Gold could be arranged.",
+      "block": 144
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGUA",
+      "quote": "For Munro children?",
+      "block": 145
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGUA",
+      "quote": "Not enough.",
+      "block": 146
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEYWARD",
+      "quote": "What is enough?",
+      "block": 147
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAGUA",
+      "quote": "Heart. Give Magua new heart.",
+      "block": 148
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Nathaniel!",
+      "block": 149
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to Sachem)",
+      "quote": "I come to you unarmed and in peace to \n\t\t\tunstop your ears, wise one. Because the \n\t\t\tHurons are mislead by the words of the \n\t\t\twolf who's never spoken the truth.",
+      "block": 150
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Let the children of the dead Colonel Munro \n\t\t\tgo free and take the fire out of the English \n\t\t\tanger over the murder of their helpless ones.",
+      "block": 151
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to Sachem)",
+      "quote": "Our father, Montcalm, is greater than the \n\t\t\tYengeese in the arts of war. The Huron \n\t\t\tdo not fear English anger.",
+      "block": 152
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to Sachem)",
+      "quote": "Wise one, the French fathers made peace \n\t\t\tand swore to their honor not to break the \n\t\t\tfriendship. Magua broke it. It is false that \n\t\t\tthe French would not be friends, still, to \n\t\t\tthe Huron.",
+      "block": 153
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "(laughs)",
+      "quote": "It made our French father happy to never \n\t\t\thave to fight the same Yengeese again. \n\t\t\tHe told me this without telling me this.",
+      "block": 154
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "So the Huron are the servants of the French? \n\t\t\tTo do what the French are shamed to do?",
+      "block": 155
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGUA",
+      "quote": "No.",
+      "block": 156
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "opp",
+      "cue": "(to Sachem)",
+      "quote": "Huron serve no one. The French father \n\t\t\tbelieves he fooled Magua because he is so \n\t\t\tproud of his cleverness, he is blind. But it \n\t\t\tis the Huron path that Magua walks down, \n\t\t\tnot the French one ... Now, Les Francais, \n\t\t\talso, fear Huron. That is good. When the \n\t\t\tHuron is strong from their fear, we will make \n\t\t\tthe terms of trade with Les Francais. And we \n\t\t\twill trade as the white man trades. Take land \n\t\t\tfrom the Abnakes; fur from the Osage, Sauk \n\t\t\t& Fox. And make the Huron great. Over \n\t\t\tother tribes. No less than the whites, as strong \n\t\t\tas the whites.",
+      "block": 157
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to Sachem)",
+      "quote": "Magua would use the ways of Les Francais \n\t\t\tand the Yengeese ...",
+      "block": 158
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "opp",
+      "cue": "(to Sachem)",
+      "quote": "The red man put down the bow, picked up \n\t\t\tthe fire stick and became the best warrior \n\t\t\tin the forest. Yes. It is the only way.",
+      "block": 159
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "(continuing)",
+      "quote": "Munro daughter with moon in her hair \n\t\t\tmust be Magua's wife so Munro's seed \n\t\t\tdoesn't die.",
+      "block": 160
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "(continuing; dissolves back to French)",
+      "quote": "... and Yengeese officer not go to Les\n\t\t\tFrancais, but back to Yengeese so their \n\t\t\thatred burns less bright. La Longue Carabine, \n\t\t\tgo in peace.",
+      "block": 161
+    },
+    {
+      "speaker": "p3",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "(to Heyward)",
+      "quote": "Tell him I'll trade him! Me for her! Tell him!!",
+      "block": 162
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "(shouts)",
+      "quote": "I am La Longue Carabine! My death is a \n\t\t\tgreat honor to the Huron. Take me!",
+      "block": 163
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "opp",
+      "cue": "(French; subtitled)",
+      "quote": "This is not the voice of wisdom. I go to \n\t\t\tthe Hurons of the Lakes! You are women. \n\t\t\tSend your arrows and guns to the Seneca, \n\t\t\tbeg from them venison to eat, corn to grind. \n\t\t\tSlaves, dogs, rabbits, thieves ... I spit on you!",
+      "block": 164
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "HAWKEYE",
+      "quote": "I said to trade me!",
+      "block": 165
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "(standing)",
+      "quote": "What are they doing to Duncan? \n\t\t\tDuncan!",
+      "block": 166
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "(low to himself)",
+      "quote": "And my compliments to you ...",
+      "block": 167
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Alice?",
+      "block": 168
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "UNCAS!!!",
+      "block": 169
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Will you go back to England?",
+      "block": 170
+    },
+    {
+      "speaker": "p14",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "I have nothing to go back for.",
+      "block": 171
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Then will you stay in America?",
+      "block": 172
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "And will you be my wife?",
+      "block": 173
+    },
+    {
+      "speaker": "p14",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Yes.",
+      "block": 174
+    },
+    {
+      "speaker": "p14",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CORA",
+      "quote": "Where will we go?",
+      "block": 175
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Winter with the Delaware, my father's ",
+      "block": 176
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "cousins. And in the spring, cross the ",
+      "block": 177
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "Ohio and look for land to settle with my ",
+      "block": 178
+    },
+    {
+      "speaker": "p3",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "father in a new place called Can-tuck-ee.",
+      "block": 179
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "The frontier moves with the sun and pushes ",
+      "block": 180
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "the red man of the wilderness forests in front ",
+      "block": 181
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "of it. Until one day there will be nowhere left. ",
+      "block": 182
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "Then our race will be no more, or be not us ...",
+      "block": 183
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "The frontier place is for people like my white ",
+      "block": 184
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "son and his woman and their children.",
+      "block": 185
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "That's my father's sadness talking.",
+      "block": 186
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "No. It is true ... One day ... there will be no ",
+      "block": 187
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "more frontier. Then men like you will go, too. ",
+      "block": 188
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "Like the Mohicans. ",
+      "block": 189
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "And new people will come. Work. Struggle ",
+      "block": 190
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "to make their light ... One mystery remains. ",
+      "block": 191
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HAWKEYE",
+      "quote": "What is that?",
+      "block": 192
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "Will there be anything left to show the world ",
+      "block": 193
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "CHINGACHGOOK",
+      "quote": "that we ever did exist?",
+      "block": 194
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p14",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p15",
+        "weight": 5,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p16",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p17",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p3",
+        "weight": 15,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 6,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p18",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p19",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p16",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p3",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p19",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p21",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p17",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p3",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p3",
+        "weight": 3,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p3",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p9",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 23 given"
+  }
+}
