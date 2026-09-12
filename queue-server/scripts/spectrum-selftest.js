@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {
   signedLaplacian, jacobiEigenvalues, spectralSignature, spectralDistance, compareEntities,
-  entitiesWithInteriors, allSpectralEdges,
+  entitiesWithInteriors, allSpectralEdges, isWellRead,
 } from '../server/src/services/graphSpectrum.js';
 
 function close(a, b, eps = 1e-6) { return Math.abs(a - b) < eps; }
@@ -91,8 +91,14 @@ function sortedClose(actual, expected) {
 {
   const ids = entitiesWithInteriors();
   assert.ok(ids.includes('f_dogville') && ids.includes('fam_maxson'), 'the two known interiors are found');
+  // Only the ones actually read take part: an under-read interior is on disk but never
+  // matched, because two nearly-empty graphs ring identically and would top the list.
+  const matchable = ids.filter(isWellRead);
+  assert.ok(matchable.includes('f_dogville') && matchable.includes('fam_maxson'),
+    'the two hand-read interiors are dense enough to match');
   const uncapped = allSpectralEdges({ nearest: 0 });
-  assert.equal(uncapped.length, (ids.length * (ids.length - 1)) / 2, 'uncapped is exactly one edge per unordered pair');
+  assert.equal(uncapped.length, (matchable.length * (matchable.length - 1)) / 2,
+    'uncapped is exactly one edge per unordered pair of well-read interiors');
   assert.ok(uncapped.every((e) => e.a !== e.b), 'no self-edges');
   assert.ok(uncapped.every((e) => typeof e.distance === 'number' && e.distance >= 0), 'every edge carries a real distance');
 
@@ -104,9 +110,9 @@ function sortedClose(actual, expected) {
   assert.ok(edges.length <= uncapped.length, 'capping never invents an edge');
   const seen = new Set(edges.map((e) => e.a + '|' + e.b));
   assert.equal(seen.size, edges.length, 'no pair appears twice');
-  if (ids.length > 1) {
+  if (matchable.length > 1) {
     const touched = new Set(edges.flatMap((e) => [e.a, e.b]));
-    assert.equal(touched.size, ids.length, 'every mapped entity keeps at least one connection');
+    assert.equal(touched.size, matchable.length, 'every well-read entity keeps at least one connection');
   }
   for (let i = 1; i < edges.length; i++) {
     assert.ok(edges[i].distance >= edges[i - 1].distance, 'closest first');

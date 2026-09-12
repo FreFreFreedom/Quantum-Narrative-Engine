@@ -9,7 +9,7 @@
 // structures can share a signature, so this feeds the propose/verify pipeline rather than
 // deciding anything on its own.
 
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { anatomyFor } from './entityRelations.js';
@@ -25,6 +25,40 @@ export function entitiesWithInteriors() {
   return files.filter((f) => f.endsWith('.graph.json')).map((f) => f.replace(/\.graph\.json$/, ''));
 }
 
+// How much of its own source a read actually found, in turns per 10k characters. A real
+// read lands around 11-14 whatever the source: Into the Wild 13.7, Taxi Driver 12.6, The
+// Master 11.4, and the two hand-read interiors sit in the same band. A read that failed —
+// a screenplay formatted in a way the extractor could not attribute — lands under 1: Cold
+// Mountain found 20 turns in 294k characters, Dances with Wolves 13 in 214k.
+//
+// This matters more than it looks. Two barely-read films produce two nearly-empty graphs,
+// and two nearly-empty graphs ring IDENTICALLY — Cold Mountain and The Way Back came out
+// at distance 0.00, which reads on screen as the strongest match in the corpus and means
+// only that neither was read. So an under-read interior is kept on disk (a better read can
+// replace it) but never offered a match.
+export const MIN_TURNS_PER_10K = 3;
+
+export function readDensity(entityId) {
+  if (!/^[A-Za-z0-9_]+$/.test(String(entityId || ''))) return null;
+  const file = resolve(INTERIORS_DIR, entityId + '.graph.json');
+  if (!file.startsWith(INTERIORS_DIR) || !existsSync(file)) return null;
+  let doc;
+  try { doc = JSON.parse(readFileSync(file, 'utf8')); } catch { return null; }
+  const turns = Array.isArray(doc.turns) ? doc.turns.length : 0;
+  const src = resolve(INTERIORS_DIR, '..', String(doc.source || '').replace(/^data-seed\//, ''));
+  let chars = 0;
+  try { chars = statSync(src).size; } catch { return null; }
+  if (!chars) return null;
+  return { turns, chars, per10k: Math.round((turns / (chars / 10000)) * 10) / 10 };
+}
+
+export function isWellRead(entityId) {
+  const d = readDensity(entityId);
+  // No readable source to measure against is not evidence of a bad read — an interior whose
+  // source file has moved is still the record of a real one, so it keeps its place.
+  return d ? d.per10k >= MIN_TURNS_PER_10K : true;
+}
+
 // How many of its nearest matches each entity keeps. Every pair of interiors has SOME
 // distance between them, so returning them all means every mapped entity is joined to
 // every other one — at 40 interiors that is 780 lines, and the graph turns back into the
@@ -37,7 +71,7 @@ export const NEAREST_PER_ENTITY = 3;
 // Every pair of mapped interiors, by how close their shapes ring — the deep connection the
 // graph draws in place of shared tags or a shared author.
 export function allSpectralEdges({ nearest = NEAREST_PER_ENTITY } = {}) {
-  const sigs = entitiesWithInteriors().map((id) => spectrumFor(id)).filter(Boolean);
+  const sigs = entitiesWithInteriors().filter(isWellRead).map((id) => spectrumFor(id)).filter(Boolean);
   const all = [];
   for (let i = 0; i < sigs.length; i++) {
     for (let j = i + 1; j < sigs.length; j++) {

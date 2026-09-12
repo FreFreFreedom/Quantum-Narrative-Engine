@@ -63,16 +63,13 @@ async function findScriptUrl(title) {
   const letter = /^[0-9]/.test(sorted) ? '0' : sorted[0].toUpperCase();
   const entries = await letterPage(letter);
   const target = normalize(sorted);
+  // Exact title only. There used to be a prefix fallback here for "punctuation drift",
+  // and what it actually did was hand back a different film: "Wild" fetched Wild at Heart,
+  // "Predator: Badlands" fetched Predator. A wrong script is worse than a missing one —
+  // it produces a confident, fully-verified interior belonging to someone else's story.
+  // A title IMSDb spells differently is a miss, and a miss is an honest answer.
   const exact = entries.find((e) => normalize(e.title) === target);
-  if (exact) return exact.href;
-  // A loose fallback for punctuation/subtitle drift ("Dune" vs "Dune Part One"), never for
-  // a completely different film — require the shorter title to be a whole prefix of the
-  // longer, word for word.
-  const loose = entries.find((e) => {
-    const a = normalize(e.title), b = target;
-    return a.startsWith(b + ' ') || b.startsWith(a + ' ');
-  });
-  return loose ? loose.href : null;
+  return exact ? exact.href : null;
 }
 
 // A details page ("/Movie Scripts/X Script.html") only ever links to the real reader
