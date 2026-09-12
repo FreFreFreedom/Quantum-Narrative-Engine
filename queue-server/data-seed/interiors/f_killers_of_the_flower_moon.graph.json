@@ -1,0 +1,3236 @@
+{
+  "entity": "f_killers_of_the_flower_moon",
+  "source": "data-seed/scripts/f_killers_of_the_flower_moon.txt",
+  "scope": "the whole script, machine-extracted (33 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "how do you mean?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "...you talk too much.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "So you race horses, do you?",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I've been known to.",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "... (scoffs) Huh!",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "You remember Blackie Thompson?",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Here put this on.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE (CONT'D)",
+      "quote": "Do you want dinner?",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Yes.",
+      "block": 9
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MINNIE",
+      "quote": "He'a possum around you, he's",
+      "block": 10
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MINNIE",
+      "quote": "like a rabbit to me...",
+      "block": 11
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "Be quiet. Coyote's watching.",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MINNIE",
+      "quote": "He wants our money.",
+      "block": 13
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Of course he wants money, but",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "he wants to be settled. He's",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "not restless...",
+      "block": 16
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MINNIE",
+      "quote": "With him you won't need Pitts",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MINNIE",
+      "quote": "with your money.",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "His Uncle has money... it's",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "not money he wants... he",
+      "block": 20
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "loves you.",
+      "block": 21
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Your hand looks on my skin...",
+      "block": 22
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "You're going to marry me Mollie. I",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Will you do that?",
+      "block": 24
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "that?",
+      "block": 25
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "...Can you stand her?",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "She's easy to like.",
+      "block": 27
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Will she be intimate with you when",
+      "block": 28
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "you need that? Whenever you desire",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Yes. She's... she's not a nag...",
+      "block": 30
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "she's... I love this girl, Mollie,",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Uncle, I really do think she's a",
+      "block": 32
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "lady...",
+      "block": 33
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "You found a wife.",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Why's that?",
+      "block": 35
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "It shows itself to you that Bill\n               Smith didn't take the care of\n               Minnie the way he could have?\n               ... To have her sick and die to\n               take her headrights and her land?",
+      "block": 36
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "That should go to her sisters, your\n               wife... by rights that should go to\n               Mollie.\n               ...With these women dying, with how\n               Osage suffer from illness... you will\n               make it the headrights come to you.\n               That is sensible and safe, you see?",
+      "block": 37
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "How is Mollie feeling?",
+      "block": 38
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Alright. She takes care of the\n               little one...",
+      "block": 39
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "That's the Osage way. They'll\n               tolerate anybody - even whites -\n               for their children. That's their\n               riches.",
+      "block": 40
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "She's sick with diabetes most days,\n               you know.",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Yes of course she is. It's just\n               waiting on this clock to stop... if\n               she's lucky. If not...",
+      "block": 42
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "well suffering is a long, needless\n               road... Like it said in Job, \"the\n               days of affliction have taken hold\n               upon her... \" This diabetes is a\n               trial to bear... Don't have to be\n               but it is.",
+      "block": 43
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "The Mother, Lizzie...",
+      "block": 44
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE (V.O.)",
+      "quote": "Most Osage don't live past 50, she\n               won't last.",
+      "block": 45
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Well, Mollie - she's sick but she's\n               strong, King.",
+      "block": 46
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "I know she's strong now, but\n               later... Think of our children. Our\n               grandchildren...",
+      "block": 47
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE (CONT'D)",
+      "quote": "Now Anna - Carries a gun in her\n               purse for heaven's sake, did you\n               know that?\n                   (laughs)",
+      "block": 48
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "I love her but - she's gonna pick a\n               fight with the wrong person one\n               day, won't she?",
+      "block": 49
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE/ERNEST (CONT'D)",
+      "quote": "Then Coyote tried to grab her and\n               she took off and picked him up and\n               carried him in the air and took him\n               far away... and dropped him.\n               \"There,' she said, `when I say\n               something you will remember what I\n               said.' And she left, and Coyote\n               ended up choking on that dust she\n               left behind.",
+      "block": 50
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIZZIE",
+      "quote": "Did you see the Owl?            Wah-poh-kah    ee-thah-theh?",
+      "block": 51
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "No.                             hahn-kah-zhee.",
+      "block": 52
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIZZIE",
+      "quote": "When you do it's a sign that    Ee-thah-theh thah-hah oh-\n     we are dying.                   peh-nee eh ahn-xee-thah\n                                     ahn-kah-kxah-een.",
+      "block": 53
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "We are dying.                    Ahnts'eh tah ah-pah.",
+      "block": 54
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIZZIE",
+      "quote": "Because of you... You all        Thee-eh dahn ... een shdah-xeen\n     marry white men. Our blood is    wah-shtsoo-xah-peh. Wah-peen\n     getting white. Where's Anna?     ahn-koh-dah-pee ah-kxah\n     I want Anna.                     skah ah-hee-peh. Hoh-wah-\n                                      een-kee Anna? Anna konbrah\n                                      meenk-sheh.",
+      "block": 55
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "I'm here.                        Sheh meen-ksheh.",
+      "block": 56
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIZZIE",
+      "quote": "I don't want you, I want         Thee-eh konbrah mah-zhee\n     Anna.                            meenk-sheh, Anna konbrah\n                                      meenk-sheh.",
+      "block": 57
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AUNT ANNIE",
+      "quote": "... huh... This one's more white\n                 than that one... You'd hardly know\n                 this one's a half-breed would you?",
+      "block": 58
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Are you laughing?                Ee-thah-xah?",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Not yet... but...                Hahn �kah-zhee...ahn-zhee...",
+      "block": 60
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "I brought blankets for Momma.    Hah-xeen toh-eh ee-nahn ah-\n                                      breen ah-tsee-eh.",
+      "block": 61
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "You're drunk already?            Ee-toh, thah-lohn-shtseen\n                                      shtsee- shtahn?",
+      "block": 62
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "I'm still drunk from last       Hahn tsee tah ah-lohn-breen\n     night, you woke me up.          shohn ah-theen-heh ahn-shchee-\n                                     xeen peh.",
+      "block": 63
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Stay outside a little, don't    Kah-txahn ah-shee tah wah-\n     let Momma see you this way.     spah, ee-nahn theh-kohn ee-\n                                     thee-thah theen-kah.",
+      "block": 64
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "I'm just lay with her, don't    Eh ah-zhahn meen-ksheh. Ahn-\n     fuss on me, Mollie...           wahn-kee-ah theen-gah, wee-\n                                     deh-zheen",
+      "block": 65
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "Hello, Anna. You steady?",
+      "block": 66
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "I'm pickled. Do you have any\n               whiskey?",
+      "block": 67
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "You drank it last night.",
+      "block": 68
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "My man can drink my whiskey --",
+      "block": 69
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "I'm not your man...",
+      "block": 70
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "You maybe don't have a choice...",
+      "block": 71
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRYAN",
+      "quote": "Are you making threats? Keep    Kee-dah-keh ee-eh shkah-xeh\n     yourself settled down in        thah-een-sheh? Keep yourself\n     here, Anna, no one wants a      settled down in here, Anna,\n     mess.                           Oh'-ee-eh tseh peh kon-thah\n                                     een-keh.",
+      "block": 72
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ERNEST",
+      "quote": "You're making threats, Anna.    You're making threats, Anna.\nDon't do that.                  Eh-kee-ohn theen-kah.",
+      "block": 73
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "(to Ernest)",
+      "quote": "(to Ernest)",
+      "block": 74
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "opp",
+      "cue": "ANNA",
+      "quote": "You can't talk - you're no      Ee-eh shtsoo-ts'ah-keh thah-\ndifferent...(to Byron) I'm      txahn-sheh � thee-eh kohn-zeh-\ntelling you a secret that you   kohn thah-txahn-sheh.(to\ndon't know... You think I       Byron) I'm telling you a\nopen my legs for any man?       secret that you don't know...\n                                You think I open my legs for\n                                any man?",
+      "block": 75
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "I get that feeling.",
+      "block": 76
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "BYRON (CONT'D)",
+      "quote": "(whispering to her)\n          You're so pretty. You know me?",
+      "block": 77
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Yes.",
+      "block": 78
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "What do you know?",
+      "block": 79
+    },
+    {
+      "speaker": "p10",
+      "to": "p12",
+      "stance": "opp",
+      "cue": "ANNA",
+      "quote": "Fuck yourself Byron Burkhart.\n              (to Martha)\n          You want I'll cut you, talking to\n          my man?",
+      "block": 80
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "BYRON",
+      "quote": "I'm not your man, I'll do as I\n          please.",
+      "block": 81
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "opp",
+      "cue": "ANNA",
+      "quote": "If I see you with any woman I will\n               kill that woman and then I will\n               kill you.",
+      "block": 82
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "You'll have to kill me before I",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Don't scream in the house.",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Ay.   Who did that?",
+      "block": 85
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "I don't know.",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "...his wife?",
+      "block": 87
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "Most likely.",
+      "block": 88
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BYRON",
+      "quote": "Time for me to take her home now.",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "ERNEST (OC)",
+      "quote": "Anna. Time to leave.",
+      "block": 90
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Yes.",
+      "block": 91
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Yes.",
+      "block": 92
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNA (IN ENGLISH)",
+      "quote": "STOP BANGING.",
+      "block": 93
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Time for me to go, Ernest?",
+      "block": 94
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Get her straight home.",
+      "block": 95
+    },
+    {
+      "speaker": "p10",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "ANNA",
+      "quote": "Let's go find another drink...",
+      "block": 96
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Disgusting these Osage graves - lot\n                of trouble and it's dirty. You want\n                something to pay big? Can't keep\n                doing work with these trouble boys.\n                You've gotta use your head,\n                Blackie, think. Hale was thinking\n                we could be partners. Bill Smith -\n                he going around talking a lot.\n                (Quieter) I mean if someone were to\n                knock off Bill Smith and Reta, too,\n                all that Estate would go to my\n                mother-in-law Lizzie Q... and she\n                wills it to my children. That's a\n                good deal, that.",
+      "block": 97
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "For you.",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "For all. Smith and her gone a lot\n                from home and you just go down and\n                plant a stand in the house and when\n                they come in � get them, they've\n                got, Reta's got three or four\n                diamonds and some ear screws and\n                Bill Smith he's got rocks. He\n                always carries two or three hundred\n                in his pocket and you could get\n                that...",
+      "block": 99
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "God damn you're a greedy Jew.",
+      "block": 100
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "What is it?",
+      "block": 101
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "I don't sleep anymore...",
+      "block": 102
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Now. Rest, love...",
+      "block": 103
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Where are you?",
+      "block": 104
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I'm right here.",
+      "block": 105
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "C'mon now, what do you mean?",
+      "block": 106
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Wioxda. (I love you.)",
+      "block": 107
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Piwithe. (I love you.)",
+      "block": 108
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "DAVID SHOUN",
+      "quote": "They're calling it `insulin.'.",
+      "block": 109
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "That's it, huh?",
+      "block": 110
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAMES SHOUN",
+      "quote": "Diabetes can be...",
+      "block": 111
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAMES SHOUN",
+      "quote": "Have you eaten in the last hour?",
+      "block": 112
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "No.",
+      "block": 113
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "DAVID SHOUN",
+      "quote": "Lift your blouse, please.",
+      "block": 114
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAMES SHOUN",
+      "quote": "Have you had anything to drink?",
+      "block": 115
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Goat's Milk. Hotcakes.",
+      "block": 116
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "...And bacon.",
+      "block": 117
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "...wah-shee shkee",
+      "block": 118
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "And taffy!",
+      "block": 119
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAMES SHOUN",
+      "quote": "That should help you some.",
+      "block": 120
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "DAVID SHOUN",
+      "quote": "If you'd like we can come to you\n               twice weekly for a small fee...",
+      "block": 121
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Why do you take care of him?",
+      "block": 122
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "No.",
+      "block": 123
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Osage don't divorce.",
+      "block": 124
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "So she's still married to him?",
+      "block": 125
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "No. No. Traditional. They were",
+      "block": 126
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "She lied to me?",
+      "block": 127
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "How does she treat you?",
+      "block": 128
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "She's a good one.",
+      "block": 129
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "So it doesn't matter what happened",
+      "block": 130
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "She can't be lying to me.",
+      "block": 131
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Let her have her secrets. That way",
+      "block": 132
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Look at all this blue! It's like",
+      "block": 133
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "HENRY GRAMMER",
+      "quote": "That's better than gold.",
+      "block": 134
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Did he kill himself?",
+      "block": 135
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ERNEST",
+      "quote": "Don't know.",
+      "block": 136
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "He was always sad. Always.",
+      "block": 137
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ERNEST",
+      "quote": "You know him well?",
+      "block": 138
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Since we were children.\n\n                His wife is not true to him I don't\n                think.\n\n                Does your Uncle know? They were\n                friends.",
+      "block": 139
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ERNEST",
+      "quote": "Yes.",
+      "block": 140
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "He wasn't murdered was he?",
+      "block": 141
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ERNEST",
+      "quote": "No.",
+      "block": 142
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "He tried to kill himself last year.\n                Did you know that?",
+      "block": 143
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Was he murdered? Or did he kill\n                himself? Do you know?",
+      "block": 144
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Roy Bunch made a lot of noise about\n                wanting to kill him. He was on his\n                wife. So you don't have to look too\n                far. Maybe he killed himself, like\n                you say... I don't know.",
+      "block": 145
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "I told you to do it in the front of\n                the head.",
+      "block": 146
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ERNEST",
+      "quote": "I don't know why he didn't.",
+      "block": 147
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Why did he do that?",
+      "block": 148
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I don't know. I told him. I told\n                him.",
+      "block": 149
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "And you told him proper? How do I\n                know you told him right?",
+      "block": 150
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I'll get him right now and put him\n                in front of you to tell you what I\n                told him � I didn't do this wrong.\n                He did it wrong. He's a coward,\n                couldn't do it in the face like you\n                said. I promise you. I swear on my\n                children.",
+      "block": 151
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "HALE",
+      "quote": "Don't do that. Settle down. Settle.\n                There's no problem that can't be\n                fixed. Now it's too much murder.\n                Don't swear on your children, that\n                makes you look foolish.",
+      "block": 152
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I'm not foolish because I did it\n                right. John Ramsey is your man and\n                he's a shuckle head and he didn't\n                have the nerve to do it in his\n                face. I'll find him and make him\n                tell you.",
+      "block": 153
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "You settle down, settle down,\n                settle yourself, son...",
+      "block": 154
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "What is....",
+      "block": 155
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ERNEST",
+      "quote": "What is this?",
+      "block": 156
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "They're putting up lights to keep\n                the murder away �",
+      "block": 157
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "There he is... slow up the car,\n                here...",
+      "block": 158
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Roy...",
+      "block": 159
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROY BUNCH",
+      "quote": "Bill.",
+      "block": 160
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "This isn't the place for you to be.\n                And I have a line that says you\n                should leave town because Sheriff's\n                office is looking to charge you in\n                this killing � they know you were\n                on shooting terms �",
+      "block": 161
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROY BUNCH",
+      "quote": "If I run, I'm guilty and I've got\n                nothing to be guilty about.",
+      "block": 162
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "HALE",
+      "quote": "If you don't run, you're going to\n                go to prison for this, you did it\n                or not � this is my friendly word.",
+      "block": 163
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": "ROY BUNCH",
+      "quote": "Thank you, Bill.",
+      "block": 164
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "...you should run.",
+      "block": 165
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "opp",
+      "cue": "ROY BUNCH",
+      "quote": "Thank you, Bill but no, I don't\n                 think I will. And you're not my\n                 friend. I'll take my chances right\n                 here in Fairfax.",
+      "block": 166
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "(confidentially) I'm gonna protect\n          you. I changed my will.",
+      "block": 167
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "You can't outrun what's coming,\n          Reta. If they want to get us...",
+      "block": 168
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "Yes, I know, but why are you\n          helping them?",
+      "block": 169
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "MOLLIE",
+      "quote": "Who?",
+      "block": 170
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "RETA",
+      "quote": "Who it is that's doing these",
+      "block": 171
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "I know, I know, but I was just at\n                my sisters.",
+      "block": 172
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "You and the kids stay in the    Zhin-ka-zhin thishki tsi da\n      house.                          waspa",
+      "block": 173
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Elizabeth still has school. I still\n                have family to see.",
+      "block": 174
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I just don't want you to go out\n                unless you have to.",
+      "block": 175
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "I think it's Perry King's house.",
+      "block": 176
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE (CONT'D)",
+      "quote": "Go to Anna.",
+      "block": 177
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE (CONT'D)",
+      "quote": "Anna tah mahn-theen.",
+      "block": 178
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "PEOPLE",
+      "quote": "That's Bill Smith's house! That's\n                Bill and Reta's! etc etc etc",
+      "block": 179
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Some fire...",
+      "block": 180
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL SMITH",
+      "quote": "SHOOT ME.      SHOOT ME.",
+      "block": 181
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "PEOPLE",
+      "quote": "Nettie's in there. Nettie Berkshire\n                stays in the back room that way �",
+      "block": 182
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "TURTON",
+      "quote": "Big Hill Company's got this. Move\n                back! Push it out.",
+      "block": 183
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL SMITH",
+      "quote": "I know who did this. I know who did\n                this.",
+      "block": 184
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "(stunned) Some fire... some fire...\n                some fire...",
+      "block": 185
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "HENRY GRAMMER",
+      "quote": "Too much dynamite.",
+      "block": 186
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "PITTS BEATY",
+      "quote": "You know, you're pronouncing\n                yourself too much, Bill.",
+      "block": 187
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "PITTS BEATY (CONT'D)",
+      "quote": "Nettie... they're finding pieces of\n                her.",
+      "block": 188
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Mollie Burkhart, Incompetent.\n                Allotment number 285.",
+      "block": 189
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "PITTS BEATY",
+      "quote": "You want $300 to go to Washington,\n                D.C.?",
+      "block": 190
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Yes.",
+      "block": 191
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "PITTS BEATY",
+      "quote": "That's a hard trip for an ailing\n                woman, Mollie. It didn't go so well\n                with Ernest as your guardian, did\n                it?... I am now reinstated as your\n                guardian and I can't let you have\n                this money or make this trip,\n                Mollie, that would do a disservice\n                to you and your children.",
+      "block": 192
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "I want to go now because I      Theh-kohn-tsee breh kohn-brah\n      will not be alive much          tahn thoh-hah ahts'eh dah\n      longer.                         meen-ksheh.",
+      "block": 193
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE (V.O.)",
+      "quote": "This evil surrounds my          Hohn-zhee thahn-tseh wee-dah\n      heart... (more?)                ah-kee-xeh ah-kxah. (more?)",
+      "block": 194
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Mr. President, please send someone\n                to help us. There is murder in\n                Osage and the police do nothing\n                about this. I lost my sisters and\n                mother and we have Osage killed for\n                the oil money.",
+      "block": 195
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "DAVID SHOUN",
+      "quote": "Give her some of this (indicating\n                the vial)... and this (indicating a\n                different vial). That's this whole",
+      "block": 196
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Who's that?",
+      "block": 197
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Mr. Burkhart?",
+      "block": 198
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Who is that?",
+      "block": 199
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "My name is Tom White, I'm with the\n                Bureau of Investigation.",
+      "block": 200
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "What's that?",
+      "block": 201
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "- Sent down from Washington, D.C.\n                to see about these murders.",
+      "block": 202
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "...see what about it?",
+      "block": 203
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "See who's doing it.",
+      "block": 204
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "...are you a Pinkerton?",
+      "block": 205
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Well, no, I was a Texas Ranger. I'm\n                now with the Federal Government,\n                called the Bureau of Investigation.",
+      "block": 206
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "If you've got questions go see the\n                Sheriff.",
+      "block": 207
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Yes I have talked with him, but I'm\n                here for Mollie Burkhart whose\n                sisters and mother are dead.",
+      "block": 208
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I'm Ernest Burkhart, her husband\n                and she's not well right now, but\n                you can call on her another time.",
+      "block": 209
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Tomorrow?",
+      "block": 210
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Tomorrow's too soon. Come back on\n                Friday.",
+      "block": 211
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Is she home right now?",
+      "block": 212
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "She has diabetes.",
+      "block": 213
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Does she?",
+      "block": 214
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "She's resting and I'm caring for\n                her � so come back on Friday.",
+      "block": 215
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "I'll do that.",
+      "block": 216
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "OSAGE COUPLE",
+      "quote": "This here's John Wren. Friend of\n                cousin Mary. He's come looking for\n                family.",
+      "block": 217
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "COUNCIL MEMBER",
+      "quote": "Welcome. [Asks a Question]",
+      "block": 218
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHN WREN",
+      "quote": "I've been told I have Osage\n                relations in Hominy. Mary was kind\n                enough to take me in.",
+      "block": 219
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "COUNCIL MEMBER",
+      "quote": "Where are you from, [MORE] etc.",
+      "block": 220
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Where you up from?",
+      "block": 221
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "CJ ROBINSON",
+      "quote": "Kendrick.... How's the rain been?",
+      "block": 222
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Can't complain.",
+      "block": 223
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "CJ ROBINSON",
+      "quote": "We could use a little more down my\n                way.... Right...",
+      "block": 224
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Well, let's make a price on this...",
+      "block": 225
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "CJ ROBINSON",
+      "quote": "I'd like to take a look first -",
+      "block": 226
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Good let's make this quick.",
+      "block": 227
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHIEF BONNICASTLE",
+      "quote": "Have you seen the lights burning in\n                our streets?",
+      "block": 228
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "I have.",
+      "block": 229
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHIEF BONNICASTLE",
+      "quote": "Why are you here now?",
+      "block": 230
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "I've only just been asked to come.",
+      "block": 231
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "PAUL RED EAGLE",
+      "quote": "Is that because McBride was\n                killed... a white man?... Or that\n                we paid the Government $20,000?",
+      "block": 232
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "I don't think it's too late to find\n                out who's doing this...",
+      "block": 233
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "PAUL RED EAGLE",
+      "quote": "It isn't just who... it's how many\n                dead. We've lost count.",
+      "block": 234
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "HALE",
+      "quote": "Who are you??",
+      "block": 235
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Did your girls get a pony?",
+      "block": 236
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes they did, thank you Bill.",
+      "block": 237
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Thank you, brother.",
+      "block": 238
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ah.",
+      "block": 239
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "They looking into the blast.",
+      "block": 240
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sure.",
+      "block": 241
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where can we find Henry Grammer?",
+      "block": 242
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "When'd this happen?",
+      "block": 243
+    },
+    {
+      "speaker": "p33",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yesterday.",
+      "block": 244
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Brother. Put that away.",
+      "block": 245
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What is it?",
+      "block": 246
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Did you sign a paper?",
+      "block": 247
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh yeah, he signed it.",
+      "block": 248
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My wife's not sick.",
+      "block": 249
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "You're scared.",
+      "block": 250
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 251
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes.",
+      "block": 252
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sign the paper... sign it.",
+      "block": 253
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MOLLIE (TO ERNEST)",
+      "quote": "You're next.",
+      "block": 254
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Can I sit down?",
+      "block": 255
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANK SMITH",
+      "quote": "Standing is good.",
+      "block": 256
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I need to sit down.",
+      "block": 257
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Yes you do but you're standing.",
+      "block": 258
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I need some sleep.",
+      "block": 259
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I never did that.",
+      "block": 260
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Not that I know of.",
+      "block": 261
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I told him he could take the car.",
+      "block": 262
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "For the purpose of using it?",
+      "block": 263
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I don't know what he wanted it for.",
+      "block": 264
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "You loaned it to him.",
+      "block": 265
+    },
+    {
+      "speaker": "p35",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE",
+      "quote": "How you doing, Ernest?",
+      "block": 266
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "May I speak to this man? Alone?",
+      "block": 267
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "You want to speak to him alone?",
+      "block": 268
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Yes.",
+      "block": 269
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "They got you turned around?",
+      "block": 270
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "No. What did you tell them?",
+      "block": 271
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "We did. But I gave you a twenty.",
+      "block": 272
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOLLIE",
+      "quote": "Are you real?",
+      "block": 273
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "William Hale and Ernest Burkhart.",
+      "block": 274
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSECUTOR LEAWARD",
+      "quote": "Have you had recent contact with\n                Mr. Hale?",
+      "block": 275
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "As a matter of fact, he just got a\n                note to me - asked me to kill his\n                nephew...",
+      "block": 276
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSECUTOR LEAWARD",
+      "quote": "... Now when you testify for the\n                United States, you have one job and\n                one job only... to tell the truth -",
+      "block": 277
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON (V.O.)",
+      "quote": "- Yes... He said he could help me\n                escape and then if I could, take\n                Ernest to old Mexico and kill him.\n                I sent a note back saying I\n                wouldn't testify if he got me out.",
+      "block": 278
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSECUTOR LEAWARD",
+      "quote": "And how did that work out for you?",
+      "block": 279
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "How did what?",
+      "block": 280
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSECUTOR LEAWARD",
+      "quote": "Mr. Hale's promise of a grand\n                escape.",
+      "block": 281
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLACKIE THOMPSON",
+      "quote": "I'm sitting here talking to you,\n                ain't I?",
+      "block": 282
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE (V.O.)",
+      "quote": "Take a letter:\n                JUDGE NOT! By William K. Hale.\n                Judge Not! the clouds of seeming\n                guilt may dim thy brother's fame;",
+      "block": 283
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "For fate may throw suspicion's\n                shade upon the brightest name!",
+      "block": 284
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I want to see my wife. You said if\n                I testified I could see my wife.",
+      "block": 285
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "She's in hospital in Pawhuska.",
+      "block": 286
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "Is she alright?",
+      "block": 287
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Doesn't seem it.",
+      "block": 288
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "When can I see her?",
+      "block": 289
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "I don't know.",
+      "block": 290
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I need to get a letter to her.",
+      "block": 291
+    },
+    {
+      "speaker": "p37",
+      "to": null,
+      "stance": "neu",
+      "cue": "REPORTER 2",
+      "quote": "Where are they taking you, Mr.\n                Burkhart?",
+      "block": 292
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I'm going the other way for a while\n                now.",
+      "block": 293
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "We're not charging you with\n                anything `cause you're gonna\n                testify... but it's best I shepherd\n                you out of the state for awhile.\n                Keep Hale and his wolves away from\n                you. Now I know you wanna get back\n                to Mollie and the kids but this is\n                protection.",
+      "block": 294
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE (V.O.)",
+      "quote": "Thou canst not tell what hidden\n                chain of circumstances may have\n                wrought the sad results that takes\n                an honest name away...",
+      "block": 295
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Judge Not! The vilest criminal may\n                rightfully demand a chance to prove\n                his innocence by jury of his land;\n                Judge Not!!!",
+      "block": 296
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALE",
+      "quote": "Get this in the Pawhuska Daily\n                Journal, Fairfax Chief, Hominy\n                Journal and the Osage County News -",
+      "block": 297
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST (V.O.)",
+      "quote": "LETTER TO MOLLIE concludes with a\n                repeat \"It's time for all the true\n                facts to come out...\"",
+      "block": 298
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM WHITE",
+      "quote": "Hold steady, son.",
+      "block": 299
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "W.S. HAMILTON",
+      "quote": "I demand to confer privately with\n                Mr. Burkhart. He is my client.",
+      "block": 300
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "W.S. HAMILTON",
+      "quote": "ERNEST BURKHART IS MY CLIENT AND I\n                DEMAND AN OPPORTUNITY TO SPEAK WITH\n                HIM! HE HAS BEEN MISSING FOR TWO\n                MONTHS AND I HAVE NOT HAD THE\n                CHANCE TO COMMUNICATE WITH HIM\n                BEFORE HE TESTIFIES!",
+      "block": 301
+    },
+    {
+      "speaker": "p39",
+      "to": null,
+      "stance": "neu",
+      "cue": "JUDGE POLLOCK",
+      "quote": "Is this man really your attorney?",
+      "block": 302
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ERNEST",
+      "quote": "I don't know...? I don't have a\n                contract with him but I'm willing\n                to talk to him.",
+      "block": 303
+    },
+    {
+      "speaker": "p39",
+      "to": null,
+      "stance": "neu",
+      "cue": "JUDGE POLLOCK",
+      "quote": "Court is adjourned until tomorrow\n                at 10.",
+      "block": 304
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+      "p28",
+      "p29",
+      "p3",
+      "p30",
+      "p31",
+      "p32",
+      "p33",
+      "p34",
+      "p35",
+      "p36",
+      "p37",
+      "p38",
+      "p39",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 27,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 2,
+          "neu": 23
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 34,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 32
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p11",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p14",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p20",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p23",
+        "weight": 34,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 34
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p34",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p35",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p37",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p39",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p2",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p3",
+        "weight": 11,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p36",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p6",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p21",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p22",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p21",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p28",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p29",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p35",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p38",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p25",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p25",
+        "b": "p26",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p25",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p6",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p29",
+        "b": "p6",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p33",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p31",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p31",
+        "b": "p32",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p32",
+        "b": "p33",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p38",
+        "b": "p39",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 39 given"
+  }
+}

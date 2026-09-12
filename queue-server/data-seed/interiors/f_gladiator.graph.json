@@ -1,0 +1,964 @@
+{
+  "entity": "f_gladiator",
+  "source": "data-seed/scripts/f_gladiator.txt",
+  "scope": "the whole script, machine-extracted (19 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Do you think he's really dying?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "He's been dying for ten years.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "I think he's really dying this time.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "He has to be bled every night now.",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "How do you know that?",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "I've been so informed.",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "Maybe he just misses us.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Why have we stopped?",
+      "block": 8
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRAETORIAN GUARD MEMBER",
+      "quote": "We're here, sir.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Where is my father?",
+      "block": 10
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLDIER #1",
+      "quote": "He's at the front, sir.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Is the battle won?",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Take me to my father.",
+      "block": 13
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "TITUS",
+      "quote": "They simply will not surrender.",
+      "block": 14
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "QUINTUS",
+      "quote": "Now!",
+      "block": 15
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "Hold steady... steady...",
+      "block": 16
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "Steady...",
+      "block": 17
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "MAXIMUS",
+      "quote": "Brothers -- I salute you!  For Rome!",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Slave!  Who are you?",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": null,
+      "quote": "SLAVE!  WHO ARE YOU?",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": null,
+      "quote": "SLAVE!  WHO ARE YOU?!",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why is he still alive?",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mmm.",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I do too.  Simple, elegant...",
+      "block": 25
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are you going to do?",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm going to kill him.",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Good.",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No?",
+      "block": 29
+    },
+    {
+      "speaker": "p8",
+      "to": "p7",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I will fight with you.",
+      "block": 30
+    },
+    {
+      "speaker": "p7",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "This isn't your battle.",
+      "block": 31
+    },
+    {
+      "speaker": "p9",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Enjoy yourself, Madame...",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "Brother, do not be influenced by the\n\t\tmob.  They are a great, faceless\n\t\tbeast --",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "They are not \"the mob,\" Lucilla,\n\t\tthey are the people.  They are my\n\t\tchildren and all I want to do is\n\t\tlove them.",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Our father loved Maximus... and I\n\t\tlove him still... yet he defies me,\n\t\the tasks me in front of my children.\n\t\tAnd they love him for it.  Just as\n\t\tMarcus loved him for it.  Tell me\n\t\twhy, Lucilla.",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "They see themselves in him.  They\n\t\tthrow in their own sad dreams\n\t\talongside his.  They think he fights\n\t\tfor them.",
+      "block": 36
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "And what do I do but fight for\n\t\tthem?!  I give them games to please\n\t\tthem.  I strangle dissent to give\n\t\tthem peace.  I empower the\n\t\tPraetorians to give them order.\n\t\tWhat more can I do?!",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Say I should fight him, in the\n\t\tarena.  Let my children see who the\n\t\tGods truly favor.",
+      "block": 38
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "And what if he should win?",
+      "block": 39
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "A God is more powerful than a man...",
+      "block": 40
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCILLA",
+      "quote": "Mercy.",
+      "block": 41
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "MAXIMUS",
+      "quote": "As will I, Commodus.  As will I.",
+      "block": 42
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Will you always mistrust me?",
+      "block": 43
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAXIMUS",
+      "quote": "Why don't you ask your father that?",
+      "block": 44
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAXIMUS",
+      "quote": "No, Caesar... I will show you.",
+      "block": 45
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Where is my sister?",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Where is my sister?",
+      "block": 47
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "HANDMAIDEN",
+      "quote": "She's out, sir...",
+      "block": 48
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Where?",
+      "block": 49
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "HANDMAIDEN",
+      "quote": "I... don't know, Caesar.",
+      "block": 50
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "Was it Centurion...?  General...?",
+      "block": 51
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROXIMO",
+      "quote": "Captain.",
+      "block": 52
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROXIMO",
+      "quote": "How did you know?",
+      "block": 53
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "A soldier knows a soldier.",
+      "block": 54
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "No --",
+      "block": 55
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROXIMO",
+      "quote": "Now I am just an entertainer.",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "You're not coming?",
+      "block": 57
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "PROXIMO",
+      "quote": "They are killing my men!",
+      "block": 58
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROXIMO",
+      "quote": "Gods... they're killing them all.",
+      "block": 59
+    },
+    {
+      "speaker": "p11",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "LUCIUS",
+      "quote": "What is that fire?",
+      "block": 60
+    },
+    {
+      "speaker": "p12",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "PRAETORIAN",
+      "quote": "Caesar...",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "COMMODUS",
+      "quote": "Oh... that's for my sister.",
+      "block": 62
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TITUS",
+      "quote": "By all the Gods...",
+      "block": 63
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "MAXIMUS",
+      "quote": "Old friend...",
+      "block": 64
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "Where is he?",
+      "block": 65
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "MAXIMUS",
+      "quote": "I forgive you.",
+      "block": 66
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MAXIMUS",
+      "quote": "For my wife!",
+      "block": 67
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MAXIMUS",
+      "quote": "For my son!",
+      "block": 68
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MAXIMUS",
+      "quote": "For my father!",
+      "block": 69
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "We who are about to die salute you.",
+      "block": 70
+    },
+    {
+      "speaker": "p13",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "GRACCHUS",
+      "quote": "you.",
+      "block": 71
+    },
+    {
+      "speaker": "p13",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "GRACCHUS",
+      "quote": "General, the purple is yours if you",
+      "block": 72
+    },
+    {
+      "speaker": "p13",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "GRACCHUS",
+      "quote": "so desire.  The Senate will support",
+      "block": 73
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "Rome... you are better than this.",
+      "block": 74
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "Look inside yourselves.  I challenge",
+      "block": 75
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "you to find your true voice.  Help",
+      "block": 76
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "the Senate speak for you.  Make them",
+      "block": 77
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "your champion... And dare to think",
+      "block": 78
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "what could be.",
+      "block": 79
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "I give you back the dream.",
+      "block": 80
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "When everything has calmed down,",
+      "block": 81
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "lead an orderly withdrawal.  Take",
+      "block": 82
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "them home.",
+      "block": 83
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "It doesn't look it now... but soon",
+      "block": 84
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "we'll have it growing again... Next",
+      "block": 85
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "year there will be vines, and then",
+      "block": 86
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "there will be grapes... It will be",
+      "block": 87
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAXIMUS",
+      "quote": "alive.",
+      "block": 88
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 18,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 18
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p7",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p9",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 3,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}
