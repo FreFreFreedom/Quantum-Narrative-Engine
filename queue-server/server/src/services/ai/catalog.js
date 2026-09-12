@@ -102,7 +102,13 @@ export const PROVIDERS = [
     label: 'Google AI Studio',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     apiKeyEnv: 'GOOGLE_AI_STUDIO_API_KEY',
-    limits: { rpm: 15, rpd: 1500 },
+    // Measured off Google's own refusal, 2026-09-12: the free tier allows TWENTY
+    // requests a day on gemini-flash-latest ("generate_content_free_tier_requests,
+    // limit: 20"), not the 15/min and 1500/day this used to claim — those are the
+    // paid-tier numbers and they made the quota panel say the opposite of the
+    // truth. Each model carries its own separate allowance, so the lite model is
+    // still answering while the flash one is spent for the day.
+    limits: { rpd: 20 },
     models: [
       // '-latest' aliases (Google-maintained, hot-swapped to the current release)
       // instead of pinned version ids — gemini-2.0-flash was retired outright and
