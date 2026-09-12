@@ -1,0 +1,1903 @@
+{
+  "entity": "f_you_can_count_on_me",
+  "source": "data-seed/scripts/f_you_can_count_on_me.txt",
+  "scope": "the whole script, machine-extracted (17 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "Why do they always put braces on",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "teenage girls at the exact moment",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "when they're the most self-conscious",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "about their appearance?",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. PRESCOTT",
+      "quote": "I don't know.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "Tom --",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. PRESCOTT",
+      "quote": "I see him...",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "Tom!",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. PRESCOTT",
+      "quote": "Tom!",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. PRESCOTT",
+      "quote": "Jesus!",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "SHERIFF",
+      "quote": "Hello, Amy.",
+      "block": 11
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "AMY",
+      "quote": "Hi, Darryl.",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "ally",
+      "cue": "SHERIFF",
+      "quote": "Amy, would you please tell the kids \n                         you'll be right back, and then shut \n                         the door and come outside to talk to \n                         us for a minute?",
+      "block": 13
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "AMY",
+      "quote": "OK.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "AMY",
+      "quote": "Be right back, you guys!",
+      "block": 15
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "You're not supposed to go out, Amy.",
+      "block": 16
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "She's going to smoke a cigarette.",
+      "block": 17
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Rudy, come on! I'm really late!",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "How was school?",
+      "block": 19
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "Stupid.",
+      "block": 20
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "We're supposed to write a story for \n                         English homework, but they didn't \n                         tell us what it's supposed to be \n                         about.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "What do you mean?",
+      "block": 22
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "I mean they didn't tell us what it's \n                         supposed to be about. They said do \n                         whatever you want.",
+      "block": 23
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "So what's wrong with that?",
+      "block": 24
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "Nothing. I just think it's \n                         unstructured.",
+      "block": 25
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Well, I'm sure you'll be able to \n                         think of something. If you can't, \n                         I'll help you.",
+      "block": 26
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Don't forget your backpack.",
+      "block": 27
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "It's not a backpack, it's a knapsack.",
+      "block": 28
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Don't forget your knapsack.",
+      "block": 29
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Give me a kiss.",
+      "block": 30
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "ally",
+      "cue": "MABEL",
+      "quote": "Guess who's been asking for you?",
+      "block": 31
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Oh no, really?",
+      "block": 32
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRIAN",
+      "quote": "Yeah: Brian.",
+      "block": 33
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Brian. Hi. I'm Samantha Prescott -- \n                         I'm the lending officer?",
+      "block": 34
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRIAN",
+      "quote": "Yeah, hi, how are you? Come on in. \n                         Sit down.",
+      "block": 35
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "I am so sorry I was late...",
+      "block": 36
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "Yeah, we missed you before...",
+      "block": 37
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "I got held up. Believe me, it is not \n                         something I make a habit of...",
+      "block": 38
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRIAN",
+      "quote": "I'm sure it's not. Actually -- could \n                         you just, could you close that door \n                         for me? Thanks.",
+      "block": 39
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "Hey, Terry.",
+      "block": 40
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Hey.",
+      "block": 41
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "Where'd you get the hat?",
+      "block": 42
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Oh, I got it on the street for a \n                         dollar.",
+      "block": 43
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "It's nice.",
+      "block": 44
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Well, you know, it's pretty much \n                         your standard woolen hat.",
+      "block": 45
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "Yeah, I had a very similar reaction \n                         to it.",
+      "block": 46
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Can I get that money from you?",
+      "block": 47
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHEILA",
+      "quote": "Yeah. Sorry.",
+      "block": 48
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHEILA",
+      "quote": "Yeah.",
+      "block": 49
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Sorry.",
+      "block": 50
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Is that all you have?",
+      "block": 51
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Can you borrow some cash from your \n                         brother?",
+      "block": 52
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHEILA",
+      "quote": "Um, yeah, but that would involve \n                         speaking to him.",
+      "block": 53
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Well, I'm definitely gonna be gone \n                         for a couple of days at least, Sheila.",
+      "block": 54
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "Why do you have to stay so long?",
+      "block": 55
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Because my sister is not a bank, you \n                         know? I can't just show up and ask \n                         her for --",
+      "block": 56
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "SHEILA",
+      "quote": "You seem to think my brother's a \n                         bank!",
+      "block": 57
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "opp",
+      "cue": "TERRY",
+      "quote": "Oh Sheila can we just cut out the \n                         puerile crap?! I'll be back just as \n                         soon as I can. OK? I am not the kind \n                         of man that everyone says I am.",
+      "block": 58
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHEILA",
+      "quote": "I know you're not.",
+      "block": 59
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "I'll call you tonight.",
+      "block": 60
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "Don't you wanna tell me you love me?",
+      "block": 61
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "I love you.",
+      "block": 62
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "That was really convincing.",
+      "block": 63
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Well... I think after this is over \n                         you should seriously consider moving \n                         back home.",
+      "block": 64
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "(Short laugh)\n                         Oh, yeah.",
+      "block": 65
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "(Gives up)\n                         All right...",
+      "block": 66
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHEILA",
+      "quote": "You gonna call tonight?",
+      "block": 67
+    },
+    {
+      "speaker": "p6",
+      "to": "p10",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Definitely.",
+      "block": 68
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Hello?... TERRY!...",
+      "block": 69
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHERIFF",
+      "quote": "Whoa there!",
+      "block": 70
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHERIFF",
+      "quote": "God damn! Terry Prescott! How you \n                         doin'? Gimme a cuddle!",
+      "block": 71
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "How you doin', Darryl?",
+      "block": 72
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHERIFF",
+      "quote": "Which way you headed?",
+      "block": 73
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "I'm just goin' to see Sammy at \n                         Dawson's...",
+      "block": 74
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHERIFF",
+      "quote": "Can I walk with you a little?",
+      "block": 75
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Sure, yeah --",
+      "block": 76
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHERIFF",
+      "quote": "So Sammy says you been out in \n                         Alaska...?",
+      "block": 77
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Yeah, I was workin' out there for a \n                         little while...",
+      "block": 78
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHERIFF",
+      "quote": "-- Sammy says she's gettin' postcards \n                         from all across the country.",
+      "block": 79
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Yeah, I've been all over the place...",
+      "block": 80
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHERIFF",
+      "quote": "Well, it's good to have you back \n                         here, I'll tell you that.",
+      "block": 81
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Thanks, Darryl. Keep enforcing the \n                         peace.",
+      "block": 82
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Thanks, Darryl.",
+      "block": 83
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SHERIFF",
+      "quote": "Well, that'll be a little harder now \n                         that you're home, but I'll do what I \n                         can.",
+      "block": 84
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "TERRY",
+      "quote": "No, man, I'm reformed.",
+      "block": 85
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SHERIFF",
+      "quote": "Oh, yeah. Good to see you, kid.",
+      "block": 86
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Sorry about yesterday --",
+      "block": 87
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "I don't care --",
+      "block": 88
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "I was studying the bus description... \n                         and I just... I got on the wrong bus -- \n                         I mean I missed my stop --",
+      "block": 89
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "I don't care, Terry. I'm just so \n                         glad to see you...!",
+      "block": 90
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "I'm glad to see you too, Sammy. Um... \n                         are you coming from work?",
+      "block": 91
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Um, no, it's Saturday...",
+      "block": 92
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Yeah, no, it's just... you're dressed \n                         so formally...",
+      "block": 93
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Oh. No. You know, I just thought I'd -- \n                         You know I thought it was a special \n                         occasion... which it is...",
+      "block": 94
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "No, it's good. I thought I'd dress \n                         up too.",
+      "block": 95
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "That's OK. You look fine.",
+      "block": 96
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Yeah, this is the haute cuisine of",
+      "block": 97
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Man, you are really --",
+      "block": 98
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "I just wanna --",
+      "block": 99
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUDY SR.",
+      "quote": "I'm an asshole? Get outta here!",
+      "block": 100
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "JANIE",
+      "quote": "Get your fuckin' hands off him...!",
+      "block": 101
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY SR.",
+      "quote": "I don't even know if that's my kid!",
+      "block": 102
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "RUDY SR.",
+      "quote": "I used to know his sister --",
+      "block": 103
+    },
+    {
+      "speaker": "p6",
+      "to": "p11",
+      "stance": "opp",
+      "cue": "TERRY",
+      "quote": "You're a lyin' fuckin' piece of shit.",
+      "block": 104
+    },
+    {
+      "speaker": "p13",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "2ND COP",
+      "quote": "You're gonna have to step back.",
+      "block": 105
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "2ND COP",
+      "quote": "Now give me your right hand...",
+      "block": 106
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": "RUDY SR.",
+      "quote": "No, because he's not my Goddamn kid.",
+      "block": 107
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "What time is it?",
+      "block": 108
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "What's the matter?",
+      "block": 109
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Oh my gosh.",
+      "block": 110
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "You know... Brian...",
+      "block": 111
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "Yeah?",
+      "block": 112
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRIAN",
+      "quote": "Um -- Yeah. Sure. If you want to.",
+      "block": 113
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRIAN",
+      "quote": "Yeah. Sure. OK. You're right.",
+      "block": 114
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "So are we still friends?",
+      "block": 115
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRIAN",
+      "quote": "Mm hm. Sure.",
+      "block": 116
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "All right. Good...!",
+      "block": 117
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "BOB",
+      "quote": "No problem.",
+      "block": 118
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Hello?",
+      "block": 119
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Hello?",
+      "block": 120
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Hello?",
+      "block": 121
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "Anyone hear from Sammy this morning?",
+      "block": 122
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MABEL",
+      "quote": "I didn't.",
+      "block": 123
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "ally",
+      "cue": "MABEL",
+      "quote": "Yes.",
+      "block": 124
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Darryl, I really appreciate this...",
+      "block": 125
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "Yeah, it's Brian.",
+      "block": 126
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Brian --",
+      "block": 127
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "opp",
+      "cue": "BRIAN",
+      "quote": "You're fired!",
+      "block": 128
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "GOOD!",
+      "block": 129
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "...you're not happy, I'm not happy, \n                         it's not good for you and it sure as \n                         heck isn't good for the bank.",
+      "block": 130
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "You know you're the worst manager \n                         we've ever had?",
+      "block": 131
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "Come on, Sammy...",
+      "block": 132
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "By far the worst.",
+      "block": 133
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "...I don't wanna trade insults with \n                         you.",
+      "block": 134
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Well, I don't want to be fired, Brian. \n                         I've been working here for seven \n                         years.",
+      "block": 135
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "BRIAN",
+      "quote": "Well --",
+      "block": 136
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "And if I were you I'd be a little \n                         nervous about firing an employee I \n                         just had an affair with. OK?",
+      "block": 137
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "BRIAN",
+      "quote": "That's -- Don't threaten me, Sammy: \n                         I'm not threatening you. I -- It's \n                         just an area I think we should \n                         explore.",
+      "block": 138
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "I'm not thr -- You explore it. I'm \n                         going back to work.",
+      "block": 139
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Oh, and I have to pick up Rudy today \n                         because there's no one else to do \n                         it. But I'll find someone as soon as \n                         I have time.",
+      "block": 140
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "BRIAN",
+      "quote": "Yeah. Fine. Why don't you just take \n                         over the whole bank?",
+      "block": 141
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "RUDY",
+      "quote": "Yeah.",
+      "block": 142
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Well, I called where Uncle Terry \n                         said he was gonna stay, and there \n                         was no answer, so I don't know if \n                         he's still in town or not.",
+      "block": 143
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "Rudy? Are you not speaking to me?",
+      "block": 144
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Well, I'm sorry you're so mad at me, \n                         but I only did what I thought I had \n                         to do, and I hope you don't stay mad \n                         at me for the rest of your life.",
+      "block": 145
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Rudy, that's too much.",
+      "block": 146
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "You gotta cut this out!",
+      "block": 147
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "What did I do?",
+      "block": 148
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "You don't know what you're talking \n                         about! There was nothing else I could \n                         do! I can't explain it better than \n                         that, but you can't go on like this \n                         because you don't know anything about \n                         it and you don't know what you're \n                         doing!",
+      "block": 149
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "RUDY",
+      "quote": "OK, I'm sorry!",
+      "block": 150
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "I don't want you to be sorry, I just \n                         want you to STOP IT!",
+      "block": 151
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "RUDY",
+      "quote": "I will! I will! I'm stopping, I'm \n                         sorry.",
+      "block": 152
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "RUDY",
+      "quote": "See? I'm stopping! I'm not doing it. \n                         See? I'm not.",
+      "block": 153
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Ray's house.",
+      "block": 154
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Hi.",
+      "block": 155
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "I didn't know if you left yet.",
+      "block": 156
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "No -- I'm leavin' tomorrow.",
+      "block": 157
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Well -- What time?",
+      "block": 158
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "There's a bus at nine.",
+      "block": 159
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Well -- Can I -- I'd like to see you \n                         before you go. I mean, can I give \n                         you a lift? Or do you want to have \n                         breakfast or anything? And I think \n                         Rudy would really like to say good-\n                         bye.",
+      "block": 160
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Yeah -- I don't know... I mean --",
+      "block": 161
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "SAMMY",
+      "quote": "Terry, you can't just leave like \n                         this. I --",
+      "block": 162
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "All right, all right. I'll come by \n                         in the morning.",
+      "block": 163
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "All right -- But just -- We have to \n                         be out of the house by eight, so -- \n                         I don't want to tell Rudy you're \n                         coming unless you really think you \n                         can make it --",
+      "block": 164
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Yeah -- No -- I'll be there.",
+      "block": 165
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "All right.",
+      "block": 166
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "All right.",
+      "block": 167
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "You should get your sneakers on.",
+      "block": 168
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Sweetie, I'm sorry, we have to go.",
+      "block": 169
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "Why can't I miss school one day?",
+      "block": 170
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "RUDY",
+      "quote": "Hi!",
+      "block": 171
+    },
+    {
+      "speaker": "p6",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Hey, how's it goin', man?",
+      "block": 172
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Sorry I'm late.",
+      "block": 173
+    },
+    {
+      "speaker": "p6",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "So Rudy... If I write you a letter, \n                         will you write me back?",
+      "block": 174
+    },
+    {
+      "speaker": "p6",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "OK, well, that's gonna be pretty \n                         nice for you, because I write a pretty \n                         Goddamn interesting letter.",
+      "block": 175
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "RUDY",
+      "quote": "Yeah, we'll see.",
+      "block": 176
+    },
+    {
+      "speaker": "p6",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "All right. Well, say good-bye.",
+      "block": 177
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "RUDY",
+      "quote": "Bye.",
+      "block": 178
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Do you need some cash for the bus?",
+      "block": 179
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "No, I got a few bucks... Aren't you \n                         gonna be late for work?",
+      "block": 180
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Oh -- Yeah. That's OK.\n                              (Pause)\n                         Terry, I don't even know where you're \n                         going.",
+      "block": 181
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Oh, well, I didn't really have a \n                         concrete plan yet. I have to go back \n                         to Worcester and get my stuff...",
+      "block": 182
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Oh, are you gonna try to see that \n                         girl?",
+      "block": 183
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Well... Yeah... You know... Thought \n                         maybe I'd try to show my face... Let \n                         her brother have a crack at me...",
+      "block": 184
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "What?",
+      "block": 185
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "...I don't want anyone to have a \n                         crack at you.",
+      "block": 186
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "I'm just kidding. I just thought... \n                         Just thought I'd check up on her...\n                              (Pause)\n                         Anyway, after that, I don't really \n                         know. I've been thinking about Alaska \n                         a lot. I still got some friends out \n                         there. I don't really know. Anyway, \n                         I'll write you.",
+      "block": 187
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "You will?",
+      "block": 188
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Sure, Sammy. Of course I will. You \n                         know that.",
+      "block": 189
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "What is gonna happen to you?",
+      "block": 190
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERRY",
+      "quote": "Nothing too bad... But I gotta tell \n                         you, I know things didn't work out \n                         too well this time...",
+      "block": 191
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Well, Terry --",
+      "block": 192
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "...but it's always really good to \n                         know that wherever I am, whatever \n                         stupid shit I'm doing, you're back \n                         at my home, rooting for me.",
+      "block": 193
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "I do root for you.",
+      "block": 194
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Come on, Sammy. Everything's gonna \n                         be all right... Comparatively... And \n                         I'll be back this way...",
+      "block": 195
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "I feel like I'm never gonna see you \n                         again...!",
+      "block": 196
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Of course you will, Sammy. You never \n                         have to worry about that.",
+      "block": 197
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMMY",
+      "quote": "Please don't go till you know where \n                         you're going. Please...!",
+      "block": 198
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "I do know where I'm going. I'm going \n                         to Worcester and I'm gonna try to \n                         see that girl. And then depending on \n                         what happens there, I thought I'd \n                         try to see if there's any work for \n                         me out West. And if there is, I'm \n                         gonna head out there for the summer \n                         and try to make some money. And if \n                         there isn't, I'll figure something \n                         else out. Maybe I'll stay around the \n                         East. I don't know... I really liked \n                         it in Alaska. It was really beautiful. \n                         You just -- It made me feel good. \n                         And before things got so messed up I \n                         was doin' pretty well out there. \n                         Seriously. But I couldn't stay here \n                         long, Sammy: I don't want to live \n                         here. But I'm gonna stay in touch. \n                         And I'll be back. 'Cause I want to \n                         see you and I want to see Rudy. I'll \n                         come home for Christmas. How about \n                         that? We'll have Christmas together.\n                              (Pause)\n                         Come on, Sammy. You can trust me...",
+      "block": 199
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Come on, Sammy... Look at me... Look \n                         at me...",
+      "block": 200
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TERRY",
+      "quote": "Hey, Sammy... Remember when we were \n                         kids, remember what we always used \n                         to say to each other . . .?\n                              (Pause)\n                         Remember when we were kids?",
+      "block": 201
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMMY",
+      "quote": "Of course I do...!",
+      "block": 202
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p6",
+        "weight": 25,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 9,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p6",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p13",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p6",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p5",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 3,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 15,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 6,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 46,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 16,
+          "neu": 28
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 16,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 5,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p8",
+        "weight": 3,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p9",
+        "weight": 29,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 8,
+          "ally": 7,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 5,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p9",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 11,
+    "balanced": false,
+    "frustration": 1,
+    "violations": [
+      "p13-p6 (opp)"
+    ],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p12",
+        "p13",
+        "p14",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p11",
+        "p2",
+        "p3",
+        "p4"
+      ]
+    ]
+  }
+}
