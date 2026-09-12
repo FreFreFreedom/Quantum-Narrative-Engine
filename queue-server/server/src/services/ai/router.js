@@ -150,6 +150,35 @@ export function getQuotaState() {
   return db.prepare(`SELECT * FROM provider_quota_state ORDER BY provider_id, model`).all();
 }
 
+// Today's calls per lane, plus the last refusal each lane gave — what the quota
+// table in AI Settings reads. Two small reads, no network: the point is to answer
+// "is this lane's free allowance spent, or is something else wrong with it" from
+// the record rather than from a guess.
+export function getLaneUsage() {
+  if (!db) return { day: null, lanes: [] };
+  const day = new Date().toISOString().slice(0, 10);
+  const lanes = db.prepare(
+    `SELECT provider_id, model, calls, refusals FROM lane_call_ledger WHERE day=? ORDER BY provider_id, model`,
+  ).all(day);
+  return { day, lanes };
+}
+
+// The most recent refusal recorded for every lane that has ever had one, with the
+// provider's own words. A lane that is live now but refused twenty times today is
+// the shape of a problem a status light cannot show.
+export function getLastRefusals() {
+  if (!db) return [];
+  try {
+    return db.prepare(`
+      SELECT l.provider_id, l.model, l.exhausted_at, l.reason, l.detected_by, l.evidence, l.resets_at, l.resets_known
+      FROM provider_quota_ledger l
+      JOIN (SELECT provider_id, model, MAX(exhausted_at) AS t FROM provider_quota_ledger GROUP BY provider_id, model) m
+        ON m.provider_id = l.provider_id AND m.model = l.model AND m.t = l.exhausted_at
+      ORDER BY l.exhausted_at DESC
+    `).all();
+  } catch { return []; }
+}
+
 // pickChain: the catalogue tail of the fallback chain, sorted by codingRank
 // descending, skipping anything currently exhausted (per-model or whole-provider).
 // Callers (ai/text.js) prepend their own configured default + Claude tier chain

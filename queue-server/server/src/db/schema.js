@@ -584,6 +584,24 @@ function initSchema(db) {
     )
   `);
 
+  // ─── Per-lane call ledger ────────────────────────────────────────────────────
+  // side_call_ledger above counts calls across the whole platform, in one number.
+  // This counts them per provider, per model, per UTC day, and separates the ones
+  // that answered from the ones that refused — which is what "is this lane's free
+  // allowance spent, or is something else wrong" actually needs. Written on every
+  // attempt the text seam makes, so it costs one small upsert per model call.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lane_call_ledger (
+      day TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      model TEXT NOT NULL DEFAULT '',
+      calls INTEGER NOT NULL DEFAULT 0,
+      refusals INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      PRIMARY KEY (day, provider_id, model)
+    )
+  `);
+
   // ─── OpenAI spend ledger (Idea Studio paid lane) ─────────────────────────────
   // One row per UTC day of real money spent on gpt-4o, in dollars (side_call_ledger
   // above counts CALLS; this counts CENTS — they are not interchangeable).

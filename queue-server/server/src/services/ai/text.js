@@ -656,6 +656,21 @@ export async function runCatalogueToolLoop({ mod, providerId, model, prompt, max
 // so Google's free-tier 429s can't slow the lane down. An explicit per-feature
 // choice in AI Settings always wins (the moment the user picked a provider or
 // model, this ordering is irrelevant — their choice is first in primaryChain).
+// A benched lane whose reset time was GUESSED rather than read off a header is
+// benched on no evidence at all. Google's 429 carries no reset time, so a single
+// burst past its per-minute ceiling used to take Gemini out of the Room for a
+// whole hour it did not owe — measured 2026-09-12: the lane was benched and
+// answering perfectly well on the same key the whole time. A refused probe costs
+// nothing and tells the truth, so a guessed bench is tried rather than believed.
+// router.mayProbe hands out at most one probe every twenty minutes per lane and
+// never probes a reset that came from a real source. Same reasoning as the
+// claude-code / claude-side probes further down; the catalogue lanes simply never
+// got it.
+function benched(providerId, model = '') {
+  if (!router.isExhausted(providerId, model)) return false;
+  return !router.mayProbe(providerId, model);
+}
+
 export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
@@ -693,7 +708,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // the main subscription instead. Removing it here would leave only the free lane
   // — the outcome this whole arrangement exists to avoid.
   const primaryUsable = isKnownProvider(providerId)
-    && (providerId === 'claude-side' || !router.isExhausted(providerId, model || ''));
+    && (providerId === 'claude-side' || !benched(providerId, model || ''));
   const primaryChain = primaryUsable ? await getFallbackChain(feature, providerId, model, { noOpencodeBackup: hasExplicitProvider }) : [];
 
   // Catalogue tail: every free model with a key present, sorted by codingRank
@@ -733,7 +748,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   for (const attempt of fullChain) {
     if (attempted >= maxAttempts) break;
     const { provider: p, model: m } = attempt;
-    if (router.isExhausted(p, m) || router.isExhausted(p, '')) {
+    if (benched(p, m) || benched(p, '')) {
       failures.push(`${p}:${m}:cooldown`);
       continue;
     }
@@ -758,8 +773,12 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     if (onStatus) { try { onStatus(failures.length ? `That lane did not answer — trying ${laneName(p, m)}…` : `Asking ${laneName(p, m)}…`); } catch {} }
     const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, account: p === providerId ? explicitAccount : null });
     attempted += 1;
+    recordLaneCall(p, m, !!result?.text);
 
     if (result?.text) {
+      // A lane that answered is not spent, whatever the guess said. Clears the
+      // bench immediately rather than leaving the rest of the hour unserved.
+      router.clearExhaustion(p, m);
       // The daily ledger exists to restrain the shared lanes — the free models and
       // the main subscription. The second account has its own ceiling and its own
       // bill, so counting it here would let a few chat questions starve the day's
@@ -1022,6 +1041,24 @@ export function sideCallBudgetLimit() {
 // `INSERT ... ON CONFLICT ... calls = calls + 1`, and the write rate is bounded by model
 // latency (seconds, not milliseconds), so the throttle was guarding nothing. It matters
 // more now that a metered lane exists at all — do not reinstate it.
+// One row per lane per UTC day: how many calls it answered, and how many it
+// refused. The platform-wide side_call_ledger cannot say which lane spent the
+// day's allowance or which one is refusing, and that is the question the quota
+// table in AI Settings has to answer.
+export function recordLaneCall(providerId, model, answered) {
+  if (!db || !providerId) return;
+  const day = new Date().toISOString().slice(0, 10);
+  try {
+    db.prepare(`INSERT INTO lane_call_ledger (day, provider_id, model, calls, refusals, updated_at)
+      VALUES (?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      ON CONFLICT(day, provider_id, model) DO UPDATE SET
+        calls = calls + excluded.calls,
+        refusals = refusals + excluded.refusals,
+        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`)
+      .run(day, providerId, model || '', answered ? 1 : 0, answered ? 0 : 1);
+  } catch {}
+}
+
 export function recordSideCall() {
   if (!db) return;
   const day = new Date().toISOString().slice(0, 10);

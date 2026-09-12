@@ -3,7 +3,7 @@
 // exhaustion state from the ledger.
 import { Router } from 'express';
 import { listProviders } from '../services/ai/catalog.js';
-import { getQuotaState, earliestResetAt } from '../services/ai/router.js';
+import { getQuotaState, earliestResetAt, getLaneUsage, getLastRefusals } from '../services/ai/router.js';
 
 export function providersRoutes() {
   const router = Router();
@@ -21,7 +21,13 @@ export function providersRoutes() {
       models: p.models.map((m) => ({ id: m.id, codingRank: m.codingRank, contextTokens: m.contextTokens })).sort((a, b) => b.codingRank - a.codingRank),
     }));
     const state = getQuotaState();
-    res.json({ providers, state, earliestResetAt: earliestResetAt() });
+    // Today's counts and the last refusal each lane gave, so the panel can say what
+    // a lane has actually done today instead of only whether it is benched now.
+    const usage = getLaneUsage();
+    res.json({
+      providers, state, earliestResetAt: earliestResetAt(),
+      day: usage.day, usage: usage.lanes, refusals: getLastRefusals(),
+    });
   });
 
   return router;

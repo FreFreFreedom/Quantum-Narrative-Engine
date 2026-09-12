@@ -1870,6 +1870,8 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .ai-fp-exhausted { color:var(--c-danger); font-size:var(--fs-xs); }
 .ai-fp-live { color:var(--c-brand); font-size:var(--fs-xs); }
 .ai-fp-nokeytag { font-size:var(--fs-xs); color:var(--c-ink-5); }
+.ai-fp-refused, .ai-fp-lastref { font-size:var(--fs-xs); color:var(--c-ink-5); cursor:help; }
+.ai-fp-paid { font-size:var(--fs-xs); color:var(--c-warn); }
 
 /* ---------- Seeds + Suggestion Engine + Quotas strip ---------- */
 .tv-toolbar, .arch-toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:8px 14px; border-bottom:1px solid var(--c-border); background:var(--c-bg); flex-shrink:0; }
@@ -11491,6 +11493,13 @@ function renderFreeProvidersSection() {
   if (!aiFreeProviders) return '';
   const stateByKey = {};
   for (const s of aiFreeProviders.state || []) stateByKey[`${s.provider_id}::${s.model}`] = s;
+  // Today's calls per lane, and the last refusal each lane gave. A lane can be
+  // live right now and still have been refused thirty times today — that is the
+  // shape of a problem a status light on its own cannot show.
+  const useByKey = {};
+  for (const u of aiFreeProviders.usage || []) useByKey[`${u.provider_id}::${u.model}`] = u;
+  const refByKey = {};
+  for (const r of aiFreeProviders.refusals || []) refByKey[`${r.provider_id}::${r.model}`] = r;
   const fmtCountdown = (iso) => {
     if (!iso) return '';
     const ms = new Date(iso).getTime() - Date.now();
@@ -11498,24 +11507,48 @@ function renderFreeProvidersSection() {
     const mins = Math.round(ms / 60000);
     return mins < 60 ? `${mins}m` : `${Math.round(mins / 60)}h`;
   };
+  const fmtAgo = (iso) => {
+    if (!iso) return '';
+    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.round(mins / 60);
+    return hrs < 48 ? hrs + 'h ago' : Math.round(hrs / 24) + 'd ago';
+  };
+  // What the provider publishes as its free allowance. Written out in words rather
+  // than as a row of numbers nobody can read at a glance.
+  const fmtLimits = (lim) => {
+    if (!lim) return '';
+    const bits = [];
+    if (lim.rpm) bits.push(lim.rpm + '/min');
+    if (lim.rph) bits.push(lim.rph + '/hour');
+    if (lim.rpd) bits.push(lim.rpd + '/day');
+    return bits.join(' · ');
+  };
   const rows = (aiFreeProviders.providers || []).flatMap((p) => {
     const providerState = stateByKey[`${p.id}::`]; // whole-provider exhaustion, if any
+    const limits = fmtLimits(p.limits);
     if (!p.models.length) {
-      return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${qEsc(p.label)}</td><td colspan="3">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
+      return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${qEsc(p.label)}</td><td colspan="4">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
     }
     return p.models.map((m, i) => {
       const st = stateByKey[`${p.id}::${m.id}`] || providerState;
       const exhausted = !!(st && st.exhausted);
+      const use = useByKey[`${p.id}::${m.id}`];
+      const ref = refByKey[`${p.id}::${m.id}`];
+      const used = use ? String(use.calls || 0) : '—';
+      const refused = use && use.refusals ? ` <span class="ai-fp-refused" title="Refused this many times today">+${use.refusals} refused</span>` : '';
       const statusHtml = !p.keyPresent
         ? (i === 0 ? `<span class="ai-fp-nokeytag">no API key set</span>` : '')
         : (exhausted
-          ? `<span class="ai-fp-exhausted">exhausted${st.resets_known ? ` — resets in ${fmtCountdown(st.resets_at)}` : ' (reset time unknown)'}</span>`
-          : `<span class="ai-fp-live">live</span>`);
+          ? `<span class="ai-fp-exhausted"${ref && ref.evidence ? ' title="' + qEsc(String(ref.evidence).slice(0, 220)) + '"' : ''}>full${st.resets_known ? ` — back in ${fmtCountdown(st.resets_at)}` : ` — trying again in ${fmtCountdown(st.resets_at)}`}</span>`
+          : `<span class="ai-fp-live">live</span>${ref ? ` <span class="ai-fp-lastref" title="${qEsc(String(ref.evidence || ref.reason || '').slice(0, 220))}">last refused ${fmtAgo(ref.exhausted_at)}</span>` : ''}`);
       return `
         <tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}">
           <td>${i === 0 ? qEsc(p.label) : ''}</td>
-          <td>${qEsc(m.id)}</td>
-          <td class="ai-fp-rank">${m.codingRank}</td>
+          <td>${qEsc(m.id)}${p.metered && i === 0 ? ' <span class="ai-fp-paid">costs money</span>' : ''}</td>
+          <td class="ai-fp-rank">${i === 0 ? qEsc(limits) : ''}</td>
+          <td class="ai-fp-rank">${used}${refused}</td>
           <td>${statusHtml}</td>
         </tr>`;
     });
@@ -11524,11 +11557,11 @@ function renderFreeProvidersSection() {
   const earliest = aiFreeProviders.earliestResetAt;
   return `
     <div class="ai-fp-section">
-      <div class="ai-fp-title">Providers &amp; quota</div>
-      <div class="ai-fp-sub" title="Reached for only once the Claude Code subscription is exhausted, in this order.">Free models, in the order they are tried.${earliest ? ` Next reset: ${fmtCountdown(earliest)}.` : ''}</div>
+      <div class="ai-fp-title">What each model is allowed, and what it has used</div>
+      <div class="ai-fp-sub" title="Tried in this order once the Claude subscription is out.">Counts are for today. Hover a refusal to see what the provider said.${earliest ? ` Next one back: ${fmtCountdown(earliest)}.` : ''}</div>
       <table class="ai-fp-table">
-        <thead><tr><th>Provider</th><th>Model</th><th>Rank</th><th>Status</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4">No free providers configured.</td></tr>'}</tbody>
+        <thead><tr><th>Provider</th><th>Model</th><th>Allowed</th><th>Used today</th><th>Now</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">No providers configured.</td></tr>'}</tbody>
       </table>
     </div>`;
 }
