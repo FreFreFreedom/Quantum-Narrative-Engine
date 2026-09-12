@@ -1859,6 +1859,23 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .ai-voice textarea { margin-top:8px; width:100%; min-height:170px; font-family:inherit; font-size:var(--fs-sm); line-height:1.55; resize:vertical; }
 .ai-voice-note { margin-top:6px; font-size:var(--fs-sm); color:var(--c-ink-4); line-height:1.5; }
 .ai-savemsg { display:block; margin-top:10px; font-size:var(--fs-sm); color:var(--c-brand); min-height:14px; }
+/* Settings is three panes behind one tab row, not one three-thousand-pixel scroll.
+   Stacked sections with their own headings are a tab strip in disguise (AGENTS.md);
+   the count on a tab is what lets a shut pane still say it holds something. */
+.ai-tabs { display:flex; gap:2px; margin-bottom:var(--sp-4); border-bottom:1px solid var(--c-border); }
+.ai-tab { background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px;
+  padding:7px 12px; cursor:pointer; color:var(--c-ink-4); font-family:var(--font-ui); font-size:var(--fs-sm);
+  display:inline-flex; align-items:center; gap:6px; }
+.ai-tab:hover { color:var(--c-ink-2); }
+.ai-tab.on { color:var(--c-ink); border-bottom-color:var(--c-brand); }
+.ai-tab-n { font-variant-numeric:tabular-nums; font-size:var(--fs-xs); color:var(--c-on-accent);
+  background:var(--c-danger); border-radius:var(--r-pill); padding:0 5px; line-height:16px; }
+.ai-pane[hidden] { display:none; }
+/* How much of a lane's day is gone, as a length rather than a second number. */
+.ai-bar { display:block; height:3px; border-radius:2px; background:var(--c-surface-3); margin-top:3px; overflow:hidden; }
+.ai-bar i { display:block; height:100%; background:var(--c-brand); }
+.ai-bar.is-full i { background:var(--c-danger); }
+.ai-lane-off td { color:var(--c-ink-5); }
 .ai-fp-section { margin-top:26px; padding-top:16px; border-top:1px solid var(--c-border); }
 .ai-fp-title { font-size:var(--fs-sm); font-weight:600; margin-bottom:2px; }
 .ai-fp-sub { font-size:var(--fs-xs); color:var(--c-ink-4); margin-bottom:10px; }
@@ -11372,6 +11389,13 @@ const AI_FEATURES = [
 const AI_CLAUDE_MODELS = ['sonnet', 'haiku', 'opus'];
 let aiSettings = null;
 let aiFreeProviders = null;
+// Which of Settings' three panes is showing. Kept per browser, like every other
+// panel in the app — reopening Settings on a pane you never chose is the small
+// rudeness that makes a panel feel like it forgets you.
+let aiPane = (function(){
+  try { const v = localStorage.getItem('fmcns_ai_pane'); if (v === 'models' || v === 'quota' || v === 'advanced') return v; } catch (e) {}
+  return 'models';
+})();
 
 async function loadAiSettings() {
   const host = document.getElementById('aiBody');
@@ -11489,22 +11513,33 @@ function aiModelOptions(provider, selected) {
 // (services/ai/catalog.js) plus live quota-ledger state (services/ai/router.js),
 // backed by GET /api/travaux/free-providers. Models within a provider are shown
 // in codingRank order (the fallback order the router actually uses).
+// How many free lanes are refusing right now — the number on the Quota tab, so a
+// shut pane still says something is wrong.
+function aiLanesOutCount() {
+  if (!aiFreeProviders) return 0;
+  return (aiFreeProviders.state || []).filter((s) => s.exhausted
+    && (!s.resets_at || new Date(s.resets_at).getTime() > Date.now())).length;
+}
+
+// The free lanes: what each model is allowed a day, how much of that is gone, and
+// what it said the last time it refused. One list, in the order they are actually
+// tried. Providers with no key are one grey line at the end rather than a dozen
+// struck-through rows — an empty section is worse than no section.
 function renderFreeProvidersSection() {
   if (!aiFreeProviders) return '';
   const stateByKey = {};
   for (const s of aiFreeProviders.state || []) stateByKey[`${s.provider_id}::${s.model}`] = s;
-  // Today's calls per lane, and the last refusal each lane gave. A lane can be
-  // live right now and still have been refused thirty times today — that is the
-  // shape of a problem a status light on its own cannot show.
   const useByKey = {};
   for (const u of aiFreeProviders.usage || []) useByKey[`${u.provider_id}::${u.model}`] = u;
   const refByKey = {};
   for (const r of aiFreeProviders.refusals || []) refByKey[`${r.provider_id}::${r.model}`] = r;
+
   const fmtCountdown = (iso) => {
     if (!iso) return '';
     const ms = new Date(iso).getTime() - Date.now();
-    if (ms <= 0) return 'resetting…';
+    if (ms <= 0) return 'any moment';
     const mins = Math.round(ms / 60000);
+    if (mins < 1) return 'seconds';
     return mins < 60 ? `${mins}m` : `${Math.round(mins / 60)}h`;
   };
   const fmtAgo = (iso) => {
@@ -11515,54 +11550,61 @@ function renderFreeProvidersSection() {
     const hrs = Math.round(mins / 60);
     return hrs < 48 ? hrs + 'h ago' : Math.round(hrs / 24) + 'd ago';
   };
-  // What the provider publishes as its free allowance. Written out in words rather
-  // than as a row of numbers nobody can read at a glance.
-  const fmtLimits = (lim) => {
+  // A day's allowance is the one people actually run out of, so it is the number
+  // shown. Per-minute is a pace, not a budget, and belongs in the hover.
+  const perDay = (lim) => (lim && lim.rpd) || null;
+  const paceOf = (lim) => {
     if (!lim) return '';
     const bits = [];
-    if (lim.rpm) bits.push(lim.rpm + '/min');
-    if (lim.rph) bits.push(lim.rph + '/hour');
-    if (lim.rpd) bits.push(lim.rpd + '/day');
-    return bits.join(' · ');
+    if (lim.rpm) bits.push(lim.rpm + ' a minute');
+    if (lim.rph) bits.push(lim.rph + ' an hour');
+    return bits.join(', ');
   };
-  const rows = (aiFreeProviders.providers || []).flatMap((p) => {
-    const providerState = stateByKey[`${p.id}::`]; // whole-provider exhaustion, if any
-    const providerLimits = fmtLimits(p.limits);
-    if (!p.models.length) {
-      return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${qEsc(p.label)}</td><td colspan="4">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
-    }
-    return p.models.map((m, i) => {
-      const st = stateByKey[`${p.id}::${m.id}`] || providerState;
-      const exhausted = !!(st && st.exhausted);
-      const use = useByKey[`${p.id}::${m.id}`];
-      const ref = refByKey[`${p.id}::${m.id}`];
-      const used = use ? String(use.calls || 0) : '—';
-      const refused = use && use.refusals ? ` <span class="ai-fp-refused" title="Refused this many times today">+${use.refusals} refused</span>` : '';
-      const statusHtml = !p.keyPresent
-        ? (i === 0 ? `<span class="ai-fp-nokeytag">no API key set</span>` : '')
-        : (exhausted
-          ? `<span class="ai-fp-exhausted"${ref && ref.evidence ? ' title="' + qEsc(String(ref.evidence).slice(0, 220)) + '"' : ''}>full${st.resets_known ? ` — back in ${fmtCountdown(st.resets_at)}` : ` — trying again in ${fmtCountdown(st.resets_at)}`}</span>`
-          : `<span class="ai-fp-live">live</span>${ref ? ` <span class="ai-fp-lastref" title="${qEsc(String(ref.evidence || ref.reason || '').slice(0, 220))}">last refused ${fmtAgo(ref.exhausted_at)}</span>` : ''}`);
-      return `
-        <tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}">
-          <td>${i === 0 ? qEsc(p.label) : ''}</td>
-          <td>${qEsc(m.id)}${p.metered && i === 0 ? ' <span class="ai-fp-paid">costs money</span>' : ''}</td>
-          <td class="ai-fp-rank">${qEsc(fmtLimits(m.limits) || (i === 0 ? providerLimits : ''))}</td>
-          <td class="ai-fp-rank">${used}${refused}</td>
-          <td>${statusHtml}</td>
-        </tr>`;
-    });
-  }).join('');
 
-  const earliest = aiFreeProviders.earliestResetAt;
+  const withKey = (aiFreeProviders.providers || []).filter((p) => p.keyPresent);
+  const withoutKey = (aiFreeProviders.providers || []).filter((p) => !p.keyPresent);
+
+  const rows = withKey.flatMap((p) => p.models.map((m, i) => {
+    const st = stateByKey[`${p.id}::${m.id}`] || stateByKey[`${p.id}::`];
+    const out = !!(st && st.exhausted && (!st.resets_at || new Date(st.resets_at).getTime() > Date.now()));
+    const use = useByKey[`${p.id}::${m.id}`];
+    const ref = refByKey[`${p.id}::${m.id}`];
+    const lim = m.limits || p.limits;
+    const cap = perDay(lim);
+    const used = use ? (use.calls || 0) : 0;
+    const pct = cap ? Math.min(100, Math.round((used / cap) * 100)) : 0;
+    const allowance = cap
+      ? `${used} of ${cap} today`
+      : (use ? `${used} today` : 'no stated limit');
+    const bar = cap
+      ? `<span class="ai-bar${out ? ' is-full' : ''}"><i style="width:${pct}%"></i></span>` : '';
+    const why = ref ? String(ref.evidence || ref.reason || '').replace(/\s+/g, ' ').slice(0, 220) : '';
+    const nowHtml = out
+      ? `<span class="ai-fp-exhausted"${why ? ' title="' + qEsc(why) + '"' : ''}>out — back in ${fmtCountdown(st.resets_at)}</span>`
+      : `<span class="ai-fp-live">ready</span>`;
+    const note = !out && ref
+      ? `<div class="ai-fp-lastref" title="${qEsc(why)}">last refused ${fmtAgo(ref.exhausted_at)}</div>` : '';
+    return `
+      <tr class="${out ? 'ai-lane-off' : ''}">
+        <td>${i === 0 ? qEsc(p.label) : ''}${p.metered && i === 0 ? ' <span class="ai-fp-paid">costs money</span>' : ''}</td>
+        <td>${qEsc(m.id)}</td>
+        <td class="ai-fp-rank"${paceOf(lim) ? ' title="' + qEsc(paceOf(lim)) + '"' : ''}>${qEsc(allowance)}${bar}</td>
+        <td>${nowHtml}${note}</td>
+      </tr>`;
+  })).join('');
+
+  const noKeyLine = withoutKey.length
+    ? `<div class="ai-fp-sub" style="margin-top:8px;">${withoutKey.length} more ${withoutKey.length === 1 ? 'provider has' : 'providers have'} no key set: ${withoutKey.map((p) => qEsc(p.label)).join(', ')}.</div>`
+    : '';
+
   return `
-    <div class="ai-fp-section">
-      <div class="ai-fp-title">What each model is allowed, and what it has used</div>
-      <div class="ai-fp-sub" title="Tried in this order once the Claude subscription is out.">Counts are for today. Hover a refusal to see what the provider said.${earliest ? ` Next one back: ${fmtCountdown(earliest)}.` : ''}</div>
+    <div class="ai-fp-section" style="margin-top:18px;border-top:none;padding-top:0;">
+      <div class="ai-section-head">Free models</div>
       <table class="ai-fp-table">
-        <thead><tr><th>Provider</th><th>Model</th><th>Allowed</th><th>Used today</th><th>Now</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="5">No providers configured.</td></tr>'}</tbody>
+        <thead><tr><th>Provider</th><th>Model</th><th>Used today</th><th>Now</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4">Nothing with a key set.</td></tr>'}</tbody>
       </table>
+      ${noKeyLine}
     </div>`;
 }
 
@@ -11649,46 +11691,92 @@ function renderAiSettings() {
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
     .replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
-  host.innerHTML = quotaBlock + `
-    <div class="ai-health">
-      <span class="ai-health-item"><span class="ai-dot${claudeUp ? ' up' : ''}"></span>Claude Code ${claudeUp ? 'reachable' : 'unreachable'} ${cooldownNote('claude-code')}</span>
-      <span class="ai-health-item"><span class="ai-dot${opencodeUp ? ' up' : ''}"></span>OpenCode ${opencodeUp ? 'reachable' : 'unreachable'} ${cooldownNote('opencode')}</span>
+  // What almost everything is pointed at, said once at the top. Twelve rows of two
+  // dropdowns is not readable at a glance; one line naming the lane they mostly
+  // share is, and the exceptions then stand out in the table below it.
+  const laneCount = {};
+  for (const f of AI_FEATURES) {
+    const cur = (aiSettings.defaults && aiSettings.defaults[f.key]) || {};
+    const key = (cur.provider || 'claude-side') + '|' + (cur.model || '');
+    laneCount[key] = (laneCount[key] || 0) + 1;
+  }
+  const topLane = Object.entries(laneCount).sort((a, b) => b[1] - a[1])[0];
+  const labelForProvider = (id) => (freeProviderList.find(p => p.id === id) || {}).label
+    || ({ 'claude-side': 'Claude, second account', 'claude-code': 'Claude, main account', opencode: 'OpenCode' }[id] || id);
+  const mostLine = topLane && topLane[1] > 1
+    ? `<div class="ai-fp-sub">${topLane[1]} of ${AI_FEATURES.length} run on ${qEsc(labelForProvider(topLane[0].split('|')[0]))}${topLane[0].split('|')[1] ? ' · ' + qEsc(topLane[0].split('|')[1]) : ''}.</div>`
+    : '';
+
+  const lanesOut = aiLanesOutCount();
+  const tab = (id, label, n) => `<button type="button" class="ai-tab${aiPane === id ? ' on' : ''}" data-ai-pane="${id}">${label}${n ? `<span class="ai-tab-n">${n}</span>` : ''}</button>`;
+
+  host.innerHTML = `
+    <div class="ai-tabs">
+      ${tab('models', 'What runs what', 0)}
+      ${tab('quota', 'What is left', lanesOut)}
+      ${tab('advanced', 'Deeper settings', 0)}
     </div>
-    <div class="ai-policy-row">
-      <label style="font-size:11px;color:var(--c-ink-3);">When a Claude account runs out of quota:</label>
-      <select id="aiPolicySel">
-        <option value="auto_free"${aiSettings.policy === 'auto_free' ? ' selected' : ''}>Try the other account, then the free models (recommended)</option>
-        <option value="manual_only"${aiSettings.policy === 'manual_only' ? ' selected' : ''}>Never switch — wait for quota to reset</option>
-      </select>
-    </div>
-    <table class="ai-feature-table">
-      <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
-      <tbody>${queueDefaultRow}${rows}</tbody>
-    </table>
-    ${cd['claude-side']?.active
-      ? `<div class="usage-alert" style="margin-top:6px;">2nd Claude account: quota exhausted</div>`
-      : `<div class="ai-fp-sub" style="margin-top:6px;" title="Order: the second Claude subscription first (the smaller bank, spent first on purpose), then the main one when it runs out for a few hours, then a free model only if both are out. Second-account jobs run on your Mac, so the runner has to be attached.">Second account first, then main, then free</div>`}
-    <details class="ai-voice">
-      <summary>How Idea Studio thinks</summary>
-      <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" title="The lens your brainstorming conversations think through: the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest, so rewriting it breaks nothing. Empty means no persona at all." placeholder="Leave empty for a plain, neutral assistant — no personality.">${qEsc(aiSettings.studioPersona || '')}</textarea>
-    </details>
-    <details class="ai-adv">
-      <summary>Advanced (JSON)</summary>
-      <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
-    </details>
     <span class="ai-savemsg" id="aiSaveMsg"></span>
-    ${renderFreeProvidersSection()}
-    <!-- Which backend this page talks to. It used to sit in the rail, on every screen,
-         for a knob that matters only when a local server is running — and a page served
-         from localhost already talks to itself with no switch at all. -->
-    <div class="ai-policy-row" style="margin-top:10px;">
-      <label style="font-size:11px;color:var(--c-ink-3);">Server this page talks to:</label>
-      <select id="serverToggle">
-        <option value="local">local</option>
-        <option value="production">production</option>
-      </select>
+
+    <div class="ai-pane" data-ai-pane-body="models"${aiPane === 'models' ? '' : ' hidden'}>
+      ${mostLine}
+      <table class="ai-feature-table">
+        <thead><tr><th>What it's for</th><th>Backend</th><th>Model</th></tr></thead>
+        <tbody>${queueDefaultRow}${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="ai-pane" data-ai-pane-body="quota"${aiPane === 'quota' ? '' : ' hidden'}>
+      ${quotaBlock}
+      ${renderFreeProvidersSection()}
+      <div class="ai-health" style="margin-top:18px;">
+        <span class="ai-health-item"><span class="ai-dot${claudeUp ? ' up' : ''}"></span>Claude Code ${claudeUp ? 'reachable' : 'unreachable'} ${cooldownNote('claude-code')}</span>
+        <span class="ai-health-item"><span class="ai-dot${opencodeUp ? ' up' : ''}"></span>OpenCode ${opencodeUp ? 'reachable' : 'unreachable'} ${cooldownNote('opencode')}</span>
+      </div>
+    </div>
+
+    <div class="ai-pane" data-ai-pane-body="advanced"${aiPane === 'advanced' ? '' : ' hidden'}>
+      <div class="ai-policy-row">
+        <label style="font-size:11px;color:var(--c-ink-3);">When a Claude account runs out of quota:</label>
+        <select id="aiPolicySel">
+          <option value="auto_free"${aiSettings.policy === 'auto_free' ? ' selected' : ''}>Try the other account, then the free models (recommended)</option>
+          <option value="manual_only"${aiSettings.policy === 'manual_only' ? ' selected' : ''}>Never switch — wait for quota to reset</option>
+        </select>
+      </div>
+      ${cd['claude-side']?.active
+        ? `<div class="usage-alert" style="margin-top:6px;">2nd Claude account: quota exhausted</div>`
+        : `<div class="ai-fp-sub" title="Order: the second Claude subscription first (the smaller bank, spent first on purpose), then the main one when it runs out for a few hours, then a free model only if both are out. Second-account jobs run on your Mac, so the runner has to be attached.">Second account first, then main, then free</div>`}
+      <details class="ai-voice">
+        <summary>How Idea Studio thinks</summary>
+        <textarea id="aiStudioPersona" class="q-textarea" spellcheck="false" title="The lens your brainstorming conversations think through: the register, what to reach for, what to push back on. It sits on top of the rules that keep answers honest, so rewriting it breaks nothing. Empty means no persona at all." placeholder="Leave empty for a plain, neutral assistant — no personality.">${qEsc(aiSettings.studioPersona || '')}</textarea>
+      </details>
+      <details class="ai-adv">
+        <summary>Advanced (JSON)</summary>
+        <textarea id="aiAdvJson" class="q-textarea" spellcheck="false">${advJson}</textarea>
+      </details>
+      <!-- Which backend this page talks to. It used to sit in the rail, on every screen,
+           for a knob that matters only when a local server is running — and a page served
+           from localhost already talks to itself with no switch at all. -->
+      <div class="ai-policy-row" style="margin-top:14px;">
+        <label style="font-size:11px;color:var(--c-ink-3);">Server this page talks to:</label>
+        <select id="serverToggle">
+          <option value="local">local</option>
+          <option value="production">production</option>
+        </select>
+      </div>
     </div>
   `;
+
+  // Switching panes must not write anything: the tab buttons are deliberately not
+  // <select>s, so the blanket save-on-change wiring below cannot see them.
+  host.querySelectorAll('[data-ai-pane]').forEach((b) => {
+    b.onclick = () => {
+      aiPane = b.getAttribute('data-ai-pane');
+      try { localStorage.setItem('fmcns_ai_pane', aiPane); } catch (e) {}
+      host.querySelectorAll('.ai-tab').forEach((t) => t.classList.toggle('on', t.getAttribute('data-ai-pane') === aiPane));
+      host.querySelectorAll('[data-ai-pane-body]').forEach((d) => { d.hidden = d.getAttribute('data-ai-pane-body') !== aiPane; });
+    };
+  });
 
   wireServerToggle();
 
