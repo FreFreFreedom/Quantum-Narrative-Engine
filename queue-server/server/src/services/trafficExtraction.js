@@ -29,12 +29,21 @@
 import { generateText } from './ai/text.js';
 import { analyseTurns } from './interactionGraph.js';
 
-// Same lane, window and pacing as docExtraction, for the same reason: Gemini Flash's free
-// tier is generous but rate-limited, and this must never reach a metered provider.
-export const TRAFFIC_MODEL = 'gemini-flash-latest';
-export const WINDOW_CHARS = 12000;
-export const WINDOW_PAUSE_MS = 2500;
-const MAX_TOKENS = 2000;
+// Cerebras, not Gemini: Gemini Flash's real free-tier cap turned out to be 20 requests a
+// day (found 2026-09-11, not the 1500/day the old comment assumed), enough for barely one
+// film. Cerebras's free tier is thousands a day and fast per call, and this is the only
+// caller pinned to a provider explicitly rather than through the doc-extraction feature
+// default — docExtraction.js (PDFs/vision) still needs Gemini and is untouched.
+// Windows were 12k chars — sized for a much smaller context window than either lane
+// actually has (both are 128k+ tokens of CONTEXT). The real ceiling turned out to be
+// Cerebras's tokens-PER-MINUTE budget, not context: 48000 chars (~13k tokens in, 6000 out)
+// tripped it immediately across a handful of back-to-back windows. 20000 chars still
+// roughly halves the number of reads a feature film needs and stays clear of it.
+export const TRAFFIC_PROVIDER = 'cerebras';
+export const TRAFFIC_MODEL = 'gpt-oss-120b';
+export const WINDOW_CHARS = 20000;
+export const WINDOW_PAUSE_MS = 5000;
+const MAX_TOKENS = 3000;
 
 const STANCES = new Set(['opp', 'ally', 'neu']);
 
@@ -163,7 +172,7 @@ export async function extractTraffic(sourceText, {
   const windows = windowsOf(text);
   const ask = callModel || (async (prompt) => {
     const out = await generateText({
-      prompt, feature: 'doc-extraction', model: TRAFFIC_MODEL,
+      prompt, feature: 'doc-extraction', provider: TRAFFIC_PROVIDER, model: TRAFFIC_MODEL,
       maxTokens: MAX_TOKENS, label: 'traffic-extraction',
     });
     return out?.text || '';
