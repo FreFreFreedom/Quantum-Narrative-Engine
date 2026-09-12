@@ -11527,7 +11527,7 @@ function renderFreeProvidersSection() {
   };
   const rows = (aiFreeProviders.providers || []).flatMap((p) => {
     const providerState = stateByKey[`${p.id}::`]; // whole-provider exhaustion, if any
-    const limits = fmtLimits(p.limits);
+    const providerLimits = fmtLimits(p.limits);
     if (!p.models.length) {
       return [`<tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}"><td>${qEsc(p.label)}</td><td colspan="4">${p.keyPresent ? '(no models catalogued)' : '<span class="ai-fp-nokeytag">no API key set</span>'}</td></tr>`];
     }
@@ -11547,7 +11547,7 @@ function renderFreeProvidersSection() {
         <tr class="${p.keyPresent ? '' : 'ai-fp-nokey'}">
           <td>${i === 0 ? qEsc(p.label) : ''}</td>
           <td>${qEsc(m.id)}${p.metered && i === 0 ? ' <span class="ai-fp-paid">costs money</span>' : ''}</td>
-          <td class="ai-fp-rank">${i === 0 ? qEsc(limits) : ''}</td>
+          <td class="ai-fp-rank">${qEsc(fmtLimits(m.limits) || (i === 0 ? providerLimits : ''))}</td>
           <td class="ai-fp-rank">${used}${refused}</td>
           <td>${statusHtml}</td>
         </tr>`;

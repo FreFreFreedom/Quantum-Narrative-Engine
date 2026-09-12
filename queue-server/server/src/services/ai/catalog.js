@@ -102,19 +102,20 @@ export const PROVIDERS = [
     label: 'Google AI Studio',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     apiKeyEnv: 'GOOGLE_AI_STUDIO_API_KEY',
-    // Measured off Google's own refusal, 2026-09-12: the free tier allows TWENTY
-    // requests a day on gemini-flash-latest ("generate_content_free_tier_requests,
-    // limit: 20"), not the 15/min and 1500/day this used to claim — those are the
-    // paid-tier numbers and they made the quota panel say the opposite of the
-    // truth. Each model carries its own separate allowance, so the lite model is
-    // still answering while the flash one is spent for the day.
+    // Measured off Google's own refusals, 2026-09-12. The free allowance here is
+    // PER MODEL and the two differ by a factor of twenty-five, so a single
+    // provider-wide number is a lie whichever one it copies: flash allows 20 a day,
+    // flash-lite 500 ("generate_content_free_tier_requests, limit: N"). The old
+    // 15/min and 1500/day were the paid-tier numbers and made the quota panel say
+    // the opposite of the truth. Provider-level stays as the smaller of the two, so
+    // anything reading it errs careful; each model carries its own below.
     limits: { rpd: 20 },
     models: [
       // '-latest' aliases (Google-maintained, hot-swapped to the current release)
       // instead of pinned version ids — gemini-2.0-flash was retired outright and
       // broke every call using it by fixed id; aliases avoid repeating that.
-      { id: 'gemini-flash-latest', codingRank: 70, contextTokens: 1000000 },
-      { id: 'gemini-flash-lite-latest', codingRank: 55, contextTokens: 1000000 },
+      { id: 'gemini-flash-latest', codingRank: 70, contextTokens: 1000000, limits: { rpd: 20 } },
+      { id: 'gemini-flash-lite-latest', codingRank: 55, contextTokens: 1000000, limits: { rpd: 500 } },
       // gemini-pro-latest is GONE, and deliberately not coming back as a hand pick
       // either. It has no usable free allowance at all: checked 2026-09-07 and
       // again 2026-09-12, on a key where both flash models answered in the same

@@ -18,7 +18,10 @@ export function providersRoutes() {
       // Surfaced so the panel can mark the one paid lane as paid rather than
       // letting it sit unlabelled among the free ones.
       metered: !!p.metered,
-      models: p.models.map((m) => ({ id: m.id, codingRank: m.codingRank, contextTokens: m.contextTokens })).sort((a, b) => b.codingRank - a.codingRank),
+      // A model's own allowance where it has one: Google's two flash models differ
+      // by a factor of twenty-five, so the provider's single number cannot speak
+      // for both.
+      models: p.models.map((m) => ({ id: m.id, codingRank: m.codingRank, contextTokens: m.contextTokens, limits: m.limits || null })).sort((a, b) => b.codingRank - a.codingRank),
     }));
     const state = getQuotaState();
     // Today's counts and the last refusal each lane gave, so the panel can say what
