@@ -1,0 +1,755 @@
+{
+  "entity": "f_shame",
+  "source": "data-seed/scripts/f_shame.txt",
+  "scope": "the whole script, machine-extracted (12 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Hi.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ALEXA",
+      "quote": "Hi.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Come in.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Drink?",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "ALEXA",
+      "quote": "No thank you.",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ALEXA (CONT'D)",
+      "quote": "Perfect.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "This Way.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Slowly.",
+      "block": 8
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEMALE CALLER ON ANSWER MACHINE",
+      "quote": "Hey, it's me..",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEMALE CALLER ON ANSWER MACHINE",
+      "quote": "Pick Up.. Pick Up...",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEMALE CALLER ON ANSWER MACHINE",
+      "quote": "Brandon?",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Cool.",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Cool.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRANDON (O.S.)",
+      "quote": "Fucking slut!",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY (O.C.)",
+      "quote": "Brandon-",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY (O.S.) (CONT'D)",
+      "quote": "Brandon, I'm sorry.",
+      "block": 16
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "FROM SCREEN",
+      "quote": "Hey, where's Brandon? Are you\n               Brandon's girlfriend? Do you want\n               to play?",
+      "block": 17
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "FROM SCREEN (CONT'D)",
+      "quote": "Do you wanna play with my tits? I\n               know Brandon would really like it..\n               And I know exactly what Brandon\n               likes.",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Come on.",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Come on.",
+      "block": 20
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE",
+      "quote": "Where are you taking me? (LAUGHS)",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Come on. You'll see",
+      "block": 22
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE",
+      "quote": "No, where are we going? (LAUGHS)",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "You wanna drink?",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BRANDON (CONT'D)",
+      "quote": "What are you looking at?",
+      "block": 25
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE",
+      "quote": "The view is amazing.",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BRANDON",
+      "quote": "Hey.",
+      "block": 27
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BRANDON",
+      "quote": "(LAUGHS) Are they vintage?",
+      "block": 28
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE",
+      "quote": "A little bit. (LAUGHS)",
+      "block": 29
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE",
+      "quote": "Brandon? Erm...",
+      "block": 30
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE (CONT'D)",
+      "quote": "You know, it's cool. It's OK.",
+      "block": 31
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE (CONT'D)",
+      "quote": "Should I go?",
+      "block": 32
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Sure.",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "BRANDON (CONT'D)",
+      "quote": "I can walk you down.",
+      "block": 34
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARIANNE (O.S.)",
+      "quote": "That's OK.",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Can I get you a drink?",
+      "block": 36
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "HOTEL LOVER",
+      "quote": "No.",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "BRANDON",
+      "quote": "Need a hand?",
+      "block": 38
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HOTEL LOVER",
+      "quote": "The hooks odd-",
+      "block": 39
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "BOUNCER",
+      "quote": "Woah! Not tonight, buddy.",
+      "block": 40
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "BOUNCER (CONT'D)",
+      "quote": "I said not tonight.",
+      "block": 41
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "(from SISSY)",
+      "quote": "Brandon, it's Sissy.. I really need",
+      "block": 42
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "(from SISSY)",
+      "quote": "to talk to you. Please.",
+      "block": 43
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY ON ANSWER MACHINE",
+      "quote": "Please will you pick up the fucking",
+      "block": 44
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY ON ANSWER MACHINE",
+      "quote": "phone?",
+      "block": 45
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY ON ANSWER MACHING",
+      "quote": "We're not bad people... We just",
+      "block": 46
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY ON ANSWER MACHING",
+      "quote": "come from a bad place.... Thanks",
+      "block": 47
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY ON ANSWER MACHING",
+      "quote": "for letting me stay.",
+      "block": 48
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "INTERCOM",
+      "quote": "Ladies and Gentlemen, at this time,",
+      "block": 49
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "INTERCOM",
+      "quote": "due to a police investigation, we",
+      "block": 50
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "INTERCOM",
+      "quote": "have to discharge this train.",
+      "block": 51
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "INTERCOM",
+      "quote": "Please follow the conductor to the",
+      "block": 52
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "INTERCOM",
+      "quote": "rear of the train.",
+      "block": 53
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONDUCTOR (O.S.)",
+      "quote": "Watch your step between cars.",
+      "block": 54
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONDUCTOR",
+      "quote": "Watch your step.",
+      "block": 55
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONDUCTOR",
+      "quote": "Follow, me please. Follow me.",
+      "block": 56
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONDUCTOR (CONT'D)",
+      "quote": "Watch your step. This way. This",
+      "block": 57
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONDUCTOR (CONT'D)",
+      "quote": "way. Quickly",
+      "block": 58
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEMALE CONDUCTOR",
+      "quote": "This way. Nothing to see. Move on.",
+      "block": 59
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONDUCTOR (O.S.) (OVER)",
+      "quote": "Right this way, please.",
+      "block": 60
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEMALE CONDUCTOR",
+      "quote": "Move on. This way.",
+      "block": 61
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANSWER MACHINE",
+      "quote": "This is Sissy..leave a message..",
+      "block": 62
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANSWER MACHINE",
+      "quote": "Don't if you're an asshole.",
+      "block": 63
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANSWER MACHINE (CONT'D)",
+      "quote": "This is Sissy..leave a me-",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRANDON",
+      "quote": "Shit!",
+      "block": 65
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BRANDON",
+      "quote": "Sissy-",
+      "block": 66
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "SISSY",
+      "quote": "Shithead.",
+      "block": 67
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 4,
+        "sign": "ally",
+        "stances": {
+          "opp": 1,
+          "ally": 3,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 4,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 4,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p8",
+        "p9"
+      ],
+      [
+        "p7"
+      ]
+    ]
+  }
+}

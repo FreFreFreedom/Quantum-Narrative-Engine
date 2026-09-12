@@ -1,0 +1,2233 @@
+{
+  "entity": "f_basic_instinct",
+  "source": "data-seed/scripts/f_basic_instinct.txt",
+  "scope": "the whole script, machine-extracted (18 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Shit.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ain't you go nothin' better to do \n                        than to come in here and jack off \n                        the damn machine?",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are you doing here, Pop?",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I came in here to jack off the \n                        damn machine.",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "One dead psychology professor.\n                        Noah Goldstein.  Dr. Noah Goldstein.  \n                        And guess what?  He was her \n                        counselor.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Was she ever suspect?",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No, sir.  They never even got a \n                        statement from her.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you remember a case -- 1956 --\n                        Hazel Dobkins?",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hell yes!  Couldn't get it outta \n                        my head for years.  Still can't.  \n                        Nice little kids -- nice husband, \n                        wasn't porkin' around -- no \n                        financial problems.  One day -- \n                        outta the clear blue sky -- she \n                        does 'em.  All of 'em.  Used a \n                        knife. He got for a wedding present.  \n                        Didn't even deny it.  Sweet as \n                        honey.  Said she didn't know why \n                        she done it.",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hi.",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Am I... disturbing you?",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.  Come in.",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm using you for my detective.  \n                        In my book.  You don't mind, do \n                        you?",
+      "block": 14
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Would you like a drink?  I was \n                        just going to have one.",
+      "block": 15
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No, thanks.",
+      "block": 16
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's right.  You're off the Jack \n                        Daniels too, aren't you?",
+      "block": 17
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'd like to ask you a few more \n                        questions.",
+      "block": 18
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'd like to ask you some, too.",
+      "block": 19
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "For my book.",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What kind of questions?",
+      "block": 21
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How does it feel to kill someone?",
+      "block": 22
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You tell me.",
+      "block": 23
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know.  But you do.",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It was an accident.  They got in \n                        the line of fire.",
+      "block": 25
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Four shootings in five years.  All \n                        accidents.",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "They were drug buys.  I was a vice \n                        cop.",
+      "block": 27
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Tell me about Professor Goldstein.",
+      "block": 28
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There's a name from the past.",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You want a name from the present?\n                        How about Hazel Dobkins?",
+      "block": 30
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Noah was my counselor in my freshman \n                        year.\n                               (she smiles)\n                        That's probably where I got the \n                        idea for the icepick.  For my book.\n                        Funny how the subconscious works.\n                               (a beat)\n                        Hazel is my friend.",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She wiped out her whole family.",
+      "block": 32
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes.  She's helped me understand \n                        homicidal impulse.",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Didn't you study it in school?",
+      "block": 34
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Only in theory.\n                               (she smiles)\n                        You know all about homicidal \n                        impulse, don't you, shooter?  Not \n                        in theory -- in practice.",
+      "block": 35
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What happened, Nick?  Did you get \n                        sucked into it? Did you like it \n                        too much?",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Tell me about the coke, Nick.  The \n                        day you shot those two tourists --\n                        how much coke did you do?",
+      "block": 37
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Tell me, Nick.",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I didn't.",
+      "block": 39
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, you did.  They never tested \n                        you, did they?  But Internal Affairs \n                        knew.",
+      "block": 40
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Your wife knew, didn't she?  She \n                        knew what was going on.  Nicky got \n                        too close to the flame.  Nicky \n                        liked it.",
+      "block": 41
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's why she killed herself?",
+      "block": 42
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "First block without speaker label",
+      "quote": "I have attorneys.  They have \n                        friends.  I have friends.  Money \n                        buys you a lot of attorneys and \n                        friends.",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "I don't know about that I don't \n                        have any money I don't have any \n                        attorneys Gus is my only real \n                        friend.",
+      "block": 44
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "I wasn't talking about real friends.  \n                        Why doesn't Gus like me.",
+      "block": 45
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "I like you.",
+      "block": 46
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Do you?",
+      "block": 47
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "Yeah.  Would you like to come up \n                        and have a drink?",
+      "block": 48
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "I didn't think you'd ask me.",
+      "block": 49
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "I'm not that easy to figure.",
+      "block": 50
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "You're not easy to figure.  I'm \n                        just very good at figuring.",
+      "block": 51
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "NICK label",
+      "quote": "Don't get too cocky.",
+      "block": 52
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Why not?",
+      "block": 53
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "You can make a mistake.",
+      "block": 54
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Not me.",
+      "block": 55
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "You should put some warmth into \n                        it.  You don't want it to reflect \n                        on your personality.",
+      "block": 56
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "Jack Daniel's okay?  It's gonna \n                        have to be.",
+      "block": 57
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Fine.",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "Ice?",
+      "block": 59
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Please.",
+      "block": 60
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Let me do that.  You like to watch \n                        me doing it, don't you?",
+      "block": 61
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Can I have a cigarette, please?  I \n                        told you you'd start smoking again.",
+      "block": 62
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Light it for me, will you?",
+      "block": 63
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Thank you.",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "What did you pay Nilsen?",
+      "block": 65
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Isn't he the policeman that you \n                        shot, Shooter?",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "NICK label",
+      "quote": "What if I asked you not to call me \n                        Shooter?",
+      "block": 67
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "What if I call you Nicky?",
+      "block": 68
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "My wife used to call me that.",
+      "block": 69
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "I know, Nicky, but I like it.",
+      "block": 70
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Cheers.  My friends call me \n                        Catherine.",
+      "block": 71
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "What did Bobby Vasquez used to \n                        call you?",
+      "block": 72
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Bitch mostly, but he meant it \n                        affectionately.  You don't have \n                        any coke, do you?  I love coke and \n                        Jack Daniel's.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "There's Pepsi in the fridge.",
+      "block": 74
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "It's not the same thing, is it?",
+      "block": 75
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "Where's it going?  What do you \n                        want from me?",
+      "block": 76
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Say -- \"What do you want from me, \n                        Catherine?\"",
+      "block": 77
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "What do you want from me, Catherine?",
+      "block": 78
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "I brought you something.",
+      "block": 79
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Aren't you going to thank me?",
+      "block": 80
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "What's it about?",
+      "block": 81
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "A boy kills his parents.  They \n                        have a plane.  He makes it look \n                        like an accident.",
+      "block": 82
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "Why does he do it?",
+      "block": 83
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "To see if he can get away with it.",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "When did you write it?",
+      "block": 85
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "You mean did I write it before my \n                        parents died?",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "Yes.",
+      "block": 87
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "No.  I wrote it years afterwards.",
+      "block": 88
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "No.",
+      "block": 89
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "You're not going to stop following \n                        me around now just because you're \n                        on leave -- are you?",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Good.  I'd miss you.\n                               (a beat)\n                        You can get into trouble, though.\n                        You're not really a cop anymore.",
+      "block": 91
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "I'll risk it.",
+      "block": 92
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "Why take the risk?",
+      "block": 93
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK label",
+      "quote": "To see if I can get away with it.",
+      "block": 94
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "How's your new book?",
+      "block": 95
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "I'm getting deeper and deeper into \n                        my character.",
+      "block": 96
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Thanks for the drink.",
+      "block": 97
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE label",
+      "quote": "I'm leaving the house around \n                        midnight.  In case you're going to \n                        follow me.\n                               (a beat)\n                        I'm going down to Johnny's club.",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "I'll meet you there.",
+      "block": 99
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "CATHERINE label",
+      "quote": "Hi, Gus.",
+      "block": 100
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS label",
+      "quote": "Forgive me for askin', son, and I \n                        don't mean to belabor the obvious, \n                        but why is it that you've got your \n                        head so far up your own ass?",
+      "block": 101
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "She want to play?  Fine.  I can \n                        play.",
+      "block": 102
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUS label",
+      "quote": "Everybody that she plays with dies.",
+      "block": 103
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK label",
+      "quote": "I know what that's like.",
+      "block": 104
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Tell me something, Rocki.  Man-to-",
+      "block": 105
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "man.",
+      "block": 106
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ROXY",
+      "quote": "She likes me to watch.",
+      "block": 107
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Nicky.",
+      "block": 108
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "'Morning.",
+      "block": 109
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I think Roxy got jealous.",
+      "block": 110
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "She's seen everything before.",
+      "block": 111
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "She's never seen us before.",
+      "block": 112
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Did you think it was so special?",
+      "block": 113
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "What did you think?",
+      "block": 114
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I didn't mean for me -- I meant \n                        for you.",
+      "block": 115
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "I'm not as judgmental about women \n                        as I am about men.",
+      "block": 116
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "How's your shoulder?",
+      "block": 117
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Fine.  How's your back?",
+      "block": 118
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "It hurts.",
+      "block": 119
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "We're alike, you know.",
+      "block": 120
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "NICK",
+      "quote": "Are you kidding?  You think this \n                        is my idea of morning-after \n                        conversation?",
+      "block": 121
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CATHERINE",
+      "quote": "Do you want personal insights and \n                        adolescent secrets?  I don't do \n                        those.",
+      "block": 122
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You mean getting inside you isn't \n                        going to get me any deeper into \n                        your character.",
+      "block": 123
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Not unless you confuse my character \n                        with my body parts.",
+      "block": 124
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Were you frightened, Nicky?",
+      "block": 125
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I thought that business with the \n                        scarf was pretty nifty.",
+      "block": 126
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "I told you I had a vivid \n                        imagination.",
+      "block": 127
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CATHERINE",
+      "quote": "You shouldn't play this game.",
+      "block": 128
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I don't have a choice.",
+      "block": 129
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CATHERINE",
+      "quote": "You're in over your head.",
+      "block": 130
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I know.",
+      "block": 131
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "I've got a book to write.  I'll \n                        see you around, Shooter.",
+      "block": 132
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "What is this place?  Hillbilly \n                        heaven?",
+      "block": 133
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "Where in the fuck you been?  I \n                        went over to your place.",
+      "block": 134
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Easy there, partner -- I wasn't \n                        there.",
+      "block": 135
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUS",
+      "quote": "I went over last night, too.",
+      "block": 136
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I wasn't there last night, either.",
+      "block": 137
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "You... fucked her!  Goddamn dumb \n                        sonofabitch... You fucked her!  \n                        Goddamn, you are one dumb \n                        sonofabitch --",
+      "block": 138
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "I'm not gonna get AIDS, pop --don't \n                        worry about it.  I always use a \n                        rubber.",
+      "block": 139
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "I don't give a... flyin'... chili-\n                        bean... fart about AIDS!",
+      "block": 140
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "You oughta use a rubber, pop.  You \n                        really should.",
+      "block": 141
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "What in the hell for?  You think \n                        I'm gettin' any at my age?  I don't \n                        like blue-haired women.  I don't \n                        like 'em.",
+      "block": 142
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You don't like punk rockers?",
+      "block": 143
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "Say what?",
+      "block": 144
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "You feeling better?",
+      "block": 145
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "GUS",
+      "quote": "I feel fine!",
+      "block": 146
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "How could you fuck her?",
+      "block": 147
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I'm not afraid of her.",
+      "block": 148
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "Why the hell not?",
+      "block": 149
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I don't know.  I'm just not.",
+      "block": 150
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "GUS",
+      "quote": "It ain't your brain.",
+      "block": 151
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "It doesn't make sense.  She didn't \n                        know me three months ago.",
+      "block": 152
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUS",
+      "quote": "Maybe it wasn't her that paid him.\n                        Maybe the money was for somethin' \n                        else.  How the fuck do I know?  \n                        I'm just an old city cowboy tryin' \n                        not to fall outta his saddle.",
+      "block": 153
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "You all right, pop?  You want me \n                        to drive you?",
+      "block": 154
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "In that little pissant car of yours?  \n                        Hell, no.  I ain't gettin' no back \n                        pain disability retirement -- I'm \n                        gettin' me a full pension and a \n                        real gold-plate Seiko watch.",
+      "block": 155
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "Come on, I'll drive you in this \n                        thing.",
+      "block": 156
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUS",
+      "quote": "You think I'd let you drive my \n                        Cadillac car?  I ain't lettin' no \n                        hear-up-his-ass person drive my \n                        Cadillac car.",
+      "block": 157
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "It was an accident.",
+      "block": 158
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "LT. WALKER",
+      "quote": "You knew her, didn't you?",
+      "block": 159
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "DR. MYRON",
+      "quote": "Sit down, Nick.",
+      "block": 160
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "NICK",
+      "quote": "I don't need any help.",
+      "block": 161
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I thought you hardly know her.",
+      "block": 162
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "BETH",
+      "quote": "I feel sorry for you, Nick.",
+      "block": 163
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Did you like her to watch?",
+      "block": 164
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "No.",
+      "block": 165
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Everybody that I care about dies.",
+      "block": 166
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "It's OK.  It's OK.",
+      "block": 167
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "CATHERINE",
+      "quote": "Make love to me.",
+      "block": 168
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Killing isn't like smoking.  You \n                        can quit.",
+      "block": 169
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "I've go to go.  I promised to get \n                        her home by six o'clock.  She just \n                        loves \"America's Most Wanted.\"",
+      "block": 170
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "There was no Lisa Anderson at \n                        Berkeley when you were there.",
+      "block": 171
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "What were you doing, checking up \n                        on me?  What for?",
+      "block": 172
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Henderson.",
+      "block": 173
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Henderson.  Lisa Henderson.  With \n                        an H.",
+      "block": 174
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You do?",
+      "block": 175
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANDREWS",
+      "quote": "I can get my butt kicked for this.\n                        You're not supposed to be in here.",
+      "block": 176
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "It's not gonna take long, Sam.",
+      "block": 177
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Bring it up, will you, Sam?",
+      "block": 178
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANDREWS",
+      "quote": "Hey, that's Dr. Gardner, isn't it?",
+      "block": 179
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You shouldn't leave your door open.",
+      "block": 180
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "I didn't.  Something's wrong with \n                        my lock.",
+      "block": 181
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "What do you want, Nick?",
+      "block": 182
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Tell me about Catherine.",
+      "block": 183
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "She told you, didn't she?",
+      "block": 184
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "What did she tell me, Beth?",
+      "block": 185
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "I slept with her once in school.\n                               (a beat)\n                        I was just a kid.  I was \n                        experimenting.  It was just that \n                        one time.\n                               (a beat)\n                        She developed a... fixation... on \n                        me.  She styled her hair like mine.  \n                        She wore the same kind of clothes \n                        I did.  It scared me.",
+      "block": 186
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "Isn't that what she told you?",
+      "block": 187
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "She told me it was you.  You wore \n                        the same kind of clothes.  You \n                        dyed your hair blonde.",
+      "block": 188
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "I did dye my hair.  It didn't have \n                        anything to do with her.  I was a \n                        redhead for a while, too.",
+      "block": 189
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Did you know Noah Goldstein?",
+      "block": 190
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "I had him in two classes.",
+      "block": 191
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "What do I say -- Hey, listen, guys, \n                        I'm not gay, but I did fuck your \n                        suspect.\n                               (she turns away)\n                        I was embarrassed.  It's the only \n                        time I've been with a woman.",
+      "block": 192
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "She's really sick you know.  Don't \n                        you know what she's doing?  She \n                        knows I went to Berkeley.  She \n                        knows I knew Noah.  She makes up \n                        that story about me.  She's handing \n                        you somebody who's obsessed with \n                        he her.",
+      "block": 193
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "She didn't hand you to me.  She \n                        doesn't even know who you are.  \n                        She told me about Lisa Henderson.",
+      "block": 194
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "She knew you'd find out who Lisa \n                        Henderson is.  You're a good cop --\n                        what did she do?  Tell you casually \n                        and make it seem irrelevant?\n                               (she smiles)\n                        Did she tell you in bed, Nick?\n                        That's how I'd do it.",
+      "block": 195
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Why did you change your name?",
+      "block": 196
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "I got married.\n                               (a beat)\n                        He was on staff at the clinic.  I \n                        was down in Salinas.  It didn't...  \n                        last long.",
+      "block": 197
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "Nick -- Do you really think I...  \n                        that I could kill someone... I \n                        never even met Johnny Boz.  What \n                        about Nilsen?  What possible motive \n                        would I have to kill him?",
+      "block": 198
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You should do something about this \n                        lock.",
+      "block": 199
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "She's evil.  She's brilliant.  Be \n                        careful, Nick.",
+      "block": 200
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Do I scare you, Nick?",
+      "block": 201
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "I just thought I'd surprise you.\n                               (a beat)\n                        What's the matter?",
+      "block": 202
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I found Lisa Henderson.",
+      "block": 203
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "Did you?  What's she doing?",
+      "block": 204
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "You're not going to tell me what \n                        she's doing.\n                               (a beat)\n                        I thought we weren't playing games \n                        anymore.",
+      "block": 205
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I did, too.\n                               (a beat)\n                        She told me it was backwards -- \n                        she said you even styled your hair \n                        the way she did.",
+      "block": 206
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "And you believed her?  I even went \n                        down to the campus  police and \n                        made out a report about her.",
+      "block": 207
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "You still think I kill people, \n                        don't you?",
+      "block": 208
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "No.",
+      "block": 209
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CATHERINE",
+      "quote": "Liar.",
+      "block": 210
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMPUS COP",
+      "quote": "Who'd you say you were with?",
+      "block": 211
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Homicide.  San Francisco.",
+      "block": 212
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMPUS COP",
+      "quote": "Don't you guys communicate over \n                        there?  You must be the same way \n                        we are.",
+      "block": 213
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMPUS COP",
+      "quote": "There was a report about Lisa \n                        Henderson -- January, 1977 -- the \n                        file's not here.",
+      "block": 214
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "What do you mean it's not here?",
+      "block": 215
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAMPUS COP",
+      "quote": "San Francisco P.D. Detective Nilsen.  \n                        Internal Affairs.  You know him?  \n                        Tell him we want it back.  He's \n                        had it a whole year.",
+      "block": 216
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUS",
+      "quote": "So Nilsen had a report on her -- \n                        so what.  You don't know what the \n                        hell was in it?",
+      "block": 217
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Catherine told me what was in it.",
+      "block": 218
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUS",
+      "quote": "If she's telling  you the truth.",
+      "block": 219
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUS",
+      "quote": "Where the hell you goin'?",
+      "block": 220
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "I'm going with you.",
+      "block": 221
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Gus!",
+      "block": 222
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "What are you doing here?",
+      "block": 223
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "opp",
+      "cue": "NICK",
+      "quote": "Put your hands up!",
+      "block": 224
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "What?",
+      "block": 225
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "opp",
+      "cue": "NICK",
+      "quote": "Take your hands out of your pockets!",
+      "block": 226
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "What is wrong with you?",
+      "block": 227
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BETH",
+      "quote": "I loved you.",
+      "block": 228
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "LT. WALKER",
+      "quote": "What made you think she had a gun?",
+      "block": 229
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANDREWS",
+      "quote": "Lieutenant.",
+      "block": 230
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "THE FORENSICS MAN",
+      "quote": "It's departmental issue.",
+      "block": 231
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "LT. WALKER",
+      "quote": "Jesus.",
+      "block": 232
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANDREWS",
+      "quote": "Thirty-eight caliber revolver.",
+      "block": 233
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "LT. WALKER",
+      "quote": "I guess that's it.",
+      "block": 234
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANDREWS",
+      "quote": "Thanks.",
+      "block": 235
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAPTAIN TALCOTT",
+      "quote": "Congratulations, Curran.",
+      "block": 236
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "A VOICE",
+      "quote": "Hi.",
+      "block": 237
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "I heard about it... on TV.",
+      "block": 238
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CATHERINE",
+      "quote": "What do we do now, Nick?",
+      "block": 239
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CATHERINE",
+      "quote": "I hate rugrats.",
+      "block": 240
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CATHERINE",
+      "quote": "I love you.",
+      "block": 241
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 37,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 8,
+          "ally": 11,
+          "neu": 18
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 102,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 7,
+          "ally": 16,
+          "neu": 79
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 22,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 1,
+          "neu": 19
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 3,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p1",
+        "p2"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,3037 @@
+{
+  "entity": "f_blue_valentine",
+  "source": "data-seed/scripts/f_blue_valentine.txt",
+  "scope": "the whole script, machine-extracted (19 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Me-gan!",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Daddydaddydaddy.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Wake up Daddy.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "What time is it baby?",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "When's she going to get back?",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "She's going to be thirsty?",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I'm sleeping!",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "DEAN",
+      "quote": "We're hungry! We're going to eat you.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Don't laugh. Come on, don't laugh!",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "What happened to the flute?",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "C'mon, eat, you can't be late today.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "I don't like it...",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Here... we can make it taste better.",
+      "block": 13
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "This is how a leopard eats.",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Lepers don't use spoons.",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "How old are you?",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Five.",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Okay, eat five bites.",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "We gotta get a dishwasher...",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I'll do it. Come on let me do it.",
+      "block": 20
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Frankie! We're leaving in 15. Eat!",
+      "block": 21
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Alright...",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "You be good today for Miss Alex, okay?",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Love you.",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Love you.",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "I love you.",
+      "block": 26
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "...Love you.",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Put your seat belt on.",
+      "block": 28
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "C'mon. What's the big deal?",
+      "block": 29
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Watch...",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "DEAN",
+      "quote": "Slow that piece of shit down!",
+      "block": 31
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEINBERG",
+      "quote": "There you are.",
+      "block": 32
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Sorry...I'm almost done.",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEINBERG",
+      "quote": "You got a second? Did you get a chance to\n           talk it over with your family yet?",
+      "block": 34
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Yeah... I'm going to.",
+      "block": 35
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEINBERG",
+      "quote": "I don't have to tell you, it's a huge\n           opportunity...",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I know I know. I should know for sure by\n           Monday.",
+      "block": 37
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEINBERG",
+      "quote": "All right, Monday's our day. I want the A\n           team up there with me. Talk it over.",
+      "block": 38
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I will.",
+      "block": 39
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHARLEY",
+      "quote": "Cheer up man. God wants you to be happy.",
+      "block": 40
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "God's a woman and she's pissed off at me.",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DR. FEINBERG (to Cindy)",
+      "quote": "Do you want to take over from here?",
+      "block": 42
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "DR. FEINBERG",
+      "quote": "Easy.",
+      "block": 43
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "DR. FEINBERG",
+      "quote": "Very good, Cindy. You're in good hands.\n           Cindy is one of our favorites.",
+      "block": 44
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Do you want to know the sex?",
+      "block": 45
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Oh no...",
+      "block": 46
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Didn't think you were gonna make it.",
+      "block": 47
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Did I miss her?",
+      "block": 48
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Almost. Her class is coming up.",
+      "block": 49
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "You have a good day?",
+      "block": 50
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "It was alright... Busy.",
+      "block": 51
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Anything good happen?",
+      "block": 52
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Is something wrong?",
+      "block": 53
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Why don't you tell me?",
+      "block": 54
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Why do you gotta make me beg? I know\n           there's something wrong. It's gonna come\n           out eventually. Just tell me.",
+      "block": 55
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I found Megan.",
+      "block": 56
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "That's great, where?",
+      "block": 57
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Where?",
+      "block": 58
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Over on Urbandale... near Spur.",
+      "block": 59
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I told you you gotta close that fucking\n           gate.",
+      "block": 60
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "I'm sorry. It's not your fault.",
+      "block": 61
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "You were great.",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Did you find Megan?",
+      "block": 63
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "No. But... I was thinking... Maybe she\n           got a job or something... You know? So\n           she could make some money and buy some\n           food. Or maybe she moved out to Hollywood\n           to become a movie dog!",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Yeah!",
+      "block": 65
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Pa!",
+      "block": 66
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Aren't you coming up?",
+      "block": 67
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "What? I can't smoke around his oxygen.",
+      "block": 68
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY",
+      "quote": "Wait...! OK...one, two, three GO!",
+      "block": 69
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Cover his mouth and hold his nose.",
+      "block": 70
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "That's my girl. Gimme a squeezer.",
+      "block": 71
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY",
+      "quote": "It got you! Go right! OTHER RIGHT!",
+      "block": 72
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Come on silly. Let's go in and get dry.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "I don't wanna take off my costume!",
+      "block": 74
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "You don't have to. Let's just go in.",
+      "block": 75
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Turn around.",
+      "block": 76
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Gonna happen to you someday too.",
+      "block": 77
+    },
+    {
+      "speaker": "p9",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Box up everything on the first floor.",
+      "block": 78
+    },
+    {
+      "speaker": "p9",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Toss everything else.",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's fucking pee!",
+      "block": 80
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How could you live like this?",
+      "block": 81
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How we s'posed to fit all this in here?",
+      "block": 82
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Look how handsome he was.",
+      "block": 83
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "What are you fucking queer?",
+      "block": 84
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Finish up, we gotta 2 hour drive back.",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Wait up. We gotta do this right...",
+      "block": 86
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Boss says we gotta go. We gotta go.",
+      "block": 87
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are we going to tell her?",
+      "block": 88
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She would have wanted to say goodbye.",
+      "block": 89
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You remember where we put...",
+      "block": 90
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Here! Let's get the fuck out of here.",
+      "block": 91
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are you doing?",
+      "block": 92
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "You're crazy.",
+      "block": 93
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Come on let's go get drunk.",
+      "block": 94
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Pack our bags. We're going to the moon!",
+      "block": 95
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is that Cindy Heller?",
+      "block": 96
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bobby Ontario?",
+      "block": 97
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROFESSOR (O.S.)",
+      "quote": "...Now you're both stuck.",
+      "block": 98
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOBBY (BREATHLESS)",
+      "quote": "Shit.",
+      "block": 99
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY (REALIZING)",
+      "quote": "Shit!",
+      "block": 100
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOBBY",
+      "quote": "I couldn't help it.",
+      "block": 101
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOBBY (CONT'D)",
+      "quote": "I couldn't help it... You felt too good.",
+      "block": 102
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOBBY (calls out) (cont'd)",
+      "quote": "Don't trip. It'll be OK...OK?",
+      "block": 103
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOBBY",
+      "quote": "It's your fault. You felt too good.",
+      "block": 104
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Give em!",
+      "block": 105
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOBBY",
+      "quote": "Say you're sorry!",
+      "block": 106
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CINDY",
+      "quote": "Take a deep whiff, you fucking douchebag!",
+      "block": 107
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "ally",
+      "cue": "BOBBY",
+      "quote": "I was just joking! God!",
+      "block": 108
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "GRAMMA",
+      "quote": "What is it?",
+      "block": 109
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "It looks like you have a new neighbor.",
+      "block": 110
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "GRAMMA",
+      "quote": "Cindy. Have you got a cigarette!",
+      "block": 111
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Okay, shhh. But you gotta be quiet.",
+      "block": 112
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (O.S.)",
+      "quote": "Boss says we gotta go. We gotta go.",
+      "block": 113
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (LOOKS DOWN AT HIS MONEY)",
+      "quote": "I didn't just steal that.",
+      "block": 114
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "No.",
+      "block": 115
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Like what?",
+      "block": 116
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Are you trying to pick up on me?",
+      "block": 117
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Maybe...",
+      "block": 118
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "SANED (O.S.)",
+      "quote": "Pack it up Periera. Bus is leaving.",
+      "block": 119
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Can I give you my number or something.",
+      "block": 120
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Wow. Where are we?",
+      "block": 121
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (yells out)",
+      "quote": "I could piss harder than this!",
+      "block": 122
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Cynthia!",
+      "block": 123
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Now watch.",
+      "block": 124
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "See. I tol' ya. It's falling out!",
+      "block": 125
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Oooooooooh shiiiiiiit!",
+      "block": 126
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Dean.",
+      "block": 127
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY (O.S.)",
+      "quote": "Lemme talk to the little one.",
+      "block": 128
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "How much?",
+      "block": 129
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "...Well, I love you more. Sleep tight.",
+      "block": 130
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "What are you doing?",
+      "block": 131
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY (CONT'D)",
+      "quote": "What are you doing?",
+      "block": 132
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "What does it look like I'm doing?",
+      "block": 133
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "What does it look like I'm doing?",
+      "block": 134
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Do you like the place?",
+      "block": 135
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "It's fine.",
+      "block": 136
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I'm gonna go order dinner now.",
+      "block": 137
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Fine!",
+      "block": 138
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Any special requests?",
+      "block": 139
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Close the door!",
+      "block": 140
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "What do you remember?",
+      "block": 141
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Everything.",
+      "block": 142
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "I wasn't done.",
+      "block": 143
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Okay.",
+      "block": 144
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY (CONT'D)",
+      "quote": "Give me the soap.",
+      "block": 145
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY (CONT'D)",
+      "quote": "Turn around.",
+      "block": 146
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Getting thinner, isn't it?",
+      "block": 147
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Your hair is not falling out.",
+      "block": 148
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY (CONT'D)",
+      "quote": "You're crazy you know...",
+      "block": 149
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I know. I love you.",
+      "block": 150
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I'll do it.",
+      "block": 151
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "No. Go order dinner. I'm hungry.",
+      "block": 152
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Wait, I didn't wash your hair...",
+      "block": 153
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "We have neighbors.",
+      "block": 154
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY (CONT'D)",
+      "quote": "Why don't you put some music on Dean?",
+      "block": 155
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "Thanks.",
+      "block": 156
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (YELLS) (cont'd)",
+      "quote": "Coming!",
+      "block": 157
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "opp",
+      "cue": "BOBBY",
+      "quote": "Hasn't anyone ever been nice to you?",
+      "block": 158
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "ally",
+      "cue": "BOBBY (CONT'D)",
+      "quote": "Don't make me give up on you...",
+      "block": 159
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Anyone call for me?",
+      "block": 160
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There!",
+      "block": 161
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I used to love these things.",
+      "block": 162
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh God... I hate these things.",
+      "block": 163
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Push me.",
+      "block": 164
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get on!",
+      "block": 165
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What happened, tough guy?",
+      "block": 166
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Make it stop.",
+      "block": 167
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You gotta puke... it's the only way.",
+      "block": 168
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm still spinning.",
+      "block": 169
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Me too.",
+      "block": 170
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah. We're flying.",
+      "block": 171
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "To honesty...",
+      "block": 172
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hey! Wait up.",
+      "block": 173
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We're toasting tonight?",
+      "block": 174
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Happy belated anniversary.",
+      "block": 175
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How is it?",
+      "block": 176
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Good. How did Frankie sound?",
+      "block": 177
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Great. She's the best.",
+      "block": 178
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She didn't sound sad?",
+      "block": 179
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Daddy's little girl.",
+      "block": 180
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She's not mine. I'm hers.",
+      "block": 181
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's beautiful.",
+      "block": 182
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's the choice I made when she was born.",
+      "block": 183
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why don't you do something...",
+      "block": 184
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Like what?",
+      "block": 185
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What am I supposed to want to do?",
+      "block": 186
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I just wanna be with you.",
+      "block": 187
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Like right before the bear eats the man?",
+      "block": 188
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Whatchu thinking about?",
+      "block": 189
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How different we are. You and me.",
+      "block": 190
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Different?",
+      "block": 191
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's a good thing.",
+      "block": 192
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I think my glass has a hole in it.",
+      "block": 193
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's wrong with that?",
+      "block": 194
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's fat.",
+      "block": 195
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's the flavor. Eat it.",
+      "block": 196
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't want to. You eat it.",
+      "block": 197
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's going straight to your tits.",
+      "block": 198
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My tits? I got tits?",
+      "block": 199
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I could still kick yer ass.",
+      "block": 200
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "A dime and you're on.",
+      "block": 201
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Ready?",
+      "block": 202
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "I'm always ready, baby.",
+      "block": 203
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "On the count of three... One... Two...",
+      "block": 204
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "THREE!",
+      "block": 205
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Come on. Go! Start.",
+      "block": 206
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Oh fuck.",
+      "block": 207
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I'm alright.",
+      "block": 208
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Hold still.",
+      "block": 209
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Ow ow ow.",
+      "block": 210
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Does it hurt?",
+      "block": 211
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "It stings a little.",
+      "block": 212
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "No, no... Put me down. It's okay...",
+      "block": 213
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Wait wait wait.",
+      "block": 214
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I'm spinning.",
+      "block": 215
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I gotta take a piss. Don't fall asleep.",
+      "block": 216
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "What are you doing in there? ...Dean?!",
+      "block": 217
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Are you all right? Dean...",
+      "block": 218
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I fell over.",
+      "block": 219
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Ew. Come on, get up.",
+      "block": 220
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "What?",
+      "block": 221
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "DEAN",
+      "quote": "Not being retarded.",
+      "block": 222
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Dean... Come on, it's time for bed.",
+      "block": 223
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "DEAN",
+      "quote": "No I want to make you laugh.",
+      "block": 224
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Hello...",
+      "block": 225
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "You're drunk.",
+      "block": 226
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "No, I'm just still in love with you.",
+      "block": 227
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CINDY",
+      "quote": "No... Dean... Wait a second.",
+      "block": 228
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "DEAN",
+      "quote": "What!? I can't have sex with my wife!?",
+      "block": 229
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CINDY",
+      "quote": "Stop... stop... stop...",
+      "block": 230
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I'm sorry...I'm sorry...I'm sorry...",
+      "block": 231
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Are my hands cold?",
+      "block": 232
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "Yes.",
+      "block": 233
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "You wanna go somewhere.",
+      "block": 234
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "Sure.",
+      "block": 235
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Where can we go?",
+      "block": 236
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY (WHISPERS)",
+      "quote": "Is your roommate awake?",
+      "block": 237
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN (WHISPERS)",
+      "quote": "I don't know. Let me go check.",
+      "block": 238
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I don't know.",
+      "block": 239
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN (WHISPERS) (cont'd)",
+      "quote": "He's just watching TV.",
+      "block": 240
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY (WHISPERS)",
+      "quote": "Do you think he's gonna come out?",
+      "block": 241
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN (WHISPERS)(cont'd)",
+      "quote": "It's still dry.",
+      "block": 242
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "You think he's gonna go to sleep now?",
+      "block": 243
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Just a second...",
+      "block": 244
+    },
+    {
+      "speaker": "p3",
+      "to": "p10",
+      "stance": "opp",
+      "cue": "CINDY",
+      "quote": "Give it back!",
+      "block": 245
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Are you okay?",
+      "block": 246
+    },
+    {
+      "speaker": "p13",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Are you okay?",
+      "block": 247
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS (O.S.)",
+      "quote": "See you later, Elvis!",
+      "block": 248
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Is it mine?",
+      "block": 249
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I... I don't know... It might be...",
+      "block": 250
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "DEAN",
+      "quote": "You let that asshole knock you up?",
+      "block": 251
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "...I'm sorry...I'm sorry...",
+      "block": 252
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "When'd this happen?",
+      "block": 253
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Before us.",
+      "block": 254
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "What do you want to do?",
+      "block": 255
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "We'll keep it. We'll take care of it.",
+      "block": 256
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "It's not the right time.",
+      "block": 257
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Do you want to take care of it?",
+      "block": 258
+    },
+    {
+      "speaker": "p13",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "DOCTOR",
+      "quote": "You can put your clothes on the chair.",
+      "block": 259
+    },
+    {
+      "speaker": "p13",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "How are you doing?",
+      "block": 260
+    },
+    {
+      "speaker": "p3",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Okay...",
+      "block": 261
+    },
+    {
+      "speaker": "p3",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Yeah.",
+      "block": 262
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You want some of this?",
+      "block": 263
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hey faggot!",
+      "block": 264
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is your name Dean?",
+      "block": 265
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who's askin'?",
+      "block": 266
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Think I'm dumb? Think I'm that dumb?",
+      "block": 267
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I think you're a fucking idiot.",
+      "block": 268
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Fucking faggot!",
+      "block": 269
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Stay away from her!",
+      "block": 270
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Never.",
+      "block": 271
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Dean... Telephone.",
+      "block": 272
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello?",
+      "block": 273
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Maria?",
+      "block": 274
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Right this way.",
+      "block": 275
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Have a seat on the table, Mrs. Guevara.",
+      "block": 276
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you speak English? Hablas Ingles?",
+      "block": 277
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Small.",
+      "block": 278
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Poquito?",
+      "block": 279
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Si.",
+      "block": 280
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yo tabien. De donde eres tu?",
+      "block": 281
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "El Salvador.",
+      "block": 282
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So...Tu famalia esta aqui? Here?",
+      "block": 283
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No no.",
+      "block": 284
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "They're in El Salvador?",
+      "block": 285
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Uh...Sola...Alone.",
+      "block": 286
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Si. Alone.",
+      "block": 287
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "But hopefully not lonely.",
+      "block": 288
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Si Si.",
+      "block": 289
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Can you drive?",
+      "block": 290
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Yeah. Let's go.",
+      "block": 291
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "No, you go. Take the car home.",
+      "block": 292
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Who is it?",
+      "block": 293
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Wait a second...",
+      "block": 294
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEINBERG",
+      "quote": "What the hell is going on!?",
+      "block": 295
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "FEINBERG",
+      "quote": "You're done. Leave.",
+      "block": 296
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Get up.",
+      "block": 297
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CINDY",
+      "quote": "You son of a bitch!",
+      "block": 298
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Give me the keys.",
+      "block": 299
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "CINDY",
+      "quote": "I want a divorce!",
+      "block": 300
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I know!",
+      "block": 301
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Oh God.",
+      "block": 302
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "I stole these for you.",
+      "block": 303
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Are you okay?",
+      "block": 304
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "JERRY",
+      "quote": "Tell him to take off his shoes.",
+      "block": 305
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Does that hurt.",
+      "block": 306
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "No. It feels good. Keep doing it.",
+      "block": 307
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Maybe I should go.",
+      "block": 308
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Good.",
+      "block": 309
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Okay.",
+      "block": 310
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "That motherfucker.",
+      "block": 311
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "DEAN",
+      "quote": "I love you.",
+      "block": 312
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CINDY",
+      "quote": "I love you too.",
+      "block": 313
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Really?",
+      "block": 314
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Yeah.",
+      "block": 315
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "They never come in here.",
+      "block": 316
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Daddy! Daddy! Mommy!",
+      "block": 317
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Who had candy for breakfast?",
+      "block": 318
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Hey sweetheart.",
+      "block": 319
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "How was Frankie?",
+      "block": 320
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY",
+      "quote": "She was good. Are you OK?",
+      "block": 321
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN (CONT'D)",
+      "quote": "Do you want to get out of my way.",
+      "block": 322
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Keep an eye on Francis.",
+      "block": 323
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "I am thinking about her.",
+      "block": 324
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "...Cynthia...Cynthia...",
+      "block": 325
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE (CONT'D)",
+      "quote": "Why you crying?",
+      "block": 326
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEAN",
+      "quote": "Thank you...",
+      "block": 327
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Daddy!",
+      "block": 328
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKIE",
+      "quote": "Daddy!",
+      "block": 329
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CINDY",
+      "quote": "Let her go, Dad.",
+      "block": 330
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JUSTICE",
+      "quote": "... you may now kiss the bride.",
+      "block": 331
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 15,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 15
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p2",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p3",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p3",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 131,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 8,
+          "ally": 7,
+          "neu": 116
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p8",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 1,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p17",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}
