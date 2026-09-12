@@ -1,0 +1,256 @@
+{
+  "entity": "f_the_way_back",
+  "source": "data-seed/scripts/f_the_way_back.txt",
+  "scope": "the whole script, machine-extracted (19 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SHEPHERD",
+      "quote": "Lhasa LHA-SA!",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SHEPHERD (CONT'D)",
+      "quote": "IN-DI-A!",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH",
+      "quote": "And food?",
+      "block": 3
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JANUSZ",
+      "quote": "Why can't we go now?",
+      "block": 4
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "JANUSZ (TO SMITH)",
+      "quote": "That's three months.",
+      "block": 5
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZORAN",
+      "quote": "Well, we can't cross in Winter.",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JANUSZ",
+      "quote": "He said it was 'difficult'.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH",
+      "quote": "I'm going to Lhasa.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH",
+      "quote": "Zoran?",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH (CONT'D)",
+      "quote": "We escaped. We made it.",
+      "block": 10
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZORAN",
+      "quote": "He's right. I just realized it.",
+      "block": 11
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOSS",
+      "quote": "Realized what?",
+      "block": 12
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOSS",
+      "quote": "Not all of us.",
+      "block": 13
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZORAN",
+      "quote": "No. Not all of us.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH",
+      "quote": "'Home'?",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "Z ORAN",
+      "quote": "Build metros?",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH",
+      "quote": "Might drift for a while.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZORAN (LAUGHS)",
+      "quote": "Haven't you had enough of that?",
+      "block": 18
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZORAN",
+      "quote": "Then re-build your church?",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOSS",
+      "quote": "I will die fighting.",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMITH",
+      "quote": "And you, Janusz?",
+      "block": 21
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "no signed edges"
+  }
+}

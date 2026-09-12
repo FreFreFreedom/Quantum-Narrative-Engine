@@ -1,0 +1,222 @@
+{
+  "entity": "f_dances_with_wolves",
+  "source": "data-seed/scripts/f_dances_with_wolves.txt",
+  "scope": "the whole script, machine-extracted (26 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SURGEON 1 (O.S.)",
+      "quote": "Is this the last one?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "PEPPER",
+      "quote": "Lieutenant... izat you?",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "PEPPER",
+      "quote": "What're you doing here lieutenant?",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "PEPPER",
+      "quote": "You went to hospital?",
+      "block": 4
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAY",
+      "quote": "Tucker!",
+      "block": 5
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "AIDE",
+      "quote": "What is it sir?",
+      "block": 6
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "TIDE",
+      "quote": "Looks like a suicide.",
+      "block": 7
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TEN BEARS",
+      "quote": "You are making a pipe?",
+      "block": 8
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "DANCES WITH WOLVES",
+      "quote": "Yes?",
+      "block": 9
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANCES WITH WOLVES",
+      "quote": "I'm told it smokes well.",
+      "block": 10
+    },
+    {
+      "speaker": "p8",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "WIND IN HIS HAIR",
+      "quote": "Dances With Wolves...",
+      "block": 11
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIND IN HIS HAIR",
+      "quote": "I am Wind In His Hair...",
+      "block": 12
+    },
+    {
+      "speaker": "p8",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "WIND IN HIS HAIR",
+      "quote": "Can you not see that I am your friend?",
+      "block": 13
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 1,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8"
+      ],
+      []
+    ]
+  }
+}
