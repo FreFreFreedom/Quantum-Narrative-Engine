@@ -63,6 +63,14 @@ export const TRAFFIC_LANES = [
 ];
 export const WINDOW_CHARS = 12000;
 export const WINDOW_PAUSE_MS = 15000;
+
+// How long to wait after a window, by whichever lane actually answered it. These are not
+// preferences, they are each lane's own published ceiling divided into the ~7.3k tokens one
+// window costs: Cerebras allows 30k tokens a minute (so four windows fit), Groq only 8k (so
+// barely one). A single fixed pause cannot serve both — 15s is right for Cerebras and gets
+// every remaining window of a film refused on Groq, which is exactly what happened the
+// night Cerebras's daily allowance ran out and the batch sat still until morning.
+export const LANE_PAUSE_MS = { cerebras: 15_000, groq: 62_000, opencode: 20_000 };
 const MAX_TOKENS = 4000;
 
 const STANCES = new Set(['opp', 'ally', 'neu']);
@@ -185,7 +193,9 @@ export async function extractTraffic(sourceText, {
   gapThreshold,
   callModel = null,
   onProgress = null,
-  pauseMs = WINDOW_PAUSE_MS,
+  // null means "pace to whichever lane answered" (see LANE_PAUSE_MS); a caller may still
+  // pass a number to pin one pace, which the selftest does to keep itself instant.
+  pauseMs = null,
 } = {}) {
   const text = String(sourceText || '').replace(/\r\n/g, '\n');
   if (!text.trim()) return { error: 'empty_source' };
@@ -195,6 +205,8 @@ export async function extractTraffic(sourceText, {
   // of the film for the sake of a wait shorter than the pause between windows anyway — so a
   // window that fails on both lanes sleeps out the minute and asks once more. A second
   // failure is taken at face value and the window is dropped, counted, and reported.
+  // Which lane answered the last window, so the caller can wait that lane's own pace.
+  let lastLane = null;
   const ask = callModel || (async (prompt) => {
     for (let round = 0; round < 2; round++) {
       if (round) await new Promise((r) => setTimeout(r, 65_000));
@@ -210,9 +222,10 @@ export async function extractTraffic(sourceText, {
           // Both read as "the model found nothing here" rather than as too small a budget.
           allowLongOutput: true,
         });
-        if (out?.text) return out.text;
+        if (out?.text) { lastLane = lane.provider; return out.text; }
       }
     }
+    lastLane = null;
     return '';
   });
 
@@ -230,7 +243,11 @@ export async function extractTraffic(sourceText, {
     allTurns.push(...kept);
     for (const k of Object.keys(dropped)) dropped[k].push(...d[k]);
     if (onProgress) onProgress({ window: i + 1, of: windows.length, kept: kept.length, proposed: candidates.length });
-    if (pauseMs && i < windows.length - 1) await new Promise((r) => setTimeout(r, pauseMs));
+    // Paced to whichever lane just answered, not to a single global guess. A window nobody
+    // answered waits the slowest lane's pace: the reason it failed is almost always a
+    // per-minute ceiling somewhere, and hurrying back is what keeps it shut.
+    const wait = pauseMs ?? (lastLane ? (LANE_PAUSE_MS[lastLane] ?? WINDOW_PAUSE_MS) : Math.max(...Object.values(LANE_PAUSE_MS)));
+    if (wait && i < windows.length - 1) await new Promise((r) => setTimeout(r, wait));
   }
 
   allTurns.sort((a, b) => a.block - b.block);
