@@ -1,0 +1,1039 @@
+{
+  "entity": "f_we_need_to_talk_about_kevin",
+  "source": "data-seed/scripts/f_we_need_to_talk_about_kevin.txt",
+  "scope": "the whole script, machine-extracted (26 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bedrooms... bearable, plumbing...\n          practically non-existent.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So what you up to?",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not much? Just had a shower...",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "huh... well half a shower.",
+      "block": 4
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So you’re naked?",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mmmmm...You know what... I’ve got\n          great tits.",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Are you doing it now?..",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Maybe..",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well do it faster.",
+      "block": 9
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You want me to do it faster?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This is stupid... come home.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You know I can’t... it’s only a\n          couple more weeks...",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Turn it up...turn it up!",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Franklin?",
+      "block": 14
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sorry babe everything’s delayed\n          ...Can’t wait to see you...(beep)\n          And don’t bother picking anything\n          up...I’m gonna cook you a..",
+      "block": 15
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Jesus Franklin!",
+      "block": 16
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Aw crap!",
+      "block": 17
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why the hell didn’t you call!",
+      "block": 18
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Our van broke down, twice. We\n          weren’t near a phone...",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You could have found one if you\n          tried...",
+      "block": 20
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I did try.",
+      "block": 21
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Jesus Eva, I’m surprised..",
+      "block": 22
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...I mean my wife coming home is\n          hardly a special occasion these\n          days...",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "OK deal.",
+      "block": 24
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "FRANKLIN",
+      "quote": "Promise.",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Aha!",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Hey!",
+      "block": 27
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "DR RHIENSTEIN",
+      "quote": "Eva, you’re resisting.",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "It’s killing me...",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "He’s beautiful.",
+      "block": 30
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Can I?",
+      "block": 31
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Kevin?...",
+      "block": 32
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "FRANKLIN",
+      "quote": "Kevin...",
+      "block": 33
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "FRANKLIN",
+      "quote": "Katchadourian.",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Really?...",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "No?",
+      "block": 36
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "FRANKLIN",
+      "quote": "How’s my little man, huh?",
+      "block": 37
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Any better on the feeding?",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "I hate to do this to you but...",
+      "block": 39
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN (O.S.)",
+      "quote": "I don’t like dat.",
+      "block": 40
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I don’t like dat.",
+      "block": 41
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I don’t like dat.",
+      "block": 42
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "What did you say?",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin honey, what don’t you like?",
+      "block": 44
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I don’t like dat. Turn it ov.",
+      "block": 45
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Jeez, a kid with good taste.",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Look Kevin...Flo-wer...Flow-er.",
+      "block": 47
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin Look at Mommy, look. Say...",
+      "block": 48
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Track-tor. Track-tor.",
+      "block": 49
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin, honey. Can you say\n          Mommy?",
+      "block": 50
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "No.",
+      "block": 51
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "I don like DA....",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "What do you like, Kevin?",
+      "block": 53
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Two months?...He’s only a baby!",
+      "block": 54
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "He’s almost three now.",
+      "block": 55
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "And who’s gonna look after him?",
+      "block": 56
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Why don’t they just nuke’em dad?\n          That’d teach the Raquis who’s boss!",
+      "block": 57
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Hey Kevin... like to meet your\n          little sister?",
+      "block": 58
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Why should I meet it? It’s coming\n          home with us, isn’t it. That means\n          I’ll meet it everyday.",
+      "block": 59
+    },
+    {
+      "speaker": "p6",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "C’mon Kev, mom’s got to get\n          dressed, lets go find some snacks\n          huh?",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Son of a....",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Jesus! What the....",
+      "block": 62
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Me and Kewin where playing\n          kidnapping!",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin!",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin!",
+      "block": 65
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Dry dirt...Mommy... dry dirt.",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Oh come on Celie, it’s only flour.",
+      "block": 67
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "All gone?",
+      "block": 68
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "All gone... can you lay the table\n            for me now honey?",
+      "block": 69
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Kewin! Your my friend!",
+      "block": 70
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Beat it Celie, go get me a soda.",
+      "block": 71
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Not that one you idiot, get me a\n            Dr. Pepper...",
+      "block": 72
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Here you are!",
+      "block": 73
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Thanks Celie... know who else is\n          thirsty?",
+      "block": 74
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "The VACUUM MONSTER!",
+      "block": 75
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Momee! Momee!",
+      "block": 76
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "For God’s sake Kevin will you cut\n          it out!",
+      "block": 77
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Hey troops!",
+      "block": 78
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Hi Dad!...How was work today?...\n          Did you take any pictures of cool\n          stuff! Any more loaded people’s\n          houses?",
+      "block": 79
+    },
+    {
+      "speaker": "p9",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Daddy, daddy, wanna see my picture?",
+      "block": 80
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "That’s nice hon.",
+      "block": 81
+    },
+    {
+      "speaker": "p6",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Hey Kev... check these out, came\n          out beautifully....",
+      "block": 82
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Gee Dad! If our bathroom’s in a\n          toothpaste ad, does that make us\n          famous.",
+      "block": 83
+    },
+    {
+      "speaker": "p6",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Just a little famous.",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "To be really famous in this\n          country, you’ve got to kill\n          somebody.",
+      "block": 85
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CELIA",
+      "quote": "Mommee?",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "What’s the matter honey?",
+      "block": 87
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRANKLIN",
+      "quote": "Jesus...you have to stop coddling\n          her.",
+      "block": 88
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin, how many times have I told\n          you to leave Celie’s stuff alone...",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin?",
+      "block": 90
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin?",
+      "block": 91
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Kevin?",
+      "block": 92
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Can you get me the spaceman ones, I\n          like the monkey in the rocket.",
+      "block": 93
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Oh sure...thanks Soweto.",
+      "block": 94
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Christ, Stairway...that’ll help.",
+      "block": 95
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "POLICE OFFICER(O.S.)",
+      "quote": "Mr Kachadourian?",
+      "block": 96
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "What about the bricks?",
+      "block": 97
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Yeah, that sure sounds like Kevin.",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "You apologized?",
+      "block": 99
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KEVIN",
+      "quote": "Nuh-uh.",
+      "block": 100
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Something came for you.",
+      "block": 101
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KEVIN (O.S.)",
+      "quote": "Gross...",
+      "block": 102
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "EVA",
+      "quote": "Franklin you son of a bitch!",
+      "block": 103
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "RECEPTIONIST.",
+      "quote": "You’ll have to wait.",
+      "block": 104
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "EVA",
+      "quote": "Bury it.",
+      "block": 105
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "ally",
+      "cue": "EVA",
+      "quote": "I’m sorry too Kevin. I’m sorry too.",
+      "block": 106
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 20,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 18
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p11",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p8",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 1,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p10",
+        "p11",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p1"
+      ]
+    ]
+  }
+}
