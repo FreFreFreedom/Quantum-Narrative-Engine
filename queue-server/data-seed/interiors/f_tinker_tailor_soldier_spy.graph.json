@@ -1,0 +1,2991 @@
+{
+  "entity": "f_tinker_tailor_soldier_spy",
+  "source": "data-seed/scripts/f_tinker_tailor_soldier_spy.txt",
+  "scope": "the whole script, machine-extracted (28 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGYAR",
+      "quote": "And porkolts. You know porkolts?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "JIM PRIDEAUX",
+      "quote": "Yes, I've had it.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "JIM PRIDEAUX",
+      "quote": "Why's that?",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGYAR",
+      "quote": "All the pigs have gone to Moscow.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "MAGYAR",
+      "quote": "I'll take you to him. Not eating?",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "JIM PRIDEAUX",
+      "quote": "Would you excuse me a moment?",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "KGB MAN",
+      "quote": "No firing!",
+      "block": 7
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERCY ALLELINE",
+      "quote": "I wish I could have done more,",
+      "block": 8
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERCY ALLELINE",
+      "quote": "Control.",
+      "block": 9
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "CONTROL",
+      "quote": "You did all you could, Percy.",
+      "block": 10
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONTROL",
+      "quote": "Well, a man should know",
+      "block": 11
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONTROL",
+      "quote": "when to leave the party.",
+      "block": 12
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "What about Smiley?",
+      "block": 13
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "BILL HAYDON",
+      "quote": "You little prick Esterhase.",
+      "block": 14
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Hello, Peter.",
+      "block": 15
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "Have I time to change?",
+      "block": 16
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Are we going far?",
+      "block": 17
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "LACON",
+      "quote": "How's your mother?",
+      "block": 18
+    },
+    {
+      "speaker": "p10",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Very well.",
+      "block": 19
+    },
+    {
+      "speaker": "p10",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Is this where he got out?",
+      "block": 20
+    },
+    {
+      "speaker": "p9",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "LACON",
+      "quote": "Why is he on the wanted list?",
+      "block": 21
+    },
+    {
+      "speaker": "p8",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Very well. (Beat) Very bonny...",
+      "block": 22
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "LACON",
+      "quote": "Do you know this man Tarr?",
+      "block": 23
+    },
+    {
+      "speaker": "p8",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "I am retired, Oliver.",
+      "block": 24
+    },
+    {
+      "speaker": "p8",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "No.",
+      "block": 25
+    },
+    {
+      "speaker": "p8",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What did you say to him?",
+      "block": 26
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "No, we never did.",
+      "block": 27
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL (CONT'D)",
+      "quote": "Best informant I ever had.",
+      "block": 28
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUILLAM",
+      "quote": "We should...",
+      "block": 29
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL (CONT'D)",
+      "quote": "K. Menzies...",
+      "block": 30
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "How long was H. Staunton a tenant?",
+      "block": 31
+    },
+    {
+      "speaker": "p6",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "Help you with something Bill?",
+      "block": 32
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BILL HAYDON",
+      "quote": "Looking for his Majesty.",
+      "block": 33
+    },
+    {
+      "speaker": "p6",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "He's walking the battlements.",
+      "block": 34
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BILL HAYDON",
+      "quote": "Much obliged.",
+      "block": 35
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALLELINE",
+      "quote": "Roy.",
+      "block": 36
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Thank you. Anywhere will do.",
+      "block": 37
+    },
+    {
+      "speaker": "p14",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "Heard you had an accident.",
+      "block": 38
+    },
+    {
+      "speaker": "p14",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "Where are you off to?",
+      "block": 39
+    },
+    {
+      "speaker": "p10",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Lunch.",
+      "block": 40
+    },
+    {
+      "speaker": "p14",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "Want some company?",
+      "block": 41
+    },
+    {
+      "speaker": "p10",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Smothered by the Mothers.",
+      "block": 42
+    },
+    {
+      "speaker": "p10",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "What does?",
+      "block": 43
+    },
+    {
+      "speaker": "p14",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "Loyalty.",
+      "block": 44
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "Scrounge a fag?",
+      "block": 45
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "ally",
+      "cue": "PETER GUILLAM",
+      "quote": "Here.",
+      "block": 46
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "What do you think of Datsuns?",
+      "block": 47
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "What?",
+      "block": 48
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "What are you driving?",
+      "block": 49
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "ally",
+      "cue": "PETER GUILLAM",
+      "quote": "Citroen.",
+      "block": 50
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROY BLAND",
+      "quote": "French? Ooh la la...",
+      "block": 51
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "ROY BLAND",
+      "quote": "Drink up and I'll drop you back.\n                You've probably got some girl\n                waiting...",
+      "block": 52
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Return to Oxford please.",
+      "block": 53
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "(Of the tea)\n               Oh, I brought...",
+      "block": 54
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "(eyeing it hungrily)\n               Not supposed to. Doctor's orders.",
+      "block": 55
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (CONT'D)",
+      "quote": "Wicked, wicked George.",
+      "block": 56
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (CONT'D)",
+      "quote": "I miss it all so much. All my\n               lovely boys.",
+      "block": 57
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (CONT'D)",
+      "quote": "I don't know about you, George\n               but I feel seriously under-\n               fucked.",
+      "block": 58
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (CONT'D)",
+      "quote": "She doesn't deserve you, George.\n               Not one hair on your head, never\n               did...",
+      "block": 59
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "You left the Circus shortly after\n               I retired...",
+      "block": 60
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "I didn't leave. I was dismissed.\n               Chucked out on the rubbish heap.\n               (Beat) Like you.",
+      "block": 61
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "(Ignoring this)\n               Why?",
+      "block": 62
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "\"Lost my sense of proportion.\"\n               That's what that personnel cow\n               said. Wouldn't let go of a bone.",
+      "block": 63
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Which bone?",
+      "block": 64
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "Polyakov.",
+      "block": 65
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Polyakov.",
+      "block": 66
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "Cultural Attach� Polyakov.",
+      "block": 67
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Stationed where?",
+      "block": 68
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "Here. London. Turned up in sixty\n               five. And I had a feeling, as\n               soon as I laid eyes on him. But\n               that little swine Toby Esterhase\n               told me I was seeing Spies under\n               the bed.",
+      "block": 69
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Esterhase said that?",
+      "block": 70
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "He had him graded Persil. Whiter\n               than white. And that was that.",
+      "block": 71
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "But you disagreed?",
+      "block": 72
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "Pretty Polly? Very military\n               bearing for someone who's never\n               supposed to have been in the\n               army. But, he was good. Went to\n               Embassy functions, lectures. I\n               love a man who lives his cover.\n               Never put a foot wrong.",
+      "block": 73
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "(Beat)\n               Never?",
+      "block": 74
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS",
+      "quote": "(As if summoning him)\n               Pretty Polly. Pretty Polly...",
+      "block": 75
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (V.O.)",
+      "quote": "... the busiest culture vulture\n          that Embassy ever had.",
+      "block": 76
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (CONT'D)",
+      "quote": "For years we'd been hearing rumours\n          that Karla was building a private\n          army of his own, outside Moscow\n          Centre. We knew he had agents\n          scattered round the globe. I\n          started spending time with the\n          Moscow gazers combing Soviet\n          bulletins and any material I could\n          get.",
+      "block": 77
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (V.O.) (CONT'D)",
+      "quote": "Late one night in Research, I was\n          trawling through some footage of\n          May Day in Berlin, 1969. I saw\n          something, George.",
+      "block": 78
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONNIE SACHS (V.O.) (CONT'D)",
+      "quote": "I saw it, George.",
+      "block": 79
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILL ROACH",
+      "quote": "No sir.",
+      "block": 80
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL ROACH",
+      "quote": "Nothing sir.",
+      "block": 81
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "BILL ROACH",
+      "quote": "Yes sir.",
+      "block": 82
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Hello, Ricki.",
+      "block": 83
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "You missed a wedge.",
+      "block": 84
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Losing my touch.",
+      "block": 85
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Where've you been, Ricki?",
+      "block": 86
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Who is?",
+      "block": 87
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR (CONT'D)",
+      "quote": "Old habits.",
+      "block": 88
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What do you want Ricki?",
+      "block": 89
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What woman?",
+      "block": 90
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Her name's Irina.",
+      "block": 91
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "TUFTY THESINGER",
+      "quote": "This is going to be a long night.",
+      "block": 92
+    },
+    {
+      "speaker": "p17",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "You baby-sit this one.",
+      "block": 93
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Your bloke's a bit of a bastard.",
+      "block": 94
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Sense what?",
+      "block": 95
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "A secret.",
+      "block": 96
+    },
+    {
+      "speaker": "p19",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "IRINA",
+      "quote": "I know what you are.",
+      "block": 97
+    },
+    {
+      "speaker": "p19",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "IRINA",
+      "quote": "That is the deal. You tell them.",
+      "block": 98
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "She had children in Russia?",
+      "block": 99
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "opp",
+      "cue": "SMILEY",
+      "quote": "But you didn't?",
+      "block": 100
+    },
+    {
+      "speaker": "p19",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "IRINA",
+      "quote": "Promise me you'll be careful. No\n                details to the Circus. Not until\n                we're safe.",
+      "block": 101
+    },
+    {
+      "speaker": "p17",
+      "to": "p19",
+      "stance": "ally",
+      "cue": "RICKI TARR",
+      "quote": "I promise.",
+      "block": 102
+    },
+    {
+      "speaker": "p18",
+      "to": "p17",
+      "stance": "opp",
+      "cue": "TUFTY THESINGER",
+      "quote": "You were supposed to have gone.\n                London stations's been on to me.\n                They want to know what the hell\n                you're doing.",
+      "block": 103
+    },
+    {
+      "speaker": "p17",
+      "to": "p18",
+      "stance": "opp",
+      "cue": "RICKI TARR",
+      "quote": "Fuck off.",
+      "block": 104
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "And what did your message say,\n                Ricki?",
+      "block": 105
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Just that I had a Moscow Centre\n                trained hood wanting to defect.",
+      "block": 106
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What else?",
+      "block": 107
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "I know what I am to the Circus.\n                One of the scalp-hunters. Someone\n                to give the dirty jobs to. I\n                wanted to bring this one in\n                myself.",
+      "block": 108
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "ally",
+      "cue": "SMILEY",
+      "quote": "Yes. I quite see that.",
+      "block": 109
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "I said that she claimed to have\n                information crucial to the well-\n                being of the Circus.",
+      "block": 110
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY (O.S)",
+      "quote": "And what else?",
+      "block": 111
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "That she had information\n                concerning a Double Agent.",
+      "block": 112
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What happened next Ricki?",
+      "block": 113
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "I waited for a reply.",
+      "block": 114
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR (V.O.)",
+      "quote": "I waited hours but that was all\n                they sent. It didn't make sense.\n                Like they were stalling.",
+      "block": 115
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "They put her on a ship. That's\n                all I know. I've done a lot of\n                things Mister Smiley, but... I",
+      "block": 116
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "She wasn't even my type. (Beat)",
+      "block": 117
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Who's going to keep you safe?",
+      "block": 118
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "opp",
+      "cue": "MINISTER",
+      "quote": "Drop the bloody jargon, Lacon.",
+      "block": 119
+    },
+    {
+      "speaker": "p20",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "MINISTER",
+      "quote": "Greedy boy.",
+      "block": 120
+    },
+    {
+      "speaker": "p20",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "MINISTER",
+      "quote": "Do you think we can get it?",
+      "block": 121
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "CONTROL",
+      "quote": "(mock out-rage)\n                Percy?",
+      "block": 122
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "CONTROL",
+      "quote": "Percy. Did you do this?",
+      "block": 123
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "PERCY ALLELINE",
+      "quote": "I followed the recipe.",
+      "block": 124
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERCY ALLELINE",
+      "quote": "(Muttering)\n                For God's sake Mary...",
+      "block": 125
+    },
+    {
+      "speaker": "p8",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "(grateful to get away\n                      from the deb)\n                 I'll go find her.",
+      "block": 126
+    },
+    {
+      "speaker": "p10",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "You look tired.",
+      "block": 127
+    },
+    {
+      "speaker": "p8",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Yes. I didn't sleep well. (Beat)\n                I want you to get something for",
+      "block": 128
+    },
+    {
+      "speaker": "p21",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "BRYANT",
+      "quote": "Mister Guillam? How's the family?",
+      "block": 129
+    },
+    {
+      "speaker": "p21",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "BRYANT (O.S.)",
+      "quote": "We keep asking...",
+      "block": 130
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "You're kidding?",
+      "block": 131
+    },
+    {
+      "speaker": "p22",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "JANITOR PETE",
+      "quote": "New rules.",
+      "block": 132
+    },
+    {
+      "speaker": "p10",
+      "to": "p22",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Mind the jewels.",
+      "block": 133
+    },
+    {
+      "speaker": "p22",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "JANITOR PETE",
+      "quote": "Pen and watch sir.",
+      "block": 134
+    },
+    {
+      "speaker": "p7",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "BILL HAYDON",
+      "quote": "Heard it was quiet down there.",
+      "block": 135
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Thanks...",
+      "block": 136
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "So, chit me.",
+      "block": 137
+    },
+    {
+      "speaker": "p23",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "SAL",
+      "quote": "What you up to this weekend?",
+      "block": 138
+    },
+    {
+      "speaker": "p23",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "SAL",
+      "quote": "I'll bet.",
+      "block": 139
+    },
+    {
+      "speaker": "p23",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "SAL (CONT'D)",
+      "quote": "Corridor D.",
+      "block": 140
+    },
+    {
+      "speaker": "p24",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "JANITOR ALWYN",
+      "quote": "Telephone sir.",
+      "block": 141
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERCY ALLELINE",
+      "quote": "Your man's a defector, Guillam.",
+      "block": 142
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "What for?",
+      "block": 143
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What for?",
+      "block": 144
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "MECHANIC",
+      "quote": "He's waiting for you.",
+      "block": 145
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "The hotel. I have to see George.",
+      "block": 146
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM (O.S.)",
+      "quote": "George?",
+      "block": 147
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "neu",
+      "cue": "FAWN",
+      "quote": "Excuse me, sir.",
+      "block": 148
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "S'right.",
+      "block": 149
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What was the date?",
+      "block": 150
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "What about the money?",
+      "block": 151
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "\"Enquiries to the fifth floor.\"",
+      "block": 152
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Secrecy is a habit.",
+      "block": 153
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "I'm sorry.",
+      "block": 154
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "I met him once. Karla.",
+      "block": 155
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELINDA",
+      "quote": "Stop it! Stop it!",
+      "block": 156
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "KASPAR",
+      "quote": "Keep your bloody hands off her!",
+      "block": 157
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "SCALPHUNTER",
+      "quote": "Christ's sake, don't fight over a\n                bit of skirt!",
+      "block": 158
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "But that's the way it is, George,\n                isn't it? When you're out, you're\n                out. Too much of this stuff.",
+      "block": 159
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (CONT'D)",
+      "quote": "(An old joke between them)\n                Too much wampum not good for\n                braves. How.",
+      "block": 160
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "(Obliging)\n                How. (Beat) I need to talk to you\n                about the night Jim Prideaux was\n                killed, Jerry. You were duty\n                officer, weren't you?",
+      "block": 161
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "Yes. Control asked me to man the\n                phones that night. Said someone was\n                doing a special job for the\n                service. He wanted someone from\n                outside he could trust. If anything\n                came in, I was to tell him and only\n                him.",
+      "block": 162
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (Entering)",
+      "quote": "Been a bit of a panic, sir.",
+      "block": 163
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (CONT'D)",
+      "quote": "From the FO resident clerk... A\n                Hungarian news bulletin, sir.\n                (Reading) British spy, work-name\n                Ellis, travelling with false\n                Hungarian papers, has attempted\n                to kidnap an unnamed Hungarian\n                general in Budapest. He's been\n                shot, other arrests imminent...",
+      "block": 164
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (CONT'D)",
+      "quote": "Can I have a brief, please? Sir?\n                Do you want me to deny it?",
+      "block": 165
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (CONT'D)",
+      "quote": "I have to have a brief sir?",
+      "block": 166
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "Ann? I'm sorry to bother you. Is\n                George back yet?",
+      "block": 167
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "You rang my house?",
+      "block": 168
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "Just on the off chance you were\n                back from Berlin.",
+      "block": 169
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What did you say?",
+      "block": 170
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "Just that there'd been a bit of a\n                crisis. She said you weren't back\n                yet. That was it.",
+      "block": 171
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Go on.",
+      "block": 172
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "All hell broke loose - military\n                yelling about Hungarian tank\n                movements on the border, Lacon\n                and the Minister baying at the\n                door. Thank Christ Bill Haydon\n                turned up when he did.",
+      "block": 173
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL HAYDON",
+      "quote": "Get out.",
+      "block": 174
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL HAYDON (CONT'D)",
+      "quote": "Tell me.",
+      "block": 175
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "I tried to get hold of you...",
+      "block": 176
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL HAYDON",
+      "quote": "I just picked up half a story on\n                the ticker-tape at my club...\n                Tell me.",
+      "block": 177
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "Jim Prideaux's been shot.",
+      "block": 178
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAYDON",
+      "quote": "Get me the Hungarian Embassy.",
+      "block": 179
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (With relief)",
+      "quote": "Yes sir...",
+      "block": 180
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL HAYDON",
+      "quote": "You go and tell your Masters what\n                will happen if one hair on Jim\n                Prideaux's head is damaged...",
+      "block": 181
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL HAYDON (CONT'D)",
+      "quote": "Get Esterhase on the phone. Tell\n                him to pull in the Hungarian\n                agents, anyone we're onto. Tell him\n                to get down to the London School of",
+      "block": 182
+    },
+    {
+      "speaker": "p30",
+      "to": "p31",
+      "stance": "neu",
+      "cue": "JERRY WESTERBY",
+      "quote": "Any more news on him?",
+      "block": 183
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "JERRY WESTERBY (CONT'D)",
+      "quote": "Bill? (Beat) Oh God, is he...?",
+      "block": 184
+    },
+    {
+      "speaker": "p8",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "The Saville.",
+      "block": 185
+    },
+    {
+      "speaker": "p8",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Peter...",
+      "block": 186
+    },
+    {
+      "speaker": "p8",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "It's not him, Peter.",
+      "block": 187
+    },
+    {
+      "speaker": "p10",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Then how did he know?",
+      "block": 188
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "I quite like this.",
+      "block": 189
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN'S VOICE (O.S.)",
+      "quote": "Hello?",
+      "block": 190
+    },
+    {
+      "speaker": "p7",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "BILL HAYDON (O.S.)",
+      "quote": "Good flight?",
+      "block": 191
+    },
+    {
+      "speaker": "p8",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Yes. Pleasant enough.",
+      "block": 192
+    },
+    {
+      "speaker": "p7",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "BILL HAYDON (CONT'D)",
+      "quote": "That's what I'm dropping off.",
+      "block": 193
+    },
+    {
+      "speaker": "p33",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROACH",
+      "quote": "Sir?",
+      "block": 194
+    },
+    {
+      "speaker": "p2",
+      "to": "p33",
+      "stance": "neu",
+      "cue": "JIM PRIDEAUX",
+      "quote": "Come in, Roach.",
+      "block": 195
+    },
+    {
+      "speaker": "p2",
+      "to": "p33",
+      "stance": "neu",
+      "cue": "JIM PRIDEAUX (CONT'D)",
+      "quote": "What is it, Jumbo?",
+      "block": 196
+    },
+    {
+      "speaker": "p33",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROACH",
+      "quote": "Are you going to have to leave?",
+      "block": 197
+    },
+    {
+      "speaker": "p2",
+      "to": "p33",
+      "stance": "ally",
+      "cue": "JIM PRIDEAUX",
+      "quote": "I'll be fine. You get back to bed.",
+      "block": 198
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CONTROL",
+      "quote": "You weren't followed?",
+      "block": 199
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "What information?",
+      "block": 200
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "What else?",
+      "block": 201
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Which means I was...?",
+      "block": 202
+    },
+    {
+      "speaker": "p34",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "You were Beggarman.",
+      "block": 203
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (V.O.)",
+      "quote": "What did you tell them?",
+      "block": 204
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIDEAUX (V.O.)",
+      "quote": "Everything.",
+      "block": 205
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Why?",
+      "block": 206
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What else?",
+      "block": 207
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Did they ask about me at all?",
+      "block": 208
+    },
+    {
+      "speaker": "p34",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "One of them did.",
+      "block": 209
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "What did he say about me?",
+      "block": 210
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIDEAUX (CONT'D)",
+      "quote": "I told him to go to hell.",
+      "block": 211
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "ally",
+      "cue": "SMILEY (Beat, quietly)",
+      "quote": "That was well said.",
+      "block": 212
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "ally",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "Try and put it all behind you, Jim.",
+      "block": 213
+    },
+    {
+      "speaker": "p34",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "He gave me a cigarette.",
+      "block": 214
+    },
+    {
+      "speaker": "p8",
+      "to": "p34",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Jim?",
+      "block": 215
+    },
+    {
+      "speaker": "p34",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "I thought it was my last one.",
+      "block": 216
+    },
+    {
+      "speaker": "p35",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN'S VOICE",
+      "quote": "Do you know this woman?",
+      "block": 217
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIDEAUX",
+      "quote": "I don't know her.",
+      "block": 218
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "IRINA",
+      "quote": "I...",
+      "block": 219
+    },
+    {
+      "speaker": "p35",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN'S VOICE (O.S.)",
+      "quote": "Tell Percy Alleline what we did.",
+      "block": 220
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIDEAUX (V.O.)",
+      "quote": "Do you know who she was?",
+      "block": 221
+    },
+    {
+      "speaker": "p10",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "PETER GUILLAM",
+      "quote": "Who?",
+      "block": 222
+    },
+    {
+      "speaker": "p8",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Toby Esterhase.",
+      "block": 223
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (O.S.)",
+      "quote": "Keep walking please.",
+      "block": 224
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "I want to talk about loyalty",
+      "block": 225
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "Toby. Control recruited you when",
+      "block": 226
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "you were trying to escape from",
+      "block": 227
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "Hungary didn't he? A wanted man.",
+      "block": 228
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "Saved you from a KGB bullet,",
+      "block": 229
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "didn't he? And yet, when the time",
+      "block": 230
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "came, when it came to picking",
+      "block": 231
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "sides between him and Alleline,",
+      "block": 232
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "you didn't hesitate?",
+      "block": 233
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "Understandable perhaps, with your",
+      "block": 234
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "war experience. You've survived",
+      "block": 235
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "this long, I suppose, because of",
+      "block": 236
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "your ability to change sides,",
+      "block": 237
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY (CONT'D)",
+      "quote": "serve any Master?",
+      "block": 238
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "What... what's this about George?",
+      "block": 239
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "Yes. And yes, I delivered them.",
+      "block": 240
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE (V.O.)",
+      "quote": "... but so did Percy...",
+      "block": 241
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "... and Bill...",
+      "block": 242
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "And Roy...",
+      "block": 243
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "Why are we here? Why are we...?",
+      "block": 244
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "Bland!",
+      "block": 245
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "I didn't know. I swear I...",
+      "block": 246
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Are you still a wanted man, Toby?",
+      "block": 247
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOBY ESTERHASE",
+      "quote": "George...!",
+      "block": 248
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "SMILEY",
+      "quote": "You picked the wrong side, Toby.",
+      "block": 249
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TOBY ESTERHASE",
+      "quote": "George, you've got to believe me. I",
+      "block": 250
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TOBY ESTERHASE",
+      "quote": "would never... I'm loyal, George.",
+      "block": 251
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "TOBY ESTERHASE",
+      "quote": "I'm loyal!",
+      "block": 252
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Give me the address. Where do you\n                meet Polyakov?",
+      "block": 253
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS MCCRAIG",
+      "quote": "There's an air duct. Open and\n                all's well. Closed and you're not\n                to enter.",
+      "block": 254
+    },
+    {
+      "speaker": "p8",
+      "to": "p36",
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Where is the mike, Mrs McCraig?",
+      "block": 255
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "And what's the procedure?",
+      "block": 256
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS MCCRAIG",
+      "quote": "Whenever the gentlemen are\n                meeting I record the session. The\n                tapes are sent back to the\n                Circus.",
+      "block": 257
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS MCCRAIG",
+      "quote": "What are they doing? They\n                shouldn't be moving things!",
+      "block": 258
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "If you're at all worried you can\n                call Lacon from the basement\n                phone. Let's try the tape\n                recorder shall we?",
+      "block": 259
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM (O.S.)",
+      "quote": "The boy stood on the burning deck\n                whence all but he had fled. The\n                flame that lit the battles wreck,\n                shone round him o'er the dead...",
+      "block": 260
+    },
+    {
+      "speaker": "p37",
+      "to": null,
+      "stance": "neu",
+      "cue": "PETER GUILLAM'S VOICE",
+      "quote": "... Yet beautiful and bright he\n                stood...",
+      "block": 261
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACKLEVORE",
+      "quote": "Guest from London Station, Monsieur\n                Fourcade.",
+      "block": 262
+    },
+    {
+      "speaker": "p39",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACKELVORE",
+      "quote": "The whole service is looking for\n                you, Ricki. They'll skin you\n                alive if they find you.",
+      "block": 263
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Maybe I want them to find me.",
+      "block": 264
+    },
+    {
+      "speaker": "p39",
+      "to": null,
+      "stance": "ally",
+      "cue": "MACKELVORE",
+      "quote": "You can go home now, Ben. Leave\n                the books where they are and put\n                the keys into the machines. I'll\n                be talking to London presently\n                under my own steam.",
+      "block": 265
+    },
+    {
+      "speaker": "p40",
+      "to": null,
+      "stance": "neu",
+      "cue": "BEN",
+      "quote": "Okay boss.",
+      "block": 266
+    },
+    {
+      "speaker": "p17",
+      "to": "p40",
+      "stance": "opp",
+      "cue": "RICKI TARR",
+      "quote": "Ben stays here.",
+      "block": 267
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Ricki Tarr claims to have further\n                information vital to the\n                safeguarding of the Circus.",
+      "block": 268
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL",
+      "quote": "Tinker...",
+      "block": 269
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "How's he look?",
+      "block": 270
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL (O.S.)",
+      "quote": "Busy.",
+      "block": 271
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL (O.S.)",
+      "quote": "Tailor...",
+      "block": 272
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL (O.S.)",
+      "quote": "Here comes Soldier...",
+      "block": 273
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MENDEL (O.S.)",
+      "quote": "Full house.",
+      "block": 274
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "RICKI TARR",
+      "quote": "Read it aloud.",
+      "block": 275
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SMILEY",
+      "quote": "Shall we begin?",
+      "block": 276
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+      "p28",
+      "p29",
+      "p3",
+      "p30",
+      "p31",
+      "p32",
+      "p33",
+      "p34",
+      "p35",
+      "p36",
+      "p37",
+      "p38",
+      "p39",
+      "p4",
+      "p40",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p14",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 11,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p21",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p22",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p25",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p26",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p34",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p37",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p17",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p8",
+        "weight": 17,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 17
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p8",
+        "weight": 19,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 18
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p18",
+        "weight": 4,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p19",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p20",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p26",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p39",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p40",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p34",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p35",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p33",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p25",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p28",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p29",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p29",
+        "b": "p30",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p8",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p7",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p31",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p32",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p32",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p33",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p34",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p34",
+        "b": "p8",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p34",
+        "b": "p35",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p36",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p37",
+        "b": "p38",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p38",
+        "b": "p39",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p39",
+        "b": "p40",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p8",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 40 given"
+  }
+}
