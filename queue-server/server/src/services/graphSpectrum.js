@@ -9,7 +9,37 @@
 // structures can share a signature, so this feeds the propose/verify pipeline rather than
 // deciding anything on its own.
 
+import { readdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { anatomyFor } from './entityRelations.js';
+
+const INTERIORS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../../../data-seed/interiors');
+
+// Every entity that currently has a mapped interior — the only ones a spectral edge can
+// ever connect. Small on purpose: this is real, sourced structure, not a guess filled in
+// to make the graph look busier.
+export function entitiesWithInteriors() {
+  let files;
+  try { files = readdirSync(INTERIORS_DIR); } catch { return []; }
+  return files.filter((f) => f.endsWith('.graph.json')).map((f) => f.replace(/\.graph\.json$/, ''));
+}
+
+// Every pair of mapped interiors, by how close their shapes ring — the deep connection the
+// graph shows in place of shared tags or a shared author. No threshold is applied here:
+// with a handful of interiors this is cheap to send in full, and it is the caller's job to
+// decide how much of it to draw, not this function's job to hide the weak end of it.
+export function allSpectralEdges() {
+  const ids = entitiesWithInteriors();
+  const sigs = ids.map((id) => spectrumFor(id)).filter(Boolean);
+  const edges = [];
+  for (let i = 0; i < sigs.length; i++) {
+    for (let j = i + 1; j < sigs.length; j++) {
+      edges.push({ a: sigs[i].entityId, b: sigs[j].entityId, distance: spectralDistance(sigs[i], sigs[j]) });
+    }
+  }
+  return edges;
+}
 
 // A - the signed adjacency (ally=+weight, opp=-weight, unsigned edges contribute nothing,
 // since no evidence exists yet for which side they'd take). D - degree from |A|, so a node

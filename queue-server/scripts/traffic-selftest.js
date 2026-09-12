@@ -82,6 +82,21 @@ assert.deepEqual(coded.names, { p1: 'Troy Maxson', p2: 'Rose Maxson' }, 'and the
 assert.ok(!JSON.stringify(coded.turns.map((t) => ({ s: t.speaker, to: t.to }))).includes('Maxson'),
   'no name reaches the graph');
 
+// ── a screenplay's own case/parenthetical variants collapse to one speaker ──────────────
+// "TRAVIS", "Travis" and "TRAVIS (V.O.)(CONT'D)" are the same person, not three strangers —
+// this is exactly what fragmented a real 43-speaker, 2-edge Taxi Driver graph that should
+// have had far fewer speakers and far more edges.
+const variants = codifySpeakers([
+  { speaker: 'TRAVIS', to: null, stance: 'neu', quote: 'a', block: 1 },
+  { speaker: 'Travis', to: null, stance: 'neu', quote: 'b', block: 2 },
+  { speaker: "TRAVIS (V.O.)(CONT'D)", to: null, stance: 'neu', quote: 'c', block: 3 },
+  { speaker: 'BETSY', to: 'Travis', stance: 'ally', quote: 'd', block: 4 },
+]);
+assert.deepEqual(variants.turns.map((t) => t.speaker), ['p1', 'p1', 'p1', 'p2'],
+  'case and parenthetical variants of the same name must codify to one speaker');
+assert.equal(variants.turns[3].to, 'p1', 'an addressee normalizes the same way a speaker does');
+assert.deepEqual(variants.names, { p1: 'TRAVIS', p2: 'BETSY' }, 'the display name is the first-seen form, parenthetical stripped');
+
 // ── the prompt says the things the gate depends on ──────────────────────────
 const prompt = buildTrafficPrompt('some text', { windowIndex: 0, windowCount: 2, cast: ['Troy', 'Rose'] });
 assert.match(prompt, /COPIED EXACTLY/);

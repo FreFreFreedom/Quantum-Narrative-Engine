@@ -14,7 +14,7 @@ import { getTagGaps } from '../services/tagGaps.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { listTensions, setTension, generateTension, fillMissingTensions } from '../services/tagTensions.js';
 import { signatureFor, setSignature, deleteSignature, signatureByRungAudit } from '../services/entitySignature.js';
-import { spectrumFor, compareEntities } from '../services/graphSpectrum.js';
+import { spectrumFor, compareEntities, allSpectralEdges } from '../services/graphSpectrum.js';
 
 // Two ends can be in the same loop; report it once.
 function dedupeLoops(loops) {
@@ -194,6 +194,10 @@ export function ontologyRoutes(db) {
     if (!a || !b) return res.status(400).json({ error: 'a and b are both required.' });
     res.json(compareEntities(a, b));
   });
+
+  // Every deep connection the graph can currently draw — one edge per pair of entities
+  // that both have a mapped interior. Replaces shared-tag/shared-author edges there.
+  router.get('/spectral-edges', (req, res) => res.json({ edges: allSpectralEdges() }));
 
   router.get('/relations/:relId/mirror', (req, res) => {
     const r = rel.getRelation(db, req.params.relId);

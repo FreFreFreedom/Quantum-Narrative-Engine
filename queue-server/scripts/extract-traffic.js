@@ -14,9 +14,16 @@ import { dirname, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
 import { extractTraffic } from '../server/src/services/trafficExtraction.js';
+import { openDb } from '../server/src/db/schema.js';
+import { bindAiTextDb, migrateDocExtractionModel } from '../server/src/services/ai/text.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnvFile(new URL('../.env', import.meta.url));
+
+// Without this, generateText() has no database to read the doc-extraction model pin from
+// and falls through to a slow last-resort chain regardless of which keys are in .env.
+bindAiTextDb(openDb());
+migrateDocExtractionModel();
 
 const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith('--'));

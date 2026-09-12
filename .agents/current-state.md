@@ -1,6 +1,6 @@
 # FMCNS — current state (auto-generated, do not edit)
 
-Generated: 2026-09-11T23:57:10.994Z
+Generated: 2026-09-12T00:51:59.531Z
 
 ## Components
 
@@ -39,7 +39,6 @@ Generated: 2026-09-11T23:57:10.994Z
 ## Plan backlog
 
 - anatomy-replaces-tags — **PLANNED** 2026-09-11
-- four-small-motions — **PLANNED** 2026-09-11
 - queue-panel-and-element-picker — **DONE** 2026-09-11
 - self-diagnosis-fixes — **DONE** 2026-09-10
 - theme-clusters-are-too-small — DONE
@@ -108,6 +107,7 @@ Generated: 2026-09-11T23:57:10.994Z
 - github-code-discovery — **DONE (MVP + most of Phase 2)**
 - world-ideas-close-the-loop — **PLANNED** 2026-08-23
 - theme-follows-the-mac — **PLANNED** 2026-08-23
+- four-small-motions — **DONE (3/4)** 2026-09-11. A fourth, Content/Map/Architecture cross-fading instead of jump-cutting, shipped, was found broken (leaving panel squeezed the row — a CSS specificity bug), was fixed and verified live, then Antoine asked for it out on taste alone — reverted same day, plain hard switch restored.
 - fractal-vision-paradigm — **DONE** 2026-08-26. Also fixed a contamination hazard: pages 1099-1101 are the answer key for two of the three films in [calibration-test.md](calibration-test.md), so both new docs joined its forbidden-files list with the reason stated inline. Wrote three follow-on plans (above, Open work) without implementing any.
 - script-coverage-test — **DONE** 2026-08-26. The plan's own premise was wrong — it described the corpus as heavy with Tarkovsky/Bresson/Dreyer/Béla Tarr; none of those are in `filmsIndex`, confirmed by grep. Findings report flags this and proceeds on the real 199-film list. No OpenSubtitles API key was available — all subtitle "found" results are from public listing pages, not the API itself; noted as a real gap for anyone building on this
 - obsidian-prior-art-findings — **DONE** 2026-09-09

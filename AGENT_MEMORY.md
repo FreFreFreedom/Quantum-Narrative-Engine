@@ -830,3 +830,25 @@ rebuilt in `setTensions` and after a hand-saved tension) plus a `WeakMap` memo k
 entity's **tags array** — that array survives a graph rebuild, where the entity object does
 not, because `buildGraph` spreads new node objects from `ENTITIES`. Same answers for all
 293 entities, 34.6s → 28ms.
+
+## Where more transcripts/scripts for the interior pipeline should come from (2026-09-11)
+
+`services/trafficExtraction.js` (the machine version of building an entity's interior —
+see graph spectra, `services/graphSpectrum.js`) only has raw material for two entities:
+`data-seed/subtitles/f_dogville.srt` and `f_fences.srt`. Scaling graph spectra past those
+two needs more transcripts in the project, and Antoine asked (2026-09-11) for this sourced
+via real tools rather than by hand, and recorded here so any engine picking this up later
+doesn't have to re-search it:
+
+- **Subtitles**: an official OpenSubtitles MCP server exists —
+  `github.com/opensubtitles/mcp.opensubtitles.com`, install via
+  `claude mcp add-json "opensubtitles" '{"command":"npx","args":["-y","@opensubtitles/mcp-server@latest"]}'`.
+  Anonymous downloads are throttled to zero; it needs a free API key from
+  opensubtitles.com/api in `OPENSUBTITLES_USER_KEY` — Antoine has to make that account
+  himself (account creation is not something an agent does on his behalf). Once the key
+  exists, this is free and unlimited for search.
+- **Scripts**: IMSDb has no official free API. A paid third-party wrapper exists
+  (Parse.bot marketplace) but nothing here should reach a metered service for this — the
+  plain screenplay pages at imsdb.com are just fetchable text, the same way several
+  open-source scrapers on GitHub already do it (e.g. `j2kun/imsdb_download_all_scripts`).
+  A small direct fetch-and-parse script is the right size, not a paid API.

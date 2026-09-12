@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {
   signedLaplacian, jacobiEigenvalues, spectralSignature, spectralDistance, compareEntities,
+  entitiesWithInteriors, allSpectralEdges,
 } from '../server/src/services/graphSpectrum.js';
 
 function close(a, b, eps = 1e-6) { return Math.abs(a - b) < eps; }
@@ -84,4 +85,16 @@ function sortedClose(actual, expected) {
   assert.equal(cmp.have.no_such_entity_at_all, false);
 }
 
-console.log('spectrum:selftest — 6 assertions passed');
+// 7. The corpus-wide edge list only ever connects entities that actually have a mapped
+// interior, one edge per pair, no duplicates, no self-edges — this is what the graph draws
+// in place of shared-tag/shared-author edges.
+{
+  const ids = entitiesWithInteriors();
+  assert.ok(ids.includes('f_dogville') && ids.includes('fam_maxson'), 'the two known interiors are found');
+  const edges = allSpectralEdges();
+  assert.equal(edges.length, (ids.length * (ids.length - 1)) / 2, 'exactly one edge per unordered pair');
+  assert.ok(edges.every((e) => e.a !== e.b), 'no self-edges');
+  assert.ok(edges.every((e) => typeof e.distance === 'number' && e.distance >= 0), 'every edge carries a real distance');
+}
+
+console.log('spectrum:selftest — 7 assertions passed');

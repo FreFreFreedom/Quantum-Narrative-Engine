@@ -328,7 +328,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .conn { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; border-radius:var(--r-sm); margin-bottom:4px; cursor:pointer; background:var(--c-surface); border:1px solid var(--c-border); font-size:var(--fs-sm); }
 .conn:hover { background:var(--c-surface-2); }
 .conn .dot { width:7px; height:7px; border-radius:50%; margin-top:3px; flex-shrink:0; }
-.dot.author { background:var(--c-amber); } .dot.ent { background:var(--c-plot-5); } .dot.bridge { background:var(--c-brand); }
+.dot.author { background:var(--c-amber); } .dot.ent { background:var(--c-plot-5); } .dot.bridge { background:var(--c-brand); } .dot.deep { background:var(--c-amber); }
 .dot.film { background:var(--c-plot-2); }
 /* A dated rule an institution holds. The date carries the weight, so it leads. */
 .posture { display:flex; gap:8px; align-items:baseline; padding:5px 8px; border-radius:var(--r-sm); margin-bottom:4px;
@@ -2764,8 +2764,6 @@ button:active { transform: translateY(1px) scale(.99); }
       <button class="ctrlbtn" data-color="cluster">Cluster</button>
       <button class="ctrlbtn" data-color="guilt_as_engine" title="Colour each entity by where it sits on the guilt-as-engine axis. Unscored ones stay grey">Guilt-as-Engine</button>
       <button class="ctrlbtn" data-color="possession_sovereignty" title="Colour each entity by where it sits on the possession/sovereignty axis. Unscored ones stay grey">Possession/Sovereignty</button>
-      <button class="ctrlbtn" id="toggleBridges" title="Green dotted links between two different kinds of thing — a character and a film, say — that score almost the same on a continuum axis">Bridges: on</button>
-      <button class="ctrlbtn" id="toggleShowAll" title="Draw every link at once, instead of only the ones touching whatever you are hovering or have selected">Show all connections</button>
       <button class="ctrlbtn" id="enrichAllBtn" title="Enrich all films with TMDb metadata (synopsis, genres, keywords, country, cast)"><svg class="ic" aria-hidden="true"><use href="#ic-film"></use></svg>Enrich all films</button>
       </span>
       <span id="enrichStatus" class="ctrl-note"></span>
@@ -3362,7 +3360,7 @@ async function boot() {
   // it must never be able to hold up or break the app coming online.
   checkStorageOnce();
   try {
-    const [entRes, clRes, axRes, facetRes, tcRes, gapRes, tnRes] = await Promise.all([
+    const [entRes, clRes, axRes, facetRes, tcRes, gapRes, tnRes, specRes] = await Promise.all([
       api('/api/ontology/entities'), api('/api/ontology/clusters'), api('/api/ontology/continuum-axes'),
       // Tolerate an older backend that predates /facets rather than failing to boot.
       api('/api/ontology/facets').catch(() => null),
@@ -3375,8 +3373,12 @@ async function boot() {
       api('/api/ontology/tag-gaps').catch(() => null),
       // What each tag stands against. Same tolerance: no route, tags stay bare labels.
       api('/api/ontology/tags/tensions').catch(() => null),
+      // Deep connections — entities whose mapped insides actually ring alike. Same
+      // tolerance: no route, no deep edges, the graph just draws none yet.
+      api('/api/ontology/spectral-edges').catch(() => null),
     ]);
     setTensions(tnRes);
+    SPECTRAL_EDGES = (specRes && specRes.edges) || [];
     ENTITIES = entRes.entities;
     ENTITIES.forEach(e => { byId[e.id] = e; });
     clRes.clusters.forEach(c => CLUSTERS[c.code] = c);
@@ -3511,6 +3513,11 @@ let themeLineEntity = null;     // entity whose cluster line is currently on scr
 // traffic in the whole tag graph, keyed by cluster id. Clusters too small to be a
 // side of a hole simply have no entry, and the line then names no far side.
 let TAG_GAPS = {};
+
+// One row per pair of entities whose mapped insides actually ring alike — {a, b, distance}.
+// Fetched once at boot (see boot()). This is what the graph draws instead of shared-tag or
+// shared-author edges; most entities have no mapped inside yet, so this stays short.
+let SPECTRAL_EDGES = [];
 
 function setTagCommunities(res) {
   const communities = (res && res.communities) || [];
@@ -3881,7 +3888,7 @@ let nodes=[], edges=[];
 // Bumped on every rebuild. The only thing that needs it is the spotlight memo, which
 // uses it as a cheap stand-in for "the pool or the filters changed".
 let graphEpoch=0;
-let focusedId=null, hoveredId=null, hoveredRegionId=null, bridgesOn=true, showAllConnections=false;
+let focusedId=null, hoveredId=null, hoveredRegionId=null;
 const camera={x:0,y:0,scale:1};
 
 // The layout is a real d3-force simulation now, not the hand-rolled runSim() loop that
@@ -4749,7 +4756,7 @@ function egoFilterSig() {
     activeCluster || '', activeTagCommunity ? activeTagCommunity.id : '',
     s ? s.value.trim().toLowerCase() : '',
     axisFilter.key, axisFilter.min, axisFilter.max,
-    bridgesOn ? 1 : 0, ENTITIES.length
+    ENTITIES.length
   ].join('|');
 }
 function egoBase() {
@@ -5243,7 +5250,7 @@ function computeEchoes(e, limit = 8, pool = ENTITIES) {
 
 // The three relations wear one name each, everywhere they appear: on the list card's
 // echoes, on the detail card, on a clicked edge.
-const RELATION_NAMES = { author: 'Shared author', ent: 'Entanglement', bridge: 'Scale echo' };
+const RELATION_NAMES = { author: 'Shared author', ent: 'Entanglement', bridge: 'Scale echo', deep: 'Deep connection' };
 
 // Which pool the card's relations block reads: the entities currently drawn, or the
 // whole corpus. Remembered, like every other switch a person can flip (AGENTS.md).
@@ -5352,31 +5359,20 @@ function computeBridges(e, pool, cap = 5) {
   return out.sort((a,b)=>a.delta-b.delta).slice(0, cap);
 }
 
-// Every connection between the entities in `pool`, deduplicated. Lifted out of
-// buildGraph() unchanged so the ego view can ask the same question of a different pool
-// (see egoBase()) instead of keeping a second, drifting definition of "neighbour".
+// Every connection between the entities in `pool`, deduplicated. Used to draw shared-tag,
+// shared-author and scale-echo edges on the graph — retired 2026-09-11 (Antoine: "hide the
+// superficial connection everywhere"). Those three were surface noise: a shared word or
+// credit, never a read structure. The graph now draws only deep connections — entities
+// whose mapped insides actually ring alike (SPECTRAL_EDGES, from graphSpectrum.js) — and
+// draws nothing between two entities neither of which has been mapped yet. That emptiness
+// is honest: most of the corpus has no deep connection recorded yet, not a bug to hide.
+// computeSharedAuthor/computeEntanglement/computeBridges are left in place — the Relations
+// panel and echo list still use them directly; only the graph's own edges changed.
 function computeEdges(pool) {
-  const seen = new Set();
-  const out = [];
-  pool.forEach(e => {
-    const vert = computeSharedAuthor(e, pool);
-    const vertIds = new Set(vert.map(o=>o.id));
-    vert.forEach(o => {
-      const k=[e.id,o.id].sort().join('|')+'d'; if(seen.has(k))return; seen.add(k);
-      const auteurs = (e.meta&&e.meta.auteurs)||[];
-      const shared = auteurs.filter(a => ((o.meta&&o.meta.auteurs)||[]).includes(a));
-      out.push({a:e.id,b:o.id,type:'author',auteur:shared[0]||null});
-    });
-    computeEntanglement(e, pool, vertIds).forEach(({o,shared})=>{
-      const k=[e.id,o.id].sort().join('|')+'e'; if(seen.has(k))return; seen.add(k);
-      out.push({a:e.id,b:o.id,type:'ent',tags:shared});
-    });
-    if (bridgesOn) computeBridges(e, pool).forEach(({o,axis,delta})=>{
-      const k=[e.id,o.id].sort().join('|')+'b'+axis; if(seen.has(k))return; seen.add(k);
-      out.push({a:e.id,b:o.id,type:'bridge',axis,delta});
-    });
-  });
-  return out;
+  const ids = new Set(pool.map(e => e.id));
+  return SPECTRAL_EDGES
+    .filter(e => ids.has(e.a) && ids.has(e.b))
+    .map(e => ({ a: e.a, b: e.b, type: 'deep', distance: e.distance }));
 }
 
 function buildGraph() {
@@ -5503,13 +5499,9 @@ function installLayoutForces(mode) {
     // isn't still pushing on this one — that global shove is what used to compress
     // every cluster toward the middle.
     .force('charge', d3.forceManyBody().strength(-160).theta(0.9).distanceMax(700))
-    // Connections pull, at a distance that says what kind of connection it is: a
-    // shared author is tight, a shared pattern looser, a continuum bridge long and
-    // weak so cross-scale echoes hint at a relationship without dragging the two
-    // clusters into each other.
-    .force('link', d3.forceLink(links).id(d => d.id)
-      .distance(e => e.type === 'author' ? 70 : e.type === 'ent' ? 110 : 190)
-      .strength(e => e.type === 'bridge' ? 0.04 : 0.35))
+    // Every connection is a deep one now, pulled at one fixed distance/strength —
+    // there is no longer a mix of kinds to space differently.
+    .force('link', d3.forceLink(links).id(d => d.id).distance(90).strength(0.35))
     // The force the old loop never had: nothing may sit on top of anything else.
     .force('collide', d3.forceCollide(d => nodeRadius(d) + 4).iterations(2))
     // Weak pull toward this node's own cluster centroid — the same job the old
@@ -5534,14 +5526,10 @@ function neighborSet(id) {
   edges.forEach(e => { if(e.a===id) set.add(e.b); else if(e.b===id) set.add(e.a); });
   return set;
 }
-// An edge is drawn by default only if it's a vertical edge (rare, always meaningful) or
-// touches the spotlighted node. Entanglement/bridge edges elsewhere only appear once
-// "show all connections" is on, or once you focus/hover one of their endpoints.
+// Every edge is a deep connection now (rare, always meaningful), so every edge draws by
+// default — there is no surface-noise type left to hide behind "show all connections".
 function edgeVisible(e, spotlight) {
-  if (showAllConnections) return true;
-  if (e.type === 'author') return true;
-  if (spotlight && (spotlight.has(e.a) || spotlight.has(e.b))) return true;
-  return false;
+  return true;
 }
 // How much of a node's label to draw, 0..1 — the semantic-zoom rule, expressed as a
 // weight rather than a yes/no so that crossing a band threshold CROSS-FADES the label
@@ -5559,21 +5547,10 @@ function labelWeight(n, spotlight) {
 let hoveredEdge = null, focusedEdge = null;
 function edgeKey(e){ return [e.a,e.b,e.type,e.axis||''].join('|'); }
 
-// The set of ALL entities (not just this edge's two endpoints) linked by the same
-// specific pattern this edge represents — a shared tag, a shared director/writer,
-// or proximity on the same continuum axis.
+// A deep connection is between exactly the two entities whose insides were actually
+// compared — unlike a shared tag or author, it names no wider group to fold in.
 function clusterForEdge(e) {
-  const pool = activeEntities();
-  const set = new Set([e.a, e.b]);
-  if (e.type === 'author' && e.auteur) {
-    pool.forEach(o => { if (((o.meta&&o.meta.auteurs)||[]).includes(e.auteur)) set.add(o.id); });
-  } else if (e.type === 'ent' && e.tags && e.tags.length) {
-    pool.forEach(o => { if ((o.tags||[]).some(t => e.tags.includes(t))) set.add(o.id); });
-  } else if (e.type === 'bridge' && e.axis) {
-    const v = byId[e.a] && byId[e.a].continuum ? byId[e.a].continuum[e.axis] : undefined;
-    if (v !== undefined) pool.forEach(o => { const ov = o.continuum && o.continuum[e.axis]; if (ov!==undefined && Math.abs(ov-v) < 0.07) set.add(o.id); });
-  }
-  return set;
+  return new Set([e.a, e.b]);
 }
 
 // ---------- The canvas renderer ----------
@@ -5593,7 +5570,7 @@ let gCanvas = null, gCtx = null, gDpr = 1, gW = 0, gH = 0;
 let needsRender = false, renderRAF = null;
 // Hoisted so a frame allocates nothing. Same values the SVG stroke-dasharray used,
 // in the same (world) units.
-const DASH_NONE = [], DASH_ENT = [4, 3], DASH_BRIDGE = [1.5, 2.5];
+const DASH_NONE = [];
 
 /* ─── The descent ──────────────────────────────────────────────────────────────
    Going down a rung is the model's first navigation move, and until now it looked
@@ -6807,22 +6784,16 @@ function paintGraph() {
     const a = byId[e.a], b = byId[e.b]; if (!a || !b) return;
     const visible = edgeVisible(e, spotlight);
     if (!visible && !spotlight) return; // fully hidden by default, not just faded — keeps the graph legible
-    const stroke = e.type==='author'?'#c08a3e': e.type==='ent'?'#8b6fb0':'#4f9d7a';
-    const dash = e.type==='ent'?DASH_ENT: e.type==='bridge'?DASH_BRIDGE:DASH_NONE;
+    const stroke = '#c08a3e';
+    const dash = DASH_NONE;
     const dimmed = spotlight && !(spotlight.has(e.a) && spotlight.has(e.b));
     const isThisEdge = activeEdge && edgeKey(activeEdge) === edgeKey(e);
-    // Far band: author edges only. A shared author is a fact about the territory and
-    // survives being zoomed out; the entanglement/bridge mesh at 0.3x is grey noise over
-    // the whole stage. What the pointer is actually on is exempt — hovering a node must
-    // still show you its connections, whatever the zoom.
-    // ...and so is "show all connections": a control the user just pressed must not be
-    // quietly undone by where the camera happens to be.
-    const standing = e.type === 'author' || showAllConnections ||
-      (spotlight && (spotlight.has(e.a) || spotlight.has(e.b)));
-    const band = standing ? 1 : 1 - bw.far;
-    let opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : (e.type==='author'?0.75:0.55)));
+    // Every edge is a deep connection, so every edge stands even at the far band — a
+    // read structural match is a fact about the territory, not noise to zoom past.
+    const band = 1;
+    let opacity = !visible ? 0 : band * (dimmed ? 0.08 : (isThisEdge ? 1 : 0.75));
     if (descent) opacity *= 0.07 * (1 - descent.ring * 0.6);   // the field recedes as you go in
-    const width = isThisEdge ? (e.type==='author'?2.6:2.2) : (e.type==='author'?1.6:1.3);
+    const width = isThisEdge ? 2.6 : 1.6;
     if (opacity <= 0.004) return; // the SVG drew these at opacity 0; not drawing them is the same picture
     ctx.globalAlpha = opacity;
     ctx.strokeStyle = stroke;
@@ -7620,18 +7591,6 @@ function initGraph(){
   initGraphCanvas();
   frameWholeWorld();
   layoutAndDraw();
-  document.getElementById('toggleBridges').onclick = function(e){
-    bridgesOn = !bridgesOn;
-    e.target.textContent = 'Bridges: ' + (bridgesOn?'on':'off');
-    e.target.classList.toggle('active', bridgesOn);
-    layoutAndDraw();
-  };
-  document.getElementById('toggleShowAll').onclick = function(e){
-    showAllConnections = !showAllConnections;
-    e.target.classList.toggle('active', showAllConnections);
-    graphEpoch++; // changes what edgeVisible() answers without rebuilding the graph
-    requestRender();
-  };
   document.getElementById('resetBtn').onclick = resetGraphView;
   document.getElementById('enrichAllBtn').onclick = enrichAllFilms;
   // Escape has to work whether or not the canvas happens to hold focus — you can enter
@@ -8109,43 +8068,11 @@ async function selectEdgeConnection(e) {
     elx.onclick = async () => {
       const entityId = elx.getAttribute('data-edge-goto');
       await selectEntity(entityId);
-      // For entanglement edges, auto-open the entity-specific read of the shared tag —
-      // the whole point of drilling into the cluster is seeing the entity-specific take,
-      // not the generic pattern description repeated.
-      if (e.type === 'ent' && e.tags && e.tags.length) {
-        const tagEl = document.querySelector(`.tag[data-tag="${e.tags[0]}"]`);
-        const ent = byId[entityId];
-        if (tagEl && ent) toggleTagLens(ent, e.tags[0], tagEl);
-      }
     };
   });
 
   const explainHost = document.getElementById('edgeExplainHost');
-  if (e.type === 'author') {
-    explainHost.innerHTML = `Every entity here shares the same director/writer (<b>${qEsc(e.auteur || 'unknown')}</b>) — an authorial fingerprint running across otherwise unrelated stories.`;
-    return;
-  }
-  if (e.type === 'bridge') {
-    const axis = AXES[e.axis];
-    explainHost.innerHTML = axis
-      ? `These entities land within a narrow band on the same continuum — <b>${qEsc(axis.name)}</b> (between "${qEsc(axis.low)}" and "${qEsc(axis.high)}") — a cross-type echo of the same underlying position, regardless of scale.`
-      : `These entities sit close together on the same continuum axis, a cross-type echo of the same underlying position.`;
-    return;
-  }
-  // 'ent' — fetch the general tag-pattern explanation from the backend, cached per tag.
-  const tag = (e.tags && e.tags[0]) || null;
-  if (!tag) { explainHost.innerHTML = 'Shared tag pattern.'; return; }
-  try {
-    const resp = await fetch(API_BASE + '/api/ontology/tags/' + encodeURIComponent(tag) + '/explain', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN }, body: '{}',
-    });
-    const data = await resp.json();
-    if (focusedEdge !== e) return; // user moved on before this resolved
-    explainHost.innerHTML = data.error ? `Could not generate an explanation: ${qEsc(data.error)}` : qEsc(data.explanation);
-  } catch (err) {
-    if (focusedEdge !== e) return;
-    explainHost.innerHTML = 'Could not reach the server.';
-  }
+  explainHost.innerHTML = `These two entities have each had their inside mapped — who stands with or against whom — and the two shapes ring alike (distance ${e.distance.toFixed(2)}, lower is closer). Not a shared word or credit: a read structural match, worth checking against the actual scenes before trusting it further.`;
 }
 
 // Tags as lenses: clicking a tag examines the currently-selected entity specifically

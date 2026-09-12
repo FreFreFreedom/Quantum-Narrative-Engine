@@ -118,18 +118,32 @@ export function verifyTurns(candidates, sourceText, { offset = 0 } = {}) {
   return { kept, dropped };
 }
 
+// A screenplay names the same person several ways in a row — "TRAVIS", "Travis",
+// "TRAVIS (V.O.)(CONT'D)" — and treating each as a different speaker fragments one real
+// character into many single-line strangers, which is exactly what starved a 43-speaker,
+// 2-edge Taxi Driver graph that should have had a handful of speakers and dozens of edges.
+// Stripped down to a case-folded, parenthetical-free key before anything is codified.
+function speakerKey(raw) {
+  return String(raw || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+}
+function speakerDisplay(raw) {
+  return String(raw || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // Names in, codes out. The graph never sees a name, so nothing downstream can match on one.
 export function codifySpeakers(turns) {
   const names = {};
-  const codes = new Map();
+  const codes = new Map(); // speakerKey() -> code
   let n = 0;
   const coded = turns.map((t) => {
-    if (!codes.has(t.speaker)) {
+    const key = speakerKey(t.speaker);
+    if (!codes.has(key)) {
       const code = 'p' + (++n);
-      codes.set(t.speaker, code);
-      names[code] = t.speaker;
+      codes.set(key, code);
+      names[code] = speakerDisplay(t.speaker);
     }
-    return { ...t, speaker: codes.get(t.speaker), to: t.to && codes.has(t.to) ? codes.get(t.to) : null };
+    const toKey = t.to ? speakerKey(t.to) : null;
+    return { ...t, speaker: codes.get(key), to: toKey && codes.has(toKey) ? codes.get(toKey) : null };
   });
   return { turns: coded, names };
 }
