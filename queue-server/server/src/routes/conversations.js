@@ -354,11 +354,11 @@ export function conversationsRoutes() {
   });
 
   // POST /api/convos/:id/reset — fold conversation into a recap.
-  router.post('/:id/reset', (req, res) => {
-    const out = convos.resetConvoContext(req.params.id);
+  router.post('/:id/reset', asyncHandler(async (req, res) => {
+    const out = await convos.resetConvoContext(req.params.id);
     if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
     res.json(out);
-  });
+  }));
 
   // POST /api/convos/:id/retitle — name it again, properly. Waits for the model:
   // it is a click, and a click that changes nothing on screen reads as broken.

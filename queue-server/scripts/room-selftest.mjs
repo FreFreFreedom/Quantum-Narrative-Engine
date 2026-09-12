@@ -175,3 +175,21 @@ const roof = turnMaxTokens(lengthy.id);
 assert.ok(roof >= 4000 * 1.4 + 2000, `4000 words needs room to actually write them, got ${roof}`);
 assert.equal(turnMaxTokens(convo.id), 4000, 'no length asked -> the standing ceiling');
 console.log(`cut answers OK — continued and joined; a 4000-word ask now gets ${roof} tokens`);
+
+// ─── Folding a long thread ───────────────────────────────────────────────────
+// The cut is placed BEFORE the last few exchanges, not at "now": a recap is a
+// summary of what was settled, and the live edge of a conversation is where the
+// half-finished thought is. Summarising that edge is how a fold loses the thread.
+{
+  const msg = (i) => ({ id: 'x' + i, kind: 'chat', text: 't' + i });
+  const long = Array.from({ length: 20 }, (_, i) => msg(i));
+  const foldedLong = convos.foldCut(long);
+  assert.equal(foldedLong.length, 14, 'the last six messages stay word for word');
+  assert.equal(foldedLong[foldedLong.length - 1].id, 'x13');
+
+  const short = Array.from({ length: 4 }, (_, i) => msg(i));
+  const foldedShort = convos.foldCut(short);
+  assert.equal(foldedShort.length, 3, 'a short thread still folds all but its last message');
+  assert.ok(convos.foldCut(Array.from({ length: 7 }, (_, i) => msg(i))).length === 1);
+  console.log('fold cut OK — the newest exchanges are never summarised away');
+}

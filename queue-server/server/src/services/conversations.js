@@ -593,17 +593,83 @@ export function setConvoStar(id, starred) {
   return { ok: true, convo: getConvo(id) };
 }
 
-export function resetConvoContext(id) {
+// What is kept out of the fold: the most recent exchanges stay in the model's
+// context word for word. A recap is a summary of what was settled; the live edge
+// of a conversation is where the half-finished thought is, and summarising that
+// is exactly how a fold loses the thread.
+const KEEP_VERBATIM_MSGS = 6;
+const RECAP_SOURCE_CHARS = 60000;
+const RECAP_PROMPT = `You are folding a long working conversation so it can carry on without resending all of it.
+
+Write the handover a person would need to pick this conversation up mid-sentence and lose nothing that matters. Not a description of the conversation — the substance of it.
+
+Keep, in this order, and only what is actually there:
+- What is being built or worked out, in one line.
+- Decisions taken, and the reason each one was taken.
+- Constraints, rules and preferences stated — especially anything phrased as never, always, or do it this way.
+- Names, identifiers, titles, numbers and measurements that were established. Copy them exactly; do not round or paraphrase them.
+- What was tried and did not work, so it is not tried again.
+- What is still open: unanswered questions, and anything waiting on someone.
+
+Rules: no preamble, no sign-off, no "this conversation was about". Plain short lines or bullets. Do not invent anything that was not said. If something was said only vaguely, keep it vague rather than sharpening it.`;
+
+// Where the cut falls: everything before the last few exchanges is folded, the rest
+// is still sent word for word. A short thread still folds all but its last message,
+// so the control does something rather than silently no-op.
+export function foldCut(chat) {
+  return chat.length > KEEP_VERBATIM_MSGS ? chat.slice(0, chat.length - KEEP_VERBATIM_MSGS) : chat.slice(0, -1);
+}
+
+// Fold everything said so far into a recap the model gets instead of the whole
+// transcript. The visible thread stays in the DB and on screen untouched — only
+// the model-facing context is compacted (see transcriptOf).
+export async function resetConvoContext(id) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(id);
   if (!convo) return { error: 'not_found' };
-  // Fold everything into a short recap row. The visible transcript stays in the
-  // DB and on screen — only the model-facing context is compacted (transcriptOf).
-  const msgs = listMessages(id);
-  const recap = msgs.map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${String(m.text).slice(0, 300)}`).join('\n');
-  db.prepare(`UPDATE convos SET recap=?, compacted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(recap || null, id);
+  const chat = listMessages(id).filter((m) => m.kind === 'chat');
+  if (chat.length < 2) return { error: 'nothing_to_fold' };
+
+  // The last few exchanges are kept verbatim, so the cut is placed before them
+  // rather than at "now" — everything newer than `compacted_at` is still sent in
+  // full. Below that many messages there is nothing to fold at all.
+  const fold = foldCut(chat);
+  const cutAt = fold[fold.length - 1].created_at;
+
+  // The old behaviour, kept as the floor: every message cut to its first 300
+  // characters. It is a poor recap — it throws away the end of every answer, which
+  // is where the conclusion lives — so it is what happens when the model call
+  // fails, never the first choice.
+  const crude = fold.map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${String(m.text).slice(0, 300)}`)
+    .join('\n').slice(-RECAP_SOURCE_CHARS);
+
+  let recap = '';
+  try {
+    // Newest last and the budget spent from the end: if the thread is too long to
+    // send whole, the older material is the part a recap can best afford to lose.
+    const transcript = fold
+      .map((m) => `${m.role === 'user' ? 'HE SAID' : 'THE ANSWER'}: ${String(m.text).slice(0, 4000)}`)
+      .join('\n\n').slice(-RECAP_SOURCE_CHARS);
+    const out = await generateText({
+      prompt: `${RECAP_PROMPT}\n\n=== THE CONVERSATION SO FAR ===\n${transcript}`,
+      feature: 'summary',
+      label: 'conversations:fold-context',
+      maxTokens: 1500,
+      allowLongOutput: true,
+      timeoutMs: 120_000,
+    });
+    recap = String(out?.text || '').trim();
+  } catch (e) {
+    console.error('[room] fold recap failed:', e?.message || e);
+  }
+  // A one-line answer is a refusal or a stub, not a fold of forty exchanges.
+  const written = recap.length >= 80;
+  if (!written) recap = crude;
+
+  db.prepare(`UPDATE convos SET recap=?, compacted_at=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`)
+    .run(recap || null, cutAt, id);
   broadcastAll('convos:updated', { convoId: id });
-  return { ok: true, recap };
+  return { ok: true, recap, written, folded: fold.length, kept: chat.length - fold.length };
 }
 
 export function deleteConvo(id) {

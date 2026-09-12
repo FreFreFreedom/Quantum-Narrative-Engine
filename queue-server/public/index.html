@@ -20547,12 +20547,26 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .catch(function(){ e.loaded = false; e.note = 'Could not rewind — reloaded the thread as it is.'; return fetchConvo(e, repaint); });
   }
 
+  /* Folding now writes a real recap rather than cutting every message to its first
+     300 characters, so it waits on a model and takes seconds, not none. A click that
+     changes nothing on screen reads as broken, so it says what it is doing and the
+     button cannot be pressed twice while it works. */
   function resetConvo(e, repaint){
-    if(!e.convoId) return Promise.resolve();
+    if(!e.convoId || e.folding) return Promise.resolve();
+    e.folding = true;
+    e.note = 'Folding what was said so far\u2026';
+    if(repaint) repaint();
     return apiWrite('/api/convos/' + e.convoId + '/reset', 'POST', {})
-      .then(function(){ e.loaded = false; return fetchConvo(e, repaint); })
-      .then(function(){ e.note = 'Folded. Summary is at the top.'; if(repaint) repaint(); })
-      .catch(function(){});
+      .then(function(out){
+        e.loaded = false;
+        return fetchConvo(e, repaint).then(function(){
+          e.note = (out && out.written === false)
+            ? 'Folded, but the summary could not be written \u2014 the rough version is in place.'
+            : 'Folded. The last few exchanges are kept word for word.';
+        });
+      })
+      .catch(function(){ e.note = 'Could not fold this one just now.'; })
+      .then(function(){ e.folding = false; if(repaint) repaint(); });
   }
 
   // ---------- Shared reading of an entry ----------
