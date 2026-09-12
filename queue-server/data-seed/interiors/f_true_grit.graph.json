@@ -1,0 +1,2149 @@
+{
+  "entity": "f_true_grit",
+  "source": "data-seed/scripts/f_true_grit.txt",
+  "scope": "the whole script, machine-extracted (20 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "It is time for you to learn you cannot have your way in every\n                     little particular. Other people have their interests.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": ". . . I am a free agent. If you find I fail to satisfy your terms I\n                     will return your money at the end of this expedition.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "God damn it!",
+      "block": 3
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "What's going on?",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "(testy)",
+      "quote": "This is a business conversation.",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "LeBoeuf",
+      "quote": "Is that what you call it. It sounds to me like you are still\n                   being hoorawed by a little girl.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "Did you say hooraw!",
+      "block": 7
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "That was the word.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "I will show you hooraw!",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "Mattie",
+      "quote": "There is no hoorawing in it. My agreement with the Marshal\n                   antedates yours. It has the force of law.",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "(amused)",
+      "quote": "The force of law! This man is a notorious thumper! He rode\n                   by the light of the moon with Quantrill and Bloody Bill\n                   Anderson!",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "Those men was patriots, Texas trash!",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "LeBoeuf",
+      "quote": "They murdered women and children in Lawrence, Kansas.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "I was at Shreveport first with Kirby-Smith--",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "What side was you on?",
+      "block": 15
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "I was in the army of Northern Virginia, Cogburn, and I don't\n                     have to hang my head when I say it!",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "If you had served with Captain Quantrill--",
+      "block": 17
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Captain Quantrill indeed!",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "You had best let this go, LeBoeuf!",
+      "block": 19
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "LeBoeuf",
+      "quote": "Captain of what!",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "Good, then! There are not sufficient dollars in the state of\n                     Texas to make it worth my while to listen to your opinions,\n                     day and night. Our agreement is nullified--it's each man for\n                     himself!",
+      "block": 21
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "LeBoeuf",
+      "quote": "That suits me!",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "We don't need him, do we Marshal?",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "(muttering)",
+      "quote": "We'll miss his Sharp's carbine. It's apt to get lively out\n                     here.",
+      "block": 24
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "Indian Youth",
+      "quote": "Hey.",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "Call that sport, do ya?",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "Rooster",
+      "quote": "Stay here sister. I will see Bagby.",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Has Chaney been here?",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "No.",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "But Coke Hayes was, two days ago. Coke runs with Lucky\n                     Ned. He bought supplies, with this.",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "Mattie",
+      "quote": "This is Papa's gold piece! Tom Chaney, here we come!",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "It is not the world's only California gold piece.",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "They are rare, here.",
+      "block": 33
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "That would be a bitter disappointment, Marshal. What do\n                     we do?",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "Rooster",
+      "quote": "We pursue. Ned is unfinished business for the marshals\n                     anyhow, and when we have him we will also have Chaney\n                     --or we can learn the whereabouts of his body. Bagby\n                     doesn't know which way they went, but now we know they\n                     come through here, they couldn't be going but one of two\n                     ways: north toward the Winding Stair Mountains, or pushing\n                     on further west. I suspect north. There is more to rob.",
+      "block": 35
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "Youth",
+      "quote": "Mr. Ferrington will want to know who cut loose his mule.",
+      "block": 36
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Tell him it was Mr. James, a bank examiner from Clay\n                     County, Missouri.",
+      "block": 37
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "Youth",
+      "quote": "The James boys is said to be slight, Frank and Jesse both.",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "One of them has grown fat. The mule will not range far.\n                     You boys mend your ways or I will return some dark night\n                     and cut off one of your heads--I do not say which--and\n                     leave it on the stomach of the other as a warning.",
+      "block": 39
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Hey!",
+      "block": 40
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "Man",
+      "quote": "Who is out there?",
+      "block": 41
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "We are looking for shelter.",
+      "block": 42
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Man",
+      "quote": "No room for you here! Ride on!",
+      "block": 43
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "Voice",
+      "quote": "Ride on!",
+      "block": 44
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Who all is in there?",
+      "block": 45
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "New Voice",
+      "quote": "A Methodist and a son-of-a-bitch!",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Is that Emmett Quincy?",
+      "block": 47
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "New Voice",
+      "quote": "I don't know any Emmett Quincy.",
+      "block": 48
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "There's only two of you!",
+      "block": 49
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "Me and Moon, but he is hit! He can't walk!",
+      "block": 50
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Drag him out! Light that lamp!",
+      "block": 51
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "You said it was a man on the roof. I thought it was Potter.",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "You was always dumb, Quincy, and remain true to form.",
+      "block": 53
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "My leg hurts.",
+      "block": 54
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "Ned Pepper? I don't know him. Who is he?",
+      "block": 55
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "That don't bring anybody to mind.",
+      "block": 56
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "I don't know those boys. I always try to help out the law.",
+      "block": 57
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "You are trying to get at me.",
+      "block": 58
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "You are trying to get at me.",
+      "block": 59
+    },
+    {
+      "speaker": "p9",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "We don't know those boys you are looking for.",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "It ain't his leg.",
+      "block": 61
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "We are weary trappers.",
+      "block": 62
+    },
+    {
+      "speaker": "p10",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "I am puzzled by this. (to Rooster) Why is she here?",
+      "block": 63
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "My leg is giving me fits.",
+      "block": 64
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "Quincy",
+      "quote": "Easy now. He is trying to get at you.",
+      "block": 65
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "I am getting at you with the truth.",
+      "block": 66
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "We seen Ned and Haze two days ago. We's supposed--",
+      "block": 67
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "opp",
+      "cue": "Quincy",
+      "quote": "Don't act the fool! If you blow I will kill you!",
+      "block": 68
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "I am played out. I must have a doctor. We's supposed--",
+      "block": 69
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "God damn it!",
+      "block": 70
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "Moon",
+      "quote": "Oh lord, I am dying!",
+      "block": 71
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "opp",
+      "cue": "Moon",
+      "quote": "Don't leave me lying here! Don't let the wolves rip me up!",
+      "block": 72
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Should I tell him you was outlawed up?",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Don't be looking for Quincy.",
+      "block": 74
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Is he dead?",
+      "block": 75
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "What was that?",
+      "block": 76
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Fingers.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "What do we do now?",
+      "block": 78
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "You will shoot him in the back?",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "Mattie",
+      "quote": "You display great poise.",
+      "block": 80
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "That is hard to believe.",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "What is?",
+      "block": 82
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "One man riding at seven.",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Why were they pursuing you?",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "They was in the nature of a posse.",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "It is all stealing.",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "That is the position they took in New Mexico.",
+      "block": 87
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Hello?",
+      "block": 88
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "Mattie",
+      "quote": "We have to warn him, Marshal!",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "Too late.",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Oh!",
+      "block": 91
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "What do we do, Marshal?",
+      "block": 92
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "We sit. What does he do?",
+      "block": 93
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "Rooster",
+      "quote": "He is a fine one for not drawing attention to himself.",
+      "block": 94
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Him in the woolly chaps is Lucky Ned.",
+      "block": 95
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, that's that.",
+      "block": 96
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well that didn't pan out.",
+      "block": 97
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You managed to put a kink in my rope, pardner.",
+      "block": 98
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I am theverely injured.",
+      "block": 99
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes you got drug some.",
+      "block": 100
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Altho shshot. By a rifle.",
+      "block": 101
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I believe I beh mythelf.",
+      "block": 102
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hngnickh.",
+      "block": 103
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's that now?",
+      "block": 104
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Knit.",
+      "block": 105
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Neither of these men are Chaney, Marshal.",
+      "block": 106
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sleep well, Little Blackie. . .",
+      "block": 107
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Malla-men what?",
+      "block": 108
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I have no doubt that the gun is sound.",
+      "block": 109
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That was \"Johnny in the Low Ground.\" There are very few",
+      "block": 110
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I am going with you.",
+      "block": 111
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "LeBoeuf",
+      "quote": "Oh, that izh not poshible.",
+      "block": 112
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Have I held you back? I have a Colt's dragoon revolver\n                     which I know how to use, and I would be no more of a\n                     burden to you than I was to the marshal.",
+      "block": 113
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "LeBoeuf",
+      "quote": "That izh not my worry. You have earned your shpurzh, that\n                     izh clear enough--you have been a regular \"old hand\" on the\n                     trail. But Cogburn izh right, even if I would not give him the\n                     shatishfaction of consheding it. The trail izh cold, and I am\n                     conshiderably diminished.",
+      "block": 114
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "How can you give up now, after the many months you've\n                     dedicated to finding Chaney? You have shown great\n                     determination. I misjudged you. I picked the wrong man.",
+      "block": 115
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "I would go on in your company if there were clear way to go.\n                     But we would be shtriking out blindly. Chelmshford izh\n                     gone--we have chaished him right off the map. There izh\n                     nothing for it. I am bound for Texash, and it izh time for you\n                     to go home too.",
+      "block": 116
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I will not go back. Not without Chaney, dead or alive.",
+      "block": 117
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "I misjudged you as well. I eckshtend my hand.",
+      "block": 118
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "Mattie",
+      "quote": "Mr. LeBoeuf! Please!",
+      "block": 119
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Adiosh!",
+      "block": 120
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "Well now I know you. Your name is Mattie. You are little\n                     Mattie the bookkeeper. Isn't this something.",
+      "block": 121
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Yes, and I know you, Tom Chaney.",
+      "block": 122
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "What are you doing here?",
+      "block": 123
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I came to fetch water.",
+      "block": 124
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "I mean what are you doing here in these mountains?",
+      "block": 125
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I have not been formally deputized but I am acting as an\n                     agent for Marshal Reuben Cogburn and Judge Parker's court.",
+      "block": 126
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "Chaney",
+      "quote": "Well I will not go. How do you like that?",
+      "block": 127
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "That is interesting news. How many is up there?",
+      "block": 128
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "I think I will oblige the officers to come after me.",
+      "block": 129
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "opp",
+      "cue": "Mattie",
+      "quote": "If you refuse to go I will have to shoot you.",
+      "block": 130
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "Chaney",
+      "quote": "Oh? Then you had better cock your piece.",
+      "block": 131
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I know how to do it.",
+      "block": 132
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "I did not think you would do it.",
+      "block": 133
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "What do you think now?",
+      "block": 134
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Mattie!",
+      "block": 135
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I am down here! Chaney is taken into custody!",
+      "block": 136
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "opp",
+      "cue": "Mattie",
+      "quote": "No, you are just a piece of trash, that is all.",
+      "block": 137
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "Everything is against me. Now I am shot by a child.",
+      "block": 138
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "opp",
+      "cue": "Mattie",
+      "quote": "Stop!",
+      "block": 139
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "Mattie",
+      "quote": "Help me! Down here! Hurry up!",
+      "block": 140
+    },
+    {
+      "speaker": "p12",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "(to Chaney)",
+      "quote": "Take them horses you got and move!",
+      "block": 141
+    },
+    {
+      "speaker": "p12",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "Lucky Ned (to Chaney)",
+      "quote": "Get on up that hill! Don't you stop.",
+      "block": 142
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Marshal Cogburn and fifty more officers.",
+      "block": 143
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "Lucky Ned",
+      "quote": "Tell me another lie and I will stove your head in!",
+      "block": 144
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Just the marshal.",
+      "block": 145
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "Lucky Ned",
+      "quote": "Cogburn! Do you hear me?",
+      "block": 146
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster's Voice",
+      "quote": "The girl is nothing to me! She is a runaway from Arkansas!",
+      "block": 147
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "That is very well! Do you advise me to kill her?",
+      "block": 148
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster's Voice",
+      "quote": "Do what you think is best, Ned! She is nothing to me but a\n                     lost child!",
+      "block": 149
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster's Voice",
+      "quote": ". . . Think it over first.",
+      "block": 150
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "I have already thought it over! You get mounted double fast!\n                     If I see you riding over that bald ridge to the northwest I will\n                     spare the girl. You have five minutes!",
+      "block": 151
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "Rooster",
+      "quote": "I will need more than five minutes!",
+      "block": 152
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "Lucky Ned",
+      "quote": "I will not give you more time.",
+      "block": 153
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "There will be a party of marshals in here soon, Ned! Let me\n                     have Chaney and the girl and I will mislead them for six\n                     hours!",
+      "block": 154
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "Lucky Ned",
+      "quote": "Too thin, Rooster! Too thin! Your five minutes is running!\n                     No more talk!",
+      "block": 155
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster's Voice",
+      "quote": "I am leaving but you must give me time!",
+      "block": 156
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "Up that hill!",
+      "block": 157
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "Lucky Ned",
+      "quote": "Quiet there!",
+      "block": 158
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "You will not shoot me.",
+      "block": 159
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "I will do what I have to do.",
+      "block": 160
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Can I have some of that bacon?",
+      "block": 161
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "ally",
+      "cue": "Lucky Ned",
+      "quote": "Help yourself. Have some of the coffee.",
+      "block": 162
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I do not drink coffee. I am fourteen.",
+      "block": 163
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "We do not have buttermilk. And we do not have bread. We\n                    are poorly supplied. What are you doing here?",
+      "block": 164
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": "Chaney",
+      "quote": "I will wring your scrawny neck!",
+      "block": 165
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "Let that go! Farrell, see to his wound. What happened?\n                    What are you doing here?",
+      "block": 166
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I will tell you what and you will see that I am in the right.\n                    Tom Chaney there shot my father to death in Fort Smith and\n                    robbed him of two gold pieces and stole his mare. Her name\n                    is Judy but I did not see her down at the river. I was\n                    informed Rooster Cogburn had grit and I hired him out to\n                    find the murderer. A few minutes ago I came upon Chaney\n                    watering the horses. He would not be taken in charge and I\n                    shot him. If I had killed him I would not be now in this fix.\n                    My revolver misfired.",
+      "block": 167
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "Lucky Ned",
+      "quote": "They will do it. It will embarrass you every time. Most girls\n                    like to play pretties, but you like guns do you?",
+      "block": 168
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I do not care a thing in the world about guns. If I did I would\n                    have one that worked.",
+      "block": 169
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "I was shot from ambush, Ned. The horses was blowing and\n                    making noise. It was that officer that got me.",
+      "block": 170
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "How can you sit there and tell such a big story?",
+      "block": 171
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": "Chaney",
+      "quote": "That pit is a hundred feet deep and I will throw you into it\n                    and leave you to scream and rot! How do you like that?",
+      "block": 172
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "No you won't. This man will not let you have your way. He\n                    is your boss and you must do as he tells you.",
+      "block": 173
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "Five minutes is well up!",
+      "block": 174
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "ally",
+      "cue": "Lucky Ned",
+      "quote": "I will give him a little more time.",
+      "block": 175
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "Chaney",
+      "quote": "How much more?",
+      "block": 176
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "Til I think he has had enough.",
+      "block": 177
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "Hold fast a while there, Doctor!",
+      "block": 178
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Why doesn't the Doctor do that?",
+      "block": 179
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "It was Marshal Cogburn and myself.",
+      "block": 180
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "Yourself, eh? You and Cogburn, quite the posse.",
+      "block": 181
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "Your friend is gone. You are alone.",
+      "block": 182
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "Well Dressed Man",
+      "quote": "We must move, Ned.",
+      "block": 183
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "You are too nervous, Doctor. It will be hours before he is\n                    back with help.",
+      "block": 184
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "Idiot",
+      "quote": "Moo! Moo!",
+      "block": 185
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Hello, Ned. How many men are with the girl?",
+      "block": 186
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "Lucky Ned",
+      "quote": "I call that bold talk for a one-eyed fat man!",
+      "block": 187
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "Idiot",
+      "quote": "Koo koo roo! Blawk!",
+      "block": 188
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Fill your hand, you son of a bitch!",
+      "block": 189
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Shoot them, Mr. LeBoeuf!",
+      "block": 190
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Mr. LeBoeuf!",
+      "block": 191
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Too far, moving too fasht.",
+      "block": 192
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Oh lord.",
+      "block": 193
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Some bully shot! Four hundred yards, at least!",
+      "block": 194
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "I am afraid I have--",
+      "block": 195
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "Mattie",
+      "quote": "Stand up, Tom Chaney!",
+      "block": 196
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Mr. LeBoeuf! Are you alive!",
+      "block": 197
+    },
+    {
+      "speaker": "p13",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster's Voice",
+      "quote": "Are you there?",
+      "block": 198
+    },
+    {
+      "speaker": "p2",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I am here!",
+      "block": 199
+    },
+    {
+      "speaker": "p13",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster's Voice",
+      "quote": "Can you clamber out?",
+      "block": 200
+    },
+    {
+      "speaker": "p2",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I cannot!",
+      "block": 201
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Awake?",
+      "block": 202
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Yes!",
+      "block": 203
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Ahh!",
+      "block": 204
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "What is that?",
+      "block": 205
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "I am bit!",
+      "block": 206
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Does Mr. LeBoeuf survive?",
+      "block": 207
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "My foot is pinned and leg broken.",
+      "block": 208
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "I have her! Up with us!",
+      "block": 209
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "I will send help for you as soon as I can. Don't wander off.",
+      "block": 210
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "We are not leaving him!",
+      "block": 211
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": ". . . I am in your debt for that shot, pard.",
+      "block": 212
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": "Never doubt the Texash Ranger.",
+      "block": 213
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "LeBoeuf",
+      "quote": ". . . Ever shtalwart!",
+      "block": 214
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Come on, you!",
+      "block": 215
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "We must stop. Little Blackie is played out.",
+      "block": 216
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "We have miles yet.",
+      "block": 217
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "No!",
+      "block": 218
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "He is getting away.",
+      "block": 219
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Who is getting away?",
+      "block": 220
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Chaney.",
+      "block": 221
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Hold on, sis.",
+      "block": 222
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "Put your arms around my neck, I will carry.",
+      "block": 223
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Where are we?",
+      "block": 224
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "Rooster",
+      "quote": "I have grown old.",
+      "block": 225
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "Voice-Over",
+      "quote": "A quarter of a century is a long time.",
+      "block": 226
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Mattie",
+      "quote": "Boy.",
+      "block": 227
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 39,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 2,
+          "neu": 34
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 24,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 8,
+          "ally": 1,
+          "neu": 15
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p12",
+        "weight": 5,
+        "sign": "opp",
+        "stances": {
+          "opp": 3,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p15",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 18,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 5,
+          "ally": 0,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p2",
+        "weight": 16,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 1,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p14",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p15",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 19,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 2,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p1"
+      ]
+    ]
+  }
+}
