@@ -1,0 +1,1656 @@
+{
+  "entity": "f_the_deer_hunter",
+  "source": "data-seed/scripts/f_the_deer_hunter.txt",
+  "scope": "the whole script, machine-extracted (21 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Then lemme have 'em.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "No.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "No.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No!!!?",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What do you mean, no???",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "That's it. No. No way.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Some fuckin' friend... You're some\n\tfuckin' friend, Merle!",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": null,
+      "quote": "You gotta learn, Vince! You come\n\tout here... You got no jacket, you\n\tgot no pants, you got no knife and\n\tyou got no boots. You think\n\teveryone's gonna take care of you!\n\tThat's what you always think, but\n\tthis time you're wrong. This time\n\tyou're on your own!",
+      "block": 8
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Merle, give him the boots.",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "No. No boots. No nothin'.",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You're one fuckin' bastard, Merle.\n\tYou know that? You're one fucking\n\tbastard!",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "This is this, Vince. This isn't\n\tsomething else. This is this!",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Vince. Hey, you guys --",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Take last night...! Last night he\n\tcoulda had twenty fuckin' deer!\n\tMore! He coulda had more! And look\n\twhat he does! I mean look what he\n\tfuckin' does!!!",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Vince!!!",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": "p2",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I'll get the boots.",
+      "block": 16
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Get the boots.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I mean let's get going before --",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": "p4",
+      "stance": "opp",
+      "cue": null,
+      "quote": "I said no.",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "What the hell are you doing here?",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "MERLE",
+      "quote": "Saving lives.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "Move it out, girls! Move it out!",
+      "block": 22
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Merle?... Jesus, Merle!",
+      "block": 23
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SAL",
+      "quote": "Hey...! Hey, Merle!",
+      "block": 24
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SAL",
+      "quote": "Merle?",
+      "block": 25
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SAL (CONT'D)",
+      "quote": "Merle?",
+      "block": 26
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MERLE (CONT'D)",
+      "quote": "Who here is for Merle...?",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MERLE (CONT'D)",
+      "quote": "Who... here... is for Merle...?",
+      "block": 28
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MERLE (CONT'D)",
+      "quote": "MERLE IS MIGHTY! -- HA!",
+      "block": 29
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MERLE (CONT'D)",
+      "quote": "MERLE IS STRONG! -- HA!",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MERLE (CONT'D)",
+      "quote": "MERLE IS MAGIC -- HA!",
+      "block": 31
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SAL",
+      "quote": "Where are we going, Merle? Are we\n\tgoing home?",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "MERLE (a whisper)",
+      "quote": "Right here.",
+      "block": 33
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SAL (CONT'D)",
+      "quote": "Merle. Merle, a car!",
+      "block": 34
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAL (CONT'D)",
+      "quote": "Hey! Hey, gee!",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "MERLE",
+      "quote": "Damn it!!! God damn it!!!",
+      "block": 36
+    },
+    {
+      "speaker": "p2",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "MERLE (nods)",
+      "quote": "Sure. Sure, Sal. We're going home.",
+      "block": 37
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "GENERAL",
+      "quote": "Where's your unit, soldier?",
+      "block": 38
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "ally",
+      "cue": "GENERAL (to his DRIVER)",
+      "quote": "C'mon. We'll take him along.",
+      "block": 39
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "ally",
+      "cue": "GENERAL (CONT'D)",
+      "quote": "Little R and R and you'll be\n\tstanding tall again, son... Damn,\n\tthis is steep!",
+      "block": 40
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "Uh-oh. Sir.",
+      "block": 41
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "GENERAL",
+      "quote": "Uh-oh.",
+      "block": 42
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "GENERAL (CONT'D)",
+      "quote": "Y'know, there's more fucking\n\tmaniacs coming out of this\n\tconflict...",
+      "block": 43
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Is your name Solomon?",
+      "block": 44
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR (CONT'D)",
+      "quote": "Are you sure?",
+      "block": 45
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR (CONT'D)",
+      "quote": "Lemme see this.",
+      "block": 46
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR (CONT'D)",
+      "quote": "Is this yours?",
+      "block": 47
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR (CONT'D)",
+      "quote": "That one's yours.",
+      "block": 48
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUM CHEWER BEHIND",
+      "quote": "Go on, babe. Take it. 'S all yours!",
+      "block": 49
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You go ahead.",
+      "block": 50
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Sal...! Sal!!!",
+      "block": 51
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAR GIRL",
+      "quote": "Everybody love Linda.",
+      "block": 52
+    },
+    {
+      "speaker": "p6",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "NICK (stares at her)",
+      "quote": "You mean...?",
+      "block": 53
+    },
+    {
+      "speaker": "p12",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BAR GIRL",
+      "quote": "You like to call me Linda now?",
+      "block": 54
+    },
+    {
+      "speaker": "p6",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Linda, yeah.",
+      "block": 55
+    },
+    {
+      "speaker": "p12",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BAR GIRL",
+      "quote": "You call me Linda, just like home.",
+      "block": 56
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK (CONT'D)",
+      "quote": "Everyone take an elephant!",
+      "block": 57
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK (CONT'D)",
+      "quote": "You know how to carry an elephant?",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE",
+      "quote": "This is him. I'm telling you, this\n\tis Nick!",
+      "block": 59
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "I thought that was it.",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE",
+      "quote": "So he's in the next one, Albert. I\n\tmean take it easy. I mean you're\n\tdriving everybody nuts!",
+      "block": 61
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "VETS (V.O.)",
+      "quote": "Three cheers for the red, white and\n\tblue...!",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE",
+      "quote": "You okay?",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE (CONT'D)",
+      "quote": "It's gonna be the next one. Okay?",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "VINCE (CONT'D)",
+      "quote": "It's gotta be the next one. I mean\n\tit's gotta be! Right, Albert?",
+      "block": 65
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "Fuckin' A. It's gotta!",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE",
+      "quote": "It's gotta!",
+      "block": 67
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Guess who.",
+      "block": 68
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "LINDA",
+      "quote": "Nick! Oh, Nick, you're back!",
+      "block": 69
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "No.",
+      "block": 70
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "LINDA",
+      "quote": "Oh, Nick! Oh I missed you so!",
+      "block": 71
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "LINDA (CONT'D)",
+      "quote": "How are you?",
+      "block": 72
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Fine. I'm fine. How are you?",
+      "block": 73
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Fine. I just go along, you know.\n\tDown at the market. Back here. I\n\tmean it just seems there's a\n\tmillion things to do!... Are you\n\tsure you're all right? I mean, what\n\tabout the wound?",
+      "block": 74
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK (anger)",
+      "quote": "That was nothing. That wasn't\n\tanything.",
+      "block": 75
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "But --",
+      "block": 76
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "It was just the complications. I\n\tmean, you take a little thing over\n\tthere and then you get\n\tcomplications. I mean all the guys\n\thad it.",
+      "block": 77
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "How's the trailer?",
+      "block": 78
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Great. Fine... Once or twice it did\n\tfall off the blocks. I don't know\n\twhat that's from.",
+      "block": 79
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Frost.",
+      "block": 80
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Is that what it is? I couldn't\n\tfigure out.",
+      "block": 81
+    },
+    {
+      "speaker": "p6",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Did you get hurt? You didn't get\n\thurt?",
+      "block": 82
+    },
+    {
+      "speaker": "p14",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Oh, no. It just kind of goes thump.\n\tWould you like a Coke? You don't\n\tdrink Coke. Or maybe you do. What\n\tabout champagne? Let's have\n\tchampagne! I don't think we have\n\tchampagne. Let's have this. See?\n\tSparkling. I'll get you an opener.\n\tOh, that's right. No opener. Let's\n\tjust have beer. Do you want some\n\tcheese? Or maybe eggs? Maybe we\n\tshould have coffee.",
+      "block": 83
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE (V.O.)",
+      "quote": "Let's go!!!",
+      "block": 84
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT (V.O.)",
+      "quote": "Hey! Fuckin' A! Time to roll!!!",
+      "block": 85
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I gotta go.",
+      "block": 86
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "JOHN",
+      "quote": "Psst. Vince!",
+      "block": 87
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHN",
+      "quote": "Sweet! Oh, that is sweet!",
+      "block": 88
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE (CONT'D)",
+      "quote": "Hold your fire! I got this one!!!",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE (CONT'D)",
+      "quote": "I got it! I got this one!",
+      "block": 90
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE",
+      "quote": "Gun! Gimme gun!!!",
+      "block": 91
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VINCE (CONT'D)",
+      "quote": "Where's it gone?",
+      "block": 92
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "JOHN",
+      "quote": "Inside, Vince.",
+      "block": 93
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Biederman! Where's Biederman!",
+      "block": 94
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "NICK",
+      "quote": "Biederman!",
+      "block": 95
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "Here.",
+      "block": 96
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You Biederman?",
+      "block": 97
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIEUTENANT",
+      "quote": "Biederman, yes.",
+      "block": 98
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIEDERMAN",
+      "quote": "Correct.",
+      "block": 99
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Follow me, please.",
+      "block": 100
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Right this way.",
+      "block": 101
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Through here.",
+      "block": 102
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Take off the uniform.",
+      "block": 103
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK (CONT'D)",
+      "quote": "Take off the uniform, Lieutenant!",
+      "block": 104
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "COLONEL",
+      "quote": "Jesus Christ, they hit the airport!",
+      "block": 105
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Naw.",
+      "block": 106
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MP",
+      "quote": "Right this way, Lieutenant.",
+      "block": 107
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARINE (V.O.)",
+      "quote": "Sir?",
+      "block": 108
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIFE",
+      "quote": "My pleasure.",
+      "block": 109
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIFE (hissing)",
+      "quote": "Avec champignons.",
+      "block": 110
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBASSADOR (CONT'D)",
+      "quote": "Avec champignons.",
+      "block": 111
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Pee-pee.",
+      "block": 112
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Merle!!!",
+      "block": 113
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK (CONT'D)",
+      "quote": "It's okay, God damn it! It's all\n\tright!",
+      "block": 114
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL",
+      "quote": "Hey, good buddy, how you doin'?",
+      "block": 115
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL",
+      "quote": "This is Biederman, you guys.",
+      "block": 116
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL",
+      "quote": "Biederman, this is Son Loc, Tu Fon,\n\tHuckerbelly and Potts. What's the\n\tstory here, Biederman? We're\n\tlooking for... Wait a minute.",
+      "block": 117
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "COLONEL (CONT'D)",
+      "quote": "Here it is. Chez Armand.",
+      "block": 118
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "WHORE",
+      "quote": "Chez Armand not here! Chez Armand\n\thas gone to other spot!",
+      "block": 119
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL (gets up)",
+      "quote": "Honey, c'mere. Come right here.",
+      "block": 120
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL (CONT'D)",
+      "quote": "This is for bein' so smart.",
+      "block": 121
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL (CONT'D)",
+      "quote": "Let's go! Mount up! C'mon\n\tBiederman!",
+      "block": 122
+    },
+    {
+      "speaker": "p16",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "COLONEL (CONT'D)",
+      "quote": "Boy, do I love this conflict.\n\tHuh?... What the hell were you\n\tdoin' in there?",
+      "block": 123
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "You know a guy named Merle?",
+      "block": 124
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL",
+      "quote": "Merle? That's who we're looking\n\tfor. Merle.",
+      "block": 125
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Yeah?",
+      "block": 126
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Yeah?",
+      "block": 127
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL",
+      "quote": "Sure! I got eight hundred potatoes\n\tsays he goes one more... He\n\tretired, you know.",
+      "block": 128
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL",
+      "quote": "Now he's back.",
+      "block": 129
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "COLONEL (CONT'D)",
+      "quote": "He eats 'em... Sure... He eats 'em\n\traw!",
+      "block": 130
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "REFEREE",
+      "quote": "Game number seven. Gentlemen will\n\tplease wrap.",
+      "block": 131
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "REFEREE (CONT'D)",
+      "quote": "One cartridge. Game to be played to\n\tcompletion. Forfeit automatic after\n\tdelay of one minute.",
+      "block": 132
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "REFEREE",
+      "quote": "Gentleman on the left will now\n\tcommence play.",
+      "block": 133
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "ally",
+      "cue": "ARMAND (CONT'D)",
+      "quote": "C'est tres amusant... You have been\n\tpromoted. And to a Jew... I am\n\tjoking of course. Naturellement.\n\tSeriously, Nick, may I hope that\n\tyou have come to play?",
+      "block": 134
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "I came to see Merle.",
+      "block": 135
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "ARMAND",
+      "quote": "Ah. Merle. And you know Merle?",
+      "block": 136
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Yeah.",
+      "block": 137
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "ally",
+      "cue": "ARMAND (studies him)",
+      "quote": "You are his friend.",
+      "block": 138
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NICK",
+      "quote": "Where is he???",
+      "block": 139
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "ally",
+      "cue": "ARMAND (faint smile)",
+      "quote": "Merle is under his tree... Beside\n\tthe terrace. You can't miss him.",
+      "block": 140
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "NICK",
+      "quote": "Merle!",
+      "block": 141
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "NICK (CONT'D)",
+      "quote": "Merle...! Jesus! Hey, how are you?",
+      "block": 142
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "MERLE",
+      "quote": "Nick!... I thought you went home.",
+      "block": 143
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "MERLE",
+      "quote": "Sit down.",
+      "block": 144
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MERLE (CONT'D)",
+      "quote": "How's Linda?",
+      "block": 145
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "MERLE",
+      "quote": "I like it, Nick.",
+      "block": 146
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MERLE",
+      "quote": "I like it because it's simple.",
+      "block": 147
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "NICK",
+      "quote": "Merle...! Merle, wait!",
+      "block": 148
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "NICK (CONT'D)",
+      "quote": "Merle!!!",
+      "block": 149
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "VET 2",
+      "quote": "Up.",
+      "block": 150
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "VINCE",
+      "quote": "John! Play something!",
+      "block": 151
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 7,
+        "sign": "opp",
+        "stances": {
+          "opp": 4,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p24",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p6",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p6",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p6",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p21",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p23",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p6",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 24 given"
+  }
+}
