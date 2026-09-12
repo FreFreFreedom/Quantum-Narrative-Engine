@@ -38,6 +38,11 @@ const TEXT_PATTERNS = [
   /limit will reset at ([^.,;\n]+)/i,
   /try again after ([^.,;\n]+)/i,
   /resets? (?:at|in) ([^.,;\n]+)/i,
+  // Google says "Please retry in 19.30131773s." and nothing else — no header, no
+  // date. Without this the whole lane fell through to the catalogue's guess and
+  // was benched for a minute over a twenty-second wait, every time. The seconds
+  // value carries a decimal point, so this pattern may not stop at a full stop.
+  /retry in ([\d.]+\s*(?:s|sec|secs|second|seconds|m|min|minutes?|h|hr|hours?)\b)/i,
 ];
 
 function fromText(text) {
@@ -48,6 +53,8 @@ function fromText(text) {
     const captured = m[1].trim();
     const asDate = Date.parse(captured);
     if (Number.isFinite(asDate)) return { resetsAt: new Date(asDate).toISOString(), known: true, source: 'text' };
+    const relSec = captured.match(/(\d+(?:\.\d+)?)\s*(?:s|sec|secs|second|seconds)\b/i);
+    if (relSec) return { resetsAt: new Date(Date.now() + Math.ceil(Number(relSec[1])) * 1000).toISOString(), known: true, source: 'text' };
     const relMin = captured.match(/(\d+)\s*(?:min|minute)/i);
     if (relMin) return { resetsAt: new Date(Date.now() + Number(relMin[1]) * 60_000).toISOString(), known: true, source: 'text' };
     const relHr = captured.match(/(\d+)\s*(?:hr|hour)/i);
