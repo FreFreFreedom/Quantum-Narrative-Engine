@@ -61,7 +61,14 @@ export const TRAFFIC_LANES = [
   // one: the ids there change often enough that pinning one is how this breaks silently.
   { provider: 'opencode', model: null },
 ];
-export const WINDOW_CHARS = 12000;
+// 8000, not 12000, and the reason is Groq rather than Cerebras. Groq's free tier allows
+// 8k tokens a minute and counts the RESERVED answer against it, not just the prompt — so a
+// 12k-char window (~3.3k in) plus a 4k answer asks for 7.3k and is refused as soon as
+// anything else has run that minute. At 8000 chars (~2.2k in) plus a 3k answer the whole
+// window is ~5.2k and fits, which is the difference between Groq working as a second lane
+// and the batch standing still every time Cerebras's daily allowance runs out. Cerebras is
+// unaffected: more windows, the same total tokens, well inside its 30k a minute.
+export const WINDOW_CHARS = 8000;
 export const WINDOW_PAUSE_MS = 15000;
 
 // How long to wait after a window, by whichever lane actually answered it. These are not
@@ -71,7 +78,7 @@ export const WINDOW_PAUSE_MS = 15000;
 // every remaining window of a film refused on Groq, which is exactly what happened the
 // night Cerebras's daily allowance ran out and the batch sat still until morning.
 export const LANE_PAUSE_MS = { cerebras: 15_000, groq: 62_000, opencode: 20_000 };
-const MAX_TOKENS = 4000;
+const MAX_TOKENS = 3000;
 
 const STANCES = new Set(['opp', 'ally', 'neu']);
 
