@@ -11573,20 +11573,25 @@ function renderFreeProvidersSection() {
     const cap = perDay(lim);
     const used = use ? (use.calls || 0) : 0;
     const pct = cap ? Math.min(100, Math.round((used / cap) * 100)) : 0;
-    const allowance = cap
-      ? `${used} of ${cap} today`
-      : (use ? `${used} today` : 'no stated limit');
+    // The column already says "used today", so the row must not say it again. Big
+    // allowances get their thousands separated — 14400 is a smear, 14,400 is a number.
+    const n = (v) => v.toLocaleString();
+    const allowance = cap ? `${n(used)} of ${n(cap)}` : (use ? String(n(used)) : 'no stated limit');
     const bar = cap
       ? `<span class="ai-bar${out ? ' is-full' : ''}"><i style="width:${pct}%"></i></span>` : '';
     const why = ref ? String(ref.evidence || ref.reason || '').replace(/\s+/g, ' ').slice(0, 220) : '';
     const nowHtml = out
       ? `<span class="ai-fp-exhausted"${why ? ' title="' + qEsc(why) + '"' : ''}>out — back in ${fmtCountdown(st.resets_at)}</span>`
       : `<span class="ai-fp-live">ready</span>`;
-    const note = !out && ref
-      ? `<div class="ai-fp-lastref" title="${qEsc(why)}">last refused ${fmtAgo(ref.exhausted_at)}</div>` : '';
+    // A refusal from yesterday on a lane that is ready now is not news — it was on
+    // nearly every row, which is how a column stops being read at all. Only a recent
+    // one earns a line.
+    const refAgeMs = ref ? Date.now() - new Date(ref.exhausted_at).getTime() : Infinity;
+    const note = !out && ref && refAgeMs < 2 * 3600_000
+      ? `<div class="ai-fp-lastref" title="${qEsc(why)}">refused ${fmtAgo(ref.exhausted_at)}</div>` : '';
     return `
       <tr class="${out ? 'ai-lane-off' : ''}">
-        <td>${i === 0 ? qEsc(p.label) : ''}${p.metered && i === 0 ? ' <span class="ai-fp-paid">costs money</span>' : ''}</td>
+        <td>${i === 0 ? qEsc(String(p.label).replace(/\s*\([^)]*\)\s*$/, '')) : ''}${p.metered && i === 0 ? ' <span class="ai-fp-paid">costs money</span>' : ''}</td>
         <td>${qEsc(m.id)}</td>
         <td class="ai-fp-rank"${paceOf(lim) ? ' title="' + qEsc(paceOf(lim)) + '"' : ''}>${qEsc(allowance)}${bar}</td>
         <td>${nowHtml}${note}</td>
