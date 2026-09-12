@@ -1,0 +1,3888 @@
+{
+  "entity": "f_12_years_a_slave",
+  "source": "data-seed/scripts/f_12_years_a_slave.txt",
+  "scope": "the whole script, machine-extracted (33 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ANNE",
+      "quote": "Solomon...",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "Come, Anne. Jump.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "I will catch you, Anne.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "I will.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "ANNE",
+      "quote": "You will.",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "A VOICE (O.S.)",
+      "quote": "Jasper! Come on!",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "Mr. Parker.",
+      "block": 7
+    },
+    {
+      "speaker": "p4",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "PARKER",
+      "quote": "Mr. Northup. Mrs. Northup.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "ally",
+      "cue": "ANNE",
+      "quote": "I am.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ANNE",
+      "quote": "It's beautiful.",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "At what price?",
+      "block": 11
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "If you would sign our condolence",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "book. My hope is to find a way to",
+      "block": 13
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "forward it to the Widow Harrison.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sad days for the nation.",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, certainly. Poor Mrs. Harris",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "and her children. I hope brighter",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "times ahead.",
+      "block": 18
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A moment, sir, and you will be",
+      "block": 19
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "assisted.",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "If we could discuss the price...",
+      "block": 21
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Forgive me, Mrs. Northup. A",
+      "block": 22
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "customer waits. Welcome, sir.",
+      "block": 23
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "To Jasper, with good nature:",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Shop well, but mind your wallet.",
+      "block": 25
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ignore the gentleman's nonsense.",
+      "block": 26
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Now, may I interest you in a new",
+      "block": 27
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "cravat? Pure silk by way of the--",
+      "block": 28
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Jasper!",
+      "block": 29
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "My regrets for the intrusion.",
+      "block": 30
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Good day, sir.",
+      "block": 31
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"Thus has passed away from earth",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "our late President.\"",
+      "block": 33
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"During the morning, from sunrise,",
+      "block": 34
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "the heavy bells had been pealing",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "forth their slow and solemn toll",
+      "block": 36
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "while the minute guns announced",
+      "block": 37
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "that soon the grave would receive",
+      "block": 38
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "its trust. Our city as well as",
+      "block": 39
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "our entire nation has been called",
+      "block": 40
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "to weep over the fall of a great",
+      "block": 41
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "and good man. One who was by the",
+      "block": 42
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "wishes of a large majority of our",
+      "block": 43
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "people raised to fill the highest",
+      "block": 44
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "place of trust within their gift.",
+      "block": 45
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "William Henry Harrison.\"",
+      "block": 46
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Will you read it again?",
+      "block": 47
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not just now, darling.",
+      "block": 48
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "For food that stays our hunger,",
+      "block": 49
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "For rest that brings us ease,",
+      "block": 50
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "For homes where memories linger,",
+      "block": 51
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We give our thanks for these.",
+      "block": 52
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Amen.",
+      "block": 53
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Margaret, that was wonderful.",
+      "block": 54
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Thank you, Papa.",
+      "block": 55
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Alonzo, do you have something to",
+      "block": 56
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "say?",
+      "block": 57
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, I helped Momma make this.",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, and you were such a good",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "help. Especially making the gravy.",
+      "block": 60
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Papa, I would very much like to",
+      "block": 61
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "learn how to play the violin.",
+      "block": 62
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Could you teach me?",
+      "block": 63
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Me too!",
+      "block": 64
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, but I asked Papa first.",
+      "block": 65
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Both of you, calm down. We will",
+      "block": 66
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "have our first lesson after this",
+      "block": 67
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "wonderful dinner. And on that",
+      "block": 68
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "note, let's start eating.",
+      "block": 69
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Three weeks. Two days.",
+      "block": 70
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It is the custom. I wonder what",
+      "block": 71
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "you'll do without me?",
+      "block": 72
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I won't stay idle.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Darling, it's good money.",
+      "block": 74
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "If only I didn't have to share",
+      "block": 75
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "your cooking with other people.",
+      "block": 76
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You don't.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Travel safely.",
+      "block": 78
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Stay safely.",
+      "block": 79
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BROWN",
+      "quote": "Sir.",
+      "block": 80
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAMILTON",
+      "quote": "He was indeed.",
+      "block": 81
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Mr. Moon is being overly gracious.",
+      "block": 82
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "A circus?",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Thank you sir...",
+      "block": 84
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "HAMILTON",
+      "quote": "Consider it an opportunity to see",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "It's intriguing...",
+      "block": 86
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "HAMILTON",
+      "quote": "No letter to post?",
+      "block": 87
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BROWN",
+      "quote": "We're off then.",
+      "block": 88
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MULATTO WOMAN",
+      "quote": "Cheer up and don't be so cast\n           down.",
+      "block": 89
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLEMENS RAY",
+      "quote": "If you want to survive, do and say \n           as little as possible. Tell no \n           one who you really are and tell no \n           one that you can read and write.",
+      "block": 90
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLEMENS RAY (CONT'D)",
+      "quote": "Unless you want to be a dead \n           nigger.",
+      "block": 91
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROBERT",
+      "quote": "I say we fight.",
+      "block": 92
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "The crew is fairly small. If it \n           were well planned, I believe \n           they could be strong armed.",
+      "block": 93
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLEMENS RAY",
+      "quote": "Three can't stand against a whole \n           crew. The rest here are niggers, \n           born and bred slaves. Niggers \n           ain't got the stomach for a fight, \n           not a damn one.",
+      "block": 94
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROBERT",
+      "quote": "All I know, we get where we \n           travelling we'll wish we'd died \n           trying.",
+      "block": 95
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLEMENS RAY",
+      "quote": "Survival is not about certain \n           death, it is about keeping your \n           head down.",
+      "block": 96
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Days ago I was with my family, in \n           my home. Now you tell me all is \n           lost. \"Tell no one who I really \n           am\" if I want to survive. I don't \n           want to survive, I want to live.",
+      "block": 97
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLEMENS RAY",
+      "quote": "Better off. Better than us.",
+      "block": 98
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAY",
+      "quote": "Clemens...! Clemens Ray!",
+      "block": 99
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAY",
+      "quote": "Who is in charge of this vessel?",
+      "block": 100
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAPTAIN",
+      "quote": "I am the Captain.",
+      "block": 101
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAPTAIN",
+      "quote": "I know nothing of--",
+      "block": 102
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "opp",
+      "cue": "RAY",
+      "quote": "Remove these contraptions!",
+      "block": 103
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAPTAIN",
+      "quote": "Free him!",
+      "block": 104
+    },
+    {
+      "speaker": "p16",
+      "to": "p15",
+      "stance": "opp",
+      "cue": "FREEMAN",
+      "quote": "Captain, who shipped that nigger?",
+      "block": 105
+    },
+    {
+      "speaker": "p15",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "CAPTAIN",
+      "quote": "Burch.",
+      "block": 106
+    },
+    {
+      "speaker": "p16",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "FREEMAN",
+      "quote": "Stand up.",
+      "block": 107
+    },
+    {
+      "speaker": "p2",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "My name is not Platt. My name is--",
+      "block": 108
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Can you play a reel?",
+      "block": 109
+    },
+    {
+      "speaker": "p17",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "CAPE (DISMISSIVE)",
+      "quote": "Nah. I don't know no reel.",
+      "block": 110
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "ally",
+      "cue": "FREEMAN (CONT'D)",
+      "quote": "Keep on. Keep on.",
+      "block": 111
+    },
+    {
+      "speaker": "p18",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "FORD",
+      "quote": "You will accept a note?",
+      "block": 112
+    },
+    {
+      "speaker": "p16",
+      "to": "p18",
+      "stance": "ally",
+      "cue": "FREEMAN",
+      "quote": "As always, from you, Mr. Ford.",
+      "block": 113
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREEMAN",
+      "quote": "Eliza, quiet!",
+      "block": 114
+    },
+    {
+      "speaker": "p19",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "BUYER",
+      "quote": "Your price for the child?",
+      "block": 115
+    },
+    {
+      "speaker": "p19",
+      "to": "p16",
+      "stance": "ally",
+      "cue": "BUYER",
+      "quote": "Done.",
+      "block": 116
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZA (CONT'D)",
+      "quote": "Please, don't. No!",
+      "block": 117
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREEMAN",
+      "quote": "Take her out of here.",
+      "block": 118
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREEMAN (CONT'D)",
+      "quote": "Keep her quiet.",
+      "block": 119
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "EMILY",
+      "quote": "Mama... Mama!",
+      "block": 120
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREEMAN (CONT'D)",
+      "quote": "Play!",
+      "block": 121
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAPIN",
+      "quote": "Sam, call to the Mistress.",
+      "block": 122
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAM",
+      "quote": "Mistress! Mistress, they arrivn'.",
+      "block": 123
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. FORD",
+      "quote": "Let me get a look at them...",
+      "block": 124
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "FORD",
+      "quote": "Mr. Chapin--",
+      "block": 125
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "FORD",
+      "quote": "Separated from her children.",
+      "block": 126
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. FORD",
+      "quote": "Oh, dear.",
+      "block": 127
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "FORD",
+      "quote": "It couldn't be helped.",
+      "block": 128
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. FORD",
+      "quote": "Poor, poor woman.",
+      "block": 129
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " of the dead, have ye not read that",
+      "block": 130
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " which was spoken unto you by God,",
+      "block": 131
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " saying, I am the God of Abraham,",
+      "block": 132
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " and the God of Isaac, and the God",
+      "block": 133
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " of Jacob. God is not the God of",
+      "block": 134
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " the dead, but of the living. And",
+      "block": 135
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " when the multitude heard this,",
+      "block": 136
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " they were astonished at his",
+      "block": 137
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " doctrine. Then one of them, which",
+      "block": 138
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " was a lawyer, asked him a",
+      "block": 139
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " question, tempting him, and",
+      "block": 140
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " saying, Master, which is the",
+      "block": 141
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " great commandment in the law?",
+      "block": 142
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " Jesus said unto him, Thou shalt",
+      "block": 143
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " love the Lord thy God with all thy",
+      "block": 144
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " heart, and with all thy soul, and",
+      "block": 145
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " with all thy mind. This is the",
+      "block": 146
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " first and great commandment. And",
+      "block": 147
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " the second is like unto it, thou",
+      "block": 148
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " shalt love thy neighbor as",
+      "block": 149
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " thyself. On these two",
+      "block": 150
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " commandments hang all the law and",
+      "block": 151
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " the prophets.",
+      "block": 152
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " But he that is greatest among you,",
+      "block": 153
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " let him be as the younger; and he",
+      "block": 154
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " that is chief, as he that doth",
+      "block": 155
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " serve. For whether is greater, he",
+      "block": 156
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " that sitteth at meat, or he that",
+      "block": 157
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " serveth? Is not he that sitteth",
+      "block": 158
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " at meat? But I am among you as he",
+      "block": 159
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " that serveth.",
+      "block": 160
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " From where did you thieve this?",
+      "block": 161
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " Suh, the book is my property.",
+      "block": 162
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " Take your hands from me!",
+      "block": 163
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " What is the commotion?",
+      "block": 164
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " Your niggers are either brazen or",
+      "block": 165
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " rebellious. This one was readin'",
+      "block": 166
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " Scripture, and this one claims it",
+      "block": 167
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " to be his.",
+      "block": 168
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " It is. A gift from his Mistress.",
+      "block": 169
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " You condone this?",
+      "block": 170
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " I encourage it. As a Christian I",
+      "block": 171
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " can do no less.",
+      "block": 172
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " You can do no worse, Ford. A",
+      "block": 173
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " slave that reads is dangerous.",
+      "block": 174
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " And the man who would allow a",
+      "block": 175
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " slave to read is unfit to own",
+      "block": 176
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " niggers!",
+      "block": 177
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " Pay him no mind. The word of God",
+      "block": 178
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " applies to all. In that you may",
+      "block": 179
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": " take comfort.",
+      "block": 180
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The creek is plenty deep enough to",
+      "block": 181
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "sail, even with a boat full of",
+      "block": 182
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "load. The distance from the WORK",
+      "block": 183
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "AREA to the point on the latter",
+      "block": 184
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "bayou is several miles by water",
+      "block": 185
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "fewer than land. It occurs to me",
+      "block": 186
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "that the expense of the",
+      "block": 187
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "transportation would be materially",
+      "block": 188
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "\"Materially diminished?\"",
+      "block": 189
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": null,
+      "quote": "If we use the waterway.",
+      "block": 190
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "It's a scheme. Plenty of",
+      "block": 191
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "engineers have schemed similarly.",
+      "block": 192
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "The passes are too tight.",
+      "block": 193
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I reckon them at more than twelve",
+      "block": 194
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "feet at their most narrow. Wide",
+      "block": 195
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "enough for a tub to traverse. A",
+      "block": 196
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "team of niggers can clear it out.",
+      "block": 197
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "And you know what of transport and",
+      "block": 198
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "terra formin'?",
+      "block": 199
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I labored repairing the Champlain",
+      "block": 200
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "canal, on the section over which",
+      "block": 201
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "William Van Nortwick was",
+      "block": 202
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "superintendent. With my earnings",
+      "block": 203
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I hired several efficient hands to",
+      "block": 204
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "assist me, and I entered into",
+      "block": 205
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "contracts for the transportation",
+      "block": 206
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "of large rafts of timber from Lake",
+      "block": 207
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Champlain to Troy.",
+      "block": 208
+    },
+    {
+      "speaker": "p18",
+      "to": "p26",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I'll admit to being impressed even",
+      "block": 209
+    },
+    {
+      "speaker": "p18",
+      "to": "p26",
+      "stance": "ally",
+      "cue": null,
+      "quote": "if you won't.",
+      "block": 210
+    },
+    {
+      "speaker": "p18",
+      "to": "p2",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Collect a gang, see what good you",
+      "block": 211
+    },
+    {
+      "speaker": "p18",
+      "to": "p2",
+      "stance": "ally",
+      "cue": null,
+      "quote": "can do.",
+      "block": 212
+    },
+    {
+      "speaker": "p2",
+      "to": "p18",
+      "stance": "ally",
+      "cue": null,
+      "quote": "My great thanks, Master Ford.",
+      "block": 213
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "My thanks to you, and it is the",
+      "block": 214
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "least of it. My hope is that it",
+      "block": 215
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "brings us both much joy over the",
+      "block": 216
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "years.",
+      "block": 217
+    },
+    {
+      "speaker": "p2",
+      "to": "p20",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Eliza. Eliza, stop!",
+      "block": 218
+    },
+    {
+      "speaker": "p2",
+      "to": "p20",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Stop it! Stop!",
+      "block": 219
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "It's all I have to keeps my loss",
+      "block": 220
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "present.",
+      "block": 221
+    },
+    {
+      "speaker": "p2",
+      "to": "p20",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You let yourself be overcome by",
+      "block": 222
+    },
+    {
+      "speaker": "p2",
+      "to": "p20",
+      "stance": "opp",
+      "cue": null,
+      "quote": "sorrow. You will drown in it.",
+      "block": 223
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Have you stopped crying for your",
+      "block": 224
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "children? You make no sounds, but",
+      "block": 225
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "will you ever let them go in your",
+      "block": 226
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "heart?",
+      "block": 227
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...They are as my flesh...",
+      "block": 228
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Master Ford is a decent man.",
+      "block": 229
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He is a slaver.",
+      "block": 230
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Under the circumstances--",
+      "block": 231
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No...",
+      "block": 232
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You luxuriate in his favor.",
+      "block": 233
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My back is thick with scars from",
+      "block": 234
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "protesting my freedom. Do not",
+      "block": 235
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Raise yer shirt.",
+      "block": 236
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Troublesome.",
+      "block": 237
+    },
+    {
+      "speaker": "p2",
+      "to": "p18",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sir, have I done something wrong?",
+      "block": 238
+    },
+    {
+      "speaker": "p2",
+      "to": "p18",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sir.",
+      "block": 239
+    },
+    {
+      "speaker": "p2",
+      "to": "p18",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, sir.",
+      "block": 240
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Make them boards flush.",
+      "block": 241
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": null,
+      "quote": "They are, sir.",
+      "block": 242
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "They is no such thing.",
+      "block": 243
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Callin' me a liar, boy?",
+      "block": 244
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "Yes, sir.",
+      "block": 245
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": "TIBEATS",
+      "quote": "Strip yer clothes!",
+      "block": 246
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "opp",
+      "cue": "TIBEATS",
+      "quote": "Strip!",
+      "block": 247
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "I will not.",
+      "block": 248
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "neu",
+      "cue": "TIBEATS",
+      "quote": "Papa I'm sorry!",
+      "block": 249
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAPIN",
+      "quote": "What is the matter?",
+      "block": 250
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAPIN",
+      "quote": "What's the matter with the nails?",
+      "block": 251
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "neu",
+      "cue": "TIBEATS",
+      "quote": "They're...they're too large.",
+      "block": 252
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Platt...",
+      "block": 253
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Yes, Mistress.",
+      "block": 254
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I can, ma'am.",
+      "block": 255
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I will, Mistress.",
+      "block": 256
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where yah from, Platt?",
+      "block": 257
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I have told you.",
+      "block": 258
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Tell me again.",
+      "block": 259
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Washington.",
+      "block": 260
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who were yah Master?",
+      "block": 261
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Master name of Freeman.",
+      "block": 262
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Was he a learned man?",
+      "block": 263
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I suppose so.",
+      "block": 264
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He learn yah ta read?",
+      "block": 265
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Boy, where are you going?",
+      "block": 266
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get there and get there quick.",
+      "block": 267
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Any trouble?",
+      "block": 268
+    },
+    {
+      "speaker": "p2",
+      "to": "p27",
+      "stance": "ally",
+      "cue": null,
+      "quote": "No, ma'am. No trouble.",
+      "block": 269
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Platt Epps, good Sunday morning.",
+      "block": 270
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "You may.",
+      "block": 271
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Excuse me, Mistress Shaw.",
+      "block": 272
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Nigger Platt.",
+      "block": 273
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sabbath day. I's free ta roam.",
+      "block": 274
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Drink tea?",
+      "block": 275
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "MISTRESS SHAW",
+      "quote": "What'n was Epps's concern?",
+      "block": 276
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "SOLOMON",
+      "quote": "...I'd rather not say...",
+      "block": 277
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "MISTRESS SHAW",
+      "quote": "He do.",
+      "block": 278
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I meant no disrespect.",
+      "block": 279
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "MISTRESS SHAW",
+      "quote": "He ain't heard you.",
+      "block": 280
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "EPPS",
+      "quote": "Pats...! Patsey!",
+      "block": 281
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "EPPS",
+      "quote": "Patsey...!",
+      "block": 282
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "I'll cut your black throat.",
+      "block": 283
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "MISTRESS EPPS",
+      "quote": "What? Wha's the fuss?",
+      "block": 284
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "A misunderstanding is all. It",
+      "block": 285
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "began when I was sent to retrieve",
+      "block": 286
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Patsey from where she'd taken",
+      "block": 287
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "sabbatical at Master Shaw's. Upon",
+      "block": 288
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "returning, Master Epps believed",
+      "block": 289
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Patsey and me to be in",
+      "block": 290
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "conversation when we were not. I",
+      "block": 291
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "tried to explain, but it lead to",
+      "block": 292
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "all this.",
+      "block": 293
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "What is it? Ya cain't remain the",
+      "block": 294
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "Sabbath without her under your",
+      "block": 295
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "EPPS",
+      "quote": "Hold a moment...",
+      "block": 296
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "A filthy, godless heathen. My bed",
+      "block": 297
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "is too holy for yah ta share.",
+      "block": 298
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "EPPS",
+      "quote": "Wha's...wha's he been tellin' yah?",
+      "block": 299
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "Of yer misbegotten ways.",
+      "block": 300
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "And he would know what of",
+      "block": 301
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "anythin'? I ain't even spoken",
+      "block": 302
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "with him today. Platt, yah lyin'",
+      "block": 303
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "nigger, have I? Have I?",
+      "block": 304
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "There; there's all the truth he",
+      "block": 305
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "opp",
+      "cue": "EPPS",
+      "quote": "got. Damned nigger. Damn yah.",
+      "block": 306
+    },
+    {
+      "speaker": "p33",
+      "to": null,
+      "stance": "neu",
+      "cue": "TREACH",
+      "quote": "Get him water.",
+      "block": 307
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "EDWARD",
+      "quote": "Go'won. Git up.",
+      "block": 308
+    },
+    {
+      "speaker": "p35",
+      "to": null,
+      "stance": "neu",
+      "cue": "UNCLE ABRAM",
+      "quote": "We dance tonight, massa?",
+      "block": 309
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "ally",
+      "cue": "MISTRESS EPPS",
+      "quote": "A moment from the dancing. Come",
+      "block": 310
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "ally",
+      "cue": "MISTRESS EPPS",
+      "quote": "sample what I baked for y'all.",
+      "block": 311
+    },
+    {
+      "speaker": "p27",
+      "to": "p31",
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "There'll be none for you, Patsey.",
+      "block": 312
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "Yah see that? Did yah see the",
+      "block": 313
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "look of insolence she give me?",
+      "block": 314
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "EPPS",
+      "quote": "Seen nothin' but her turn away.",
+      "block": 315
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "Are you blind or ignorant? It was",
+      "block": 316
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "hot, hateful scorn. It filled",
+      "block": 317
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "that black face. Yah tell me yah",
+      "block": 318
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "did'n see it, then yah choose not",
+      "block": 319
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "to look, or yah sayin' I lie.",
+      "block": 320
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "EPPS",
+      "quote": "Whatever it was, it passed.",
+      "block": 321
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "Is that how yah are with the",
+      "block": 322
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "niggers? Let every ill thought",
+      "block": 323
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "opp",
+      "cue": "MISTRESS EPPS",
+      "quote": "fester inside 'em. Look at 'em.",
+      "block": 324
+    },
+    {
+      "speaker": "p36",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ZACHARY",
+      "quote": "Off the porch. Get off.",
+      "block": 325
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SOLOMON",
+      "quote": "...Sir...",
+      "block": 326
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Sir.",
+      "block": 327
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "No, sir, I have not.",
+      "block": 328
+    },
+    {
+      "speaker": "p37",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "JUDGE TURNER",
+      "quote": "You play the fiddle?",
+      "block": 329
+    },
+    {
+      "speaker": "p2",
+      "to": "p37",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I do.",
+      "block": 330
+    },
+    {
+      "speaker": "p37",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "JUDGE TURNER",
+      "quote": "Mind yourself, Platt.",
+      "block": 331
+    },
+    {
+      "speaker": "p2",
+      "to": "p37",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Yes, sir.",
+      "block": 332
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELESTE",
+      "quote": "I am hungry.",
+      "block": 333
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Platt.",
+      "block": 334
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELESTE",
+      "quote": "Was you free?",
+      "block": 335
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I was. I am.",
+      "block": 336
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON (CONT'D)",
+      "quote": "I remain free in my heart.",
+      "block": 337
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I will not.",
+      "block": 338
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I have a plan. I have a letter.",
+      "block": 339
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I risk discovery to take more.",
+      "block": 340
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELESTE",
+      "quote": "You will bring Celeste 'mo food.",
+      "block": 341
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "I have my letter.",
+      "block": 342
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELESTE",
+      "quote": "Yah has your freedom then?",
+      "block": 343
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Is it more food you need?",
+      "block": 344
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELESTE",
+      "quote": "I live in fear.",
+      "block": 345
+    },
+    {
+      "speaker": "p38",
+      "to": null,
+      "stance": "neu",
+      "cue": "CELESTE",
+      "quote": "You got alternatives, Solomon.",
+      "block": 346
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "To return is to die!",
+      "block": 347
+    },
+    {
+      "speaker": "p39",
+      "to": null,
+      "stance": "neu",
+      "cue": "ARMSBY (CONT'D)",
+      "quote": "And with frequency.",
+      "block": 348
+    },
+    {
+      "speaker": "p2",
+      "to": "p39",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Where is your place of birth?",
+      "block": 349
+    },
+    {
+      "speaker": "p2",
+      "to": "p39",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "...I cannot say that I have.",
+      "block": 350
+    },
+    {
+      "speaker": "p2",
+      "to": "p39",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Why did you leave it?",
+      "block": 351
+    },
+    {
+      "speaker": "p33",
+      "to": "p34",
+      "stance": "neu",
+      "cue": "TREACH",
+      "quote": "Get him water.",
+      "block": 352
+    },
+    {
+      "speaker": "p39",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ARMSBY",
+      "quote": "What do you ask?",
+      "block": 353
+    },
+    {
+      "speaker": "p2",
+      "to": "p39",
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "First, your word, sir.",
+      "block": 354
+    },
+    {
+      "speaker": "p39",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ARMSBY",
+      "quote": "On my honor.",
+      "block": 355
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "Master Bass",
+      "quote": "Master Bass, I want to ask you\n           what part of the country you came\n           from?",
+      "block": 356
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "response to Solomon",
+      "quote": "No part of this land. I was born\n           in Canada. Now guess where that\n           is.",
+      "block": 357
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "reply to Bass",
+      "quote": "Oh, I know where Canada is. I\n           have been there myself.",
+      "block": 358
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "question after Solomon's reply",
+      "quote": "Have you?",
+      "block": 359
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "soliloquy after \"Have you?\"",
+      "quote": "Montreal and Kingston and\n           Queenston and a great many places.\n           And I have been in York state,\n           too. Buffalo and Rochester and\n           Albany, and can tell you the names\n           of the villages on the Erie canal\n           and the Champlain canal.",
+      "block": 360
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "question to Solomon",
+      "quote": "Well traveled for a slave. How\n           came you here?",
+      "block": 361
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "addressing Master Bass",
+      "quote": "Master Bass, if justice had been\n           done I never would have been here.",
+      "block": 362
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "prompt after Solomon's statement",
+      "quote": "How's this? Tell me all about it.",
+      "block": 363
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "addressing Bass",
+      "quote": "I am afraid to tell you, though I\n           don't believe you would tell\n           Master Epps if I should.",
+      "block": 364
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "statement to Solomon",
+      "quote": "Every word you speak is a profound\n           secret.",
+      "block": 365
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "question",
+      "quote": "How many years all told?",
+      "block": 366
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "answer",
+      "quote": "Just nearly...just passed eleven.",
+      "block": 367
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "comment",
+      "quote": "Your story is...it is amazing, and\n           in no good way.",
+      "block": 368
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "question",
+      "quote": "Do you believe, sir, in justice as\n           you have said?",
+      "block": 369
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "response",
+      "quote": "I do.",
+      "block": 370
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "question",
+      "quote": "That slavery is an evil that\n           should befall none?",
+      "block": 371
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "response",
+      "quote": "I believe so.",
+      "block": 372
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "shout",
+      "quote": "And bring those markers!",
+      "block": 373
+    },
+    {
+      "speaker": "p40",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "continuation",
+      "quote": "No letter yet.",
+      "block": 374
+    },
+    {
+      "speaker": "p2",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "question",
+      "quote": "You are certain?",
+      "block": 375
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PARKER",
+      "quote": "As is your right. As it will be",
+      "block": 376
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PARKER",
+      "quote": "my pleasure to bankrupt you in the",
+      "block": 377
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PARKER",
+      "quote": "courts. Your decision.",
+      "block": 378
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATSEY",
+      "quote": "Platt...",
+      "block": 379
+    },
+    {
+      "speaker": "p4",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PARKER",
+      "quote": "Are you ready?",
+      "block": 380
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "UNKNOWN MAN:",
+      "quote": "And who is this?",
+      "block": 381
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARGARET",
+      "quote": "He is my husband.",
+      "block": 382
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "Husband?",
+      "block": 383
+    },
+    {
+      "speaker": "p41",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARGARET'S HUSBAND",
+      "quote": "It is very good to meet you, sir.",
+      "block": 384
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "We have much acquainting to do.",
+      "block": 385
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLOMON",
+      "quote": "...Solomon...",
+      "block": 386
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SOLOMON (CONT'D)",
+      "quote": "Forgive me.",
+      "block": 387
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNE",
+      "quote": "There is nothing to forgive.",
+      "block": 388
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+      "p28",
+      "p29",
+      "p3",
+      "p30",
+      "p31",
+      "p32",
+      "p33",
+      "p34",
+      "p35",
+      "p36",
+      "p37",
+      "p38",
+      "p39",
+      "p4",
+      "p40",
+      "p41",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 11,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p2",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 3,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p17",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p18",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p21",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p2",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p24",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p2",
+        "weight": 6,
+        "sign": "ally",
+        "stances": {
+          "opp": 1,
+          "ally": 3,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p25",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p25",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p26",
+        "weight": 15,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 2,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p20",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p27",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 3,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p29",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p30",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p36",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p37",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p38",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p39",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p33",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p40",
+        "weight": 16,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 3,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p41",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p26",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p25",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p26",
+        "b": "p27",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p28",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p32",
+        "weight": 10,
+        "sign": "opp",
+        "stances": {
+          "opp": 5,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p35",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p36",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p31",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p32",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p31",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p32",
+        "b": "p33",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p33",
+        "b": "p34",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p33",
+        "b": "p39",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p34",
+        "b": "p35",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 41 given"
+  }
+}

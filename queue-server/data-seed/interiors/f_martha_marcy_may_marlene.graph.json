@@ -1,0 +1,2489 @@
+{
+  "entity": "f_martha_marcy_may_marlene",
+  "source": "data-seed/scripts/f_martha_marcy_may_marlene.txt",
+  "scope": "the whole script, machine-extracted (20 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Hello. Hello?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Hi!",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Martha?",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Yeah.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Oh my god! Where are you?",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I'm not sure. Upstate I think.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "You're in New York?",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I think. Yeah.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "When did you get back?",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY (CONT'D)",
+      "quote": "Martha? What's wrong? What's happened?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I don't know. I should go back.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Go back where?",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I have to go, I can't stay gone.",
+      "block": 13
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Sorry for calling.",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY (BEAT)",
+      "quote": "Do you want me to come get you?",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I can't wait that long.",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "It's okay, you don't have to-",
+      "block": 17
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "I want to see you Martha. Please.",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Aren't you hungry?",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not really, sorry.",
+      "block": 20
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, you've got to eat.",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's okay, I can fix you something later.",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where are we?",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Connecticut.",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How far are we?",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "From what?",
+      "block": 26
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yesterday.",
+      "block": 27
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You mean where I picked you up?\n           14.",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "About 3 hours.",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why?",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why?",
+      "block": 31
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why?",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just wondered.",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Put out your cigarette.",
+      "block": 34
+    },
+    {
+      "speaker": "p4",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just do it.",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is that him?",
+      "block": 36
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hey!",
+      "block": 37
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is this Martha?",
+      "block": 38
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hi!",
+      "block": 39
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "How're you doing?",
+      "block": 40
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Great. You've got a really nice place\n           here.",
+      "block": 41
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's as much yours as it is mine.",
+      "block": 42
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I thought you quit?",
+      "block": 43
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I did.",
+      "block": 44
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's disgusting.",
+      "block": 45
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know. I'm sorry.",
+      "block": 46
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Don't apologize to me, it's your body.",
+      "block": 47
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Look after this girl properly Zoe, she\n           deserves some real care for once in her\n           life.",
+      "block": 48
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I will.",
+      "block": 49
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She's been great, everyone's been great.",
+      "block": 50
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Marcy was my grandmothers name.",
+      "block": 51
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, there you go.",
+      "block": 52
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm going for a dip. Anyone want to join?",
+      "block": 53
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sure.",
+      "block": 54
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You coming?",
+      "block": 55
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Brilliant choice of swim wear.",
+      "block": 56
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Martha! What are you doing?",
+      "block": 57
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Would you put some clothes on, you can't\n           swim naked.\n           17.",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You just can't. There are kids around and\n           people come by.",
+      "block": 60
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "So?",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "So you can't. We don't, just don't. I\n           have a bathing suit you can borrow.",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Martha!",
+      "quote": "Martha!",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "You should eat.",
+      "quote": "You should eat.",
+      "block": 64
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "It's okay.",
+      "quote": "It's okay.",
+      "block": 65
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "She's not coming?",
+      "quote": "She's not coming?",
+      "block": 66
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "She seems a bit off",
+      "quote": "She seems a bit off, no?",
+      "block": 67
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Has she always been like this?",
+      "quote": "Has she always been like this?",
+      "block": 68
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "A pain in my ass",
+      "quote": "A pain in my ass, yes.",
+      "block": 69
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Hey Marcy.",
+      "quote": "Hey Marcy.",
+      "block": 70
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "I don't know",
+      "quote": "I don't know, I never get invited.",
+      "block": 71
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "You want to have a drink",
+      "quote": "You want to have a drink with me?",
+      "block": 72
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "They won't be back",
+      "quote": "They won't be back for a few hours.",
+      "block": 73
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Alright.",
+      "quote": "Alright.",
+      "block": 74
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "Patrick'll know.",
+      "quote": "Patrick'll know.",
+      "block": 75
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "It's cool",
+      "quote": "It's cool, I'm good at hiding it.",
+      "block": 76
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "No.",
+      "quote": "No. I can learn though.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "When do you think",
+      "quote": "When do you think that'll happen?",
+      "block": 78
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "That'll be nice.",
+      "quote": "That'll be nice.",
+      "block": 79
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "Shoot.",
+      "quote": "Shoot.",
+      "block": 80
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "How's everything",
+      "quote": "How's everything going so far Marcy May?",
+      "block": 81
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "Good.",
+      "quote": "Good.",
+      "block": 82
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "You like it here?",
+      "quote": "You like it here?",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "Yeah, it's really nice.",
+      "quote": "Yeah, it's really nice.",
+      "block": 84
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "I want you to feel",
+      "quote": "I want you to feel at home.",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "I do.",
+      "quote": "I do. Thanks.",
+      "block": 86
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "What?",
+      "quote": "What?",
+      "block": 87
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's no good?",
+      "block": 88
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's good, it's just, a bit dry.",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's not dry.",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She seems better today.",
+      "block": 91
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Let me take you.",
+      "block": 92
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No, I don't want to leave her alone.",
+      "block": 93
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You'll be nice to her right?",
+      "block": 94
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm always nice.",
+      "block": 95
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Right.",
+      "block": 96
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you believe me?",
+      "block": 97
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Really?",
+      "block": 98
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, it's so special.",
+      "block": 99
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm not.",
+      "block": 100
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This one's called Marcy's song.",
+      "block": 101
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well she, she's just a picture.",
+      "block": 102
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well she, she's just a picture",
+      "block": 103
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who lives on my wall",
+      "block": 104
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "And the reason, reason, reason it is so",
+      "block": 105
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "small.",
+      "block": 106
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "With a smile so inviting and a body so",
+      "block": 107
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "tall, She, she's just a picture",
+      "block": 108
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just a picture",
+      "block": 109
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "THAT'S ALL",
+      "block": 110
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Okay.",
+      "block": 111
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Oh, hi.",
+      "block": 112
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Hi.",
+      "block": 113
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What do I have to do?",
+      "block": 114
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do I have to wear this robe?",
+      "block": 115
+    },
+    {
+      "speaker": "p8",
+      "to": "p2",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Thanks.",
+      "block": 116
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Shouldn't we start cooking?",
+      "block": 117
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I thought we were going to cook.",
+      "block": 118
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "We cooked last night.",
+      "block": 119
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh, yeah.",
+      "block": 120
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not really.",
+      "block": 121
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you blame me for anything?",
+      "block": 122
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 123
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 124
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Like what?",
+      "block": 125
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know.",
+      "block": 126
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know.",
+      "block": 127
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I didn't think about it.",
+      "block": 128
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Really?",
+      "block": 129
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "We were far apart.",
+      "block": 130
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "The past doesn't matter.",
+      "block": 131
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It does matter.",
+      "block": 132
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I took care of myself.",
+      "block": 133
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Stop it.",
+      "block": 134
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You're not angry at me?",
+      "block": 135
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Dinner's ready.",
+      "block": 136
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "So what are your plans Martha?",
+      "block": 137
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "For what?",
+      "block": 138
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Life.",
+      "block": 139
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Fuck this.",
+      "block": 140
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Don't walk away from me Max.",
+      "block": 141
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I can't.",
+      "block": 142
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I trust you.",
+      "block": 143
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What did you do?",
+      "block": 144
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You said it was sick.",
+      "block": 145
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You okay?",
+      "block": 146
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm fine.",
+      "block": 147
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where are you going to go?",
+      "block": 148
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You don't want to do that.",
+      "block": 149
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's not about taking shit.",
+      "block": 150
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sounds like it's about taking shit to me.",
+      "block": 151
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You need to quit drinking.",
+      "block": 152
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm not drinking.",
+      "block": 153
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll try.",
+      "block": 154
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm strong, they'll see.",
+      "block": 155
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You'll be okay.",
+      "block": 156
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Jesus Christ you scared me.",
+      "block": 157
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "MARTHA",
+      "quote": "Sorry.",
+      "block": 158
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Did I wake you?",
+      "block": 159
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "No. I can't sleep.",
+      "block": 160
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Me neither. I was going to watch a movie.",
+      "block": 161
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "TED",
+      "quote": "You want to watch?",
+      "block": 162
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I should try to sleep.",
+      "block": 163
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "TED",
+      "quote": "I'm sorry about before, Martha.",
+      "block": 164
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "MARTHA",
+      "quote": "It's alright. It's your house.",
+      "block": 165
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "TED",
+      "quote": "You want me to make some breakfast?",
+      "block": 166
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Hey!",
+      "block": 167
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "What's wrong?",
+      "block": 168
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "LUCY",
+      "quote": "You can not be serious right now.",
+      "block": 169
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "TED",
+      "quote": "What?",
+      "block": 170
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Lucy!",
+      "block": 171
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "TED",
+      "quote": "No one was curling up with anybody.",
+      "block": 172
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "LUCY",
+      "quote": "You really do think I'm stupid don't you?",
+      "block": 173
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "TED",
+      "quote": "You're being ridiculous.",
+      "block": 174
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "LUCY",
+      "quote": "You're unbelievable.",
+      "block": 175
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Calm down, if you calm down no one will\n           get hurt.",
+      "block": 176
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "What do you want?\n           67.",
+      "block": 177
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "We're not stealing, we don't want\n           anything.",
+      "block": 178
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAN",
+      "quote": "Just get out.",
+      "block": 179
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "We're just looking at the house. It's\n           nice.\n                          (BEAT)\n           We didn't realize you were home. We\n           wouldn't have come in otherwise.",
+      "block": 180
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAN",
+      "quote": "Just Leave.",
+      "block": 181
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "I would but I can't be sure you won't\n           call the police.",
+      "block": 182
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "MAN",
+      "quote": "I won't. You didn't take anything so just\n           go, I just want my family to be safe.",
+      "block": 183
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "PATRICK",
+      "quote": "Safe? Why wouldn't anyone be safe. Unless\n           you call the police, everything will be\n           fine.",
+      "block": 184
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "MAN",
+      "quote": "Okay, I won't. You have my word, please\n           just go.",
+      "block": 185
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAN (CONT'D)",
+      "quote": "Get the fuck out of my house.",
+      "block": 186
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK",
+      "quote": "Look at me.",
+      "block": 187
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PATRICK (CONT'D)",
+      "quote": "You okay?",
+      "block": 188
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Uh huh.",
+      "block": 189
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "It's too hot, let it cool for a minute.",
+      "block": 190
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Thanks mom. I'm sorry I ruined the party.",
+      "block": 191
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Everything was fine.",
+      "block": 192
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Is it over?",
+      "block": 193
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Yes, you slept through the night.",
+      "block": 194
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "That's good.",
+      "block": 195
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "LUCY",
+      "quote": "Are you going to drink the tea?",
+      "block": 196
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "I don't want it.",
+      "block": 197
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "We have to do something.",
+      "block": 198
+    },
+    {
+      "speaker": "p10",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "WATTS",
+      "quote": "He's fine. Right Max?",
+      "block": 199
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAX",
+      "quote": "Yeah, I'm cool.",
+      "block": 200
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Watts!",
+      "block": 201
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "WATTS",
+      "quote": "There's nothing to do Marcy, you need to\n           get inside. Max is strong, he'll be fine.\n           Right?",
+      "block": 202
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAX",
+      "quote": "Yeah, I'm good Marcy. Stop.",
+      "block": 203
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "How long do you think we'll be down here?",
+      "block": 204
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZOE",
+      "quote": "It'll just be a few days. Just to be\n           safe.",
+      "block": 205
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Do you feel alright? If you hit your head \n           you shouldn't sleep.",
+      "block": 206
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAX",
+      "quote": "I'm fine.",
+      "block": 207
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Do you know why we're down here?",
+      "block": 208
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What do you think it was?",
+      "block": 209
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know. It doesn't matter.",
+      "block": 210
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "71.",
+      "block": 211
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you still think about leaving?",
+      "block": 212
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No. It's cool now, I don't really have ",
+      "block": 213
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "anywhere to go. Why, would you?",
+      "block": 214
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No. I just wanted to see about you.",
+      "block": 215
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "up.",
+      "block": 216
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello?",
+      "block": 217
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hi, is Watts there?",
+      "block": 218
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who's this?",
+      "block": 219
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who's this?",
+      "block": 220
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Jane. Is Watts there?",
+      "block": 221
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Jane.",
+      "block": 222
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Can I help you?",
+      "block": 223
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's Marlene Lewis. What's your last name",
+      "block": 224
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Heller, sorry, do I have the right",
+      "block": 225
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "number?",
+      "block": 226
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know, do you?",
+      "block": 227
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's a Jane.",
+      "block": 228
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hey. How are you? Sure, yeah, let's do",
+      "block": 229
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hey.",
+      "block": 230
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "it, I'll be around there on Friday. No,",
+      "block": 231
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "that was my cousin Marlene, yeah, I'll",
+      "block": 232
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "see you in a bit then. Great, I'm glad",
+      "block": 233
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "you called.",
+      "block": 234
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nothing till they're done. You know",
+      "block": 235
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "better.",
+      "block": 236
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know. Sorry Katie.",
+      "block": 237
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know.",
+      "block": 238
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who's Katie?",
+      "block": 239
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who's Katie?",
+      "block": 240
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?",
+      "block": 241
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?",
+      "block": 242
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh, nothing.",
+      "block": 243
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Lucy?",
+      "block": 244
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah.",
+      "block": 245
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah.",
+      "block": 246
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is this from the past or is this now?",
+      "block": 247
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't remember waking up this morning.",
+      "block": 248
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why don't you go sit down, I'll finish",
+      "block": 249
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's going on?",
+      "block": 250
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who the fuck knows.",
+      "block": 251
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She needs to see someone.",
+      "block": 252
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll start looking into places tomorrow.",
+      "block": 253
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We can arrange for her to be somewhere by",
+      "block": 254
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Wednesday.",
+      "block": 255
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Places?",
+      "block": 256
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't think she should stay with us",
+      "block": 257
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "anymore. We can't do anything for her",
+      "block": 258
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "when she's like this.",
+      "block": 259
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't want to talk about it anymore.",
+      "block": 260
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Zoe?",
+      "block": 261
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I can't stop feeling terrible for that",
+      "block": 262
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know. It happens though, we're never",
+      "block": 263
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "really dead or alive, we just exist, so",
+      "block": 264
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "he's still existing, but it's in a",
+      "block": 265
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "parallel time. Just don't think about it,",
+      "block": 266
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "it's in the past.",
+      "block": 267
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "Yeah.",
+      "block": 268
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "TED",
+      "quote": "Yeah.",
+      "block": 269
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARTHA",
+      "quote": "What's it like there?",
+      "block": 270
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "LUCY",
+      "quote": "It looks nice.",
+      "block": 271
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MARTHA",
+      "quote": "Yep.",
+      "block": 272
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Jesus Christ.",
+      "block": 273
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "LUCY",
+      "quote": "Are you okay?",
+      "block": 274
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "LUCY",
+      "quote": "Fucking idiot. What was he doing?",
+      "block": 275
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 58,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 3,
+          "neu": 53
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 22,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 5,
+          "ally": 1,
+          "neu": 16
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 18,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 5,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 11,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 15,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 18,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 18
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p9",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 2,
+          "neu": 5
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 1,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}

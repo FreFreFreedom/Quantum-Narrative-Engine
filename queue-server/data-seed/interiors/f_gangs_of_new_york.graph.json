@@ -1,0 +1,2622 @@
+{
+  "entity": "f_gangs_of_new_york",
+  "source": "data-seed/scripts/f_gangs_of_new_york.txt",
+  "scope": "the whole script, machine-extracted (28 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "No. Never. The blood stays on the blade, son.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HAPPY JACK",
+      "quote": "Did you bring the boy for a charm, Priest?",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "No, Jack. For a baptism.",
+      "block": 3
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "RABBIT WARRIOR",
+      "quote": "We'll send a few across the river today, Priest.",
+      "block": 4
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "SHANG",
+      "quote": "What's the fight?",
+      "block": 5
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "SHANG",
+      "quote": "Are you Native or Rabbit?",
+      "block": 6
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "SHANG",
+      "quote": "Looks alright. I'll stand by you, then.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "VALLON",
+      "quote": "I don't know you.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "Derry?",
+      "block": 9
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Donnegal. Name's Monk Eastman.",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "And you want to fight, Mr. Eastman?",
+      "block": 11
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MONK",
+      "quote": "lf there's money in it.",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "Fight for the Natives. They have a proper war chest.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "Let's see your skills, and we'll talk of payment later.",
+      "block": 14
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MONK",
+      "quote": "Fine. But if you like what you see, pay me double.",
+      "block": 15
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bill Poole! on whose challenge are we assembled?",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Bene.",
+      "block": 17
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It wasn't God who touched your eye.",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't expect a death blow from your hand, Butcher. Let's have at it.",
+      "block": 19
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "There is another matter.",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Say it out and quick, before spring gets here.",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": null,
+      "quote": "So?",
+      "block": 22
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Prepare to receive the Lord.",
+      "block": 23
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Yeah? Then you oughta be a red Indian.",
+      "block": 24
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You need a weapon? Use a knife.",
+      "block": 25
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "It makes a deeper cut.",
+      "block": 26
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Say a benediction, Priest.",
+      "block": 27
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "(announcing)",
+      "quote": "Ears and noses will be trophies of the day.",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "Can't..can't cross the river... with steel through my heart.",
+      "block": 29
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MONK",
+      "quote": "That's yours, rightfully.",
+      "block": 30
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MONK",
+      "quote": "And this is mine. Only what's owed. Use the rest for funeral.",
+      "block": 31
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "No!",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAPPY JACK",
+      "quote": "It's fair.",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "Hon ...",
+      "block": 34
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "No, Pa!",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "VALLON",
+      "quote": "... honor me... think of me ... don't never look away.",
+      "block": 36
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "RABBIT WOMAN",
+      "quote": "Take the body. Bring the boy.",
+      "block": 37
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "RABBIT WARRIOR",
+      "quote": "Come an, lad. Therels nothing to be done now.",
+      "block": 38
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Get away! Get away!",
+      "block": 39
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HAPPY JACK",
+      "quote": "Leave him be. He's his to mourn.",
+      "block": 40
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "POLICEMAN",
+      "quote": "Where's your family, sonny?",
+      "block": 41
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "My mother's just there.",
+      "block": 42
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "On the trip, her insides all broke up. She wasn't dead and there was three\nothers fighting for her bed.",
+      "block": 43
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "POLICEMAN",
+      "quote": "And your father? Where's he, then?",
+      "block": 44
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "I never knew him.",
+      "block": 45
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "(taking Johnny's hand)",
+      "quote": "We better see to you, then.",
+      "block": 46
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "POLICEMAN",
+      "quote": "Where all those streets come together right ahead is the true Five Points.\nBut most speak of the Five Points and mean anywhere between the Battery\nand the Bowery.",
+      "block": 47
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "And those? What are those?",
+      "block": 48
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "POLICEMAN",
+      "quote": "Well, those. Those are, as you might say, a sort of...",
+      "block": 49
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "POLICEMAN",
+      "quote": "... sort of whatnot.",
+      "block": 50
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRANSVESTITE",
+      "quote": "Say, policeman. I'll buy your bonny friend.",
+      "block": 51
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Easy, crusher. What's this all about?",
+      "block": 52
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "CRUSHER",
+      "quote": "Ask the boy.",
+      "block": 53
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Make another Arrangement, looks like. For advertising.",
+      "block": 54
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Better go along. I'll see to all this.",
+      "block": 55
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "COP",
+      "quote": "The boy...",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Take the little malefactor.",
+      "block": 57
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Give the boy what he paid for.",
+      "block": 58
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRISONER",
+      "quote": "Ain't his first Tombs trip.",
+      "block": 59
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "What do they call you?",
+      "block": 60
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Amsterdam.",
+      "block": 61
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "Your full name.",
+      "block": 62
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Vallon.",
+      "block": 63
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "First name?",
+      "block": 64
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "I told you.",
+      "block": 65
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "Address?",
+      "block": 66
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Got none.",
+      "block": 67
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "Well, where was they from when you had one?",
+      "block": 68
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "City.",
+      "block": 69
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "Disrobe.",
+      "block": 70
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAILER",
+      "quote": "What's the charge, Asbury?",
+      "block": 71
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "COP",
+      "quote": "Theft. Assault. Creating a ...",
+      "block": 72
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "VISITOR ONE",
+      "quote": "Ought to be served in a trough, properly. Will you try some?",
+      "block": 73
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "ARTIST",
+      "quote": "Probably. What is it?",
+      "block": 74
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "VISITOR",
+      "quote": "Your health.",
+      "block": 75
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "Let me see! I don't believe it.",
+      "block": 76
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRIEND",
+      "quote": "No! It's a danger.",
+      "block": 77
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "Oh come on! It's not.\n(Friend shakes her head)\nThen tell me where you got it.",
+      "block": 78
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRIEND",
+      "quote": "From some man. He took me in his carriage. He only wanted to do something\nto me fast.",
+      "block": 79
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "What?",
+      "block": 80
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRIEND",
+      "quote": "I didn't understand.",
+      "block": 81
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "Would he do the same with me?",
+      "block": 82
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRIEND",
+      "quote": "I won't tell you if he's around again.\n(clutches penny tight)\nHe's my secret.",
+      "block": 83
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "Better keep it more careful, then.",
+      "block": 84
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You come into the Five Points and you stole from me.",
+      "block": 85
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TWEED",
+      "quote": "I don't know...",
+      "block": 86
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TWEED",
+      "quote": "You're a lunatic to come here like...",
+      "block": 87
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Thank you. Just listen good. The Native Americans holds the Five Points.\nWe have prevailed. What you do outside the Points is your deciding.\nOutside is your city. Inside the Points is mine. Anyone who says\ndifferent, or does different, or thinks different...\n(smiles)\n... theylll draw my unwelcame attention. You understand?",
+      "block": 88
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "ally",
+      "cue": "BOSS TWEED",
+      "quote": "I do understand, yes.",
+      "block": 89
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "opp",
+      "cue": "BOSS TWEED",
+      "quote": "But you don't understand at all.",
+      "block": 90
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOSS TWEED",
+      "quote": "There's a whole city to share and all you see is your own narrow streets.",
+      "block": 91
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You just stay out of my place.",
+      "block": 92
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "It's good work.",
+      "block": 93
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOSS TWEED",
+      "quote": "As far as it goes.",
+      "block": 94
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You wouldn't be talking to me otherwise.",
+      "block": 95
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILL THE BUTCHER",
+      "quote": "We work for no one.",
+      "block": 96
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Then get cops to do it.",
+      "block": 97
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Appearance means nothing.",
+      "block": 98
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "If you can talk plain, maybe we can do business.",
+      "block": 99
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TWEED",
+      "quote": "Anyone inside?",
+      "block": 100
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "ONLOOKER",
+      "quote": "No, praise God, but all we own...",
+      "block": 101
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TWEED",
+      "quote": "Waiting on reinforcements.",
+      "block": 102
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHIEF",
+      "quote": "May I point out that the building is burning to ashes?",
+      "block": 103
+    },
+    {
+      "speaker": "p27",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "KILLORAN",
+      "quote": "Another proud night for Tammany, Bill.",
+      "block": 104
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "TWEED",
+      "quote": "Just tell them...\n(lowers his voice)\n... to take enough to share. And not to steal so in the open.",
+      "block": 105
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Satisfied?",
+      "block": 106
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "Satisfied? It wasn't me that's been dancing and shagging all night.",
+      "block": 107
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "JOHNNY",
+      "quote": "The hell.",
+      "block": 108
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Goddamn it.",
+      "block": 109
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Goddamn you anyway.",
+      "block": 110
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "MONK EASTMAN",
+      "quote": "What's the trouble, Don?",
+      "block": 111
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "DON WHISKERANDOS",
+      "quote": "There's someone here.",
+      "block": 112
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "MONK EASTMAN",
+      "quote": "It's just a man of commerce.",
+      "block": 113
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You're right enough this time, Monk.",
+      "block": 114
+    },
+    {
+      "speaker": "p7",
+      "to": "p29",
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Go ahead.",
+      "block": 115
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Go on with your work. I'll finish my business.",
+      "block": 116
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "MONK EASTMAN",
+      "quote": "Come out with it then.",
+      "block": 117
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You damn craven, do it!",
+      "block": 118
+    },
+    {
+      "speaker": "p28",
+      "to": null,
+      "stance": "neu",
+      "cue": "MONK EASTMAN",
+      "quote": "What the hell...",
+      "block": 119
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Your eyes was open for that alright. And you still got one to see this.",
+      "block": 120
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "If I was you I'd use that to open in a new location. Consider St. Louis.",
+      "block": 121
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "The war club.",
+      "block": 122
+    },
+    {
+      "speaker": "p7",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "I promise you, Amsterdam. I promise you.",
+      "block": 123
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "GREELEY",
+      "quote": "I may enjoy the bounty of your table and the pleasures of your company,\nMr. Tweed ...",
+      "block": 124
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOSS TWEED",
+      "quote": "And the pleasures of the company provided you, Mr. Greeley.",
+      "block": 125
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "GREELEY",
+      "quote": "...without the Tribune endorsing your politics.",
+      "block": 126
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "I'm not good enough for your table, so I eat where I can. (takes a big",
+      "block": 127
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "bite)",
+      "block": 128
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "It's good, what is it?",
+      "block": 129
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOSS TWEED",
+      "quote": "Pheasant.",
+      "block": 130
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "He never had his own cross. Thanks.",
+      "block": 131
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Your touch is light, but as a tracker you work awful heavy. Come ahead.\nNow that I met your mother, you should come and meet my father.",
+      "block": 132
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "You should finish the stone.",
+      "block": 133
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "It'll be finished when everything's finished. That's when helll rest. The\nhand that killed him is the hand that will bury him in peace.",
+      "block": 134
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "It was Bill killed him, not you.",
+      "block": 135
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "With my hand on the knife.",
+      "block": 136
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "And his hand on yours!",
+      "block": 137
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "And me feeling the life go out of my father! He looked at me ... he looked\nat me and he swore me with his eyes. I could feel his spirit... I say I\ncould feel it rising... flowing through the knife like blood into my own\nheart.",
+      "block": 138
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "You talk like he lives in you.",
+      "block": 139
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "I don't want him to live, I want him dead! I kill Bill and I'm free of\nthem both!",
+      "block": 140
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "You think you can be free that easy? You need your way so clear, and\nyou''' use anything to clear it. Anyone, too. Me, everybody, we're all\njust a way for you to settle your damned ghosts.",
+      "block": 141
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "You're part of me now, like the gang is part of me and my father both. If\nI can bring us to glory, then my father... like The Book says...my father\ncan enter his house justified.",
+      "block": 142
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "All of us is set on the same road together. The gang can have everything\nthey ever wanted and get me what I want while they're doing it. We're not\ninterfering with each other, we're helping each other. It's all the same,\nwe're all one together.",
+      "block": 143
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "We'll all have a share of the profit like we'll all have a portion of the\nfame. If we come to be notorious, that only means we're strong, and if\nwe're strong that means we're ready.",
+      "block": 144
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "And I'll know that time, know it right off when it comes. Just like I knew\nyou.",
+      "block": 145
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Now! Finish him now!",
+      "block": 146
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "Our man will take him in another five. What puts you in such a hurry?",
+      "block": 147
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNUM",
+      "quote": "I want to extend thanks and admiration not only to our two combatants\ntoday, but to their sponsors, the Dead Rabbits ...\n(indicates one side of the ring)\n... and the Native Americans.",
+      "block": 148
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNUM",
+      "quote": "Their generous support allows me to bring you this splendid exhibition.\nWith their indulgence I'd like to remind you also of the further wonders\nthat await you at my new Museum, located on Broadway...",
+      "block": 149
+    },
+    {
+      "speaker": "p31",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNUM",
+      "quote": "... fists up!",
+      "block": 150
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "Dobbs will take him this round. That'll be something. The Natives has\nnever lost before.",
+      "block": 151
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Because there's never been a Dead Rabbit fighting before.",
+      "block": 152
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "That'll shame them thorough.",
+      "block": 153
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "There'll be worse than shaming. We only got the Natives in range.\n\nIt's time to squeeze the trigger, John.",
+      "block": 154
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "Don't push the Natives too far, Amsterdam. Otherwise it'll be Tammany\npushing back.",
+      "block": 155
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "That don't matter any more.",
+      "block": 156
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "It does matter, and it's going to matter even more. Tammany's the heart\nand future of this city. If the Rabbits is going to keep growing, we're\ngoing to have to throw in with Tammany some way.",
+      "block": 157
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "They got that Conscription Act from Washington keeping them busy, but they\nwon't leave us alone forever. And the Natives is strong as they ever been!",
+      "block": 158
+    },
+    {
+      "speaker": "p9",
+      "to": "p12",
+      "stance": "opp",
+      "cue": "AMSTERDAM",
+      "quote": "(indicates Fighter 1)\nYou call that strong, John?",
+      "block": 159
+    },
+    {
+      "speaker": "p9",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "AMSTERDAM",
+      "quote": "(to Johnny)\nThis is our time now!",
+      "block": 160
+    },
+    {
+      "speaker": "p32",
+      "to": null,
+      "stance": "neu",
+      "cue": "FAMILY MAN",
+      "quote": "We're with you, don't harm us!",
+      "block": 161
+    },
+    {
+      "speaker": "p33",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOB MAN",
+      "quote": "Show us your spirit and come out with us then!",
+      "block": 162
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "What is it?",
+      "block": 163
+    },
+    {
+      "speaker": "p34",
+      "to": null,
+      "stance": "neu",
+      "cue": "LITTLE GIRL",
+      "quote": "Cops has everything closed to the north, and the militia's coming.",
+      "block": 164
+    },
+    {
+      "speaker": "p35",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOY",
+      "quote": "My Daddy don't have to die for you! Why should he fight and die for you?",
+      "block": 165
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "I'd kill you for this.",
+      "block": 166
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "JIMMY SPOILS",
+      "quote": "How's that?",
+      "block": 167
+    },
+    {
+      "speaker": "p9",
+      "to": "p21",
+      "stance": "neu",
+      "cue": "to Jenny",
+      "quote": "Are you with us, then?",
+      "block": 168
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Good. We're going for the Armory at Canal Street.",
+      "block": 169
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "JIMMY SPOILS",
+      "quote": "The Armory! We'll have to beat the militia to get there.",
+      "block": 170
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "There's a way through the lines. Jen, did you see the cops and militia?",
+      "block": 171
+    },
+    {
+      "speaker": "p36",
+      "to": null,
+      "stance": "neu",
+      "cue": "JIMMY SPOILS",
+      "quote": "Why, we going to take a sail to Europe?",
+      "block": 172
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "Seems we are.",
+      "block": 173
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": "GREELEY",
+      "quote": "They attacked me! I had every sympathy for them at first...",
+      "block": 174
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Where's the Native Americans?",
+      "block": 175
+    },
+    {
+      "speaker": "p37",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "RIOTER",
+      "quote": "Ain't seen them. Ain't here.",
+      "block": 176
+    },
+    {
+      "speaker": "p9",
+      "to": "p37",
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "And the militia?",
+      "block": 177
+    },
+    {
+      "speaker": "p37",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "RIOTER",
+      "quote": "The Devil himself couldn't take that place.",
+      "block": 178
+    },
+    {
+      "speaker": "p9",
+      "to": "p37",
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "That's why he sent us.",
+      "block": 179
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNY",
+      "quote": "(crying)\nHelp me. Oh please help me. He's shot, we need a doctor, please help.",
+      "block": 180
+    },
+    {
+      "speaker": "p38",
+      "to": "p21",
+      "stance": "neu",
+      "cue": "DETACHMENT COMMANDER",
+      "quote": "Miss, we ain't a medical outfit. The main unit's ten minutes behind us,\nthey'll have...",
+      "block": 181
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Help us, we got wounded!",
+      "block": 182
+    },
+    {
+      "speaker": "p39",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "GUARD 1",
+      "quote": "We can't leave the post.",
+      "block": 183
+    },
+    {
+      "speaker": "p9",
+      "to": "p39",
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Open the damn doors then! We're bad hurt!",
+      "block": 184
+    },
+    {
+      "speaker": "p39",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "GUARD 1",
+      "quote": "Where's the others?",
+      "block": 185
+    },
+    {
+      "speaker": "p39",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "GUARD 1",
+      "quote": "God, it's good to see you!",
+      "block": 186
+    },
+    {
+      "speaker": "p9",
+      "to": "p39",
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Likewise.",
+      "block": 187
+    },
+    {
+      "speaker": "p27",
+      "to": "p24",
+      "stance": "neu",
+      "cue": "KILLORAN",
+      "quote": "It's from the Armory Guards. That's the last before the wire went dead.",
+      "block": 188
+    },
+    {
+      "speaker": "p27",
+      "to": "p24",
+      "stance": "neu",
+      "cue": "KILLORAN",
+      "quote": "They got to be near.",
+      "block": 189
+    },
+    {
+      "speaker": "p12",
+      "to": "p24",
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "So long as they're near, it's alright. The Rabbits can take the Armory,\nbut they can't hold it. If Bill can get into position, he can make sure\nthey don't get out.",
+      "block": 190
+    },
+    {
+      "speaker": "p24",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "BOSS TWEED",
+      "quote": "Alright then, John, you pray to any God you choose that's the fact of it.\nIf Bill thinks he can best the Natives, that is your opportunity. That is\nyour moment.\n(Johnny hesitates)\nAre you a Bible man? The Book says in Revelations, \"I saw a new heaven and\na new earth.\" If the hand of God's not on you to fulfill that prophecy,\nthen the hand of Tweed will be. Go on and God bless.",
+      "block": 191
+    },
+    {
+      "speaker": "p40",
+      "to": "p24",
+      "stance": "neu",
+      "cue": "GOVERNOR",
+      "quote": "I don't believe he can do it, Tweed.",
+      "block": 192
+    },
+    {
+      "speaker": "p24",
+      "to": "p40",
+      "stance": "neu",
+      "cue": "BOSS TWEED",
+      "quote": "Oh, I think he can. Whether it's one man against another or a mob against\nthe city, the mathematics remain the same. You never enjoyed the\nenlightenment of poverty, did you, Governor? If you had, you'd know you\ncan always hire half the poor to kill the other half.",
+      "block": 193
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "We move now and we can drive them out! We press them and they'll break!",
+      "block": 194
+    },
+    {
+      "speaker": "p41",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "MILITIA COMMANDER",
+      "quote": "I can't spare the men or stand the risk! We stay fast and smoke lem out!",
+      "block": 195
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Tweed put me in charge of this! I say we move, and by the crucified Christ\nwe will move!\n(turns to his men)\nNative Americans, come with me! Any militia that wants to live upright\ninstead of die hunkered down, come with us!",
+      "block": 196
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "We'll show you gladiators' greatness! Come on!",
+      "block": 197
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Was it Tweed or your friend put you to this?",
+      "block": 198
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "Tweed.",
+      "block": 199
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You'd lie to save your friend.",
+      "block": 200
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHNNY",
+      "quote": "No. There's no friends for me.",
+      "block": 201
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Me the same. Pity us both.",
+      "block": 202
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Hold your fire!",
+      "block": 203
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "In there! Hey in there! I want to talk to Amsterdam!",
+      "block": 204
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Go on, then, talk.",
+      "block": 205
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You and me.",
+      "block": 206
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Come ahead then. And bring my friend's body.",
+      "block": 207
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Your friend made different friends lately.",
+      "block": 208
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Tammany's put us all in the same place. You want to get out alive?",
+      "block": 209
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "You'd lay aside what's between us?",
+      "block": 210
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "I'm not forgetting where I put it.",
+      "block": 211
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "If you do, I'll remind you.",
+      "block": 212
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "What's your call, Bill?",
+      "block": 213
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "I'm considering where's my better chance.",
+      "block": 214
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Go ahead them, give them cover! Give them some damn cover!",
+      "block": 215
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Well, it seems like between us we got two mobs that might make a gang.",
+      "block": 216
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Whose gang might it be?",
+      "block": 217
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "Not William Tweed's.",
+      "block": 218
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Which way you pointing that?",
+      "block": 219
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "They got to come in if we're going to fight them.",
+      "block": 220
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "Who do you want to fight, Bill?",
+      "block": 221
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "See you in the street.",
+      "block": 222
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMSTERDAM",
+      "quote": "You'll have a warrior's funeral anyway, John.",
+      "block": 223
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "We're finished, all of us.",
+      "block": 224
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "AMSTERDAM",
+      "quote": "But you and me ain't settled.",
+      "block": 225
+    },
+    {
+      "speaker": "p7",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "BILL THE BUTCHER",
+      "quote": "We got the same now, a full share of nothing. There's nothing to settle.\nThere's nothing left.",
+      "block": 226
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "AMSTERDAM",
+      "quote": "Then let's start over.",
+      "block": 227
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+      "p28",
+      "p29",
+      "p3",
+      "p30",
+      "p31",
+      "p32",
+      "p33",
+      "p34",
+      "p35",
+      "p36",
+      "p37",
+      "p38",
+      "p39",
+      "p4",
+      "p40",
+      "p41",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p9",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p31",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p27",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p7",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p7",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p9",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p21",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p22",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p9",
+        "weight": 11,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p33",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p34",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p35",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p36",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p30",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p38",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p25",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p26",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p27",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p7",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p30",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p40",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p26",
+        "b": "p27",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p29",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p7",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p7",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p30",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p32",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p32",
+        "b": "p33",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p34",
+        "b": "p35",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p36",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p37",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p38",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p39",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p41",
+        "b": "p7",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p9",
+        "weight": 21,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 19
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 41 given"
+  }
+}
