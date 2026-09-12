@@ -1,0 +1,1360 @@
+{
+  "entity": "f_no_country_for_old_men",
+  "source": "data-seed/scripts/f_no_country_for_old_men.txt",
+  "scope": "the whole script, machine-extracted (24 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "La puerta... Hay lobos...",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Ain't no lobos.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "If you stopped... to watch your\n           backtrack... you're gonna shoot my\n           dumb ass.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...But. If you stopped... you stopped\n           in shade.",
+      "block": 4
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's in the satchel?",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": null,
+      "quote": "It's full a money.",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That'll be the day.",
+      "block": 7
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Where'd you get the pistol?",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": null,
+      "quote": "At the gettin' place.",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Did you buy that gun?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": null,
+      "quote": "No. I found it.",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Llewelyn!",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "What? Quit hollerin'.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What'd you give for that thing?",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You don't need to know everthing,\n           Carla Jean.",
+      "block": 15
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "I need to know that.",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You keep running that mouth I'm gonna\n           take you in the back and screw you.",
+      "block": 17
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Big talk.",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just keep it up.",
+      "block": 19
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Fine. I don't wanna know. I don't\n           even wanna know where you been all\n           day.",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "That'll work.",
+      "block": 21
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "All right.",
+      "block": 22
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Llewelyn.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Yeah.",
+      "block": 24
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What're you doin', baby?",
+      "block": 25
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Goin' out.",
+      "block": 26
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Goin' where?",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Somethin' I forgot to do. I'll be\n           back.",
+      "block": 28
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What're you goin' to do?",
+      "block": 29
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "...If I don't come back tell Mother\n           I love her.",
+      "block": 30
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Your mother's dead, Llewelyn.",
+      "block": 31
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Well then I'll tell her myself.",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well done.",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Don't put it in your pocket.",
+      "block": 34
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sir?",
+      "block": 35
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Where you want me to put it?",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Llewelyn? What the hell?",
+      "block": 37
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Odessa.",
+      "block": 38
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why would we go to Odessa?",
+      "block": 39
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not we, you. Stay with your mother.",
+      "block": 40
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well -- how come?",
+      "block": 41
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So... for how long do we have to...",
+      "block": 42
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What'm I supposed to tell Mama?",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mind ridin' bitch?",
+      "block": 44
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This his truck?",
+      "block": 45
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mm-hm.",
+      "block": 46
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Screwgie.",
+      "block": 47
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Who slashed his tires?",
+      "block": 48
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Wudden us.",
+      "block": 49
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's a dead dog.",
+      "block": 50
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Thank you.",
+      "block": 51
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Where's the transponder?",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "In the truck. I'll get it.",
+      "block": 53
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "These are some ripe petunias.",
+      "block": 54
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hold this please.",
+      "block": 55
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...You getting anything on this?",
+      "block": 56
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not a bleep.",
+      "block": 57
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "All right...",
+      "block": 58
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hyah!",
+      "block": 59
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I thought it was a car afire.",
+      "block": 60
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...I love you more'n more, ever day.",
+      "block": 61
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Be careful.",
+      "block": 62
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I always am.",
+      "block": 63
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Don't get hurt.",
+      "block": 64
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I never do.",
+      "block": 65
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Don't hurt no one.",
+      "block": 66
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well. If you say so.",
+      "block": 67
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yessir. We should a brought wieners.",
+      "block": 68
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It could be.",
+      "block": 69
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "Hello?",
+      "block": 70
+    },
+    {
+      "speaker": "p4",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "CHIGURH",
+      "quote": "Is Llewelyn there?",
+      "block": 71
+    },
+    {
+      "speaker": "p10",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "Llewelyn?! No he ain't.",
+      "block": 72
+    },
+    {
+      "speaker": "p4",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "CHIGURH",
+      "quote": "You expect him?",
+      "block": 73
+    },
+    {
+      "speaker": "p10",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "Now why would I expect him? Who is\n           this?",
+      "block": 74
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "Hep you?",
+      "block": 75
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "I need the Larry Mahan's in black,\n           size 11.",
+      "block": 76
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "Okay.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "You sell socks?",
+      "block": 78
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "Just white.",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": "p11",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "White is all I wear. You got a\n           bathroom?",
+      "block": 80
+    },
+    {
+      "speaker": "p11",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "Ain't got Larries in black but I got\n           'em in osta-rich. Break in easy.",
+      "block": 81
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "Don't stop. Just ride me up past the\n           rooms.",
+      "block": 82
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "What room?",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "Just drive me around. I want to see\n           if someone's here.",
+      "block": 84
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "...Keep going.",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "...Keep going. Don't stop.",
+      "block": 86
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "I don't want to get in some kind of\n           a jackpot here, buddy.",
+      "block": 87
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "It's all right.",
+      "block": 88
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "Why don't I set you down here and we\n           won't argue about it.",
+      "block": 89
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "I want you to take me to another\n           motel.",
+      "block": 90
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "Let's just call it square.",
+      "block": 91
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "You're already in a jackpot. I'm\n           trying to get you out of it. Now\n           take me to a motel.",
+      "block": 92
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "WENDELL",
+      "quote": "He labs from Austin on the man by\n           the highway.",
+      "block": 93
+    },
+    {
+      "speaker": "p7",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "What was the bullet?",
+      "block": 94
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "WENDELL",
+      "quote": "Wasn't no bullet.",
+      "block": 95
+    },
+    {
+      "speaker": "p7",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "Wasn't no bullet?",
+      "block": 96
+    },
+    {
+      "speaker": "p9",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "WENDELL",
+      "quote": "Yessir. Wasn't none.",
+      "block": 97
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOSS",
+      "quote": "There just ain't no way.",
+      "block": 98
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Doctor.",
+      "block": 99
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "...Medico. Por favor.",
+      "block": 100
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Anything on those vehicles yet?",
+      "block": 101
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sheriff I found out everything there\n           was to find. Those vehicles are titled\n           and registered to deceased people.",
+      "block": 102
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...The owner of that Blazer died\n           twenty years ago. Did you want me to\n           see what I could find out about the\n           Mexican ones?",
+      "block": 103
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "No. Lord no.",
+      "block": 104
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...This month's checks.",
+      "block": 105
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That DEA agent called again. You\n           don't want to talk to him?",
+      "block": 106
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm goin' to try and keep from it as\n           much as I can.",
+      "block": 107
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He's goin' back out there and he\n           wanted to know if you wanted to go\n           with him.",
+      "block": 108
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well that's cordial of him. I guess\n           he can go wherever he wants. He's a\n           certified agent of the United States\n           Government.",
+      "block": 109
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Could I get you to call Loretta\n           and tell her I've gone to Odessa?\n           goin' to visit with Carla Jean Moss.",
+      "block": 110
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Yes Sheriff.",
+      "block": 111
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll call Loretta when I get there.\n           I'd call now but she'll want me to\n           come home and I just might.",
+      "block": 112
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You want me to wait til you've quit\n           the building?",
+      "block": 113
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "Hard to believe.",
+      "block": 114
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "ROSCOE",
+      "quote": "Strolls right back into a crime scene.",
+      "block": 115
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELLIS",
+      "quote": "Min back!",
+      "block": 116
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "How'd you know I was here.",
+      "block": 117
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELLIS",
+      "quote": "Who else'd be in your truck.",
+      "block": 118
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "You heard it?",
+      "block": 119
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELLIS",
+      "quote": "How's that?",
+      "block": 120
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "But -- how'd you know it was mine?",
+      "block": 121
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELLIS",
+      "quote": "I deduced it. Once you walked in.",
+      "block": 122
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "How many a those things you got now?",
+      "block": 123
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "How you been, Ellis?",
+      "block": 124
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "I am older.",
+      "block": 125
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "Didn't know there was any.",
+      "block": 126
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "BELL",
+      "quote": "Want a cup?",
+      "block": 127
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "ally",
+      "cue": "ELLIS",
+      "quote": "'Predate it.",
+      "block": 128
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "BELL",
+      "quote": "How fresh is this coffee?",
+      "block": 129
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "BELL",
+      "quote": "That man that shot you died in prison.",
+      "block": 130
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p4",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p7",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p7",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p7",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 30,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 7,
+          "ally": 9,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p9",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p10",
+        "p11",
+        "p13",
+        "p14",
+        "p15",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p1",
+        "p12"
+      ]
+    ]
+  }
+}
