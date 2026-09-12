@@ -1,0 +1,1902 @@
+{
+  "entity": "f_mother",
+  "source": "data-seed/scripts/f_mother.txt",
+  "scope": "the whole script, machine-extracted (19 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Baby?",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "You scared me.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Sorry.   Didn’t mean to.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "You were outside?",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I wanted to be alone.",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I mean, I needed to clear my head,\n          get the ideas flowing.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "And did they?",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "HIM",
+      "quote": "No.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MOTHER",
+      "quote": "They will.     Don’t worry, it’ll\n          come.",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "HIM",
+      "quote": "I must stink.",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MOTHER",
+      "quote": "I like it...",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I’d better shower.",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Can I grab these?",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MOTHER",
+      "quote": "I got it.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Perfect.    You didn’t need to do all\n          of this.",
+      "block": 15
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MOTHER",
+      "quote": "I wanted to. You’ve been working\n          so hard.",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "HIM",
+      "quote": "(sarcastic)\n          Yeah, right.",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "(slight concern)\n             Wait here.",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "HIM",
+      "quote": "Please, come in.",
+      "block": 19
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MAN",
+      "quote": "Oh, hello.",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "MOTHER",
+      "quote": "Hello.",
+      "block": 21
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "What do you do there?",
+      "block": 22
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MAN",
+      "quote": "I’m an orthopedic surgeon.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Really?",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Research?",
+      "block": 25
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Yes I know, it’s bit boring...",
+      "block": 26
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MAN",
+      "quote": "No, that’s fine...",
+      "block": 27
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Some tea?",
+      "block": 28
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MAN",
+      "quote": "No, I don’t want to be a bother.",
+      "block": 29
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Let’s hope not.",
+      "block": 30
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "MAN",
+      "quote": "It’s an incredible place.",
+      "block": 31
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "HIM",
+      "quote": "My wife loves having company.",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "(O.S.)\n          You all right?",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "(barely squeaks)\n          Fine.",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Hey!",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "I told you, he doesn’t like anyone\n          being in here without him.",
+      "block": 36
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "It’s amazing. What is it?",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "(getting anxious)\n          We really need to leave.    Please.",
+      "block": 38
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "I just want to look at it.",
+      "block": 39
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "I don’t know why you have to make\n            such a big deal out of it.",
+      "block": 40
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "Oh, they’re back.",
+      "block": 41
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "This way, I’ll get you some water.",
+      "block": 42
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "Honey? Are you all right?   Your\n            damn smoking.",
+      "block": 43
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Here.",
+      "block": 44
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "You all right?",
+      "block": 45
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "(re: cough)\n            Just started.",
+      "block": 46
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "Come on, let’s go get you your\n            pills. Look, if I wanted a third\n            child...",
+      "block": 47
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "(to Mother)\n            That was intense. You’re not going\n            to believe what he just told me--",
+      "block": 48
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "That sink’s not braced yet.",
+      "block": 49
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "What?   Is something...",
+      "block": 50
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "He has one of those pictures of you\n            in his luggage.",
+      "block": 51
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "What were you doing in their\n            luggage?",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "That’s not the point.     He didn’t\n            just “stumble” on us.     He’s a crazy\n            fan.",
+      "block": 53
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I know.",
+      "block": 54
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Excuse me?",
+      "block": 55
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "That’s what he told me on our walk.\n            He’s dying. That’s why he came\n            here. He wanted to meet me before\n            he’s gone.",
+      "block": 56
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "HIM",
+      "quote": "What have you done?",
+      "block": 57
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "I’m so sorry. We’re both sorry.",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "I think it’s best if you leave.",
+      "block": 59
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "We said we were sorry.",
+      "block": 60
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Please.   Please!",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "What are you doing?",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MOTHER",
+      "quote": "What are you doing!?",
+      "block": 63
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLDEST SON",
+      "quote": "Good luck.",
+      "block": 64
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Are you all right?",
+      "block": 65
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "He was here.",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "No.",
+      "block": 67
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Here.    It’s okay.   It’s all right.",
+      "block": 68
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "What happened at the hospital?",
+      "block": 69
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "That’s awful. Are you all right?",
+      "block": 70
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I’m exhausted.",
+      "block": 71
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "What is it?",
+      "block": 72
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "I’ll be up in a minute.",
+      "block": 73
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "You sure?",
+      "block": 74
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Yeah.",
+      "block": 75
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOURNER",
+      "quote": "In here?",
+      "block": 76
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "What are they doing here?",
+      "block": 77
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "I’m so sorry.",
+      "block": 78
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "CUPBEARER",
+      "quote": "Shall we have a toast?",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "HIM",
+      "quote": "Of course.",
+      "block": 80
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "CUPBEARER",
+      "quote": "Here!   Here!",
+      "block": 81
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "EVERYONE",
+      "quote": "HERE!   HERE!",
+      "block": 82
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "They’re ruining everything.",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Those are just things. They can be\n          replaced. Don’t worry.",
+      "block": 84
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "HERALD",
+      "quote": "Coming through please.      Forgive me,\n          just a few shots.",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Of course.",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "No...   No...",
+      "block": 87
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to Chronicler)",
+      "quote": "Make sure you’re getting him.",
+      "block": 88
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "HERALD",
+      "quote": "No, don’t go.",
+      "block": 89
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DISCIPLE",
+      "quote": "Step forward.",
+      "block": 90
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DISCIPLE",
+      "quote": "Step forward.",
+      "block": 91
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZEALOT",
+      "quote": "His words are yours. If you\n          please, pin your thoughts on the\n          wall.",
+      "block": 92
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZEALOT",
+      "quote": "His words are yours, dear.",
+      "block": 93
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "HERALD",
+      "quote": "There you are! Where have you been\n          hiding?",
+      "block": 94
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Why are you doing this?!",
+      "block": 95
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "HEWER",
+      "quote": "Proof we were here.",
+      "block": 96
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "No...   Don’t...",
+      "block": 97
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZEALOT",
+      "quote": "Hey!",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "No!    Let go.",
+      "block": 99
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZEALOT",
+      "quote": "No you can’t leave, he loves you.",
+      "block": 100
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Where are you going?      Don’t go.",
+      "block": 101
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "You don’t want me here.",
+      "block": 102
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Come here.",
+      "block": 103
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "I can’t.",
+      "block": 104
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Please. I have to tell you\n          something.",
+      "block": 105
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "What?",
+      "block": 106
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "(to Mother)",
+      "quote": "Okay, come here. Come, come.",
+      "block": 107
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to disciples)",
+      "quote": "We need space! We need space!",
+      "block": 108
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "(to Mother)",
+      "quote": "Hold on here, I’ll be right back.",
+      "block": 109
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Give us some room!",
+      "block": 110
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Give us some room, give us some\n          room.",
+      "block": 111
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Help me.   Help me--",
+      "block": 112
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEPUTY",
+      "quote": "Hands off!",
+      "block": 113
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "No! Please don’t!       Please don’t!\n          My baby!",
+      "block": 114
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Get off her!",
+      "block": 115
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "GLEANER",
+      "quote": "I called dibs...",
+      "block": 116
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "SLAVEDRIVER",
+      "quote": "How is she?",
+      "block": 117
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "WHOREMONGER",
+      "quote": "Tainted.",
+      "block": 118
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The inspiration! Where have you\n            been hiding?",
+      "block": 119
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Finish her.",
+      "block": 120
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "On your knees!",
+      "block": 121
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "All right six more.",
+      "block": 122
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Freeze!",
+      "block": 123
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh no... Come on.",
+      "block": 124
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Are you hurt?",
+      "block": 125
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The baby...",
+      "block": 126
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This way.    Hurry! Hurry!",
+      "block": 127
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "(relieved)\n          It’s me. It’s me.",
+      "block": 128
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What’s happening?",
+      "block": 129
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don’t know. I have to take you\n          somewhere safe.",
+      "block": 130
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There!   OUT!",
+      "block": 131
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No, it’s too dangerous.   Come with\n          me, quietly.",
+      "block": 132
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The door!     The door!",
+      "block": 133
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No, this way.",
+      "block": 134
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s him, the poet! He hasn’t\n            forsaken us after all!",
+      "block": 135
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Come, we need to hurry.    Stay\n            close!",
+      "block": 136
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get back!",
+      "block": 137
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Help us! / We’re hungry. / We’re\n            lost. / Fuck him! / He abandoned\n            us.",
+      "block": 138
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’m sorry.     I can’t.",
+      "block": 139
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’m sorry!     I will not forget you.",
+      "block": 140
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Up here!",
+      "block": 141
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "They will protect us.",
+      "block": 142
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Give me your hand!",
+      "block": 143
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get back!     I will return!",
+      "block": 144
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sit here.     Rest.",
+      "block": 145
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’m a doctor! I’m a doctor.",
+      "block": 146
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A doctor! Help her please.     I’ll\n          be right back.",
+      "block": 147
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Look at me. Listen to my voice.\n          The baby’s almost here.",
+      "block": 148
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Now just push! Yes, yes, you have\n          to push.",
+      "block": 149
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, you’re doing very good.    I can\n          feel the head--",
+      "block": 150
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Please move, I’ve got her.    Come.\n          I’ve got you now.",
+      "block": 151
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Wait, I can help!",
+      "block": 152
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZEALOT (O.S.)",
+      "quote": "Do you hear that? That’s the sound\n          of life, the sound of humanity.\n          His cry of love. His love for you.",
+      "block": 153
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Please stop. Stop.      STOP!",
+      "block": 154
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to the crowd)",
+      "quote": "Go away! Leave her alone!     What\n          are you doing?",
+      "block": 155
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Look what they’ve done to you.",
+      "block": 156
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to the crowd)",
+      "quote": "What are you doing?!    WHAT ARE YOU\n          DOING?",
+      "block": 157
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MOTHER",
+      "quote": "They killed my baby. You killed\n          him. You killed him.",
+      "block": 158
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HIM",
+      "quote": "I am so sorry. They just wanted to\n          see him, they just wanted to touch\n          him, and then they... It’s\n          horrible. I’m sorry. I’m so\n          sorry.",
+      "block": 159
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "What are you talking about?",
+      "block": 160
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MOTHER",
+      "quote": "They butchered our son.",
+      "block": 161
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I know.",
+      "block": 162
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MOTHER",
+      "quote": "You’re insane.",
+      "block": 163
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "NOOOOO!",
+      "block": 164
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Murderers!",
+      "block": 165
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "(at HIM)",
+      "quote": "Murderer.",
+      "block": 166
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "MOTHER",
+      "quote": "It’s time to get the fuck out of my\n          house!",
+      "block": 167
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIM (O.S.)",
+      "quote": "No. Don’t! Please, come back!\n          Don’t leave me.",
+      "block": 168
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "(understands)",
+      "quote": "No.",
+      "block": 169
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "(to crowd)",
+      "quote": "Stop! Please!     Hold on!",
+      "block": 170
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "(to Mother)",
+      "quote": "Don’t. Please don’t.     I love you.",
+      "block": 171
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MOTHER",
+      "quote": "And you gave it all away.",
+      "block": 172
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "HIM",
+      "quote": "No!   No!   NO!",
+      "block": 173
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "What are you?",
+      "block": 174
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Me?    I, am I. You?   You were home.",
+      "block": 175
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Where are you taking me?",
+      "block": 176
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "The beginning.",
+      "block": 177
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "It won’t hurt much longer.",
+      "block": 178
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "What hurts me the most is that I\n          wasn’t enough.",
+      "block": 179
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "It’s not your fault. Nothing is\n          ever enough. I couldn’t create if\n          it was. And I have to. That’s\n          what I do. That’s what I am. And\n          now I must try it all again.",
+      "block": 180
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "(asks)",
+      "quote": "Just let me go.",
+      "block": 181
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "I need one last thing.",
+      "block": 182
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "I have nothing left to give.",
+      "block": 183
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HIM",
+      "quote": "Your love.\n                 (he points at her chest)\n             It’s still there isn’t it?",
+      "block": 184
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MOTHER",
+      "quote": "Go ahead.    Take it.",
+      "block": 185
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW WOMAN",
+      "quote": "Baby?",
+      "block": 186
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 66,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 7,
+          "ally": 5,
+          "neu": 54
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p12",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p11",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 6,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p20",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p21",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p22",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 23 given"
+  }
+}
