@@ -1,0 +1,221 @@
+{
+  "entity": "f_private_life",
+  "source": "data-seed/scripts/f_private_life.txt",
+  "scope": "the whole script, machine-extracted (17 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. HUDSON",
+      "quote": "Mr. Holmes...",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HOLMES",
+      "quote": "Please, Mrs. Hudson.    You're in my line\n          of fire.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MRS. HUDSON",
+      "quote": "How many times have I told you I will not\n          tolerate pistol practice on my premises?\n          I should have evicted you when you shot\n          them holes in my wall.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HOLMES",
+      "quote": "Merely celebrating Her Majesty's Golden\n          Jubilee.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "MRS. HUDSON",
+      "quote": "Look at that mess you made --",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "WATSON",
+      "quote": "It's all right, Mrs. Hudson. I'll clean\n          it up --\n                 (hands her the diploma)\n          -- while you unpack my things.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MRS. HUDSON",
+      "quote": "Unpack?",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "HOLMES",
+      "quote": "You heard him.",
+      "block": 8
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "WATSON",
+      "quote": "Thank you, Holmes. I know how difficult\n          it must've been for you --",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "HOLMES",
+      "quote": "Not really. It was simple choice between\n          a bad habit and a good companion.",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "WATSON",
+      "quote": "You've made me very happy.",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "HOLMES",
+      "quote": "I've often been accused of being cold and\n          unemotional. I admit to it. And yet, in\n          my cold, unemotional way, I'm very fond\n          of you, Watson.",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "WATSON",
+      "quote": "I know that. But one likes to hear these\n          things occasionally.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "WATSON",
+      "quote": "Look at this. Covered with that nasty\n          stuff. I'd better dry it off.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "HOLMES",
+      "quote": "I'll do it.",
+      "block": 15
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "WATSON",
+      "quote": "For a moment, I was worried that you were\n          going to let me walk out -- that you\n          weren't even going to try to stop me.",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "HOLMES",
+      "quote": "Now, Watson -- you know there's nothing I\n          wouldn't do to keep you here.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WATSON'S VOICE",
+      "quote": "It was not the first not the last time he\n          tricked me like that. Normally, I was\n          inclined to forgive him...",
+      "block": 18
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 8,
+        "sign": "ally",
+        "stances": {
+          "opp": 1,
+          "ally": 5,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p2",
+        "p3",
+        "p4"
+      ],
+      []
+    ]
+  }
+}
