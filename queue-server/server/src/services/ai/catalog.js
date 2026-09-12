@@ -72,7 +72,17 @@ export const PROVIDERS = [
     label: 'Cerebras',
     baseUrl: 'https://api.cerebras.ai/v1',
     apiKeyEnv: 'CEREBRAS_API_KEY',
-    limits: { rpm: 30, rpd: 14400 },
+    // Read off the account's own x-ratelimit-* response headers 2026-09-11, not guessed:
+    // 5 requests a MINUTE (this used to say 30, which is why a paced batch job kept being
+    // refused), 150 an hour, 2400 a day, and 30k tokens a minute.
+    limits: { rpm: 5, rph: 150, rpd: 2400 },
+    // Both models here think before answering, and the thinking is charged to the SAME
+    // output budget as the answer — a 4000-token call came back with 14,802 characters of
+    // reasoning and an empty answer, which reads exactly like a broken lane. Unlike
+    // Gemini, where only tiny budgets are affected, there is no budget at which this is
+    // affordable, so the lane always asks for low reasoning. Measured: same call with it
+    // returned 50 extracted turns in 1.9s.
+    thinksByDefault: true,
     // Model ids re-read from the account's own /v1/models on 2026-09-10 — the two
     // that used to be listed here (llama-3.3-70b, qwen-3-32b) answer
     // model_not_found now. Both of these answered, including a 25k-token prompt,

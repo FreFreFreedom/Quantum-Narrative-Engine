@@ -13,12 +13,11 @@
 // several minutes.
 //
 // KNOWN LIMIT, recorded rather than hidden: the hand-built interiors position turns by
-// their subtitle block number, so a moment like "id#355-479" means something a person
-// would recognise. A machine-built interior positions turns by character offset in the
-// source file instead — analyseTurns's gap logic still works the same way, but a split
-// screen or Narrative Mirror moment built from one of these reads a raw offset range, not
-// a subtitle number. Fine for graph spectra (which only needs the shape), not yet fine for
-// resolveMoment's human-readable ranges.
+// their subtitle block number, so a moment like "fam_maxson#355-479" points at a place in
+// the .srt a person can go and check. A machine-built interior positions turns by their
+// order in the conversation instead (1, 2, 3…), so "f_the_master#40-58" means turns 40-58,
+// not subtitle blocks. Both are honest and both resolve to real verified quotes; they are
+// simply not the same unit, and nothing should compare one file's numbers with another's.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';

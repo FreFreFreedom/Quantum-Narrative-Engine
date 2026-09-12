@@ -34,16 +34,17 @@ import { analyseTurns } from './interactionGraph.js';
 // film. Cerebras's free tier is thousands a day and fast per call, and this is the only
 // caller pinned to a provider explicitly rather than through the doc-extraction feature
 // default — docExtraction.js (PDFs/vision) still needs Gemini and is untouched.
-// Windows were 12k chars — sized for a much smaller context window than either lane
-// actually has (both are 128k+ tokens of CONTEXT). The real ceiling turned out to be
-// Cerebras's tokens-PER-MINUTE budget, not context: 48000 chars (~13k tokens in, 6000 out)
-// tripped it immediately across a handful of back-to-back windows. 20000 chars still
-// roughly halves the number of reads a feature film needs and stays clear of it.
+// Sized against Cerebras's real published limits (read off its own response headers, see
+// catalog.js): 5 requests a minute and 30k tokens a minute. A 12k-char window is ~3.3k
+// tokens in and ~2.2k out, so a 15s pause holds both ceilings at once — 4 reads a minute,
+// ~22k tokens a minute. A feature film is ~18 reads, so ~4-5 minutes, against 20+ before.
+// Neither number is a guess and neither should be nudged without re-reading the headers:
+// going faster does not fail gracefully, it refuses every remaining window of the film.
 export const TRAFFIC_PROVIDER = 'cerebras';
 export const TRAFFIC_MODEL = 'gpt-oss-120b';
-export const WINDOW_CHARS = 20000;
-export const WINDOW_PAUSE_MS = 5000;
-const MAX_TOKENS = 3000;
+export const WINDOW_CHARS = 12000;
+export const WINDOW_PAUSE_MS = 15000;
+const MAX_TOKENS = 4000;
 
 const STANCES = new Set(['opp', 'ally', 'neu']);
 
@@ -174,6 +175,13 @@ export async function extractTraffic(sourceText, {
     const out = await generateText({
       prompt, feature: 'doc-extraction', provider: TRAFFIC_PROVIDER, model: TRAFFIC_MODEL,
       maxTokens: MAX_TOKENS, label: 'traffic-extraction',
+      // Without this, runAttempt's soft cap silently rewrites MAX_TOKENS down to 800 —
+      // a rule meant for short side-calls, and the single reason this extraction looked
+      // flaky for so long. One window's answer is a JSON array of dozens of turns; at 800
+      // tokens a thinking model spends the whole budget thinking and returns an empty
+      // string, and a non-thinking one returns an array truncated mid-object. Both read
+      // as "the model found nothing here" rather than as a budget that was too small.
+      allowLongOutput: true,
     });
     return out?.text || '';
   });
@@ -196,6 +204,15 @@ export async function extractTraffic(sourceText, {
   }
 
   allTurns.sort((a, b) => a.block - b.block);
+  // `block` arrives as a character offset into the source, which orders the turns
+  // correctly and is useless as a distance: interactionGraph's gap threshold asks "how far
+  // apart may two turns be and still count as an exchange", in whatever unit `block`
+  // carries, and its default of 3 means three SUBTITLE BLOCKS in the hand-built interiors.
+  // Three characters apart is a gap nothing ever clears, so every turn read as a beat on
+  // its own and a 20-speaker film produced 3 edges. Renumbered to position-in-conversation
+  // after sorting, so the threshold means "within three turns" — the same thing it means
+  // for the hand-built two, and independent of whether the source was a script or an .srt.
+  allTurns.forEach((t, i) => { t.block = i + 1; });
   const { turns, names } = codifySpeakers(allTurns);
   const droppedCount = dropped.notVerbatim.length + dropped.noSpeaker.length + dropped.badStance.length;
   return {

@@ -1,0 +1,2299 @@
+{
+  "entity": "f_the_master",
+  "source": "data-seed/scripts/f_the_master.txt",
+  "scope": "the whole script",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "What kind of belt?",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": ".I try to stay away from that.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "But you spend time outdoors.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "MMMM",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "What do you do?",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "How old are you, Freddie?",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "28.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "It's a weakness. But I like it.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "I know what the other is too.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "How can you tell that? I'm clean.",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "The tattoo's.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Is that a weakness...",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "No one ever made money chasing girls.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "You're wrong. This tatoo's my Auntie.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Who's that?",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "College?",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I tried that, it didn't work.",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Why'd you leave?",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "I know you were, Freddie.",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Freddie.",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Too lucky?",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Something like that.",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Were you in the service?",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes, sir.",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Navy?",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "You have a break coming?",
+      "block": 26
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "Yes.",
+      "block": 27
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 30
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "When?",
+      "block": 31
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "15 minutes.",
+      "block": 32
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I saw you.",
+      "block": 33
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "I saw you first.",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "What's your name?",
+      "block": 35
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "Donna. What's yours?",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "That's a nice name.",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "This is homemade..",
+      "block": 38
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "Is it gonna kill me?",
+      "block": 39
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "Uugugh.",
+      "block": 40
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Taste good?",
+      "block": 41
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "Yeah.",
+      "block": 42
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "I have an apricot belly. Want to see it?",
+      "block": 43
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "Are they nice?",
+      "block": 44
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Wanna go out tonight?",
+      "block": 45
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I don't have any cigarettes...",
+      "block": 46
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DONNA",
+      "quote": "What do you make this liquor with?",
+      "block": 47
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": ".somebody shut him up..",
+      "block": 48
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BARTENDER",
+      "quote": "You feel alright?",
+      "block": 49
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yeah, fine.",
+      "block": 50
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "ANOTHER SERVER",
+      "quote": "Why don't you go lay down, I'll take\n          over...",
+      "block": 51
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "NORMAN CONRAD",
+      "quote": "How are you doing?",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Alright. What is this?",
+      "block": 53
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "NORMAN CONRAD",
+      "quote": "How'd you get on this shit?",
+      "block": 54
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I walked.",
+      "block": 55
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "NORMAN CONRAD",
+      "quote": "Why?",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "MASTER OF CEREMONIES",
+      "quote": "You need to sit down.",
+      "block": 57
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I need to sit down.",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Whatdchu put in my drink?",
+      "block": 59
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "NORMAN CONRAD",
+      "quote": "You've been sedated.",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I'm sleepy.",
+      "block": 61
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "NORMAN CONRAD",
+      "quote": "I know you are. But you need to wake up\n          now. Be sharp and wake up... can you do\n          that for me? I want you to ask some\n          questions about why you're here.. .how you\n          came to be on this ship...",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": ".I just need the work. Wasinmy drink?",
+      "block": 63
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "NORMAN CONRAD",
+      "quote": "You shouldn't be here, this is a private\n          trip.",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": ".I'm a good worker..Iknowthese ships...",
+      "block": 65
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER OF CEREMONIES",
+      "quote": "You're an able bodied seamen?",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I am.",
+      "block": 67
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "You've had your appendix removed.",
+      "block": 68
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "MASTER",
+      "quote": "Why didn't you just ask if you could join\n          this ship? We're always looking for new\n          members, we'd have been happy to have\n          you, no need for skulking or sneaking.",
+      "block": 69
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "MASTER",
+      "quote": "You need work? We'd love to have you\n          work. You can work for us and our\n          company. . .we have a wonderful company...",
+      "block": 70
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yeah? Whatdo you do your company?",
+      "block": 71
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "This is the company where past, present\n          and future come together.",
+      "block": 72
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "Tell me why you're on my ship.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I just want to go to sea. I am looking\n          for a berth--",
+      "block": 74
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "What's wrong with where you were?",
+      "block": 75
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I'm a seamen.",
+      "block": 76
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "What wrong with the world from where you\n          were?",
+      "block": 77
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I like being at sea. (I am a sailor.)",
+      "block": 78
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MASTER",
+      "quote": "You're a Russian spy. Did you hear me?\n          Wake up, Freddie.",
+      "block": 79
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "What do you want? .what's your name?",
+      "block": 80
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MASTER",
+      "quote": "We've told you. You're a russian spy.\n          What are you escaping.",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Nothing.",
+      "block": 82
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MASTER",
+      "quote": "You did something.",
+      "block": 83
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I'm here to work, I know ships...",
+      "block": 84
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "MASTER",
+      "quote": "You don't know?",
+      "block": 85
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "No. I don't know-what?",
+      "block": 86
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "You're a little drunk and sleepy.",
+      "block": 87
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "More than a little watchu put in my\n          drink.",
+      "block": 88
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "More than a little. You work for Dick\n          Quinn.",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Dick.",
+      "block": 90
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "RICHARD QUINN",
+      "block": 91
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Don't know him. / no",
+      "block": 92
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "You work for the AMA. CIA.",
+      "block": 93
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": ". you got alotta questions..",
+      "block": 94
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "You work for Bill Christos and his\n          friends at the APA.",
+      "block": 95
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I don't know you...",
+      "block": 96
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "And you picked this ship at random?",
+      "block": 97
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "ally",
+      "cue": "FREDDIE",
+      "quote": "Yes, sir.",
+      "block": 98
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "How long have you been sleeping?",
+      "block": 99
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I just woke up.",
+      "block": 100
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL WHITE",
+      "quote": "We'd like to present you with this gift\n          from the New York Branch for your stay\n          here ...we know how fond you are of\n          motorcycles.",
+      "block": 101
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "Loooooooooook at that... 1940 Harley\n          Davidson Knucklehead. For me?",
+      "block": 102
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL WHITE",
+      "quote": "Make way, make way..thank you.",
+      "block": 103
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "You can hear a tomato scream when you cut\n          it...this is why I don't eat tomatoes...",
+      "block": 104
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "As you can see I've brought props.",
+      "block": 105
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Showman's trade secrets.. .he-he-he",
+      "block": 106
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Let me just listen to this tape...",
+      "block": 107
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Can't hear anything. But there's sound on\n          here, no? Sound to be found?",
+      "block": 108
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "This should do it!",
+      "block": 109
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Well what do we have? We have the high\n          fidelity audio tape, we have speakers,\n          and yet..a ha! Just a moment.",
+      "block": 110
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "This should do it...",
+      "block": 111
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Seems we're out of pieces..",
+      "block": 112
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "I know there's sound on that tape...",
+      "block": 113
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (V.0.) (CONT'D)",
+      "quote": "Our life has never stopped and always\n          been. All of the recordings of our\n          lifetimes that we have lived are\n          available to us..",
+      "block": 114
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Everything's there isn't it? On the tape?\n          Sure is, we just need to get it working\n          with all the other pieces in synch-ro-\n          nization. No good if it's not plugged\n          into the wall. Can't hear it. But the\n          sounds are still there. No good if those\n          speakers aren't there. Can't hear it.",
+      "block": 115
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "But that doesn't mean it's not there,\n          does it? No. It doesn't. That flimsy\n          little piece of tape is just nothin'",
+      "block": 116
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "It's just Q-44...all it is. Trillions of\n          years ago - little implants..",
+      "block": 117
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "I promise to explain it. And make it go\n          away.",
+      "block": 118
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Val has a habit of finding trouble...\n          I sometimes wonder what danger a man\n          could get himself into this Island.",
+      "block": 119
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER (CONT'D)",
+      "quote": "Can you do this for me?\n          With a casualness and delicacy? Watchful\n          eyes to make sure trouble doesn't come...\n          or that come doesn't trouble? My little\n          soldier?",
+      "block": 120
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Keep an eye on him?",
+      "block": 121
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "And report back to me...",
+      "block": 122
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Alright.",
+      "block": 123
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "Hi.",
+      "block": 124
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Hi.",
+      "block": 125
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "Why aren't you downstairs?",
+      "block": 126
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I'm working.",
+      "block": 127
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "What are you doing?",
+      "block": 128
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Errands.",
+      "block": 129
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "You're not an errand boy...you're a\n          loafer... you're doing more than that, I\n          can tell.",
+      "block": 130
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "ally",
+      "cue": "ELIZABETH (CONT'D)",
+      "quote": "I want to tell you...\n          Freddie. . .what you did for my father last\n          night was spectacular.",
+      "block": 131
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "I didn't do anything.",
+      "block": 132
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "I'm my father's daughter.\n          Don't tell me you did nothing. It was\n          just what was needed to be done. And you\n          took it upon yourself.",
+      "block": 133
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH (CONT'D)",
+      "quote": "I can tell that you know what persecution\n          feels like...",
+      "block": 134
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH (CONT'D)",
+      "quote": "Can I have some of your liquor?",
+      "block": 135
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 136
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 137
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "Why not?",
+      "block": 138
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "It's too strong.",
+      "block": 139
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "I'm a big girl.",
+      "block": 140
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Not big enough yet -",
+      "block": 141
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "I could just steal some...",
+      "block": 142
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "Don't argue with me. You're Father's\n          speaking .get dressed and get down\n          there...",
+      "block": 143
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "'ELIZABETH",
+      "quote": "There's plenty of time... besides:\n          I've heard it all before.",
+      "block": 144
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MASTER",
+      "quote": "THANK YOU! THANK YOU! Well? Down but not\n          out. Not Dead Yet!",
+      "block": 145
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Bobby?",
+      "block": 146
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB (OC)",
+      "quote": "Yeah?",
+      "block": 147
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "It's Freddie.",
+      "block": 148
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB (OC)",
+      "quote": "FREDDIE! FREDDIE WHERE ARE YA!",
+      "block": 149
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Are you home?",
+      "block": 150
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB (OC)",
+      "quote": "YEAH. YOU HERE?!",
+      "block": 151
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Where's everybody?",
+      "block": 152
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "We're havin' a party. Where you coming\n          from? Where you been?",
+      "block": 153
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Here and there. Antarctica. Where's your\n          dad?",
+      "block": 154
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "Not here, working. Get in here you gotta\n          see these two girls. Antarctica?",
+      "block": 155
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Where's my mom?",
+      "block": 156
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "I heard she was in Florida.",
+      "block": 157
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Where's your mom?",
+      "block": 158
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "Left. She's back living in Princeton.\n          It's the best since she's gone. My dad's\n          never here. This place is mine. Did you\n          see these girls?",
+      "block": 159
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Anybody ever hear about stolen jewels and\n          money in the sewers?",
+      "block": 160
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "Where?",
+      "block": 161
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Near Harlem.",
+      "block": 162
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE (CONT'D)",
+      "quote": "I heard about a load of money and jewels\n          that are hidden in a sewer wall up near\n          Harlem. A long time ago.\n          With crocodiles that live down there and\n          protect it.",
+      "block": 163
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOY",
+      "quote": "I heard about that.",
+      "block": 164
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOY 2",
+      "quote": "I heard about that too.",
+      "block": 165
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Let's go this way and that way - come\n          with me -",
+      "block": 166
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "My mom signed my early entrance to the\n          army.",
+      "block": 167
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "How'd she do that?",
+      "block": 168
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "She just signed this letter I made up\n          saying my birth certificate was burned in\n          a fire. She's happy to let me go.",
+      "block": 169
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "You don't want to go there, dummy.",
+      "block": 170
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "There's a lot of pussy there, Freddie. I\n          like those Korean girls the way they\n          look.",
+      "block": 171
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "You're an idiot.",
+      "block": 172
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "I'd rather be there than here. Pussy over\n          there... I've been licking so much pussy\n          this summer...",
+      "block": 173
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB (CONT'D)",
+      "quote": "I jerked off to a picture of my mom once.\n          Did I ever tell you that?",
+      "block": 174
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "I did...",
+      "block": 175
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There's nothing here...let's just go...",
+      "block": 176
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah. WE'RE COMING BACK!!!! MEET BACK.",
+      "block": 177
+    },
+    {
+      "speaker": "p1",
+      "to": "p11",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bob...",
+      "block": 178
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "OVER HERE!!!! OVER HERE!!!!!",
+      "block": 179
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where were those?",
+      "block": 180
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Right here.",
+      "block": 181
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I found them right here.",
+      "block": 182
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Holy shit.",
+      "block": 183
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You see anything last night?",
+      "block": 184
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": ".with what?",
+      "block": 185
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "With Val.",
+      "block": 186
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 187
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "How does that happen?",
+      "block": 188
+    },
+    {
+      "speaker": "p1",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": ".lost 'em in the streets...",
+      "block": 189
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get thee behind me --",
+      "block": 190
+    },
+    {
+      "speaker": "p16",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "And push.",
+      "block": 191
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Cheers to that!",
+      "block": 192
+    },
+    {
+      "speaker": "p8",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes. Yes.",
+      "block": 193
+    },
+    {
+      "speaker": "p8",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, master.",
+      "block": 194
+    },
+    {
+      "speaker": "p15",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "And no more of that boy's booze.",
+      "block": 195
+    },
+    {
+      "speaker": "p8",
+      "to": "p15",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes master.",
+      "block": 196
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Try to recall how you feel...",
+      "block": 197
+    },
+    {
+      "speaker": "p17",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh, I'm sort of glad it's the end..",
+      "block": 198
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What happens next?",
+      "block": 199
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What is the doctor wearing?",
+      "block": 200
+    },
+    {
+      "speaker": "p18",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "FOLLOWER",
+      "quote": "You're talking about Book II?",
+      "block": 201
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 202
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "ally",
+      "cue": "FREDDIE",
+      "quote": "I'll get some.",
+      "block": 203
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "FREDDIE",
+      "quote": "Alright.",
+      "block": 204
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": ".where's Clark?",
+      "block": 205
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "Denver.",
+      "block": 206
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "What's in Denver?",
+      "block": 207
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "He had a mission there...",
+      "block": 208
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "What kind of mission?",
+      "block": 209
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "A secret one...",
+      "block": 210
+    },
+    {
+      "speaker": "p15",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "MARY SUE",
+      "quote": "Do you want some pancakes?",
+      "block": 211
+    },
+    {
+      "speaker": "p19",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "Hello, Freddie.",
+      "block": 212
+    },
+    {
+      "speaker": "p1",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Bill.",
+      "block": 213
+    },
+    {
+      "speaker": "p1",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "There's nothing going on, Bill.",
+      "block": 214
+    },
+    {
+      "speaker": "p19",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "What does that mean?",
+      "block": 215
+    },
+    {
+      "speaker": "p1",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "That's what that means.",
+      "block": 216
+    },
+    {
+      "speaker": "p1",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "That's it.",
+      "block": 217
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "We appreciate that.",
+      "block": 218
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 219
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 220
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 221
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FREDDIE",
+      "quote": "Yes.",
+      "block": 222
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "And that entitles me to the Journals?",
+      "block": 223
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "But I haven't gotten the Journals?",
+      "block": 224
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "But I haven't gotten the Journals?",
+      "block": 225
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 226
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 227
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 228
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 229
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 230
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 231
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "No.",
+      "block": 232
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "And I'm not going to get the Journals?",
+      "block": 233
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "And I'm not going to get any Journals?",
+      "block": 234
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "And I haven't gotten them?",
+      "block": 235
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "But you're going to give them to me?",
+      "block": 236
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "Why?",
+      "block": 237
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILL",
+      "quote": "Why?",
+      "block": 238
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "I'm not embarrassed. That's sunburn.",
+      "block": 239
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "FREDDIE",
+      "quote": "You can't see Master.",
+      "block": 240
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "Can we have some of your booze now?",
+      "block": 241
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 20,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 20
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 35,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 1,
+          "neu": 30
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 23,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 22
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p11",
+        "weight": 28,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 26
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p15",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p19",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p14",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p17",
+        "p18",
+        "p19",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}
