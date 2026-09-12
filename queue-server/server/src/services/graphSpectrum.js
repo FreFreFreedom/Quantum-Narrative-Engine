@@ -25,20 +25,34 @@ export function entitiesWithInteriors() {
   return files.filter((f) => f.endsWith('.graph.json')).map((f) => f.replace(/\.graph\.json$/, ''));
 }
 
+// How many of its nearest matches each entity keeps. Every pair of interiors has SOME
+// distance between them, so returning them all means every mapped entity is joined to
+// every other one — at 40 interiors that is 780 lines, and the graph turns back into the
+// hairball the tag edges were removed for. Keeping each entity's closest few is what makes
+// a drawn line mean "this is one of the closest things to it" rather than "both of these
+// happen to have been read". Mutual: a line survives if EITHER end counts it among its
+// nearest, so a much-matched entity cannot crowd a quiet one off the map.
+export const NEAREST_PER_ENTITY = 3;
+
 // Every pair of mapped interiors, by how close their shapes ring — the deep connection the
-// graph shows in place of shared tags or a shared author. No threshold is applied here:
-// with a handful of interiors this is cheap to send in full, and it is the caller's job to
-// decide how much of it to draw, not this function's job to hide the weak end of it.
-export function allSpectralEdges() {
-  const ids = entitiesWithInteriors();
-  const sigs = ids.map((id) => spectrumFor(id)).filter(Boolean);
-  const edges = [];
+// graph draws in place of shared tags or a shared author.
+export function allSpectralEdges({ nearest = NEAREST_PER_ENTITY } = {}) {
+  const sigs = entitiesWithInteriors().map((id) => spectrumFor(id)).filter(Boolean);
+  const all = [];
   for (let i = 0; i < sigs.length; i++) {
     for (let j = i + 1; j < sigs.length; j++) {
-      edges.push({ a: sigs[i].entityId, b: sigs[j].entityId, distance: spectralDistance(sigs[i], sigs[j]) });
+      all.push({ a: sigs[i].entityId, b: sigs[j].entityId, distance: spectralDistance(sigs[i], sigs[j]) });
     }
   }
-  return edges;
+  if (!nearest || all.length <= nearest) return all;
+  const keep = new Set();
+  for (const s of sigs) {
+    all.filter((e) => e.a === s.entityId || e.b === s.entityId)
+      .sort((x, y) => x.distance - y.distance)
+      .slice(0, nearest)
+      .forEach((e) => keep.add(e.a + '|' + e.b));
+  }
+  return all.filter((e) => keep.has(e.a + '|' + e.b)).sort((x, y) => x.distance - y.distance);
 }
 
 // A - the signed adjacency (ally=+weight, opp=-weight, unsigned edges contribute nothing,

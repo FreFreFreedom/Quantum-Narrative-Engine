@@ -15,7 +15,7 @@
 // counted and skipped, never retried in a loop — a source that cannot be read twice in a
 // row will not read on the third try either, and the log says which ones to look at.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, rmSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from '../server/src/lib/loadEnvFile.js';
@@ -105,8 +105,28 @@ async function buildOne(id, film) {
   };
 }
 
+// Two copies of this running at once do not go twice as fast — they share one free-tier
+// rate limit, so each one's every window waits out a refusal from the other, and both make
+// almost no progress while looking alive. That happened (three copies, 35 minutes, nothing
+// built). The lock is the whole fix; a stale one from a killed run is detected and taken.
+function claimLock() {
+  const lock = resolve(INTERIORS_DIR, '.batch.pid');
+  if (existsSync(lock)) {
+    const pid = Number(readFileSync(lock, 'utf8').trim());
+    let alive = false;
+    try { process.kill(pid, 0); alive = true; } catch {}
+    if (alive) { console.error(`another batch is already running (pid ${pid}) — nothing to do`); return false; }
+  }
+  writeFileSync(lock, String(process.pid));
+  const drop = () => { try { if (Number(readFileSync(lock, 'utf8').trim()) === process.pid) rmSync(lock); } catch {} };
+  process.on('exit', drop);
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { drop(); process.exit(0); });
+  return true;
+}
+
 async function main() {
   mkdirSync(INTERIORS_DIR, { recursive: true });
+  if (!claimLock()) return;
   const ontology = JSON.parse(readFileSync(ONTOLOGY_FILE, 'utf8'));
   const todo = Object.keys(ontology.filmsIndex)
     .filter((id) => sourceFor(id))

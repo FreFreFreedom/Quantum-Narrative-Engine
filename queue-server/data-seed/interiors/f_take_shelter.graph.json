@@ -1,0 +1,1519 @@
+{
+  "entity": "f_take_shelter",
+  "source": "data-seed/scripts/f_take_shelter.txt",
+  "scope": "the whole script, machine-extracted (14 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "Thanks babe.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "You slept late.",
+      "block": 2
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "SUE",
+      "quote": "Yeah.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (MOUTH FULL)",
+      "quote": "With the kids?",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Tell Nat to take it easy on her.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "CURTIS (SIGNING)",
+      "quote": "I love you.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "Just write the check, babe. Okay.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Okay. Bye.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "No more food. You, eat.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "CURTIS",
+      "quote": "Why not?!",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Happy hour starts at five Dewart!",
+      "block": 11
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART (TO HIMSELF)",
+      "quote": "Not if it's rainin'...Ready?",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Oh, yeah.",
+      "block": 13
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Oh my god.",
+      "block": 14
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "(GLANCES OUTSIDE)",
+      "quote": "Hannah!",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "You guys okay?",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "SAMANTHA",
+      "quote": "No. Don't touch.",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "You understand?",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "Oksy. Come here.",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "Hey, DJ. Bring the girls inside.",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Bye guys. Thanks for coming over.",
+      "block": 21
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Okay. Love you.",
+      "block": 22
+    },
+    {
+      "speaker": "p6",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "CAMMIE",
+      "quote": "Bye Sam.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Bye Cam.",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "Can you sign s-t-o-r-m?",
+      "block": 25
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "Storm.",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I gotta get home.",
+      "block": 27
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "Nat and me been lookin' into a",
+      "block": 28
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "threesome. We've been chattin' with",
+      "block": 29
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "a girl online from Canton. Yeah.",
+      "block": 30
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "Big `ol girl.",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "What's big?",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "She's about two fifty, two seventy",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "five. She can't be no taller than",
+      "block": 34
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "5 foot.",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Shit man.",
+      "block": 36
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "No. I don't guess you would.",
+      "block": 37
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART (CONT'D)",
+      "quote": "You got a good life Curtis.",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Well. It ain't always so easy.",
+      "block": 39
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "Hell I know that.",
+      "block": 40
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART (CONT'D)",
+      "quote": "Ah shit. I gotta go...Manana.",
+      "block": 41
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Good night.",
+      "block": 42
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (SOFTLY)",
+      "quote": "Hey baby.",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "She do all right today?",
+      "block": 44
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I'll get to it this weekend.",
+      "block": 45
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "I still whisper.",
+      "block": 46
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Curtis?",
+      "block": 47
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Curtis?",
+      "block": 48
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "What?",
+      "block": 49
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "What?",
+      "block": 50
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "What's wrong?",
+      "block": 51
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Hannah. Come here. Hannah.",
+      "block": 52
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "I'm late.",
+      "block": 53
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "It's okay.",
+      "block": 54
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Yes sir.",
+      "block": 55
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "JIM",
+      "quote": "End of day Curtis.",
+      "block": 56
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "Think we got time?",
+      "block": 57
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Yeah. There's time.",
+      "block": 58
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "If you're sick, we should cancel.",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I'll be all right.",
+      "block": 60
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Okay, we'll talk later.",
+      "block": 61
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "Come on. Let's go.",
+      "block": 62
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "(TO CURTIS)",
+      "quote": "You sure?",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Honey, please.",
+      "block": 64
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Okay.",
+      "block": 65
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARGAIN HUNTER",
+      "quote": "change.",
+      "block": 66
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "change.",
+      "block": 67
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARGAIN HUNTER",
+      "quote": "How much you asking for this",
+      "block": 68
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARGAIN HUNTER",
+      "quote": "pillow?",
+      "block": 69
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "This pillow's fifteen dollars.",
+      "block": 70
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "BARGAIN HUNTER",
+      "quote": "That's more than I want to spend.",
+      "block": 71
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "This is all hand stitched. It takes",
+      "block": 72
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "a really long time. That's why I",
+      "block": 73
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "charge that.",
+      "block": 74
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "BARGAIN HUNTER",
+      "quote": "I'll give you seven for it.",
+      "block": 75
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "SAMANTHA",
+      "quote": "I can't go that low.",
+      "block": 76
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARGAIN HUNTER",
+      "quote": "Well that's my offer.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "How about 10?",
+      "block": 78
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "opp",
+      "cue": "BARGAIN HUNTER",
+      "quote": "I'll give you eight, but it's in",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "That's fine.",
+      "block": 80
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "Lucky for you she likes to count",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Red! Come on.",
+      "block": 82
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "Get in.",
+      "block": 83
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "Good boy.",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "I'm sorry about this buddy. We",
+      "block": 85
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "just gotta work it like this for",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "awhile okay?",
+      "block": 87
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR",
+      "quote": "While rescue workers made several",
+      "block": 88
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR",
+      "quote": "attempts to reach the family,",
+      "block": 89
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR",
+      "quote": "Walter Jacobs wife...",
+      "block": 90
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "But that's what I don't understand.",
+      "block": 91
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "If he didn't do anything why did",
+      "block": 92
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "you put him out back?",
+      "block": 93
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "What?",
+      "block": 94
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "You hear me? I said if he didn't",
+      "block": 95
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "do anything why did you have to put",
+      "block": 96
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "him outside?",
+      "block": 97
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I just wanted him to be outside for",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "awhile.",
+      "block": 99
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "He's your dog. He's always been an",
+      "block": 100
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "inside dog.",
+      "block": 101
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "He's my dog, and that's why he's",
+      "block": 102
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "outside. Right now with Hannah and",
+      "block": 103
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "everything I just think it'd be",
+      "block": 104
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "better.",
+      "block": 105
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Hannah loves Red.",
+      "block": 106
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Hold on.",
+      "block": 107
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR",
+      "quote": "...the gas cloud spread across",
+      "block": 108
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR",
+      "quote": "their six acre property.",
+      "block": 109
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR (CONT'D)",
+      "quote": "The only way off their land was",
+      "block": 110
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR (CONT'D)",
+      "quote": "across the train tracks which were",
+      "block": 111
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEWS ANCHOR (CONT'D)",
+      "quote": "blocked by wreckage.",
+      "block": 112
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALTER JACOBS",
+      "quote": "I tried using some wet rags and",
+      "block": 113
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALTER JACOBS",
+      "quote": "towels to breathe through but that",
+      "block": 114
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "You hearin' this?",
+      "block": 115
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "It's awful.",
+      "block": 116
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Eleven hours. No way out.",
+      "block": 117
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Hannah.",
+      "block": 118
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Hey!",
+      "block": 119
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Babe?",
+      "block": 120
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "Yeah?",
+      "block": 121
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "You got the number for Dr. Shannan?",
+      "block": 122
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "You're still not feeling good?",
+      "block": 123
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Yeah, but you got the number?",
+      "block": 124
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Right. Yeah. I'll call tomorrow.",
+      "block": 125
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "CURTIS",
+      "quote": "No. Stop!",
+      "block": 126
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Shit...",
+      "block": 127
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "What is that?",
+      "block": 128
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "It's fine. I'll be fine.",
+      "block": 129
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "No. She needs breakfast.",
+      "block": 130
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I've got it.",
+      "block": 131
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Come on. Just go.",
+      "block": 132
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "What's wrong with you?",
+      "block": 133
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I'm sorry, I'm sorry. Just go.",
+      "block": 134
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "We're going out.",
+      "block": 135
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "You stay put okay?",
+      "block": 136
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "SAMANTHA",
+      "quote": "Where the hell have you been?",
+      "block": 137
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I know.",
+      "block": 138
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "You're really late.",
+      "block": 139
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Curtis.",
+      "block": 140
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "What're you doin' here?",
+      "block": 141
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Not here man.",
+      "block": 142
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "DEWART",
+      "quote": "I said what are you doin' here.",
+      "block": 143
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "DEWART",
+      "quote": "I told people what you been doin'.",
+      "block": 144
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "I know.",
+      "block": 145
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "CURTIS",
+      "quote": "I know. I'm sorry.",
+      "block": 146
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Come on.",
+      "block": 147
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "God dammit.",
+      "block": 148
+    },
+    {
+      "speaker": "p2",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "SAMANTHA",
+      "quote": "STOP IT DEWART!",
+      "block": 149
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "CURTIS",
+      "quote": "I SAID NOT HERE! GOD DAMNIT!",
+      "block": 150
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Hannah?",
+      "block": 151
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "Hannah!",
+      "block": 152
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Curtis! Wake up! Wake up!",
+      "block": 153
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "CURTIS",
+      "quote": "Come on. It's okay.",
+      "block": 154
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "SAMANTHA",
+      "quote": "No. Don't do that.",
+      "block": 155
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "CURTIS",
+      "quote": "No.",
+      "block": 156
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "SAMANTHA",
+      "quote": "Are you kidding?",
+      "block": 157
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "CURTIS",
+      "quote": "Please just do it. Okay?",
+      "block": 158
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "CURTIS (CONT'D)",
+      "quote": "Hey. I love you. It's okay.",
+      "block": 159
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "Wake up babe.",
+      "block": 160
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "Where's your mask?",
+      "block": 161
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SAMANTHA",
+      "quote": "We're fine. Take it off.",
+      "block": 162
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "SAMANTHA (CONT'D)",
+      "quote": "You need to open the door now.",
+      "block": 163
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SAMANTHA",
+      "quote": "What?",
+      "block": 164
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "CURTIS",
+      "quote": "What if it's not over?",
+      "block": 165
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 47,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 7,
+          "ally": 6,
+          "neu": 34
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}

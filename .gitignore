@@ -1,1 +1,5 @@
 .playwright-mcp/
+
+# batch runtime state, not a record
+queue-server/data-seed/interiors/.batch-log.txt
+queue-server/data-seed/interiors/.batch.pid

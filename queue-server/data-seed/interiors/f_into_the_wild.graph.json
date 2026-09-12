@@ -1,0 +1,3428 @@
+{
+  "entity": "f_into_the_wild",
+  "source": "data-seed/scripts/f_into_the_wild.txt",
+  "scope": "the whole script, machine-extracted (22 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "Hey!",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "DRIVER (CONT'D)",
+      "quote": "Come here.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "DRIVER (CONT'D)",
+      "quote": "You left your watch, your comb, your\n              change...",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "BACKPACK",
+      "quote": "Keep it.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "I don't want your money.    And I already\n              have a watch.",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BACKPACK",
+      "quote": "If you don't take it, I'm gonna throw it\n              away. I don't want to know what time it\n              is, what day it is, or where I am.",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BACKPACK (CONT'D)",
+      "quote": "I don't want to see anybody. None of\n             that matters.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "DRIVER",
+      "quote": "Take em.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "BACKPACK",
+      "quote": "Hey, do me a favor, will ya?     Take a\n             picture of me.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "DRIVER",
+      "quote": "You gonna be alright?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BACKPACK",
+      "quote": "I'll be better than that.\n                    (I'll be who I am.)",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "The Datsun?",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "WALT",
+      "quote": "Yes.   We want to get you a new car.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "But, thanks anyway.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALT",
+      "quote": "Everything's gotta be difficult.",
+      "block": 15
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "I wouldn't say no to a new car.",
+      "block": 16
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Ivana Trump McCandless.",
+      "block": 17
+    },
+    {
+      "speaker": "p5",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "CARINE",
+      "quote": "Shut up, Chris.",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "Seriously, I'll pay you back.",
+      "block": 19
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Sign, sign. Everywhere a sign. Fuckin'\n               up the scenery, breakin' my mind.",
+      "block": 20
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Do this. Don't do that. Can't you read\n                 the sign?",
+      "block": 21
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "FOREST RANGER",
+      "quote": "U.S. Forestry. Could you step out of the\n                 tent please?",
+      "block": 22
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "Sorry. I thought you were a bear.",
+      "block": 23
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "FOREST RANGER",
+      "quote": "I don't blame you. You're less than a\n                 hundred yards from the nearest den.\n                 That's why I came over here to talk to\n                 you. Do you have some identification?",
+      "block": 24
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "No. I'm sorry. My name's Alex. I've\n          been travelling a lot and I got robbed\n          and my identification was taken.",
+      "block": 25
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No.",
+      "block": 26
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "FOREST RANGER",
+      "quote": "You mind if I take a look in your tent?",
+      "block": 27
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "Go ahead.",
+      "block": 28
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "FOREST RANGER",
+      "quote": "You're not the character who knocked down\n          our sign, are ya?",
+      "block": 29
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "FOREST RANGER",
+      "quote": "Because there was a sign indicating that\n          camping was allowed by permit only.",
+      "block": 30
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Well, I don't have a permit.",
+      "block": 31
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "FOREST RANGER",
+      "quote": "No, I'm sure you don't. Listen, it looks\n          like you've got your food secured pretty\n          good, so I'm not gonna make you move on\n          tonight. But, these bears out here are\n          nursing young and you know how that goes.\n          Next time, stop at the Rangers station\n          and get yourself a permit.",
+      "block": 32
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "Alright. I appreciate it. I'm gonna be\n          headed towards the coast tomorrow.",
+      "block": 33
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "FOREST RANGER",
+      "quote": "Be careful.",
+      "block": 34
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Is that a man mommy?\n                That's no mere man, sweetheart. That's\n                Alexander SuperTramp! King of the wild\n                frontier!",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "DRIVER",
+      "quote": "This is where I turn off.",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "Alright man.    Thanks a lot.",
+      "block": 37
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "POLICEMAN",
+      "quote": "How're you doin' this evening?",
+      "block": 38
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I'm alright. What's the matter?",
+      "block": 39
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "POLICEMAN",
+      "quote": "You wanna put your backpack down on the\n          hood of my car.",
+      "block": 40
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Why?",
+      "block": 41
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "POLICEMAN",
+      "quote": "Because I asked you to, sir.",
+      "block": 42
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "POLICEMAN",
+      "quote": "Do you know that it's unlawful to\n          hitchhike on this stretch of highway.",
+      "block": 43
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You're kidding.",
+      "block": 44
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "POLICEMAN",
+      "quote": "Do you see a safe area for a vehicle to\n          stop? We got a tree-lined highway\n          without a substantial shoulder here. And\n          we've had a lot of accidents on this road\n          from people stopping in the traffic lane\n          for hitchhikers.",
+      "block": 45
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Alright, but...I mean, you stopped your\n          car. You're in the traffic lane. And\n          you can see, there's hardly any cars out\n          here. Plus, it's a straight road; you\n          can see for a long ways.",
+      "block": 46
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "There's really been accidents along here?",
+      "block": 47
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "POLICEMAN",
+      "quote": "May I see some identification?",
+      "block": 48
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I don't have any.",
+      "block": 49
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "POLICEMAN",
+      "quote": "You don't have any identification?",
+      "block": 50
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "McCandless. Christopher Johnson\n               McCandless.",
+      "block": 51
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "You know what Alex ought to do, Rainey?\n               He ought to come out to the Slabs this\n               winter.",
+      "block": 52
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY",
+      "quote": "Oh yeah.",
+      "block": 53
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY (CONT'D)",
+      "quote": "You'd like that if you're still on the\n          road. Lot of fellow travelers.",
+      "block": 54
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "What is that? The Slabs?",
+      "block": 55
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY",
+      "quote": "It's down in Niland, California.   You\n          know where the Salton Sea is?",
+      "block": 56
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Near San Diego, yeah?",
+      "block": 57
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY",
+      "quote": "Well about 200 miles Northeast of there,\n          but yeah. Niland's off the east shore of\n          Salton. Wild place. The navy bulldozed\n          and abandoned a base there. All that's\n          left is a grid of concrete foundations.\n          They're scattered over about a square\n          mile or so.",
+      "block": 58
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "there.",
+      "block": 59
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "When the weather turns cold across the\n          rest of the country, people show up there\n          by the thousands: snow birds...",
+      "block": 60
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY",
+      "quote": "Drifters...",
+      "block": 61
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Sundry vagabonds...",
+      "block": 62
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY / JAN",
+      "quote": "Like ourselves.",
+      "block": 63
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Livin' on the cheap under the sun.",
+      "block": 64
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You sell your handcrafts there?",
+      "block": 65
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Oh yeah. And a lot of second-hand goods.",
+      "block": 66
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "There's a swap meet. The people are",
+      "block": 67
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "cool. There's even some kids running",
+      "block": 68
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "around sometimes. Most everyone there,",
+      "block": 69
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "if they're not avoiding the cold, are at",
+      "block": 70
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "least dodging the IRS.",
+      "block": 71
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "RAINEY",
+      "quote": "Or the FBI.   CIA! DDT!!!",
+      "block": 72
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "It's good. You should check it out. If",
+      "block": 73
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "you come, I'll make a proper hat for you.",
+      "block": 74
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "(standing, shaking out her",
+      "block": 75
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "blanket)",
+      "block": 76
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Well, Alex. I'm gonna clean up and the",
+      "block": 77
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "old man and I are gonna get some rest.",
+      "block": 78
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "(indicating the sleeping bag)",
+      "block": 79
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Looks like you got yourself a good bag",
+      "block": 80
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yeah...my mother made it from a kit.",
+      "block": 81
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "I'm gonna sleep out here by the fire.     I\n               want to read a little bit.",
+      "block": 82
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "ally",
+      "cue": "JAN",
+      "quote": "You're wonderful.   Don't make me worry\n               about you.",
+      "block": 83
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "WAYNE",
+      "quote": "How're you doing? Wayne Westerberg.",
+      "block": 84
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Hi Wayne. Alex McCandless.",
+      "block": 85
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Oh, I wouldn't want to burden you.",
+      "block": 86
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "WAYNE",
+      "quote": "So where is it you're headed?",
+      "block": 87
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You mean those free satellite TV deals?",
+      "block": 88
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "WAYNE",
+      "quote": "You said it, not me.",
+      "block": 89
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "WAYNE",
+      "quote": "OOOOOOH.",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Who are these guys?",
+      "block": 91
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Madison.    Okay.",
+      "block": 92
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "Thanks Wayne. I will.",
+      "block": 93
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "MAN #1",
+      "quote": "What are you Alex, a Commie?",
+      "block": 94
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No, I just like White Russians.",
+      "block": 95
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Really?",
+      "block": 96
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Dawn tomorrow, engines roaring.",
+      "block": 97
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"Pot o Gold.    Gotta get that pot o gold!\"",
+      "block": 98
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "To Carthage.",
+      "block": 99
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "To Carthage.",
+      "block": 100
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "First come, first serve buddy.",
+      "block": 101
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I got first!",
+      "block": 102
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You had first last night!",
+      "block": 103
+    },
+    {
+      "speaker": "p16",
+      "to": "p11",
+      "stance": "opp",
+      "cue": null,
+      "quote": "Shut up, Wayne.",
+      "block": 104
+    },
+    {
+      "speaker": "p16",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You want a White Russian, sweetie?",
+      "block": 105
+    },
+    {
+      "speaker": "p3",
+      "to": "p16",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Yes please, ma'am.",
+      "block": 106
+    },
+    {
+      "speaker": "p11",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes please, ma'am?",
+      "block": 107
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ain't he great?",
+      "block": 108
+    },
+    {
+      "speaker": "p16",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Don't pay any attention to him.",
+      "block": 109
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm thinking about going to Alaska.",
+      "block": 110
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "In the wild.",
+      "block": 111
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Society, right.",
+      "block": 112
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who \"people\" we talking about?",
+      "block": 113
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Now, that's who could be President!",
+      "block": 114
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Workin' time!",
+      "block": 115
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "I like all this.",
+      "block": 116
+    },
+    {
+      "speaker": "p11",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WAYNE",
+      "quote": "I gotta take a piss.",
+      "block": 117
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "WAYNE",
+      "quote": "You wanna get that zipper for me?",
+      "block": 118
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "GAIL",
+      "quote": "Where are you gonna go?",
+      "block": 119
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I've been thinking a lot about Alaska.",
+      "block": 120
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Little lady, I walked in, I can walk out.",
+      "block": 121
+    },
+    {
+      "speaker": "p17",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "GREEN SUIT",
+      "quote": "Can I help you?",
+      "block": 122
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Not much.",
+      "block": 123
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "GREEN SUIT",
+      "quote": "Any?   Do you have a permit?",
+      "block": 124
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "A permit for what?",
+      "block": 125
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Wait-list?   To paddle down a river?",
+      "block": 126
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "GREEN SUIT",
+      "quote": "That's right.",
+      "block": 127
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Well, how long do you have to wait?",
+      "block": 128
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "GREEN SUIT",
+      "quote": "I've got an opening May 2003.",
+      "block": 129
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Twelve years?",
+      "block": 130
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Thanks for your help.",
+      "block": 131
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I'm Superman. SuperTramp.",
+      "block": 132
+    },
+    {
+      "speaker": "p18",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "Hello!",
+      "block": 133
+    },
+    {
+      "speaker": "p3",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Hello.",
+      "block": 134
+    },
+    {
+      "speaker": "p18",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "You can join us!",
+      "block": 135
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "We have hotdogs!",
+      "block": 136
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "I am Mads.",
+      "block": 137
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Hi. Alex.",
+      "block": 138
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA",
+      "quote": "I am Sonja.",
+      "block": 139
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA",
+      "quote": "Hello Alex.",
+      "block": 140
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I am.",
+      "block": 141
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA",
+      "quote": "My Got!",
+      "block": 142
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS (CONT'D)",
+      "quote": "Just one minute. One minute...",
+      "block": 143
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Well...",
+      "block": 144
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS (interrupting)",
+      "quote": "Because that's crazy! You come down the\n          rapids. What do you want on your hotdog?\n          Mustard and relish?",
+      "block": 145
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You have ketchup?",
+      "block": 146
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "No, I have mustard and relish.",
+      "block": 147
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Mustard and relish it is then.",
+      "block": 148
+    },
+    {
+      "speaker": "p18",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "Sonja, you want a hotdog?",
+      "block": 149
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA (in Danish)",
+      "quote": "Of course I want a hotdog.   Why are you\n          stupid?",
+      "block": 150
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS (translating)",
+      "quote": "She asked me why I'm stupid. And I say,\n          well...like I ask you why you're crazy\n          and you say \"well.\" Where are you going?",
+      "block": 151
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I haven't decided.",
+      "block": 152
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "We like it here very much. We went to\n          Los Angeles. And then, we went to Las\n          Vegas.",
+      "block": 153
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA",
+      "quote": "Las Vegas is very nice.   The universe is\n          very good.",
+      "block": 154
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "And then, we come here.   Maybe you go to\nMexico.",
+      "block": 155
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS (CONT'D)",
+      "quote": "You can take kayak around Lake Mead and\n          then take the river down to Mexico.",
+      "block": 156
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "How far are we from Lake Mead?",
+      "block": 157
+    },
+    {
+      "speaker": "p18",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "Sonja, how far is Hoover Dam?",
+      "block": 158
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA",
+      "quote": "Maybe three hundred thirty\n          kilometers...like two hundred miles.",
+      "block": 159
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Man, I wonder if I could go all the way\n          down into the Gulf of California.",
+      "block": 160
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS (entering the water with\n                  Chris' hotdog)",
+      "quote": "I go with you. We leave Sonja here.    You\n          and me in kayak - we go to Mexico.",
+      "block": 161
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA (in Danish)",
+      "quote": "You're embarrassing.   Idiot.",
+      "block": 162
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "I like the meeting you.",
+      "block": 163
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Thank you. I'm very happy to meet both\n          of you too.",
+      "block": 164
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "Well, guys I really appreciate the\n               hospitality but I wanna make camp down-\n               river a ways so I better take off before\n               dark.",
+      "block": 165
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADS",
+      "quote": "He went thattaway!   The crazy man - he\n               went thattaway!",
+      "block": 166
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "SONJA",
+      "quote": "Just like in the movies.",
+      "block": 167
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "IMMIGRATION OFFICER (V.O.)",
+      "quote": "How long were you on your own down there?",
+      "block": 168
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "36 days.",
+      "block": 169
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "IMMIGRATION OFFICER (V.O.)",
+      "quote": "How'd you know?",
+      "block": 170
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "Fingers and toes.",
+      "block": 171
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "I paddled south about 20 miles.",
+      "block": 172
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "One...Two...Three -",
+      "block": 173
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "Can you tell me how to get an ID card?",
+      "block": 174
+    },
+    {
+      "speaker": "p21",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "SOCIAL WORKER",
+      "quote": "Did you lose your identification sir?",
+      "block": 175
+    },
+    {
+      "speaker": "p3",
+      "to": "p21",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yeah.",
+      "block": 176
+    },
+    {
+      "speaker": "p21",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "SOCIAL WORKER",
+      "quote": "No birth certificate? Nothing?",
+      "block": 177
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOCIAL WORKER",
+      "quote": "You leaving us so soon? I know them DMV\n                lines are long...",
+      "block": 178
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "Lay down on your stomach, spread eagle!",
+      "block": 179
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "Let me see your face.",
+      "block": 180
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "I never, ever, ever forget a face. If I",
+      "block": 181
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "see yours again, I won't arrest you.",
+      "block": 182
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "I'll kill you. This is the god-damned",
+      "block": 183
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "railroad. And we will do whatever we",
+      "block": 184
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "have to, to keep you freeloaders from",
+      "block": 185
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "violating our liability.",
+      "block": 186
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "If one of you people gets hurt on our",
+      "block": 187
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "train, we are liable. Do you understand",
+      "block": 188
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "that?",
+      "block": 189
+    },
+    {
+      "speaker": "p3",
+      "to": "p22",
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "I'm sorry, sir.",
+      "block": 190
+    },
+    {
+      "speaker": "p22",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "You have I.D.?",
+      "block": 191
+    },
+    {
+      "speaker": "p3",
+      "to": "p22",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No, sir.",
+      "block": 192
+    },
+    {
+      "speaker": "p22",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "BULL #2",
+      "quote": "Last time, my friend.",
+      "block": 193
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Thanks very much.",
+      "block": 194
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLIE",
+      "quote": "I'm not talking about this anymore!",
+      "block": 195
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALT",
+      "quote": "Don't walk away from me WOMAN!",
+      "block": 196
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILLIE",
+      "quote": "Fuck you!   I hate you!",
+      "block": 197
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLIE",
+      "quote": "KIDS!   LOOK WHAT YOUR FATHER'S DOING TO",
+      "block": 198
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLIE",
+      "quote": "ME!",
+      "block": 199
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALT",
+      "quote": "LOOK WHAT YOUR MOTHER IS MAKING ME DO!",
+      "block": 200
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALT",
+      "quote": "I'll just cancel Christmas then!",
+      "block": 201
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "opp",
+      "cue": "BILLIE",
+      "quote": "Who do you think you are?   God?",
+      "block": 202
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "WALT",
+      "quote": "Yes.   I'm God!",
+      "block": 203
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALT",
+      "quote": "Where do you kids think you're going?",
+      "block": 204
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLIE",
+      "quote": "Kids, get back here!",
+      "block": 205
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I'll cancel Christmas!",
+      "block": 206
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "Who do you think you are? God?",
+      "block": 207
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yes.   I'm God.",
+      "block": 208
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "In the nine months since Chris'\n                disappearance, my parents went through\n                enormous changes. Guilt was giving way\n                to pain. And pain seemed to bring them\n                closer. My father had humbled\n                dramatically. And what had always been a\n                sort of curt arrogance, the kind of man\n                who actually thought he could cancel\n                Christmas, had given way to the\n                vulnerability of a father's heart. Even\n                their faces had changed. It made me sad\n                that I couldn't share with Chris the new\n                closeness I felt toward our parents.",
+      "block": 209
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "I close my eyes at night sometimes and\n                imagine where Chris might be.",
+      "block": 210
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "Was there beauty around him?   Was he\n                hurt? Was he alone?",
+      "block": 211
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "Was he having the great adventure that he\n                wanted?",
+      "block": 212
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "Could he feel the changes here at home?\n                By some kind of supernatural osmosis?\n                Chris once wrote to me from college\n                saying he wanted to talk to me about all\n                the problems he had with mom and dad.",
+      "block": 213
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "He said I was the only person in the\n                world who could've possibly understood\n                what he had to say.",
+      "block": 214
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "In those silent moments, with my eyes\n                closed trying to picture where Chris\n                might be at that very moment, probably\n                climbing some scary mountain, I want to\n                reach into that picture and bring him\n                back to see what mom and dad, what our\n                family might become.",
+      "block": 215
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "But instead when I open my eyes, what I",
+      "block": 216
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "She convinces herself it's   Chris; that\n                it's her son, whenever she   passes a\n                stray. And I fear for the    mother in\n                her...",
+      "block": 217
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CARINE",
+      "quote": "Instincts that seem to sense the threat\n                of a loss so huge and irreparable that\n                the mind balks at taking its measure - I\n                begin to wonder if I do understand what\n                Chris is saying any longer. But I catch\n                myself in doubt and remember that these\n                are not the parents he grew up with.\n                That in the forced reflection that comes\n                with loss, indeed everything Chris is\n                saying, has to be said. And I trust for\n                him that everything he is doing has to be\n                done. This is our life.",
+      "block": 218
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRUCKER",
+      "quote": "I don't know where to drop you.\n                Bullhead's kinda haphazard - there's no\n                \"center.\" You sure you don't want to be\n                in Laughlin? It's casinos versus\n                chiropractors.",
+      "block": 219
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yeah, no.   This is good.   Right here.",
+      "block": 220
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRUCKER",
+      "quote": "Alright then. Chiropractors it is.",
+      "block": 221
+    },
+    {
+      "speaker": "p25",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LORI",
+      "quote": "Chris, you gotta go faster.   We've got a\n                line out the door.",
+      "block": 222
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Okay.",
+      "block": 223
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Okay.",
+      "block": 224
+    },
+    {
+      "speaker": "p25",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "LORI",
+      "quote": "Chris, I don't mean to be on you about\n                everything. You're doing a great job.",
+      "block": 225
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Right, right. I forgot.",
+      "block": 226
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "LORI",
+      "quote": "And please.   Hurry.   We're ten deep.",
+      "block": 227
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "How much do I have in the account now?",
+      "block": 228
+    },
+    {
+      "speaker": "p26",
+      "to": null,
+      "stance": "neu",
+      "cue": "TELLER",
+      "quote": "It looks like...let me see. Including\n                this latest deposit...One thousand, two\n                hundred and fifty two dollars\n                and...twenty-two cents.",
+      "block": 229
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "What's the interest on twenty-two cents?",
+      "block": 230
+    },
+    {
+      "speaker": "p3",
+      "to": "p25",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Lori, I'm punching out.",
+      "block": 231
+    },
+    {
+      "speaker": "p25",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LORI",
+      "quote": "Okay.   Just put it in the drop.",
+      "block": 232
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No, I mean I'm punching out for good.",
+      "block": 233
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "LORI",
+      "quote": "(happy for him)\n                We've made our quota, have we?",
+      "block": 234
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yeah. Also, I've got to do some things\n                before I head north.",
+      "block": 235
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "LORI",
+      "quote": "Alright Chris. Well, we've enjoyed\n                knowing you. I won't be able to get that\n                last check to you right away though.",
+      "block": 236
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "That's okay.    I'll let you know where to\n                send it.",
+      "block": 237
+    },
+    {
+      "speaker": "p25",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LORI",
+      "quote": "Alright then Chris.    Bye-bye now.",
+      "block": 238
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Bye-bye.",
+      "block": 239
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Sunni!    Come here boy.",
+      "block": 240
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Surprise!",
+      "block": 241
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "(overjoyed)\n                Alex!",
+      "block": 242
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "You have to tell us everything.",
+      "block": 243
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "ally",
+      "cue": "JAN",
+      "quote": "I think you've made yourself a friend.",
+      "block": 244
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "(blushing)\n                She's only a teenager.",
+      "block": 245
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Good luck.",
+      "block": 246
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRACY",
+      "quote": "Eighteen.",
+      "block": 247
+    },
+    {
+      "speaker": "p27",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRACY (CONT'D)",
+      "quote": "Seventeen.",
+      "block": 248
+    },
+    {
+      "speaker": "p3",
+      "to": "p27",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "What year were you born?",
+      "block": 249
+    },
+    {
+      "speaker": "p3",
+      "to": "p27",
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "You want to do something together?",
+      "block": 250
+    },
+    {
+      "speaker": "p3",
+      "to": "p27",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You can always get in touch with me by\n                sending mail here. I don't know when\n                I'll get it, but I'll get it.",
+      "block": 251
+    },
+    {
+      "speaker": "p27",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TRACY",
+      "quote": "Okay.",
+      "block": 252
+    },
+    {
+      "speaker": "p3",
+      "to": "p27",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You're pretty magic.",
+      "block": 253
+    },
+    {
+      "speaker": "p27",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TRACY",
+      "quote": "I am?",
+      "block": 254
+    },
+    {
+      "speaker": "p9",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "RAINEY",
+      "quote": "You take care of yourself, kiddo.",
+      "block": 255
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You too, Rainey. Thanks for everything.",
+      "block": 256
+    },
+    {
+      "speaker": "p3",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "New Year's resolution?",
+      "block": 257
+    },
+    {
+      "speaker": "p8",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "JAN",
+      "quote": "Just get your pack out of the back and\n                get out of here. I can't take a hug.",
+      "block": 258
+    },
+    {
+      "speaker": "p28",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "THE GIRL",
+      "quote": "Thank you.",
+      "block": 259
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Go on, boy.    Go on.",
+      "block": 260
+    },
+    {
+      "speaker": "p29",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Where's your camp?",
+      "block": 261
+    },
+    {
+      "speaker": "p3",
+      "to": "p29",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Out past Oh-My-God Hot Springs.",
+      "block": 262
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "I've lived in and around here six years\n                now and I've never heard of any place\n                that goes by that name.",
+      "block": 263
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Show me how to get there.",
+      "block": 264
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Ron Franz.",
+      "block": 265
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Alex.",
+      "block": 266
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Alex.    Where are you from Alex?",
+      "block": 267
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "West Virginia.",
+      "block": 268
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Okay, Alex from West Virginia. I like a\n                fellow who doesn't raise the pitch of his\n                voice when he talks to animals...shows he\n                doesn't condescend.",
+      "block": 269
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You go left here.",
+      "block": 270
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "You live here?",
+      "block": 271
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No, we keep going. I'm further up.\n                Another half-mile or so, out on the\n                Bajada.",
+      "block": 272
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Well, this is somethin' out here. Don't\n                you worry about those dope smokers and\n                nudists down below there?",
+      "block": 273
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No, they keep to themselves pretty much\n                and so do I.",
+      "block": 274
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Hmmm. You strike me as a bright young\nman. Am I wrong about that?",
+      "block": 275
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "I think I got my head on my shoulders\npretty good.",
+      "block": 276
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "That's what I mean.    How long have you\nbeen out here?",
+      "block": 277
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Couple of weeks.",
+      "block": 278
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "And before that?",
+      "block": 279
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "A lot of places. I've been moving\naround.",
+      "block": 280
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "How old are you?",
+      "block": 281
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Twenty-three.",
+      "block": 282
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Twenty-three years old! Son, don't you\nthink you should be getting an education?\nAnd a job? And making something of this\nlife?",
+      "block": 283
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Look Mr. Franz. I think careers are a\ntwentieth century invention and I don't\nwant one. You don't need to worry about\nme. I have a college education. I'm not\ndestitute. I'm living like this by\nchoice.",
+      "block": 284
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "In the dirt?",
+      "block": 285
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yeah, in the dirt.",
+      "block": 286
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "I just don't know.    Where's your family?",
+      "block": 287
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Don't have one anymore.",
+      "block": 288
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "That's a shame.",
+      "block": 289
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "You can see the Salton Sea from up there?",
+      "block": 290
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yes, sir.",
+      "block": 291
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "My goodness.",
+      "block": 292
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "You don't want to go up?",
+      "block": 293
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Nope.   I don't do these kind of things.",
+      "block": 294
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Fair enough.",
+      "block": 295
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "How old are you, Mr. Franz?",
+      "block": 296
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "Seventy-nine years old.",
+      "block": 297
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "But it's true.",
+      "block": 298
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "It is.   No question about that.",
+      "block": 299
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": "RON",
+      "quote": "You got a lot of passion, young man.",
+      "block": 300
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "That would be swell.",
+      "block": 301
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Good night Mr. Franz.",
+      "block": 302
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Did you find everything you need?",
+      "block": 303
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah. I hope I don't wreck your machine.\n          There's a lot of grime in that stuff.",
+      "block": 304
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, that's what it's for.   How do these\n          steaks look?",
+      "block": 305
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Great.",
+      "block": 306
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, sit down.",
+      "block": 307
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What do you drink?",
+      "block": 308
+    },
+    {
+      "speaker": "p3",
+      "to": "p29",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You got a White Russian?",
+      "block": 309
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nope.",
+      "block": 310
+    },
+    {
+      "speaker": "p3",
+      "to": "p29",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Beer?",
+      "block": 311
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nope. Don't have any alcohol. I had to\n          quit all that. How about a guava juice?",
+      "block": 312
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll take a guava juice, that sounds\n          good.",
+      "block": 313
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, I had a little spell with the\n          bottle, you could say.",
+      "block": 314
+    },
+    {
+      "speaker": "p30",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Cheers.",
+      "block": 315
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I spent most of my life in the army. On\n          New Year's Eve 1957, I was stationed over\n          in Okinawa. My wife and son were here in\n          the States, just driving down the road\n          when a fellow who'd had too much to drink\n          plowed right into them. Killed them\n          both. Anyway, you might think that the\n          last thing in the world I'd do, is go to\n          the whiskey, but at the time, it felt\n          like the only thing I could do. And I\n          did it hard. But pretty soon, I figured\n          I wasn't doing my wife and son any good,\n          mourning them with a bottle. So, I\n          pulled myself together and quit drinking,\n          cold turkey. And then...",
+      "block": 316
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You see all these kids over here?",
+      "block": 317
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, I was gonna ask you.",
+      "block": 318
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, that's...",
+      "block": 319
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "And this is Akira. Just finished medical\n          school.",
+      "block": 320
+    },
+    {
+      "speaker": "p3",
+      "to": "p29",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you ever travel, Mr. Franz?",
+      "block": 321
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No. I can't seem to get too far from my\n                leather. I'll show you after you finish\n                eating. I do a lot of leather engraving.\n                I got a little workshop in the garage.\n                Between that and my pension, I do pretty\n                well. But every time I think I might\n                take a trip somewhere, I get too far\n                behind on orders and such to consider it.",
+      "block": 322
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, I'm finished eating. I'd love to\n                see your workshop.",
+      "block": 323
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Would ya?",
+      "block": 324
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Alright then.",
+      "block": 325
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How about some fishing?",
+      "block": 326
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That thing's twice as salty as the ocean.\n                Did you know that?",
+      "block": 327
+    },
+    {
+      "speaker": "p3",
+      "to": "p29",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Anything alive in it?",
+      "block": 328
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's the N stand for?",
+      "block": 329
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...North.",
+      "block": 330
+    },
+    {
+      "speaker": "p29",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Alaska?",
+      "block": 331
+    },
+    {
+      "speaker": "p29",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Son, what the hell you running from?",
+      "block": 332
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I could ask you the same question.\n                Except I already know the answer.",
+      "block": 333
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You do, do you?",
+      "block": 334
+    },
+    {
+      "speaker": "p3",
+      "to": "p29",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I do, Mr. Franz. You've got to get back\n                out in the world. Get out of that lonely\n                house of yours, that little workshop,\n                and go live on the road.",
+      "block": 335
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sittin' on my butt, huh?",
+      "block": 336
+    },
+    {
+      "speaker": "p29",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll show you sittin' on my butt.",
+      "block": 337
+    },
+    {
+      "speaker": "p29",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"Stubborn old man.\"",
+      "block": 338
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Come on, old man! Come on!",
+      "block": 339
+    },
+    {
+      "speaker": "p29",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ya little pinhead.",
+      "block": 340
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (O.C.)",
+      "quote": "Mom, help me.",
+      "block": 341
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "WALT",
+      "quote": "What is it?",
+      "block": 342
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLIE",
+      "quote": "I wasn't dreaming! I didn't imagine it!",
+      "block": 343
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLIE",
+      "quote": "I heard his voice, Walt. I heard Chris.",
+      "block": 344
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "...the road. Escaped from Atlanta. Thou\n                shalt not return `cause the \"west is the\n                best.\" And now after two rambling years,\n                comes the final and greatest adventure.",
+      "block": 345
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "The climactic battle to kill the false\n                being within and victoriously conclude\n                the spiritual revolution.",
+      "block": 346
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Shit!",
+      "block": 347
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "Here she stopped and, closing her eyes,\n                took a deep breath of the flower-scented\n                air of the broad expanse around her. It\n                was dearer to her than her kin, better\n                than a lover, wiser than a book.",
+      "block": 348
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "For a moment, she re-discovered the\n                purpose of her life. She was here in\n                earth to grasp the meaning of its wild\n                enchantment and call each thing by its\n                right name.",
+      "block": 349
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (CONT'D)",
+      "quote": "By its right name. By its right name.",
+      "block": 350
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No, no, no, don't do this to me.",
+      "block": 351
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.0)",
+      "quote": "And that an unshared happiness is not\n          happiness...",
+      "block": 352
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "HAPPINESS ONLY REAL WHEN SHARED.",
+      "block": 353
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "CALL EVERYTHING BY ITS RIGHT NAME.",
+      "block": 354
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (O.C.)",
+      "quote": "Call everything by its right name.",
+      "block": 355
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "Would you see then...",
+      "block": 356
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS (V.O.)",
+      "quote": "...what I see now?",
+      "block": 357
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "Chris:",
+      "quote": "Chris: The LAST, AIRY EXPULSION OF HIS BREATH.",
+      "block": 358
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+      "p28",
+      "p29",
+      "p3",
+      "p30",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 7,
+        "sign": "ally",
+        "stances": {
+          "opp": 1,
+          "ally": 3,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p14",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p16",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p3",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p3",
+        "weight": 17,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 17
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p19",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p3",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p3",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p4",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p25",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p25",
+        "b": "p3",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p26",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p3",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p27",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p28",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p29",
+        "b": "p3",
+        "weight": 64,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 64
+        }
+      },
+      {
+        "a": "p29",
+        "b": "p30",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 12,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 9,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p7",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 5,
+          "ally": 1,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p8",
+        "weight": 11,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p9",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 30 given"
+  }
+}

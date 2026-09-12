@@ -1,0 +1,2499 @@
+{
+  "entity": "f_taxi_driver",
+  "source": "data-seed/scripts/f_taxi_driver.txt",
+  "scope": "the whole script",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER (O.S.)",
+      "quote": "No trouble with the Hack Bureau?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS (O.S.)",
+      "quote": "No Sir.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Got your license?",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Yes.",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I can't sleep nights.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "There's porno theatres for that.",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I know. I tried that.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "So whatja do now?",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "You want to work uptown nights?",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "How's your driving record?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Sorry, sir. I didn't mean that.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Physical? Criminal?",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Also clean.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Age?",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Twenty-six.",
+      "block": 15
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Education?",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Some. Here and there.",
+      "block": 17
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Military record?",
+      "block": 18
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Honorable discharge. May 1971.",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "You moonlightin?",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "No, I want long shifts.",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "We hire a lot of moonlighters here.",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "So I hear.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "TRAVIS",
+      "quote": "No.",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "TRAVIS",
+      "quote": "No.",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PERSONNEL OFFICER",
+      "quote": "Well then check back tomorrow.",
+      "block": 26
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Yes, Sir.",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Why should it be grounded?",
+      "block": 28
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Then it's a good guess it's grounded.",
+      "block": 29
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Have you tried the telephone?",
+      "block": 30
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN IN BUSINESS SUIT",
+      "quote": "Taxi! Taxi!",
+      "block": 31
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS (V.O.)",
+      "quote": "Some won't take spooks - Hell,\n            don't make no difference tom me.",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "JOHN (O.S.)",
+      "quote": "Oh baby, baby.",
+      "block": 33
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSTITUTE (O.S.)",
+      "quote": "Come on.",
+      "block": 34
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS (V.O.)",
+      "quote": "They're all animals anyway. All the\n            animals come out at night: Whores,\n            skunk pussies, buggers, queens,\n            fairies, dopers, junkies, sick,\n            venal.",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS (V.O.)",
+      "quote": "Someday a real rain will come and\n            wash all this scum off the streets.",
+      "block": 36
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS (V.O.)",
+      "quote": "Each night when I return the cab to\n            the garage I have to clean the come\n            off the back seat. Some nights I\n            clean off the blood.",
+      "block": 37
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "1ST CABBIE",
+      "quote": "... hadda piss like a bull steer,\n            so I pull over on 10th Ave, yank up\n            the hood and do the engine job.\n                   (gestures as if\n                   taking a piss into\n                   the hood)\n            There I am with my dong in my hand\n            when a guy come up and asks if I\n            need any help. Just checking the\n            battery, I says, and, meanwhile...",
+      "block": 38
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "2ND CABBIE",
+      "quote": "If he thinks I'm going up into The\n            Jungle this time of night, he can\n            shove it.",
+      "block": 39
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "3RD CABBIE",
+      "quote": "Fuck that Violets First. Fucking\n            saddle horse. No, no, the OTB. Fuck\n            them. No, it was TKR. TCR and I'da\n            made seven fucking grand. Fuck them\n            too. Alright, what about the second\n            race?",
+      "block": 40
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "4TH CABBIE",
+      "quote": "Over at Love, this hooker took on\n            the whole garage. Blew the whole\n            fucking joint and they wouldn't\n            even let her use the drinking\n            fountain.",
+      "block": 41
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CONCESSION GIRL",
+      "quote": "Kin I help ya?",
+      "block": 42
+    },
+    {
+      "speaker": "p2",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "What is your name? My name is Travis.",
+      "block": 43
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CONCESSION GIRL",
+      "quote": "Awh, come off it, Pal.",
+      "block": 44
+    },
+    {
+      "speaker": "p2",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "No, I'm serious, really...",
+      "block": 45
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CONCESSION GIRL",
+      "quote": "Ya want me to call da boss? Huh?\n            That what you want?",
+      "block": 46
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CONCESSION GIRL",
+      "quote": "We don't have ju-jukes. We don't\n            have Coca-Cola. We only got Royal\n            Crown Cola.",
+      "block": 47
+    },
+    {
+      "speaker": "p2",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "That's fine.",
+      "block": 48
+    },
+    {
+      "speaker": "p10",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "CONCESSION GIRL",
+      "quote": "That's a dollar forty-seven.",
+      "block": 49
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MALE MOVIE VOICE (O.S.)",
+      "quote": "Come here, bitch. I'm gonna split\n            you in half.",
+      "block": 50
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS (V.O.)",
+      "quote": "Twelve hours of work and I still\n            cannot sleep. The days dwindle on\n            forever and do not end.",
+      "block": 51
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Tom.",
+      "block": 52
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Tom, come here a moment.\n                   (he walks over)\n            I think this canvas report is about\n            ready to go out. Check it out with\n            Andy, and if he okays if, have a\n            copy made for the campaign\n            headquarters in every county.\n                   (a beat)\n            And don't forget to add the new\n            photo releases.",
+      "block": 53
+    },
+    {
+      "speaker": "p13",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "The senator's white paper is almost\n            ready, Bets. Should we wait for that?",
+      "block": 54
+    },
+    {
+      "speaker": "p12",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Andy usually just sends those to\n            the national media. The local press\n            doesn't know what to do with a\n            position paper until UPI and AP\n            tell them anyway.",
+      "block": 55
+    },
+    {
+      "speaker": "p13",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "I think we should try to get\n            maximum coverage for this new\n            mandatory welfare program. Push the\n            issues.",
+      "block": 56
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "You forgot \"sexy\".",
+      "block": 57
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "No, I didn't forget \"sexy\".",
+      "block": 58
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "Just didn't get around to it, huh?",
+      "block": 59
+    },
+    {
+      "speaker": "p12",
+      "to": "p13",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "Oh, Tom, please.",
+      "block": 60
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "More people watch it.",
+      "block": 61
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Just what?",
+      "block": 62
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "Kidding around... you know, fun.",
+      "block": 63
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "With who?",
+      "block": 64
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "No, why?",
+      "block": 65
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "What taxi driver?",
+      "block": 66
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "How long has he been there?",
+      "block": 67
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "Well, I'll go out and ask him.",
+      "block": 68
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "So howsit?",
+      "block": 69
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOUGH-BOY",
+      "quote": "Stick up?",
+      "block": 70
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOUGH-BOY",
+      "quote": "Where.",
+      "block": 71
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "In the jungle. 122nd.",
+      "block": 72
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Huh?",
+      "block": 73
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I have.",
+      "block": 74
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOUGH-BOY",
+      "quote": "You carry a piece? You need one?",
+      "block": 75
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "For a fee.",
+      "block": 76
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOUGH-BOY",
+      "quote": "For a fee.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I want to volunteer.",
+      "block": 78
+    },
+    {
+      "speaker": "p13",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "If you'll come this way.",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "No. I want to volunteer to you.",
+      "block": 80
+    },
+    {
+      "speaker": "p13",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TOM",
+      "quote": "Bets.",
+      "block": 81
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "And why is that?",
+      "block": 82
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Who mam?",
+      "block": 83
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "You want to canvass?",
+      "block": 84
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Yes, mam.",
+      "block": 85
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Well, we're all working tonight.",
+      "block": 86
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah. Yes. I don't follow music too\n            much.",
+      "block": 87
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Kris Kristofferson.",
+      "block": 88
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You work at night, you get an\n            instinct. You can smell them. The",
+      "block": 89
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "big tippers, the stiffs, the",
+      "block": 90
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "trouble makers. Quarter is good tip",
+      "block": 91
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "for Manhattan. Queens is better,",
+      "block": 92
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Brooklyn is best. go for the guys",
+      "block": 93
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "with suitcases. The rich are the",
+      "block": 94
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "worst tippers, hooks are lousy.",
+      "block": 95
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Spooks are okay, but they don't",
+      "block": 96
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "live at Park Ave after all.",
+      "block": 97
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I called Betsy again at her office,",
+      "block": 98
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "and she said maybe we could go to a",
+      "block": 99
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "movie together after she gets off",
+      "block": 100
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "work tomorrow. That's my day off.",
+      "block": 101
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "At first she hesitated, but I",
+      "block": 102
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "called her again and she agreed.",
+      "block": 103
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Betsy. Betsy what? I forgot to ask",
+      "block": 104
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "her last name again.  Damn. I've",
+      "block": 105
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "got to remember stuff like that.",
+      "block": 106
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "St. Regis Hotel.",
+      "block": 107
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's 12:30 now. You'll have fifteen\n            minutes before the actual luncheon\n            begins.",
+      "block": 108
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't think we have to worry\n            about anybody here committing\n            themselves until things start\n            coming in from California.",
+      "block": 109
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Say, aren't you Charles Palantine,\n            the candidate?",
+      "block": 110
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes I am.",
+      "block": 111
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, I'm one of your biggest\n            supporters. I tell everybody that\n            comes in this cab that they should\n            vote for you.",
+      "block": 112
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why, thank you Travis.",
+      "block": 113
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm sure you'll win, sir. Everybody\n            I know is going to vote for you.\n                   (a beat)\n            I was going to put one of your\n            stickers on my taxi but the company\n            said it was against their policy.",
+      "block": 114
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll tell you, Travis, I've learned\n            more about this country sitting in\n            taxi cabs than in the board room of\n            General Motors.",
+      "block": 115
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "And in some other places too...",
+      "block": 116
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Travis, what single thing would you\n            want the next President of this\n            country to do most?",
+      "block": 117
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't know, sir. I don't follow\n            political issues much.",
+      "block": 118
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There must be something...",
+      "block": 119
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, he should clean up this city\n            here. It's full of filth and scum.\n            Scum and filth. It's like an open\n            sewer. I can hardly take it.",
+      "block": 120
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Some days I go out and smell it\n            then I get headaches that just stay\n            and never go away. We need a\n            President that would clean up this\n            whole mess.  Flush it out.",
+      "block": 121
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know what you mean, Travis, and\n            it's not going to be easy. We're\n            going to have to make some radical\n            changes.",
+      "block": 122
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Damn straight.",
+      "block": 123
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nice talking to you, Travis.",
+      "block": 124
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Thank you, sir. You're a good man,\n            sir.",
+      "block": 125
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You didn't have to spend your\n            money - ?",
+      "block": 126
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He'll, what else can I do with it\n            all?",
+      "block": 127
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Travis, you haven't even played the\n            record?",
+      "block": 128
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, well my stereo player is\n            broke. But I'm sure the record is OK.",
+      "block": 129
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Your stereo broke? God, I could\n            hardly stand that. I live on music.",
+      "block": 130
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don't follow music much. I'd like\n            to though.\n                   (second thought)\n            Honest.",
+      "block": 131
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So you haven't heard this record yet?",
+      "block": 132
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.\n                   (sly smile)\n            I thought maybe you could play it\n            for me on your player.",
+      "block": 133
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are you doing?",
+      "block": 134
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I bought a couple of tickets.",
+      "block": 135
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Damn.",
+      "block": 136
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "What's wrong?",
+      "block": 137
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I forgot to get the Coca-Cola.",
+      "block": 138
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Where are you going?",
+      "block": 139
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "I'm leaving.",
+      "block": 140
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "What do you mean?",
+      "block": 141
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "This is sort of high class...",
+      "block": 142
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "I mean porno movies.",
+      "block": 143
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Well... mostly...",
+      "block": 144
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "My God!",
+      "block": 145
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "There's plenty of movies around here.",
+      "block": 146
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Huh?",
+      "block": 147
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "But... Betsy...",
+      "block": 148
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "I'm getting a taxi.",
+      "block": 149
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "What about the record?",
+      "block": 150
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Keep it.",
+      "block": 151
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Can I call you?",
+      "block": 152
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Please, Betsy, I bought it for you.",
+      "block": 153
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "All right, I'll accept the record.",
+      "block": 154
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Taxi!",
+      "block": 155
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "But I got a taxi.",
+      "block": 156
+    },
+    {
+      "speaker": "p19",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "PROFESSIONAL PASSENGER",
+      "quote": "Jackson Heights.",
+      "block": 157
+    },
+    {
+      "speaker": "p2",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I'm off duty.",
+      "block": 158
+    },
+    {
+      "speaker": "p2",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "It was on.\n                   (gesturing toward top\n                   of taxi)\n            it just takes a while to warm up.\n            Like a TV.",
+      "block": 159
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "YOUNG PASSENGER",
+      "quote": "471 Central Park West.",
+      "block": 160
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "YOUNG PASSENGER",
+      "quote": "Just pull over to the curb a moment.",
+      "block": 161
+    },
+    {
+      "speaker": "p20",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "YOUNG PASSENGER",
+      "quote": "Yeah, that's fine. Just sit here.",
+      "block": 162
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Nah. I ain't interested.",
+      "block": 163
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "ally",
+      "cue": "ANDY",
+      "quote": "Okay, okay.",
+      "block": 164
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "TV DISC JOCKEY",
+      "quote": "Freshingly, fantastic, freaked-out\n            dance time. Can you dig it? Dig on\n            it. You got it, flaunt it.",
+      "block": 165
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "IRIS",
+      "quote": "Come on, mister, let's get outta\n            here -- quick.",
+      "block": 166
+    },
+    {
+      "speaker": "p24",
+      "to": "p23",
+      "stance": "neu",
+      "cue": "SPORT",
+      "quote": "Come on, baby, let's go.  This is\n            all a real drag.",
+      "block": 167
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "SPORT",
+      "quote": "Just forget all about this, cabbie.\n            It's nothing.",
+      "block": 168
+    },
+    {
+      "speaker": "p25",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHARLIE T",
+      "quote": "See ya, Killer.  Don't forget your\n            pea shooter.",
+      "block": 169
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Hey Wiz.",
+      "block": 170
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Wiz?",
+      "block": 171
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "WIZARD",
+      "quote": "Yeah?",
+      "block": 172
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "Yeah?",
+      "block": 173
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "Yeah?",
+      "block": 174
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Look, ah, we never talked much, you\n            and me...",
+      "block": 175
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I wanted to ask you something, on\n            account you've been around so long.",
+      "block": 176
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "WIZARD",
+      "quote": "Shoot.  They don't call me the\n            Wizard for nothing.",
+      "block": 177
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Well, I just, you know...",
+      "block": 178
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "WIZARD",
+      "quote": "Things got ya down?",
+      "block": 179
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Real down.",
+      "block": 180
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "It happens.",
+      "block": 181
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Sometimes it gets so I just don't\n            know what I'm gonna do.  I get some\n            real crazy ideas, you know?  Just\n            go out and do somethin.",
+      "block": 182
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "The taxi life, you mean.",
+      "block": 183
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Yeah.",
+      "block": 184
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "WIZARD",
+      "quote": "(nods)\n            I know.",
+      "block": 185
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Like do anything, you know.",
+      "block": 186
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "WIZARD",
+      "quote": "Travis, look, I dig it.  Let me\n            explain.  You choose a certain way\n            of life.  You live it.  It becomes\n            what you are.  I've been a hack 27\n            years, the last ten at night.\n            Still don't own my own cab.  I\n            guess that's the way I want it.\n            You see, that must be what I am.",
+      "block": 187
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "TRAVIS",
+      "quote": "That's just about the dumbest thing\n            I ever heard, Wizard.",
+      "block": 188
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "opp",
+      "cue": "WIZARD",
+      "quote": "What do you expect, Bertrand\n            Russell?  I've been a cabbie all my\n            life, what do I know?\n                   (a beat)\n            I don't even know what you're\n            talking about.",
+      "block": 189
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Neither do I, I guess.",
+      "block": 190
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "You fit in.  It's lonely, it's\n            rough at first.  But you fit in.\n            You got no choice.",
+      "block": 191
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "Yeah.  Sorry, Wizard.",
+      "block": 192
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "WIZARD",
+      "quote": "Don't worry, Killer.  You'll be all\n            right.\n                   (a beat)\n            I seen enough to know.",
+      "block": 193
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Thanks.",
+      "block": 194
+    },
+    {
+      "speaker": "p13",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TOM",
+      "quote": "Betsy, come over here a moment.",
+      "block": 195
+    },
+    {
+      "speaker": "p12",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "What is it?  I'm busy.",
+      "block": 196
+    },
+    {
+      "speaker": "p13",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TOM",
+      "quote": "Just follow me.",
+      "block": 197
+    },
+    {
+      "speaker": "p12",
+      "to": "p13",
+      "stance": "opp",
+      "cue": "BETSY",
+      "quote": "No, I don't think so.",
+      "block": 198
+    },
+    {
+      "speaker": "p12",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "That's someone else.",
+      "block": 199
+    },
+    {
+      "speaker": "p13",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TOM",
+      "quote": "Now look more closely.  Look around\n            the eyes and chin.  See?  See there?",
+      "block": 200
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Are you a Secret Service Man?",
+      "block": 201
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Why do you ask?",
+      "block": 202
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I've seen a lot of suspicious-\n            looking people around here today.",
+      "block": 203
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Who?",
+      "block": 204
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Is it hard to get to be a Secret\n            Service Man?",
+      "block": 205
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Why?",
+      "block": 206
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I kinda thought I might make a good\n            one.  I'm very observant.",
+      "block": 207
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Oh?",
+      "block": 208
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Is that so?",
+      "block": 209
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "What kind of guns do you guys use?\n            .38's?",
+      "block": 210
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Look, um, if you give me your name\n            and address, we'll send you the\n            information on how to apply.",
+      "block": 211
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "You would, huh?",
+      "block": 212
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Sure.",
+      "block": 213
+    },
+    {
+      "speaker": "p2",
+      "to": "p26",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "My name is Henry Krinkle -- that's\n            with a \"K.\" K-R-I-N-K-L-E.  I live\n            at 13 1/2 Hopper Avenue, Fair Lawn,\n            New Jersey.  Zip code 07410.\n                   (a beat)\n            Got that?",
+      "block": 214
+    },
+    {
+      "speaker": "p26",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "SECRET SERVICE MAN",
+      "quote": "Sure, Henry.  I got it all.  We'll\n            send you all the stuff all right.",
+      "block": 215
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Great, hey.  Thanks a lot.",
+      "block": 216
+    },
+    {
+      "speaker": "p2",
+      "to": "p24",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Hey, Sport.  How are things?",
+      "block": 217
+    },
+    {
+      "speaker": "p24",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "SPORT",
+      "quote": "O.K., cowboy.",
+      "block": 218
+    },
+    {
+      "speaker": "p24",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SPORT",
+      "quote": "What's going on?",
+      "block": 219
+    },
+    {
+      "speaker": "p2",
+      "to": "p24",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I'm here to see Iris.",
+      "block": 220
+    },
+    {
+      "speaker": "p24",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SPORT",
+      "quote": "Iris?",
+      "block": 221
+    },
+    {
+      "speaker": "p24",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SPORT",
+      "quote": "Wha -- ?",
+      "block": 222
+    },
+    {
+      "speaker": "p24",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "SPORT",
+      "quote": "No.",
+      "block": 223
+    },
+    {
+      "speaker": "p2",
+      "to": "p24",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "You carry a gun?",
+      "block": 224
+    },
+    {
+      "speaker": "p2",
+      "to": "p24",
+      "stance": "opp",
+      "cue": "TRAVIS",
+      "quote": "Get it.",
+      "block": 225
+    },
+    {
+      "speaker": "p2",
+      "to": "p24",
+      "stance": "opp",
+      "cue": "TRAVIS",
+      "quote": "Now suck on that.",
+      "block": 226
+    },
+    {
+      "speaker": "p27",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "OLD MAN",
+      "quote": "Don't kill me!  Don't kill me!",
+      "block": 227
+    },
+    {
+      "speaker": "p23",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "IRIS",
+      "quote": "Don't kill him, Travis!  Don't kill\n            him!",
+      "block": 228
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Pgghew!  Pgghew!",
+      "block": 229
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "WIZARD",
+      "quote": "A private-owner wanted to swap\n            wheels.  Now my tires were brand\n            new. \"Give me a couple days,\" I says.",
+      "block": 230
+    },
+    {
+      "speaker": "p25",
+      "to": "p14",
+      "stance": "ally",
+      "cue": "CHARLIE T",
+      "quote": "Howdy Wizard, Killer.",
+      "block": 231
+    },
+    {
+      "speaker": "p25",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "CHARLIE T",
+      "quote": "Don't mess with the Killer.",
+      "block": 232
+    },
+    {
+      "speaker": "p2",
+      "to": "p25",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Hey Charlie T.",
+      "block": 233
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Shit.",
+      "block": 234
+    },
+    {
+      "speaker": "p25",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "CHARLIE T",
+      "quote": "Take it slow, Killer.",
+      "block": 235
+    },
+    {
+      "speaker": "p28",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "FEMALE VOICE",
+      "quote": "34 East 56th Street.",
+      "block": 236
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "Hello, Travis.",
+      "block": 237
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Hello, Betsy.",
+      "block": 238
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "I see where Palantine got the\n            nomination.",
+      "block": 239
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "Yes.  It won't be long now.\n            Seventeen days.",
+      "block": 240
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "How are you, Travis?  I read about\n            you in the papers.",
+      "block": 241
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Oh, I got over that.  It was\n            nothing, really.  The papers always\n            blow these things up.\n                   (a beat)\n            A little stiffness.  That'll go\n            away.  I just sleep more, that's all.",
+      "block": 242
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "Here we are.",
+      "block": 243
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAVIS",
+      "quote": "No, no, please.  This fare's on me.\n            Please.",
+      "block": 244
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "Thank you, Travis.",
+      "block": 245
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BETSY",
+      "quote": "Travis?",
+      "block": 246
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Yeah.",
+      "block": 247
+    },
+    {
+      "speaker": "p12",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "BETSY",
+      "quote": "Maybe I'll see you again sometime,\n            huh?",
+      "block": 248
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "TRAVIS",
+      "quote": "Sure.",
+      "block": 249
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p25",
+      "p26",
+      "p27",
+      "p28",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 19,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 17
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p2",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p2",
+        "weight": 39,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 7,
+          "neu": 32
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 3,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p28",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p18",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p2",
+        "weight": 19,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 5,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p25",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p2",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p20",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p21",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p25",
+        "weight": 3,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p26",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 11
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p24",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p27",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p27",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p25",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p25",
+        "b": "p28",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 28 given"
+  }
+}

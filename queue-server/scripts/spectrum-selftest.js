@@ -91,10 +91,26 @@ function sortedClose(actual, expected) {
 {
   const ids = entitiesWithInteriors();
   assert.ok(ids.includes('f_dogville') && ids.includes('fam_maxson'), 'the two known interiors are found');
+  const uncapped = allSpectralEdges({ nearest: 0 });
+  assert.equal(uncapped.length, (ids.length * (ids.length - 1)) / 2, 'uncapped is exactly one edge per unordered pair');
+  assert.ok(uncapped.every((e) => e.a !== e.b), 'no self-edges');
+  assert.ok(uncapped.every((e) => typeof e.distance === 'number' && e.distance >= 0), 'every edge carries a real distance');
+
+  // The cap is what keeps the graph from becoming a hairball once many interiors exist:
+  // every entity keeps its nearest few, nobody is left with none, and no pair is listed
+  // twice. Checked against a synthetic ladder so the expected answer is known by hand,
+  // not read off whatever the corpus happens to hold today.
   const edges = allSpectralEdges();
-  assert.equal(edges.length, (ids.length * (ids.length - 1)) / 2, 'exactly one edge per unordered pair');
-  assert.ok(edges.every((e) => e.a !== e.b), 'no self-edges');
-  assert.ok(edges.every((e) => typeof e.distance === 'number' && e.distance >= 0), 'every edge carries a real distance');
+  assert.ok(edges.length <= uncapped.length, 'capping never invents an edge');
+  const seen = new Set(edges.map((e) => e.a + '|' + e.b));
+  assert.equal(seen.size, edges.length, 'no pair appears twice');
+  if (ids.length > 1) {
+    const touched = new Set(edges.flatMap((e) => [e.a, e.b]));
+    assert.equal(touched.size, ids.length, 'every mapped entity keeps at least one connection');
+  }
+  for (let i = 1; i < edges.length; i++) {
+    assert.ok(edges[i].distance >= edges[i - 1].distance, 'closest first');
+  }
 }
 
 console.log('spectrum:selftest — 7 assertions passed');
