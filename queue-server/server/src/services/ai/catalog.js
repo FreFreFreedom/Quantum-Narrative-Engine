@@ -115,15 +115,12 @@ export const PROVIDERS = [
       // broke every call using it by fixed id; aliases avoid repeating that.
       { id: 'gemini-flash-latest', codingRank: 70, contextTokens: 1000000 },
       { id: 'gemini-flash-lite-latest', codingRank: 55, contextTokens: 1000000 },
-      // Google's strongest model, for a question in the Room that deserves it.
-      // `pinnedOnly` because the free tier gives Pro a DAILY INPUT-TOKEN cap, not
-      // a generous rate limit: verified live 2026-09-07, `gemini-pro-latest`
-      // (then resolving to gemini-3.1-pro) returned 429
-      // "GenerateContentInputTokensPerModelPerDay-FreeTier" in 195ms while
-      // gemini-flash-latest answered fine on the same key. So it is a deliberate
-      // hand pick only — never a link in an automatic fallback chain, or a
-      // background job would spend the day's allowance before Antoine asks for it.
-      { id: 'gemini-pro-latest', codingRank: 88, contextTokens: 1000000, pinnedOnly: true },
+      // gemini-pro-latest is GONE, and deliberately not coming back as a hand pick
+      // either. It has no usable free allowance at all: checked 2026-09-07 and
+      // again 2026-09-12, on a key where both flash models answered in the same
+      // second, it returned 429 in under 200ms every single time. Offering a lane
+      // that has never once answered is worse than not offering it — it is a
+      // choice in the picker that silently costs a turn.
     ],
   },
   {

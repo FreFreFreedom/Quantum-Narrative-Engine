@@ -21017,8 +21017,13 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function wireQuotePick(log, e, repaint){
     if(log.dataset.quoteWired) return;
     log.dataset.quoteWired = '1';
-    log.addEventListener('mouseup', function(){
-      // After mouseup the selection is final; a frame later it is also painted,
+    // Quote, Chapter and Keep are all reached the same way: select a passage of an
+    // answer and the offer appears over it. That offer used to be wired to mouseup
+    // alone — which a phone and a tablet never send — so on touch the whole set was
+    // unreachable and read as gone. touchend is the same moment on a touch screen,
+    // given a longer beat because the handles settle after the gesture ends.
+    var offer = function(settleMs){
+      // After the gesture the selection is final; a frame later it is also painted,
       // which is when getBoundingClientRect is worth reading.
       setTimeout(function(){
         var sel = window.getSelection && window.getSelection();
@@ -21082,8 +21087,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         });
         document.body.appendChild(quotePop);
         placeQuotePop();
-      }, 0);
-    });
+      }, settleMs);
+    };
+    log.addEventListener('mouseup', function(){ offer(0); });
+    // Passive: the gesture is the browser's own text selection and must not be
+    // interfered with — this only reads what it produced.
+    log.addEventListener('touchend', function(){ offer(350); }, { passive: true });
   }
   // contains(), not ===: the popover is a bar of buttons, so a click lands on a
   // CHILD. Comparing against the bar itself tore it down on mousedown, before the
