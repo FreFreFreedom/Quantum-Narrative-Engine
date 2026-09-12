@@ -11,6 +11,10 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## A civic structure holds itself together by metabolizing its shadow — banishing, laughing off, or rationalizing whatever its self-image cannot integrate.
+
+Crook County (Nicole Gonzalez Van Cleve's ethnography of the Cook County criminal court) made the mechanism concrete: the court's sustaining myth of neutrality depends on routine expulsion, ridicule, and delegitimation of those marked 'wrong' — Black, poor, uninitiated. Prosecutors mimic defenders' jokes to maintain camaraderie, judges 'coach' newcomers to stand farthest from the accused, clerks mock families who don't know the codes. Coherence is bought by the same sacrificial logic that appears at every scale where order is saved by banishing the heretic.
+
 ## Connection vs. freedom (rebellion vs conformity) is the candidate for THE one fundamental pattern — the claim that all relationship dynamics reduce to a single axis.
 
 Owner wants to shrink the zoo of relationship patterns to one essential pattern; connection/freedom is judged more universal than the narcissist/codependent pairing. Mechanism: every entity sits at some unique balance — a particular degree of integration and of repression of each pole — and whatever is repressed is subconsciously projected outward onto the people it meets. Concrete translation at country scale: communism vs capitalism as connection vs freedom. Under an ontology of self-similarity, nailing this one thing should write itself into every body, city, law and sibling fight; it is the interior whose external reflection ('the relationships inside reflect the relationships outside') the whole platform rests on.
