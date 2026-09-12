@@ -1,0 +1,1695 @@
+{
+  "entity": "f_the_ballad_of_buster_scruggs",
+  "source": "data-seed/scripts/f_the_ballad_of_buster_scruggs.txt",
+  "scope": "the whole script, machine-extracted (27 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "IKE",
+      "quote": "Joey...?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "I’m not a devious man by nature but\n                         when you’re unarmed your tactics\n                         might gotta be downright\n                         Archimedean.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... Now what happened to the music?",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "IKE",
+      "quote": "Joe! Surly Joe! He’s gawn! We’ve a-lost’m!",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "IKE (CONT’D)",
+      "quote": "... You kilt my brother, you\n                         cowardly, sonofabitch! Gunned ‘im\n                         down when he wasn’t hardly lookin’!",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "BUSTER",
+      "quote": "I can cut you a little slack, grievin’\n                         as you are, but the fact is Buster Scruggs\n                         don’t shoot nobody in the back and\n                         that sorry sack a bones was more in\n                         the nature of a suicide.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "IKE",
+      "quote": "You’re Buster Scruggs?! The West\n                          Texas Twit?",
+      "block": 7
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "THE KID",
+      "quote": "Buster Scruggs?",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Presume you meant to say “The West\n                          Texas Tit”—on account of that\n                          p’ticular bird’s mellifluous\n                          warble.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "IKE",
+      "quote": "Call yerself any damn name you\n                          please! I wanna see you outside—\n                          wearin’ iron!",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Things have a way of escalatin’ out\n                          here in the West with one thing\n                          leadin’ to another, but I think I\n                          can make pretty short work of this\n                          ramified ol’ sonofagun.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "IKE",
+      "quote": "Scruggs! Scru-u-u-u-u-uggs! I’m a-callin’\n                          you out!",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "BUSTER",
+      "quote": "Well hang in there, pardner, I just\n                          need to buckle on this toolbelt\n                          here.",
+      "block": 13
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... Are ya ready?",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "IKE",
+      "quote": "Ready!",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Are ya set?",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "IKE",
+      "quote": "Set!",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Ya need you a count?",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "IKE",
+      "quote": "Na’sir!",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Hard to trigger with them other\n                          fingers, but...",
+      "block": 20
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... you cain’t be too careful.",
+      "block": 21
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "Uh-oh. Looks like when they made\n                          this fella they forgot to put in\n                          the quit! Lemme see here, five\n                          fingers at a bullet a piece, I\n                          ain’t got but the one bullet left.",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "Sure hope I don’t miss.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... Lesee, his heart’d be on the\n                          left side but the mirror puts it\n                          right, cepting for we is facing the\n                          same way and the gun is upside\n                          down. So, um...",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... maybe it’s best not to play it\n                          fancy.",
+      "block": 25
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "Cause for reflection—heh-heh.\n                          Well, this whole entire episode\n                          puts me in mind of a song.",
+      "block": 26
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "BUSTER",
+      "quote": "The same. You got a mighty sweet\n                         singin’ voice, pardner.",
+      "block": 27
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "THE KID",
+      "quote": "That’s high praise—from the San\n                         Saba Songbird, Herald of Demise.",
+      "block": 28
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "THE KID (CONT’D)",
+      "quote": "... Mr. Scruggs, I been huntin’ you\n                         on account a they say you’re the\n                         one to beat, a-singin’ and a-slingin’\n                         guns.",
+      "block": 29
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Another young fella with something\n                         to prove.",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "I gotta set m’self up in the\n                         undertaking bidnis—stop doin’ all\n                         the skillwork so’s another man can\n                         profit.",
+      "block": 31
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... But then, do I wanna wear a\n                         black suit.",
+      "block": 32
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "THE KID",
+      "quote": "You need a count?",
+      "block": 33
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER",
+      "quote": "Na’sir—",
+      "block": 34
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... Hold on a second.",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "Well now that ain’t good.",
+      "block": 36
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "I guess I shoulda seen this\n                          comin’...",
+      "block": 37
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... Roam and ramble though you\n                          might, eventually you’re gonna come\n                          acrost some sonofagun who sings a\n                          little sweeter and draws a little faster.",
+      "block": 38
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... I don’t know as I believe in a\n                          divinity shapin’ our ends and\n                          numberin’ our days. But I do\n                          believe I’m a-headed for a\n                          hereafter...",
+      "block": 39
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BUSTER (CONT’D)",
+      "quote": "... I b’lieve the music comes from\n                          that higher place...",
+      "block": 40
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DROVER",
+      "quote": "... Hold still!",
+      "block": 41
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DROVER",
+      "quote": "... Damme.",
+      "block": 42
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAILIFF",
+      "quote": "No hats inna presence of Judge Hobby.",
+      "block": 43
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "JUDGE",
+      "quote": "What’d this sonofabitch do?",
+      "block": 44
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "Sir, I—",
+      "block": 45
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "BAILIFF",
+      "quote": "Hold yer tongue.",
+      "block": 46
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "BAILIFF",
+      "quote": "Hold yer tongue.",
+      "block": 47
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BAILIFF",
+      "quote": "Sumbitch’s a stock rustler.",
+      "block": 48
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "JUDGE",
+      "quote": "Alleged.",
+      "block": 49
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "BAILIFF",
+      "quote": "Yes Yer Honor.",
+      "block": 50
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "Sir, I didn’t—",
+      "block": 51
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "JUDGE",
+      "quote": "Good enough. Hang ‘im.",
+      "block": 52
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "Sir, I never—",
+      "block": 53
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "BAILIFF",
+      "quote": "Hesh. Quiet there.",
+      "block": 54
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "No, sir—",
+      "block": 55
+    },
+    {
+      "speaker": "p7",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "No sir, but—",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "First time?",
+      "block": 57
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "COWBOY",
+      "quote": "There’s a pretty girl.",
+      "block": 58
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "All right Mr. Pocket—I’m a comin.",
+      "block": 59
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "You just set there, I’m a comin.",
+      "block": 60
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "Where are ye, Mr. Pocket—right,",
+      "block": 61
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "left, er straight up the middle?",
+      "block": 62
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "... Well, we’ll see.",
+      "block": 63
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "... We’ll see.",
+      "block": 64
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Heh! Almost enough to keep!",
+      "block": 65
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "All right! I’m gonna getcha. Not",
+      "block": 66
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "today, but I’m gonna getcha. You",
+      "block": 67
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "can’t run away Mr. Pocket!",
+      "block": 68
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "... I’ll catch up with you tomorra.",
+      "block": 69
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "I’m old, but yer older!",
+      "block": 70
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Good night, Mr. Pocket!",
+      "block": 71
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN (CONT’D)",
+      "quote": "... Ahh me.",
+      "block": 72
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR",
+      "quote": "I cain’t do it!",
+      "block": 73
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "... Damny.",
+      "block": 74
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "Mebbe just one.",
+      "block": 75
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "... How high can a bird count,",
+      "block": 76
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "anyway...",
+      "block": 77
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR",
+      "quote": "Yep... yep...",
+      "block": 78
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "Ya ready, Mr. Pocket?",
+      "block": 79
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR",
+      "quote": "Keepers now... gettin to keepers...",
+      "block": 80
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR",
+      "quote": "Lumps’n chunks... lumps’n chunks...",
+      "block": 81
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "... Right here! I got the almighty",
+      "block": 82
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "cinch on you, Mr. Pocket! You’re",
+      "block": 83
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "settin down there a-waitin for me!",
+      "block": 84
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "... Hold on sun, hold on. I’m",
+      "block": 85
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "almost there.",
+      "block": 86
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR",
+      "quote": "Okay... okay...",
+      "block": 87
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "... That’s yer share, ya measly\n                          skunk!",
+      "block": 88
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR",
+      "quote": "There’s a spot in me heart\n                          Which nobody may own\n                          There’s a depth in my soul\n                          Never sounded or known...",
+      "block": 89
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "PROSPECTOR (CONT’D)",
+      "quote": "There’s a place in my mem’ry\n                         —My heart—that you fill\n                         No other can take it\n                         No one ever will...",
+      "block": 90
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE",
+      "quote": "His cough did not respond to any\n                           kind of syrup or elixir...",
+      "block": 91
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "I bought him every kind of remedy,\n                           out of my own pocket. Nothing\n                           palliated. Although one of them he\n                           drank avidly. And it was an\n                           extremely rattly cough. No, I was\n                           not sad to see Mr. Kincaid leave.",
+      "block": 92
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY",
+      "quote": "It was not a contagious cough.\n                           Nobody here became ill. It was a\n                           nervous cough. I would not rent to\n                           a contagious cougher.",
+      "block": 93
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "I have never heard of a nervous\n                         cough.\n                               (turns to Mrs. Longabaugh)\n                         I understand you are about to leave\n                         us.",
+      "block": 94
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY",
+      "quote": "There is no medical affliction but\n                         that doesn’t have a nervous\n                         variety. The nervous system spreads\n                         its tendrils throughout the body. I\n                         saw a picture of it in a book.",
+      "block": 95
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "The nervous system does not have\n                         “tendrils.”",
+      "block": 96
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY",
+      "quote": "I don’t pretend to be a physician,\n                         or a botanist. I know that the\n                         nervous system extends through the\n                         body and I presume that that is how\n                         it learns of the various physical\n                         conditions that it imitates.",
+      "block": 97
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANOTHER MAN",
+      "quote": "Mrs. Flannery is quite right, I\n                         have seen that picture.",
+      "block": 98
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY",
+      "quote": "My point is only that Mr. Kincaid\n                         was not a contagious cougher. I\n                         don’t rent to such.",
+      "block": 99
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "MIDDLE-AGED WOMAN",
+      "quote": "Is there any more chicken and\n                         dumplings? The bowl came to me\n                         last.",
+      "block": 100
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY",
+      "quote": "Yes there is more! We don’t stint\n                         at this table. Grandma Turner looks\n                         to be finished. Are you finished\n                         Grandma Turner!",
+      "block": 101
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY (CONT’D)",
+      "quote": "... Grandma Turner is finished.",
+      "block": 102
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "SALESMAN (to Alice)",
+      "quote": "(to Alice)\n                         Leaving tomorrow? Jumping off the\n                         map, so to speak?",
+      "block": 103
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Yes indeed, my brother and I are\n                         setting off in the morning, for\n                         Oregon.",
+      "block": 104
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "Oregon! You have people there, or\n                         a—",
+      "block": 105
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "LANDLADY",
+      "quote": "Just scoop from her plate, Mrs.\n                         Halliday. Grandma Turner is quite\n                         done.",
+      "block": 106
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "No, I, not exactly—that is, my\n                         brother does.",
+      "block": 107
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "GILBERT",
+      "quote": "Well go ahead and tell him Alice,\n                         don’t be tongue-tied. She has\n                         exciting news.",
+      "block": 108
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "I’m... I’m to be married. Or at\n                         least I may be, to Gilbert’s...\n                         associate.",
+      "block": 109
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "GILBERT",
+      "quote": "He’s well fixed out there.",
+      "block": 110
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "SALESMAN",
+      "quote": "You’re not certain whether you’re\n                         going to be married? Has the\n                         gentleman not proposed?",
+      "block": 111
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Well, he—",
+      "block": 112
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "GILBERT",
+      "quote": "He will propose. Once they meet\n                          each other I’m sure Alice will pass",
+      "block": 113
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Uh huh.",
+      "block": 114
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "Yes, it uh... Of course you will do\n                         fine, solo, no doubt about it, a\n                         man of your skills will always be\n                         in high demand.",
+      "block": 115
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "... Wheres’at mecate rope?—Neb\n                         mind, here it is.",
+      "block": 116
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "... When will we see buffalo?",
+      "block": 117
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "Oh soon, very soon.",
+      "block": 118
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "... Used to hunt the big shaggies,\n                         provisioned for the army. Did some\n                         trapping. Years. Found myself\n                         missing animals’t walked upright.\n                         Started piloting. Partnered up with\n                         Mr. Arthur.",
+      "block": 119
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "What did Mr. Arthur do, previously?",
+      "block": 120
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "Don’t know...",
+      "block": 121
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "... That man is a wonder. He can\n                         read the prairie like a book. To\n                         see him cut for sign, well—you’d\n                         think the good lord dealt us each\n                         our five senses, then bottom-dealt\n                         Mr. Arthur one extra. Still... he\n                         is old. I don’t know how it will go\n                         with him. His affairs may... I\n                         can’t help feeling in the wrong.",
+      "block": 122
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Your first responsibility is to\n         your household.",
+      "block": 123
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "Yes, but...",
+      "block": 124
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "I’m sorry. I should not dismiss it\n         with an easy apothegm.",
+      "block": 125
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "Yes.",
+      "block": 126
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Yes.",
+      "block": 127
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Gilbert had a saying for any\n         situation. A ready bit of wisdom.\n         He was very certain.",
+      "block": 128
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "He was a doughface?",
+      "block": 129
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "How did—oh, yes. He was an admirer\n         of President Pierce, yes, very much\n         so. He had fixed political beliefs.\n         All of his beliefs were quite\n         fixed, even those that... fortune\n         did not tend to endorse. He would\n         upbraid me for being “wishy-washy.”\n         I never had his certainties. I\n         suppose it’s a defect.",
+      "block": 130
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "Oh, I don’t think it is a defect at\n         all. Oh no. Uncertainty—that is\n         appropriate for the matters of this\n         world. Only regarding the next are\n         we vouchsafed certainty.",
+      "block": 131
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALICE",
+      "quote": "Strait is the gate...",
+      "block": 132
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "BILLY KNAPP",
+      "quote": "... and narrow the way. Indeed.\n                          Indeed.",
+      "block": 133
+    },
+    {
+      "speaker": "p8",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Sign, Mr. Arthur?",
+      "block": 134
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Horses.\n                               (a gesture forward as he mounts up)\n                          Keep on. Gonna talk to Mr. Knapp.",
+      "block": 135
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Wharza woman?",
+      "block": 136
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Tsat?",
+      "block": 137
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Mrs. Longabaugh, wharshe?",
+      "block": 138
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Went o’er air.",
+      "block": 139
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "O’er air? Whyzat?",
+      "block": 140
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Huh. I’dno. Heard that mutt\n                         barkin’. Pres’dent Pierce.",
+      "block": 141
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Whenshe go?",
+      "block": 142
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Wull. I’dno.",
+      "block": 143
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Whenshe go?!",
+      "block": 144
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Half ar.",
+      "block": 145
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "MR. ARTHUR",
+      "quote": "Uh-hnghh.",
+      "block": 146
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "opp",
+      "cue": "TRAPPER",
+      "quote": "You did not wake me!",
+      "block": 147
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAPPER (CONT’D)",
+      "quote": "... For I was not asleep.",
+      "block": 148
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "ally",
+      "cue": "THIGPEN",
+      "quote": "Oh, not asleep, I see.",
+      "block": 149
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAPPER",
+      "quote": "How much to go d’you reckon?",
+      "block": 150
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "TRAPPER",
+      "quote": "Me? No. You?",
+      "block": 151
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "opp",
+      "cue": "TRAPPER",
+      "quote": "Him’s yourn?",
+      "block": 152
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "LADY",
+      "quote": "A loved one?",
+      "block": 153
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "ally",
+      "cue": "THIGPEN (giggle)",
+      "quote": "By somebody, perhaps!",
+      "block": 154
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "opp",
+      "cue": "FRENCHMAN",
+      "quote": "You did not know heem?",
+      "block": 155
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "THIGPEN (giggle)",
+      "quote": "We knew him only at the end.",
+      "block": 156
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLARENCE",
+      "quote": "At the very end.",
+      "block": 157
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "opp",
+      "cue": "TRAPPER",
+      "quote": "No!",
+      "block": 158
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "ally",
+      "cue": "FRENCHMAN",
+      "quote": "Ees true. Practice.",
+      "block": 159
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "THIGPEN (helpful)",
+      "quote": "... human—",
+      "block": 160
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 2,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p15",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p14",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p18",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p18",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p19",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p20",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p21",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p24",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p23",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p22",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p23",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 4,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 24 given"
+  }
+}
