@@ -21869,16 +21869,15 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     log.scrollTop = Math.max(0, to);
   }
 
-  // Wrap the first run of text matching `needle` in a <mark>. Walks text nodes so
-  // the surrounding markup (code spans, links) is left exactly as it was; gives up
-  // rather than guessing when the passage spans several nodes.
+  // Find where `needle` starts (an opening probe, since a passage can run through
+  // a code span or link and no single text node then holds all of it), then wrap
+  // the full length of the passage in <mark>s, one per text node it crosses, so a
+  // multi-paragraph/bullet selection gets highlighted end to end rather than just
+  // its opening words.
   function highlightIn(root, needle){
     var want = String(needle || '').replace(/\s+/g, ' ').trim();
     if(!want) return null;
     root.normalize();
-    // Longest first, then shorter openings. A passage can run through a code span
-    // or a link, and no single text node then holds all of it — but its first
-    // twenty characters almost always sit in one, which is enough to land on.
     var tries = [80, 40, 20].filter(function(n, i){ return i === 0 || n < want.length + 10; });
     for(var k = 0; k < tries.length; k++){
       var probe = want.slice(0, tries[k]);
@@ -21887,13 +21886,32 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       while((node = walker.nextNode())){
         var i = node.nodeValue.indexOf(probe);
         if(i === -1) continue;
-        var range = document.createRange();
-        range.setStart(node, i);
-        range.setEnd(node, Math.min(i + probe.length, node.nodeValue.length));
-        var el = document.createElement('mark');
-        el.className = 'se-jumped';
-        try { range.surroundContents(el); } catch(err) { continue; }
-        return el;
+        // Collect every text node from here to the end of the passage BEFORE
+        // touching the DOM. Wrapping a node mid-walk reinserts it as a fresh
+        // sibling, and asking the same walker for "next" afterward hands back
+        // the piece just wrapped — double-counting it and cutting the
+        // highlight short after only a node or two.
+        var nodes = [node];
+        var n2;
+        while((n2 = walker.nextNode())) nodes.push(n2);
+        var marks = [];
+        var remaining = want.length;
+        var offset = i;
+        for(var ni = 0; ni < nodes.length && remaining > 0; ni++){
+          var cur = nodes[ni];
+          var avail = cur.nodeValue.length - offset;
+          if(avail <= 0){ offset = 0; continue; }
+          var take = Math.min(avail, remaining);
+          var range = document.createRange();
+          range.setStart(cur, offset);
+          range.setEnd(cur, offset + take);
+          var el = document.createElement('mark');
+          el.className = 'se-jumped';
+          try { range.surroundContents(el); marks.push(el); } catch(err) { /* skip this node, keep going */ }
+          remaining -= take;
+          offset = 0;
+        }
+        return marks[0] || null;
       }
     }
     return null;
