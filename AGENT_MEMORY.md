@@ -951,3 +951,22 @@ left over in `createPrompt` from the merge. The task card's **Look at the world*
 button is the sole generation trigger; a precomputed report explicitly carried
 from a suggestion, seed or other source is still reused. See
 `plans/queue-world-ideas-manual-only.md`.
+
+## The Room analogy engine becomes social-first (2026-09-13)
+
+Antoine used the live pane and found its scientific analogies too hard and too
+far from what he wants. The cause is explicit prompt text — “the stranger the
+domain, the better.” The approved reform is in
+`plans/room-analogy-engine-social-structure.md`: social structures become the
+default across people, families, groups, institutions, cities and nations;
+films, books, myths and imagined societies remain valid social material; an
+explicit request may still ask for biology or any other domain. Strongest
+structural fit comes first and scale diversity only breaks ties. Structure is
+the default form; repair and counterexamples appear when requested.
+
+Antoine chose a separate critic call: generate a wider pool, then independently
+reject keyword matches, generic tropes, reversed relations, invented facts,
+scientific defaults and semantic duplicates before anything is stored. The
+implementation must reconcile completed but unmerged commit `76c301b` (natural
+requests, lasting context, progressive exact counts) with `90d9a63` and
+`3b3e28f` already on `develop` (long asks, forget and regenerate controls).
