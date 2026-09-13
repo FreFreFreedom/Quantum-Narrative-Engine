@@ -1,0 +1,797 @@
+{
+  "entity": "f_three_days_of_the_condor",
+  "source": "data-seed/scripts/f_three_days_of_the_condor.txt",
+  "scope": "the whole script, machine-extracted (24 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JANICE",
+      "quote": "It's busted. Heidegger was copying\n          something. You know him with machines.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DR. LAPPE'S VOICE",
+      "quote": "This was in the pouch from New York\n          Center.",
+      "block": 2
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "HQ at Langley says there's nothing from\n          any other intelligence source to support\n          your theory.",
+      "block": 3
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "Is this your idea of working on that\n          book?",
+      "block": 4
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "Oh, I'll have it on the computer by four.",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "We have people to service these machines.",
+      "block": 6
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "These things are fairly simple ... they\n          just look complicated.",
+      "block": 7
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "Mr. Turner ... I wonder if you're\n          entirely happy here.",
+      "block": 8
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "Within obvious limits, yes sir.",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "Obvious limits?",
+      "block": 10
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "I'd rather write... and... well it\n          bothers me that I can't tell people what\n          I do.",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "Why is it taking you so long to accept\n          that??",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "I actually trust a few people.     It's a\n          problem.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "(shaking his head)\n          I believe it's your turn to bring in\n          lunch.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "What time is it?",
+      "block": 15
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "11:22.",
+      "block": 16
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "Rain should end by 11:30.",
+      "block": 17
+    },
+    {
+      "speaker": "p3",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "DR. LAPPE",
+      "quote": "You can wait 8 minutes.",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "JENNINGS",
+      "quote": "Mr. Turner!",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNINGS",
+      "quote": "Goddamnit!     That is not a proper exit!",
+      "block": 20
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. RUSSELL",
+      "quote": "He always goes out that way when it rains\n          ... it saves him a block.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNINGS",
+      "quote": "Personnel should enter and exit premises\n          by authorized means only.",
+      "block": 22
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "MRS. RUSSELL",
+      "quote": "(reaching for another\n               cigarette)\n          Gimme a light, will ya?",
+      "block": 23
+    },
+    {
+      "speaker": "p7",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "JIMMY",
+      "quote": "How's it going, Shakespeare?",
+      "block": 24
+    },
+    {
+      "speaker": "p4",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "Great. I'm building one of the finest\n          collections of rejection slips in the\n          world.",
+      "block": 25
+    },
+    {
+      "speaker": "p7",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "JIMMY",
+      "quote": "I know the feeling: I always wanted to be\n          Escoffier.",
+      "block": 26
+    },
+    {
+      "speaker": "p4",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "It's not too late.\n              (points)\n          No mayo on Dr. Lappe's.",
+      "block": 27
+    },
+    {
+      "speaker": "p4",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "Van Gogh didn't begin painting until he\n          was almost 30...",
+      "block": 28
+    },
+    {
+      "speaker": "p7",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "JIMMY",
+      "quote": "Yeah?",
+      "block": 29
+    },
+    {
+      "speaker": "p4",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "On the other hand, Mozart was playing\n          piano at 3 and composing at 6.",
+      "block": 30
+    },
+    {
+      "speaker": "p7",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "JIMMY",
+      "quote": "Fast-starter ... That's probably better.",
+      "block": 31
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "Mark Ray's no batter.",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "TURNER",
+      "quote": "I don't know: Van Gogh never sold a",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes.",
+      "block": 34
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Hey, you're early!",
+      "block": 35
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Janice working late...?",
+      "block": 36
+    },
+    {
+      "speaker": "p9",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "So is Sam.",
+      "block": 37
+    },
+    {
+      "speaker": "p9",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Pour one for me,too, will you, Joe?   It's\n           their own fault if we're zonked --",
+      "block": 38
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "How do you know ... Sam is working late?",
+      "block": 39
+    },
+    {
+      "speaker": "p9",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Think he's up to something else?   Tom\n          catting around?",
+      "block": 40
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "When did he call?",
+      "block": 41
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "ally",
+      "cue": null,
+      "quote": "2, 2:30. Maybe. Hey! Let's give them\n          an hour? If they don't show ... it's you\n          and me babe.\n              (sings)\n          \"Just like old times, da-da-da-da-dah...\"",
+      "block": 42
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What'd he tell you?   Exactly.",
+      "block": 43
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "He didn't exactly.    Had the Center call.",
+      "block": 44
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who, at the Center?",
+      "block": 45
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not Miss Randolph. She's the one I\n          usually get, with the Baltimore accent:\n          'He's oot!'... No, this was a man.",
+      "block": 46
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Did you recognize his voice?",
+      "block": 47
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 48
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "...Hey?   Where's our drinks?",
+      "block": 49
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello?",
+      "block": 50
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That's the third damn time tonight!",
+      "block": 51
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Third time...?",
+      "block": 52
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I have to go.",
+      "block": 53
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What? What'd I say??",
+      "block": 54
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I'm sorry!",
+      "block": 55
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's the matter?",
+      "block": 56
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I'm so sorry, Mae!",
+      "block": 57
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What about dinner?       What happened?",
+      "block": 58
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'll try to call ... but...",
+      "block": 59
+    },
+    {
+      "speaker": "p8",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?    What is it??",
+      "block": 60
+    },
+    {
+      "speaker": "p4",
+      "to": "p8",
+      "stance": "ally",
+      "cue": null,
+      "quote": "I can't! I'm sorry! Goodnight, Mae, I\n             don't know ... when...\n                 (stops; quickly)\n             Good-night!",
+      "block": 61
+    },
+    {
+      "speaker": "p10",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Your keys.",
+      "block": 62
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Oh yes! ... Thanks.",
+      "block": 63
+    },
+    {
+      "speaker": "p11",
+      "to": "p4",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Don't mention it.",
+      "block": 64
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "4th floor: Ladies' Underwear!",
+      "block": 65
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bet we've to wait an hour!",
+      "block": 66
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nah!      She'll be ready.",
+      "block": 67
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Her name is Freddy, she must be ready!",
+      "block": 68
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Kids...!",
+      "block": 69
+    },
+    {
+      "speaker": "p4",
+      "to": "p11",
+      "stance": "neu",
+      "cue": null,
+      "quote": "They different? Where you're from?\n          France?",
+      "block": 70
+    },
+    {
+      "speaker": "p11",
+      "to": "p4",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Corsica.",
+      "block": 71
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p4",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p4",
+        "weight": 3,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p7",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 17,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 5,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p9",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}
