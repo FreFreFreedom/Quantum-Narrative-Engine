@@ -180,6 +180,15 @@ export function conversationsRoutes() {
     res.json({ steer: out });
   });
 
+  // Replace one card in place with a freshly generated one — waits on the model,
+  // same as ask above.
+  router.post('/:id/analogies/:messageId/regenerate', asyncHandler(async (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    const out = await analogies.regenerateAnalogy(req.params.id, req.params.messageId);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json({ ...out, ...analogies.listAnalogies(req.params.id) });
+  }));
+
   router.delete('/:id/analogies/:messageId', (req, res) => {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
     const out = analogies.forgetAnalogy(req.params.id, req.params.messageId);
