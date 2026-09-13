@@ -193,9 +193,14 @@ function lastUserMessageId(convoId) {
   return msgs.length ? msgs[msgs.length - 1].id : null;
 }
 
-function transcriptFor(convoId, limit = 14) {
+// Deliberately short. The relation being circled is in the last few turns, and a
+// 28,000-character prompt (what fourteen whole turns came to) is above the
+// per-minute token ceiling of most free lanes — so they refuse it, the call walks
+// further down the chain, and a half-second answer takes a minute. Measured
+// 2026-09-13: the model itself answers a real thread in 0.4s.
+function transcriptFor(convoId, limit = 6) {
   const msgs = listMessages(convoId).filter((m) => m.kind === 'chat').slice(-limit);
-  return msgs.map((m) => `${m.role === 'user' ? 'OWNER' : 'QNE'}: ${String(m.text || '').slice(0, 2000)}`).join('\n\n');
+  return msgs.map((m) => `${m.role === 'user' ? 'OWNER' : 'QNE'}: ${String(m.text || '').slice(0, 900)}`).join('\n\n');
 }
 
 async function runLook(convoId, { question = null, asked = false } = {}) {
@@ -210,6 +215,12 @@ async function runLook(convoId, { question = null, asked = false } = {}) {
     feature: 'analogies',         // its own lane: leaving the domain is not what a chat model is picked for
     maxTokens: 1200,
     label: 'room:analogies',
+    // Bounded, because this fires on every turn. Without these it inherits
+    // generateText's defaults — unlimited attempts at 90s each, walking the whole
+    // free catalogue — which is how a 0.4s answer became a 109s wait. Nothing is
+    // lost by giving up: no arrival is the normal quiet state of this pane.
+    maxAttempts: 2,
+    timeoutMs: 20_000,
   });
   if (result?.error) return { error: result.error };
 
