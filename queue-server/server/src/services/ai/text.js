@@ -481,11 +481,14 @@ export async function getFallbackChain(feature, providerId, model, { noOpencodeB
  * @param {string} opts.feature - Work type key: 'quick' (books/lens/pattern/detail) | 'build' (suggestions) | 'judge' (modelPolicy) | 'summary' (runUserSummary) | 'warmup'
  * @param {number} [opts.maxTokens=800] - Max tokens (API path only)
  * @param {string} [opts.label] - Log label
+ * @param {string[]} [opts.images] - data: URLs to hand a vision-capable model. Forces the
+ *   google-ai-studio lane (the only one in this app that can see); dropped silently (call
+ *   still runs, blind) if that lane is unkeyed or resting.
  * @returns {Promise<{text:string,via:string}|{error:string,message:string}>}
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null, onUsage = null }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null, onUsage = null, images = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -645,7 +648,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   if (wantsTools && mod.chatCompletion) {
     return runCatalogueToolLoop({ mod, providerId: p, model: m, prompt, maxTokens, timeoutMs, tools, dispatchTool, maxRounds, toolResultCap, label, cacheKey });
   }
-  const r = await mod.runToolless({ prompt: toollessPrompt, model: m, providerId: p, maxTokens, timeoutMs });
+  const r = await mod.runToolless({ prompt: toollessPrompt, model: m, providerId: p, maxTokens, timeoutMs, images });
   if (isMeteredProvider(p)) {
     if (r.usage) { recordSpend({ model: m, usage: r.usage, providerId: p }); if (onUsage) onUsage(r.usage, { providerId: p, model: m }); }
     else console.warn(`[${label}] ${p}/${m} returned no usage block — this call is NOT counted against the monthly cap`);
@@ -734,9 +737,26 @@ function benched(providerId, model = '') {
   return !router.mayProbe(providerId, model);
 }
 
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null, images = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
+
+  // A picture can only be seen on one lane in this app — Google's. When a
+  // caller hands us images, force that lane outright rather than let the
+  // feature's configured provider (which may not be able to see at all)
+  // win. If Google is unkeyed or currently resting, drop the images and let
+  // the call go through blind, exactly as it would with none at all — never
+  // fail, and never swap in some other provider expecting it to see.
+  if (images && images.length) {
+    if (!process.env.GOOGLE_AI_STUDIO_API_KEY || benched('google-ai-studio', 'gemini-flash-lite-latest')) {
+      images = null;
+    } else {
+      explicitProvider = 'google-ai-studio';
+      // The 500-a-day model, not the 20-a-day one — a rhyme isn't worth a
+      // twentieth of the day's strongest free model (catalog.js).
+      explicitModel = 'gemini-flash-lite-latest';
+    }
+  }
   // A caller-named provider (the Room's manual model picker, or the /ask forced
   // lanes) wins outright over the feature's configured default — that is the
   // whole point of an explicit pick. See plan "chat-model-picker".
@@ -834,7 +854,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     // next one is tried, and from outside that is indistinguishable from a model
     // thinking hard — so say which one is being asked, and say when one gives up.
     if (onStatus) { try { onStatus(failures.length ? `That lane did not answer — trying ${laneName(p, m)}…` : `Asking ${laneName(p, m)}…`); } catch {} }
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null, images });
     attempted += 1;
     recordLaneCall(p, m, !!result?.text);
 
