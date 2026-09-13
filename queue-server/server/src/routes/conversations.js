@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
 import * as analogies from '../services/roomAnalogies.js';
+import { rememberPassage } from '../services/mind.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -180,6 +181,63 @@ export function conversationsRoutes() {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
     res.json(analogies.clearAnalogies(req.params.id));
   });
+
+  // ─── Side talks (plan "side talks in the Room, and remember this") ─────────
+  // A tangent without polluting the main thread — its own small conversation in
+  // the pane, on Gemini, seeing the whole parent conversation. "↑ bring" (a
+  // frontend move, same as analogies' above) is how anything reaches the main
+  // composer; nothing here ever writes into the main thread itself.
+
+  router.get('/:id/sides', (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json({ sides: convos.listSideTalks(req.params.id) });
+  });
+
+  // POST /api/convos/:id/sides — body: { mode: 'empty'|'fork', throughMessageId?,
+  // title?, text?, quotes?, body? }. 'empty' opens a fresh aside — if `text` is
+  // given (the from-quotes door), it is sent as the aside's first message,
+  // `quotes`/`body` riding through unchanged to sendMessage. 'fork' branches the
+  // parent thread itself into the pane instead of the thread list.
+  router.post('/:id/sides', asyncHandler(async (req, res) => {
+    const parentId = req.params.id;
+    if (!convos.getConvo(parentId)) return res.status(404).json({ error: 'not_found' });
+    const createdBy = req.user?.id || 'antoine';
+    const mode = req.body?.mode === 'fork' ? 'fork' : 'empty';
+
+    const out = mode === 'fork'
+      ? convos.forkConvo(parentId, {
+          throughMessageId: req.body?.throughMessageId || null,
+          title: req.body?.title || null,
+          createdBy,
+          toSide: true,
+        })
+      : convos.createSideTalk(parentId, { title: req.body?.title || null, createdBy });
+    if (out.error && !out.ok) return res.status(statusFor(out.error)).json(out);
+
+    const text = String(req.body?.text || '').trim();
+    if (mode === 'empty' && text) {
+      const sent = await convos.sendMessage(out.convo.id, {
+        text, userId: req.user?.id, quotes: req.body?.quotes || null, body: req.body?.body || null,
+      });
+      return res.json({ ...out, sent });
+    }
+    res.json(out);
+  }));
+
+  // POST /api/convos/:id/remember — body: { passage, messageId? }. Returns a
+  // PROPOSAL only ({kind, text, detail}) — saving is a separate, explicit call to
+  // the existing fact routes (POST /api/mind/facts), because where it lands is
+  // his choice, never decided for him.
+  router.post('/:id/remember', asyncHandler(async (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    const passage = String(req.body?.passage || '').trim();
+    if (!passage) return res.status(400).json({ error: 'empty' });
+    const out = await rememberPassage(req.params.id, {
+      passage, messageId: req.body?.messageId || null, kind: req.body?.kind || null,
+    });
+    if (out.error) return res.status(out.error === 'empty' ? 400 : 500).json(out);
+    res.json(out);
+  }));
 
   // POST /api/convos/:id/lane — the manual model picker's sticky pick (plan
   // "chat-model-picker"): body { provider, model?, account? }, or {} / provider:

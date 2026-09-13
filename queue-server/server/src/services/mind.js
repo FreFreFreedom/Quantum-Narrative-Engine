@@ -270,8 +270,10 @@ function parseHarvest(text) {
 // The extraction job. Never called on the request path — fire-and-forget after an
 // assistant turn. Reads only the turns since the watermark, never the whole thread.
 async function runHarvest(convoId, force) {
-  const convo = db.prepare(`SELECT id, turns, mind_seen_turns FROM convos WHERE id=? AND deleted_at IS NULL`).get(convoId);
-  if (!convo) return;
+  const convo = db.prepare(`SELECT id, subject_type, turns, mind_seen_turns FROM convos WHERE id=? AND deleted_at IS NULL`).get(convoId);
+  // A side talk is a tangent, not standing memory to harvest — same reasoning
+  // as roomWorldLook and analogyLook skipping it in conversations.js/roomAnalogies.js.
+  if (!convo || convo.subject_type === 'side') return;
   // Both roles now. mind_seen_turns still counts HIS messages only — that is what
   // the watermark has always meant and what the trigger counts — but the slice
   // handed to the model runs from his first unseen message to the end, answers
@@ -317,6 +319,78 @@ export function rewindHarvest(convoId) {
     db.prepare(`UPDATE convos SET mind_seen_turns=0 WHERE id=?`).run(convoId);
     return { ok: true };
   } catch (e) { return { error: e.message || 'rewind_failed' }; }
+}
+
+// "Remember this" (plan "side talks in the Room, and remember this"): a selected
+// passage, understood rather than copied — his own words: "it understands what
+// we talked about and that this is a particular concept", not just the literal
+// quote. The passage is a pointer; the turns around it (same shape as the
+// harvest transcript) are what actually let the model name the concept.
+const REMEMBER_RADIUS = 6;
+function transcriptAround(convoId, messageId) {
+  const all = db.prepare(`SELECT id, role, text FROM convo_messages WHERE convo_id=? AND kind='chat' AND role IN ('user','assistant') ORDER BY created_at`).all(convoId);
+  const idx = messageId ? all.findIndex((m) => m.id === messageId) : -1;
+  const slice = idx >= 0
+    ? all.slice(Math.max(0, idx - REMEMBER_RADIUS), idx + REMEMBER_RADIUS + 1)
+    : all.slice(-REMEMBER_RADIUS * 2);
+  return transcriptFor(slice);
+}
+
+function buildRememberPrompt(passage, transcript, factList, kindHint) {
+  const facts = factList.length ? factList.map((f) => `- [${f.id}] (${f.kind}) ${f.text}`).join('\n') : '(none yet)';
+  return `You maintain the long-term memory of a personal app built for one man. He just selected a passage from a conversation to remember.
+
+Do not just repeat the passage back. Understand what it is an instance OF — the standing fact or the paradigm concept it is pointing at — and name THAT.
+
+THE PASSAGE HE SELECTED:
+"""
+${passage}
+"""
+
+THE CONVERSATION AROUND IT (for context only — the passage above is what matters):
+${transcript}
+
+WHAT YOU ALREADY KNOW:
+${facts}
+${kindHint ? `\nHe leans toward filing this as "${kindHint}", but judge it yourself — use whichever kind actually fits.\n` : ''}
+Return ONLY this JSON object (no prose, no markdown fence):
+{"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the concept itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land>"}
+
+Use "vision" only for the paradigm itself — what the platform is, a mechanism, what counts as an entity or a scale. Everything else about him or his work uses the other kinds.`;
+}
+
+function parseRememberReply(text) {
+  if (!text) return null;
+  let s = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  const open = s.indexOf('{');
+  const close = s.lastIndexOf('}');
+  if (open === -1 || close === -1 || close < open) return null;
+  try {
+    const obj = JSON.parse(s.slice(open, close + 1));
+    return (obj && typeof obj === 'object') ? obj : null;
+  } catch { return null; }
+}
+
+// Returns a PROPOSAL only — saveFact() is a separate, explicit step, because
+// where it lands is his choice (2026-09-13: "he chooses where it lands — it must
+// not be decided for him").
+export async function rememberPassage(convoId, { passage, messageId, kind } = {}) {
+  const text = String(passage || '').trim();
+  if (!text) return { error: 'empty' };
+  const transcript = transcriptAround(convoId, messageId);
+  const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text, kind: f.kind }));
+  const result = await generateText({
+    feature: 'summary', maxTokens: 700, label: 'mind:remember',
+    prompt: buildRememberPrompt(text, transcript, factList, KINDS.includes(kind) ? kind : null),
+  });
+  if (result.error) return { error: result.error };
+  const obj = parseRememberReply(result.text);
+  if (!obj || !obj.text) return { error: 'unparseable' };
+  return {
+    kind: KINDS.includes(obj.kind) ? obj.kind : 'about',
+    text: String(obj.text).slice(0, 240),
+    detail: obj.detail ? String(obj.detail).slice(0, 4000) : null,
+  };
 }
 
 const _harvestInFlight = new Set();

@@ -1736,6 +1736,14 @@ export function initConversationsSchema(db) {
   // plus messages newer than this to the model, instead of the whole transcript
   // it still shows on screen. NULL means never compacted.
   try { db.exec(`ALTER TABLE convos ADD COLUMN compacted_at TEXT`); } catch {}
+
+  // Side talks (plan "side talks in the Room, and remember this"): a side talk is
+  // a convo with subject_type='side', subject_id='<parentConvoId>:<uuid>' (the
+  // uuid is needed because, unlike the one-per-thread analogy pane, a thread can
+  // have many side talks and idx_convos_subject is unique). This column is the
+  // fast lookup back to the parent — reading it out of subject_id would work too,
+  // but this is what conversations.js#assemble reads on every turn.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN parent_convo_id TEXT`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────

@@ -1364,6 +1364,26 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
 .se-quote-pop button:hover { background:var(--c-border); color:var(--c-ink); }
 .se-quote-pop .ic { width:11px; height:11px; flex:none; }
+/* "Remember this" (plan "side talks in the Room, and remember this"): the
+   proposal card — what the model understood a selected passage as, and the
+   shelf it wants. Fixed near the bottom so it never depends on a selection
+   that may already be gone by the time the model answers. */
+.se-remember-pop { position:fixed; z-index:var(--z-popover); left:50%; bottom:24px; transform:translateX(-50%);
+  width:min(420px, calc(100vw - 32px)); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
+  border-radius:var(--r-lg); padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.28); animation:sePopIn .12s var(--ease); }
+.se-remember-kind { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.03em; color:var(--c-ink-5); }
+.se-remember-kind select { font:inherit; margin-left:4px; }
+.se-remember-text { margin:6px 0; font-size:var(--fs-sm); }
+.se-remember-detail { margin:0 0 8px; font-size:var(--fs-xs); color:var(--c-ink-3); }
+.se-remember-acts { display:flex; gap:8px; justify-content:flex-end; }
+/* Side talks — the list and the one open at a time. */
+.room-side-new { margin-bottom:8px; }
+.room-side-list { display:flex; flex-direction:column; gap:2px; margin-bottom:8px; }
+.room-side-row { text-align:left; background:none; border:none; padding:6px 8px; border-radius:var(--r-sm); cursor:pointer;
+  font:inherit; font-size:var(--fs-sm); color:var(--c-ink-3); }
+.room-side-row:hover { background:var(--c-border); color:var(--c-ink); }
+.room-side-row.is-open { background:var(--c-border); color:var(--c-ink); font-weight:500; }
+.room-side-open { border-top:1px solid var(--c-border); padding-top:8px; }
 /* The chapters strip, and the flash that lands on the passage jumped to. */
 .se-marks { display:flex; flex-wrap:wrap; gap:5px; padding:5px 0 3px; }
 .se-mark { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--c-border); border-radius:var(--r-pill);
@@ -3097,6 +3117,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="passages" role="tab">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="analogies" role="tab">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
+          <button type="button" data-room-pane="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
         </div>
@@ -3136,6 +3157,9 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="room-pane room-ideas" id="roomAnalogies">
           <div id="roomAnalogiesHost"></div>
+        </div>
+        <div class="room-pane room-ideas" id="roomSide">
+          <div id="roomSideHost"></div>
         </div>
       </div>
     </div>
@@ -9293,7 +9317,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', mind: 'roomMind', extract: 'roomExtract' };
+const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', mind: 'roomMind', extract: 'roomExtract' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9317,6 +9341,9 @@ const ROOM_TAB_HAS = {
   // results, but this one holds a question box — hiding it until something has
   // already arrived makes the asking unreachable.
   analogies: () => !!roomSel,
+  // Same reasoning as analogies above: the pane holds the action that opens the
+  // first side talk, so hiding it while empty makes it unreachable.
+  side: () => !!roomSel,
   mind: () => roomMind.length > 0,
   extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
 };
@@ -9792,6 +9819,7 @@ async function loadRoom() {
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
   loadRoomIdeas();
   loadRoomAnalogies();
+  loadRoomSides();
   loadRoomExtract();
   loadRoomPassages().then(loadRoomPassageWorld);
 }
@@ -10683,6 +10711,120 @@ function renderRoomAnalogies() {
   roomAnaMarkTurns();
 }
 
+/* ── Side talks beside the Room (plan "side talks in the Room, and remember
+   this") ─────────────────────────────────────────────────────────────────────
+   A tangent without lengthening or polluting the main thread: its own small
+   conversation in this pane, pinned to Gemini, seeing the WHOLE main
+   conversation as background. One open at a time. Reuses the exact same
+   embedded-conversation box (window.studioEmbed/studioLend) every other card
+   in this app uses — a side talk is a real conversation with a real composer,
+   not a bespoke widget — so quote chips, the model picker and everything else
+   about talking to it come for free. "↑ bring" is the only way anything reaches
+   the main thread; nothing here ever sends in his name. */
+let roomSides = [];
+let roomSideOpenId = null;
+
+async function loadRoomSides() {
+  const want = roomSel;
+  if (!want) { roomSides = []; roomSideOpenId = null; renderRoomSide(); return; }
+  try {
+    const out = await api('/api/convos/' + encodeURIComponent(want) + '/sides');
+    if (roomSel !== want) return;   // a different thread was picked mid-flight
+    roomSides = out.sides || [];
+    if (roomSideOpenId && !roomSides.some(s => s.id === roomSideOpenId)) roomSideOpenId = null;
+  } catch (e) { if (roomSel === want) roomSides = []; }
+  renderRoomSide();
+}
+
+// Switch the right column to a named pane — the strip owns its own click
+// handler (closure state, set up once in initRoom), so this reuses it rather
+// than keeping a second copy of which pane is showing.
+function roomShowPane(id) {
+  const strip = document.getElementById('roomTabs');
+  const btn = strip && strip.querySelector('[data-room-pane="' + id + '"]');
+  if (btn) btn.click();
+}
+
+function roomSideOpen(id) {
+  roomSideOpenId = id;
+  roomShowPane('side');
+  renderRoomSide();
+}
+
+// mode: 'empty' (a fresh aside) or 'fork' (branch the main thread itself into
+// the pane). `starter` carries the from-quotes door's first message + the
+// picked passages straight through, same shape sendMessage already accepts.
+async function roomSideCreate({ mode = 'empty', throughMessageId = null, starter = null } = {}) {
+  if (!roomSel) return null;
+  const body = { mode };
+  if (throughMessageId) body.throughMessageId = throughMessageId;
+  if (starter) { body.text = starter.text; if (starter.quotes) body.quotes = starter.quotes; if (starter.body) body.body = starter.body; }
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/sides', 'POST', body);
+    if (!out || !out.convo) return null;
+    await loadRoomSides();
+    roomSideOpen(out.convo.id);
+    return out.convo;
+  } catch (e) { return null; }
+}
+
+// Carry the open side talk's last answer (or, with nothing to point at yet,
+// the whole thing) into the MAIN composer — a chip naming where it came from,
+// the answer itself as the editable draft. Never sent on his behalf.
+function roomSideBring() {
+  const side = roomSides.find(s => s.id === roomSideOpenId);
+  const main = roomThreads.find(t => t.id === roomSel);
+  if (!side || !main || !window.studioLend || !window.studioLend.carry) return;
+  const e = window.studioLend.entry('side', side.subject_id);
+  const last = (e.msgs || []).slice().reverse().find(m => m.role === 'assistant');
+  const draft = last ? last.text : '';
+  window.studioLend.carry('open', main.subject_id,
+    { text: (side.title || 'Side talk') + (last ? ' — ' + last.text.slice(0, 80) : ''), msgId: null }, draft);
+  renderRoomConvo();
+  const box = document.querySelector('#roomConvo .se-input');
+  if (box) box.focus();
+}
+
+function renderRoomSide() {
+  const host = document.getElementById('roomSideHost');
+  if (!host) return;
+  setRoomTabCount('roomSideCount', roomSides.length);
+  if (!roomSel) { host.innerHTML = ''; return; }
+
+  const open = roomSides.find(s => s.id === roomSideOpenId) || null;
+  let html = '<div class="room-ana-acts room-side-new">'
+    + '<button type="button" data-side-new="1">+ Aside</button>'
+    + '</div>';
+
+  html += '<div class="room-side-list">' + roomSides.map(s => (
+    '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
+    + qEsc(s.title || 'Side talk')
+    + '</button>'
+  )).join('') + (!roomSides.length ? '<div class="tv-empty">Nothing yet. Select a passage and choose Aside, or start one here.</div>' : '') + '</div>';
+
+  if (open) {
+    html += '<div class="room-side-open" id="roomSideEmbed"></div>'
+      + '<div class="room-ana-acts"><button type="button" data-side-bring="1">↑ bring</button></div>';
+  }
+  host.innerHTML = html;
+
+  const newBtn = host.querySelector('[data-side-new]');
+  if (newBtn) newBtn.onclick = () => roomSideCreate({ mode: 'empty' });
+  host.querySelectorAll('[data-side-pick]').forEach(b => {
+    b.onclick = () => roomSideOpen(b.getAttribute('data-side-pick'));
+  });
+  const bring = host.querySelector('[data-side-bring]');
+  if (bring) bring.onclick = roomSideBring;
+
+  if (open) {
+    const embedHost = document.getElementById('roomSideEmbed');
+    if (embedHost) {
+      window.studioEmbedOpen('side', open.subject_id);
+      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '' });
+    }
+  }
+}
+
 async function loadRoomIdeas() {
   const want = roomSel;
   if (!want) { roomIdeasReports = []; roomIdeasRunning = false; renderRoomIdeas(); return; }
@@ -11019,6 +11161,7 @@ function roomSelect(id) {
   // under the newly-selected one while loadRoomIdeas() is still in flight.
   roomIdeasReports = []; roomIdeasRunning = false;
   roomAna = { steer: null, items: [] }; roomAnaBusy = false;
+  roomSides = []; roomSideOpenId = null;
   roomExtractStatus = null; roomExtractChunks = [];
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');
@@ -11027,6 +11170,7 @@ function roomSelect(id) {
   loadRoomSubjects();
   loadRoomIdeas();
   loadRoomAnalogies();
+  loadRoomSides();
   loadRoomExtract();
   loadRoomPassages().then(loadRoomPassageWorld);
 }
@@ -20955,6 +21099,29 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .then(function(){ e.forking = false; if(repaint) repaint(); });
   }
 
+  // Door #2 into a side talk (plan "side talks in the Room, and remember
+  // this"): the same branch-from-a-message move as forkFromMessage above, but
+  // filed as a side talk of this thread instead of a loose one in the list.
+  function forkFromMessageToSide(e, messageId, repaint){
+    if(!e.convoId || !messageId || e.forking) return;
+    e.forking = true;
+    e.note = 'Branching into a side talk…';
+    if(repaint) repaint();
+    apiWrite('/api/convos/' + e.convoId + '/sides', 'POST', { mode: 'fork', throughMessageId: messageId })
+      .then(function(out){
+        var id = out && out.convo ? out.convo.id : null;
+        var inRoom = typeof roomSel !== 'undefined' && roomSel === e.convoId && typeof roomSideOpen === 'function' && typeof loadRoomSides === 'function';
+        if(id && inRoom){
+          e.note = '';
+          return loadRoomSides().then(function(){ roomSideOpen(id); });
+        }
+        e.note = id ? 'Branched into a side talk.' : 'Could not branch into a side talk.';
+        if(repaint) repaint();
+      })
+      .catch(function(){ e.note = 'Could not branch into a side talk.'; if(repaint) repaint(); })
+      .then(function(){ e.forking = false; if(repaint) repaint(); });
+  }
+
   function rewindToMessage(e, messageId, repaint){
     if(!e.convoId || !messageId || e.busy) return;
     var at = -1;
@@ -21545,6 +21712,29 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         mk('seed', 'Keep', 'Keep this line — it goes to Passages, with a reading of it', function(){
           keepPassage(e, msgId, passage, repaint);
         });
+        // Aside and Remember only make sense against the Room's own main thread
+        // (plan "side talks in the Room, and remember this") — a side talk of a
+        // task card or a seed has nothing to step out of.
+        if(e.type === 'open' && typeof roomSel !== 'undefined' && e.convoId === roomSel && typeof roomSideCreate === 'function'){
+          // Selecting several passages before clicking Aside carries them all —
+          // the same e.quotes accumulation Quote already does. Aside takes
+          // whatever is already queued for the main composer and redirects it
+          // into the new side talk instead, rather than sending it to the main
+          // thread — so it also clears e.quotes once it has them.
+          mk('fork', 'Aside', 'Open a side talk about this, without touching this thread', function(){
+            if(!e.quotes) e.quotes = [];
+            e.quotes.push({ text: passage, msgId: msgId || null });
+            var quotes = e.quotes.slice();
+            var question = 'What should I understand this as?';
+            roomSideCreate({ starter: { text: withQuote({ quotes: quotes }, question), body: question, quotes: quotes } });
+            e.quotes = [];
+            saveDraft(e);
+            repaint();
+          });
+          mk('bulb', 'Remember', 'Understand what this points at, and choose where it goes', function(){
+            roomRememberOffer(e.convoId, msgId, passage);
+          });
+        }
         document.body.appendChild(quotePop);
         placeQuotePop();
       }, settleMs);
@@ -21726,6 +21916,58 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); });
   }
 
+  // "Remember this" (plan "side talks in the Room, and remember this"): ask the
+  // model what a selected passage is an instance OF, then let him choose where it
+  // lands — never decided for him. One card on screen at a time.
+  var ROOM_MIND_KINDS = [['about','About him'],['taste','Taste'],['decision','Decision'],['project','Project'],['person','Person'],['style','Style'],['vision','Vision — the paradigm itself']];
+  var rememberPop = null;
+  function killRememberPop(){ if(rememberPop && rememberPop.parentNode) rememberPop.parentNode.removeChild(rememberPop); rememberPop = null; }
+  function roomRememberOffer(convoId, msgId, passage){
+    killRememberPop();
+    var card = document.createElement('div');
+    card.className = 'se-remember-pop';
+    card.innerHTML = '<div class="se-remember-text">Working out what to remember…</div>';
+    document.body.appendChild(card);
+    rememberPop = card;
+    apiWrite('/api/convos/' + convoId + '/remember', 'POST', { passage: passage, messageId: msgId || null })
+      .then(function(out){
+        if(rememberPop !== card) return; // closed, or superseded, while this was in flight
+        if(!out || out.error || !out.text){
+          card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
+            + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
+        } else {
+          var kindOpts = ROOM_MIND_KINDS.map(function(k){ return '<option value="' + k[0] + '"' + (k[0] === out.kind ? ' selected' : '') + '>' + k[1] + '</option>'; }).join('');
+          card.innerHTML = '<div class="se-remember-kind">Remember as <select id="remKindPick">' + kindOpts + '</select></div>'
+            + '<div class="se-remember-text">' + qEsc(out.text) + '</div>'
+            + (out.detail ? '<div class="se-remember-detail">' + qEsc(out.detail) + '</div>' : '')
+            + '<div class="se-remember-acts"><button type="button" data-rem-drop="1">Drop</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
+          var saveBtn = card.querySelector('[data-rem-save]');
+          saveBtn.onclick = function(){
+            saveBtn.disabled = true;
+            var kind = card.querySelector('#remKindPick').value;
+            apiWrite('/api/mind', 'POST', { kind: kind, text: out.text, detail: out.detail || null })
+              .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); })
+              .catch(function(){})
+              .then(killRememberPop);
+          };
+        }
+        var closeBtn = card.querySelector('[data-rem-close]');
+        var dropBtn = card.querySelector('[data-rem-drop]');
+        if(closeBtn) closeBtn.onclick = killRememberPop;
+        if(dropBtn) dropBtn.onclick = killRememberPop;
+      })
+      .catch(function(){
+        if(rememberPop !== card) return;
+        card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
+          + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
+        var closeBtn = card.querySelector('[data-rem-close]');
+        if(closeBtn) closeBtn.onclick = killRememberPop;
+      });
+  }
+  document.addEventListener('mousedown', function(ev){
+    if(rememberPop && !rememberPop.contains(ev.target)) killRememberPop();
+  }, true);
+
   // The carried passage, folded into the message actually sent. Quoted rather than
   // pasted invisibly, so the transcript still reads as a conversation afterwards —
   // and so the model is told which part of its own answer is being asked about.
@@ -21797,7 +22039,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       };
     });
     log.querySelectorAll('[data-se-fork]').forEach(function(b){
-      b.onclick = function(ev){ ev.stopPropagation(); forkFromMessage(e, b.getAttribute('data-se-fork'), function(){ if(host.isConnected) fillEmbed(host, e, opts); }); };
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var messageId = b.getAttribute('data-se-fork');
+        var repaintFork = function(){ if(host.isConnected) fillEmbed(host, e, opts); };
+        // The second choice (plan "side talks in the Room, and remember this")
+        // only makes sense on the Room's own main thread — a side talk of a task
+        // card's own conversation has no Room pane to open into.
+        if(e.type === 'open' && typeof roomSel !== 'undefined' && e.convoId === roomSel
+           && typeof window.openMenu === 'function' && typeof forkFromMessageToSide === 'function'){
+          window.openMenu(b, [
+            { label: 'Branch into a new thread', on: function(){ forkFromMessage(e, messageId, repaintFork); } },
+            { label: 'Branch into a side talk', on: function(){ forkFromMessageToSide(e, messageId, repaintFork); } },
+          ]);
+          return;
+        }
+        forkFromMessage(e, messageId, repaintFork);
+      };
     });
     var retry = log.querySelector('[data-se-retry]');
     if (retry) retry.onclick = function(ev){

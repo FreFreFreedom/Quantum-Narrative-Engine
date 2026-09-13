@@ -243,7 +243,9 @@ const _inFlight = new Set();
 export function analogyLook(convoId) {
   if (!convoId || _inFlight.has(convoId)) return;
   const convo = getConvo(convoId);
-  if (!convo) return;
+  // A side talk is itself the small conversation beside the Room — it does not
+  // get a second one of its own beside IT.
+  if (!convo || convo.subject_type === 'side') return;
   const steer = getSteer(convoId);
   if (steer.when === 'asked') return;          // he turned the unasked pass off
   const seen = convo.analogy_seen_turns || 0;
