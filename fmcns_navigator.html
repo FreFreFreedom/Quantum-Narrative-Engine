@@ -1436,6 +1436,9 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-acts button:hover { text-decoration:underline; }
 .room-ana-mine { font-family:var(--room-font); font-size:var(--fs-sm); background:var(--c-surface-2);
   border-radius:var(--r-sm); padding:7px 9px; margin:12px 0 0; }
+.room-ana-progress { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--c-ink-4); font-size:var(--fs-xs); background:none; border:1px solid var(--c-border); margin-top:6px; }
+.room-ana-progress .room-ana-acts { margin:0; }
+.room-ana-progress .room-ana-acts button { color:var(--c-accent); }
 .room-ana-ask { display:flex; gap:6px; align-items:center; margin-top:11px; }
 .room-ana-ask .searchbox { flex:1; min-width:0; }
 /* The line an unasked arrival is pinned to. A dot in the gutter, not a band. */
@@ -10511,8 +10514,7 @@ function roomIdeaIsOpen(id, idx) { return id in roomIdeasState.open ? !!roomIdea
    the Room's composer using the same carried-quote chip a kept passage already
    uses, and never sends. Nothing here writes into the thread. */
 let roomAna = { steer: null, items: [] };
-let roomAnaBusy = false;
-const ROOM_ANA_MOVES = ['vertical', 'horizontal', 'entanglement', 'antidote', 'counterpart'];
+let roomAnaAsking = false; // true only while an ask is in flight, not while a request generates in the background
 
 function roomAnaCards() { return (roomAna.items || []).filter(i => i.card); }
 
@@ -10523,7 +10525,6 @@ async function loadRoomAnalogies() {
     const out = await api('/api/convos/' + encodeURIComponent(want) + '/analogies');
     if (roomSel !== want) return;   // a different thread was picked mid-flight
     roomAna = { steer: out.steer || null, items: out.items || [] };
-    roomAnaBusy = !!out.running;
   } catch (e) { if (roomSel === want) roomAna = { steer: null, items: [] }; }
   renderRoomAnalogies();
 }
@@ -10539,31 +10540,36 @@ async function roomAnaSteer(patch) {
   renderRoomAnalogies();
 }
 
-function roomAnaToggleMove(move) {
-  const cur = ((roomAna.steer && roomAna.steer.moves) || []).slice();
-  const i = cur.indexOf(move);
-  if (i >= 0) cur.splice(i, 1); else cur.push(move);
-  // Empty means "the defaults" on the server, which is not what an all-off click
-  // means here — so the last one standing cannot be switched off.
-  if (!cur.length) return;
-  roomAnaSteer({ moves: cur });
-}
-
+// He can ask for any number, any subject, in plain language — there is nothing
+// left to steer with buttons. The request is generated in the background over
+// several batches, so the box stays usable while it fills (loadRoomAnalogies is
+// re-run on every 'analogies:updated' broadcast, which is what shows the cards
+// landing).
 async function roomAnaAsk(text) {
   const q = String(text || '').trim();
-  if (!q || !roomSel || roomAnaBusy) return;
+  if (!q || !roomSel || roomAnaAsking) return;
   const want = roomSel;
-  roomAnaBusy = true;
-  // Show his question straight away — he is waiting on this one, unlike the
-  // unasked pass, and a pane that sits blank for twenty seconds reads as broken.
-  roomAna.items = (roomAna.items || []).concat([{ id: 'pending', role: 'user', text: q, card: null }]);
+  roomAnaAsking = true;
+  roomAna.items = (roomAna.items || []).concat([{ id: 'pending', role: 'user', text: q, card: null, request: { status: 'queued', requested_count: null, delivered_count: 0 } }]);
   renderRoomAnalogies();
-  try {
-    const out = await apiWrite('/api/convos/' + encodeURIComponent(want) + '/analogies/ask', 'POST', { text: q });
-    if (roomSel === want) roomAna = { steer: out.steer || roomAna.steer, items: out.items || roomAna.items };
-  } catch (e) { if (roomSel === want) loadRoomAnalogies(); }
-  roomAnaBusy = false;
-  renderRoomAnalogies();
+  try { await apiWrite('/api/convos/' + encodeURIComponent(want) + '/analogies/ask', 'POST', { text: q }); }
+  catch (e) { /* the pending row above still shows what he asked */ }
+  roomAnaAsking = false;
+  if (roomSel === want) loadRoomAnalogies();
+}
+
+async function roomAnaResume(requestId) {
+  if (!roomSel || !requestId) return;
+  try { await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/analogies/requests/' + encodeURIComponent(requestId) + '/resume', 'POST', {}); }
+  catch (e) {}
+  loadRoomAnalogies();
+}
+
+async function roomAnaCancel(requestId) {
+  if (!roomSel || !requestId) return;
+  try { await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/analogies/requests/' + encodeURIComponent(requestId) + '/cancel', 'POST', {}); }
+  catch (e) {}
+  loadRoomAnalogies();
 }
 
 // Carry one arrival into the Room's composer: a chip above the box naming what
@@ -10603,31 +10609,39 @@ function roomAnaMarkTurns() {
   });
 }
 
+function roomAnaRequestLine(req) {
+  if (!req) return '';
+  if (req.status === 'complete') return '';
+  const count = req.requested_count == null ? '…' : req.requested_count;
+  let line = req.delivered_count + ' of ' + count + ' so far';
+  let action = '';
+  if (req.status === 'paused') { line = 'paused at ' + req.delivered_count + ' of ' + count; action = '<button type="button" data-ana-resume="' + qEsc(req.id) + '">resume</button>'; }
+  else if (req.status === 'cancelled') { line = 'stopped at ' + req.delivered_count + ' of ' + count; }
+  else if (req.status === 'queued' || req.status === 'running') { action = '<button type="button" data-ana-cancel="' + qEsc(req.id) + '">stop</button>'; }
+  return '<div class="room-ana-mine room-ana-progress">' + qEsc(line) + (action ? '<span class="room-ana-acts">' + action + '</span>' : '') + '</div>';
+}
+
 function renderRoomAnalogies() {
   const host = document.getElementById('roomAnalogiesHost');
   if (!host) return;
   const cards = roomAnaCards();
   setRoomTabCount('roomAnaCount', cards.length);
   if (!roomSel) { host.innerHTML = ''; return; }
-  const steer = roomAna.steer || { moves: ['vertical', 'horizontal', 'entanglement'], reach: 'anywhere', when: 'pause' };
-  const on = (m) => (steer.moves || []).indexOf(m) >= 0 ? ' on' : '';
+  const steer = roomAna.steer || { when: 'pause' };
 
   let html = '<div class="room-ana-steer">'
-    + ROOM_ANA_MOVES.map(m => '<button type="button" class="room-ana-chip' + on(m) + '" data-ana-move="' + m + '">' + m + '</button>').join('')
-    + '<button type="button" class="room-ana-chip' + (steer.reach === 'anywhere' ? ' on' : '') + '" data-ana-reach="1"'
-    + ' title="Where it may look">' + (steer.reach === 'anywhere' ? 'anywhere' : 'only here') + '</button>'
     + '<button type="button" class="room-ana-chip' + (steer.when === 'asked' ? '' : ' on') + '" data-ana-when="1"'
     + ' title="Whether it speaks without being asked">' + (steer.when === 'asked' ? 'only when asked' : 'as you talk') + '</button>'
     + '</div>';
 
-  if (!roomAna.items.length && !roomAnaBusy) {
-    html += '<div class="tv-empty">Nothing yet. Keep talking, or ask below.</div>';
+  if (!roomAna.items.length) {
+    html += '<div class="tv-empty">Nothing yet. Keep talking, or ask below for as many as you want.</div>';
   }
   html += (roomAna.items || []).map((it, idx) => {
-    if (!it.card) return '<div class="room-ana-mine">' + qEsc(it.text) + '</div>';
+    if (!it.card) return (qEsc(it.text) ? '<div class="room-ana-mine">' + qEsc(it.text) + '</div>' : '') + roomAnaRequestLine(it.request);
     const c = it.card;
     return '<div class="room-ana-item">'
-      + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + ' · ' + qEsc(c.move) + '</div>'
+      + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + '</div>'
       + '<h4>' + qEsc(c.title) + '</h4>'
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
       + '<div class="room-ana-acts">'
@@ -10636,18 +10650,14 @@ function renderRoomAnalogies() {
       + '</div></div>';
   }).join('');
 
-  if (roomAnaBusy) html += '<div class="tv-empty">Looking…</div>';
   if (cards.length > 1) html += '<div class="room-ana-acts"><button type="button" data-ana-bringall="1">↑ bring all of them</button></div>';
   html += '<div class="room-ana-ask">'
-    + '<input class="searchbox" id="roomAnaInput" placeholder="Ask for another kind…" autocomplete="off"'
-    + (roomAnaBusy ? ' disabled' : '') + '>'
-    + '<button type="button" class="ubtn ubtn--pill" id="roomAnaSend"' + (roomAnaBusy ? ' disabled' : '') + '>Ask</button>'
+    + '<input class="searchbox" id="roomAnaInput" placeholder="Ask for any number, about anything…" autocomplete="off"'
+    + (roomAnaAsking ? ' disabled' : '') + '>'
+    + '<button type="button" class="ubtn ubtn--pill" id="roomAnaSend"' + (roomAnaAsking ? ' disabled' : '') + '>Ask</button>'
     + '</div>';
   host.innerHTML = html;
 
-  host.querySelectorAll('[data-ana-move]').forEach(b => { b.onclick = () => roomAnaToggleMove(b.getAttribute('data-ana-move')); });
-  const reach = host.querySelector('[data-ana-reach]');
-  if (reach) reach.onclick = () => roomAnaSteer({ reach: steer.reach === 'anywhere' ? 'here' : 'anywhere' });
   const when = host.querySelector('[data-ana-when]');
   if (when) when.onclick = () => roomAnaSteer({ when: steer.when === 'asked' ? 'pause' : 'asked' });
   host.querySelectorAll('[data-ana-bring]').forEach(b => {
@@ -10665,6 +10675,8 @@ function renderRoomAnalogies() {
   });
   const all = host.querySelector('[data-ana-bringall]');
   if (all) all.onclick = roomAnaBringAll;
+  host.querySelectorAll('[data-ana-resume]').forEach(b => { b.onclick = () => roomAnaResume(b.getAttribute('data-ana-resume')); });
+  host.querySelectorAll('[data-ana-cancel]').forEach(b => { b.onclick = () => roomAnaCancel(b.getAttribute('data-ana-cancel')); });
   const input = host.querySelector('#roomAnaInput');
   const send = host.querySelector('#roomAnaSend');
   const fire = () => { if (input) { const v = input.value; input.value = ''; roomAnaAsk(v); } };
@@ -11009,7 +11021,7 @@ function roomSelect(id) {
   // Reset before renderRoom() paints, so the outgoing thread's rounds never flash
   // under the newly-selected one while loadRoomIdeas() is still in flight.
   roomIdeasReports = []; roomIdeasRunning = false;
-  roomAna = { steer: null, items: [] }; roomAnaBusy = false;
+  roomAna = { steer: null, items: [] }; roomAnaAsking = false;
   roomExtractStatus = null; roomExtractChunks = [];
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');

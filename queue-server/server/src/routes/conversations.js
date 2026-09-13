@@ -162,13 +162,26 @@ export function conversationsRoutes() {
     res.json(analogies.listAnalogies(req.params.id));
   });
 
-  // His own question into the side pane. Answers inline — he is waiting on it,
-  // unlike the unasked pass which is fire-and-forget.
-  router.post('/:id/analogies/ask', asyncHandler(async (req, res) => {
-    const out = await analogies.askAnalogies(req.params.id, req.body?.text);
+  // His own question into the side pane. A durable request is created and
+  // answered right away with 202 — the actual generation runs in the background
+  // in batches, so the ask box stays usable and a second ask can queue behind it.
+  router.post('/:id/analogies/ask', (req, res) => {
+    const out = analogies.askAnalogies(req.params.id, req.body?.text);
     if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
-    res.json({ ...out, ...analogies.listAnalogies(req.params.id) });
-  }));
+    res.status(202).json(out);
+  });
+
+  router.post('/:id/analogies/requests/:requestId/resume', (req, res) => {
+    const out = analogies.resumeRequest(req.params.id, req.params.requestId);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  router.post('/:id/analogies/requests/:requestId/cancel', (req, res) => {
+    const out = analogies.cancelRequest(req.params.id, req.params.requestId);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
 
   router.patch('/:id/analogies/steer', (req, res) => {
     const out = analogies.setSteer(req.params.id, req.body || {});

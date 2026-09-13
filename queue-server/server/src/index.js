@@ -56,7 +56,7 @@ import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaSched
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
-import { bindRoomAnalogiesDb } from './services/roomAnalogies.js';
+import { bindRoomAnalogiesDb, resumeAllStrayRequests } from './services/roomAnalogies.js';
 import { passagesRoutes } from './routes/passages.js';
 import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
@@ -126,6 +126,7 @@ bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
 bindRoomAnalogiesDb(db);
+try { resumeAllStrayRequests(); } catch (e) { console.error('[room] analogy request resume failed:', e?.message || e); }
 bindPassagesDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);
