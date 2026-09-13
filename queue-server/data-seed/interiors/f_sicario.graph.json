@@ -1,0 +1,2629 @@
+{
+  "entity": "f_sicario",
+  "source": "data-seed/scripts/f_sicario.txt",
+  "scope": "the whole script, machine-extracted (32 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOM",
+      "quote": "Kate. I can see it.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Like I said, rough day.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOM",
+      "quote": "What a waste of a law degree, Kate.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Who came to the party?",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "No.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "MOM",
+      "quote": "You look tired.",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "Know what's going on?",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "No idea.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY (CONT'D)",
+      "quote": "I need coffee.",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "We did this by the book, right?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Come on ... Of course.",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY (CONT'D)",
+      "quote": "Jesus.",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "What?(Turns around) Oh shit.",
+      "block": 13
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PHIL",
+      "quote": "Would you step in here, Kate?",
+      "block": 14
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "What do you know about his brother?",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Um ... Wasn't aware he had one.",
+      "block": 16
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "BURNETT",
+      "quote": "His cousin is Fausto Alarcon.",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "I don't know who that is.",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Number three in the Sinaloa Cartel.",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "None of this is in his file.",
+      "block": 20
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "BURNETT",
+      "quote": "With good reason.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Loose lips sink ships, Kate.",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "I'm not --",
+      "block": 23
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNINGS",
+      "quote": "Agent Macy doesn't work narcotics,\n                    she runs a kidnapping response\n                    team.",
+      "block": 24
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "You married?",
+      "block": 25
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "I'm sorry?",
+      "block": 26
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Husband?",
+      "block": 27
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Divorced.",
+      "block": 28
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Kids?",
+      "block": 29
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "No. He works for Border Patrol and\n                    got to keep the condo and my\n                    Bronco, anything else?",
+      "block": 30
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SILVIO",
+      "quote": "No.",
+      "block": 31
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "SILVIO",
+      "quote": "No.",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PHIL",
+      "quote": "Thank you Kate, if you could wait\n                    outside, please.",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "PHIL",
+      "quote": "Will you come in, Kate?",
+      "block": 34
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNINGS",
+      "quote": "DOJ wants advisors that focus on\n                    cartels involved in pursuing Mr.\n                    Diaz. This is Matt Graves. He'll be\n                                   LEADING --",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "He'll be leading who? This is\n                    Phoenix Homicide now.",
+      "block": 36
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "We're expanding the scope of the\n                    investigation.",
+      "block": 37
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "PHIL",
+      "quote": "You'll act as a liaison.",
+      "block": 38
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "What does that mean?",
+      "block": 39
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "PHIL",
+      "quote": "State Department is pulling an\n                    agent from the field that\n                    specializes in responding to\n                    escalated cartel activity. You'll\n                    meet up with them...(To Matt) at\n                    Luke, Tomorrow?",
+      "block": 40
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Day after. Early.",
+      "block": 41
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Luke ... Air Force base?",
+      "block": 42
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Gonna go see Guillermo.",
+      "block": 43
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "His brother.",
+      "block": 44
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "That's the one.",
+      "block": 45
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Okay... If I, umm... What's our\n                    objective?",
+      "block": 46
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Why isn't Reggie in here?",
+      "block": 47
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "He's a little green. You've been\n                    kicking doors longer.",
+      "block": 48
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Makes you feel better to have him\n                    around, he can tag along after we\n                    get back from El Paso.",
+      "block": 49
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "JENNINGS",
+      "quote": "Kate. You must volunteer for an\n                    interagency task force... Think\n                    very hard before you respond ...\n                    You want to be a part of this?",
+      "block": 50
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "We get an opportunity at the men\n                    responsible for today?",
+      "block": 51
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "The men who are REALLY responsible.",
+      "block": 52
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "MACY",
+      "quote": "Then yeah, sure. I'll volunteer.",
+      "block": 53
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOY'S VOICE",
+      "quote": "Papa?",
+      "block": 54
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOY'S VOICE",
+      "quote": "Despirtate.",
+      "block": 55
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "BOY'S VOICE",
+      "quote": "Si.",
+      "block": 56
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So... that's it then?",
+      "block": 57
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It is the Colonel.",
+      "block": 58
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We'll get to that...",
+      "block": 59
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why so many?",
+      "block": 60
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where are we going?",
+      "block": 61
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "To keep my promise.",
+      "block": 62
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What did they do?",
+      "block": 63
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Thank you.",
+      "block": 64
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You're back tonight?",
+      "block": 65
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah.",
+      "block": 66
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm supposed to worry about you.",
+      "block": 67
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This isn't what we do, Kate.",
+      "block": 68
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Kate.",
+      "block": 69
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We do what we need to do.",
+      "block": 70
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "neu",
+      "cue": null,
+      "quote": "(To Reggie) You're not on here.",
+      "block": 71
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know. What's she supposed to do?",
+      "block": 72
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Walk.",
+      "block": 73
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This way.",
+      "block": 74
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Am I late?",
+      "block": 75
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No. We just landed.",
+      "block": 76
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Kate Macy.",
+      "block": 78
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Have you been to Juarez before?",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We're taking this?",
+      "block": 80
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Really... Okay...",
+      "block": 81
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Ever been over there?",
+      "block": 82
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALEJANDRO",
+      "quote": "I worked in Juarez.",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "For the DEA?",
+      "block": 84
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": "ALEJANDRO",
+      "quote": "No.",
+      "block": 85
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": "ALEJANDRO",
+      "quote": "No.",
+      "block": 86
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "For who?",
+      "block": 87
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALEJANDRO",
+      "quote": "Mexico. As a federal prosecutor.",
+      "block": 88
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "You're not American?",
+      "block": 89
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Who do you work for now?",
+      "block": 90
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALEJANDRO",
+      "quote": "I go where I'm sent.",
+      "block": 91
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Where were you sent FROM?",
+      "block": 92
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALEJANDRO",
+      "quote": "Cartagena.",
+      "block": 93
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "... Colombia?",
+      "block": 94
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "MATT",
+      "quote": "Try it on.",
+      "block": 95
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Well?",
+      "block": 96
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "MATT",
+      "quote": "He's a DOD advisor, just like me.",
+      "block": 97
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "I'm not authorized to --",
+      "block": 98
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "MATT",
+      "quote": "Fine. Stay here.",
+      "block": 99
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "MATT",
+      "quote": "But you don't want to, do you?",
+      "block": 100
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "You asked to get on this train.",
+      "block": 101
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Because you KNOW you're not",
+      "block": 102
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "stopping anything in Phoenix.",
+      "block": 103
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "You're just sweeping up the mess.",
+      "block": 104
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "In six months, every house you raid",
+      "block": 105
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "will be rigged with explosives...",
+      "block": 106
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "You want to find the men",
+      "block": 107
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "responsible? This is where we",
+      "block": 108
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "start.",
+      "block": 109
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "So how nervous should I be?",
+      "block": 110
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": "AGENT",
+      "quote": "Are you kidding?",
+      "block": 111
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "AGENT",
+      "quote": "Over there? That's the beast.",
+      "block": 112
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "JUST... Give me a minute.",
+      "block": 113
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Yeah. That got a little nutty, huh?",
+      "block": 114
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Hey. I told you to stay here...",
+      "block": 115
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEVE",
+      "quote": "You wanna get cracking?",
+      "block": 116
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUILLERMO",
+      "quote": "NO HABLO-",
+      "block": 117
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUILLERMO",
+      "quote": "El Medellin.",
+      "block": 118
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Alejandro, he remembers you.",
+      "block": 119
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "DEA AGENT",
+      "quote": "I'm gonna step out.",
+      "block": 120
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Hey. Got another one of those?",
+      "block": 121
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Been a while. Thanks.",
+      "block": 122
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "Like fireworks?",
+      "block": 123
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "Come here.",
+      "block": 124
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "Up to you.",
+      "block": 125
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Fireworks is code for something, I\n                    assume.",
+      "block": 126
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "Sort of.",
+      "block": 127
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA (CONT'D)",
+      "quote": "Here we go.",
+      "block": 128
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA (CONT'D)",
+      "quote": "Look right there.",
+      "block": 129
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA (CONT'D)",
+      "quote": "Keep looking.",
+      "block": 130
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "I don't hear anything.",
+      "block": 131
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "Can't. Too far away. Keep looking.\n                    They're everywhere.",
+      "block": 132
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Unbelievable.",
+      "block": 133
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "Madness, huh.",
+      "block": 134
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "Can they get them all in one place?\n                    No... I'm on a clock now, I can't\n                    wait... No, contact Bob Fiske. Have\n                    him hold all of them at the staging\n                    center.( Turns to Macy) How far is\n                    Tuscon?",
+      "block": 135
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "From here? Little over two hours.",
+      "block": 136
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "We'll be there a little after 2.",
+      "block": 137
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "We're going to Tucson?",
+      "block": 138
+    },
+    {
+      "speaker": "p5",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "You gotta learn how to sleep on a\n                    plane.",
+      "block": 139
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "They let me on the base when this\n                    peckerwood needs a ride, don't\n                    they?",
+      "block": 140
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "REGGIE-",
+      "block": 141
+    },
+    {
+      "speaker": "p5",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "(Pleasant as can be) Has nothing to\n                    do with your race. I just don't\n                    believe you're good enough at your\n                    job yet to be of any use. Kate's\n                    sure fond of you, though.",
+      "block": 142
+    },
+    {
+      "speaker": "p3",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "Thanks, man. I feel much better\n                    now.",
+      "block": 143
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE (CONT'D)",
+      "quote": "Who's that.",
+      "block": 144
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "We're going to Tucson.",
+      "block": 145
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE (O.S.)",
+      "quote": "Now?",
+      "block": 146
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "REGGIE (CONT'D)",
+      "quote": "Hey... How was it?",
+      "block": 147
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Bad.",
+      "block": 148
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "What happened?",
+      "block": 149
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "Now's not the time.",
+      "block": 150
+    },
+    {
+      "speaker": "p18",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "What's the deal, Matt? Why you\n                    holding up my transports?",
+      "block": 151
+    },
+    {
+      "speaker": "p5",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "We'll be quick.",
+      "block": 152
+    },
+    {
+      "speaker": "p18",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "I have to feed these bastards when\n                    we hold em. Know how an internal\n                    auditor responds to an eight\n                    thousand dollar check to fucking\n                    Domino's Pizza?",
+      "block": 153
+    },
+    {
+      "speaker": "p5",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "You're so dramatic, Bob. This is\n                    Kate Macy with the FBI, and her\n                    partner `what's his name'... It was\n                    her call.",
+      "block": 154
+    },
+    {
+      "speaker": "p2",
+      "to": "p18",
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "I don't even know what we're doing\n                    here. (Pointing to his cigarette)\n                    Got another one of those?",
+      "block": 155
+    },
+    {
+      "speaker": "p18",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BOB",
+      "quote": "Finish it before we get inside.",
+      "block": 156
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Yeah, baby.",
+      "block": 157
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know him.",
+      "block": 158
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who?",
+      "block": 159
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He's Phoenix PD.",
+      "block": 160
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "HEY! TED!",
+      "block": 161
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What do you got there man?",
+      "block": 162
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I rode tonight.",
+      "block": 163
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A bull? No shit?",
+      "block": 164
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah. Were you watching?",
+      "block": 165
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah.",
+      "block": 166
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "For a minute, how'd you do?",
+      "block": 167
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Sit down, man.",
+      "block": 168
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Anything, man.",
+      "block": 169
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Married?",
+      "block": 170
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "All yours. In my basketball league.",
+      "block": 171
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Good guy?",
+      "block": 172
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah... Thanks.",
+      "block": 173
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know where this is going --",
+      "block": 174
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Don't give me any ideas.",
+      "block": 175
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Okay.",
+      "block": 176
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Scuse us. We're just gonna...",
+      "block": 177
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Mmhmm.",
+      "block": 178
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Take a look around back.",
+      "block": 179
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Watch my bag.",
+      "block": 180
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "What am I -- Uhh.",
+      "block": 181
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "Let's see...",
+      "block": 182
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "GIRL",
+      "quote": "Did you two plan this??",
+      "block": 183
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "Got a cell phone?",
+      "block": 184
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "GIRL",
+      "quote": "Yeah... What?",
+      "block": 185
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "What are you doing???",
+      "block": 186
+    },
+    {
+      "speaker": "p19",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "TED",
+      "quote": "Reggie... pull up my pants for me?",
+      "block": 187
+    },
+    {
+      "speaker": "p3",
+      "to": "p19",
+      "stance": "opp",
+      "cue": "REGGIE",
+      "quote": "FUCK YOU.",
+      "block": 188
+    },
+    {
+      "speaker": "p2",
+      "to": "p7",
+      "stance": "opp",
+      "cue": "MACY",
+      "quote": "No.",
+      "block": 189
+    },
+    {
+      "speaker": "p2",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "MACY",
+      "quote": "Thank you, Dave.",
+      "block": 190
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    What. What. What's he saying?",
+      "block": 191
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE",
+      "quote": "                    Um. Hold on... They called him\n                    back. He's on the road now.",
+      "block": 192
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    Where.",
+      "block": 193
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE",
+      "quote": "                    Turning left on Scottsdale. You got\n                    about three hours and he'll be\n                    across.",
+      "block": 194
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    We're gonna have to hit the tunnel\n                    the minute we get on the ground.",
+      "block": 195
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT (CONT'D)",
+      "quote": "                    Pretty exciting, huh?",
+      "block": 196
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    On foot from here.",
+      "block": 197
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "                    Keep your fucking safeties on and\n                    the barrels pointed down. Stay in\n                    the back and don't shoot anyone on\n                    my fucking team, got it?",
+      "block": 198
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "REGGIE",
+      "quote": "                    We HAVE done this before.",
+      "block": 199
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACY",
+      "quote": "                    I don't think we've done THIS.",
+      "block": 200
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "                    Rules of engagement on this deal?",
+      "block": 201
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "                    I don't use those. Ask Matt.",
+      "block": 202
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "                    Rules of engagement?",
+      "block": 203
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    Weapons free, my friend.",
+      "block": 204
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT (CONT'D)",
+      "quote": "                    (Into mouthpiece) Where is the\n                    target?",
+      "block": 205
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE",
+      "quote": "                    Bout twenty minutes to the border.",
+      "block": 206
+    },
+    {
+      "speaker": "p5",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    (To Delta)We need to boogie. And we\n                    need to do it quiet till we find\n                    the center.",
+      "block": 207
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "DELTA",
+      "quote": "                    (whispers) So we're clear, I don't\n                    need to announce. Weapons free.",
+      "block": 208
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MATT",
+      "quote": "                    They don't get freer buddy.",
+      "block": 209
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "                    Take the left shaft ... Make noise.",
+      "block": 210
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Afuera del carro!!",
+      "block": 211
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "This mother fucker...",
+      "block": 212
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Levanta su camisa.",
+      "block": 213
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You know who I am? HUH??",
+      "block": 214
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Tira la pistola en la tierra.",
+      "block": 215
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Walk back to your car.",
+      "block": 216
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who was he?",
+      "block": 217
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A mule. Like you.",
+      "block": 218
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get in.",
+      "block": 219
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Drive.",
+      "block": 220
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This is what they think of you. You\n                    see?",
+      "block": 221
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Maybe you have enough pride that\n                    you don't marry another one of\n                    these. Maybe you take his money and\n                    go hide and raise your children far\n                    from here. Maybe your son grows up\n                    to be a doctor. And I don't have to\n                    come back and kill him some day.",
+      "block": 222
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mama?",
+      "block": 223
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Three days ago I hadn't had you in\n                    ten years... fucker.",
+      "block": 224
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "(Half joking) You're the only one\n                    who understands me.",
+      "block": 225
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I think maybe, it will be the thing\n                    that kills us all ... as a people,\n                    you know?",
+      "block": 226
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Stop it.",
+      "block": 227
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "That will scar. I'm sorry.",
+      "block": 228
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Please.",
+      "block": 229
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Let me look ... Move your hand.",
+      "block": 230
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "These ribs are bruised, but not\n                    broken, yes?",
+      "block": 231
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I would recommend not standing on\n                    balconies for a little while.",
+      "block": 232
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "You're an assassin.",
+      "block": 233
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "In Mexico, the killers are called\n                    Sicarios... The word comes from the\n                    zealots of Jerusalem. Killers who\n                    hunted the Romans that invaded\n                    their homeland... They don't\n                    deserve the term.",
+      "block": 234
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "You are a Sicario.",
+      "block": 235
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Policing them does nothing. They\n                    must be killed. Wherever they are\n                    found. They will make every place\n                    they touch Juarez. Now ... Now you\n                    understand how far we have fallen.",
+      "block": 236
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You look like a girl when you're\n                    scared. Such beauty in you when you\n                    let yourself be frail. Like the\n                    daughter they took from me ... This\n                    is not the work for you. Look at\n                    yourself, Kate. What it has done to\n                    you in just three days ... Find a\n                    little town far from the border. A\n                    place where the rule of law still\n                    exists. You will spot predators\n                    there very easy now... Make a\n                    difference you can see everyday.\n                    Because you will not survive here.\n                    You are not a wolf. This is the\n                    land of wolves now.",
+      "block": 237
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "We like to think if we cut the head",
+      "block": 238
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "from the snake, the serpent will",
+      "block": 239
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "die...",
+      "block": 240
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "But there is no snake. They are",
+      "block": 241
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "worms. When you cut the head, a new",
+      "block": 242
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "one grows. From both segments ...",
+      "block": 243
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "We cannot question if the end",
+      "block": 244
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "justifies the means because there",
+      "block": 245
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "is no end to consider...",
+      "block": 246
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "This is the price of our self",
+      "block": 247
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "indulgence. Our weakness ... Our",
+      "block": 248
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "appetite. They are our demons, our",
+      "block": 249
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO (V.O.)",
+      "quote": "creation.",
+      "block": 250
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "There is a moment in each person's",
+      "block": 251
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "life. A choice. Do what feels",
+      "block": 252
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "good... Do what is good. Make the",
+      "block": 253
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "wrong choice enough, and it is not",
+      "block": 254
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "presented again... then all choices",
+      "block": 255
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "are bad. And the consequences",
+      "block": 256
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "worse. There is no war on drugs.",
+      "block": 257
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "Only war. The enemy we fight?",
+      "block": 258
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALEJANDRO",
+      "quote": "Ourselves ...",
+      "block": 259
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p5",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p2",
+        "weight": 20,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 4,
+          "neu": 12
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p17",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p22",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p2",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p5",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p5",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p3",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 1,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p2",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 21,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 20
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p5",
+        "weight": 36,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 2,
+          "neu": 32
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p5",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p5",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 23 given"
+  }
+}
