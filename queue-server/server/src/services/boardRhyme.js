@@ -73,6 +73,15 @@ function firstJson(text) {
   return null;
 }
 
+function labelled(text) {
+  const t = String(text || '');
+  const line = t.match(/^\s*LINE:\s*(.+)$/im);
+  const why = t.match(/^\s*WHY:\s*(.+)$/im);
+  if (!line || !why) return null;
+  const strip = (v) => v.trim().replace(/^["“']|["”']$/g, '').trim();
+  return { passage: strip(line[1]), why: strip(why[1]) };
+}
+
 function buildPrompt({ material, transcript, hasImage }) {
   const seeing = hasImage
     ? 'You can SEE the picture that was kept, attached below. It is evidence for your answer, not the subject of it.'
@@ -95,8 +104,9 @@ Hard rules:
 - The "why" is one short sentence about what holds between the line and what is actually happening in the frame — a gesture, the distance between two bodies, who is turned away, what the light is doing — never what either one looks like or is titled.
 - Plain, short words. No jargon.
 
-Respond with ONLY this JSON and nothing else:
-{"passage":"the quoted line from the conversation","why":"one short sentence on what holds between them"}`;
+Answer in exactly two lines, nothing before or after:
+LINE: the quoted line from the conversation
+WHY: one short sentence on what holds between them`;
 }
 
 export async function rhymeFor(cardId) {
@@ -125,7 +135,10 @@ export async function rhymeFor(cardId) {
     return { error: out?.error || 'no_text' };
   }
 
-  const parsed = firstJson(out.text);
+  // Two labelled lines, with the old JSON still accepted. The free lane wraps JSON
+  // in chatter often enough that a strict reader threw away good answers — seen
+  // live 2026-09-13, the model narrating mid-object.
+  const parsed = firstJson(out.text) || labelled(out.text);
   const passage = String(parsed?.passage || '').trim().slice(0, 500);
   const why = String(parsed?.why || '').trim().slice(0, 400);
   if (!passage || !why) {
