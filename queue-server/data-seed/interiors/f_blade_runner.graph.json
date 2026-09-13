@@ -1,0 +1,1563 @@
+{
+  "entity": "f_blade_runner",
+  "source": "data-seed/scripts/f_blade_runner.txt",
+  "scope": "the whole script, machine-extracted (26 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  Choose from a variety of seventy",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  nine different personality types.",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  Each and every one a loyal trouble-",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  free companion given to you upon",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  your arrival absolutely free...",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  To use as personal body servant",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  to tireless field hand -- the",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  custom tailored humanoid robot,",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  designed especially for your",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "                  needs.",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Did you get your precious 'things'?",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Somebody was already there.",
+      "block": 12
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Police.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Just a man.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Police man.",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Why don't you have a seat.",
+      "block": 16
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "opp",
+      "cue": null,
+      "quote": "                  Enjoy the view.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nexus designated Leon:  incept\n                  date April 10th, 2015 -- to be\n                  used in military experiments to\n                  determine how hyper metabolism\n                  functions in deep space.\n                  Nexus designated Batty incept\n                  data April 10th, 2015, combat\n                  model, level of self-sufficiency,\n                  optimum.",
+      "block": 18
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Here's something you might find\n                  interesting.  They have been built\n                  to emulate the human in every way\n                  except in its emotional spectrum.\n                  However, after a period of time\n                  it is only logical that such a\n                  'mechanism' would create its own\n                  emotional responses, hate, love,\n                  fear, anger, envy.",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know all that.",
+      "block": 20
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What about a summary then.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I think we're through for the night.",
+      "block": 22
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mr. Deckard.",
+      "block": 23
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes?",
+      "block": 24
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you have something against\n                  science?",
+      "block": 25
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not if it works.",
+      "block": 26
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "And what in your estimation works?",
+      "block": 27
+    },
+    {
+      "speaker": "p5",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "The umbrella.",
+      "block": 28
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Every government that could was\n                  racing to populate their colonial\n                  territory.  But emigrants needed\n                  incentive.  Over-population and\n                  the greenhouse factor didn't seem\n                  to be enough; but owning a human\n                  look-a-like had lots of appeal.\n                  It was big industry, the competition\n                  was stiff and Tyrell was top of the\n                  line.",
+      "block": 29
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "But so far they'd always managed\n                  to keep it quiet.  Not to say\n                  that once in a while there wasn't\n                  bad publicity.  Some fanatic\n                  bitching about equal rights for\n                  andies or an occasional trade union\n                  proclaiming it was aun-American for\n                  automatons to take jobs away from\n                  humans on the colony.",
+      "block": 30
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "But what's more American than good\n                  old supply and demand?  The\n                  Government needed them, industry\n                  made them and the church backed\n                  them.  The big religious boys\n                  said that Androids, no matter how\n                  human, were objects; only God\n                  could make people. I'm not religious,\n                  but I was inclined to agree.\n                  Otherwise I'd be out of a job.",
+      "block": 31
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello, Mr. Deckard.  My name is\n                  Rachael.",
+      "block": 32
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It seems your department doesn't\n                  believe out new unit is to the\n                  public benefit.",
+      "block": 33
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "A humanoid robot is like any other\n                  machine, it can be a benefit or a\n                  hazard.  If it's a benefit, it's\n                  not our problem.",
+      "block": 34
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "But because your department can't\n                  do an adequate job in detecting\n                  the miniscule number at large,\n                  it's a problem.  Correct, Mr.\n                  Deckard?",
+      "block": 35
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You like our owl?",
+      "block": 36
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's artificial?",
+      "block": 37
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Of course not.",
+      "block": 38
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You're in a very unique position,\n                  Mr. Deckard.  You could affect the\n                  future of this entire organization\n                  according to how you work your\n                  little test.",
+      "block": 39
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Are you apprehensive?",
+      "block": 40
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why should I be?",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "Was that your dinner?",
+      "block": 42
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "I'm sorry.  I called and found out\n                  you were on your way home.  These\n                  were already delivered to your\n                  department but I thought you\n                  should have copies as soon as\n                  possible.",
+      "block": 43
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "I'm sorry.",
+      "block": 44
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "It's the Nexus information you\n                  wanted.",
+      "block": 45
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "DECKARD",
+      "quote": "Thanks.",
+      "block": 46
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Is there anything else?",
+      "block": 47
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "I know you think it complicates\n                  your work, but I'm here to help.",
+      "block": 48
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "DECKARD",
+      "quote": "I've already got more help than\n                  I need.",
+      "block": 49
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "I think you need more help than\n                  you've got.",
+      "block": 50
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "There's two reasons a man rejects\n                  help.  Either because he's so good\n                  at what he does he doesn't think\n                  he needs it, or he's so insecure\n                  he can't admit it.",
+      "block": 51
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "DECKARD",
+      "quote": "Sounds like I'm an ass-hole either\n                  way, but the answer is still no.",
+      "block": 52
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "Two of us might be more effective\n                  than one.",
+      "block": 53
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "DECKARD",
+      "quote": "I work alone.",
+      "block": 54
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "RACHAEL",
+      "quote": "No you don't.",
+      "block": 55
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "You use your equipment, don't you?",
+      "block": 56
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "So?",
+      "block": 57
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "So, I'm a piece of equipment.\n                  Use me.",
+      "block": 58
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "That's okay, I'll get it...",
+      "block": 59
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "Do I make you nervous?",
+      "block": 60
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Yeah.",
+      "block": 61
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "It's strange to suddenly realize\n                  that what you thought was your\n                  life is actually someone else's\n                  fabrication.",
+      "block": 62
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "I can imagine.",
+      "block": 63
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "Can you?  I couldn't.",
+      "block": 64
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "A part of me is glad.  I think I\n                  feel more.  I don't like who I was\n                  before.",
+      "block": 65
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "So why do you think they were\n                  after their records.",
+      "block": 66
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "They probably want to find out\n                  when they were made.",
+      "block": 67
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Right.",
+      "block": 68
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "I guess the date of your birth is\n                  important if you know you're not\n                  made to last.",
+      "block": 69
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "That's my number.  If you need me.",
+      "block": 70
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "RACHAEL",
+      "quote": "You better get better locks --\n                  if you want to keep me out.",
+      "block": 71
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "RACHAEL",
+      "quote": "Good night.",
+      "block": 72
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "DECKARD",
+      "quote": "Night.",
+      "block": 73
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD (V.O.)",
+      "quote": "The possibilities were infinite.\n                  They could change their appearances\n                  but not their future.\n                  Like she said, it was short.\n                  Longevity is what they were after.\n                  The garbage man even wanted a past.\n                  Poor fuck.  I'd check it out but\n                  I knew she was right.  The market\n                  worked on turn-over.  Built-in\n                  obsolescence was the name of the\n                  game.  That meant her too.  It\n                  was something I didn't want to",
+      "block": 74
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "You'd be surprised what a guy'll\n                  go through to get a glimpse of a\n                  beautiful body.",
+      "block": 75
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "SALOME",
+      "quote": "I bet I would.",
+      "block": 76
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Little dirty holes the bastards\n                  drill in the wall so they can\n                  watch a lady undress.",
+      "block": 77
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "SALOME",
+      "quote": "And what if somebody did try to\n                  'exploit' me?  Who do I go to?",
+      "block": 78
+    },
+    {
+      "speaker": "p5",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "DECKARD",
+      "quote": "Me.",
+      "block": 79
+    },
+    {
+      "speaker": "p7",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "SALOME",
+      "quote": "And who do I go to about you?",
+      "block": 80
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Hmmmmm?",
+      "block": 81
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "ZHORA",
+      "quote": "You ever get the feeling things\n                  aren't the way they seem?",
+      "block": 82
+    },
+    {
+      "speaker": "p5",
+      "to": "p8",
+      "stance": "opp",
+      "cue": "DECKARD",
+      "quote": "Stop or you're dead!",
+      "block": 83
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "COP",
+      "quote": "Drop it!",
+      "block": 84
+    },
+    {
+      "speaker": "p10",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "SERGEANT",
+      "quote": "On your belly!",
+      "block": 85
+    },
+    {
+      "speaker": "p5",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Listen, Sergeant...",
+      "block": 86
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sorry, I am not in at the moment,",
+      "block": 87
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "but if you'll leave your name and",
+      "block": 88
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "number I'll return your call as",
+      "block": 89
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "soon as I can.",
+      "block": 90
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Fuck you, then.",
+      "block": 91
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mr. Deetchum?  Hello?",
+      "block": 92
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Now, now, Waddles.",
+      "block": 93
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello, Wrigley.",
+      "block": 94
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Mr. Deetchum isn't taking very",
+      "block": 95
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "good care of you people.",
+      "block": 96
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Whoops.",
+      "block": 97
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "This is my Uncle Roy, Sebastian.",
+      "block": 98
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Hello, glad to meet you.",
+      "block": 99
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "And my Aunt Mary.",
+      "block": 100
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well stocked.",
+      "block": 101
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Oh, no bother, I'd be glad to.",
+      "block": 102
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well, actually",
+      "block": 103
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We're famished.",
+      "block": 104
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "Charming.",
+      "block": 105
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Well?",
+      "block": 106
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "I want to know what's going on.",
+      "block": 107
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There's only three of us left.",
+      "block": 108
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Then we're stupid and we'll die.",
+      "block": 109
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "Pris?",
+      "block": 110
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "BATTY",
+      "quote": "You're our best and only friend.",
+      "block": 111
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "ally",
+      "cue": "SEBASTIAN",
+      "quote": "Thank you.",
+      "block": 112
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "When was the last time you cleaned\n                  this place?",
+      "block": 113
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Hmmm?",
+      "block": 114
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "Have you ever cleaned your\n                  apartment?",
+      "block": 115
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Don't be fooled by appearances.",
+      "block": 116
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "It appears to be dirty -- why don't\n                  you get somebody?",
+      "block": 117
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Because they would ruin the\n                  arrangement.",
+      "block": 118
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "They could clean around the\n                  arrangement.",
+      "block": 119
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "I don't like people snooping around\n                  my stuff.",
+      "block": 120
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD'S VOICE",
+      "quote": "There's a vacuum in the front room\n                  closet is you wanna give it a try.",
+      "block": 121
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Oh no, don't do that.",
+      "block": 122
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "But if I don't plug it in how can\n                  I...",
+      "block": 123
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Never mind the plug, just go\n                  through the motions.",
+      "block": 124
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "But then how can you...",
+      "block": 125
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "I don't like the noise.  Just\n                  practice.  Practice makes perfect.",
+      "block": 126
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "I'm serious.  Go ahead.  Show me\n                  how you would do it.",
+      "block": 127
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "How about under the couch there.\n                  Come on.",
+      "block": 128
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "RACHAEL",
+      "quote": "This feels stupid.",
+      "block": 129
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "Good for a smart girl to feel\n                  stupid.  Part of your education.",
+      "block": 130
+    },
+    {
+      "speaker": "p6",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "RACHAEL",
+      "quote": "You're sick, Deckard.",
+      "block": 131
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "DECKARD",
+      "quote": "I never felt better.",
+      "block": 132
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "STYLES",
+      "quote": "Okay, I'll take that now.",
+      "block": 133
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "opp",
+      "cue": "SEBASTIAN",
+      "quote": "Wait!",
+      "block": 134
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "SEBASTIAN",
+      "quote": "Can't fly without the pilot.",
+      "block": 135
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "IAN",
+      "quote": "Oh!",
+      "block": 136
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARY",
+      "quote": "Let's go while there is still\n                  time.",
+      "block": 137
+    },
+    {
+      "speaker": "p2",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "Where?",
+      "block": 138
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "MARY",
+      "quote": "Anywhere.",
+      "block": 139
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "What's the point?",
+      "block": 140
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARY",
+      "quote": "Not to be trapped.",
+      "block": 141
+    },
+    {
+      "speaker": "p2",
+      "to": "p14",
+      "stance": "opp",
+      "cue": "BATTY",
+      "quote": "You underestimate the trap, Mary.",
+      "block": 142
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "Where are you going, Sebastian?",
+      "block": 143
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "SEBASTIAN",
+      "quote": "Just thought I'd...",
+      "block": 144
+    },
+    {
+      "speaker": "p2",
+      "to": "p12",
+      "stance": "opp",
+      "cue": "BATTY",
+      "quote": "No, you stay here with us.  Out\n                  last night together.",
+      "block": 145
+    },
+    {
+      "speaker": "p2",
+      "to": "p14",
+      "stance": "ally",
+      "cue": "BATTY",
+      "quote": "Think of yourself as a light, Mary.\n                  Shine before you're turned off.",
+      "block": 146
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "SEBASTIAN",
+      "quote": "Someone is coming here.",
+      "block": 147
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "One man.\n                         (he smiles)\n                  He must be good.",
+      "block": 148
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "ally",
+      "cue": "MARY",
+      "quote": "Then go get him.",
+      "block": 149
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "BATTY",
+      "quote": "That wouldn't be very sporting.",
+      "block": 150
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "PRIS",
+      "quote": "I want to do it.",
+      "block": 151
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "BATTY",
+      "quote": "Okay, but don't kill him.  Save a\n                  little for everybody.  A\n                  masterpiece.",
+      "block": 152
+    },
+    {
+      "speaker": "p2",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "Turn out the lights, Pris.",
+      "block": 153
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "opp",
+      "cue": "PRIS",
+      "quote": "Naughty, naughty.",
+      "block": 154
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "BATTY",
+      "quote": "It's time to die.",
+      "block": 155
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "Ah!",
+      "block": 156
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "ally",
+      "cue": "BATTY",
+      "quote": "That's for you.",
+      "block": 157
+    },
+    {
+      "speaker": "p2",
+      "to": "p5",
+      "stance": "opp",
+      "cue": "BATTY",
+      "quote": "Well?",
+      "block": 158
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "BATTY",
+      "quote": "Crap.",
+      "block": 159
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p5",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p2",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 2,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p16",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p2",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 4,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p2",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 3,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 4,
+        "sign": "opp",
+        "stances": {
+          "opp": 4,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 43,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 5,
+          "ally": 6,
+          "neu": 32
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p8",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p9",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 7,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p11",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p17",
+        "p3",
+        "p4",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p10",
+        "p12",
+        "p2",
+        "p5"
+      ]
+    ]
+  }
+}
