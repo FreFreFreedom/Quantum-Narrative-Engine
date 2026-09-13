@@ -1,0 +1,1873 @@
+{
+  "entity": "f_the_last_samurai",
+  "source": "data-seed/scripts/f_the_last_samurai.txt",
+  "scope": "the whole script, machine-extracted (35 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALGREN",
+      "quote": "Thank you.",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "[I AM SPEAKING OF THE DEAD!]",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "KID ASSISTANT",
+      "quote": "Un-huh.",
+      "block": 3
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "WINCHESTER REP",
+      "quote": "Oh, God... Oh, God...",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "... Let's just see here --",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALGREN",
+      "quote": "God bless you all.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "I've been busy.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ALGREN",
+      "quote": "Who's asking you?",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "You're a critic now?",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "When'd you get out?",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "I have a job.",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "ALGREN",
+      "quote": "I'm not wearing that uniform again.",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "opp",
+      "cue": "GANT",
+      "quote": "Did I say a U.S. uniform?",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Ask him what training they've had.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "GANT",
+      "quote": "Jesus, Mary, and the Saints...",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "GANT",
+      "quote": "Sir.",
+      "block": 16
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "GANT",
+      "quote": "Sir.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "GANT",
+      "quote": "Imperial Army, Atten-tion!",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "N.C.O.",
+      "quote": "Dai ichi rentai, kyotsuke!",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALGREN",
+      "quote": "Well done, Sergeant.",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Shoulder arms!",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Take over, Zeb.",
+      "block": 22
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "GANT",
+      "quote": "First rank, STAND!",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Who supplies their weapons?",
+      "block": 24
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HASEGAWA",
+      "quote": "Katsumoto wa samurai no michi o",
+      "block": 25
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Katsumoto in tsuite motto",
+      "block": 26
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "shiritai.",
+      "block": 27
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Kare wa katsu et heika no shi de\n                  ari, mottomo shinrai sareru soudan\n                  yaku deshita.",
+      "block": 28
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Katsumoto was [once] the Emperor's\n                  teacher and his most trusted\n                  advisor.",
+      "block": 29
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You must understand, for centuries\n                  it was the Samurai who guarded\n                  Japan and fought her wars. But\n                  now the creation of a modern\n                  army...",
+      "block": 30
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "... the Samurai, well, some have\n                  accepted the change, taken money\n                  instead. But some just couldn't\n                  bring themselves to do it. Thus,\n                  the rebellion.",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who supplies their weapons?",
+      "block": 32
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Buki wa don na juu desuka?",
+      "block": 33
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Katsumoto wa samurai no michi o\n                  shirumono tachi ni agamerareteoru.\n                  Imasara tobidougu nanka tsukawan\n                  yo.",
+      "block": 34
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "To those who honor the old ways,\n                  Katsumoto is a hero. He no longer\n                  dishonors himself by touching\n                  firearms.",
+      "block": 35
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He used them once, but now he\n                  doesn't?",
+      "block": 36
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He gave them up, yes. Felt they\n                  diminished Bushido, \"The Way of\n                  the Warrior.\" A code of behavior.\n                  Very serious stuff.",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "How well does he know him?",
+      "block": 38
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The General and Katsumoto fought\n                  together for the Emperor.",
+      "block": 39
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He fought with the samurai?",
+      "block": 40
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "He is samurai.",
+      "block": 41
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Vexing people, the samurai.\n                  Blood-thirsty, honorable, cruel,\n                  fabulously artistic. Wanted to\n                  write a book about them for years,\n                  but they tend to keep to\n                  themselves.",
+      "block": 42
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bastards still wear armor...",
+      "block": 43
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes, and when the Irish were still\n                  comporting themselves in\n                  loincloths, these chaps were\n                  already the most sophisticated\n                  warriors on earth.",
+      "block": 44
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I want detailed accounts of their\n                  battle tactics.",
+      "block": 45
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I have several books on it.",
+      "block": 46
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Just waiting to be translated.",
+      "block": 47
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Captain'll be speaking the lingo\n                  in no time. You should hear him\n                  blather on in Blackfoot.",
+      "block": 48
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A fellow linguist! Come on, sir,\n                  a word or two in the savage\n                  tongue.",
+      "block": 49
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sorry, can't remember.",
+      "block": 50
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nonsense, you were among them for\n                  how long? Just \"hello\" or\n                  \"goodbye\" or \"cut his tongue out\n                  and boil him in oil.\"",
+      "block": 51
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Early day tomorrow, Captain-\n                  darlin', time for bed, isn't it?",
+      "block": 52
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I've always had a dread\n                  fascination with scalping. But\n                  I've never quite understood the\n                  technique.",
+      "block": 53
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ah, the English and their love of\n                  torture.",
+      "block": 54
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I beg your pardon --",
+      "block": 55
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A lovely race -- the rack, the\n                  spike, and the bloody Tower of\n                  London.",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I was not speaking to you, you\n                  uncivilized hooligan.",
+      "block": 57
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I sir am an American citizen and\n                  no longer under the boot heel of\n                  the English oppressor.",
+      "block": 58
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "...First you need to grab a\n                  handful of hair and give it a\n                  quick jerk in order to loosen the\n                  skin. Then you saw the scalp off\n                  a little at a time because the\n                  blades are usually dull and the\n                  skin doesn't come off all at once.\n                  The problem is getting enough\n                  leverage when your hands are\n                  bloody...and slick. And, of\n                  course, the person being scalped\n                  in generally still alive and\n                  screaming. So a knee in the back\n                  tends to quiet them down and give\n                  you the purchase you need to\n                  finish the job.",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Hold the line... hold the line...",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "FIRE!",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "RELOAD AND FIRE AT WILL!",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "HOLD THE LINE, DAMN IT!",
+      "block": 63
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "What is your name?",
+      "block": 64
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Leave him be.",
+      "block": 65
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Jolly good.",
+      "block": 66
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Be quiet.",
+      "block": 67
+    },
+    {
+      "speaker": "p9",
+      "to": "p10",
+      "stance": "neu",
+      "cue": null,
+      "quote": "He's in bad shape.",
+      "block": 68
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sake.",
+      "block": 69
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sake.",
+      "block": 70
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sake?",
+      "block": 71
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "[Sake.]",
+      "block": 72
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes.   Sake.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"November 26, 1868. The Washita\n                   River. For twelve years I have\n                   done nothing but carry out my\n                   orders to the best of my ability.\"",
+      "block": 74
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"Tomorrow, if I do what is asked\n                   of me as a soldier-- \"",
+      "block": 75
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "... Captain?",
+      "block": 76
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Over there. Go. You.     Go.   You.",
+      "block": 77
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So where are we going?",
+      "block": 78
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Are my words not correct?",
+      "block": 79
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You will?",
+      "block": 80
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "If you would honor me.",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Then what do you want?",
+      "block": 82
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "To know my enemy.",
+      "block": 83
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I saw what you do to your enemies.",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Nathan Algren.",
+      "block": 85
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I have questions.",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I have questions.",
+      "block": 87
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Questions come later.",
+      "block": 88
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My brother-in-law. Hirotaro.",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "And the woman who cares for me?",
+      "block": 90
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I killed her husband?",
+      "block": 91
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It was a good death.",
+      "block": 92
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You!   Come... Please...",
+      "block": 93
+    },
+    {
+      "speaker": "p9",
+      "to": "p10",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why don't you tell him?",
+      "block": 94
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "At least make him take a bath.",
+      "block": 95
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "No mind.",
+      "block": 96
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NOBUTADA",
+      "quote": "Hai! No sword. No people watch.\n                    No enemy. No mind. You try.",
+      "block": 97
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (V.O.)",
+      "quote": "Is it bestowed at birth -- ?",
+      "block": 98
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (V.O.)",
+      "quote": "I am surprised to learn that the\n                    word, Samurai, means \"to serve.\"\n                    And that Bushido, The Way of the\n                    warrior, is much more than the\n                    study of war.",
+      "block": 99
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (V.O.)",
+      "quote": "To the samurai, training the mind\n                    is as important as the skills of\n                    combat.",
+      "block": 100
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (V.O.)",
+      "quote": "Zazen, or \"Sitting,\" seems to be a\n                    kind of contemplation. Not prayer\n                    as we might know it, but rather a\n                    way of quieting the mind.",
+      "block": 101
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "NOBUTADA",
+      "quote": "He's getting better, no?",
+      "block": 102
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "NAKAO",
+      "quote": "Yes.    But still so ugly.",
+      "block": 103
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Cold.",
+      "block": 104
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIGEN",
+      "quote": "Samui.",
+      "block": 105
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (subtitles)",
+      "quote": "I'm cold.",
+      "block": 106
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "You're cold also.",
+      "block": 107
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIGEN",
+      "quote": "Hi!",
+      "block": 108
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAGOJIRO (repeating)",
+      "quote": "Hi.",
+      "block": 109
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Hi.   Fire.",
+      "block": 110
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIGEN (subtitles)",
+      "quote": "The branch.",
+      "block": 111
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Wood.    Ede.",
+      "block": 112
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIGEN (subtitles)",
+      "quote": "The branch burns.",
+      "block": 113
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Eda ga...",
+      "block": 114
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIGEN",
+      "quote": "Eda ga moeru.",
+      "block": 115
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "TAKA",
+      "quote": "No, please.",
+      "block": 116
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (insistent)",
+      "quote": "Hai.",
+      "block": 117
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "TAKA (subtitles)",
+      "quote": "Japanese men do not help with this.",
+      "block": 118
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN (subtitles)",
+      "quote": "I am not Japanese.",
+      "block": 119
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "You're always so polite. What\n                must you be thinking [feeling]?\n                [Do you miss him that much?] Was\n                he good to you? I hope he was.",
+      "block": 120
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "I’m sorry.   Gomen n’sai.",
+      "block": 121
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Gomen n’sai... Your husband,\n                Hirotaro.",
+      "block": 122
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "UJIO",
+      "quote": "Lord, please go inside.",
+      "block": 123
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "The women, children!",
+      "block": 124
+    },
+    {
+      "speaker": "p10",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "TAKA",
+      "quote": "Higen!",
+      "block": 125
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "UJIO",
+      "quote": "None must escape!",
+      "block": 126
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Whatever you do, don't stop.",
+      "block": 127
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUARD",
+      "quote": "Stop!   Don't come any closer!",
+      "block": 128
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUARD",
+      "quote": "Stop!   Somebody!",
+      "block": 129
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUARD",
+      "quote": "You stop!",
+      "block": 130
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "opp",
+      "cue": "GUARD",
+      "quote": "It's not my responsibility...",
+      "block": 131
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUARD",
+      "quote": "Carry the equipment.",
+      "block": 132
+    },
+    {
+      "speaker": "p15",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "GUARD",
+      "quote": "This way...",
+      "block": 133
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "GRAHAM",
+      "quote": "I think I'm going to be sick...",
+      "block": 134
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GUARD",
+      "quote": "Photo... graph.",
+      "block": 135
+    },
+    {
+      "speaker": "p1",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "How's your poem coming?",
+      "block": 136
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "The end is proving difficult.",
+      "block": 137
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "GRAHAM",
+      "quote": "An honor.",
+      "block": 138
+    },
+    {
+      "speaker": "p8",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "I thought you returned to America.",
+      "block": 139
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "And how do you plan to do that?",
+      "block": 140
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "GRAHAM",
+      "quote": "I would be greatly honored.",
+      "block": 141
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "ally",
+      "cue": "NOBUTADA",
+      "quote": "Hurry, this way!",
+      "block": 142
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "Archers! Shoot! Shoot!",
+      "block": 143
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Can you see them?",
+      "block": 144
+    },
+    {
+      "speaker": "p17",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "BAGLEY",
+      "quote": "What on earth -- ?",
+      "block": 145
+    },
+    {
+      "speaker": "p16",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "What is happening?",
+      "block": 146
+    },
+    {
+      "speaker": "p17",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "BAGLEY",
+      "quote": "The attack has been stopped.",
+      "block": 147
+    },
+    {
+      "speaker": "p16",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "How is that possible?",
+      "block": 148
+    },
+    {
+      "speaker": "p16",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "How long will that take?",
+      "block": 149
+    },
+    {
+      "speaker": "p17",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "BAGLEY",
+      "quote": "An hour.   Less.",
+      "block": 150
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "SAMURAI",
+      "quote": "Attack! Prepare to die!      Die...",
+      "block": 151
+    },
+    {
+      "speaker": "p19",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "SILENT SAMURAI",
+      "quote": "ALGREN-SAN!",
+      "block": 152
+    },
+    {
+      "speaker": "p1",
+      "to": "p19",
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "NO!!",
+      "block": 153
+    },
+    {
+      "speaker": "p16",
+      "to": "p17",
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "We must call for reserves.",
+      "block": 154
+    },
+    {
+      "speaker": "p17",
+      "to": "p16",
+      "stance": "neu",
+      "cue": "BAGLEY",
+      "quote": "The reserves are a half hour back,\n                   damn it! We've thrown three\n                   thousand men at him and he's not\n                   even armed.",
+      "block": 155
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "This is not possible --",
+      "block": 156
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAGLEY",
+      "quote": "Son-of-a-bitch thinks he can win.",
+      "block": 157
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Call up the reinforcements NOW!",
+      "block": 158
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "UJIO",
+      "quote": "Daijigozaran.",
+      "block": 159
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "But now you live again.",
+      "block": 160
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALGREN",
+      "quote": "Yes.",
+      "block": 161
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATSUMOTO",
+      "quote": "It was not your time.",
+      "block": 162
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAGLEY",
+      "quote": "I'm taking command down there.",
+      "block": 163
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Bring up the new guns!",
+      "block": 164
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Quickly! Quickly!",
+      "block": 165
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Fire!!!!! Fire!!!!!",
+      "block": 166
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAPANESE OFFICER",
+      "quote": "Stop firing!",
+      "block": 167
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Idiots, keep on firing!",
+      "block": 168
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "JAPANESE OFFICER",
+      "quote": "Stop firing! Stop!",
+      "block": 169
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "OMURA",
+      "quote": "Shoot! Kill Katsumoto!      Kill the",
+      "block": 170
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "AMBASSADOR SWANBECK",
+      "quote": "Sir, if I may --",
+      "block": 171
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "opp",
+      "cue": "AMBASSADOR SWANBECK",
+      "quote": "This is an outrage -- !",
+      "block": 172
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "ALGREN",
+      "quote": "I will tell you how he lived.",
+      "block": 173
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 9,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p12",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p14",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p15",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p21",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p8",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p16",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p7",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p17",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p20",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p21",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p7",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 3,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p9",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 21 given"
+  }
+}
