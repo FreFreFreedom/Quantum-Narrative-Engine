@@ -35,6 +35,23 @@ export function detectLimit(text, headers = null) {
   return LIMIT_RE.test(String(text || '')) ? { label: 'quota/limit reached' } : null;
 }
 
+// A thinking model is charged for its thoughts out of the SAME budget as its
+// answer, so `max_tokens` is not an answer budget there — it is both, and the
+// thinking goes first. Measured on production 2026-09-13: the analogy call asked
+// Cerebras for 1200 tokens and got 5,475 characters of reasoning and an EMPTY
+// answer, every single time, with finish_reason "length" and no error — which
+// reads exactly like a dead lane, so the call then walked the whole fallback
+// chain and a 1.4-second answer became a 109-second wait. The same call with room
+// to think answered in 1.5s.
+//
+// So a lane that always thinks gets headroom on top of what the caller asked for.
+// The caller's number stays the answer budget, which is what every caller means
+// by it.
+const THINKING_HEADROOM = 2000;
+function budgetFor(providerId, maxTokens) {
+  return getProviderCatalog(providerId)?.thinksByDefault ? (maxTokens || 800) + THINKING_HEADROOM : maxTokens;
+}
+
 async function postChatCompletions({ providerId, model, messages, maxTokens, tools, timeoutMs = 60_000, cacheKey = null }) {
   const apiKey = apiKeyFor(providerId);
   const endpoint = endpointFor(providerId);
@@ -50,7 +67,7 @@ async function postChatCompletions({ providerId, model, messages, maxTokens, too
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: maxTokens,
+        max_tokens: budgetFor(providerId, maxTokens),
         // Gemini-flash is a thinking model: with a small max_tokens budget its
         // "thoughts" can consume the whole budget and leave the visible answer
         // empty (verified live — a 50-token call returned zero visible text).
@@ -223,7 +240,7 @@ export async function postChatCompletionsStream({ providerId, model, messages, m
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: maxTokens,
+        max_tokens: budgetFor(providerId, maxTokens),
         stream: true,
         // A streamed OpenAI response carries NO usage block unless you ask for
         // it, and without token counts services/openaiSpend.js cannot price the
