@@ -1,7 +1,10 @@
 # Every Room conversation reaches the repo, not only the saved ones
 
-**Status: PLANNED (not a green light) — written 2026-09-13. Antoine names a plan before it
-is implemented.**
+| Status | Date |
+|---|---|
+| **PLANNED** | 2026-09-13 |
+
+Not a green light — Antoine names a plan before it is implemented.
 
 ## What he asked for
 
