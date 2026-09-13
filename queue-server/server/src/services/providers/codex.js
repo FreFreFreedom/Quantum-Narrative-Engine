@@ -81,10 +81,26 @@ export function signedInAs() {
 }
 
 // Quota is display-only; deliberately not a task admission gate.
-export const QUOTA_MAX_AGE_MS = 30 * 60_000;
+// A reading is good until the window it describes resets, not for half an hour.
+// The numbers only exist while Codex is being used, so "recent" could never be the
+// test: an hour after a session the row would blank even though the percentage is
+// still true. Inside its own window a used-percent can only rise, so an old reading
+// is a floor, never a lie. Each window is judged on its own — the five hours can
+// roll over while the week is still running.
+// The small slack absorbs clock drift: the Mac writes the timestamp, the container
+// and the browser each re-judge it with their own clock, and a Mac a minute ahead
+// used to throw away a perfectly good reading.
+const QUOTA_CLOCK_SLACK_MS = 2 * 60_000;
 export function freshQuota(quota, now = Date.now()) {
   const at = Date.parse(quota?.at);
-  return Number.isFinite(at) && at <= now && now - at <= QUOTA_MAX_AGE_MS ? quota : null;
+  if (!Number.isFinite(at) || at > now + QUOTA_CLOCK_SLACK_MS) return null;
+  const open = (bucket) => {
+    const resets = Date.parse(bucket?.resetsAt);
+    return Number.isFinite(resets) && resets > now ? bucket : null;
+  };
+  const session = open(quota.session);
+  const week = open(quota.week);
+  return session || week ? { ...quota, session, week } : null;
 }
 
 // Both the fixture parser and the disk reader consume newest lines first.
@@ -153,8 +169,18 @@ export function readQuota(root = join(homedir(), '.codex', 'sessions'), now = Da
             .map(e => ({ path: join(dp, e.name), mtime: statSync(join(dp, e.name)).mtimeMs }))
             .sort((a, b) => b.mtime - a.mtime);
           if (!files.length) continue;
-          fd = openSync(files[0].path, 'r');
-          return quotaFromLines(tailLines(fd), now);
+          // Not just the newest file: a session that asked one short question holds no
+          // quota line at all, and anything touching an old transcript makes it the
+          // newest. Either way a single-file read gives up with the answer sitting in
+          // the file next to it. Five back is plenty and costs a tail read each.
+          for (const file of files.slice(0, 5)) {
+            fd = openSync(file.path, 'r');
+            const found = quotaFromLines(tailLines(fd), now);
+            closeSync(fd);
+            fd = undefined;
+            if (found) return found;
+          }
+          return null;
         }
       }
     }

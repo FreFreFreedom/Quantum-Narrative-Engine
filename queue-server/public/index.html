@@ -17060,10 +17060,20 @@ function uqShutBar(name, usage) {
     <span>${name}${left == null ? ' —' : ''}</span><i>${fill}</i></span>`;
 }
 
+// Same rule as the server's own: a reading holds until the window it measures
+// resets, since the numbers only exist while Codex is being used and would
+// otherwise blank an hour after every session. Each window stands or falls alone.
 function currentCodexQuota(u) {
   const quota = u && u.codex;
   const at = Date.parse(quota && quota.at);
-  return Number.isFinite(at) && at <= Date.now() && Date.now() - at <= 30 * 60000 ? quota : null;
+  const now = Date.now();
+  if (!Number.isFinite(at) || at > now + 2 * 60000) return null;
+  const open = bucket => {
+    const resets = Date.parse(bucket && bucket.resetsAt);
+    return Number.isFinite(resets) && resets > now ? bucket : null;
+  };
+  const session = open(quota.session), week = open(quota.week);
+  return session || week ? { ...quota, session, week } : null;
 }
 function codexAllowance(u) {
   const quota = currentCodexQuota(u);

@@ -130,32 +130,42 @@ ok('a foreign model name falls back instead of being passed through');
 // Quota fixtures use the session event's timestamp, never the heartbeat time.
 const quotaAt = '2026-09-13T12:00:00.000Z';
 const quotaNow = Date.parse(quotaAt);
+// Both windows are still open at the fixture's own timestamp — an already-reset
+// window is a separate case, exercised below by moving the clock forward.
+const sessionResets = Math.floor(quotaNow / 1000) + 2 * 3600;
+const weekResets = Math.floor(quotaNow / 1000) + 5 * 86400;
 const quotaEvent = {
   timestamp: quotaAt, type: 'event_msg', payload: { type: 'token_count', rate_limits: {
     limit_id: 'codex',
-    primary: { used_percent: 36, window_minutes: 300, resets_at: 1789296051 },
-    secondary: { used_percent: 6, window_minutes: 10080, resets_at: 1789836694 },
+    primary: { used_percent: 36, window_minutes: 300, resets_at: sessionResets },
+    secondary: { used_percent: 6, window_minutes: 10080, resets_at: weekResets },
     credits: { has_credits: false, unlimited: false, balance: '0' }, plan_type: 'plus',
   } },
 };
 const quotaLine = JSON.stringify(quotaEvent);
 const quota = codex.parseQuota(quotaLine, quotaNow);
 assert.deepEqual(quota, {
-  session: { utilizationPct: 36, resetsAt: new Date(1789296051 * 1000).toISOString() },
-  week: { utilizationPct: 6, resetsAt: new Date(1789836694 * 1000).toISOString() },
+  session: { utilizationPct: 36, resetsAt: new Date(sessionResets * 1000).toISOString() },
+  week: { utilizationPct: 6, resetsAt: new Date(weekResets * 1000).toISOString() },
   credits: quotaEvent.payload.rate_limits.credits, plan: 'plus', at: quotaAt,
 });
 ok('quota percentages, reset seconds, plan, credits and original time are read correctly');
 assert.equal(codex.parseQuota('{"type":"turn.started"}', quotaNow), null);
 assert.equal(codex.parseQuota('', quotaNow), null);
 ok('a transcript without quota reports unknown');
-assert.equal(codex.parseQuota(quotaLine, quotaNow + 30 * 60000 + 1), null);
-assert.equal(codex.freshQuota(quota, quotaNow + 30 * 60000 + 1), null);
-assert.deepEqual(codex.parseQuota(quotaLine, quotaNow + 30 * 60000), quota);
-ok('old readings expire at the source and again when served, even with fresh heartbeats');
+// A reading lives until the window it describes resets, not for a fixed time: the
+// numbers are only written while Codex is being used, so an hour of quiet must not
+// blank the row. The fixture's five hours reset well before its week does.
+const sessionResetsAt = Date.parse(quota.session.resetsAt);
+const weekResetsAt = Date.parse(quota.week.resetsAt);
+assert.deepEqual(codex.parseQuota(quotaLine, quotaNow + 60 * 60000), quota);
+assert.deepEqual(codex.freshQuota(quota, sessionResetsAt - 1), quota);
+assert.deepEqual(codex.freshQuota(quota, sessionResetsAt + 1), { ...quota, session: null });
+assert.equal(codex.freshQuota(quota, weekResetsAt + 1), null);
+ok('a reading holds while its window is open and each window expires on its own');
 assert.equal(codex.parseQuota(quotaLine + '\n{"partial":', quotaNow), null);
 assert.equal(codex.parseQuota(JSON.stringify({ ...quotaEvent, timestamp: 'bad' }), quotaNow), null);
-assert.equal(codex.parseQuota(quotaLine, quotaNow - 1), null);
+assert.equal(codex.parseQuota(quotaLine, quotaNow - 10 * 60000), null);
 ok('malformed, partial and invalid timestamp readings are unknown');
 const changedQuota = JSON.parse(quotaLine);
 changedQuota.payload.rate_limits.primary.used_percent = 0;
