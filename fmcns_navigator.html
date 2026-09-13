@@ -22380,30 +22380,42 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // this only flips between the one that reaches the written vision and the one
           // that stays in the app's memory, because that is the only difference with a
           // consequence. His call, 2026-09-13: "too much options here".
-          var remVision = out.kind === 'vision';
+          // Two pills, both on screen, and either or BOTH can be lit — a thing can
+          // belong to the paradigm and say something about him at the same time.
+          // His call, 2026-09-13.
+          var remShelf = { vision: out.kind === 'vision', plain: out.kind !== 'vision' };
           var remPlain = (out.kind && out.kind !== 'vision') ? out.kind : 'about';
-          // Two pills, both on screen. A single word you had to know was clickable
-          // read as a label, not a choice — his words, 2026-09-13.
-          var shelfBtnHtml = function(v, label){
-            return '<button type="button" class="se-remember-shelf' + (remVision === v ? ' is-on' : '') + '" data-rem-shelf="' + (v ? '1' : '0') + '">' + label + '</button>';
+          var shelfBtnHtml = function(k, label){
+            return '<button type="button" class="se-remember-shelf' + (remShelf[k] ? ' is-on' : '') + '" data-rem-shelf="' + k + '">' + label + '</button>';
           };
-          card.innerHTML = '<div class="se-remember-kind">Keeps as ' + shelfBtnHtml(true, 'the paradigm') + shelfBtnHtml(false, 'about you') + '</div>'
+          card.innerHTML = '<div class="se-remember-kind">Keeps as ' + shelfBtnHtml('vision', 'the paradigm') + shelfBtnHtml('plain', 'about you') + '</div>'
             + '<div class="se-remember-text">' + qEsc(out.text) + '</div>'
             + (out.detail ? '<div class="se-remember-detail">' + qEsc(out.detail) + '</div>' : '')
             + '<div class="se-remember-acts"><button type="button" data-rem-drop="1">Drop</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
+          var saveBtn = card.querySelector('[data-rem-save]');
+          var syncShelves = function(){
+            card.querySelectorAll('[data-rem-shelf]').forEach(function(b){
+              b.classList.toggle('is-on', !!remShelf[b.getAttribute('data-rem-shelf')]);
+            });
+            // Nothing lit means nothing to keep, so Save stops offering.
+            saveBtn.disabled = !remShelf.vision && !remShelf.plain;
+          };
           card.querySelectorAll('[data-rem-shelf]').forEach(function(btn){
             btn.onclick = function(){
-              remVision = btn.getAttribute('data-rem-shelf') === '1';
-              card.querySelectorAll('[data-rem-shelf]').forEach(function(b){
-                b.classList.toggle('is-on', (b.getAttribute('data-rem-shelf') === '1') === remVision);
-              });
+              var k = btn.getAttribute('data-rem-shelf');
+              remShelf[k] = !remShelf[k];
+              syncShelves();
             };
           });
-          var saveBtn = card.querySelector('[data-rem-save]');
+          syncShelves();
           saveBtn.onclick = function(){
             saveBtn.disabled = true;
-            var kind = remVision ? 'vision' : remPlain;
-            apiWrite('/api/mind', 'POST', { kind: kind, text: out.text, detail: out.detail || null })
+            var kinds = [];
+            if(remShelf.vision) kinds.push('vision');
+            if(remShelf.plain) kinds.push(remPlain);
+            Promise.all(kinds.map(function(kind){
+              return apiWrite('/api/mind', 'POST', { kind: kind, text: out.text, detail: out.detail || null }).catch(function(){});
+            }))
               .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); })
               .catch(function(){})
               .then(killRememberPop);
