@@ -1,0 +1,1421 @@
+{
+  "entity": "f_the_shining",
+  "source": "data-seed/scripts/f_the_shining.txt",
+  "scope": "the whole script, machine-extracted (27 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ULLMAN",
+      "quote": "Yes, it is.  Oh, it's still hard\n            for me to believe that it actually\n            happened here, but it did and eh...\n            I think you can appreciate why I\n            wanted to tell you about it.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Oh,",
+      "block": 2
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Ah, I certainly can, and eh... I\n            also understand why your people in\n            Denver left it for you to tell me.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ULLMAN",
+      "quote": "Well, obviously some people can be",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "ULLMAN",
+      "quote": "put off by the idea of staying\n            alone in a place where something\n            like that actually happened.",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Well, you can rest assured Mr.\n            Ullman, that's not going to happen\n            with me, and eg as far as my wife\n            is concerned, I am sure she'll be\n            absolutely fascinated when I tell\n            her about it.  She's a confirmed\n            ghost story and horror film addict.",
+      "block": 6
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Tony, do you think Daddy will get\n            the job?",
+      "block": 7
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "TONY",
+      "quote": "Yeah, he did.  He's gonna phone\n            Wendy up in a few minutes to tell\n            her.",
+      "block": 8
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Hello.",
+      "block": 9
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Hi, hon.  How's it going?",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Great.  Look, I'm at the hotel and\n            I still have an awful lot to go\n            through.  I don't think I can get\n            home before nine or ten.",
+      "block": 11
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Sounds like you got the job?",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Right it's a beautiful place.  You\n            and Danny are gonna love it.",
+      "block": 13
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Tony, why don't you want to go to\n            the hotel?",
+      "block": 14
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "TONY",
+      "quote": "I don't know.",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "You do too know, now come on tell me.",
+      "block": 16
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "TONY",
+      "quote": "I don't want to.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Please...",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "TONY",
+      "quote": "No.",
+      "block": 19
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "No.",
+      "block": 20
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "No.",
+      "block": 21
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Now Tony, tell me.",
+      "block": 22
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Now hold your eyes still so that I\n            can see.",
+      "block": 23
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "That's good, now the other one.\n            Good boy.",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Do you remember when you were\n            brushing your teeth?",
+      "block": 25
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Yes.",
+      "block": 26
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "What's the next thing you remember\n            after you were brushing your teeth?",
+      "block": 27
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Mommy saying, 'Wake up, wake up,\n            wake up Danny, wake up.'",
+      "block": 28
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Now Danny, can you remember what\n            you were doing just before you\n            started brushing your teeth?",
+      "block": 29
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "Talking to Tony.",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Is Tony one of your animals?",
+      "block": 31
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DANNY",
+      "quote": "No.  It's the little boy that lives\n            in my mouth.",
+      "block": 32
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Tony is his imaginary friend.",
+      "block": 33
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "if you were to open your mouth now,\n            could I see Tony?",
+      "block": 34
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOCTOR",
+      "quote": "Why not?",
+      "block": 35
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Hi, hon.  How's it going?",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Fine.",
+      "block": 37
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Get a lot written today?",
+      "block": 38
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Yes.",
+      "block": 39
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Yes.",
+      "block": 40
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Yes.",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Hey, the weather forecast said it's\n            going to snow tonight.",
+      "block": 42
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "What do you want me to do about it?",
+      "block": 43
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Ah, come on hon.  Don't be so\n            grouchy.",
+      "block": 44
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "I'm not being grouchy.  I just want\n            to finish my work.",
+      "block": 45
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Okay.  I understand.  I'll come\n            back later on with a couple of\n            sandwiches for you and... maybe\n            you'll let me read something then.",
+      "block": 46
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Okay.",
+      "block": 47
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "Wendy,\n                   (clears throat)\n            let me explain something to you.\n            Whenever you come in here and\n            interrupt me, you're breaking my\n            concentration.",
+      "block": 48
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "you're distracting me,",
+      "block": 49
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "Fine.  Now we're going to make a\n            new rule.  Whenever I am in here\n            and you hear me typing,",
+      "block": 50
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "or whether you don't hear me\n            typing, whatever the fuck you hear\n            me doing in here, when I am in here\n            that means that I am working - that\n            means don't come in.  Now do you\n            think you can handle that?",
+      "block": 51
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "Fine.  Why don't you start right\n            now and get the fuck out of here,\n            hmm?",
+      "block": 52
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "I know you've got some.",
+      "block": 53
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Oh no!",
+      "block": 54
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "I knew it!",
+      "block": 55
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "What happened, honey?  Hon?  What's\n            wrong?  Jack!",
+      "block": 56
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "I had... I had the most terrible\n            nightmare I ever had.  It's the\n            most horrible dream I ever had.",
+      "block": 57
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "It's okay.  It's okay, now.  Really.",
+      "block": 58
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "I dreamed that I... that I killed\n            you and Danny.",
+      "block": 59
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "But I didn't just kill you, I cut\n            you up into little pieces.",
+      "block": 60
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Oh...",
+      "block": 61
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Every...everything is just going to\n            be all right.  Come on.  Here let's\n            get up off the floor.",
+      "block": 62
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Danny!  Everything's okay... Just\n            go play in your room for a while.\n            Your Dad's just got a headache.\n            Danny - mind what I say.  Go play\n            in your room!",
+      "block": 63
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "WENDY",
+      "quote": "Hon, let me just go and get him out\n            of here.  I'll be right back.",
+      "block": 64
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Danny, why don't you mind me - huh?\n            Danny.",
+      "block": 65
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Oh my God!  Danny what happened to\n            your neck?  Danny...",
+      "block": 66
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WENDY (CONT'D)",
+      "quote": "what happened to your neck, huh?",
+      "block": 67
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "WENDY",
+      "quote": "You did this to him, didn't you?",
+      "block": 68
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "WENDY (OFF)(CONT'D)",
+      "quote": "didn't you?",
+      "block": 69
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "WENDY (OFF)",
+      "quote": "You son of a bitch!  You did this\n            to him,",
+      "block": 70
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "WENDY",
+      "quote": "How could you?  How could you?",
+      "block": 71
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "God, I'd give anything for a drink?",
+      "block": 72
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "My goddam soul, just a glass of beer.",
+      "block": 73
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Hi Lloyd.",
+      "block": 74
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "A little slow tonight, isn't it?",
+      "block": 75
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "LLOYD",
+      "quote": "Yes, it is, Mr. Torrance.",
+      "block": 76
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "LLOYD",
+      "quote": "What'll it be?",
+      "block": 77
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Now I'm awfully glad you asked me\n            that, Lloyd, because I just happen\n            to have two twenties and two tens\n            right here in my wallet.  I was\n            afraid they were going to be there\n            until next April.  So here's what:\n            you slip me a bottle of Bourbon, a\n            glass and some ice.  You can do\n            that, can't you, Lloyd?  You're not\n            to busy, are you?",
+      "block": 78
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "LLOYD",
+      "quote": "No, sir.  I'm not busy at all.",
+      "block": 79
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "JACK (OFF)",
+      "quote": "Good man.",
+      "block": 80
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "JACK (OFF)",
+      "quote": "You set them up, and I'll knock\n            them back, Lloyd, one by one.",
+      "block": 81
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "White man's burden, Lloyd my man.\n            White man's burden.",
+      "block": 82
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Say, Lloyd, it seems I'm temporarily\n            light.",
+      "block": 83
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "How's my credit in this joint anyway?",
+      "block": 84
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "LLOYD",
+      "quote": "Your credit's fine, Mr. Torrance.",
+      "block": 85
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "That's swell.  I like you, Lloyd.\n            I always liked you.  You were\n            always the best of them.",
+      "block": 86
+    },
+    {
+      "speaker": "p3",
+      "to": "p7",
+      "stance": "ally",
+      "cue": "JACK (CONT'D)",
+      "quote": "Best goddamned bartender from\n            Timbuctoo to Portland Maine -\n            Portland Oregon for that matter.",
+      "block": 87
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Pardon me, miss.  What time will we\n            get to Denver?",
+      "block": 88
+    },
+    {
+      "speaker": "p9",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "STEWARDESS",
+      "quote": "We're due to arrive at 8:20, sir.",
+      "block": 89
+    },
+    {
+      "speaker": "p8",
+      "to": "p9",
+      "stance": "ally",
+      "cue": "HALLORAN",
+      "quote": "Thank you very much.",
+      "block": 90
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "Durkin's garage.",
+      "block": 91
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Hello, can I speak to Larry?",
+      "block": 92
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "Speaking.",
+      "block": 93
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Hello Larry.  This is Dick, Dick\n            Halloran.",
+      "block": 94
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "Dick, how are you doing?  How's the\n            weather down there?",
+      "block": 95
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "I'm not in Florida, Larry.  I'm\n            calling from Stapleton Airport.",
+      "block": 96
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "opp",
+      "cue": "DURKIN",
+      "quote": "What the hell are you doing down\n            there?",
+      "block": 97
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Well, I just got in from Miami, and\n            I've got to get up to the Overlook\n            today.  What's the weather like up\n            there?",
+      "block": 98
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "Well, the snow ploughs are keeping\n            things moving in town, but the\n            mountain roads are completely\n            blocked.",
+      "block": 99
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "What's the big deal about getting\n            up there today, especially in this\n            kind of weather?",
+      "block": 100
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Larry, just between you and me,\n            we've got a very serious problem\n            with the people who are taking care\n            of the place.  They've turned out\n            to be completely unreliable assholes.\n            Ullman phoned me last night, and\n            I'm supposed to go up there and\n            find out if they have to be replaced.",
+      "block": 101
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "How long is it going to take you to\n            get up here?",
+      "block": 102
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Oh about five hours.  I'm gonna\n            rent a car here at the airport.",
+      "block": 103
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "Okay, Dick - I'll take care of it.",
+      "block": 104
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "HALLORAN",
+      "quote": "Oh thanks a lot, Larry.  I really\n            appreciate that.",
+      "block": 105
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "DURKIN",
+      "quote": "That's all right.  Drive carefully.",
+      "block": 106
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE OVER RADIO",
+      "quote": "Well, good morning to you, Hal and\n            Charlie on Radio 63, KHOW Denver",
+      "block": 107
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE OVER RADIO (CONT'D)",
+      "quote": "and, Charlie, we have what you call\n            your bad day out there.  What you\n            call your heavy snow, snowing hard\n            throughout the eh Denver metro area.\n            Many of the mountain passes - Wolf\n            Creek, and Red Mountain passes are\n            already closed...",
+      "block": 108
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "VOICE OVER RADIO (CONT'D)",
+      "quote": "and the chain law is in effect\n            right now at the Eisenhower Tunnel.\n            I guess as we've just heard from\n            the news forecast, Charlie, a few\n            of the flights are still landing\n            out at Stapleton International\n            Airport, and, with these early\n            storms like this, I guess the\n            entire airport will probably be\n            closed within the hour.  Yeah,\n            they're just not prepared.  The\n            storm will continue throughout the\n            day, and the national weather\n            service... has declared a stopmans\n            and travelers advisory... for all\n            areas outlying the Denver metro",
+      "block": 109
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Hon,",
+      "block": 110
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Okay, hon?",
+      "block": 111
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Jack...?",
+      "block": 112
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Jack...?",
+      "block": 113
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "How do you like it?",
+      "block": 114
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "How do you like it?",
+      "block": 115
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Jack!",
+      "block": 116
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "What are you doing down here?",
+      "block": 117
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "I just eh... wanted...",
+      "block": 118
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY (OFF)",
+      "quote": "...to talk to you.",
+      "block": 119
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Okay.  Let's talk.",
+      "block": 120
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "What do you want to talk about?",
+      "block": 121
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "I...",
+      "block": 122
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY (OFF)",
+      "quote": "I can't really remember.",
+      "block": 123
+    },
+    {
+      "speaker": "p3",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "You can't remember.",
+      "block": 124
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY (OFF)",
+      "quote": "No, I can't.",
+      "block": 125
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "What should be done with him?",
+      "block": 126
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY (OFF)",
+      "quote": "I don't know.",
+      "block": 127
+    },
+    {
+      "speaker": "p6",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Yes...",
+      "block": 128
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Wendy?",
+      "block": 129
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "GRADY (OFF)",
+      "quote": "It's Grady, Mr. Torrance.  Delbert\n            Grady.",
+      "block": 130
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Grady... oh.",
+      "block": 131
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Oh Grady... right.  Grady... er...",
+      "block": 132
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Hullo Grady.",
+      "block": 133
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "GRADY (OFF)",
+      "quote": "Mr. Torrance, I see you can hardly\n            have taken care of the...",
+      "block": 134
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "GRADY (OFF)",
+      "quote": "business we discussed.",
+      "block": 135
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "No need to rub it in, Mr. Grady.\n            I'll deal with that situation as\n            soon as I get out of here.",
+      "block": 136
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "GRADY (OFF)",
+      "quote": "Will you indeed, Mr. Torrance.",
+      "block": 137
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "GRADY (OFF)",
+      "quote": "I wonder.  I have my doubts.",
+      "block": 138
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "GRADY (OFF)",
+      "quote": "I and others have come to believe...\n            that your heart is not in this,\n            that you haven't the belly for it.",
+      "block": 139
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "Just give me one more chance to\n            prove it, Mr. Grady.  That's all I\n            ask.",
+      "block": 140
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "GRADY (OFF)",
+      "quote": "Your wife appears to be stronger\n            than we imagined, Mr. Torrance.\n            Somewhat more resourceful, she\n            seems to have got the better of you.",
+      "block": 141
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "For the moment, Mr. Grady.  Only\n            for the moment.",
+      "block": 142
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "GRADY (OFF)",
+      "quote": "I fear that you will have to deal\n            with this matter in the harshest\n            possible way, Mr. Torrance.  I fear\n            that is the only thing to do.",
+      "block": 143
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "opp",
+      "cue": "JACK",
+      "quote": "There's nothing I look forward to\n            with the greater pleasure, Mr. Grady.",
+      "block": 144
+    },
+    {
+      "speaker": "p12",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "GRADY (OFF)",
+      "quote": "You give your word on that do you,\n            Mr. Torrance?",
+      "block": 145
+    },
+    {
+      "speaker": "p3",
+      "to": "p12",
+      "stance": "ally",
+      "cue": "JACK",
+      "quote": "I give you my word.",
+      "block": 146
+    },
+    {
+      "speaker": "p6",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "WENDY",
+      "quote": "Danny.  Danny, stop it.  Danny!",
+      "block": 147
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "WENDY",
+      "quote": "Eh...",
+      "block": 148
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 15,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 14
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 12,
+        "sign": "opp",
+        "stances": {
+          "opp": 5,
+          "ally": 3,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 30,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 4,
+          "ally": 7,
+          "neu": 19
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p7",
+        "weight": 6,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 6,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 6,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p12"
+      ]
+    ]
+  }
+}
