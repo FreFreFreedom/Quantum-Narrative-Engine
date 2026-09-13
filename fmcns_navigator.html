@@ -19998,15 +19998,15 @@ function renderQueuePanel() {
       ${qPaused ? '<div class="qp-status" style="display:block;margin-top:6px;">⏸ Paused — this waits until you resume.</div>' : ''}
     </div>
     ${qpSectionHtml('asking', 'Waiting for you', asking.length,
-      asking.map(p => `<div class="qp-card">
+      asking.map(p => `<div class="qp-card" data-qitem="${p.id}">
         <div class="q-item-title">${qEsc(p.title || '(untitled)')}</div>
         ${qQuestionBlockHtml(p, { showQuestion: true })}
         ${qReplyBoxHtml('qp' + p.id)}
       </div>`).join(''))}
     ${qpSectionHtml('', 'Running now', running.length,
-      running.map(p => `<div class="qp-row"><span class="qp-num">▶</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''))}
+      running.map(p => `<div class="qp-row" data-qitem="${p.id}"><span class="qp-num">▶</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span></div>`).join(''))}
     ${qpSectionHtml('', 'In queue', queued.length,
-      queued.map((p, i) => `<div class="qp-row"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span>${i > 0 ? iconBtn('top', 'Move it to the front of the queue and start it sooner', 'first', p.id) : ''}</div>`).join(''))}
+      queued.map((p, i) => `<div class="qp-row" data-qitem="${p.id}"><span class="qp-num">${i + 1}.</span><span class="qp-title">${qEsc(p.title || '(untitled)')}</span>${i > 0 ? iconBtn('top', 'Move it to the front of the queue and start it sooner', 'first', p.id) : ''}</div>`).join(''))}
     ${asking.length || running.length || queued.length ? '' : '<div class="qp-quiet">Nothing in the queue.</div>'}
   `;
   qRestoreInputs(body, snap);
@@ -20077,8 +20077,12 @@ async function qpSubmitTask() {
 // The click lands on a deep <span> or <svg>; the thing worth naming is the control around it.
 // ponytail: closest() can overshoot to a big container when nothing nearer is named --
 // the caption shows what will be captured before you click, and chips are removable.
-const qpPickTarget = (t) => (t && t.closest && t.closest('button,a,[role],[id],[data-src],[data-testid],[aria-label],[title],[name],[placeholder]')) || t;
+const qpPickTarget = (t) => (t && t.closest && t.closest('[data-qitem],button,a,[role],[id],[data-src],[data-testid],[aria-label],[title],[name],[placeholder]')) || t;
 function qpDescribeEl(el) {
+  if (el.hasAttribute && el.hasAttribute('data-qitem')) {
+    const label = (el.querySelector('.q-item-title, .qp-title') || el).textContent.trim().slice(0, 60);
+    return '🗂 ' + (label || 'queued task');
+  }
   const parts = [];
   ['id', 'data-src', 'data-testid', 'aria-label', 'placeholder', 'name', 'title'].forEach(k => {
     const v = el.getAttribute(k);
@@ -20093,6 +20097,9 @@ function qpDescribeEl(el) {
   return parts.join(' · ');
 }
 function qpIsOurs(t) {
+  // Dispatch-queue rows live inside this same panel but are valid pick targets --
+  // pointing at a queued item is exactly how you say what to modify next.
+  if (t && t.closest && t.closest('[data-qitem]')) return false;
   return document.getElementById('queuePanel').contains(t)
     || document.getElementById('sysBtn').contains(t);
 }
