@@ -1390,6 +1390,12 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   font:inherit; font-size:var(--fs-sm); color:var(--c-ink-3); }
 .room-side-row:hover { background:var(--c-border); color:var(--c-ink); }
 .room-side-row.is-open { background:var(--c-border); color:var(--c-ink); font-weight:500; }
+.room-side-item { display:flex; align-items:center; gap:2px; }
+.room-side-item .room-side-row { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.room-side-drop { background:none; border:none; padding:4px 6px; cursor:pointer; font:inherit; line-height:1;
+  color:var(--c-ink-5); opacity:0; }
+.room-side-item:hover .room-side-drop, .room-side-drop:focus-visible { opacity:1; }
+.room-side-drop:hover { color:var(--c-danger, var(--c-ink)); }
 .room-side-open { border-top:1px solid var(--c-border); padding-top:8px; }
 /* The board (plan "room-mood-board"): a flowing wall, a kept shelf, and the full
    board opened big. Kept small in the pane on purpose — the full arrangement
@@ -10882,9 +10888,12 @@ function renderRoomSide() {
     + '</div>';
 
   html += '<div class="room-side-list">' + roomSides.map((s, i) => (
-    '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
+    '<div class="room-side-item">'
+    + '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
     + qEsc(s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1))
     + '</button>'
+    + '<button type="button" class="room-side-drop" data-side-drop="' + qEscAttr(s.id) + '" title="Throw this aside away" aria-label="Throw this aside away">✕</button>'
+    + '</div>'
   )).join('') + (!roomSides.length ? '<div class="tv-empty">Nothing yet. Select a passage and choose Aside, or start one here.</div>' : '') + '</div>';
 
   if (open) {
@@ -10897,6 +10906,16 @@ function renderRoomSide() {
   if (newBtn) newBtn.onclick = () => roomSideCreate({ mode: 'empty' });
   host.querySelectorAll('[data-side-pick]').forEach(b => {
     b.onclick = () => roomSideOpen(b.getAttribute('data-side-pick'));
+  });
+  host.querySelectorAll('[data-side-drop]').forEach(b => {
+    b.onclick = async (ev) => {
+      ev.stopPropagation();
+      const id = b.getAttribute('data-side-drop');
+      if (!confirm('Throw this aside away?')) return;
+      try { await apiWrite('/api/convos/' + encodeURIComponent(id), 'DELETE'); } catch (e) {}
+      if (roomSideOpenId === id) roomSideOpenId = null;
+      loadRoomSides();
+    };
   });
   const bring = host.querySelector('[data-side-bring]');
   if (bring) bring.onclick = roomSideBring;
