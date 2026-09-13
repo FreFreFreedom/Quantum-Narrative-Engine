@@ -1,3 +1,4 @@
+import { freshQuota } from './services/providers/codex.js';
 // Local .env first, before any module reads process.env at import time. No-op on
 // Railway (variables come from the project there, no .env file exists).
 import { loadEnvFile } from './lib/loadEnvFile.js';
@@ -21,7 +22,7 @@ import { chatRoutes } from './routes/chat.js';
 import { bindDb, initPromptQueue } from './services/promptQueue.js';
 import { bindAgentsDb } from './services/agents.js';
 import { migrateOntology, seedKnowledge, seedPlans, seedAgentMemory, seedArchitectureHistory, cleanupFrenchSuggestions, cleanupTestArchNode } from './services/bootstrapData.js';
-import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage } from './services/taskRunner.js';
+import { initTaskRunner, bindTaskDb, DATA_DIR, runnerReportedUsage, runnerStatus } from './services/taskRunner.js';
 import { architectureRoutes } from './routes/architecture.js';
 import { intelRoutes } from './routes/intel.js';
 import { discoveryRoutes } from './routes/discovery.js';
@@ -384,6 +385,7 @@ app.get('/api/agent/usage', requireAuth, async (req, res) => {
     res.json({
       ...usage,
       openai,
+      codex: runnerStatus().connected ? freshQuota(fromRunner?.codex) : null,
       schedulerLimitResetAt: queueDeferUntil(),
     });
   } catch (err) {

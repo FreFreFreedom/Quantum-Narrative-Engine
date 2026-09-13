@@ -550,6 +550,10 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 .rail-foot #usageStripHost { flex:0 0 auto; height:120px; overflow:hidden; padding:0 3px; }
 .railbar:not(.pinned):not(:hover):not(:focus-within) .rail-foot #usageStripHost { padding:0 2px; }
 .uq-grid { display:flex; flex-direction:column; }
+.uq-grid .uq-line { padding:2px 4px; }
+.uq-grid .uq-cell { gap:1px; }
+.uq-grid .uq-in { display:none; } /* Reset times remain in each cell’s tooltip. */
+.ai-queue-quota { display:inline-block; margin-left:6px; font-size:var(--fs-xs); color:var(--c-ink-4); }
 .uq-head { display:grid; grid-template-columns:1fr 46px 46px; gap:6px; padding:0 4px 4px;
   font-size:var(--fs-2xs); letter-spacing:.06em; text-transform:uppercase; color:var(--c-ink-5); }
 .uq-head span:not(:first-child) { text-align:center; }
@@ -568,7 +572,7 @@ body, .left, .right, .graph-controls, .rail-inner, .arch-toolbar, .tv-toolbar, .
 /* The money is a figure, not a warning — spending is not a state to be alarmed by,
    so it takes no colour from the ramp and none of its own. */
 .uq-money b { font-size:var(--fs-sm); font-weight:var(--fw-medium); color:var(--c-ink-2); font-variant-numeric:tabular-nums; }
-/* Shut: two short bars, the five-hour window only, named above each, spend beneath.
+/* Shut: three short bars, the five-hour window only, named above each, spend beneath.
    No figures — at 52px a percentage is four characters of noise, and the bar already
    says the one thing worth knowing from across the room. */
 .uq-shut { display:flex; flex-direction:column; gap:8px; padding:4px 2px 2px; }
@@ -2693,7 +2697,7 @@ button:active { transform: translateY(1px) scale(.99); }
          server pick moved into Settings, which is where a knob touched twice a year
          belongs. What is left is the only thing here that is information. -->
     <div class="rail-foot">
-      <div id="usageStripHost" data-src="Side rail → the quota read-out (both Claude accounts + the paid lane) | fmcns_navigator.html: loadUsage(), usageRailHtml(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
+      <div id="usageStripHost" data-src="Side rail → the quota read-out (both Claude accounts + Codex + the paid lane) | fmcns_navigator.html: loadUsage(), usageRailHtml(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
       <div class="rail-btnrow">
         <button class="rail-item rail-btn" id="aiSheetBtn" title="Settings — which model handles what, which server this page talks to, and what happens when the paid one runs out">
           <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-settings"></use></svg>
@@ -11721,6 +11725,7 @@ function renderAiSettings() {
           <option value="opencode"${qdProvider === 'opencode' ? ' selected' : ''}>OpenCode</option>
           <option value="codex"${qdProvider === 'codex' ? ' selected' : ''}>Codex — ChatGPT (your Mac)</option>
         </select>
+        <span id="aiQueueQuota" class="ai-queue-quota"${qdProvider === 'codex' ? '' : ' hidden'}>${codexAllowance(lastUsage)}</span>
       </td>
       <td>
         <select id="aiQueueModel"${qdProvider === 'opencode' || qdIsClaude || qdProvider === 'codex' ? '' : ' disabled'}>${qdModelOpts}</select>
@@ -11821,6 +11826,7 @@ function renderAiSettings() {
 
   const qpSel = document.getElementById('aiQueueProvider');
   if (qpSel) qpSel.onchange = async () => {
+    refreshCodingQuota();
     const ms = document.getElementById('aiQueueModel');
     const es = document.getElementById('aiQueueEffort');
     if (!ms) return;
@@ -16171,7 +16177,7 @@ function usageFullHtml(u) {
   </div>`;
 }
 
-// ── The rail read-out: two accounts, two windows each, and the money ───────────
+// ── The rail read-out: three accounts, two windows each, and the money ───────────
 // Every figure here is what is LEFT, never what is spent — the reading that answers
 // "can I start something now". The hairline under it is the same quantity drawn, and
 // its colour is one continuous ramp rather than three named states: sea green while
@@ -16192,7 +16198,7 @@ function uqColour(leftPct) {
 // round once, in one place, rather than each caller remembering to.
 function uqLeft(bucket) {
   const p = bucket && bucket.utilizationPct;
-  return typeof p === 'number' ? Math.max(0, Math.min(100, Math.round(100 - p))) : null;
+  return Number.isFinite(p) ? Math.max(0, Math.min(100, Math.round(100 - p))) : null;
 }
 // The figure is what is left; the line is what has been used. They run opposite ways
 // on purpose — the number answers "can I start something", the line fills up as the
@@ -16218,15 +16224,31 @@ function uqShutBar(name, usage) {
   const left = uqLeft(usage && usage.session);
   const fill = left == null ? '' : `<em style="width:${100 - left}%;background:${uqColour(left)}"></em>`;
   return `<span class="uq-b" title="${name}: ${left == null ? 'no reading' : left + '% of five hours left'}">
-    <span>${name}</span><i>${fill}</i></span>`;
+    <span>${name}${left == null ? ' —' : ''}</span><i>${fill}</i></span>`;
 }
 
+function currentCodexQuota(u) {
+  const quota = u && u.codex;
+  const at = Date.parse(quota && quota.at);
+  return Number.isFinite(at) && at <= Date.now() && Date.now() - at <= 30 * 60000 ? quota : null;
+}
+function codexAllowance(u) {
+  const quota = currentCodexQuota(u);
+  const left = bucket => { const n = uqLeft(bucket); return n == null ? '—' : n + '%'; };
+  return `5 h: ${left(quota && quota.session)} · Week: ${left(quota && quota.week)} left`;
+}
+function refreshCodingQuota() {
+  const el = document.getElementById('aiQueueQuota');
+  if (!el) return;
+  el.hidden = document.getElementById('aiQueueProvider')?.value !== 'codex';
+  el.textContent = codexAllowance(lastUsage);
+}
 async function loadUsage() {
   const host = document.getElementById('usageStripHost');
   let u;
-  try { u = await api('/api/agent/usage'); } catch (e) { if (host) host.innerHTML = ''; return; }
+  try { u = await api('/api/agent/usage'); } catch { u = {}; }
   lastUsage = u;
-  // If Settings is open, its breakdown refreshes with the same reading.
+  refreshCodingQuota();
   const full = document.getElementById('usageFullHost');
   if (full) full.innerHTML = usageFullHtml(u);
   if (!host) return;
@@ -16237,14 +16259,7 @@ async function loadUsage() {
   // hard. An absent account draws a dash, never a zero: a zero would read as "spent".
   const pa = u;
   const ant = u.side || null;
-  const haveAny = uqLeft(pa.session) != null || uqLeft(pa.week) != null
-    || (ant && (uqLeft(ant.session) != null || uqLeft(ant.week) != null));
-
-  if (!haveAny) {
-    const today = fmtTokens(u.today && u.today.totalTokens);
-    host.innerHTML = `<div class="uq-none" title="Attach the local runner (npm run runner) and the limits appear here.">No reading${today !== '0' ? ` · ${today} tokens today` : ''}</div>`;
-    return;
-  }
+  const codex = currentCodexQuota(u);
 
   const cap = u.openai;
   const money = cap && typeof cap.spentUsd === 'number'
@@ -16256,11 +16271,13 @@ async function loadUsage() {
       <div class="uq-head"><span></span><span>5 h</span><span>Week</span></div>
       ${uqRow('PA', pa)}
       ${uqRow('Antoine', ant)}
+      ${uqRow('Codex', codex)}
       ${money}
     </div>
     <div class="uq-shut">
       ${uqShutBar('PA', pa)}
       ${uqShutBar('Ant', ant)}
+      ${uqShutBar('Codex', codex)}
       ${cap && typeof cap.spentUsd === 'number' ? `<span class="uq-spend" title="Spent this month">$${cap.spentUsd.toFixed(2)}</span>` : ''}
     </div>`;
 }

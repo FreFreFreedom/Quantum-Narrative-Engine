@@ -19,7 +19,7 @@
 //     "cached_input_tokens":28416,"output_tokens":132,"reasoning_output_tokens":0}}
 
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, openSync, readSync, closeSync, fstatSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { registerTextCall, unregisterTextCall } from '../textCallRegistry.js';
@@ -80,6 +80,89 @@ export function signedInAs() {
   }
 }
 
+// Quota is display-only; deliberately not a task admission gate.
+export const QUOTA_MAX_AGE_MS = 30 * 60_000;
+export function freshQuota(quota, now = Date.now()) {
+  const at = Date.parse(quota?.at);
+  return Number.isFinite(at) && at <= now && now - at <= QUOTA_MAX_AGE_MS ? quota : null;
+}
+
+// Both the fixture parser and the disk reader consume newest lines first.
+function quotaFromLines(lines, now) {
+  try {
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line);
+      const limits = event.payload?.rate_limits ?? event.rate_limits;
+      if (!limits) continue;
+      if (limits.limit_id && limits.limit_id !== 'codex') continue;
+      const bucket = (value, minutes) => {
+        if (!value || value.window_minutes !== minutes || !Number.isFinite(value.used_percent)
+          || value.used_percent < 0 || value.used_percent > 100
+          || !Number.isFinite(value.resets_at)) throw new Error('Invalid quota window');
+        return { utilizationPct: value.used_percent, resetsAt: new Date(value.resets_at * 1000).toISOString() };
+      };
+      return freshQuota({
+        session: bucket(limits.primary, 300), week: bucket(limits.secondary, 10080),
+        plan: typeof limits.plan_type === 'string' ? limits.plan_type : null,
+        credits: limits.credits ?? null, at: event.timestamp,
+      }, now);
+    }
+  } catch { /* partial writes and unexpected data mean unknown */ }
+  return null;
+}
+
+export function parseQuota(raw, now = Date.now()) {
+  return quotaFromLines(String(raw || '').split('\n').reverse(), now);
+}
+
+function* tailLines(fd) {
+  let position = fstatSync(fd).size;
+  let carry = Buffer.alloc(0);
+  while (position > 0) {
+    const size = Math.min(position, 16 * 1024);
+    position -= size;
+    const chunk = Buffer.alloc(size);
+    if (readSync(fd, chunk, 0, size, position) !== size) throw new Error('Short read');
+    const bytes = Buffer.concat([chunk, carry]);
+    let end = bytes.length;
+    for (let i = end - 1; i >= 0; i--) {
+      if (bytes[i] !== 10) continue;
+      yield bytes.subarray(i + 1, end).toString('utf8');
+      end = i;
+    }
+    carry = bytes.subarray(0, end);
+  }
+  if (carry.length) yield carry.toString('utf8');
+}
+
+export function readQuota(root = join(homedir(), '.codex', 'sessions'), now = Date.now()) {
+  let fd;
+  try {
+    const dirs = (path, pattern) => readdirSync(path, { withFileTypes: true })
+      .filter(e => e.isDirectory() && pattern.test(e.name)).map(e => e.name).sort().reverse();
+    // Visit dated folders newest first and stop at the newest populated day.
+    for (const year of dirs(root, /^\d{4}$/)) {
+      const yp = join(root, year);
+      for (const month of dirs(yp, /^\d{2}$/)) {
+        const mp = join(yp, month);
+        for (const day of dirs(mp, /^\d{2}$/)) {
+          const dp = join(mp, day);
+          const files = readdirSync(dp, { withFileTypes: true })
+            .filter(e => e.isFile() && /^rollout-.*\.jsonl$/.test(e.name))
+            .map(e => ({ path: join(dp, e.name), mtime: statSync(join(dp, e.name)).mtimeMs }))
+            .sort((a, b) => b.mtime - a.mtime);
+          if (!files.length) continue;
+          fd = openSync(files[0].path, 'r');
+          return quotaFromLines(tailLines(fd), now);
+        }
+      }
+    }
+  } catch { /* missing sessions, permissions or a file disappearing */ }
+  finally { if (fd !== undefined) { try { closeSync(fd); } catch {} } }
+  return null;
+}
+
 // ─── Transcript parsing (Codex's JSONL) ─────────────────────────────────────
 export function streamEventToChunks(evt, onChunk) {
   if (evt.type !== 'item.completed' || !evt.item) return;
@@ -135,10 +218,15 @@ export function usageFromTranscript(raw) {
 }
 
 // ─── Quota / limit detection ────────────────────────────────────────────────
+// These must match how the CLI REPORTS being spent, not the word "quota" wherever it
+// appears. The loose version read a task that was ABOUT quota as a quota failure and
+// benched the lane on the agent's own prose — the run had finished its work and the
+// account was at 53%. Keep every pattern anchored to error phrasing.
 const LIMIT_PATTERNS = [
-  [/usage limit|rate limit|too many requests|429/i, 'usage limit reached'],
-  [/quota|insufficient_quota/i, 'quota exhausted'],
-  [/you.{0,12}(?:have )?(?:reached|hit).{0,20}limit/i, 'usage limit reached'],
+  [/\b429\b|too many requests/i, 'usage limit reached'],
+  [/(usage|rate)[ _-]?limit[^.\n]{0,30}(reached|exceeded|exhausted)/i, 'usage limit reached'],
+  [/insufficient_quota|quota[ _-]?(exceeded|exhausted)/i, 'quota exhausted'],
+  [/you(?:'ve| have)?\s+(?:reached|hit)\s+(?:your\s+)?[^.\n]{0,24}limit/i, 'usage limit reached'],
 ];
 
 export function detectLimit(text) {

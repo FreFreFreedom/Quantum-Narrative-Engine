@@ -107,7 +107,12 @@ ok('OPENAI_API_KEY is stripped, so a run cannot silently bill per token');
 assert.equal(codex.detectLimit('Error: 429 Too Many Requests').hit, true);
 assert.equal(codex.detectLimit('you have reached your usage limit').hit, true);
 assert.equal(codex.detectLimit('wrote 3 files, done').hit, false);
-ok('a rate-limited run is recognised and a normal one is not');
+// The failure that made this rule: a task ABOUT quota talked about quota all the way
+// through, and the lane was benched on its own prose while the account sat at 53%.
+assert.equal(codex.detectLimit("Codex's quota joins the read-out. The quota reading is a file read.").hit, false);
+assert.equal(codex.detectLimit('rate limit exceeded').hit, true);
+assert.equal(codex.detectLimit('quota exhausted').hit, true);
+ok('a rate-limited run is recognised — and a task that merely talks about quota is not');
 
 // No automatic substitution between models.
 assert.deepEqual(codex.buildFallbackChain(), []);
@@ -121,5 +126,42 @@ assert.equal(codex.resolveModel(''), 'gpt-6-astra');
 assert.equal(codex.resolveModel(null), 'gpt-6-astra');
 assert.equal(codex.resolveModel('gpt-5.6-sol'), 'gpt-5.6-sol');
 ok('a foreign model name falls back instead of being passed through');
+
+// Quota fixtures use the session event's timestamp, never the heartbeat time.
+const quotaAt = '2026-09-13T12:00:00.000Z';
+const quotaNow = Date.parse(quotaAt);
+const quotaEvent = {
+  timestamp: quotaAt, type: 'event_msg', payload: { type: 'token_count', rate_limits: {
+    limit_id: 'codex',
+    primary: { used_percent: 36, window_minutes: 300, resets_at: 1789296051 },
+    secondary: { used_percent: 6, window_minutes: 10080, resets_at: 1789836694 },
+    credits: { has_credits: false, unlimited: false, balance: '0' }, plan_type: 'plus',
+  } },
+};
+const quotaLine = JSON.stringify(quotaEvent);
+const quota = codex.parseQuota(quotaLine, quotaNow);
+assert.deepEqual(quota, {
+  session: { utilizationPct: 36, resetsAt: new Date(1789296051 * 1000).toISOString() },
+  week: { utilizationPct: 6, resetsAt: new Date(1789836694 * 1000).toISOString() },
+  credits: quotaEvent.payload.rate_limits.credits, plan: 'plus', at: quotaAt,
+});
+ok('quota percentages, reset seconds, plan, credits and original time are read correctly');
+assert.equal(codex.parseQuota('{"type":"turn.started"}', quotaNow), null);
+assert.equal(codex.parseQuota('', quotaNow), null);
+ok('a transcript without quota reports unknown');
+assert.equal(codex.parseQuota(quotaLine, quotaNow + 30 * 60000 + 1), null);
+assert.equal(codex.freshQuota(quota, quotaNow + 30 * 60000 + 1), null);
+assert.deepEqual(codex.parseQuota(quotaLine, quotaNow + 30 * 60000), quota);
+ok('old readings expire at the source and again when served, even with fresh heartbeats');
+assert.equal(codex.parseQuota(quotaLine + '\n{"partial":', quotaNow), null);
+assert.equal(codex.parseQuota(JSON.stringify({ ...quotaEvent, timestamp: 'bad' }), quotaNow), null);
+assert.equal(codex.parseQuota(quotaLine, quotaNow - 1), null);
+ok('malformed, partial and invalid timestamp readings are unknown');
+const changedQuota = JSON.parse(quotaLine);
+changedQuota.payload.rate_limits.primary.used_percent = 0;
+assert.equal(codex.parseQuota(quotaLine + '\n' + JSON.stringify(changedQuota) + '\n', quotaNow).session.utilizationPct, 0);
+changedQuota.payload.rate_limits.primary.used_percent = null;
+assert.equal(codex.parseQuota(JSON.stringify(changedQuota), quotaNow), null);
+ok('the last reading wins, real zero is preserved and a missing percentage is unknown');
 
 console.log(`\ncodex: ${n} checks passed\n`);

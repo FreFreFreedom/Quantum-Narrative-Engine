@@ -571,13 +571,14 @@ async function claudeGate({ tier, preset, account }) {
 async function usageForReport() {
   let usage = null;
   try { usage = await getClaudeUsage(); } catch { /* unknown — nothing to report */ }
-  if (!usage) return null;
   let side = null;
   try {
     const s = await getSideClaudeUsage();
     if (s && s.subscriptionAvailable) side = { session: s.session, week: s.week, subscriptionAvailable: true };
   } catch { /* unknown — the rail shows a dash */ }
-  return { ...usage, side };
+  let codex = null;
+  try { codex = codexCli.readQuota(); } catch { /* quota must never break a heartbeat */ }
+  return { ...usage, side, codex };
 }
 
 // ─── Claude helper lane ───────────────────────────────────────────────────────
@@ -1218,7 +1219,7 @@ function runCodexOnce({ task, model, effort, cwd, branch }) {
       if (!pending.length && !sawRealOutput) return;
       const chunks = pending; pending = [];
       try {
-        const r = await api(`/worker/${task.id}/stream`, { chunks, model: `codex:${model}`, cost_usd: 0, session_id: sessionId, usage });
+        const r = await api(`/worker/${task.id}/stream`, { chunks, model: `codex:${model}`, cost_usd: 0, session_id: sessionId, usage: await usageForReport() });
         if (r.status === 409) finish('cancelled');
       } catch { /* transient network — retry next tick */ }
     }, STREAM_FLUSH_MS);
