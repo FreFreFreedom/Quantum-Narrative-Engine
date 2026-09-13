@@ -33,7 +33,7 @@ import { listSuggestions } from './workSuggestions.js';
 import { listIdeas, getIdea } from './workIdeas.js';
 import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTools.js';
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
-import { mindBlock, harvest as harvestMind } from './mind.js';
+import { mindBlock, harvest as harvestMind, rememberPassage as rememberPassageMind } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
 import { analogyLook } from './roomAnalogies.js';
 
@@ -330,6 +330,20 @@ export function setChatLane(convoId, override) {
   return getChatLane(convoId);
 }
 
+// Side talks (plan "side talks in the Room, and remember this") default to
+// Gemini and only Gemini — his call, 2026-09-13 — via the sticky per-conversation
+// lane above. getFallbackChain (ai/text.js) already keeps a pinned model's own
+// catalogue siblings in its retry chain, so a spent gemini-flash-latest falls
+// back to gemini-flash-lite-latest and never to another provider.
+const SIDE_LANE = Object.freeze({ provider: 'google-ai-studio', model: 'gemini-flash-latest' });
+
+// '<parentConvoId>:<uuid>' — the uuid is what makes representing MANY side talks
+// per parent possible under idx_convos_subject's unique index (see the schema
+// comment on convos.parent_convo_id). Exported (pure) for scripts/side-selftest.js.
+export function sideSubjectId(parentConvoId) {
+  return `${parentConvoId}:${randomUUID()}`;
+}
+
 export function findConvo(subjectType, subjectId) {
   if (!db) return null;
   return db.prepare(`SELECT * FROM convos WHERE subject_type=? AND subject_id=? AND deleted_at IS NULL`).get(subjectType, subjectId) || null;
@@ -574,6 +588,37 @@ export function listOpenConvos(limit = 50) {
   return rows.map((c) => ({ ...c, subjects: listConvoSubjects(c.id) }));
 }
 
+// ─── Side talks (plan "side talks in the Room, and remember this") ─────────────
+// A side talk is a convo with subject_type='side', subject_id='<parentId>:<uuid>'
+// (the uuid because, unlike the one-per-thread analogy pane, a thread can have
+// many of these and idx_convos_subject is unique) and parent_convo_id set. It
+// stays out of listOpenConvos by construction (subject_type filter) and reads the
+// whole parent conversation via the block conversations.js's own prompt assembly
+// adds below (see buildTurnPrompt).
+
+export function listSideTalks(parentConvoId) {
+  if (!db) return [];
+  return db.prepare(
+    `SELECT * FROM convos WHERE subject_type='side' AND parent_convo_id=? AND deleted_at IS NULL ORDER BY updated_at DESC`,
+  ).all(parentConvoId);
+}
+
+// Door #1 — an empty aside beside `parentConvoId`. Its first message (plain, or
+// carrying picked passages via sendMessage's `quotes`) is the caller's job — this
+// only opens the thread and pins it to Gemini.
+export function createSideTalk(parentConvoId, { title = null, createdBy = 'antoine' } = {}) {
+  if (!db) return { error: 'no_db' };
+  if (!getConvo(parentConvoId)) return { error: 'not_found' };
+  const made = createOpenConvo({ title: title || 'Side talk', createdBy });
+  if (made.error) return made;
+  const subjectId = sideSubjectId(parentConvoId);
+  db.prepare(`UPDATE convos SET subject_type='side', subject_id=?, parent_convo_id=? WHERE id=?`)
+    .run(subjectId, parentConvoId, made.convo.id);
+  setChatLane(made.convo.id, SIDE_LANE);
+  broadcastAll('convos:updated', { convoId: made.convo.id, subjectType: 'side', subjectId });
+  return { ok: true, convo: getConvo(made.convo.id) };
+}
+
 export function renameConvo(id, title) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(id);
@@ -733,7 +778,12 @@ export function deleteMark(convoId, markId) {
 // is a fresh context — reset folded the old one for the old thread), the queue
 // hand-off, the extraction state, and the attached files. A branch that inherited
 // a work_prompt_id would look like it had already been sent to the queue.
-export function forkConvo(convoId, { throughMessageId = null, title = null, createdBy = 'antoine' } = {}) {
+// `toSide: true` is door #2 into a side talk: the same copy below, except the
+// result is filed as a side talk of `convoId` (subject_type='side', parent
+// pinned, Gemini lane) instead of a loose roaming conversation. Reuses this
+// copier rather than writing a second one — the only difference is what the
+// result gets filed as afterwards.
+export function forkConvo(convoId, { throughMessageId = null, title = null, createdBy = 'antoine', toSide = false } = {}) {
   if (!db) return { error: 'no_db' };
   const convo = getConvo(convoId);
   if (!convo) return { error: 'not_found' };
@@ -776,6 +826,14 @@ export function forkConvo(convoId, { throughMessageId = null, title = null, crea
   }
 
   db.prepare(`UPDATE convos SET turns=? WHERE id=?`).run(keep.filter((m) => m.role === 'user').length, forkId);
+
+  if (toSide) {
+    const subjectId = sideSubjectId(convoId);
+    db.prepare(`UPDATE convos SET subject_type='side', subject_id=?, parent_convo_id=? WHERE id=?`)
+      .run(subjectId, convoId, forkId);
+    setChatLane(forkId, SIDE_LANE);
+  }
+
   broadcastAll('convos:updated', { convoId: forkId });
   return { ok: true, convo: getConvo(forkId), copied: keep.length, of: msgs.length };
 }
@@ -1133,7 +1191,10 @@ const _worldLookInFlight = new Set();
 export function roomWorldLook(convoId) {
   if (!convoId || _worldLookInFlight.has(convoId)) return;
   const convo = getConvo(convoId);
-  if (!convo) return;
+  // A side talk is a tangent, not a place to mine for build ideas — and it
+  // costs a model call to check. Same reasoning below for the analogy pass and
+  // the mind harvest (analogyLook, mind.js#runHarvest).
+  if (!convo || convo.subject_type === 'side') return;
   const seen = convo.world_look_seen_turns || 0;
   const turns = convo.turns || 0;
   if (turns <= seen) return;
@@ -1194,6 +1255,28 @@ export function turnMaxTokens(convoId, base = 4000) {
 // subscription when 'studio' points there). Returns { text, via } | { error }.
 // The prompt itself, factored out so the streaming turn below sends exactly the
 // same thing — a second copy of this assembly would drift.
+// A side talk sees the WHOLE main conversation it stepped out of (his ask,
+// 2026-09-13) — never the reverse, and never leaking anywhere else: only this
+// function reads parent_convo_id, so a main thread's own transcript, its /note
+// export and the mind harvest all still read convo_messages by convo_id alone
+// and never see a side talk's content.
+// Pure given its arguments — no db reads of its own — so scripts/side-selftest.js
+// can exercise it directly. The db lookups (parent convo + its messages) live at
+// the call site below.
+export function parentTranscriptBlock(convo, parent, parentMsgs) {
+  if (!convo || convo.subject_type !== 'side' || !convo.parent_convo_id || !parent) return '';
+  const transcript = transcriptOf(parent, parentMsgs || [], CONVO_HISTORY_WINDOW, { full: true });
+  if (!transcript) return '';
+  return `\n=== THE CONVERSATION THIS ONE STEPPED OUT OF — background, not the subject ===\n${transcript}`;
+}
+
+function parentTranscriptFor(convo) {
+  if (convo.subject_type !== 'side' || !convo.parent_convo_id) return '';
+  const parent = getConvo(convo.parent_convo_id);
+  if (!parent) return '';
+  return parentTranscriptBlock(convo, parent, listMessages(parent.id));
+}
+
 function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext = true, brevity = true, tools = false, repoFacts = null, maxChars = null }) {
   const msgs = listMessages(convo.id);
   const depth = !brevity;
@@ -1242,6 +1325,10 @@ function buildTurnPrompt({ convo, ctx, instruction = null, includeProjectContext
     repoFacts
       ? `\n=== REPO FACTS (read from the checkout just now — trust these over your own recollection) ===\n${repoFacts}\nTreat any file not listed as EXIST above as non-existent. Do not name a file you have not been told exists.`
       : '',
+    // A side talk's own parent — same cache-safe region as memory and repo facts,
+    // for the same reason: variable material that belongs AFTER the cached prefix,
+    // never ahead of it. See parentTranscriptBlock().
+    parentTranscriptFor(convo),
     `\n=== THE CONVERSATION SO FAR ===\n${transcriptOf(convo, msgs, historyWindow) || '(nothing yet)'}`,
     depth && studioPersona() ? `\n=== HOW TO THINK ===\n${studioPersona()}` : '',
     instruction

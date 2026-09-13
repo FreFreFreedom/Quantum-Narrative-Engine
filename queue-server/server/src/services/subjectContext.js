@@ -120,6 +120,25 @@ registerSubject('open', {
 });
 
 
+// ─── 'side' — a side talk beside a Room conversation ─────────────────────────
+// (plan "side talks in the Room, and remember this"). Its subject_id is
+// '<parentConvoId>:<uuid>' — synthetic, like 'open''s, and unique for the same
+// reason. describe() stays short because the actual background — the WHOLE
+// parent conversation — rides in its own block (conversations.js#parentTranscriptBlock),
+// not here, so the two never say the same thing twice.
+registerSubject('side', {
+  label: 'Side talk',
+  load: (db, id) => ({ id }),
+  title: (db, id, hint) => {
+    const h = (typeof hint === 'string' ? hint : hint?.title) || '';
+    return String(h).trim().slice(0, 80) || 'Side talk';
+  },
+  describe: () => `This is a SIDE TALK — a small, separate conversation he opened beside a main one, to work out a tangent or a clarification without lengthening or polluting the main thread. The whole main conversation it stepped out of is given to you below as background, not as the subject: answer what is actually asked here, using that background only where it helps.`,
+  handoff: () => {
+    return;
+  },
+});
+
 registerSubject('seed', {
   label: 'Seed',
   load: (db, id, hint) => {

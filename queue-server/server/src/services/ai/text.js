@@ -399,8 +399,10 @@ function detectQuotaLimit(providerId, text) {
   return false;
 }
 
-// Get the fallback chain for a feature
-async function getFallbackChain(feature, providerId, model, { noOpencodeBackup = false } = {}) {
+// Get the fallback chain for a feature. Exported for scripts/side-selftest.js —
+// the same-provider-only retry for a pinned lane (noOpencodeBackup) is pure and
+// worth guarding directly rather than only through a live model call.
+export async function getFallbackChain(feature, providerId, model, { noOpencodeBackup = false } = {}) {
   const cap = getProviderCapability(providerId);
   if (!cap) return [];
 
@@ -427,7 +429,21 @@ async function getFallbackChain(feature, providerId, model, { noOpencodeBackup =
   // gets NO automatic opencode backup either — same reasoning as the catalogue
   // tail being skipped in generateText: Antoine picked this lane specifically,
   // and a quiet swap to a different provider on failure would defeat the point.
-  if (noOpencodeBackup) return chain;
+  //
+  // It DOES still get the rest of that SAME provider's free catalogue models
+  // (plan "side talks in the Room, and remember this" — a side talk pinned to
+  // gemini-flash-latest must fail over to gemini-flash-lite-latest when the
+  // daily allowance is spent, never to a different provider). Model, never
+  // provider, is what a pin means.
+  if (noOpencodeBackup) {
+    if (model) {
+      const cat = getProviderCatalog(providerId);
+      for (const m of cat?.models || []) {
+        if (m.id !== model) chain.push({ provider: providerId, model: m.id });
+      }
+    }
+    return chain;
+  }
 
   // If quota policy allows auto-free, add the opencode lane as backup: the
   // free floor (the opencode default for side passes), never the paid
