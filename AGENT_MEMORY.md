@@ -924,3 +924,14 @@ worth knowing before extending it:
   it has a CHECK of ('chat','plan'). Steering and the watermark are two columns on
   `convos`.
 
+## Natural requests and lasting analogy context (2026-09-13)
+
+Antoine approved the next analogy-engine pass in
+`plans/room-analogy-engine-natural-requests.md`. Remove the horizontal, vertical,
+entanglement, antidote, counterpart and reach filters; natural language becomes
+the steering, with only **as you talk / only when asked** left. Manual asks may
+request any positive number of structural analogies about any subject, delivered
+progressively to the exact count. A durable living-subject record must replace the
+six-message-only context so the engine remains aware of older Room threads and of
+its own side conversation. This is approved implementation work, assigned to
+Claude's second account on Sonnet at medium effort.
