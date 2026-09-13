@@ -1,0 +1,327 @@
+{
+  "entity": "f_vertigo",
+  "source": "data-seed/scripts/f_vertigo.txt",
+  "scope": "the whole script, machine-extracted (24 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who is the woman in the portrait?",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The one where the lady is sitting.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh, that's Carlotta, sir.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "You'll find it in the catalogue:",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "\"Portrait of Carlotta.\"",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELSTER",
+      "quote": "She never heard of Carlotta Valdes.",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELSTER",
+      "quote": "Nothing.",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SCOTTIE",
+      "quote": "And when she goes to those places...",
+      "block": 8
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELSTER",
+      "quote": "She is not my wife.",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SCOTTIE",
+      "quote": "Why did she never tell her daughter?",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SCOTTIE",
+      "quote": "Are you all right?",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "SCOTTIE",
+      "quote": "Madeleine...",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MADELEINE",
+      "quote": "Please... thank you... please...",
+      "block": 13
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "OFFICIAL",
+      "quote": "Of course Mr. Ferguson is to be \n\t\tcongratulated for having once saved \n\t\tthe woman's life when, in a previous \n\t\tfit of aberration, she threw herself \n\t\tinto the Bay. It is a pity that \n\t\tknowing her suicidal tendencies he \n\t\tdid not make a greater effort the \n\t\tsecond time. But we are not here to \n\t\tpass judgment on Mr. Ferguson's lack \n\t\tof initiative. He did nothing, and \n\t\tthe law has little to say on the \n\t\tsubject of things left undone.",
+      "block": 14
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FOREMAN",
+      "quote": "We've reached the verdict.",
+      "block": 15
+    },
+    {
+      "speaker": "p5",
+      "to": "p6",
+      "stance": "neu",
+      "cue": "next line naming the speaker",
+      "quote": "And what is your verdict.",
+      "block": 16
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "FOREMAN",
+      "quote": "We find that Madeleine Elster \n\t\tcommitted suicide while being out of -- \n\t\twhile being out of unsound mind.",
+      "block": 17
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "OFFICIAL",
+      "quote": "Your verdict will be so recorded.  \n\t\tDismissed.",
+      "block": 18
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "HANSEN",
+      "quote": "Let's go, Scottie.",
+      "block": 19
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELSTER",
+      "quote": "Scottie --",
+      "block": 20
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ELSTER",
+      "quote": "Scottie, I'm sorry. That was rough.",
+      "block": 21
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ELSTER",
+      "quote": "He had no right to say that. It was \n\t\tmy responsibility. You didn't know \n\t\ther. I shouldn't have got you \n\t\tinvolved.",
+      "block": 22
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ELSTER",
+      "quote": "No, there's nothing you have to say \n\t\tto me. I'm getting out, Scottie. For \n\t\tgood. I can't stay here. I'm winding \n\t\tup her affairs, and mine. I'm going \n\t\tto get as far away as I can. Probably \n\t\tEurope. And I'll probably never come \n\t\tback.",
+      "block": 23
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ELSTER",
+      "quote": "Good-bye, Scottie. If there's anything \n\t\tI can do for you before I go...",
+      "block": 24
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ELSTER",
+      "quote": "There was no way for them to \n\t\tunderstand. But you and I know who \n\t\tkilled Madeleine.",
+      "block": 25
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 1,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      []
+    ]
+  }
+}
