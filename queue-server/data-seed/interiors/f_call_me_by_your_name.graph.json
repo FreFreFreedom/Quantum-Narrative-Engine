@@ -1,0 +1,1163 @@
+{
+  "entity": "f_call_me_by_your_name",
+  "source": "data-seed/scripts/f_call_me_by_your_name.txt",
+  "scope": "the whole script, machine-extracted (24 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Just play it again.",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "The same one?",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "The same one.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Just play it again, please!",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Forget I asked.",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "How did you know about this place?",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Thanks, Buddy!",
+      "block": 7
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "I think your insights here are\n               persuasive, but..",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "OLIVER",
+      "quote": "Go on, I’m okay with criticism.",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "PERLMAN",
+      "quote": "You are? Good. I think this needs\n               firming up.",
+      "block": 10
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "It feels like you need to accept\n               the paradoxical nature of this\n               philosopher’s thinking, not just\n               explain it..",
+      "block": 11
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Sei stato al fiume?\n               (You've been at the river?)",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "ANCHISE",
+      "quote": "Si.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "OLIVER",
+      "quote": "I’m okay with firming up - I’m okay\n               with paradox. Back to the drawing\n               board.",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Are you sleeping?",
+      "block": 15
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "I was.",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Does this make any sense to you?\n               Not to me. Nor to your dad.",
+      "block": 17
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Maybe it did when you wrote it.",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "OLIVER",
+      "quote": "That’s the kindest thing anyone’s\n               said to me in months.",
+      "block": 19
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Kind?",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Yes, kind.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "NARRATOR",
+      "quote": "Oliver had three personalities\n               depending on which bathing suit he\n               was wearing. Red: for bold, set in\n               his ways, gruff and ill-tempered\n               snappy... dangerous.",
+      "block": 22
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "NARRATOR",
+      "quote": "Yellow: good-humored, funny, but\n               not without barbs - didn’t give in\n               too easily.\n               He didn’t wear his green bathing\n               suit that often. It meant maybe\n               that he was eager to learn, eager\n               to speak, just eager, sunny.",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Elio! What are you doing?",
+      "block": 24
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Reading my music.",
+      "block": 25
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "opp",
+      "cue": "OLIVER",
+      "quote": "No you’re not.",
+      "block": 26
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Thinking, then.",
+      "block": 27
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "About?",
+      "block": 28
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Private.",
+      "block": 29
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "So you won’t tell me?",
+      "block": 30
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "So I won’t tell you.",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "So he won’t tell me.\n               In that case I’m going with your\n               mom.",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’m... I’m... I have... an allergy.",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Me too. We might have the same one.",
+      "block": 34
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Later, maybe.",
+      "block": 35
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Let’s go now.",
+      "block": 36
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Must we?",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "See you downstairs!",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do you type good too?",
+      "block": 39
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I type good.",
+      "block": 40
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "As good as you speak good?",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Find yuh-sef somebuddy else.",
+      "block": 42
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah, come on.",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Thanks, Buddy.",
+      "block": 44
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Che ne so. (I don’t care.)",
+      "block": 45
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ANNELLA",
+      "quote": "Our muvi star...",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": "p7",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "I’ll miss all this, Mrs. P.",
+      "block": 47
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ANNELLA",
+      "quote": "And we will certainly miss you.",
+      "block": 48
+    },
+    {
+      "speaker": "p2",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "ELIO",
+      "quote": "Any time...",
+      "block": 49
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNELLA",
+      "quote": "Ennnnnni taaim...",
+      "block": 50
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "How is the work going?",
+      "block": 51
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "It’s going.",
+      "block": 52
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "Planning to go into town tonight?",
+      "block": 53
+    },
+    {
+      "speaker": "p1",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Not tonight. Maybe tomorrow.",
+      "block": 54
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "No poker either?",
+      "block": 55
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNELLA",
+      "quote": "Not in here!",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNELLA",
+      "quote": "And don’t forget Mr. Keller and Mr.\n               Hodell are coming for dinner\n               tonight.",
+      "block": 57
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO (to Oliver)",
+      "quote": "Otherwise known as Laurel and\n               Hardy.",
+      "block": 58
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN (gently admonishing)",
+      "quote": "Okay...",
+      "block": 59
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANNELLA",
+      "quote": "I want you to wear the shirt they\n               gave you for your birthday. It\n               will make them happy.",
+      "block": 60
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "It’s way too big on me. It looks\n               ridiculous.",
+      "block": 61
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO (CONT’D)",
+      "quote": "See if Oliver doesn’t think I look\n               like a scarecrow in it. I’ll model\n               it for you.",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "What's the time?",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER (in his halting Italian)",
+      "quote": "Mafalda, non sarò con voi a cena\n               stasera. (I won’t be home for\n               dinner this evening).",
+      "block": 64
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA (IN FRENCH)",
+      "quote": "Tu ne bandes pas.\n               (You aren’t hard.)",
+      "block": 65
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "ELIO (IN FRENCH)",
+      "quote": "Ne fais pas ça ici.\n               (Don’t do that here.)",
+      "block": 66
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA (IN FRENCH)",
+      "quote": "Montons dans ta chambre.\n               (Let’s go up to your room.)",
+      "block": 67
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO (IN FRENCH)",
+      "quote": "J'ai une meilleure idée.\n               (I have a better idea.)",
+      "block": 68
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA (riant)",
+      "quote": "On va où???\n                   (laughing)\n               (Where are we going???)",
+      "block": 69
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "I can’t put it on now! They’ve\n               already met me. It will look like a\n               put-up job.",
+      "block": 70
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "PERLMAN (in a very amused tone)",
+      "quote": "No misbehaving tonight. When I tell\n               you to play, then play! You’re too\n               old not to accept people as they\n               are. What’s wrong with them? I\n               don’t think it’s very attractive of\n               you to call them ‘Laurel and Hardy’\n               behind their backs...",
+      "block": 71
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Mom called them that.",
+      "block": 72
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "PERLMAN",
+      "quote": "...and then accept gifts from them.\n               Is it because they’re gay or\n               because they’re ridiculous? Is that\n               it? I hope not. And if you know as\n               much about economics when you’re\n               Zafar’s age you’ll be a very wise\n               man indeed and a credit to me. Now\n               get into this.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER (CONT’D)",
+      "quote": "You’re okay?",
+      "block": 74
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Did we make noise?",
+      "block": 75
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Nothing to worry about.",
+      "block": 76
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Mafalda always looks for signs.",
+      "block": 77
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "She won’t find any.",
+      "block": 78
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "You’re not happy. You’re feeling\n                sick about it, aren’t you?",
+      "block": 79
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Maybe.",
+      "block": 80
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER (CONT’D)",
+      "quote": "Did you hate it?",
+      "block": 81
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "No, I didn’t hate it at all.",
+      "block": 82
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "You can go back to sleep, if you\n                want.",
+      "block": 83
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Let’s go swimming.",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Are you going to hold last night\n                against me?",
+      "block": 85
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "No.",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Take your trunks off.",
+      "block": 87
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER (CONT’D)",
+      "quote": "Sit down.",
+      "block": 88
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER (CONT’D)",
+      "quote": "(with a wry smile)\n                Well, this is promising. You’re\n                hard again. Good.",
+      "block": 89
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "I’m going to town, I have to\n                collect my typed up pages. Later\n                I'd like to show them to you,\n                Professor.",
+      "block": 90
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "(imitating Oliver)\n                Later.",
+      "block": 91
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN (CONT’D)",
+      "quote": "Before you leave we'll certainly\n                find the time to go over these\n                revisions.",
+      "block": 92
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "So.. Later!",
+      "block": 93
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Did you get your passport?",
+      "block": 94
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OLIVER",
+      "quote": "Yeah, I did.",
+      "block": 95
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Mafalda? Maman... Bonjour. Oui, je\n                vais bien. Je suis à Clusone, à la\n                gare. Oui... il est parti. Maman,\n                s'il te plaît, tu pourrais venir me\n                chercher?\n                (Mafalda? Mom... Hey. Yes, I'm\n                fine. I'm in Clusone, at the\n                station. Yes.. he left. Mom..\n                please could you come pick me up?)",
+      "block": 96
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA",
+      "quote": "Ciao.",
+      "block": 97
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA",
+      "quote": "How are you?",
+      "block": 98
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Good, thanks.",
+      "block": 99
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA",
+      "quote": "J'ai lu le livre que\n                tu m'as offert, les poèmes.\n                Ils sont très beaux. J’aime\n                beaucoup cette Antonia Pozzi.\n                (I read the book you gave me, the\n                poems, they are beautiful. I really\n                love Antonia Pozzi.)\n                “Nell’aria della stanza - non te\n                guardo - ma già il ricordo del tuo\n                viso” (In the room’s air - not you\n                do I look at - but already the\n                memory of your face)",
+      "block": 100
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA",
+      "quote": "I'm sorry you feel so bad. I just\n                wanted to tell you that I'm not mad\n                at you. I love you. (Je suis\n                désolée que tu sois si malheureux.\n                Je voulais juste te dire que je ne\n                t'en veux pas. Je t'aime.)",
+      "block": 101
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA",
+      "quote": "On reste amis?\n                (Friends.)",
+      "block": 102
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Pour la vie?\n                (Forever?)",
+      "block": 103
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARZIA",
+      "quote": "Pour la vie.\n                (Forever)",
+      "block": 104
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANCHISE",
+      "quote": "Il signor Ulliva è partito? (Has\n                mister Ulliva left?)",
+      "block": 105
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Sì, stamattina. (Yes, this morning)",
+      "block": 106
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANCHISE",
+      "quote": "Anche a me duole. (I too am\n                saddened).",
+      "block": 107
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAFALDA",
+      "quote": "I fixed up your room the way it\n                was.",
+      "block": 108
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "So? Welcome home. Did Oliver enjoy\n                the trip?",
+      "block": 109
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "I think he did.",
+      "block": 110
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "You two had a nice friendship.",
+      "block": 111
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "(somewhat evasive)\n          Yes.",
+      "block": 112
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "You’re too smart not to know how\n          rare, how special, what you two had\n          was.",
+      "block": 113
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "Oliver was Oliver.",
+      "block": 114
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "PERLMAN",
+      "quote": "“Parce-que c’etait lui, parce-que\n          c’etait moi.”",
+      "block": 115
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIO",
+      "quote": "(trying to avoid talking\n               about Oliver with his\n               father)\n          Oliver may be very intelligent -",
+      "block": 116
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ANNELLA",
+      "quote": "E questo?",
+      "block": 117
+    },
+    {
+      "speaker": "p7",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "ANNELLA",
+      "quote": "Elio, Elio",
+      "block": 118
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 42,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 40
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 12,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p7",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p8",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 9
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 2,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      []
+    ]
+  }
+}
