@@ -335,12 +335,17 @@ export function migrateDocExtractionModel() {
 
 // The analogy engine's own lane (plan "room-analogy-engine"). It rode the Idea
 // Studio's setting at first, which meant it could not be aimed anywhere without
-// moving every Room answer with it — and this one wants something different from
-// a chat model. Measured 2026-09-13 on the same question ("a family that makes
-// belonging depend on staying the same"): Gemini Flash Lite and Flash both reached
-// for a software metaphor, as did the strongest ChatGPT model, while Cerebras's
-// qwen-3.8-27b answered with a sealed terrarium in half a second. Leaving the
-// domain is the whole job here, so that is the seeded pick.
+// moving every Room answer with it.
+//
+// Seeded to Gemini Flash Lite, and that pick has a history worth keeping. One toy
+// question ("a family that makes belonging depend on staying the same") said
+// Cerebras qwen was the one that left the domain, so this seeded qwen. Antoine
+// asked for a real trial first — six of his own Room threads, every lane — and it
+// reversed the result outright: qwen produced a usable answer on ONE thread of
+// six, while Flash Lite answered all six and answered them better (a drug economy
+// against cellular apoptosis; a street gang against a parasite steering its host;
+// legal precedent against protein folding). The lane that wins a one-line puzzle
+// is not the lane that wins a real conversation.
 //
 // Seeded only when the key is ABSENT, which is also the guard: the moment Antoine
 // chooses something else the key exists and this never touches it again. No flag
@@ -352,7 +357,7 @@ export function seedAnalogiesDefault() {
   let defaults = {};
   try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: false }; }
   if (defaults.analogies) return { changed: false };
-  defaults.analogies = { provider: 'cerebras', model: 'qwen-3.8-27b' };
+  defaults.analogies = { provider: 'google-ai-studio', model: 'gemini-flash-lite-latest' };
   db.prepare(`UPDATE ai_settings SET defaults_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
     .run(JSON.stringify(defaults));
   refreshAiSettings();
