@@ -1,0 +1,740 @@
+{
+  "entity": "f_burn_after_reading",
+  "source": "data-seed/scripts/f_burn_after_reading.txt",
+  "scope": "the whole script, machine-extracted (24 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OSBOURNE (CONT'D)",
+      "quote": "... Cold.",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OSBOURNE (CONT'D)",
+      "quote": "... I guess we should head back.",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "A MAN'S VOICE",
+      "quote": "We've seen this...",
+      "block": 3
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATIE",
+      "quote": "No.",
+      "block": 4
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "TERIKHIAN (CONT'D)",
+      "quote": "... Feet.",
+      "block": 5
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "MACHINE",
+      "quote": "You have reached The Cox Group...",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "OSBOURNE (heavy breathing)",
+      "quote": "Hello.",
+      "block": 7
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "KRAPOTKIN",
+      "quote": "Could you wait please?",
+      "block": 8
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Well----",
+      "block": 9
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "... I have a date----",
+      "block": 10
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "The fish.      Has bitten.",
+      "block": 11
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "What?      Oh, yeah.   Yeah, he seems cool.",
+      "block": 12
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "... That fucker really hit me.",
+      "block": 13
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN",
+      "quote": "Could you accompany me please?",
+      "block": 14
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Well----okay...",
+      "block": 15
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "Can you tell me where this material\n                  comes from?",
+      "block": 16
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "Name, rank and serial number.",
+      "block": 17
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "Excuse me?",
+      "block": 18
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "We, um... we know our rights.",
+      "block": 19
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "This is just a taste.",
+      "block": 20
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "There is more material?",
+      "block": 21
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "There's a lot more.    But we need to be\n               paid.",
+      "block": 22
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "You are not ideological.",
+      "block": 23
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "I don't think so.",
+      "block": 24
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Look, I have a date.",
+      "block": 25
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "Hm?",
+      "block": 26
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Date.",
+      "block": 27
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "... We will examine the material.   How\n               do I contact?",
+      "block": 28
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "We work at the Hardbodies in\n               Alexandria.",
+      "block": 29
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "I'm at 1442 Westerly----",
+      "block": 30
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Chad, not your home address!",
+      "block": 31
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "NEW EMBASSY MAN",
+      "quote": "So... I call Hardbodies, I ask for...\n               Chad?",
+      "block": 32
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "No.    Linda.",
+      "block": 33
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "A line to check in, towels piling up.",
+      "block": 34
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "I'm sorry.",
+      "block": 35
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "Manolo running around like crazy----what\n               happened to your nose?",
+      "block": 36
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "I just----",
+      "block": 37
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "This is not acceptable at Hardbodies.\n               You two know better than that.",
+      "block": 38
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "Yes we do.     I'm sorry, Ted.",
+      "block": 39
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "This is no way.",
+      "block": 40
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHAD",
+      "quote": "It was unavoidable.    This won't happen\n               again.",
+      "block": 41
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "But you won't tell me what's going on.",
+      "block": 42
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "We can't. I... I... Ted, I know this\n               is terrible, but----I have to run. I\n               have a date.",
+      "block": 43
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "You're changing, Linda.",
+      "block": 44
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "TED",
+      "quote": "... Very sad.",
+      "block": 45
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATIE",
+      "quote": "Ozzie! Goddamnit, Ozzie, what have\n                you done to the car?!",
+      "block": 46
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATIE",
+      "quote": "Ozzie!",
+      "block": 47
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATIE",
+      "quote": "... All right. All right.",
+      "block": 48
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "KATIE'S VOICE",
+      "quote": "Can I see you please. Harry, please\n               call me. I'm very upset.",
+      "block": 49
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "LINDA",
+      "quote": "I'm sorry----am I late?",
+      "block": 50
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": "HARRY",
+      "quote": "No no, doesn't start for five minutes.",
+      "block": 51
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "PALMER",
+      "quote": "Yes sir. Should I pay it out of,\n          should it be from----",
+      "block": 52
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "PALMER",
+      "quote": "Yes sir.",
+      "block": 53
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GARDNER CHUBB",
+      "quote": "One of the black accounts, I don't\n          give a shit. The January fund.\n          Whatever.",
+      "block": 54
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "PALMER",
+      "quote": "Okay.",
+      "block": 55
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GARDNER CHUBB",
+      "quote": "Jesus.    Jesus fucking Christ.",
+      "block": 56
+    },
+    {
+      "speaker": "p15",
+      "to": "p14",
+      "stance": "neu",
+      "cue": "GARDNER CHUBB (CONT'D)",
+      "quote": "... What did we learn, Palmer.",
+      "block": 57
+    },
+    {
+      "speaker": "p14",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "PALMER",
+      "quote": "I don't know, sir.",
+      "block": 58
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GARDNER CHUBB",
+      "quote": "I don't fucking know either. I guess\n          we learned not to do it again.",
+      "block": 59
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "GARDNER CHUBB",
+      "quote": "Although I'm fucked if I know what we\n          did.",
+      "block": 60
+    },
+    {
+      "speaker": "p14",
+      "to": "p15",
+      "stance": "neu",
+      "cue": "PALMER",
+      "quote": "Yes sir.    Hard to say.",
+      "block": 61
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p7",
+        "weight": 10,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p7",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p14",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "no signed edges"
+  }
+}
