@@ -1501,6 +1501,8 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-chip.on { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
 .room-ana-item { padding:13px 0; border-bottom:1px solid var(--c-border); }
 .room-ana-item.is-carried { opacity:.5; }
+.room-ana-item.is-regenning { opacity:.5; }
+.room-ana-acts button[disabled] { cursor:default; opacity:.5; text-decoration:none; }
 .room-ana-eyebrow { font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .room-ana-item h4 { font-family:var(--room-font); font-weight:400; font-size:var(--fs-md); line-height:1.25; margin:7px 0 5px; }
 .room-ana-item p { margin:0 0 6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
@@ -10649,6 +10651,7 @@ function roomIdeaIsOpen(id, idx) { return id in roomIdeasState.open ? !!roomIdea
    uses, and never sends. Nothing here writes into the thread. */
 let roomAna = { steer: null, items: [] };
 let roomAnaBusy = false;
+const roomAnaRegenBusy = new Set();
 const ROOM_ANA_MOVES = ['vertical', 'horizontal', 'entanglement', 'antidote', 'counterpart'];
 
 function roomAnaCards() { return (roomAna.items || []).filter(i => i.card); }
@@ -10716,6 +10719,19 @@ function roomAnaBring(card) {
   if (box) box.focus();
 }
 
+async function roomAnaRegenerate(id) {
+  if (!roomSel || roomAnaRegenBusy.has(id)) return;
+  const want = roomSel;
+  roomAnaRegenBusy.add(id);
+  renderRoomAnalogies();
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(want) + '/analogies/' + encodeURIComponent(id) + '/regenerate', 'POST');
+    if (roomSel === want) roomAna = { steer: out.steer || roomAna.steer, items: out.items || roomAna.items };
+  } catch (e) { /* the card stays put; try again */ }
+  roomAnaRegenBusy.delete(id);
+  renderRoomAnalogies();
+}
+
 function roomAnaBringAll() {
   const cards = roomAnaCards().map(i => i.card);
   if (!cards.length) return;
@@ -10764,14 +10780,17 @@ function renderRoomAnalogies() {
     if (!it.card) return '<div class="room-ana-mine">' + qEsc(it.text)
       + '<button type="button" class="room-ana-drop" data-ana-drop="' + qEscAttr(it.id) + '" title="Forget this and what it found" aria-label="Forget this">✕</button></div>';
     const c = it.card;
-    return '<div class="room-ana-item">'
+    const regenning = roomAnaRegenBusy.has(it.id);
+    return '<div class="room-ana-item' + (regenning ? ' is-regenning' : '') + '">'
       + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + ' · ' + qEsc(c.move) + '</div>'
       + '<h4>' + qEsc(c.title) + '</h4>'
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
       + '<div class="room-ana-acts">'
-      +   '<button type="button" data-ana-bring="' + idx + '">↑ bring</button>'
-      +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '">where from</button>' : '')
-      +   '<button type="button" data-ana-drop="' + qEscAttr(it.id) + '" title="Forget this one">✕</button>'
+      +   '<button type="button" data-ana-bring="' + idx + '"' + (regenning ? ' disabled' : '') + '>↑ bring</button>'
+      +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '"' + (regenning ? ' disabled' : '') + '>where from</button>' : '')
+      +   '<button type="button" data-ana-regen="' + qEscAttr(it.id) + '" title="Try another one in this spot"' + (regenning ? ' disabled' : '') + '>'
+      +     (regenning ? '↻ …' : '↻ refresh') + '</button>'
+      +   '<button type="button" data-ana-drop="' + qEscAttr(it.id) + '" title="Forget this one"' + (regenning ? ' disabled' : '') + '>✕</button>'
       + '</div></div>';
   }).join('');
 
@@ -10795,6 +10814,9 @@ function renderRoomAnalogies() {
       try { await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/analogies/' + encodeURIComponent(id), 'DELETE'); } catch (e) {}
       loadRoomAnalogies();
     };
+  });
+  host.querySelectorAll('[data-ana-regen]').forEach(b => {
+    b.onclick = () => roomAnaRegenerate(b.getAttribute('data-ana-regen'));
   });
   host.querySelectorAll('[data-ana-bring]').forEach(b => {
     b.onclick = () => { const it = roomAna.items[Number(b.getAttribute('data-ana-bring'))]; if (it && it.card) roomAnaBring(it.card); };

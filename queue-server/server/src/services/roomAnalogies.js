@@ -301,6 +301,38 @@ export function forgetAnalogy(convoId, messageId) {
   return { ok: true, removed: n };
 }
 
+// Swap one card for a fresh one in the same slot — same row, same position,
+// same anchor. Asking the model to avoid what it just said stops it handing
+// back the same arrival twice in a row.
+export async function regenerateAnalogy(convoId, messageId) {
+  if (!db) return { error: 'no_db' };
+  const side = sideThread(convoId);
+  if (!side) return { error: 'not_found' };
+  const row = db.prepare(`SELECT * FROM convo_messages WHERE id=? AND convo_id=?`).get(messageId, side.id);
+  const oldCard = row ? parseMeta(row.meta) : null;
+  if (!row || oldCard?.kind !== 'arrival') return { error: 'not_found' };
+
+  const transcript = transcriptFor(convoId);
+  if (!transcript) return { error: 'empty' };
+  const steer = getSteer(convoId);
+  const prompt = buildPrompt({ transcript, steer, question: null })
+    + `\n\nOne more rule: do not repeat this one, offer something different from "${oldCard.left} ↔ ${oldCard.right} — ${oldCard.title}".`;
+
+  const result = await generateText({
+    prompt, feature: 'analogies', maxTokens: 1200, label: 'room:analogies:regen',
+    maxAttempts: 2, timeoutMs: 20_000,
+  });
+  if (result?.error) return { error: result.error };
+
+  const arrivals = parseArrivals(result?.text, { steer, anchorMessageId: oldCard.anchor_message_id, asked: oldCard.asked });
+  const next = arrivals[0];
+  if (!next) return { error: 'empty' };
+
+  db.prepare(`UPDATE convo_messages SET text=?, meta=? WHERE id=?`).run(next.title, JSON.stringify(next), messageId);
+  broadcastAll('analogies:updated', { convoId });
+  return { ok: true, card: next };
+}
+
 export function clearAnalogies(convoId) {
   const side = sideThread(convoId);
   if (!side) return { cleared: 0 };
