@@ -144,14 +144,14 @@ ${where}${domains}
 
 Hard rules:
 - Match on the relation, never on shared words or shared subject matter. If two things are analogous only because they use the same nouns, it is not an analogy.
-- Every arrival must say where it BREAKS. A comparison that cannot fail is a claim, not a finding.
+- Offer it only if you could say where it breaks. Do not write that down — it came back as filler every time ("the analogy stops when the biological immune response meets adaptive market regulation" says nothing). Let it do its work by keeping you honest about what you offer.
 - Never give a similarity score, percentage or star rating.
 - A pattern repeating at several scales is not evidence that anything travels between them. Never imply cause.
 - What you offer is PROPOSED, never established.
 - Plain, short words. No jargon.
 
 Respond with ONLY this JSON and nothing else:
-{"arrivals":[{"move":"one of ${moves}","left":"the first side, 1-3 words","right":"the other side, 1-3 words","title":"the relation itself, under 7 words","reading":"one or two short sentences saying what holds","breaks":"one short sentence saying where it stops holding","question":"the new question this makes possible, one sentence"}]}
+{"arrivals":[{"move":"one of ${moves}","left":"the first side, 1-3 words","right":"the other side, 1-3 words","title":"the relation itself, under 7 words","reading":"one or two short sentences saying what holds","question":"the new question this makes possible, one sentence"}]}
 
 Between one and ${CARD_CAP} arrivals. Fewer and better beats more.`;
 }
@@ -179,7 +179,7 @@ export function parseArrivals(text, { steer = STEER_DEFAULT, anchorMessageId = n
       move: MOVES.includes(a?.move) ? a.move : (steer.moves[0] || 'horizontal'),
       left: S(a?.left, 60), right: S(a?.right, 60),
       title: S(a?.title, 120), reading: S(a?.reading, 600),
-      breaks: S(a?.breaks, 400), question: S(a?.question, 400),
+      question: S(a?.question, 400),
       anchor_message_id: anchorMessageId, asked,
     }))
     .filter((a) => a.title && a.left && a.right)

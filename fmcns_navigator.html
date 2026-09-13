@@ -1431,7 +1431,6 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-eyebrow { font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
 .room-ana-item h4 { font-family:var(--room-font); font-weight:400; font-size:var(--fs-md); line-height:1.25; margin:7px 0 5px; }
 .room-ana-item p { margin:0 0 6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
-.room-ana-breaks { color:var(--c-ink-5); font-size:var(--fs-xs); }
 .room-ana-acts { display:flex; gap:12px; margin-top:8px; }
 .room-ana-acts button { background:none; border:none; padding:0; cursor:pointer; font-family:inherit; font-size:var(--fs-xs); color:var(--c-accent); }
 .room-ana-acts button:hover { text-decoration:underline; }
@@ -10631,7 +10630,6 @@ function renderRoomAnalogies() {
       + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + ' · ' + qEsc(c.move) + '</div>'
       + '<h4>' + qEsc(c.title) + '</h4>'
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
-      + (c.breaks ? '<p class="room-ana-breaks">Breaks: ' + qEsc(c.breaks) + '</p>' : '')
       + '<div class="room-ana-acts">'
       +   '<button type="button" data-ana-bring="' + idx + '">↑ bring</button>'
       +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '">where from</button>' : '')
