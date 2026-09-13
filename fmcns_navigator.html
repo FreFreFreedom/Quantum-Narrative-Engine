@@ -10524,6 +10524,7 @@ async function loadRoomAnalogies() {
     const out = await api('/api/convos/' + encodeURIComponent(want) + '/analogies');
     if (roomSel !== want) return;   // a different thread was picked mid-flight
     roomAna = { steer: out.steer || null, items: out.items || [] };
+    roomAnaBusy = !!out.running;
   } catch (e) { if (roomSel === want) roomAna = { steer: null, items: [] }; }
   renderRoomAnalogies();
 }
@@ -10617,7 +10618,7 @@ function renderRoomAnalogies() {
     + '<button type="button" class="room-ana-chip' + (steer.reach === 'anywhere' ? ' on' : '') + '" data-ana-reach="1"'
     + ' title="Where it may look">' + (steer.reach === 'anywhere' ? 'anywhere' : 'only here') + '</button>'
     + '<button type="button" class="room-ana-chip' + (steer.when === 'asked' ? '' : ' on') + '" data-ana-when="1"'
-    + ' title="Whether it speaks without being asked">' + (steer.when === 'asked' ? 'only when asked' : 'on a pause') + '</button>'
+    + ' title="Whether it speaks without being asked">' + (steer.when === 'asked' ? 'only when asked' : 'as you talk') + '</button>'
     + '</div>';
 
   if (!roomAna.items.length && !roomAnaBusy) {

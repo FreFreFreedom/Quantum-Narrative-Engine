@@ -153,6 +153,32 @@ export function recordFeedback(db, { repo_full_name, verdict }) {
   return { ok: true };
 }
 
+// Below this, a look is one thought and splitting it into parts costs a model
+// call to learn nothing. Measured 2026-09-13: a short convo look returned exactly
+// one part every time.
+const SPLIT_MIN_CHARS = 600;
+
+// When the splitting pass is skipped there are no model-written search queries,
+// and with no query the "real projects" shelf comes back empty — the prompt
+// correctly refuses to invent repos. So the query is built from the text itself:
+// the words it actually leans on, minus the ones every text uses. Free, instant,
+// and good enough for a repository search, which matches on words anyway.
+const STOPWORDS = new Set(('a an and are as at be but by for from has have how i if in into is it its of on or '
+  + 'that the their them then there these they this to was we what when where which who will with would you your '
+  + 'about after again all also any because been before being can could did do does doing down each few had he her '
+  + 'here him his how just like made make me more most my no not now one only other our out over own said same she '
+  + 'should so some such than too under up very want well were while why would yes yet owner qne app thing things').split(' '));
+export function keywordQuery(text, take = 4) {
+  const counts = new Map();
+  for (const raw of String(text || '').toLowerCase().match(/[a-z][a-z-]{2,}/g) || []) {
+    if (STOPWORDS.has(raw)) continue;
+    counts.set(raw, (counts.get(raw) || 0) + 1);
+  }
+  const words = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, take).map(([w]) => w);
+  return words.length >= 2 ? words.join(' ') : '';
+}
+
 // ─── World-look generation ────────────────────────────────────────────────────
 // Bumped whenever the world-look prompts change in a way that makes older reports
 // worth redoing. Generation 2 is the first that carries the asking task's own words
@@ -430,11 +456,24 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
       + "\n\n[…the rest of this task's text is not shown here — this pass only needs to know what the work is about.]";
   }
 
-  const pass0 = await generateTextByFeature({ prompt: buildInspireDecomposePrompt(lookText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
+  // A short look is ONE thing, and the splitting pass can only ever answer "one
+  // part" for it — a whole round trip to be told what we already knew. A Room
+  // conversation or a kept line goes straight to the picks call. Long text (a
+  // plan, a real task) still gets split, because there the parts are real and the
+  // picks calls that follow run side by side.
+  const skipSplit = lookText.length < SPLIT_MIN_CHARS;
+  const pass0 = skipSplit
+    ? { text: '' }
+    : await generateTextByFeature({ prompt: buildInspireDecomposePrompt(lookText), feature: 'inspire', maxTokens: 700, label: 'inspire-decompose', maxAttempts: 3, timeoutMs: 45_000, claudeLastResort: true });
   if (pass0.error) return { error: pass0.error, message: pass0.message };
-  const parsed0 = parseJsonObject(pass0.text);
+  const parsed0 = skipSplit ? null : parseJsonObject(pass0.text);
   const rawParts = (parsed0?.parts || []).filter(p => p && p.description).slice(0, INSPIRE_MAX_PARTS);
-  const parts = rawParts.length ? rawParts : [{ name: parsed0?.project_name || 'Idea', description: lookText, queries: [] }];
+  const fallbackQ = keywordQuery(lookText);
+  const parts = rawParts.length ? rawParts : [{
+    name: parsed0?.project_name || 'Idea',
+    description: lookText,
+    queries: fallbackQ ? [{ q: fallbackQ, why: 'the words this look leans on' }] : [],
+  }];
   const projectName = parsed0?.project_name || ideaText.slice(0, 60);
   // Which part of the app this look is FOR. Only accepted if it is a real area id, so a
   // hallucinated value degrades to "no subject named" rather than to a wrong subject —
@@ -448,7 +487,13 @@ export async function runInspiration(db, { idea_text, source = 'prompt', source_
   // most two) GitHub searches run together too; a failed search just drops out.
   const builtParts = await Promise.all(parts.map(async (part) => {
     const partDescription = String(part.description || lookText).trim();
-    const queries = (part.queries || []).filter(q => q && q.q).slice(0, 2);
+    // A query has to be worth a round trip to GitHub. One or two words is the
+    // project's own name or a bare noun — it returns the same popular repos for
+    // any task, which is worse than no results at all because the picks pass then
+    // recommends them.
+    const queries = (part.queries || [])
+      .filter(q => q && typeof q.q === 'string' && q.q.trim().split(/\s+/).length >= 2 && q.q.trim().length >= 6)
+      .slice(0, 2);
     const outs = await Promise.all(queries.map(q => getResults(db, queryHash(q.q), q.q, { forceRefresh })));
     const resultsByQuery = [];
     queries.forEach((q, i) => { if (!outs[i].error) resultsByQuery.push({ q, why: q.why, results: outs[i].results || [] }); });

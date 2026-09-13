@@ -92,9 +92,11 @@ function parseMeta(raw) { try { return raw ? JSON.parse(raw) : null; } catch { r
 
 // Every message of the side thread, newest last, with its card parsed out. His
 // own asks come back as {role:'user'} rows with no card.
+export function isLooking(convoId) { return _inFlight.has(convoId); }
+
 export function listAnalogies(convoId) {
   const side = sideThread(convoId);
-  if (!side) return { steer: getSteer(convoId), items: [] };
+  if (!side) return { steer: getSteer(convoId), items: [], running: isLooking(convoId) };
   const items = listMessages(side.id).map((m) => {
     const meta = parseMeta(m.meta);
     return {
@@ -102,7 +104,7 @@ export function listAnalogies(convoId) {
       card: meta?.kind === 'arrival' ? meta : null,
     };
   });
-  return { steer: getSteer(convoId), items };
+  return { steer: getSteer(convoId), items, running: isLooking(convoId) };
 }
 
 function addSideMessage(sideId, role, text, meta = null) {
@@ -236,14 +238,17 @@ export function analogyLook(convoId) {
   const seen = convo.analogy_seen_turns || 0;
   const turns = convo.turns || 0;
   if (turns <= seen) return;
-  if (steer.when === 'pause' && turns - seen < 2) return;  // wait for a real pause
 
   _inFlight.add(convoId);
   db.prepare(`UPDATE convos SET analogy_seen_turns=? WHERE id=?`).run(turns, convoId);
+  // Say it is looking before the call, not after: a pane that sits still for two
+  // seconds and then jumps reads as broken, and the whole point of this one is
+  // that it arrives on its own.
+  broadcastAll('analogies:updated', { convoId, running: true });
   setImmediate(async () => {
     try { await runLook(convoId); }
     catch (e) { console.error('[room] analogy look failed:', e?.message || e); }
-    finally { _inFlight.delete(convoId); }
+    finally { _inFlight.delete(convoId); broadcastAll('analogies:updated', { convoId }); }
   });
 }
 
