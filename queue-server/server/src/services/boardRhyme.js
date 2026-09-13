@@ -53,9 +53,10 @@ Respond with ONLY this JSON and nothing else:
 
 export async function rhymeFor(cardId) {
   const card = getCard(cardId);
-  if (!card) return { error: 'not_found' };
+  if (!card) { console.warn('[board] rhyme: card gone'); return { error: 'not_found' }; }
   const transcript = boardTranscriptFor(card.convo_id);
-  if (!transcript) return { error: 'no_transcript' };
+  if (!transcript) { console.warn('[board] rhyme: nothing said in this thread yet'); return { error: 'no_transcript' }; }
+  console.log('[board] rhyme: asking for', cardId.slice(0, 8), '—', transcript.length, 'chars of thread');
 
   const out = await generateText({
     prompt: buildPrompt({ material: materialFor(card), transcript }),
