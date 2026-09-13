@@ -1,0 +1,565 @@
+{
+  "entity": "f_enemy_of_the_state",
+  "source": "data-seed/scripts/f_enemy_of_the_state.txt",
+  "scope": "the whole script, machine-extracted (25 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Diane's instinct is that it's sabre",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "rattling. I think they're gonna",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "file suit.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We've checked everything. NRO tapes,",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "traffic surveillance monitors -",
+      "block": 5
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "- and two ATM cameras. The one",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Freeze there.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Times ten.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Focus on the drop.",
+      "block": 9
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's your opinion?",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes sir.",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Then what's your goddam opinion?",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get it.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get it.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "We'd have to--",
+      "block": 15
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Bobby?",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah.",
+      "block": 17
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What do you mean?",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who did you work with to get the--",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "A guy named Brill. Same guy as always.",
+      "block": 20
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Have you been working with Rachel?",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 22
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sorry.",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's okay.",
+      "block": 24
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Got it.",
+      "block": 25
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Baudmore Consultants.",
+      "block": 26
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Is Jerry Delsano in?",
+      "block": 27
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who's calling?",
+      "block": 28
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "The thing is...it really can't wait.",
+      "block": 29
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My name's Neil. Maybe I can help you.",
+      "block": 30
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh yeah. Got another one here.",
+      "block": 31
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Well then who can?",
+      "block": 32
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "What are you saying?",
+      "block": 33
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Law enforcement?",
+      "block": 34
+    },
+    {
+      "speaker": "p6",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "FBI, CIA, NSA, local cops.",
+      "block": 35
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Are you sure about this?",
+      "block": 36
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh my God.",
+      "block": 37
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "With what?",
+      "block": 38
+    },
+    {
+      "speaker": "p8",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Neil, thank you for your help.",
+      "block": 39
+    },
+    {
+      "speaker": "p6",
+      "to": "p8",
+      "stance": "ally",
+      "cue": null,
+      "quote": "Anytime.",
+      "block": 40
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "He came in four minutes ago.",
+      "block": 41
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "C'mon.",
+      "block": 42
+    },
+    {
+      "speaker": "p6",
+      "to": "p1",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Feeling lucky?",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not particularly, no.",
+      "block": 44
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "STACY takes him by the arm",
+      "quote": "C'mon upstairs. I've got a\n            Christmas present from Harrison's I\n            want to show you.",
+      "block": 45
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT (on TV)",
+      "quote": "Our intelligence communities",
+      "block": 46
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "presently monitor our phones,",
+      "block": 47
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "computers, financial transactions,",
+      "block": 48
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "medical histories...all this and",
+      "block": 49
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "more. Some of you may say, \"Fine.",
+      "block": 50
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "I'm not a criminal and I have",
+      "block": 51
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "nothing to hide.\" Well God forbid",
+      "block": 52
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "we ever edge to tyranny. God forbid",
+      "block": 53
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "George Orwell's version of America",
+      "block": 54
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ALBERT",
+      "quote": "becomes a reality. We are that close.",
+      "block": 55
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 3
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "no signed edges"
+  }
+}
