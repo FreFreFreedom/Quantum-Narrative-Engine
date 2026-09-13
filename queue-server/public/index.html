@@ -1378,8 +1378,11 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    2026-09-13: "i dont even know where to type". */
 .se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more { display:none; }
 .se-slim .se-input { flex:1 1 auto; min-width:0; }
-.se-remember-shelf { font:inherit; text-transform:none; letter-spacing:normal; background:none; border:0; border-bottom:1px dotted currentColor;
-  padding:0; margin-left:4px; color:var(--c-accent); cursor:pointer; }
+.se-remember-shelf { font:inherit; text-transform:none; letter-spacing:normal; background:none;
+  border:1px solid var(--c-border); border-radius:999px; padding:3px 10px; margin-left:6px;
+  color:var(--c-ink-4); cursor:pointer; }
+.se-remember-shelf:hover { border-color:var(--c-ink-5); color:var(--c-ink); }
+.se-remember-shelf.is-on { border-color:var(--c-accent); color:var(--c-accent); }
 .se-remember-text { margin:6px 0; font-size:var(--fs-sm); }
 .se-remember-detail { margin:0 0 8px; font-size:var(--fs-xs); color:var(--c-ink-3); }
 .se-remember-acts { display:flex; gap:8px; justify-content:flex-end; }
@@ -22379,13 +22382,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // consequence. His call, 2026-09-13: "too much options here".
           var remVision = out.kind === 'vision';
           var remPlain = (out.kind && out.kind !== 'vision') ? out.kind : 'about';
-          var shelfLabel = function(){ return remVision ? 'the paradigm' : 'about you'; };
-          card.innerHTML = '<div class="se-remember-kind">Keeps as <button type="button" class="se-remember-shelf" data-rem-shelf="1">' + shelfLabel() + '</button></div>'
+          // Two pills, both on screen. A single word you had to know was clickable
+          // read as a label, not a choice — his words, 2026-09-13.
+          var shelfBtnHtml = function(v, label){
+            return '<button type="button" class="se-remember-shelf' + (remVision === v ? ' is-on' : '') + '" data-rem-shelf="' + (v ? '1' : '0') + '">' + label + '</button>';
+          };
+          card.innerHTML = '<div class="se-remember-kind">Keeps as ' + shelfBtnHtml(true, 'the paradigm') + shelfBtnHtml(false, 'about you') + '</div>'
             + '<div class="se-remember-text">' + qEsc(out.text) + '</div>'
             + (out.detail ? '<div class="se-remember-detail">' + qEsc(out.detail) + '</div>' : '')
             + '<div class="se-remember-acts"><button type="button" data-rem-drop="1">Drop</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
-          var shelfBtn = card.querySelector('[data-rem-shelf]');
-          if(shelfBtn) shelfBtn.onclick = function(){ remVision = !remVision; shelfBtn.textContent = shelfLabel(); };
+          card.querySelectorAll('[data-rem-shelf]').forEach(function(btn){
+            btn.onclick = function(){
+              remVision = btn.getAttribute('data-rem-shelf') === '1';
+              card.querySelectorAll('[data-rem-shelf]').forEach(function(b){
+                b.classList.toggle('is-on', (b.getAttribute('data-rem-shelf') === '1') === remVision);
+              });
+            };
+          });
           var saveBtn = card.querySelector('[data-rem-save]');
           saveBtn.onclick = function(){
             saveBtn.disabled = true;
