@@ -1,0 +1,1506 @@
+{
+  "entity": "f_the_piano",
+  "source": "data-seed/scripts/f_the_piano.txt",
+  "scope": "the whole script, machine-extracted (19 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "Mother... I'm \n               thinking",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA",
+      "quote": "I'm not going to ",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA",
+      "quote": "call him Papa.  I'm not going ",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA",
+      "quote": "to call HIM anything. I'm not ",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA",
+      "quote": "even going to look at HIM.",
+      "block": 5
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Are we stopping?... Do you want \n               to stop?",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Shall we stop?",
+      "block": 7
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Tai hoa! Me tatari tatou .., me \n               tutatou I konei.",
+      "block": 8
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "We must get on.",
+      "block": 9
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "TAME",
+      "quote": "Aue tepatupsiarehe!",
+      "block": 10
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Miss McGrath, Alisdair Stewart. \n               You'll have to wake yourself. \n               I've got men here to carry your \n               things.",
+      "block": 11
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "I see you have a good many \n               boxes, I'd like to know what is \n               in each.",
+      "block": 12
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "CAN - YOU - HEAR - ME?",
+      "block": 13
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Well that is good, yes that is \n               good, good.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "What's in here?",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Ohh, yes so it is, written \n               there, crockery.",
+      "block": 16
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "And this one?",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "You're small. I never thought \n               you'd be small.",
+      "block": 18
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "What's here?",
+      "block": 19
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "What's in here then, lead?",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "(gravely) It's my mother's \n               piano.",
+      "block": 21
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "A piano?",
+      "block": 22
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Tell them to carry in pairs.",
+      "block": 23
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Those three and those two the \n               black and the red, then the \n               suitcases.",
+      "block": 24
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "What do you think?",
+      "block": 25
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "She looks tired.",
+      "block": 26
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "She's stunted, that's one \n               thing.",
+      "block": 27
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Anei nga pouaka - ko era e \n               toro.\n               Me era e raa.",
+      "block": 28
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": "HONE",
+      "quote": "E Hoal",
+      "block": 29
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Oh no, it can't come now.",
+      "block": 30
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "It must come.",
+      "block": 31
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "She wants it to come.",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Yes and so do I, but there are \n               too few of us here to carry it. \n               TOO - HEAVY",
+      "block": 33
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "I can't play.",
+      "block": 34
+    },
+    {
+      "speaker": "p7",
+      "to": "p3",
+      "stance": "opp",
+      "cue": "BLIND MAN",
+      "quote": "You don't play?",
+      "block": 35
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "BAINES",
+      "quote": "No, I can't.",
+      "block": 36
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "ally",
+      "cue": "BAINES",
+      "quote": "I'm going to learn.",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "FLORA",
+      "quote": "Oh, it's in tune.",
+      "block": 38
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "What's out there?",
+      "block": 39
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "FLORA",
+      "quote": "It's in tune.",
+      "block": 40
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Ada, four keys.",
+      "block": 41
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA",
+      "quote": "I just want to lie.",
+      "block": 42
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA",
+      "quote": "All right, all right five.",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "The Holly and the Ivy...",
+      "block": 44
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOMAN",
+      "quote": "They're bringing in extra \n               seats!",
+      "block": 45
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANOTHER WOMAN",
+      "quote": "Oh God, don't pin my hair too \n               high Alfred!",
+      "block": 46
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": "STILL ANOTHER",
+      "quote": "Yes, me too, do it about here \n               ... (she shows Alfred)",
+      "block": 47
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "MAN ONE",
+      "quote": "Look who's here, the musical MR BAINES\n               What will we have tonight \n               George, \"Twinkle, twinkle?\"",
+      "block": 48
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "ANOTHER MAN",
+      "quote": "'Mary had a little lamb' or a \n               polka, come on George what's it \n               to be?",
+      "block": 49
+    },
+    {
+      "speaker": "p13",
+      "to": "p3",
+      "stance": "neu",
+      "cue": "AUNT MORAG",
+      "quote": "Mr. Baines, do come and turn \n               pages",
+      "block": 50
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "I can't read music, I have just \n               begun.",
+      "block": 51
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "(turning) Lot of fools. Come \n               on, move up.",
+      "block": 52
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "REVEREND",
+      "quote": "And so the young maid came upon \n               each and all of Bluebeard's \n               missing wives, their severed \n               heads still bleeding, their \n               eyes still crying.",
+      "block": 53
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "REVEREND",
+      "quote": "But who it this?",
+      "block": 54
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLUEBEARD",
+      "quote": "I am home early my sweet wife \n               ... where art thou?",
+      "block": 55
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": "YOUNG WIFE",
+      "quote": "Hello husband, what a surprise!",
+      "block": 56
+    },
+    {
+      "speaker": "p15",
+      "to": null,
+      "stance": "neu",
+      "cue": "BLUEBEARD",
+      "quote": "Yes wife, a surprise indeed! So \n               now you know my secret you, the \n               sweetest and youngest or all my \n               wives must be prepared to die.",
+      "block": 57
+    },
+    {
+      "speaker": "p17",
+      "to": null,
+      "stance": "neu",
+      "cue": "NIHE",
+      "quote": "(Amused by them)\n               E te whsnau keite pai-he takaro",
+      "block": 58
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "You make BIG mistake George",
+      "quote": "               You make BIG mistake George. In \n               first place you should swap \n               land for wife. Now look, she \n               gone, you no land, no music \n               box, you got nothing.",
+      "block": 59
+    },
+    {
+      "speaker": "p4",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Is it all right?",
+      "quote": "               Is it all right? Aren't you \n               going to play something?",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "What will I play?",
+      "quote": "What will I play?",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "Do I know any gigs?",
+      "quote": "                         FLORA\n(to ADA) Do I know any gigs?",
+      "block": 62
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "Why won't she",
+      "quote": "                         STEWART\n(exasperated) Why won't she \nplay it? We have it back, and \nshe just wanders off!",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "Why? Why can't I?",
+      "quote": "                         FLORA\nWhy? Why can't I?",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "I shan't",
+      "quote": "                         FLORA\n(crossing her arms) I shan't \npractise and I DON'T CARE!",
+      "block": 65
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "Where's your mother?",
+      "quote": "                         STEWART\n(looking up the hill) Where's \nyour mother? Where has she \ngone?",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "To HELL!",
+      "quote": "                         FLORA\n               To HELL!",
+      "block": 67
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "neu",
+      "cue": "So what brings you here?",
+      "quote": "                         BAINES\n               So what brings you here? Did \n               you leave something? I have not \n               found anything.",
+      "block": 68
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "Ada, I am unhappy",
+      "quote": "                         BAINES\n               Ada, I am unhappy because I \n               want you, because my mind has \n               seized on you and thinks of \n               nothing else. This is how I \n               suffer, I am sick with longing. \n               I don't eat, I don't sleep. If \n               you do not want me, if you have \n               come with no feeling for me, \n               then go!",
+      "block": 69
+    },
+    {
+      "speaker": "p3",
+      "to": "p2",
+      "stance": "opp",
+      "cue": "Go! Go NOW! Leave!",
+      "quote": "               Go! Go NOW! Leave!",
+      "block": 70
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "I want to touch you Why can't I \n               touch you? Do you like me?",
+      "block": 71
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "(Clears his throat) We must \n               both get on. I have decided to \n               trust you to stay here. You \n               will not see Baines?\n\n               (ADA nods) Good, good. Perhaps \n               with more trying you will come \n               to like me?",
+      "block": 72
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "We're not supposed to visit \n               him'.",
+      "block": 73
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "The grand old Duke of York. He \n               had ten thousand men etc.",
+      "block": 74
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "Mumma wanted me to give this to \n               Mr. Baines.",
+      "block": 75
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "I thought maybe it was not a \n               proper thing to do.",
+      "block": 76
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Shall I open it?",
+      "block": 77
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "No!!",
+      "block": 78
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MANA",
+      "quote": "Knare e Wainta! Kaare e Wajata! \n               (no sing, no sing)",
+      "block": 79
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "(exasperated) why? WHY? I \n               trusted you!",
+      "block": 80
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "WHY?",
+      "block": 81
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "I trusted you, do you hear? I \n               trusted you. I could love you.",
+      "block": 82
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "Why do you do this? Why do you \n               make me hurt you? Do you bear? \n               Why have you done it? We could \n               be happy",
+      "block": 83
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "You have made me angry. SPEAK!!",
+      "block": 84
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "STEWART",
+      "quote": "(anguished) Do you love him? Do \n               you?! Is it him you love?",
+      "block": 85
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "No, she says NOOOOOO!!!",
+      "block": 86
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "FLORA",
+      "quote": "(Screaming) Mother!!",
+      "block": 87
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "FLORA",
+      "quote": "Mama!",
+      "block": 88
+    },
+    {
+      "speaker": "p1",
+      "to": "p2",
+      "stance": "ally",
+      "cue": "FLORA",
+      "quote": "(quietly) Mama.",
+      "block": 89
+    },
+    {
+      "speaker": "p4",
+      "to": "p3",
+      "stance": "ally",
+      "cue": "STEWART",
+      "quote": "Take this to Baines. Tell him \n               if he ever tries to see her again \n               I'll take off another and another \n               and another!",
+      "block": 90
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIRA",
+      "quote": "I worry for us Peini. Pakeha \n               cunning like wind, KNOCK you \n               over, yet you not see it. Some \n               they say, how can pakeha get \n               our land if we won't sell it?",
+      "block": 91
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIRA",
+      "quote": "They wrong Peini. We need guns \n               to hold it.",
+      "block": 92
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIRA",
+      "quote": "(angrily)I worried Feini. \n               What's gonna happen you, you go \n               home, but where we go? We got \n               nowhere to go.",
+      "block": 93
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MANA",
+      "quote": "(In Macit) \n               It is mine. I found it.",
+      "block": 94
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "(urgently)\n               Homni 'ci au.\n               (I want this.)",
+      "block": 95
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "neu",
+      "cue": "MANA",
+      "quote": "(sulky) \n               Ncrr! Naaku. It�s mine. Me find \n               it",
+      "block": 96
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "He aha to hiahia? Ask for it? \n               Tobacco?\n               (What do you want?)",
+      "block": 97
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIRA",
+      "quote": "(still angry) \n               Gun, ask for his gun!",
+      "block": 98
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "OTHERS",
+      "quote": "- Nga rarahe\n               (The glasses)",
+      "block": 99
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "OTHERS",
+      "quote": "- Wana Putu",
+      "block": 100
+    },
+    {
+      "speaker": "p20",
+      "to": null,
+      "stance": "neu",
+      "cue": "OTHERS",
+      "quote": "-Te whitiki, gettem ehoal\n               (The belt)",
+      "block": 101
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "HIRA",
+      "quote": "Go Peini ... Haere atu e Peini.",
+      "block": 102
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "I'll be back.",
+      "block": 103
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Can you read?",
+      "block": 104
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "TREE GIRL",
+      "quote": "I can.",
+      "block": 105
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "You can read?",
+      "block": 106
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "She can't read, she's my \n               sister, I ought to know.\n               Are those sweets?",
+      "block": 107
+    },
+    {
+      "speaker": "p21",
+      "to": null,
+      "stance": "neu",
+      "cue": "TREE GIRL",
+      "quote": "I can read!",
+      "block": 108
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "She can't.",
+      "block": 109
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "Running writing, we haven't \n               done that yet.",
+      "block": 110
+    },
+    {
+      "speaker": "p23",
+      "to": null,
+      "stance": "neu",
+      "cue": "READING GIRL",
+      "quote": "Myrtle can read it, her mother \n               taught her.",
+      "block": 111
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MYRTLE",
+      "quote": "(frowning) D e a r  G e o r g e",
+      "block": 112
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "That's \"My\".",
+      "block": 113
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MYRTLE",
+      "quote": "Its not an M",
+      "block": 114
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "Yes it is.",
+      "block": 115
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MYRTLE",
+      "quote": "heart? (She pulls a face as if \n               it doesn't make sense) Ada \n               McGrath.",
+      "block": 116
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "It doesn't make sense.",
+      "block": 117
+    },
+    {
+      "speaker": "p24",
+      "to": null,
+      "stance": "neu",
+      "cue": "MYRTLE",
+      "quote": "That's all",
+      "block": 118
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "BAINES",
+      "quote": "Say it again, just you.",
+      "block": 119
+    },
+    {
+      "speaker": "p22",
+      "to": null,
+      "stance": "neu",
+      "cue": "BIG SISTER",
+      "quote": "Dear George you have my heart, \n               Ada McGrath.",
+      "block": 120
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "What a death!",
+      "block": 121
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "What a chance!",
+      "block": 122
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "What a surprise!",
+      "block": 123
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "My will has chosen life!?",
+      "block": 124
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "I teach piano now in Nelson.",
+      "block": 125
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "learning to speak. My sound is",
+      "block": 126
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "still so bad I am ashamed. I",
+      "block": 127
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "At night! I think of my piano",
+      "block": 128
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "in its ocean grave, and",
+      "block": 129
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "sometimes of myself floating",
+      "block": 130
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER)",
+      "quote": "above it. Down there everything",
+      "block": 131
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER",
+      "quote": "is so still and silent that it",
+      "block": 132
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER",
+      "quote": "lulls me to sleep. It is a",
+      "block": 133
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER",
+      "quote": "weird lullaby and so it is; it",
+      "block": 134
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "ADA (VOICE OVER",
+      "quote": "is mine.",
+      "block": 135
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p21",
+      "p22",
+      "p23",
+      "p24",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 13,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 2,
+          "ally": 1,
+          "neu": 10
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p12",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p16",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p15",
+        "b": "p17",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p18",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p19",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p20",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p3",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p22",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p21",
+        "b": "p22",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p3",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p23",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p22",
+        "b": "p24",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p23",
+        "b": "p24",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p24",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 7,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 7
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p7",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p6",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "exhaustive balance refuses past 20 nodes; 24 given"
+  }
+}
