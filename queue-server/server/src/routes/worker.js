@@ -49,7 +49,13 @@ export function workerRoutes() {
     // Whether this runner can reach the second Claude subscription. The server
     // cannot know it — that token is only ever on the Mac — so the runner says so
     // here, and the model picker stops greying out a lane that in fact works.
-    noteRunnerCapabilities({ sideAccount: !!req.body?.side_account });
+    // Same idea for OpenCode's model catalog: only the Mac's OpenCode is logged
+    // into providers like Google, so only the runner can report the full free-model
+    // list. Capped defensively — this rides a poll sent every few seconds.
+    const opencodeModels = Array.isArray(req.body?.opencode_models)
+      ? req.body.opencode_models.slice(0, 500)
+      : undefined;
+    noteRunnerCapabilities({ sideAccount: !!req.body?.side_account, opencodeModels });
 
     // Free anything whose previous runner died before handing this one a new
     // task — otherwise a task stranded by a closed laptop would never come back.

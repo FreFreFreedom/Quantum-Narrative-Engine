@@ -581,6 +581,19 @@ async function usageForReport() {
   return { ...usage, side, codex };
 }
 
+// This Mac's OpenCode is logged into providers the container never can be
+// (Google, Alibaba, …), so its model catalog is the real one — the container's
+// own bare install silently hides every free model behind those logins. Riding
+// this on the same poll as usage keeps the model picker honest without a
+// separate schedule; listOpenCodeModels() already caches for 5 minutes, so this
+// is a cheap in-memory read on every call but one.
+async function opencodeModelsForReport() {
+  try {
+    const { models } = await listOpenCodeModels();
+    return (models || []).map((m) => ({ id: m.id, name: m.name, free: m.free, contextWindow: m.contextWindow }));
+  } catch { return null; }
+}
+
 // ─── Claude helper lane ───────────────────────────────────────────────────────
 // The second subscription's token. Set in queue-server/.env on this Mac and
 // nowhere else — never on Railway, never committed. Absent is a supported state:
@@ -2261,13 +2274,14 @@ async function main() {
       // real read per minute — that's what keeps the app's usage bar truthful now
       // that Claude runs here rather than in the container.
       const usage = await usageForReport();
+      const opencodeModels = await opencodeModelsForReport();
       // `side_account` tells the server whether the SECOND Claude subscription is
       // reachable at all. Only this Mac has that token (never Railway — see the
       // rule in AGENT_MEMORY.md), so the server cannot answer the question itself:
       // without this it read its own empty env and reported the second account as
       // unavailable, which greyed "Claude (2nd)" out of the Room's model picker
       // even though the lane works perfectly through this runner.
-      const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage, side_account: !!SIDE_TOKEN });
+      const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage, side_account: !!SIDE_TOKEN, opencode_models: opencodeModels });
       if (r.ok) {
         const body = await r.json();
         claimed = body.none ? null : body.task;

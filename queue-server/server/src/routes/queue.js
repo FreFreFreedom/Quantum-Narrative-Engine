@@ -63,8 +63,12 @@ export function queueRoutes() {
           .map((id) => ({ id })),
       },
       opencode: {
-        available: discovery.models.length > 0 || !discovery.error,
-        models: discovery.models,
+        // The runner's own report wins when it's attached: its OpenCode is logged
+        // into providers (Google, Alibaba, …) this container's bare install never
+        // is, so the container's own discovery undercounts the real free-model
+        // list. Fall back to that discovery only while no runner is reporting in.
+        available: (runner.opencode_models?.length > 0) || discovery.models.length > 0 || !discovery.error,
+        models: (runner.opencode_models?.length > 0) ? runner.opencode_models : discovery.models,
         defaultModel,
         error: discovery.error || null,
       },

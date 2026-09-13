@@ -1659,8 +1659,16 @@ export function noteRunnerPoll(runnerId = null) {
 // seconds between a redeploy and the next poll, which is the honest answer — an
 // unattached runner genuinely cannot serve that account.
 let _sideAccount = false;
-export function noteRunnerCapabilities({ sideAccount } = {}) {
+// The runner's own OpenCode model list, reported on every claim poll. OpenCode's
+// catalog depends on which providers ITS auth.json is logged into (Google,
+// Alibaba, …) — the Mac has those logins, the container never can (same reason
+// Codex and the second Claude account only work through this runner). Without
+// this, the model picker asked the container's own bare OpenCode install and
+// silently hid every free model that only the Mac's login can see.
+let _runnerOpenCodeModels = null;
+export function noteRunnerCapabilities({ sideAccount, opencodeModels } = {}) {
   if (sideAccount !== undefined) _sideAccount = !!sideAccount;
+  if (Array.isArray(opencodeModels)) _runnerOpenCodeModels = opencodeModels;
 }
 
 // Claude usage as seen ON THE MACHINE THAT RUNS CLAUDE. Since execution moved to
@@ -1708,6 +1716,7 @@ export function runnerStatus() {
     runner_id: runnerId,
     // Only meaningful while connected — a runner that is gone serves nothing.
     side_account: connected && _sideAccount,
+    opencode_models: connected ? _runnerOpenCodeModels : null,
   };
 }
 
