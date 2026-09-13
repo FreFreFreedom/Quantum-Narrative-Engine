@@ -1314,7 +1314,7 @@ async function runTask(task) {
   // picked in AI Settings meant nothing.
   if ((task.provider || 'opencode') === 'codex') {
     chain.length = 0;
-    chain.push(`codex:${task.model || 'gpt-6-astra'}`);
+    chain.push(`codex:${codexCli.resolveModel(task.model)}`);
   }
   if ((task.provider || 'opencode') === 'claude-code') {
     const preset = task.effort === 'high' ? 'deep' : task.effort === 'low' ? 'fast' : 'standard';

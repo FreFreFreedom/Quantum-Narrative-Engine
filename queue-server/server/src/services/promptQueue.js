@@ -109,8 +109,13 @@ function frontParkedPosition(space) {
 
 function broadcast() { broadcastAll('travaux:prompts:updated', {}); }
 
-// The single model the Codex lane offers today (services/providers/codex.js).
+// The Codex lane's models, from the CLI's own list (2026-09-13). The first is the
+// default; the set exists so a pick made in AI Settings can be told apart from a
+// Claude tier name — 'sonnet' must never reach the Codex CLI.
 const CODEX_MODEL = 'gpt-6-astra';
+const CODEX_MODELS = new Set([
+  'gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve',
+]);
 
 // Providers whose task model is picked directly (provider_model), not resolved
 // from a Claude-Code preset tier — opencode and ai-router both work this way.
@@ -149,7 +154,8 @@ export function runModelFor(row, q = queueDefaultEngine()) {
   // (or the standing choice in AI Settings) and ignores the tier's Claude model —
   // without this the card would claim a task ran on sonnet.
   if (row.provider === 'codex') {
-    return { model: row.provider_model || CODEX_MODEL, effort: q.effort || tier.effort };
+    const picked = row.provider_model || (CODEX_MODELS.has(q.model) ? q.model : null);
+    return { model: picked || CODEX_MODEL, effort: q.effort || tier.effort };
   }
   const model = row.provider_model
     || (CLAUDE_QUEUE_MODELS.includes(q.model) ? q.model : null)

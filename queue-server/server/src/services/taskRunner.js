@@ -1222,7 +1222,8 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   if (provider === 'codex') {
     // One model on this lane, so a preset tier has nothing to pick — but the
     // effort dial is real and is left exactly as the task row set it.
-    model = next.provider_model || getProvider('codex').DEFAULT_MODEL;
+    // The slug already resolved at dispatch (runModelFor) rides on next.model.
+    model = getProvider('codex').resolveModel(next.provider_model || next.model);
   }
   if (provider === 'opencode') {
     // OpenCode ignores preset tiers — the user picked a concrete model

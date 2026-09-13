@@ -28,9 +28,20 @@ import { shq } from '../shellQuote.js';
 export const id = 'codex';
 export const label = 'Codex';
 
-// The only model this lane offers. Codex resolves its own default, but naming it
-// keeps the card honest about what actually ran.
+// The models this lane offers, read from the CLI's own list on 2026-09-13
+// (~/.codex/models_cache.json, client 0.154.0). Hardcoded because the deployed
+// server has no CLI to ask — refresh from that file when it changes.
 export const DEFAULT_MODEL = 'gpt-6-astra';
+export const MODELS = [
+  'gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve',
+];
+
+// A Claude tier name ('sonnet', 'opus') reaching this CLI would start a run against
+// a model that does not exist and waste the whole attempt, so anything unrecognised
+// falls back to the default rather than being passed through.
+export function resolveModel(name) {
+  return MODELS.includes(String(name || '')) ? String(name) : DEFAULT_MODEL;
+}
 
 // Read at call time, not at module load — ESM hoists every `import` above the
 // importing module's own body, so a CODEX_BIN set in .env is undefined at load.
@@ -138,13 +149,14 @@ export function detectLimit(text) {
   return { hit: false, label: null };
 }
 
-// One model, so there is no ladder to walk. Returning null is the honest answer —
-// inventing a chain here would silently move work to a model nobody picked.
+// No automatic ladder. The models differ in depth, not in availability, so moving
+// a task to one nobody picked would be a silent substitution, not a rescue.
 export function buildFallbackChain() { return []; }
 export function nextFallbackModel() { return null; }
 
 // ─── The run ────────────────────────────────────────────────────────────────
-// `effort` is the reasoning dial (low | medium | high), carried on the task row
+// `effort` is the reasoning dial (low … ultra — each model states its own ceiling),
+// carried on the task row
 // exactly as the Claude lane carries it, and passed through the CLI's own config
 // override because there is no dedicated flag for it.
 //

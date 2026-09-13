@@ -11416,6 +11416,30 @@ const AI_QUEUE_CLAUDE_MODELS = [
   ['sonnet', 'Sonnet — the everyday model'],
   ['opus', 'Opus — strongest, and by far the most expensive'],
 ];
+// Codex's models, read from the CLI's own list on 2026-09-13 (~/.codex/models_cache.json,
+// client 0.154.0). Hardcoded here because the deployed server has no CLI to ask — the same
+// reason the free-provider catalogue carries its ids by hand. Refresh by reading that file.
+// The second field is what the model is FOR; the third is the deepest thinking it accepts,
+// which is why the dial's options depend on the model.
+// slug, name, what it is for (OpenAI's own words), deepest thinking it accepts.
+const AI_QUEUE_CODEX_MODELS = [
+  ['gpt-6-astra',   'GPT-6-Astra',   'The most capable — complex, demanding work',   'ultra'],
+  ['gpt-5.6-sol',   'GPT-5.6-Sol',   'Reliable workhorse for everyday tasks',        'ultra'],
+  ['gpt-5.6-terra', 'GPT-5.6-Terra', 'Balanced coder for everyday work',             'ultra'],
+  ['gpt-5.6-luna',  'GPT-5.6-Luna',  'Fast and cheap',                               'max'],
+  ['gpt-5.5',       'GPT-5.5',       'Proven previous generation',                   'xhigh'],
+  ['gpt-reserve',   'GPT-Reserve',   'Fast and cheap — when the others are busy',    'max'],
+];
+const AI_QUEUE_EFFORT_LADDER = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'];
+const AI_QUEUE_EFFORT_LABELS = {
+  low: 'Low — answer quickly',
+  medium: 'Medium — the usual',
+  high: 'High — think longer before writing',
+  xhigh: 'Very high',
+  max: 'Max',
+  ultra: 'Ultra — slowest, deepest',
+};
+
 const AI_QUEUE_EFFORTS = [
   ['low', 'Low — answer quickly'],
   ['medium', 'Medium — the usual'],
@@ -11426,16 +11450,26 @@ function aiQueueIsClaude(provider) { return provider === 'claude-code' || provid
 // words through its own config override; OpenCode and the free lanes have none.
 function aiQueueHasEffort(provider) { return aiQueueIsClaude(provider) || provider === 'codex'; }
 
-function aiQueueEffortOptions(selected) {
+// Claude stops at high; each Codex model says how deep it will go, so the dial is
+// cut to that model's own ceiling rather than offering a level it would refuse.
+function aiQueueEffortOptions(selected, provider, model) {
+  let levels = AI_QUEUE_EFFORTS.map(([v]) => v);
+  if (provider === 'codex') {
+    const row = AI_QUEUE_CODEX_MODELS.find(m => m[0] === (model || AI_QUEUE_CODEX_MODELS[0][0]));
+    const top = AI_QUEUE_EFFORT_LADDER.indexOf((row && row[3]) || 'high');
+    levels = AI_QUEUE_EFFORT_LADDER.slice(0, top + 1);
+  }
   return `<option value=""${selected ? '' : ' selected'}>Auto</option>`
-    + AI_QUEUE_EFFORTS.map(([v, label]) =>
-      `<option value="${v}"${v === selected ? ' selected' : ''}>${label}</option>`).join('');
+    + levels.map(v =>
+      `<option value="${v}"${v === selected ? ' selected' : ''}>${AI_QUEUE_EFFORT_LABELS[v] || v}</option>`).join('');
 }
 
 function aiQueueModelOptions(selected, provider) {
-  // One model on the Codex lane. Say which, rather than leaving a box that looks
-  // like a choice and is not.
-  if (provider === 'codex') return `<option value="" selected>gpt-6-astra</option>`;
+  if (provider === 'codex') {
+    return `<option value=""${selected ? '' : ' selected'}>Auto — GPT-6-Astra</option>`
+      + AI_QUEUE_CODEX_MODELS.map(([v, name, what]) =>
+        `<option value="${v}"${v === selected ? ' selected' : ''} title="${what}">${name} — ${what}</option>`).join('');
+  }
   if (aiQueueIsClaude(provider)) {
     return `<option value=""${selected ? '' : ' selected'}>Auto — from the task's speed</option>`
       + AI_QUEUE_CLAUDE_MODELS.map(([v, label]) =>
@@ -11680,8 +11714,8 @@ function renderAiSettings() {
         </select>
       </td>
       <td>
-        <select id="aiQueueModel"${qdProvider === 'opencode' || qdIsClaude ? '' : ' disabled'}>${qdModelOpts}</select>
-        <select id="aiQueueEffort" class="ai-effort-sel"${aiQueueHasEffort(qdProvider) ? '' : ' hidden'} title="How long the model is asked to think before it writes.">${aiQueueEffortOptions(qdEffort)}</select>
+        <select id="aiQueueModel"${qdProvider === 'opencode' || qdIsClaude || qdProvider === 'codex' ? '' : ' disabled'}>${qdModelOpts}</select>
+        <select id="aiQueueEffort" class="ai-effort-sel"${aiQueueHasEffort(qdProvider) ? '' : ' hidden'} title="How long the model is asked to think before it writes.">${aiQueueEffortOptions(qdEffort, qdProvider, qdModel)}</select>
       </td>
     </tr>`;
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
@@ -11787,9 +11821,15 @@ function renderAiSettings() {
     // an OpenCode id means nothing to Claude — so the pick resets rather than carrying
     // a value the new lane would silently drop on save.
     if (claude) { ms.innerHTML = aiQueueModelOptions('', 'claude-code'); ms.disabled = false; return; }
-    // Codex offers one model, shown but not choosable — the effort dial beside it is
-    // the real control on this lane.
-    if (qpSel.value === 'codex') { ms.innerHTML = aiQueueModelOptions('', 'codex'); ms.disabled = true; return; }
+    if (qpSel.value === 'codex') {
+      ms.innerHTML = aiQueueModelOptions('', 'codex');
+      ms.disabled = false;
+      // The dial's ceiling belongs to the model, so it is rebuilt whenever the model
+      // changes — otherwise a level the model refuses stays selectable.
+      if (es) es.innerHTML = aiQueueEffortOptions(es.value, 'codex', ms.value);
+      ms.onchange = () => { if (es) es.innerHTML = aiQueueEffortOptions(es.value, 'codex', ms.value); };
+      return;
+    }
     if (qpSel.value !== 'opencode') { ms.disabled = true; ms.value = ''; return; }
     ms.innerHTML = aiQueueModelOptions(ms.value, 'opencode');
     ms.disabled = false;
@@ -11847,7 +11887,7 @@ function renderAiSettings() {
       queue.defaultProvider = qpEl.value;
       // Claude used to be blanked here unconditionally, which is why pinning a model to
       // it never stuck even once the dropdown was enabled.
-      queue.defaultModel = ((qpEl.value === 'opencode' || claude) && qmEl) ? qmEl.value : '';
+      queue.defaultModel = ((qpEl.value === 'opencode' || qpEl.value === 'codex' || claude) && qmEl) ? qmEl.value : '';
       queue.defaultEffort = (aiQueueHasEffort(qpEl.value) && qeEl) ? qeEl.value : '';
     }
     try {

@@ -109,9 +109,17 @@ assert.equal(codex.detectLimit('you have reached your usage limit').hit, true);
 assert.equal(codex.detectLimit('wrote 3 files, done').hit, false);
 ok('a rate-limited run is recognised and a normal one is not');
 
-// One model, so there is no ladder to climb.
+// No automatic substitution between models.
 assert.deepEqual(codex.buildFallbackChain(), []);
 assert.equal(codex.nextFallbackModel(), null);
 ok('no invented fallback model');
+
+// A Claude tier name must never be handed to this CLI — it would start a run
+// against a model that does not exist and waste the whole attempt.
+assert.equal(codex.resolveModel('sonnet'), 'gpt-6-astra');
+assert.equal(codex.resolveModel(''), 'gpt-6-astra');
+assert.equal(codex.resolveModel(null), 'gpt-6-astra');
+assert.equal(codex.resolveModel('gpt-5.6-sol'), 'gpt-5.6-sol');
+ok('a foreign model name falls back instead of being passed through');
 
 console.log(`\ncodex: ${n} checks passed\n`);
