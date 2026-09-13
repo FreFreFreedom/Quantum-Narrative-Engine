@@ -9305,7 +9305,10 @@ const ROOM_TAB_HAS = {
   attached: () => roomAttachedCards().length > 0 || roomPickOpen,
   passages: () => roomPassages.length > 0,
   ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning,
-  analogies: () => roomAnaCards().length > 0 || roomAnaBusy,
+  // The one tab that shows even while empty: every other pane only ever holds
+  // results, but this one holds a question box — hiding it until something has
+  // already arrived makes the asking unreachable.
+  analogies: () => !!roomSel,
   mind: () => roomMind.length > 0,
   extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
 };
