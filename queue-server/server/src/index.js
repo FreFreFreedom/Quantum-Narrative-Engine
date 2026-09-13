@@ -50,7 +50,7 @@ import { bindTagCommunitiesDb, buildTagCommunities } from './services/tagCommuni
 import { getClaudeUsage } from './services/claudeUsage.js';
 import { logBillingPosture, logOpenAiPosture } from './services/billingGuard.js';
 import { bindOpenAiSpendDb, warmSpendCache, capState as openAiCapState } from './services/openaiSpend.js';
-import { bindAiTextDb, migrateSecondAccountFirst, migratePlanDraftModel, migrateDocExtractionModel } from './services/ai/text.js';
+import { bindAiTextDb, migrateSecondAccountFirst, migratePlanDraftModel, migrateDocExtractionModel, seedAnalogiesDefault } from './services/ai/text.js';
 import { bindRouterDb, queueDeferUntil } from './services/ai/router.js';
 import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaScheduler.js';
 import { providersRoutes } from './routes/providers.js';
@@ -166,6 +166,7 @@ try {
 // flag is set so an already-migrated install still moves up to Flash.
 try {
   const docExtractionMigrated = migrateDocExtractionModel();
+  seedAnalogiesDefault();
   if (!docExtractionMigrated.skipped && docExtractionMigrated.changed) console.log('Doc-extraction model: pinned to google-ai-studio/gemini-flash-latest.');
 } catch (e) { console.error('Doc-extraction migration failed:', e.message); }
 

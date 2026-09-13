@@ -99,7 +99,7 @@ export function studioPersonaText() { return loadAiSettings().studioPersona || '
 // 'reply' is the chat on a task card. It was missing here for as long as the chat
 // existed, which meant no per-feature choice could ever reach it: an unlisted
 // feature falls through to the free lane below no matter what the settings say.
-const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply', 'umbrellas', 'doc-extraction'];
+const FEATURES = ['quick', 'build', 'judge', 'summary', 'warmup', 'plan_draft', 'inspire', 'treesync', 'studio', 'reply', 'umbrellas', 'doc-extraction', 'analogies'];
 
 // Read-only snapshot for the AI Settings panel: per-feature defaults, the global
 // quota policy, and live cooldown state (with seconds-remaining, since the panel
@@ -331,6 +331,32 @@ export function migrateDocExtractionModel() {
     .run(JSON.stringify(defaults));
   refreshAiSettings();
   return { changed: true, skipped: false };
+}
+
+// The analogy engine's own lane (plan "room-analogy-engine"). It rode the Idea
+// Studio's setting at first, which meant it could not be aimed anywhere without
+// moving every Room answer with it — and this one wants something different from
+// a chat model. Measured 2026-09-13 on the same question ("a family that makes
+// belonging depend on staying the same"): Gemini Flash Lite and Flash both reached
+// for a software metaphor, as did the strongest ChatGPT model, while Cerebras's
+// qwen-3.8-27b answered with a sealed terrarium in half a second. Leaving the
+// domain is the whole job here, so that is the seeded pick.
+//
+// Seeded only when the key is ABSENT, which is also the guard: the moment Antoine
+// chooses something else the key exists and this never touches it again. No flag
+// column, no second migration to remember.
+export function seedAnalogiesDefault() {
+  if (!db) return { changed: false };
+  const row = db.prepare(`SELECT defaults_json FROM ai_settings WHERE id='global'`).get();
+  if (!row) return { changed: false };
+  let defaults = {};
+  try { defaults = JSON.parse(row.defaults_json || '{}'); } catch { return { changed: false }; }
+  if (defaults.analogies) return { changed: false };
+  defaults.analogies = { provider: 'cerebras', model: 'qwen-3.8-27b' };
+  db.prepare(`UPDATE ai_settings SET defaults_json=?, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id='global'`)
+    .run(JSON.stringify(defaults));
+  refreshAiSettings();
+  return { changed: true };
 }
 
 // ─── Stall memory ────────────────────────────────────────────────────────────

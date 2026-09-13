@@ -207,7 +207,7 @@ async function runLook(convoId, { question = null, asked = false } = {}) {
 
   const result = await generateText({
     prompt: buildPrompt({ transcript, steer, question }),
-    feature: 'studio',            // his one Room lane knob — no new setting
+    feature: 'analogies',         // its own lane: leaving the domain is not what a chat model is picked for
     maxTokens: 1200,
     label: 'room:analogies',
   });
