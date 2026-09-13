@@ -16414,18 +16414,21 @@ function uqLeft(bucket) {
   const p = bucket && bucket.utilizationPct;
   return Number.isFinite(p) ? Math.max(0, Math.min(100, Math.round(100 - p))) : null;
 }
-// The figure is what is left; the line is what has been used. They run opposite ways
-// on purpose — the number answers "can I start something", the line fills up as the
-// window is spent, so the rail gets visibly heavier through the day instead of
-// quietly draining. The colour follows the figure, not the line: it warms as the
-// room runs out, so a long orange bar means both things at once.
+// The figure and the line say the SAME thing: what is left. A full bar means a full
+// allowance, and it drains through the day.
+//
+// They used to run opposite ways — the number counted down while the line filled up —
+// on the theory that a rail growing heavier reads as work done. It does not: 93% beside
+// a bar with a sliver in it is two opposite impressions of one fact, and the eye takes
+// the bar. His ask, 2026-09-13. The colour ramp already followed the figure, so now
+// colour, length and number all move together.
 function uqCell(bucket) {
   const left = uqLeft(bucket);
   if (left == null) return '<span class="uq-cell uq-blank"><span class="uq-pct">—</span></span>';
   const back = fmtResetIn(bucket.resetsAt);
   return `<span class="uq-cell" title="${left}% left, ${100 - left}% used${back ? `, back in ${back}` : ''}">
     <span class="uq-pct">${left}%</span>
-    <span class="uq-line-bar"><i style="width:${100 - left}%;background:${uqColour(left)}"></i></span>
+    <span class="uq-line-bar"><i style="width:${left}%;background:${uqColour(left)}"></i></span>
     <span class="uq-in">${back || '—'}</span></span>`;
 }
 function uqRow(name, usage) {
@@ -16436,7 +16439,7 @@ function uqRow(name, usage) {
 // matters from across the room.
 function uqShutBar(name, usage) {
   const left = uqLeft(usage && usage.session);
-  const fill = left == null ? '' : `<em style="width:${100 - left}%;background:${uqColour(left)}"></em>`;
+  const fill = left == null ? '' : `<em style="width:${left}%;background:${uqColour(left)}"></em>`;
   return `<span class="uq-b" title="${name}: ${left == null ? 'no reading' : left + '% of five hours left'}">
     <span>${name}${left == null ? ' —' : ''}</span><i>${fill}</i></span>`;
 }
