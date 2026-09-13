@@ -11,9 +11,9 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
-## Civic immune systems can go autoimmune: a society's defense mechanism begins wounding the community it protects; the full diagram must chart where protection becomes self-harm.
+## A gang is not an individual pathology but an emergent organ formed precisely where every other system for metabolizing injustice and pain has been amputated.
 
-The immune lens yields its darkest corollary, the climax of the exploration: welfare reform's 'dependency elimination' is, at immune-logic level, a defense mechanism wounding its own citizens; and the necessary dissociation that lets a community bear too many dead children (Death Without Weeping) is survival bought with permanent scar. A system-wide diagram must therefore chart not only violence and border-guards but the cells of ambivalence, rituals of forgetting, pathways for return and repair — and above all the places where the civic immune response turns auto-immune: where defending 'us' begins wounding the body itself.
+Under the paradigm, street entities and gangs are structured immune or survival substitutes—coagulations of rejected anger and unprocessed intergenerational energy—growing to hold together a community abandoned by formal care.
 
 ## The immune system is the deep anatomy of civic entities — skin, antibodies, self-recognition, amnesia triggers, sacrificial organs — and justice is its immune act: maintaining the self/not-self boundary.
 

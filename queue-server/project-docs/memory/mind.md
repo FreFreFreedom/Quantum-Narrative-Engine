@@ -22,7 +22,7 @@ The paradigm itself lives next door in vision-from-the-room.md, not here.
 
 ## How he wants to be worked with
 
-- When asking for deep exploration, owner gives explicit word-count ranges (e.g. 1000–1500, 3500–4000) and wants the word count printed at the end of the answer. — Repeated twice across this session with verbatim reuse of the request when an answer failed to return; he also rerolls with '-4.1' rather than accepting a flat answer. His preferred format is one continuous flowing exploration (not structured point-by-point replies to his prompts, which he explicitly waived) that treats the pieces as one connected whole. Sustains the standing 'go deep — full paradigm investigation, not surface summaries'.
+- When asking for deep exploration, owner gives explicit word-count ranges (e.g. 3000–4000) and wants the word count printed at the end of the answer. — Extends the existing preference for explicit word-count bounds to long-form philosophical/structural investigations (e.g., analyzing the movie South Central through the paradigm).
 - When exploring vision directions, go deep—full paradigm investigation, not surface summaries — Wants thorough exploration of the ontology and its mechanisms, not executive summaries or simplified explanations
 - Vision exploration should be bold and unrestricted, not bounded by feasibility or 'realism'—focus on defining core elements of the full paradigm's power — During deep vision exploration, no plans or app modifications; pure examination of what could be
 - Design must have elegance, beauty, power, efficiency, AND simplicity—all four equally, not traded off.
