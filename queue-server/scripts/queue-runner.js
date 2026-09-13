@@ -46,8 +46,8 @@ import { runIdeaLanding as ideaLandingPass, buildDiff as buildIdeaDiff } from '.
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk, commitFilesToTrunk } from './git-ship.js';
 import { noteFiles, NOTES_REPO_PATH } from '../server/src/services/noteMirror.js';
+import { mindFiles, MEMORY_REPO_PATH } from '../server/src/services/mindMirror.js';
 import { convoFiles, CONVOS_REPO_PATH } from '../server/src/services/convoMirror.js';
-import { mindFiles } from '../server/src/services/mindMirror.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const QUEUE_URL = (process.env.QUEUE_URL || 'https://quantum-narrative-engine-production.up.railway.app').replace(/\/$/, '');
@@ -674,6 +674,33 @@ async function runHelperJobs() {
       await api(`/worker/helper/${job.id}/result`, out ? { text: out } : { error: err || 'witness check failed' });
     } catch { /* the caller's own deadline covers this — and reads it as "not checked" */ }
     console.log(`  witness ${job.label || job.feature} ${out ? 'checked against the checkout (no model)' : `failed — ${err}`}`);
+    return;
+  }
+
+  // A job for the Codex CLI. No Claude window to gate on — it is a different
+  // subscription entirely — and no account to swap; spawnEnv drops OPENAI_API_KEY
+  // so it cannot fall through to per-token billing.
+  if (job.engine === 'codex') {
+    const who = codexCli.signedInAs();
+    const cxModel = codexCli.resolveModel(job.model);
+    console.log(`  helper ${job.label || job.feature} → codex:${cxModel}${who.email ? dim(` (${who.email})`) : ''}`);
+    let out = null;
+    try {
+      out = await codexCli.runToolless({
+        prompt: job.prompt,
+        model: cxModel,
+        timeoutMs: Number.isFinite(job.timeout_ms) && job.timeout_ms > 0 ? Math.min(job.timeout_ms, 600_000) : 120_000,
+        cwd: RUNNER_REPO,
+      });
+    } catch (e) {
+      out = { code: -1, text: '', error: e.message };
+    }
+    const cxText = out && out.code === 0 ? (out.text || '').trim() : '';
+    try {
+      await api(`/worker/helper/${job.id}/result`,
+        cxText ? { text: cxText } : { error: out?.text || out?.error || `exit ${out?.code}` });
+    } catch { /* the caller's own deadline covers this */ }
+    console.log(`  helper ${job.label || job.feature} ${cxText ? 'answered' : `failed — ${String(out?.text || out?.error || `exit ${out?.code}`).slice(0, 300)}`}`);
     return;
   }
 
@@ -1961,13 +1988,14 @@ function tidyWorktrees() {
 const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 
 // ─── What the Room knows, into the repo ───────────────────────────────────────
-// The Room's conversations and memories live in the app's database, where no coding agent can see them —
+// Three memories live in the app's database, where no coding agent can see them —
 // Claude Code, OpenCode and every task worktree read files, not SQLite:
 //
 //   - conversations saved with `/note` (knowledge_docs)
 //   - raw Room transcripts with at least three user messages (convos + convo_messages)
 //   - the facts harvested out of every Room conversation (mind_facts), split into
 //     what he is like and the paradigm itself
+//   - every Room conversation that meets the junk threshold (>=3 user messages)
 //
 // The server was supposed to mirror both and genuinely could not: its image has no
 // git binary, so all six notes saved between 2026-08-24 and 2026-09-07 pushed
@@ -1975,12 +2003,13 @@ const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 // memory mirror sat at "Nothing recorded yet" while the app held twenty facts. This
 // Mac has the checkout, so this is where it belongs.
 //
-// ONE commit for all of them, because every push to the trunk redeploys the app — two
-// mirrors on the same timer would mean two deploys for one tick's worth of news.
+// ONE commit for all three, because every push to the trunk redeploys the app —
+// multiple mirrors on the same timer would mean multiple deploys for one tick's
+// worth of news.
 //
 // Reads the whole set and rewrites the whole mirror every time rather than tracking
-// what is new: it costs three requests, and it means anything saved while this runner
-// was off is picked up by simply starting it.
+// what is new: it costs three requests, and it means anything saved while this
+// runner was off is picked up by simply starting it.
 const NOTE_MIRROR_MS = 5 * 60_000;
 let lastNoteMirrorAt = 0;
 async function mirrorToRepo() {
@@ -2000,8 +2029,8 @@ async function mirrorToRepo() {
   // An empty list is never acted on. It is what a broken query, a half-migrated
   // DB or a wrong environment also looks like, and mirroring it would prune every
   // note out of the repo on the strength of a bad answer. Same reasoning for the
-  // facts below — except there is nothing to prune there, so an empty answer just
-  // means this tick has no memory news.
+  // transcripts and facts below — an unanswered query must never be read as "he
+  // deleted everything".
   const haveNotes = Array.isArray(notes) && notes.length > 0;
   if (haveNotes) {
     files.push(...noteFiles(notes.map((n) => ({
@@ -2018,10 +2047,11 @@ async function mirrorToRepo() {
     const r = await apiRoot('/convos/transcripts');
     if (r.ok) convos = (await r.json()).convos;
   } catch { /* leave transcripts alone this tick */ }
-  if (Array.isArray(convos) && convos.length > 0) {
+  const haveConvos = Array.isArray(convos) && convos.length > 0;
+  if (haveConvos) {
     files.push(...convoFiles(convos));
-    pruneDirs.push(CONVOS_REPO_PATH);
     said.push(`${convos.length} conversation(s)`);
+    pruneDirs.push(CONVOS_REPO_PATH);
   }
 
   let facts = null;
@@ -2033,6 +2063,7 @@ async function mirrorToRepo() {
     files.push(...mindFiles(facts));
     const vision = facts.filter((f) => f.kind === 'vision').length;
     said.push(`${facts.length} remembered fact(s)${vision ? `, ${vision} of them the paradigm` : ''}`);
+    // Memory mirror has fixed filenames (mind.md, vision-from-the-room.md) — no pruning needed.
   }
 
   if (!files.length) return;
@@ -2041,9 +2072,10 @@ async function mirrorToRepo() {
     repo: RUNNER_REPO,
     trunk: TRUNK,
     files,
-    // Reconcile each directory only when its own source answered non-empty.
-    // A failed or empty response must never mean "delete everything".
-    pruneDirs,
+    // Prune only directories whose source answered non-empty this tick. An empty
+    // or failed answer must never prune — a broken query looks exactly like "he
+    // deleted everything". This replaces the old single pruneDir.
+    pruneDirs: pruneDirs.length ? pruneDirs : null,
     message: 'mirror: what the Room knows',
     dryRun: GIT_SHIP_DRY_RUN,
     log: (m) => console.log(dim(`    ${m}`)),

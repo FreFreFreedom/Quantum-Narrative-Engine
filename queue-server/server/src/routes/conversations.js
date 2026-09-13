@@ -95,16 +95,28 @@ export function conversationsRoutes() {
     res.json({ notes: convos.listNotes({ full: req.query.full === '1' }) });
   });
 
-  // One request for the runner's complete shelf, before the /:id route.
+  // GET /api/convos/transcripts — full transcripts of open conversations, for the
+  // repo mirror. One call returns all threads (no N+1), already filtered by the
+  // junk rule (>=3 user messages). Returns newest first.
   router.get('/transcripts', (req, res) => {
-    const transcripts = convos.listOpenConvos(null).flatMap((convo) => {
-      const messages = convos.listMessages(convo.id)
-        .map(({ role, content, created_at }) => ({ role, content, created_at }));
-      if (messages.filter((message) => message.role === 'user').length < 3) return [];
-      const { id, title, created_at, updated_at, turns } = convo;
-      return [{ id, title, created_at, updated_at, turns, messages }];
-    });
-    res.json({ convos: transcripts });
+    const openConvos = convos.listOpenConvos();
+    const filtered = openConvos
+      .map((c) => {
+        const messages = convos.listMessages(c.id);
+        const userCount = messages.filter((m) => m.role === 'user').length;
+        if (userCount < 3) return null;
+        return {
+          id: c.id,
+          title: c.title,
+          created_at: c.created_at,
+          updated_at: c.updated_at,
+          turns: c.turns,
+          messages: messages.map((m) => ({ role: m.role, content: m.text, created_at: m.created_at })),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    res.json({ convos: filtered });
   });
 
   // POST /api/convos/open — start one. No subject to pick: it gets a synthetic

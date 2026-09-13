@@ -475,6 +475,22 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   // to spare the big account's quota, not to give up the moment the small one is
   // spent. So a limit hit here is remembered (so the next call doesn't wait on a
   // door that is shut) and the same question is asked again on the main account.
+  // Codex draws on the ChatGPT subscription through the CLI, which exists only on
+  // the Mac — exactly the situation claude-side is in, so it takes the same road:
+  // park a helper job and let the runner answer it. No API key is involved and none
+  // must ever be: an OpenAI key here would bill per token.
+  if (p === 'codex') {
+    const out = await runHelperJob({
+      prompt: toollessPrompt, feature, maxTokens, label,
+      model: m || 'gpt-6-astra', waitMs: helperWaitMs, engine: 'codex',
+    });
+    if (out?.text) return { text: out.text, provider: 'codex', model: m || 'gpt-6-astra' };
+    // "no runner" is the honest answer, not a reason to quietly use something else:
+    // a lane picked by hand that silently becomes another lane is how a model choice
+    // stopped meaning anything here once before.
+    return { error: out?.error || 'codex_unavailable', message: out?.message || 'the Mac runner is not attached, so Codex cannot answer' };
+  }
+
   if (p === 'claude-side') {
     const ask = (acct) => runHelperJob({
       prompt: helperTools ? prompt : toollessPrompt, feature, maxTokens, label, model: m,
@@ -864,7 +880,7 @@ export function claimHelperJob() {
   if (!db) return null;
   const staleCutoff = new Date(Date.now() - HELPER_CLAIM_STALE_MS).toISOString();
   db.prepare(`UPDATE helper_jobs SET status='queued', claimed_at=NULL WHERE status='running' AND claimed_at < ?`).run(staleCutoff);
-  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, timeout_ms FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
+  const job = db.prepare(`SELECT id, feature, label, prompt, max_tokens, model, allowed_tools, account, kind, engine, timeout_ms FROM helper_jobs WHERE status='queued' ORDER BY created_at LIMIT 1`).get();
   if (!job) return null;
   db.prepare(`UPDATE helper_jobs SET status='running', claimed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(job.id);
   return job;
@@ -903,7 +919,7 @@ const MODEL_FREE_KINDS = new Set(['repo_probe', 'witness']);
 
 // Park a request for the local runner and wait for its answer. Returns
 // { text } on success, { error, message } otherwise. Never throws.
-async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main', kind = 'text' }) {
+async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, waitMs = null, model = null, account = 'main', kind = 'text', engine = 'claude' }) {
   if (!db) return { error: 'no_db' };
   try {
     // Only worth parking if a runner is actually attached — otherwise this is a
@@ -925,9 +941,11 @@ async function runHelperJob({ prompt, feature, maxTokens, label, tools = null, w
     const jobTimeoutMs = (Number.isFinite(waitMs) && waitMs > HELPER_WAIT_MS)
       ? Math.max(0, waitMs - HELPER_POLL_MS * 2)
       : null;
-    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind, timeout_ms) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    db.prepare(`INSERT INTO helper_jobs (id, feature, label, prompt, max_tokens, allowed_tools, model, account, kind, engine, timeout_ms) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
       .run(id, feature || 'unknown', label || '', prompt, maxTokens || 800, tools || null,
-        model || 'haiku', account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text',
+        model || (engine === 'codex' ? 'gpt-6-astra' : 'haiku'),
+        account === 'side' ? 'side' : 'main', MODEL_FREE_KINDS.has(kind) ? kind : 'text',
+        engine === 'codex' ? 'codex' : 'claude',
         jobTimeoutMs);
 
     // A caller with a person waiting on the other end (the task-card chat) sets

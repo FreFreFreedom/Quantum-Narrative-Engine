@@ -20302,7 +20302,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     }).catch(function(){ laneCatalog = {}; return laneCatalog; });
     return laneCatalogPromise;
   }
-  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT' };
+  var LANE_LABELS = { 'claude-code': 'Claude', 'claude-side': 'Claude (2nd)', opencode: 'OpenCode', 'google-ai-studio': 'Google', openai: 'ChatGPT (billed)', codex: 'ChatGPT' };
+  // Codex's models, from the CLI's own list (2026-09-13). Same set the queue offers.
+  var CODEX_LANE_MODELS = ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve'];
+
   function laneTagFor(provider, model){
     var label = LANE_LABELS[provider] || provider;
     return model ? label + ' · ' + model : label;
@@ -20937,7 +20940,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +         '<option value="claude-side">Claude (2nd)</option>'
         +         '<option value="opencode">OpenCode</option>'
         +         '<option value="google-ai-studio">Google</option>'
-        +         '<option value="openai">ChatGPT</option>'
+        +         '<option value="codex">ChatGPT — your subscription</option>'
+        +         '<option value="openai">ChatGPT — billed per use</option>'
         +       '</select>'
         +       '<select class="se-lanemodel" style="display:none"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
@@ -21086,12 +21090,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(provider === 'opencode') return ((catalog && catalog.opencode && catalog.opencode.models) || []).map(function(m){ return (m && m.id) || m; });
     if(provider === 'google-ai-studio') return ((catalog && catalog.google && catalog.google.models) || []).map(function(m){ return m.id; });
     if(provider === 'openai') return ((catalog && catalog.openai && catalog.openai.models) || []).map(function(m){ return m.id; });
+    // Codex runs through the Mac, so the server has no list to hand over — the same
+    // set the queue's own picker carries.
+    if(provider === 'codex'){
+      var cx = (catalog && catalog.codex && catalog.codex.models) || [];
+      return cx.length ? cx.map(function(m){ return m.id; }) : CODEX_LANE_MODELS.slice();
+    }
     var f = freeApiLane(provider, catalog);
     if(f) return f.models.map(function(m){ return m.id; });
     return [];
   }
   // Why a lane is unpickable, in Antoine's words rather than a variable name.
   function laneOffReason(provider){
+    if(provider === 'codex') return 'Codex runs through your Mac. Start the queue runner there and this becomes available.';
     if(provider === 'claude-side') return 'Your second Claude account runs through your Mac. Start the queue runner there and this becomes available.';
     if(provider === 'claude-code') return 'The main Claude account is not reachable from the server right now.';
     if(provider === 'opencode') return 'No OpenCode models are reachable right now.';
@@ -21104,6 +21115,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(!catalog) return true; // don't block Auto while the catalog is still loading
     if(provider === 'claude-code') return !!(catalog.claude && catalog.claude.available);
     if(provider === 'claude-side') return !!(catalog.claude && catalog.claude.secondAccountAvailable);
+    if(provider === 'codex') return !!(catalog.codex && catalog.codex.available);
     if(provider === 'opencode') return !!(catalog.opencode && catalog.opencode.available);
     if(provider === 'google-ai-studio') return !!(catalog.google && catalog.google.available);
     if(provider === 'openai') return !!(catalog.openai && catalog.openai.available);
@@ -21244,7 +21256,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   function killLaneMenu(){ if(window.closeMenu) window.closeMenu(); }
   var REASK_LANES = [
     ['', 'Auto'],
-    ['openai', 'ChatGPT'],
+    ['codex', 'ChatGPT'],
+    ['openai', 'ChatGPT (billed)'],
     ['claude-code', 'Claude'],
     ['claude-side', 'Claude (2nd)'],
     ['google-ai-studio', 'Google'],

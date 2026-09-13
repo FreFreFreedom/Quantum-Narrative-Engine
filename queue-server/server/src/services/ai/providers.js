@@ -84,7 +84,10 @@ function isCatalogProvider(id) {
 // a hard-coded pair, so adding a provider to catalog.js is enough to make it
 // routable everywhere that calls this.
 export function isKnownProvider(id) {
-  return id === 'claude-code' || id === 'claude-side' || id === 'opencode' || isCatalogProvider(id);
+  // 'codex' has no module here for the same reason 'claude-side' does not: it is a
+  // CLI that exists only on the Mac, so ai/text.js parks it as a helper job rather
+  // than asking for a module. It must still be pinnable in the Room.
+  return id === 'claude-code' || id === 'claude-side' || id === 'opencode' || id === 'codex' || isCatalogProvider(id);
 }
 
 // Get capability object for a provider. Catalogue (free) providers synthesize

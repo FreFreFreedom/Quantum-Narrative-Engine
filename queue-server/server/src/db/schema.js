@@ -1840,6 +1840,10 @@ export function initFilmEnrichmentSchema(db) {
   // the remove button?" cannot be answered honestly without looking). NULL keeps
   // the original toolless behaviour, which is what every other caller wants.
   try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN allowed_tools TEXT`); } catch {}
+  // Which CLI on the Mac answers this job. 'claude' (the default, and everything
+  // written before 2026-09-13) or 'codex'. The account column still says which
+  // Claude subscription; it means nothing on the codex engine.
+  try { db.exec(`ALTER TABLE helper_jobs ADD COLUMN engine TEXT NOT NULL DEFAULT 'claude'`); } catch {}
   // Which Claude subscription answers this job. 'main' is the account the runner
   // itself is logged into (and the one every queue coding task uses); 'side' is the
   // second, smaller subscription, reached only by handing its token to that one

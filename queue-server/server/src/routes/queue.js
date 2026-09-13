@@ -54,6 +54,14 @@ export function queueRoutes() {
         // case where the server IS the Mac (local dev, `oc preview`).
         secondAccountAvailable: !!process.env.CLAUDE_SIDE_OAUTH_TOKEN || !!runner.side_account,
       },
+      // Codex, like the second Claude account, lives on the Mac and is reachable
+      // only while the runner is attached — so the runner is what decides whether
+      // this lane is offered, never an env var in the container.
+      codex: {
+        available: !!runner.connected,
+        models: ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-reserve']
+          .map((id) => ({ id })),
+      },
       opencode: {
         available: discovery.models.length > 0 || !discovery.error,
         models: discovery.models,
