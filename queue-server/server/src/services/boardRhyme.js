@@ -65,12 +65,20 @@ export async function rhymeFor(cardId) {
     maxAttempts: 2,
     timeoutMs: 20_000,
   });
-  if (out?.error || !out?.text) return { error: out?.error || 'no_text' };
+  if (out?.error || !out?.text) {
+    // Silent failure is right for the card, wrong for the operator: without this the
+    // only evidence a rhyme never ran was an empty field on a card.
+    console.warn('[board] rhyme: no answer —', out?.error || 'no_text');
+    return { error: out?.error || 'no_text' };
+  }
 
   const parsed = firstJson(out.text);
   const passage = String(parsed?.passage || '').trim().slice(0, 500);
   const why = String(parsed?.why || '').trim().slice(0, 400);
-  if (!passage || !why) return { error: 'parse_failed' };
+  if (!passage || !why) {
+    console.warn('[board] rhyme: could not read the answer —', String(out.text).slice(0, 200).replace(/\s+/g, ' '));
+    return { error: 'parse_failed' };
+  }
 
   setCardRhyme(cardId, { passage, rhyme: why });
   return { ok: true, passage, why };
