@@ -111,10 +111,17 @@ async function postChatCompletions({ providerId, model, messages, maxTokens, too
 // ─── Toolless call (ai/text.js free-fallback path) ────────────────────────────
 // Matches the { code, text } shape claudeCode.runToolless / opencode.runToolless
 // return, so ai/text.js's dispatch can treat every provider uniformly.
-export async function runToolless({ prompt, model, providerId, timeoutMs = 60_000, maxTokens = 800 }) {
+// `images`: optional array of already-inlined `data:` URLs (never a remote
+// http(s) URL — this endpoint does not fetch one for you). When empty/absent
+// the request body is byte-for-byte what it always was; every other caller of
+// this function goes through the same line, so that has to stay true.
+export async function runToolless({ prompt, model, providerId, timeoutMs = 60_000, maxTokens = 800, images = null }) {
+  const content = images && images.length
+    ? [{ type: 'text', text: prompt }, ...images.map((url) => ({ type: 'image_url', image_url: { url } }))]
+    : prompt;
   const out = await postChatCompletions({
     providerId, model, maxTokens, timeoutMs,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content }],
   });
   if (out.error) return { code: -1, text: out.message || out.error, limit: out.limit || null };
   const text = out.data?.choices?.[0]?.message?.content?.trim() || '';
