@@ -705,6 +705,32 @@ instead. Read it before non-trivial work. When you learn something durable that
 another engine's future task would need, add a short entry (or update an existing
 one) rather than leaving it only in chat or in a private memory store.
 
+### The four shelves every engine can read (added 2026-09-13, when Codex joined)
+
+Four engines now work here — Claude Code (either account), OpenCode, Codex and the
+free lanes — and each one's private memory is invisible to the other three. Everything
+below is a plain file on `develop`, so all four read the same thing:
+
+| Shelf | Where | What is in it |
+|---|---|---|
+| Shared notes between engines | `AGENT_MEMORY.md` | findings, standing decisions, gotchas. Write here, not into a private store. |
+| The rules | this file, and `CLAUDE.md` | how to talk to him, how to design the interface, how to ship. |
+| What the app learned about him | `queue-server/project-docs/memory/mind.md` | standing facts harvested from his Room conversations. |
+| The paradigm, as it develops | `queue-server/project-docs/memory/vision-from-the-room.md` and `queue-server/data-seed/docs/fractal_operational_core.md` | the mirror is written by the app; the core doc is hand-curated. |
+| Saved conversations | `queue-server/project-docs/notes/` | a `/note`d thread, in full, one file each. |
+
+The last three arrive **from the Mac runner**, every five minutes while it is idle.
+A container cannot write to the repo — Railway's image has no `git` binary at all —
+so when these look stale the runner is simply off, and starting it catches everything
+since. Do not build a second path to the trunk; there is one, and it is
+`scripts/git-ship.js#commitFilesToTrunk`.
+
+**Codex reads this file by itself** (its own AGENTS.md convention, verified
+2026-09-13: asked cold, it named `AGENT_MEMORY.md` and quoted the communication
+profile). It also keeps a private memory of its own under `~/.codex/`, which no other
+engine can see — so the rule above applies to it exactly as it does to Claude Code:
+anything durable goes in `AGENT_MEMORY.md`.
+
 ## Repository essentials
 
 For agents working in this repo — what QNE is, how to run things, the rules.
