@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED — approved for queue completion** | 2026-09-13 |
+| **DONE** | 2026-09-13 |
 
 Antoine asked: “remove the default world idea generations for tasks we add to
 the queue please.”

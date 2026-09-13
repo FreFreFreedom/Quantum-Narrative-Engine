@@ -3,7 +3,7 @@
 //
 //   node scripts/send-plan.js plans/my-plan.md              # queued; no automatic world-look
 //   node scripts/send-plan.js plans/my-plan.md --park       # arrives parked, waits for a click
-//   node scripts/send-plan.js plans/my-plan.md --raw        # no world-look, no wait — dispatch now
+//   node scripts/send-plan.js plans/my-plan.md --raw        # raw text, no plan prep — dispatch now
 //   node scripts/send-plan.js plans/my-plan.md --dry-run    # print what would be sent, send nothing
 //   node scripts/send-plan.js plans/my-plan.md --preset standard
 //   node scripts/send-plan.js plans/my-plan.md --account side

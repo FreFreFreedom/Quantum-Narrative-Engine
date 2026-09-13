@@ -936,12 +936,18 @@ six-message-only context so the engine remains aware of older Room threads and o
 its own side conversation. This is approved implementation work, assigned to
 Claude's second account on Sonnet at medium effort.
 
-## Queue World Ideas are manual (2026-09-13)
+## Queue World Ideas are manual (2026-09-13) — DONE
 
 Antoine approved removing automatic World Ideas from queue tasks. Core backend
-code landed inside concurrent commit `905eb78`; the completion task is queued to
-audit it, add the regression test, correct the raw-task UI wording in both HTML
-copies, and verify the deployed behavior. The intended invariant is that the task
-card's **Look at the world** button is the sole generation trigger. A precomputed
-report explicitly carried from a suggestion, seed or other source is still
-reused. See `plans/queue-world-ideas-manual-only.md`.
+code landed inside concurrent commit `905eb78` and audited clean: `createPrompt`
+never calls `startInspiration` (only the explicit `refreshInspiration` path does),
+`advanceQueue` never gates dispatch on `inspire_state`, and `preGen.js`'s sweeps
+(`autoWorldLookSuggestions/Components/Ideas`) never touch `work_prompts`. The
+completion task added `scripts/queue-inspiration-selftest.js`
+(`npm run queue-inspiration:selftest`), fixed the raw-task checkbox label/tooltip
+in both HTML copies (it used to read as if only `--raw` skipped World Ideas — now
+"Run raw — skip planning (fastest)"), and removed four dead `effective*` variables
+left over in `createPrompt` from the merge. The task card's **Look at the world**
+button is the sole generation trigger; a precomputed report explicitly carried
+from a suggestion, seed or other source is still reused. See
+`plans/queue-world-ideas-manual-only.md`.
