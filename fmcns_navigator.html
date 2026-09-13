@@ -1372,7 +1372,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
   width:min(420px, calc(100vw - 32px)); background:var(--c-bg-2, var(--c-bg)); border:1px solid var(--c-border);
   border-radius:var(--r-lg); padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.28); animation:sePopIn .12s var(--ease); }
 .se-remember-kind { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.03em; color:var(--c-ink-5); }
-.se-remember-kind select { font:inherit; margin-left:4px; }
+/* A conversation embedded in the 290px right column: the heading repeats the tab
+   above it, the lane is already pinned, and the command list is for the Studio —
+   all three squeezed the box someone types in down to nothing. His words,
+   2026-09-13: "i dont even know where to type". */
+.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more { display:none; }
+.se-slim .se-input { flex:1 1 auto; min-width:0; }
+.se-remember-shelf { font:inherit; text-transform:none; letter-spacing:normal; background:none; border:0; border-bottom:1px dotted currentColor;
+  padding:0; margin-left:4px; color:var(--c-accent); cursor:pointer; }
 .se-remember-text { margin:6px 0; font-size:var(--fs-sm); }
 .se-remember-detail { margin:0 0 8px; font-size:var(--fs-xs); color:var(--c-ink-3); }
 .se-remember-acts { display:flex; gap:8px; justify-content:flex-end; }
@@ -10874,9 +10881,9 @@ function renderRoomSide() {
     + '<button type="button" data-side-new="1">+ Aside</button>'
     + '</div>';
 
-  html += '<div class="room-side-list">' + roomSides.map(s => (
+  html += '<div class="room-side-list">' + roomSides.map((s, i) => (
     '<button type="button" class="room-side-row' + (s.id === roomSideOpenId ? ' is-open' : '') + '" data-side-pick="' + qEscAttr(s.id) + '">'
-    + qEsc(s.title || 'Side talk')
+    + qEsc(s.title && s.title !== 'Side talk' ? s.title : 'Aside ' + (i + 1))
     + '</button>'
   )).join('') + (!roomSides.length ? '<div class="tv-empty">Nothing yet. Select a passage and choose Aside, or start one here.</div>' : '') + '</div>';
 
@@ -10898,7 +10905,7 @@ function renderRoomSide() {
     const embedHost = document.getElementById('roomSideEmbed');
     if (embedHost) {
       window.studioEmbedOpen('side', open.subject_id);
-      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '' });
+      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true });
     }
   }
 }
@@ -21782,7 +21789,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Nothing here holds state worth preserving, so it is simply redrawn — which
       // also picks up a count that arrived from the batch lookup after the card did.
       host.setAttribute('data-se', stamp);
-      host.innerHTML = '<div class="se-wrap">' + teaserHtml(e) + '</div>';
+      host.innerHTML = '<div class="se-wrap' + (opts && opts.slim ? ' se-slim' : '') + '">' + teaserHtml(e) + '</div>';
       host.querySelector('.se-teaser').onclick = function(ev){
         ev.stopPropagation();
         e.open = true;
@@ -21795,7 +21802,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(fresh){
       host.setAttribute('data-se', stamp);
       host.innerHTML = ''
-        + '<div class="se-wrap se-open">'
+        + '<div class="se-wrap se-open' + (opts && opts.slim ? ' se-slim' : '') + '">'
         +   '<div class="se-head">'
         +     '<span class="se-head-title">Talk it over</span>'
         +     '<span class="se-count"></span>'
@@ -22347,15 +22354,23 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
             + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
         } else {
-          var kindOpts = ROOM_MIND_KINDS.map(function(k){ return '<option value="' + k[0] + '"' + (k[0] === out.kind ? ' selected' : '') + '>' + k[1] + '</option>'; }).join('');
-          card.innerHTML = '<div class="se-remember-kind">Remember as <select id="remKindPick">' + kindOpts + '</select></div>'
+          // Two shelves, not seven. The model still picks the exact kind underneath —
+          // this only flips between the one that reaches the written vision and the one
+          // that stays in the app's memory, because that is the only difference with a
+          // consequence. His call, 2026-09-13: "too much options here".
+          var remVision = out.kind === 'vision';
+          var remPlain = (out.kind && out.kind !== 'vision') ? out.kind : 'about';
+          var shelfLabel = function(){ return remVision ? 'the paradigm' : 'about you'; };
+          card.innerHTML = '<div class="se-remember-kind">Keeps as <button type="button" class="se-remember-shelf" data-rem-shelf="1">' + shelfLabel() + '</button></div>'
             + '<div class="se-remember-text">' + qEsc(out.text) + '</div>'
             + (out.detail ? '<div class="se-remember-detail">' + qEsc(out.detail) + '</div>' : '')
             + '<div class="se-remember-acts"><button type="button" data-rem-drop="1">Drop</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
+          var shelfBtn = card.querySelector('[data-rem-shelf]');
+          if(shelfBtn) shelfBtn.onclick = function(){ remVision = !remVision; shelfBtn.textContent = shelfLabel(); };
           var saveBtn = card.querySelector('[data-rem-save]');
           saveBtn.onclick = function(){
             saveBtn.disabled = true;
-            var kind = card.querySelector('#remKindPick').value;
+            var kind = remVision ? 'vision' : remPlain;
             apiWrite('/api/mind', 'POST', { kind: kind, text: out.text, detail: out.detail || null })
               .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); })
               .catch(function(){})
