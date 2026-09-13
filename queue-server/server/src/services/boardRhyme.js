@@ -74,12 +74,15 @@ function firstJson(text) {
 }
 
 function labelled(text) {
-  const t = String(text || '');
-  const line = t.match(/^\s*LINE:\s*(.+)$/im);
-  const why = t.match(/^\s*WHY:\s*(.+)$/im);
+  const t = String(text || '').replace(/\*\*/g, '');
+  const line = t.match(/LINE\s*:\s*([\s\S]*?)(?=\n\s*WHY\s*:|$)/i);
+  const why = t.match(/WHY\s*:\s*([\s\S]*)/i);
   if (!line || !why) return null;
-  const strip = (v) => v.trim().replace(/^["“']|["”']$/g, '').trim();
-  return { passage: strip(line[1]), why: strip(why[1]) };
+  const strip = (v) => String(v).trim().replace(/^["\u201c']+|["\u201d']+$/g, '').replace(/\s+/g, ' ').trim();
+  const passage = strip(line[1]);
+  const w = strip(why[1]);
+  if (!passage || !w) return null;
+  return { passage, why: w };
 }
 
 function buildPrompt({ material, transcript, hasImage }) {
@@ -142,7 +145,7 @@ export async function rhymeFor(cardId) {
   const passage = String(parsed?.passage || '').trim().slice(0, 500);
   const why = String(parsed?.why || '').trim().slice(0, 400);
   if (!passage || !why) {
-    console.warn('[board] rhyme: could not read the answer —', String(out.text).slice(0, 200).replace(/\s+/g, ' '));
+    console.warn('[board] rhyme: could not read the answer —', String(out.text).slice(0, 400).replace(/\s+/g, ' '));
     return { error: 'parse_failed' };
   }
 
