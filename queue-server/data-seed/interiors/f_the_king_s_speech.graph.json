@@ -1,0 +1,333 @@
+{
+  "entity": "f_the_king_s_speech",
+  "source": "data-seed/scripts/f_the_king_s_speech.txt",
+  "scope": "the whole script, machine-extracted (18 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BERTIE",
+      "quote": "Thank you, Mr Churchill.",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BERTIE (CONT’D)",
+      "quote": "How long, Logue?",
+      "block": 2
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "LIONEL",
+      "quote": "Just under three minutes, Sir.",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BERTIE",
+      "quote": "Mr Wood.",
+      "block": 4
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "WOOD",
+      "quote": "Good luck, Your Majesty.",
+      "block": 5
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIZABETH",
+      "quote": "I am sure you will be splendid.",
+      "block": 6
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOOD",
+      "quote": "One minute, sir.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "LIONEL",
+      "quote": "Knighthood?",
+      "block": 8
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "WOOD (O.S.)",
+      "quote": "Twenty seconds.",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "LIONEL",
+      "quote": "That was very good, Bertie.",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "opp",
+      "cue": "LIONEL (CONT’D)",
+      "quote": "You still stammered on the “w”.",
+      "block": 11
+    },
+    {
+      "speaker": "p3",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "WOOD",
+      "quote": "Congratulations, your Majesty.",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BERTIE",
+      "quote": "Thank you, Mr Wood.",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BERTIE (CONT’D)",
+      "quote": "Thank you. My friend.",
+      "block": 14
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "ally",
+      "cue": "LIONEL",
+      "quote": "Thank you... Your Majesty.",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "ally",
+      "cue": "ELIZABETH",
+      "quote": "I knew you’d be good.",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "BERTIE",
+      "quote": "Onwards?",
+      "block": 17
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "COSMO LANG",
+      "quote": "Your Majesty, I’m speechless.",
+      "block": 18
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "ally",
+      "cue": "CHAMBERLAIN",
+      "quote": "Congratulations, Sir",
+      "block": 19
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BERTIE",
+      "quote": "Thank you, Gentlemen.",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BERTIE (CONT’D)",
+      "quote": "So how was Papa?",
+      "block": 21
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "MARGARET",
+      "quote": "You were just splendid, Papa.",
+      "block": 22
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "BERTIE",
+      "quote": "Of course I was.",
+      "block": 23
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 4,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 2,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 7,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      []
+    ]
+  }
+}
