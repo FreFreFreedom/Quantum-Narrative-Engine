@@ -1509,7 +1509,13 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-acts button:hover { text-decoration:underline; }
 .room-ana-mine { font-family:var(--room-font); font-size:var(--fs-sm); background:var(--c-surface-2);
   border-radius:var(--r-sm); padding:7px 9px; margin:12px 0 0; }
-.room-ana-ask { display:flex; gap:6px; align-items:center; margin-top:11px; }
+.room-ana-mine { position:relative; }
+.room-ana-drop { background:none; border:none; padding:0 2px; cursor:pointer; font:inherit; color:var(--c-ink-5); opacity:0; }
+.room-ana-mine .room-ana-drop { position:absolute; right:4px; top:4px; }
+.room-ana-mine:hover .room-ana-drop, .room-ana-item:hover .room-ana-drop { opacity:1; }
+.room-ana-drop:hover { color:var(--c-ink); }
+.room-ana-ask { display:flex; gap:6px; align-items:flex-end; margin-top:11px; }
+.room-ana-ask textarea.searchbox { resize:none; overflow-y:auto; font:inherit; line-height:1.4; }
 .room-ana-ask .searchbox { flex:1; min-width:0; }
 /* The line an unasked arrival is pinned to. A dot in the gutter, not a band. */
 .se-turn.has-analogy { position:relative; }
@@ -10755,7 +10761,8 @@ function renderRoomAnalogies() {
     html += '<div class="tv-empty">Nothing yet. Keep talking, or ask below.</div>';
   }
   html += (roomAna.items || []).map((it, idx) => {
-    if (!it.card) return '<div class="room-ana-mine">' + qEsc(it.text) + '</div>';
+    if (!it.card) return '<div class="room-ana-mine">' + qEsc(it.text)
+      + '<button type="button" class="room-ana-drop" data-ana-drop="' + qEscAttr(it.id) + '" title="Forget this and what it found" aria-label="Forget this">✕</button></div>';
     const c = it.card;
     return '<div class="room-ana-item">'
       + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + ' · ' + qEsc(c.move) + '</div>'
@@ -10764,14 +10771,15 @@ function renderRoomAnalogies() {
       + '<div class="room-ana-acts">'
       +   '<button type="button" data-ana-bring="' + idx + '">↑ bring</button>'
       +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '">where from</button>' : '')
+      +   '<button type="button" data-ana-drop="' + qEscAttr(it.id) + '" title="Forget this one">✕</button>'
       + '</div></div>';
   }).join('');
 
   if (roomAnaBusy) html += '<div class="tv-empty">Looking…</div>';
   if (cards.length > 1) html += '<div class="room-ana-acts"><button type="button" data-ana-bringall="1">↑ bring all of them</button></div>';
   html += '<div class="room-ana-ask">'
-    + '<input class="searchbox" id="roomAnaInput" placeholder="Ask for another kind…" autocomplete="off"'
-    + (roomAnaBusy ? ' disabled' : '') + '>'
+    + '<textarea class="searchbox" id="roomAnaInput" rows="1" placeholder="Ask for another kind…"'
+    + (roomAnaBusy ? ' disabled' : '') + '></textarea>'
     + '<button type="button" class="ubtn ubtn--pill" id="roomAnaSend"' + (roomAnaBusy ? ' disabled' : '') + '>Ask</button>'
     + '</div>';
   host.innerHTML = html;
@@ -10781,6 +10789,13 @@ function renderRoomAnalogies() {
   if (reach) reach.onclick = () => roomAnaSteer({ reach: steer.reach === 'anywhere' ? 'here' : 'anywhere' });
   const when = host.querySelector('[data-ana-when]');
   if (when) when.onclick = () => roomAnaSteer({ when: steer.when === 'asked' ? 'pause' : 'asked' });
+  host.querySelectorAll('[data-ana-drop]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.getAttribute('data-ana-drop');
+      try { await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/analogies/' + encodeURIComponent(id), 'DELETE'); } catch (e) {}
+      loadRoomAnalogies();
+    };
+  });
   host.querySelectorAll('[data-ana-bring]').forEach(b => {
     b.onclick = () => { const it = roomAna.items[Number(b.getAttribute('data-ana-bring'))]; if (it && it.card) roomAnaBring(it.card); };
   });
@@ -10800,7 +10815,14 @@ function renderRoomAnalogies() {
   const send = host.querySelector('#roomAnaSend');
   const fire = () => { if (input) { const v = input.value; input.value = ''; roomAnaAsk(v); } };
   if (send) send.onclick = fire;
-  if (input) input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); fire(); } };
+  // Enter sends, shift+Enter makes a new line — the box takes a pasted block now,
+  // and a paste with newlines must not fire six half-asks.
+  if (input) {
+    input.onkeydown = (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); fire(); } };
+    const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; };
+    input.oninput = grow;
+    grow();
+  }
 
   roomAnaMarkTurns();
 }

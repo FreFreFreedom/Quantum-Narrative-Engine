@@ -270,12 +270,35 @@ export function analogyLook(convoId) {
 export async function askAnalogies(convoId, text) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(convoId)) return { error: 'not_found' };
-  const question = String(text || '').trim().slice(0, 1000);
+  // 1000 characters cut a real ask in half — he pasted a six-point description of
+  // a loop and the pane answered the first half of it (2026-09-13). An ask is the
+  // thing being reasoned about, so it gets room.
+  const question = String(text || '').trim().slice(0, 6000);
   if (!question) return { error: 'empty' };
   const side = sideThread(convoId, { create: true });
   addSideMessage(side.id, 'user', question);
   broadcastAll('analogies:updated', { convoId });
   return runLook(convoId, { question, asked: true });
+}
+
+// One card off the pane, rather than the whole pane. Analogies are messages in
+// the side thread, so removing one is removing its row — and an ask is removed
+// with the arrivals it produced, since an ask left alone shows as a question
+// nothing answered.
+export function forgetAnalogy(convoId, messageId) {
+  const side = sideThread(convoId);
+  if (!side) return { error: 'not_found' };
+  const rows = listMessages(side.id);
+  const at = rows.findIndex((m) => m.id === messageId);
+  if (at < 0) return { error: 'not_found' };
+  const ids = [rows[at].id];
+  if (rows[at].role === 'user') {
+    for (let i = at + 1; i < rows.length && rows[i].role !== 'user'; i++) ids.push(rows[i].id);
+  }
+  const marks = ids.map(() => '?').join(',');
+  const n = db.prepare(`DELETE FROM convo_messages WHERE convo_id=? AND id IN (${marks})`).run(side.id, ...ids)?.changes || 0;
+  broadcastAll('analogies:updated', { convoId });
+  return { ok: true, removed: n };
 }
 
 export function clearAnalogies(convoId) {

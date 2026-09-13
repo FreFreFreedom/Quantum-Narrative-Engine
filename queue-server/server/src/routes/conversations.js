@@ -180,6 +180,13 @@ export function conversationsRoutes() {
     res.json({ steer: out });
   });
 
+  router.delete('/:id/analogies/:messageId', (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    const out = analogies.forgetAnalogy(req.params.id, req.params.messageId);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
   router.delete('/:id/analogies', (req, res) => {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
     res.json(analogies.clearAnalogies(req.params.id));
