@@ -1,0 +1,86 @@
+// The line a kept image answers (plan "room-mood-board") — the part of the board
+// Antoine cares about most: "maybe it could detect automatically the passages of
+// our conversation that applies to a particular image... instead of a description
+// of the image. A description is more ontology."
+//
+// Runs ONCE, when a card is kept — never on the flowing wall, never on a
+// schedule. Keeping is rare, so the cost is near zero (CLAUDE.md, "Credit/cost
+// efficiency"). Failure is silent: no rhyme, the card still keeps.
+
+import { getCard, setCardRhyme, boardTranscriptFor } from './board.js';
+import { generateText } from './ai/text.js';
+
+function materialFor(card) {
+  const p = card.payload || {};
+  if (card.kind === 'note') return `A note he wrote: "${String(p.title || '').slice(0, 400)}"`;
+  if (card.kind === 'side') return `A side talk titled "${p.title || ''}"`;
+  const bits = [p.title, p.year, p.credit, p.blurb].filter(Boolean);
+  return `${card.kind === 'poster' ? 'A film poster' : card.kind === 'still' ? 'A film still' : card.kind === 'book' ? 'A book' : 'An image'}: ${bits.join(' — ')}`;
+}
+
+function firstJson(text) {
+  const t = String(text || '').replace(/```(?:json)?/gi, '');
+  const start = t.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start; i < t.length; i++) {
+    if (t[i] === '{') depth++;
+    else if (t[i] === '}') { depth--; if (!depth) { try { return JSON.parse(t.slice(start, i + 1)); } catch { return null; } } }
+  }
+  return null;
+}
+
+function buildPrompt({ material, transcript }) {
+  return `A conversation just kept something onto its board — an image, a film, a book, a note. Your one job: find the LINE OF THE CONVERSATION it answers.
+
+What was kept:
+${material}
+
+The conversation so far:
+---
+${transcript}
+---
+
+Hard rules:
+- Quote the line of the conversation, word for word, that this image answers. Do not paraphrase it.
+- Never describe what is IN the picture. A description of the image is not wanted — it says nothing about why it was kept. If you catch yourself writing what the image shows, stop and delete it.
+- The "why" is one short sentence: what holds between the line and the image, not what either one looks like.
+- Plain, short words. No jargon.
+
+Respond with ONLY this JSON and nothing else:
+{"passage":"the quoted line from the conversation","why":"one short sentence on what holds between them"}`;
+}
+
+export async function rhymeFor(cardId) {
+  const card = getCard(cardId);
+  if (!card) return { error: 'not_found' };
+  const transcript = boardTranscriptFor(card.convo_id);
+  if (!transcript) return { error: 'no_transcript' };
+
+  const out = await generateText({
+    prompt: buildPrompt({ material: materialFor(card), transcript }),
+    feature: 'analogies', // the free lane already seeded to Gemini for this kind of pass
+    label: 'board:rhyme',
+    maxTokens: 300,
+    maxAttempts: 2,
+    timeoutMs: 20_000,
+  });
+  if (out?.error || !out?.text) return { error: out?.error || 'no_text' };
+
+  const parsed = firstJson(out.text);
+  const passage = String(parsed?.passage || '').trim().slice(0, 500);
+  const why = String(parsed?.why || '').trim().slice(0, 400);
+  if (!passage || !why) return { error: 'parse_failed' };
+
+  setCardRhyme(cardId, { passage, rhyme: why });
+  return { ok: true, passage, why };
+}
+
+// Fire-and-forget, called right after a keep — same shape as passages.js's
+// readPassageSoon. Never throws into the caller: a card that cannot be
+// explained is better than a keep that fails.
+export function rhymeSoon(cardId) {
+  setImmediate(() => {
+    rhymeFor(cardId).catch((e) => console.error('[board] rhyme failed:', e?.message || e));
+  });
+}

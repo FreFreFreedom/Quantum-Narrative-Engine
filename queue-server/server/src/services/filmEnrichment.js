@@ -29,7 +29,9 @@ const now = () => new Date().toISOString();
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-async function tmdbFetch(path, params = {}) {
+// Exported for services/imageSources.js (the Room board's still/poster search) —
+// "do not write a second TMDB client" (plans/room-mood-board.md).
+export async function tmdbFetch(path, params = {}) {
   const key = process.env.TMDB_API_KEY;
   if (!key) return { tmdbKeyMissing: true };
   // v3 API keys authenticate via the api_key query param (the Bearer/Read-Access
