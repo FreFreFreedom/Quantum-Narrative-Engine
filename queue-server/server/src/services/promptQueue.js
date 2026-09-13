@@ -253,10 +253,6 @@ export async function createPrompt({
   // true / 1 / "1". The read-side guards elsewhere keep comparing `=== 1` on purpose:
   // they read the column back, and SQLite always returns it as an integer.
   const isGroup = is_group === true || is_group === 1 || is_group === '1';
-  const effectiveStatus = isGroup ? 'paused' : initial;
-  const effectivePlanSource = isGroup ? 'skip' : plan_source;
-  const effectivePlanPending = isGroup ? 0 : undefined;
-  const effectiveInspireState = isGroup ? 'skipped' : null;
   const inSpace = PROMPT_SPACES.includes(space) ? space : 'fmcns';
   // Agent assignment (plan Part 1): NULL falls back to dev1 at dispatch time.
   const useAgentKey = String(agent_key || '').trim() || null;

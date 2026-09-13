@@ -3025,9 +3025,9 @@ button:active { transform: translateY(1px) scale(.99); }
                 </label>
               </div>
 <div class="q-row">
-                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Starts at once — no world-look, no plan draft. For small tasks.">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Starts at once — no plan draft. For small tasks. Look at the world stays manual either way.">
                   <input type="checkbox" id="qRunRaw">
-                  Run raw — skip inspiration &amp; planning (fastest)
+                  Run raw — skip planning (fastest)
                 </label>
               </div>
               <div class="q-row">
@@ -15015,9 +15015,9 @@ async function qAddPrompt(asPaused) {
       provider_model: usesModelPicker ? (modelSel.value || null) : null, // '' = Auto → server system default
       account: document.getElementById('qAccount').value || 'main', // '' = Main
       agent_key: document.getElementById('qAgent').value || null, // '' = Auto
-      // "Run raw": skip the automatic world-look + plan-draft passes entirely —
-      // plan_source:'skip' already means "no drafted plan" server-side, and
-      // promptQueue.js now also treats it as "skip inspiration" for the same reason.
+      // "Run raw": skip the plan-draft pass entirely — plan_source:'skip' means
+      // "no drafted plan" server-side. World Ideas is manual for every task
+      // either way (the card's own "Look at the world" button).
       plan_source: document.getElementById('qRunRaw').checked ? 'skip' : 'auto',
       // "I'll run this myself in OpenCode" — excludes this task from the
       // automated runner's advanceQueue() selection.
