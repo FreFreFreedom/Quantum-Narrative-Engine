@@ -21017,15 +21017,17 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // would also destroy every blockquote, because a quoted line starts with one.
         // A '>' on its own cannot open anything, so it is left alone.
         var safe = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-        // Some lanes write a section title as plain prose — "II. South Central LA:
-        // City as Fractured Organism ————— What then is..." — with the title, a run
-        // of dashes and the next sentence all in one paragraph. Markdown has no way
-        // to know that is a heading, so it rendered flat and the answer read as one
-        // undifferentiated wall. Promote exactly that shape: a numbered or
-        // roman-numbered title at the start of a line, followed by three or more
-        // dashes. Narrow on purpose — an ordinary numbered list item has no dash run
-        // after it and is left alone.
-        safe = safe.replace(/^((?:[IVXLCM]{1,7}|\d{1,2})\.[ \t]+\S[^\n]{0,90}?)[ \t]*[—–-]{3,}[ \t]*/gm, '## $1\n\n');
+        // Some lanes underline a section title with EN dashes — "II. South Central
+        // LA: City as Fractured Organism" then a line of "––––" then the paragraph.
+        // Markdown only knows the hyphen form, so it saw three ordinary lines, glued
+        // them into one paragraph, and the answer read as a wall with no titles in it.
+        // Normalising the underline to hyphens makes the line above it a real heading,
+        // which is exactly what the writer meant by drawing it.
+        safe = safe.replace(/^[ \t]*[\u2013\u2014]{3,}[ \t]*$/gm, '---');
+        // Same title, same intent, written on one line instead: title, dash run, then
+        // the sentence carrying on. Narrow on purpose — an ordinary numbered list item
+        // has no dash run after it and is left alone.
+        safe = safe.replace(/^((?:[IVXLCM]{1,7}|\d{1,2})\.[ \t]+\S[^\n]{0,90}?)[ \t]*[\u2013\u2014-]{3,}[ \t]*/gm, '## $1\n\n');
         var out = marked.parse(safe, { breaks: false, gfm: true });
         if (cacheKey) {
           if (mdCache.size > 300) mdCache.clear();   // a whole conversation fits; a year of them does not
