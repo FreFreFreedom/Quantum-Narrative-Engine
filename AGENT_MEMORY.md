@@ -935,3 +935,11 @@ progressively to the exact count. A durable living-subject record must replace t
 six-message-only context so the engine remains aware of older Room threads and of
 its own side conversation. This is approved implementation work, assigned to
 Claude's second account on Sonnet at medium effort.
+
+## Queue World Ideas are manual (2026-09-13)
+
+Queue tasks no longer generate a World Ideas pass by default, either when created
+or through the periodic pre-generation sweep. The task card's **Look at the
+world** button is the sole generation trigger. A precomputed report explicitly
+carried from a suggestion, seed or other source is still reused. See
+`plans/queue-world-ideas-manual-only.md` and `npm run queue-inspiration:selftest`.

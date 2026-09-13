@@ -312,7 +312,7 @@ export async function createPrompt({
   // plan_source, the three values (Antoine, 2026-08-21):
   //   'auto' — ours to draft, and to redraft (the sweep at redraftHeldTasks, and the
   //            answer path further down, both act only on 'auto').
-  //   'own'  — the caller's plan is FINAL, but still look at the world. Used by the
+  //   'own'  — the caller's plan is FINAL. Used by the
   //            Idea Studio handoff, the thought handoff, and plans sent in from a
   //            terminal session (scripts/send-plan.js). The ONLY thing allowed to
   //            rewrite an owned plan is Antoine picking a world idea, which goes
@@ -322,32 +322,22 @@ export async function createPrompt({
   //            composer's "Run raw" toggle, and the deliberate escape hatch for
   //            launching something without waiting for ideas.
   //
-  // 'own' exists because these two used to be ONE flag: 'skip' meant both "keep my
-  // plan" and "don't look at the world", so every caller that handed over a finished
-  // plan silently got no world ideas at all — nothing looked broken, the shelves were
-  // simply always empty. Do not re-merge them.
+  // 'own' and 'skip' still record different intent: an owned plan is the final brief
+  // and may later be redrafted only when Antoine explicitly picks a World Idea;
+  // 'skip' is raw text with no preparation.
   const willDraft = willDraftPreCheck;
-  // Inspiration step (plan inspiration-before-planning): EVERY implement-mode
-  // task — suggestion, hand-typed, seed, thought, handoff — gets a background
-  // pass that looks at the world (open / hidden / bold shelves) before its plan
-  // is written. Question-mode tasks skip it, mini-tier tasks skip it for speed
-  // (free-only plan: a tiny fix's plan cannot need world context — the card
-  // shows the skip reason and the world-look stays one click away), and
-  // plan_source:'skip' skips it too — that flag means "run this raw, right now", and
-  // waiting on a look for a plan that won't exist is pure waste (this is also the
-  // "Run raw" composer toggle's fast path). 'own' deliberately does NOT skip it: the
-  // ideas cannot rewrite the plan on their own, but they are exactly how you find out
-  // a chunk of it is already built. The pass never blocks creation: the row lands with
-  // inspire_state='pending' and the draft simply waits up to its timeout for the
-  // report (below), then proceeds without it on failure. Nothing can strand on it
-  // either — sweepHeldByFailedLook releases a held task after INSPIRE_GIVEUP_MS.
-  const willInspire = useMode === 'implement' && tier !== 'mini' && plan_source !== 'skip';
+  // Queue tasks start without a World Ideas pass. The manual task-card action is
+  // the only way to generate one; a report supplied by the source is simply reused.
+  // Queue tasks no longer generate World Ideas by default (Antoine, 2026-09-13).
+  // A handoff can still reuse a report it already owns, and the task detail keeps
+  // its explicit "Look at the world" action.
+  const hasProvidedInspiration = useMode === 'implement' && !!inspiration?.report_id;
   // Precomputed world-look: the item's own section (suggestion / seed / not-built
   // component) already ran the pass, so the task reuses it instead of searching
   // again. Picks are validated against the report; state lands 'applied' when
   // picks came along, else 'ready' (shelves shown, nothing chosen yet).
   let preInsp = null;
-  if (willInspire && inspiration && inspiration.report_id) {
+  if (hasProvidedInspiration) {
     const rep = getReport(db, inspiration.report_id);
     if (rep) {
       const applied = [];
@@ -361,18 +351,12 @@ export async function createPrompt({
       preInsp = { report: rep, applied, digest: inspirationDigestFor(rep, applied, rep.review) };
     }
   }
-  const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : (!willInspire ? 'skipped' : 'pending');
+  const preState = preInsp ? (preInsp.applied.length ? 'applied' : 'ready') : 'skipped';
   // Group umbrellas stay paused, skip the world-look, and have no plan draft.
   const finalPlanPending = isGroup ? 0 : (willDraft ? 1 : 0);
   const finalInspireState = isGroup ? 'skipped' : preState;
-  // Why the world-look was skipped, shown on the card (free-only plan): mini tasks skip
-  // it; the budget skip is set by startInspiration itself. The old wording promised "the
-  // plan runs instantly", which is now wrong in a way that matters — a mini task has no
-  // drafted plan at all, it runs the words as typed. Say that, so a result that answers
-  // the request literally is not a surprise.
-  const preSkipNote = !willInspire && !preInsp
-    ? 'Small task — it runs exactly as you wrote it, with no plan drafted and no look at the world first, so it starts straight away. One click adds the ideas.'
-    : null;
+  // The quiet state needs no explanation on every task card. The manual button remains.
+  const preSkipNote = null;
   // No judge call here any more: usePreset above already resolved 'auto' from the
   // free tier heuristic, so resolved_preset is simply that (kept for the UI and for
   // onAgentTaskFinalized's "retry one tier stronger" valve).
@@ -402,9 +386,6 @@ export async function createPrompt({
 
   if (autoContextNote) addMessage(id, { role: 'agent', text: autoContextNote });
   broadcast();
-  if (willInspire && !preInsp) {
-    startInspiration(id, { title: label, prompt: text });
-  }
   if (willDraft) {
     runPlanDraft(id, {
       title: label, prompt: text, mode: useMode, preset: usePreset, provider: useProvider, targetStatus: initial,
@@ -557,17 +538,10 @@ async function runPlanDraft(id, { title, prompt, mode, preset, provider, targetS
 }
 
 // ─── Inspiration step ─────────────────────────────────────────────────────────
-// Every implement-mode task gets an automatic pass that looks at the world
-// (codeDiscovery.runInspiration: open / hidden / bold shelves). It runs ALONGSIDE the
-// task now, not in front of it (Antoine, 2026-08-21): it blocks neither creation, nor
-// the plan draft, nor dispatch. Its ideas land on the card, and applyInspiration is what
-// acts on them — redrafting a queued task, steering a running one, or opening a
-// follow-up. A failure just leaves inspire_state='failed' with a retry button.
-//
-// There is deliberately no "wait for the ideas" path any more. There was one
-// (waitForInspiration, 75s, and unbounded whenever the quick check asked a question);
-// it is in git if it is ever wanted back, but it sat in front of every task and, over
-// Antoine's first 31, bought context he used 4 times out of 18.
+// World Ideas for a queue task are manual. The task detail's "Look at the world"
+// button calls refreshInspiration(), and an explicit pass still lands on the card
+// without blocking dispatch. applyInspiration then redrafts a queued task, steers a
+// running one, or opens a follow-up for a finished one.
 const _inspiring = new Map();
 
 function parseInspirePicks(row) {
@@ -693,10 +667,8 @@ function startInspiration(id, { title, prompt }, { force = false } = {}) {
     } finally {
       _inspiring.delete(id);
       broadcast();
-      // The inspiration gate: a queued task held at 'off'/'pending'/'failed' is
-      // released the moment the pass settles (ready → runs, failed → stays held
-      // for the retry/skip buttons). advanceQueue is a no-op for rows that are
-      // still held or still drafting — safe to call on every completion.
+      // A manual look may land while the task is still queued. Give the queue
+      // another chance after the card is refreshed.
       advanceQueue();
     }
   })();
@@ -738,14 +710,9 @@ export async function skipPlanDraft(id) {
   return getPrompt(id);
 }
 
-// Manual re-run from the task detail (also the entry point for tasks created
-// before this feature: their state is 'off' and this starts their first pass).
-//
-// `force` bypasses the daily side-call budget, which is right for a button the
-// human just pressed and wrong for anything automatic. It used to be hardcoded
-// true, so the background sweep (autoWorldLookTasks) spent through the budget
-// cap that exists precisely to stop background work draining credit — the sweep
-// now passes force:false and gets throttled like any other background call.
+// Manual run from the task detail (also the entry point for tasks created before
+// this feature). `force` bypasses the daily side-call budget because the human
+// explicitly asked for this pass.
 export async function refreshInspiration(id, { force = true } = {}) {
   const row = getPrompt(id);
   if (!row) return null;
@@ -972,59 +939,6 @@ export async function backfillInspirationReviews() {
   }
   if (reviewed || redrafted) broadcast();
   return { reviewed, redrafted, skipped, failed };
-}
-
-// ─── Background sweep for legacy tasks ───────────────────────────────────────
-// Tasks queued before the world-look feature shipped sit at inspire_state='off'
-// (the column default) with no report — opening one shows a "✨ Look" button
-// instead of the ideas. This pre-runs their world-look at boot and every 6h, the
-// same way the suggestion/seed/not-built sweeps do theirs, so every task the user
-// can click on already has its shelves ready (grey-outs, alternatives, our pick
-// included) instead of making them wait. Idempotent: tasks with a report or an
-// in-flight pass are skipped; refreshInspiration() dedups an already-running pass
-// via `_inspiring`. Reuses the free-model-first seam; never throws.
-//
-// Two subtleties that both earned their keep (2026-08-22, after done tasks sat
-// permanently shelf-less):
-//   • 'skipped' rows are INCLUDED when the skip was written by the daily-budget
-//     gate in startInspiration (its error text is the marker). That gate promises
-//     "re-opens at UTC midnight" — without this arm the sweep never went back,
-//     and the promise was a lie. A human's own "Start without inspiration"
-//     writes inspire_error=NULL, so those stay respected.
-//   • The order is shuffled: oldest-first meant the same handful of ancient
-//     always-failing rows occupied the whole LIMIT every sweep, starving every
-//     newer task behind them.
-export async function autoWorldLookTasks({ limit = 16 } = {}) {
-  const rows = db.prepare(`
-    SELECT id, title, raw_prompt, prompt
-    FROM work_prompts
-    WHERE mode='implement' AND deleted_at IS NULL
-      AND inspire_report_id IS NULL
-      AND (
-        inspire_state IS NULL OR inspire_state IN ('off','failed')
-        OR (inspire_state = 'skipped' AND inspire_error LIKE 'Daily helper budget%')
-      )
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(limit);
-  let ran = 0, skipped = 0, failed = 0;
-  for (const r of rows) {
-    if (_inspiring.has(r.id)) { skipped++; continue; }          // already running
-    // force:false — this is a background sweep, so it must respect the daily
-    // side-call budget instead of using the manual-click escape hatch.
-    const row = await refreshInspiration(r.id, { force: false }); // -> 'pending' + starts runInspiration
-    if (!row) { skipped++; continue; }
-    const run = _inspiring.get(r.id);                           // grab the in-flight promise
-    if (run) {
-      await run;                                                // settle (look + quick check)
-      const st = getPrompt(r.id)?.inspire_state;
-      if (st === 'ready' || st === 'applied') ran++;
-      else failed++;                                            // review settled as failed/held
-    } else {
-      skipped++;                                                // started elsewhere between the check and the call
-    }
-  }
-  return { ran, skipped, failed };
 }
 
 // ─── Stuck-stage recovery ────────────────────────────────────────────────────

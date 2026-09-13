@@ -327,11 +327,8 @@ export function queueRoutes() {
     res.json(row);
   }));
 
-  // Inspiration step: the automatic world-look pass (open / hidden / bold shelves)
-  // that runs for every implement-mode task before its plan is written. This view
-  // serves the task detail's "Inspired by" panel; refresh re-runs the pass (also
-  // the entry point for tasks created before the feature); apply stores the
-  // human's picks and re-drafts the plan with them emphasized.
+  // Optional World Ideas for a task. Nothing runs at creation or in a background
+  // sweep; refresh is the explicit "Look at the world" action on the task card.
   router.get('/prompts/:id/inspiration', (req, res) => {
     const out = queue.inspirationPayload(req.params.id);
     if (!out) return res.status(404).json({ error: 'not_found' });

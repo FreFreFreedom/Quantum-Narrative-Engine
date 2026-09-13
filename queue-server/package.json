@@ -35,6 +35,7 @@
     "peers:selftest": "node scripts/peers-selftest.js",
     "traffic:selftest": "node scripts/traffic-selftest.js",
     "queue:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-model-selftest.js",
+    "queue-inspiration:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-inspiration-selftest.js",
     "gaps:selftest": "node scripts/taggaps-selftest.js",
     "mind:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/mind-selftest.js",
     "room:selftest": "node scripts/room-selftest.mjs",

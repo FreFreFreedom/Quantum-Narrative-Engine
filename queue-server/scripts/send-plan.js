@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Send a plan written in a terminal session into the app's Dispatch Queue.
 //
-//   node scripts/send-plan.js plans/my-plan.md              # queued; world-look runs; then it starts
+//   node scripts/send-plan.js plans/my-plan.md              # queued; no automatic world-look
 //   node scripts/send-plan.js plans/my-plan.md --park       # arrives parked, waits for a click
 //   node scripts/send-plan.js plans/my-plan.md --raw        # no world-look, no wait — dispatch now
 //   node scripts/send-plan.js plans/my-plan.md --dry-run    # print what would be sent, send nothing
@@ -21,14 +21,13 @@
 // and it is deliberately the SAME door the app uses — POST /api/travaux/prompts — not a
 // side channel with its own rules.
 //
-// The plan is sent with plan_source:'own', which means "this plan is final, but still
-// look at the world". Nothing redrafts it; the world-look runs alongside and its ideas
-// wait on the task card. If one of them matters ("that part already exists"), picking it
-// in the app redrafts the plan from raw_prompt, so the original stays underneath. See
+// The plan is sent with plan_source:'own', which means "this plan is final". Queue
+// tasks do not generate World Ideas automatically. The task card keeps an explicit
+// "Look at the world" action; if Antoine asks for it and picks an idea, the plan is
+// redrafted from raw_prompt so the original stays underneath. See
 // promptQueue.js#createPrompt for the three plan_source values.
 //
-// --raw sends plan_source:'skip' instead: no look, no wait, dispatched immediately. That
-// is the escape hatch for when you want the work started now and do not care about ideas.
+// --raw sends plan_source:'skip' instead: no plan preparation, dispatched immediately.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -284,7 +283,7 @@ async function main() {
   console.log(`Title  : ${title}`);
   console.log(`Model  : ${PRESET ? `${PRESET} (forced)` : 'auto — judged from the plan\'s size'}`);
   console.log(`Account: ${ACCOUNT ? `${ACCOUNT} (forced)` : 'main — the subscription the queue uses by default'}`);
-  console.log(`Ideas  : ${RAW ? 'no world-look (--raw)' : 'world-look runs; ideas wait on the card'}`);
+  console.log('Ideas  : manual — use “Look at the world” on the task card');
   console.log(`Arrives: ${PARK ? 'parked — waits for you to start it' : 'queued — starts on its own'}`);
   console.log(`Ships  : ${PREVIEW ? 'never on its own — waits for a local preview + Deploy' : 'normally, once reviewed'}`);
   if (umbrellaTitle) console.log(`Umbrella: part of "${umbrellaTitle}"`);
@@ -370,18 +369,9 @@ async function main() {
     } else if (worker && worker.mode === 'local' && !worker.connected) {
       console.log('  Note: your Mac runner is not attached, so nothing will run until it is.');
       console.log('  Start it with:  cd queue-server && npm run runner');
-    } else if (RAW) {
-      console.log('  It starts now — you can close this terminal.');
     } else {
-      console.log('  It starts once the look at the world finishes — usually a few minutes.');
+      console.log('  It can start as soon as its queue slot is free — no World Ideas pass runs first.');
       console.log('  You can close this terminal; it does not need you.');
-    }
-    if (!RAW) {
-      // Say the real cost of the default. The look is a chain of model calls and live
-      // searches run one after another, so it is minutes, not seconds — and it is the
-      // only thing standing between a queued plan and the work starting. Better said
-      // here than discovered by watching a task sit at 'queued'.
-      console.log('  (The look is a few model calls and searches in sequence. --raw skips it and starts immediately.)');
     }
   } catch {
     // Reporting is a courtesy, never a failure: the task is already created.

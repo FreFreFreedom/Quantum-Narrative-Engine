@@ -24,6 +24,8 @@ import {
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
+import { costOf } from './openAiSpend.js';
+import { isMeteredProvider } from './ai/catalog.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
 import { getComponents } from './architecture.js';
 import { projectMapBlock } from './projectMap.js';
@@ -1362,6 +1364,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // number instead of a guess. Cheap — projectMapBlock() just returns the
   // string already held in memory.
   const mapChars = projectMapBlock().length;
+  let spentUsd = 0, spentIn = 0, spentOut = 0;
   const result = await generateTextStream({
     prompt,
     // The router's lane: a brainstorm/forced turn points at 'studio' (which may be
@@ -1393,9 +1396,18 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
     // the same OpenAI prompt cache instead of scattering across machines (plan
     // "make-the-caching-actually-work"). Only OpenAI's adapter reads this.
     cacheKey: convoId,
-    onUsage: (usage) => {
+    onUsage: (usage, where) => {
       const cached = usage?.prompt_tokens_details?.cached_tokens || 0;
       console.log(`[studio-turn] prompt ${prompt.length} chars (map ${mapChars}) → prompt_tokens ${usage?.prompt_tokens ?? '?'}, cached ${cached}`);
+      // What this one answer cost, so the Room can show the climb. A long thread
+      // resends everything said before it, so the price of a turn rises with the
+      // thread — which is the one thing he cannot see from the text on screen.
+      // Free lanes cost nothing and record nothing; the mark stays absent there.
+      if (where?.providerId && isMeteredProvider(where.providerId)) {
+        spentUsd += costOf(where.model, usage, where.providerId);
+        spentIn += Number(usage?.prompt_tokens || 0);
+        spentOut += Number(usage?.completion_tokens || 0);
+      }
     },
   });
   // Stopped from the Room while this was being written: save nothing, learn
@@ -1409,12 +1421,12 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   // The id travels back with the answer. Without it the just-arrived turn has no
   // anchor on screen until the conversation is reloaded, and Chapter — which needs
   // a message to point at — is hidden on exactly the answer he is reading.
-  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}), ...(spentUsd > 0 ? { cost: spentUsd, tin: spentIn, tout: spentOut } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
   analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId, cost: spentUsd };
 }
 
 // The non-streaming twin. Reached only when the client does not ask for NDJSON,

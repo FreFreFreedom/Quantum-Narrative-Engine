@@ -1443,6 +1443,15 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-turn.has-analogy::before { content:''; position:absolute; left:-13px; top:7px; width:7px; height:7px;
   border-radius:50%; background:var(--c-accent); opacity:.7; }
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
+/* What the last answer cost, on the paid lane only. It sits INSIDE the composer
+   rather than on a line of its own: a horizontal band is the scarcest thing on
+   this screen, and this is a glance, not a reading. Absent entirely when nothing
+   has been spent, which is every free lane and every thread's first turn. */
+.se-spend { flex:none; align-self:center; font-size:var(--fs-xs); color:var(--c-ink-5); font-variant-numeric:tabular-nums;
+  display:flex; align-items:center; gap:5px; cursor:default; }
+.se-spend i { display:block; width:26px; height:3px; border-radius:2px; background:var(--c-surface-3); overflow:hidden; }
+.se-spend i em { display:block; height:100%; border-radius:2px; background:currentColor; opacity:.55; }
+.se-spend.is-heavy { color:var(--c-warn); }
 /* What the next question is about. One row, above the box, because a thing the
    question is about belongs beside the question and not in a panel you have to go
    and look at. Empty means nothing attached, and an empty row is no row. */
@@ -15287,22 +15296,19 @@ async function qSummarize(p) {
 
 function qInspireHtml(p) {
   if (!p.inspire_state || p.inspire_state === 'off' || p.inspire_state === 'skipped') {
-    const note = p.inspire_state === 'skipped'
-      ? (p.inspire_error || 'This task runs on a plain plan — the world-look was skipped.')
-      : 'This task has not looked at the world yet, so it will not start until it does (or you skip the search).';
-    return `<div class="tv-empty">${note}<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Look at what exists before you start</button>${p.inspire_state !== 'skipped' ? '<button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button>' : ''}</div>`;
+    return `<div class="tv-empty"><button class="ctrlbtn" data-action="inspire-start"><svg class="ic" aria-hidden="true"><use href="#ic-spark"></use></svg>Look at the world</button></div>`;
   }
   if (['pending', 'reviewing'].includes(p.inspire_state) && qStageStuck(p)) {
     return `<div class="tv-empty">This step stopped part-way — the server restarted while it was running, so nothing is working on it any more. Resetting it lets the task carry on.<br><button class="ctrlbtn" data-action="unstick" style="margin-top:8px;">Reset this step</button></div>`;
   }
   if (p.inspire_state === 'pending') {
-    return `<div class="tv-empty">🔭 Looking for inspiration… real projects, hidden products, bold ideas. This task will not start before these ideas are ready.</div>`;
+    return `<div class="tv-empty">🔭 Looking for ideas…</div>`;
   }
   if (p.inspire_state === 'reviewing') {
     return `<div class="tv-empty">🔎 Quick check on the ideas… keeping what earns its place, marking the alternatives.</div>`;
   }
   if (p.inspire_state === 'failed') {
-    return `<div class="tv-empty">The world-look did not finish${p.inspire_error ? ': ' + qEsc(p.inspire_error) : ''}. This task waits until the search succeeds — or you let it run on a plain plan.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">Try again</button><button class="ctrlbtn" data-action="inspire-skip" style="margin-top:8px;" title="Let this task run on a normal plan, without the world-look.">Start without inspiration</button></div>`;
+    return `<div class="tv-empty">The world-look did not finish${p.inspire_error ? ': ' + qEsc(p.inspire_error) : ''}.<br><button class="ctrlbtn" data-action="inspire-start" style="margin-top:8px;">Try again</button></div>`;
   }
   const cached = qInspireCache[p.id];
   if (cached && cached.state === p.inspire_state && cached.report_id === p.inspire_report_id) {
@@ -20677,6 +20683,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         if (meta.lane) out.laneTag = meta.lane;
         if (meta.intent) out.intent = meta.intent;
         if (meta.notice) out.notice = meta.notice;
+        if (meta.cost) out.cost = meta.cost;
         if (meta.checked) out.checked = meta.checked;
         if (meta.answered) out.answered = meta.answered;
         if (Array.isArray(meta.quotes) && meta.quotes.length && meta.body) { out.quotes = meta.quotes; out.body = meta.body; }
@@ -20785,7 +20792,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           var arrivedWhole = !e.stream;
           // id carried straight from the save, so the answer he is reading can be
           // marked as a chapter right away instead of only after a reload.
-          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0 });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // A roaming thread can pick up its title from this very turn (the first
           // exchange), so the list needs to come back the same way /fold or
@@ -21114,6 +21121,44 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       + (turns >= 12 ? ' — long conversations cost more each turn; ⟳ starts fresh with a recap.' : '');
   }
 
+
+  // ── What this conversation is costing ───────────────────────────────────────
+  // On a paid lane every turn resends everything said before it, so the price of
+  // an answer climbs with the thread — quietly, and invisibly from the words on
+  // screen. This is the only place that climb is visible.
+  //
+  // The headline is the LAST answer, not the total, because the last answer is
+  // what the next one will resemble. The bar behind it is that answer measured
+  // against the dearest one this thread has had, so a thread that is getting
+  // heavier fills up and a fresh start empties it. No threshold, no advice and
+  // nothing that says "compact now" — his ask was to be aware, not to be told.
+  function money(usd){
+    if(usd >= 1) return '$' + usd.toFixed(2);
+    var c = usd * 100;
+    return (c >= 10 ? Math.round(c) : c.toFixed(1)) + '\u00A2';
+  }
+  function spendMark(e){
+    var costs = (e.msgs || []).filter(function(m){ return m.cost > 0; }).map(function(m){ return m.cost; });
+    if(!costs.length) return null;
+    var last = costs[costs.length - 1];
+    var total = costs.reduce(function(a, b){ return a + b; }, 0);
+    var peak = Math.max.apply(null, costs);
+    return { last: last, total: total, share: peak > 0 ? Math.round(last / peak * 100) : 0, n: costs.length };
+  }
+  function paintSpend(host, e){
+    var el = host.querySelector('.se-spend');
+    if(!el) return;
+    var m = spendMark(e);
+    if(!m){ el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    // Warm only when this answer IS the dearest so far and there is a thread to
+    // compare it against — the moment the climb is real rather than noisy.
+    el.classList.toggle('is-heavy', m.n >= 3 && m.share >= 100);
+    el.title = 'Last answer ' + money(m.last) + ' \u00b7 ' + m.n + ' paid answer' + (m.n === 1 ? '' : 's')
+             + ' \u00b7 ' + money(m.total) + ' this thread';
+    el.innerHTML = '<i><em style="width:' + m.share + '%"></em></i><span>' + money(m.last) + '</span>';
+  }
+
   /* ───────────────────────── Folded into the card ───────────────────────── */
 
   // Paint the conversation into `host`. Idempotent and cheap: it draws from the
@@ -21220,6 +21265,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
         +     '</span>'
         +     '<textarea class="se-input" rows="1" placeholder="Say what you\'re thinking…"></textarea>'
+        +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
         +   '</div>'
         +   '<div class="se-cmds"></div>'
@@ -21957,6 +22003,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       }
     }
     host.querySelector('.se-cost').innerHTML = costLine(e);
+    paintSpend(host, e);
     var sendBtn = host.querySelector('.se-send');
     sendBtn.disabled = !e.convoId;
     sendBtn.textContent = e.busy ? '■' : '↵';

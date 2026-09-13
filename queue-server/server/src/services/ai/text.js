@@ -469,7 +469,7 @@ async function getFallbackChain(feature, providerId, model, { noOpencodeBackup =
  */
 // Run one attempt against a resolved {provider, model} pair. Shared by
 // generateText's chain loop and generateTextDirect.
-async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null }) {
+async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs = 90_000, feature = null, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, account = null, tailReminder = null, onUsage = null }) {
   // Soft cap (free-only plan): short-text calls never ask for more than 800
   // output tokens — one stale big maxTokens can't turn a 2s side pass into a
   // long, quota-hungry generation. Queue run calls set their own budget on the
@@ -631,7 +631,7 @@ async function runAttempt({ provider: p, model: m, prompt, maxTokens, label, tim
   }
   const r = await mod.runToolless({ prompt: toollessPrompt, model: m, providerId: p, maxTokens, timeoutMs });
   if (isMeteredProvider(p)) {
-    if (r.usage) recordSpend({ model: m, usage: r.usage, providerId: p });
+    if (r.usage) { recordSpend({ model: m, usage: r.usage, providerId: p }); if (onUsage) onUsage(r.usage, { providerId: p, model: m }); }
     else console.warn(`[${label}] ${p}/${m} returned no usage block — this call is NOT counted against the monthly cap`);
   }
   if (r.code === 0 && r.text) return { text: r.text, via: p };
@@ -718,7 +718,7 @@ function benched(providerId, model = '') {
   return !router.mayProbe(providerId, model);
 }
 
-export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null }) {
+export async function generateText({ prompt, feature, maxTokens = 800, label = 'ai-text', model: explicitModel = null, provider: explicitProvider = null, account: explicitAccount = null, timeoutMs = 90_000, maxAttempts = Infinity, claudeLastResort = false, helperTools = null, helperWaitMs = null, allowLongOutput = false, tools = null, dispatchTool = null, maxRounds = TOOL_MAX_ROUNDS, toolResultCap = TOOL_RESULT_CAP, cacheKey = null, tailReminder = null, onStatus = null, onUsage = null }) {
   const { defaults, policy } = loadAiSettings();
   const featureDefaults = defaults[feature] || {};
   // A caller-named provider (the Room's manual model picker, or the /ask forced
@@ -818,7 +818,7 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
     // next one is tried, and from outside that is indistinguishable from a model
     // thinking hard — so say which one is being asked, and say when one gives up.
     if (onStatus) { try { onStatus(failures.length ? `That lane did not answer — trying ${laneName(p, m)}…` : `Asking ${laneName(p, m)}…`); } catch {} }
-    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, account: p === providerId ? explicitAccount : null });
+    const result = await runAttempt({ provider: p, model: m, prompt, maxTokens, label, timeoutMs, feature, helperTools, helperWaitMs, allowLongOutput, tools, dispatchTool, maxRounds, toolResultCap, cacheKey, tailReminder, onUsage, account: p === providerId ? explicitAccount : null });
     attempted += 1;
     recordLaneCall(p, m, !!result?.text);
 
@@ -1322,7 +1322,7 @@ export async function generateTextStream({
       // Tokens already delivered are real; only give up entirely if nothing came.
       if (!text) return fallback(`the paid model's answer was cut off (${e.message}), so this answer came from the free lane instead`);
       console.warn(`[${label}] stream ended early after ${text.length} chars — ${e.message}`);
-      if (usage && isMeteredProvider(providerId)) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage); }
+      if (usage && isMeteredProvider(providerId)) { recordSpend({ model, usage, providerId }); if (onUsage) onUsage(usage, { providerId, model }); }
       break;
     }
 
@@ -1331,7 +1331,7 @@ export async function generateTextStream({
     // would then be counting a fraction of what was actually spent.
     if (usage) {
       if (isMeteredProvider(providerId)) recordSpend({ model, usage, providerId });
-      if (onUsage) onUsage(usage);
+      if (onUsage) onUsage(usage, { providerId, model });
     } else {
       console.warn(`[${label}] ${providerId}/${model} round ${round} returned no usage block — this call is NOT counted against the monthly cap`);
     }

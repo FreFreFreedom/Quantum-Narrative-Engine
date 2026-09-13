@@ -1,6 +1,6 @@
 # QNE — current state (auto-generated, do not edit)
 
-Generated: 2026-09-13T11:30:09.660Z
+Generated: 2026-09-13T20:30:45.556Z
 
 ## Components
 
@@ -38,6 +38,8 @@ Generated: 2026-09-13T11:30:09.660Z
 
 ## Plan backlog
 
+- queue-world-ideas-manual-only — **DONE** 2026-09-13
+- room-analogy-engine-natural-requests — **PLANNED** 2026-09-13
 - room-analogy-engine — **DONE** 2026-09-13
 - room-analogy-mockups — **PLANNED** 2026-09-13
 - codex-as-an-engine — **PLANNED** 2026-09-13
