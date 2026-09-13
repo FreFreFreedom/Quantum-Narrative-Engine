@@ -24,7 +24,7 @@ import {
 import { writeTarget, writeActsFor, applySubjectWrite, subjectEdits } from './subjectWrite.js';
 import { createIdea } from './workIdeas.js';
 import { generateText, generateTextStream, studioPersonaText, promptCharBudget } from './ai/text.js';
-import { costOf } from './openAiSpend.js';
+import { costOf } from './openaiSpend.js';
 import { isMeteredProvider } from './ai/catalog.js';
 import { resolveTurn, computeLaneTag, tagFromVia } from './turnRouter.js';
 import { getComponents } from './architecture.js';

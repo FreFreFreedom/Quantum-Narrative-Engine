@@ -938,8 +938,10 @@ Claude's second account on Sonnet at medium effort.
 
 ## Queue World Ideas are manual (2026-09-13)
 
-Queue tasks no longer generate a World Ideas pass by default, either when created
-or through the periodic pre-generation sweep. The task card's **Look at the
-world** button is the sole generation trigger. A precomputed report explicitly
-carried from a suggestion, seed or other source is still reused. See
-`plans/queue-world-ideas-manual-only.md` and `npm run queue-inspiration:selftest`.
+Antoine approved removing automatic World Ideas from queue tasks. Core backend
+code landed inside concurrent commit `905eb78`; the completion task is queued to
+audit it, add the regression test, correct the raw-task UI wording in both HTML
+copies, and verify the deployed behavior. The intended invariant is that the task
+card's **Look at the world** button is the sole generation trigger. A precomputed
+report explicitly carried from a suggestion, seed or other source is still
+reused. See `plans/queue-world-ideas-manual-only.md`.
