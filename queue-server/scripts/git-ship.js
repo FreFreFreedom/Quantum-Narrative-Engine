@@ -29,7 +29,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, copyFileSync, readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
+import { join, dirname } from 'node:path';
 import { runShipChecks } from '../server/src/services/shipChecks.js';
 
 const APP_FILE = 'fmcns_navigator.html';
@@ -101,10 +101,10 @@ function pushTrunk(wt, trunk, dryRun) {
 // and it is why the file list must be a pure function of the data — a filename with
 // a clock or a random suffix in it would commit, and redeploy, forever.
 //
-// `pruneDir` (repo-relative) drops files in that directory that the list no longer
+// `pruneDirs` (repo-relative) drops files in those directories that the list no longer
 // contains, so deleting a note in the app also takes it out of the repo. Without it
 // a note stays readable by every coding agent after it is gone.
-export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], pruneDir = null, message, dryRun = false, log = () => {} } = {}) {
+export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], pruneDirs = [], message, dryRun = false, log = () => {} } = {}) {
   if (!files.length || !message) return { ok: false, error: 'nothing_to_commit' };
 
   const wt = shipTree(repo, trunk, 'mirror');
@@ -120,12 +120,12 @@ export function commitFilesToTrunk({ repo, trunk = 'develop', files = [], pruneD
       writeFileSync(full, f.content, 'utf8');
       paths.push(f.path);
     }
-    if (pruneDir) {
-      const keep = new Set(files.map((f) => basename(f.path)));
+    const keep = new Set(files.map((f) => f.path));
+    for (const pruneDir of pruneDirs) {
       const dir = join(wt, pruneDir);
       if (existsSync(dir)) {
         for (const name of readdirSync(dir)) {
-          if (!name.endsWith('.md') || keep.has(name)) continue;
+          if (!name.endsWith('.md') || keep.has(`${pruneDir}/${name}`)) continue;
           unlinkSync(join(dir, name));
           paths.push(`${pruneDir}/${name}`);
         }

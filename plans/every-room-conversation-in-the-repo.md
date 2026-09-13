@@ -2,9 +2,9 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-13 |
+| **IN PROGRESS** | 2026-09-13 |
 
-Not a green light — Antoine names a plan before it is implemented.
+Implementation authorized by the queue task. Code is implemented; full Git-based and live verification remain pending.
 
 ## What he asked for
 
@@ -166,3 +166,24 @@ and vice versa.
 - `queue-server/scripts/queue-runner.js` — one block in `mirrorToRepo()`.
 - `queue-server/scripts/git-ship.js` — `pruneDir` → `pruneDirs`, path-based.
 - `queue-server/project-docs/conversations/` — new, written by the mirror.
+
+## Implementation verification — 2026-09-13
+
+Implemented the transcript route, deterministic file producer, shared mirror integration,
+and independent path-based pruning. The existing `listOpenConvos` query now accepts an
+internal `null` limit (SQLite's unlimited `LIMIT -1`); the ordinary list keeps its default
+50 / maximum 200. Without this, a growing shelf could silently drop older transcripts.
+The mirror keeps the specified five-minute schedule; no optional settling delay was added.
+
+Passed all six changed JavaScript files through `node --check`. Passed
+`npm run notes:selftest -- --files-only` (17 assertions). Also exercised the actual route,
+list reader, mirror function and filesystem pruning code in an isolated Node harness:
+three-user-message filtering, full export, one combined commit request, independent
+empty/failed-source guards, duplicate basenames, both indexes, and directory isolation.
+The harness stubbed Git and used temporary files; it did not access the live database.
+
+The extended full `npm run notes:selftest` remains unrun because this task prohibits all
+Git commands, including the temporary repository operations inside that test. The live
+three-message Room / mirror-tick / worktree-file check remains unrun because this isolated
+implementation is not deployed and running the publishing mirror would execute Git.
+No Git commands, deployment, live conversation, or model calls were performed.

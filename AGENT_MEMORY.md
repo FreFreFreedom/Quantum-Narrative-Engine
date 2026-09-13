@@ -887,3 +887,14 @@ doesn't have to re-search it:
   plain screenplay pages at imsdb.com are just fetchable text, the same way several
   open-source scrapers on GitHub already do it (e.g. `j2kun/imsdb_download_all_scripts`).
   A small direct fetch-and-parse script is the right size, not a paid API.
+
+
+## Raw Room transcripts in the mirror (2026-09-13)
+
+Implemented in the queue worktree; full Git and live verification pending. The existing
+Mac mirror now also reads `/api/convos/transcripts` into
+`queue-server/project-docs/conversations/` (three user messages minimum, raw text alongside
+curated notes). `listOpenConvos(null)` is the internal unlimited export; its default list
+is capped and must not feed pruning. `commitFilesToTrunk` now takes `pruneDirs`, with
+repo-relative keep paths and each source's own non-empty guard. See
+`plans/every-room-conversation-in-the-repo.md` for verification status.

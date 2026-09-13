@@ -95,6 +95,18 @@ export function conversationsRoutes() {
     res.json({ notes: convos.listNotes({ full: req.query.full === '1' }) });
   });
 
+  // One request for the runner's complete shelf, before the /:id route.
+  router.get('/transcripts', (req, res) => {
+    const transcripts = convos.listOpenConvos(null).flatMap((convo) => {
+      const messages = convos.listMessages(convo.id)
+        .map(({ role, content, created_at }) => ({ role, content, created_at }));
+      if (messages.filter((message) => message.role === 'user').length < 3) return [];
+      const { id, title, created_at, updated_at, turns } = convo;
+      return [{ id, title, created_at, updated_at, turns, messages }];
+    });
+    res.json({ convos: transcripts });
+  });
+
   // POST /api/convos/open — start one. No subject to pick: it gets a synthetic
   // one, and cards are attached afterwards (or never).
   router.post('/open', (req, res) => {

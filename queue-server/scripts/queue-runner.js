@@ -46,6 +46,7 @@ import { runIdeaLanding as ideaLandingPass, buildDiff as buildIdeaDiff } from '.
 import { answerRepoWitnesses } from '../server/src/services/witnessCheck.js';
 import { shipJob, undoJob, shipTree, fetchTrunk, alreadyOnTrunk, commitFilesToTrunk } from './git-ship.js';
 import { noteFiles, NOTES_REPO_PATH } from '../server/src/services/noteMirror.js';
+import { convoFiles, CONVOS_REPO_PATH } from '../server/src/services/convoMirror.js';
 import { mindFiles } from '../server/src/services/mindMirror.js';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -1960,10 +1961,11 @@ function tidyWorktrees() {
 const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 
 // ─── What the Room knows, into the repo ───────────────────────────────────────
-// Two memories live in the app's database, where no coding agent can see them —
+// The Room's conversations and memories live in the app's database, where no coding agent can see them —
 // Claude Code, OpenCode and every task worktree read files, not SQLite:
 //
 //   - conversations saved with `/note` (knowledge_docs)
+//   - raw Room transcripts with at least three user messages (convos + convo_messages)
 //   - the facts harvested out of every Room conversation (mind_facts), split into
 //     what he is like and the paradigm itself
 //
@@ -1973,11 +1975,11 @@ const GIT_SHIP_DRY_RUN = process.env.GIT_SHIP_DRY_RUN === '1';
 // memory mirror sat at "Nothing recorded yet" while the app held twenty facts. This
 // Mac has the checkout, so this is where it belongs.
 //
-// ONE commit for both, because every push to the trunk redeploys the app — two
+// ONE commit for all of them, because every push to the trunk redeploys the app — two
 // mirrors on the same timer would mean two deploys for one tick's worth of news.
 //
 // Reads the whole set and rewrites the whole mirror every time rather than tracking
-// what is new: it costs two requests, and it means anything saved while this runner
+// what is new: it costs three requests, and it means anything saved while this runner
 // was off is picked up by simply starting it.
 const NOTE_MIRROR_MS = 5 * 60_000;
 let lastNoteMirrorAt = 0;
@@ -1987,6 +1989,7 @@ async function mirrorToRepo() {
 
   const files = [];
   const said = [];
+  const pruneDirs = [];
 
   let notes = null;
   try {
@@ -2006,7 +2009,19 @@ async function mirrorToRepo() {
       content: n.content,
       updated_at: n.updated_at,
     }))));
+    pruneDirs.push(NOTES_REPO_PATH);
     said.push(`${notes.length} saved conversation(s)`);
+  }
+
+  let convos = null;
+  try {
+    const r = await apiRoot('/convos/transcripts');
+    if (r.ok) convos = (await r.json()).convos;
+  } catch { /* leave transcripts alone this tick */ }
+  if (Array.isArray(convos) && convos.length > 0) {
+    files.push(...convoFiles(convos));
+    pruneDirs.push(CONVOS_REPO_PATH);
+    said.push(`${convos.length} conversation(s)`);
   }
 
   let facts = null;
@@ -2026,11 +2041,9 @@ async function mirrorToRepo() {
     repo: RUNNER_REPO,
     trunk: TRUNK,
     files,
-    // Only the notes directory is reconciled: a deleted note must lose its file,
-    // while the memory mirror has fixed filenames and nothing to prune. Pruning is
-    // skipped entirely on a tick where the notes request failed — an unanswered
-    // query must never be read as "he deleted everything".
-    pruneDir: haveNotes ? NOTES_REPO_PATH : null,
+    // Reconcile each directory only when its own source answered non-empty.
+    // A failed or empty response must never mean "delete everything".
+    pruneDirs,
     message: 'mirror: what the Room knows',
     dryRun: GIT_SHIP_DRY_RUN,
     log: (m) => console.log(dim(`    ${m}`)),

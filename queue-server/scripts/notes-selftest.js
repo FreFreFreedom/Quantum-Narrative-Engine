@@ -21,6 +21,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync, readFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { noteFiles, NOTES_REPO_PATH } from '../server/src/services/noteMirror.js';
+import { convoFiles, CONVOS_REPO_PATH } from '../server/src/services/convoMirror.js';
 import { commitFilesToTrunk } from './git-ship.js';
 
 const TRUNK = 'develop';
@@ -59,6 +60,29 @@ ok(JSON.stringify(noteFiles(clashing)) === JSON.stringify(clash), 'and the count
 
 ok(noteFiles([])[0].content.includes('No notes saved yet'), 'no notes still writes an honest index.md');
 
+// ─── raw transcripts ────────────────────────────────────────────────────────
+console.log('\nRaw transcripts');
+const threads = ['11111111-one', '22222222-two'].map((id) => ({
+  id, title: 'Same title', turns: 3, updated_at: '2026-09-13T00:00:00.000Z',
+  messages: [{ role: 'user', content: 'x'.repeat(20000) }, { role: 'assistant', content: 'Reply' }],
+}));
+const transcripts = convoFiles(threads);
+ok(JSON.stringify(transcripts) === JSON.stringify(convoFiles(threads)), 'same threads give byte-identical files');
+ok(transcripts[0].path !== transcripts[1].path, 'same title gets different id-based filenames');
+ok(transcripts[0].path === convoFiles([...threads].reverse())[1].path, 'list order never renames a thread');
+ok(transcripts[0].content.includes('x'.repeat(8000) + '…(cut)') && !transcripts[0].content.includes('x'.repeat(8001)),
+  '20,000-character message is capped at 8,000 with a visible cut marker');
+ok(transcripts[0].content.includes('## you\n') && transcripts[0].content.includes('## the room\n\nReply'),
+  'messages retain their order, speaker and text');
+ok(transcripts.at(-1).content.includes('notes/') && transcripts.at(-1).content.includes('both are kept'),
+  'index explains that curated notes and raw transcripts are both kept');
+
+// Allows the deterministic file checks when git execution is prohibited.
+if (process.argv.includes('--files-only')) {
+  console.log(failures ? `\n${failures} broken expectation(s).` : '\nFile checks passed; git checks not run.');
+  process.exit(failures ? 1 : 0);
+}
+
 // ─── the git step ─────────────────────────────────────────────────────────────
 console.log('\nThe git step (throwaway repo, real push)');
 
@@ -76,8 +100,8 @@ try {
   git(['commit', '-m', 'first'], repo);
   git(['push', 'origin', `HEAD:refs/heads/${TRUNK}`], repo);
 
-  const run = (files) => commitFilesToTrunk({
-    repo, trunk: TRUNK, files, pruneDir: NOTES_REPO_PATH, message: 'mirror: saved conversations from the Room',
+  const run = (files, pruneDirs = [NOTES_REPO_PATH]) => commitFilesToTrunk({
+    repo, trunk: TRUNK, files, pruneDirs, message: 'mirror: saved conversations from the Room',
   });
 
   const first = run(noteFiles(notes));
@@ -96,6 +120,24 @@ try {
   ok(!afterPrune.includes(`${NOTES_REPO_PATH}/fractal-ontology.md`),
     'a note deleted in the app is removed from the repo, not left readable');
   ok(afterPrune.includes(`${NOTES_REPO_PATH}/qne.md`), 'the remaining note is untouched');
+
+  const bothDirs = [NOTES_REPO_PATH, CONVOS_REPO_PATH];
+  const shared = (dir) => ({ path: `${dir}/shared.md`, content: 'same basename, different shelf' });
+  const both = run([...noteFiles(notes), ...transcripts, ...bothDirs.map(shared)], bothDirs);
+  ok(both.ok && both.changed, 'two shelves are mirrored in one commit');
+  const dropped = run([...noteFiles(notes), ...transcripts, shared(CONVOS_REPO_PATH)], bothDirs);
+  const tree = () => git(['ls-tree', '-r', '--name-only', TRUNK], origin).split('\n');
+  ok(dropped.ok && !tree().includes(`${NOTES_REPO_PATH}/shared.md`), 'same basename in conversations does not keep a deleted note alive');
+  ok(tree().includes(`${CONVOS_REPO_PATH}/shared.md`), "removing the note preserves the other shelf's file");
+  ok(bothDirs.every((dir) => tree().includes(`${dir}/index.md`)), 'both shelves keep their own index.md');
+  const missingIndex = run([...noteFiles(notes).slice(0, -1), ...transcripts], bothDirs);
+  ok(missingIndex.ok && !tree().includes(`${NOTES_REPO_PATH}/index.md`) && tree().includes(`${CONVOS_REPO_PATH}/index.md`),
+    'an index on another shelf cannot keep a missing index alive');
+  const onlyNotes = run(noteFiles([notes[0]]));
+  ok(onlyNotes.ok && tree().includes(transcripts[0].path), 'notes-only tick leaves transcripts untouched');
+  const onlyConvos = run(convoFiles([threads[0]]), [CONVOS_REPO_PATH]);
+  ok(onlyConvos.ok && tree().includes(`${NOTES_REPO_PATH}/qne.md`), 'transcripts-only tick leaves notes untouched');
+  ok(!tree().includes(transcripts[1].path), 'removed transcript is pruned from its own shelf');
 
   const dry = commitFilesToTrunk({ repo, trunk: TRUNK, files: noteFiles([note('Note: Dry')]), message: 'mirror: dry', dryRun: true });
   ok(dry.ok && dry.dry, 'a dry run reports without pushing', dry.error || '');

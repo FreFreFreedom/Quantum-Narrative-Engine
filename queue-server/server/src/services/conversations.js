@@ -566,7 +566,8 @@ export function listOpenConvos(limit = 50) {
   if (!db) return [];
   const rows = db.prepare(
     `SELECT * FROM convos WHERE subject_type='open' AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT ?`,
-  ).all(Math.min(Math.max(Number(limit) || 50, 1), 200));
+  // Internal full exports pass null; HTTP list requests retain their 200-row cap.
+  ).all(limit === null ? -1 : Math.min(Math.max(Number(limit) || 50, 1), 200));
   return rows.map((c) => ({ ...c, subjects: listConvoSubjects(c.id) }));
 }
 
