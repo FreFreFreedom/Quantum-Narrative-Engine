@@ -5,6 +5,8 @@ import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
 import * as analogies from '../services/roomAnalogies.js';
+import * as board from '../services/board.js';
+import { rhymeSoon } from '../services/boardRhyme.js';
 import { rememberPassage } from '../services/mind.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
@@ -32,7 +34,8 @@ function isConvoError(out) {
 function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
-      || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title') return 400;
+      || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title'
+      || err === 'invalid_kind') return 400;
   return 500;
 }
 
@@ -180,6 +183,49 @@ export function conversationsRoutes() {
   router.delete('/:id/analogies', (req, res) => {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
     res.json(analogies.clearAnalogies(req.params.id));
+  });
+
+  // ─── The board (plan "room-mood-board") ────────────────────────────────────
+  // GET .../wall is the flowing images — searched, shown, forgotten. GET/POST/
+  // PATCH/DELETE .../board is what he kept. Keeping is one tap: nothing is ever
+  // asked, the automatic "why" is filled in afterwards by boardRhyme.js.
+
+  router.get('/:id/wall', asyncHandler(async (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    const out = await board.wallFor(req.params.id, { force: req.query.force === '1' });
+    if (out.error) return res.status(500).json(out);
+    res.json(out);
+  }));
+
+  router.get('/:id/board', (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json({ cards: board.listBoard(req.params.id) });
+  });
+
+  router.post('/:id/board', (req, res) => {
+    const out = board.keepCard(req.params.id, {
+      kind: req.body?.kind,
+      payload: req.body?.payload || null,
+      sourceMessageId: req.body?.sourceMessageId || null,
+      passage: req.body?.passage || null,
+    });
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    rhymeSoon(out.card.id);
+    res.json(out);
+  });
+
+  router.patch('/:id/board/:cardId', (req, res) => {
+    const out = board.updateCard(req.params.cardId, {
+      col: req.body?.col, pos: req.body?.pos, note: req.body?.note,
+    });
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  router.delete('/:id/board/:cardId', (req, res) => {
+    const out = board.deleteCard(req.params.cardId);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
   });
 
   // ─── Side talks (plan "side talks in the Room, and remember this") ─────────

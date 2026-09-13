@@ -44,6 +44,7 @@ export function openDb() {
   initConversationsSchema(db);
   initMindSchema(db);
   initFilmEnrichmentSchema(db);
+  initBoardSchema(db);
   return db;
 }
 
@@ -1744,6 +1745,12 @@ export function initConversationsSchema(db) {
   // fast lookup back to the parent — reading it out of subject_id would work too,
   // but this is what conversations.js#assemble reads on every turn.
   try { db.exec(`ALTER TABLE convos ADD COLUMN parent_convo_id TEXT`); } catch {}
+
+  // The board wall's watermark (plan "room-mood-board"): how many of this
+  // conversation's turns the flowing wall has already searched for, so it only
+  // re-searches on a beat rather than on every render. Same shape as
+  // analogy_seen_turns above.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN wall_seen_turns INTEGER DEFAULT 0`); } catch {}
 }
 
 // ─── The Room's shared memory (`mind_facts`, plan "room-shared-memory") ───────
@@ -1933,4 +1940,44 @@ export function initFilmEnrichmentSchema(db) {
   // answer /api/agent/usage from a process that had never seen a claim poll.
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN runner_usage_json TEXT NOT NULL DEFAULT '{}'`); } catch {}
   try { db.exec(`ALTER TABLE ai_settings ADD COLUMN runner_usage_at TEXT`); } catch {}
+}
+
+// ─── The Room's board (plan "room-mood-board") ────────────────────────────────
+// A conversation's own wall of images, films, books, quotes and side talks — kept
+// with one tap, never asked to explain itself. See services/board.js.
+export function initBoardSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS board_cards (
+      id TEXT PRIMARY KEY,
+      convo_id TEXT NOT NULL,
+      -- 'image' | 'still' | 'poster' | 'book' | 'quote' | 'side' | 'note' — a plain
+      -- TEXT column with NO CHECK constraint on purpose: convo_messages.kind has one
+      -- and SQLite cannot alter a CHECK in place, which has already cost this
+      -- project a workaround (see initConversationsSchema's meta column comment).
+      kind TEXT NOT NULL,
+      col INTEGER NOT NULL DEFAULT 0,
+      pos REAL NOT NULL DEFAULT 0,
+      payload TEXT,
+      source_message_id TEXT,
+      -- The line of the conversation the card answers, and why — filled in once by
+      -- services/boardRhyme.js#rhymeFor right after the keep. Never asked of him.
+      passage TEXT,
+      rhyme TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      deleted_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_board_cards_convo ON board_cards(convo_id, col, pos)`); } catch {}
+
+  // Raw search-response cache for services/imageSources.js (TMDB stills/posters,
+  // Art Institute of Chicago, Wikimedia Commons) — one table for all three
+  // sources, same generate-once-and-cache pattern as tmdb_cache above. Image
+  // FILES are never stored here, only the API responses that name them.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS image_search_cache (
+      key TEXT PRIMARY KEY,
+      body TEXT NOT NULL,
+      fetched_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    )
+  `);
 }

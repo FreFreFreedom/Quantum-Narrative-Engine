@@ -1384,6 +1384,43 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .room-side-row:hover { background:var(--c-border); color:var(--c-ink); }
 .room-side-row.is-open { background:var(--c-border); color:var(--c-ink); font-weight:500; }
 .room-side-open { border-top:1px solid var(--c-border); padding-top:8px; }
+/* The board (plan "room-mood-board"): a flowing wall, a kept shelf, and the full
+   board opened big. Kept small in the pane on purpose — the full arrangement
+   happens in #boardFullRoot, not here. */
+.room-wall-acts { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.room-wall-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-bottom:10px; }
+.room-wall-thumb { position:relative; border-radius:var(--r-sm); overflow:hidden; cursor:pointer; aspect-ratio:4/3; background:var(--c-border); }
+.room-wall-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.room-wall-keep { position:absolute; top:4px; right:4px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:var(--r-pill);
+  padding:2px 8px; font-size:var(--fs-xs); cursor:pointer; opacity:0; transition:opacity var(--t-fast) var(--ease); }
+.room-wall-thumb:hover .room-wall-keep { opacity:1; }
+.room-wall-caption { position:absolute; left:0; right:0; bottom:0; padding:3px 5px; font-size:var(--fs-2xs); color:#fff;
+  background:linear-gradient(transparent, rgba(0,0,0,.6)); }
+.room-board-shelf { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin:8px 0; }
+.room-board-shelf-card { border-radius:var(--r-sm); overflow:hidden; cursor:pointer; aspect-ratio:1; background:var(--c-border); border:none; padding:0; }
+.room-board-shelf-card img { width:100%; height:100%; object-fit:cover; display:block; }
+.room-board-shelf-card.is-note { display:flex; align-items:center; justify-content:center; padding:6px; font-size:var(--fs-2xs); color:var(--c-ink-3); text-align:center; }
+.board-full-modal { width:min(1100px, 96vw); height:88vh; max-height:none; }
+.board-full-body { flex:1; display:flex; overflow:hidden; }
+.board-rail { flex:none; width:120px; border-right:1px solid var(--c-border); padding:10px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+.board-rail button { text-align:left; background:none; border:1px solid var(--c-border-2); border-radius:var(--r-sm); padding:5px 8px;
+  font:inherit; font-size:var(--fs-xs); color:var(--c-ink-3); cursor:pointer; }
+.board-rail button:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
+.board-columns { flex:1; display:flex; gap:12px; padding:12px; overflow-x:auto; }
+.board-column { flex:none; width:220px; display:flex; flex-direction:column; gap:8px; background:var(--c-bg-2, transparent); border-radius:var(--r-md); padding:4px; min-height:100px; }
+.board-column.is-dragover { outline:2px dashed var(--c-accent); }
+.board-card { border:1px solid var(--c-border); border-radius:var(--r-md); overflow:hidden; cursor:grab; background:var(--c-bg); }
+.board-card:active { cursor:grabbing; }
+.board-card img { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
+.board-card-body-inner { padding:6px 8px; }
+.board-card-title { font-size:var(--fs-xs); color:var(--c-ink-3); }
+.board-card-passage { font-size:var(--fs-2xs); color:var(--c-ink-4); margin-top:3px; font-style:italic; }
+.board-card-note { padding:10px; font-size:var(--fs-sm); }
+.board-card-modal { width:min(760px, 96vw); height:auto; max-height:88vh; }
+.board-card-body { padding:16px; overflow-y:auto; }
+.board-card-body img { max-width:100%; border-radius:var(--r-md); display:block; margin-bottom:12px; }
+.board-card-passage-big { font-size:var(--fs-md); font-style:italic; border-left:2px solid var(--c-brand); padding-left:10px; margin:10px 0; }
+.board-card-rhyme { font-size:var(--fs-sm); color:var(--c-ink-3); margin-bottom:14px; }
 /* The chapters strip, and the flash that lands on the passage jumped to. */
 .se-marks { display:flex; flex-wrap:wrap; gap:5px; padding:5px 0 3px; }
 .se-mark { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--c-border); border-radius:var(--r-pill);
@@ -3117,6 +3154,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" data-room-pane="passages" role="tab">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
           <button type="button" data-room-pane="analogies" role="tab">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
+          <button type="button" data-room-pane="board" role="tab">Board <span class="room-tabcount" id="roomBoardCount"></span></button>
           <button type="button" data-room-pane="side" role="tab">Side talks <span class="room-tabcount" id="roomSideCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
@@ -3161,8 +3199,29 @@ button:active { transform: translateY(1px) scale(.99); }
         <div class="room-pane room-ideas" id="roomSide">
           <div id="roomSideHost"></div>
         </div>
+        <div class="room-pane room-ideas" id="roomBoard">
+          <div id="roomBoardHost"></div>
+        </div>
       </div>
     </div>
+  </div>
+</div>
+<div id="boardFullRoot" class="studio-overlay" style="display:none;" data-src="CORE ARCHITECTURE → Room → Board (full) | fmcns_navigator.html: renderBoardFull(), backend: GET/PATCH/DELETE /api/convos/:id/board, services/board.js">
+  <div class="studio-modal board-full-modal">
+    <div class="studio-head">
+      <span class="studio-title" id="boardFullTitle">Board</span>
+      <div class="studio-actions"><button id="boardFullCloseBtn" title="Close">✕</button></div>
+    </div>
+    <div class="board-full-body" id="boardFullBody"></div>
+  </div>
+</div>
+<div id="boardCardRoot" class="studio-overlay" style="display:none;">
+  <div class="studio-modal board-card-modal">
+    <div class="studio-head">
+      <span class="studio-title">&nbsp;</span>
+      <div class="studio-actions"><button id="boardCardCloseBtn" title="Close">✕</button></div>
+    </div>
+    <div class="board-card-body" id="boardCardBody"></div>
   </div>
 </div>
 <div id="aiSheetRoot" class="studio-overlay" style="display:none;" data-src="CORE ARCHITECTURE → ⚙ → Settings sheet | fmcns_navigator.html: renders into #aiBody, loadAiSettings()/renderAiSettings() | backend: GET/PUT /api/travaux/ai-settings, GET /api/travaux/providers, services/ai/text.js">
@@ -8985,6 +9044,21 @@ function initRailControls() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && aiRoot && aiRoot.style.display === 'flex') aiRoot.style.display = 'none';
   });
+  // The board's two overlays (plan "room-mood-board") — same open/close/backdrop
+  // shape as the Settings sheet above.
+  const boardFullRoot = document.getElementById('boardFullRoot');
+  const boardFullClose = document.getElementById('boardFullCloseBtn');
+  if (boardFullClose) boardFullClose.onclick = closeBoardFull;
+  if (boardFullRoot) boardFullRoot.addEventListener('click', (e) => { if (e.target === boardFullRoot) closeBoardFull(); });
+  const boardCardRoot = document.getElementById('boardCardRoot');
+  const boardCardClose = document.getElementById('boardCardCloseBtn');
+  if (boardCardClose) boardCardClose.onclick = closeBoardCard;
+  if (boardCardRoot) boardCardRoot.addEventListener('click', (e) => { if (e.target === boardCardRoot) closeBoardCard(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (boardCardRoot && boardCardRoot.style.display === 'flex') closeBoardCard();
+    else if (boardFullRoot && boardFullRoot.style.display === 'flex') closeBoardFull();
+  });
   // The four Architecture destinations, straight from the rail — including from
   // another mode, which is why this cannot live in initCore(): the rail is
   // visible before Core has ever been opened.
@@ -9317,7 +9391,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', mind: 'roomMind', extract: 'roomExtract' };
+const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', side: 'roomSide', board: 'roomBoard', mind: 'roomMind', extract: 'roomExtract' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9344,6 +9418,9 @@ const ROOM_TAB_HAS = {
   // Same reasoning as analogies above: the pane holds the action that opens the
   // first side talk, so hiding it while empty makes it unreachable.
   side: () => !!roomSel,
+  // Same again: the pane holds the action that keeps the first card, so hiding
+  // it while the wall/board is empty makes it unreachable.
+  board: () => !!roomSel,
   mind: () => roomMind.length > 0,
   extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
 };
@@ -9820,6 +9897,7 @@ async function loadRoom() {
   loadRoomIdeas();
   loadRoomAnalogies();
   loadRoomSides();
+  loadRoomBoard();
   loadRoomExtract();
   loadRoomPassages().then(loadRoomPassageWorld);
 }
@@ -10825,6 +10903,319 @@ function renderRoomSide() {
   }
 }
 
+/* ── The board (plan "room-mood-board") ──────────────────────────────────────
+   A conversation's own wall of images, films, books, quotes and side talks.
+   The wall FLOWS while he talks — searched, shown, forgotten. Keeping is one
+   tap and nothing is ever asked: no box opens, ever. The pane shows a small
+   version of both; the full arrangement (columns, drag between them) opens in
+   #boardFullRoot. Card kinds render differently but share one card shape. */
+let roomWall = [];
+let roomWallBusy = false;
+let roomBoardCards = [];
+let boardFullCol = null; // which column a note/side pick is being added into
+
+function lastRoomMessageId() {
+  const log = document.querySelector('#roomConvo .se-log');
+  if (!log) return null;
+  const turns = log.querySelectorAll('.se-turn');
+  const last = turns[turns.length - 1];
+  return last ? last.getAttribute('data-msg-id') : null;
+}
+
+async function loadRoomBoard() {
+  const want = roomSel;
+  if (!want) { roomWall = []; roomBoardCards = []; renderRoomBoard(); return; }
+  try {
+    const [wall, board] = await Promise.all([
+      api('/api/convos/' + encodeURIComponent(want) + '/wall'),
+      api('/api/convos/' + encodeURIComponent(want) + '/board'),
+    ]);
+    if (roomSel !== want) return; // a different thread was picked mid-flight
+    roomWall = wall.items || [];
+    roomBoardCards = board.cards || [];
+  } catch (e) { if (roomSel === want) { roomWall = []; roomBoardCards = []; } }
+  renderRoomBoard();
+  if (document.getElementById('boardFullRoot').style.display !== 'none') renderBoardFull();
+}
+
+async function roomWallLookAgain() {
+  if (!roomSel || roomWallBusy) return;
+  roomWallBusy = true;
+  renderRoomBoard();
+  try {
+    const out = await api('/api/convos/' + encodeURIComponent(roomSel) + '/wall?force=1');
+    if (roomSel) roomWall = out.items || [];
+  } catch (e) { /* the wall just stays as it was */ }
+  roomWallBusy = false;
+  renderRoomBoard();
+}
+
+// One tap, nothing asked — the whole point. No dialog, no reason typed in.
+async function roomWallKeep(item) {
+  if (!roomSel) return;
+  const kind = item.kind === 'poster' ? 'poster' : (item.kind === 'still' ? 'still' : 'image');
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/board', 'POST', {
+      kind, payload: item, sourceMessageId: lastRoomMessageId(),
+    });
+  } catch (e) { /* nothing to say — the wall keeps flowing either way */ }
+  loadRoomBoard();
+}
+
+async function roomBoardDiscard(cardId) {
+  if (!roomSel) return;
+  try { await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/board/' + encodeURIComponent(cardId), 'DELETE'); }
+  catch (e) {}
+  closeBoardCard();
+  loadRoomBoard();
+}
+
+async function roomBoardMove(cardId, col, pos) {
+  if (!roomSel) return;
+  try { await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/board/' + encodeURIComponent(cardId), 'PATCH', { col, pos }); }
+  catch (e) {}
+  loadRoomBoard();
+}
+
+async function roomBoardAddNote() {
+  const text = prompt('A note for the board:');
+  if (!text || !text.trim() || !roomSel) return;
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/board', 'POST', {
+      kind: 'note', payload: { title: text.trim() }, sourceMessageId: lastRoomMessageId(),
+    });
+  } catch (e) {}
+  loadRoomBoard();
+}
+
+async function roomBoardAddSide(side) {
+  if (!roomSel) return;
+  try {
+    await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/board', 'POST', {
+      kind: 'side', payload: { title: side.title || 'Side talk', subjectId: side.subject_id },
+    });
+  } catch (e) {}
+  loadRoomBoard();
+}
+
+function boardCardImgUrl(card) {
+  const p = card.payload || {};
+  return p.thumbUrl || p.fullUrl || '';
+}
+
+function boardCardTitle(card) {
+  const p = card.payload || {};
+  if (card.kind === 'note') return p.title || '';
+  if (card.kind === 'side') return p.title || 'Side talk';
+  return p.title || '';
+}
+
+function renderRoomBoard() {
+  const host = document.getElementById('roomBoardHost');
+  if (!host) return;
+  setRoomTabCount('roomBoardCount', roomBoardCards.length);
+  if (!roomSel) { host.innerHTML = ''; return; }
+
+  let html = '<div class="room-wall-acts">'
+    + '<button type="button" class="ubtn ubtn--pill" id="roomBoardOpenBtn">Open board</button>'
+    + '<button type="button" data-wall-look="1"' + (roomWallBusy ? ' disabled' : '') + '>' + (roomWallBusy ? 'Looking…' : '↻ look again') + '</button>'
+    + '</div>';
+
+  html += '<div class="room-wall-grid">' + roomWall.map((it, idx) => (
+    '<div class="room-wall-thumb" data-wall-open="' + idx + '">'
+    + '<img loading="lazy" src="' + qEscAttr(it.thumbUrl || it.fullUrl) + '" alt="">'
+    + '<button type="button" class="room-wall-keep" data-wall-keep="' + idx + '">keep</button>'
+    + (it.title ? '<div class="room-wall-caption">' + qEsc(it.title) + '</div>' : '')
+    + '</div>'
+  )).join('') + '</div>';
+  if (!roomWall.length) html += '<div class="tv-empty">Nothing showed up yet. Keep talking, or look again.</div>';
+
+  if (roomBoardCards.length) {
+    html += '<div class="room-board-shelf">' + roomBoardCards.slice(0, 9).map((c, idx) => {
+      const img = boardCardImgUrl(c);
+      return '<button type="button" class="room-board-shelf-card' + (img ? '' : ' is-note') + '" data-shelf-open="' + idx + '">'
+        + (img ? '<img loading="lazy" src="' + qEscAttr(img) + '" alt="">' : qEsc(boardCardTitle(c).slice(0, 60)))
+        + '</button>';
+    }).join('') + '</div>';
+  }
+
+  host.innerHTML = html;
+
+  const openBtn = host.querySelector('#roomBoardOpenBtn');
+  if (openBtn) openBtn.onclick = openBoardFull;
+  const look = host.querySelector('[data-wall-look]');
+  if (look) look.onclick = roomWallLookAgain;
+  host.querySelectorAll('[data-wall-keep]').forEach(b => {
+    b.onclick = (ev) => { ev.stopPropagation(); roomWallKeep(roomWall[Number(b.getAttribute('data-wall-keep'))]); };
+  });
+  host.querySelectorAll('[data-wall-open]').forEach(el => {
+    el.onclick = () => {
+      const it = roomWall[Number(el.getAttribute('data-wall-open'))];
+      if (it && (it.link || it.fullUrl)) window.open(it.link || it.fullUrl, '_blank', 'noopener');
+    };
+  });
+  host.querySelectorAll('[data-shelf-open]').forEach(b => {
+    b.onclick = () => openBoardCard(roomBoardCards[Number(b.getAttribute('data-shelf-open'))]);
+  });
+}
+
+// ── The board, opened full width ────────────────────────────────────────────
+function openBoardFull() {
+  document.getElementById('boardFullRoot').style.display = 'flex';
+  const t = roomThreads.find(x => x.id === roomSel);
+  const title = document.getElementById('boardFullTitle');
+  if (title) title.textContent = (t && t.title) ? t.title + ' — board' : 'Board';
+  renderBoardFull();
+}
+function closeBoardFull() {
+  document.getElementById('boardFullRoot').style.display = 'none';
+}
+
+function boardColumns() {
+  const byCol = new Map();
+  roomBoardCards.forEach(c => {
+    const col = c.col || 0;
+    if (!byCol.has(col)) byCol.set(col, []);
+    byCol.get(col).push(c);
+  });
+  const cols = [...byCol.keys()].sort((a, b) => a - b);
+  if (!cols.length) cols.push(0);
+  const max = Math.max(...cols);
+  for (let i = 0; i <= max + 1 && i < 6; i++) if (!byCol.has(i)) byCol.set(i, []);
+  return [...byCol.keys()].sort((a, b) => a - b).map(col => ({ col, cards: (byCol.get(col) || []).slice().sort((a, b) => a.pos - b.pos) }));
+}
+
+function boardCardHtml(c, idx) {
+  const img = boardCardImgUrl(c);
+  const title = boardCardTitle(c);
+  return '<div class="board-card" draggable="true" data-card-id="' + qEscAttr(c.id) + '" data-card-idx="' + idx + '">'
+    + (img ? '<img loading="lazy" src="' + qEscAttr(img) + '" alt="">' : '')
+    + '<div class="board-card-body-inner' + (!img ? ' board-card-note' : '') + '">'
+    + '<div class="board-card-title">' + qEsc(title || (c.kind === 'note' ? '' : c.kind)) + '</div>'
+    + (c.passage ? '<div class="board-card-passage">"' + qEsc(c.passage.slice(0, 90)) + '"</div>' : '')
+    + '</div></div>';
+}
+
+function renderBoardFull() {
+  const body = document.getElementById('boardFullBody');
+  if (!body) return;
+  const cols = boardColumns();
+  let html = '<div class="board-rail">'
+    + '<button type="button" data-rail-note="1">+ Note</button>'
+    + '<button type="button" data-rail-side="1">+ Side talk</button>'
+    + '</div>';
+  html += '<div class="board-columns">' + cols.map(({ col, cards }) => (
+    '<div class="board-column" data-col="' + col + '">'
+    + cards.map(c => boardCardHtml(c, roomBoardCards.indexOf(c))).join('')
+    + '</div>'
+  )).join('') + '</div>';
+  body.innerHTML = html;
+
+  const railNote = body.querySelector('[data-rail-note]');
+  if (railNote) railNote.onclick = roomBoardAddNote;
+  const railSide = body.querySelector('[data-rail-side]');
+  if (railSide) railSide.onclick = () => {
+    if (!roomSides.length) { roomBoardAddSide({ title: 'Side talk' }); return; }
+    const pick = roomSides.map((s, i) => (i + 1) + '. ' + (s.title || 'Side talk')).join('\n');
+    const chosen = prompt('Which side talk?\n' + pick);
+    const n = parseInt(chosen, 10);
+    if (n && roomSides[n - 1]) roomBoardAddSide(roomSides[n - 1]);
+  };
+
+  body.querySelectorAll('.board-card').forEach(el => {
+    el.addEventListener('dragstart', (ev) => {
+      ev.dataTransfer.setData('text/plain', el.getAttribute('data-card-id'));
+      ev.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('click', () => {
+      const card = roomBoardCards[Number(el.getAttribute('data-card-idx'))];
+      if (card) openBoardCard(card);
+    });
+  });
+  body.querySelectorAll('.board-column').forEach(colEl => {
+    colEl.addEventListener('dragover', (ev) => { ev.preventDefault(); colEl.classList.add('is-dragover'); });
+    colEl.addEventListener('dragleave', () => colEl.classList.remove('is-dragover'));
+    colEl.addEventListener('drop', (ev) => {
+      ev.preventDefault();
+      colEl.classList.remove('is-dragover');
+      const cardId = ev.dataTransfer.getData('text/plain');
+      if (!cardId) return;
+      const col = Number(colEl.getAttribute('data-col'));
+      const siblings = [...colEl.querySelectorAll('.board-card')].filter(x => x.getAttribute('data-card-id') !== cardId);
+      // Drop position: after the card the pointer landed nearest to, or at the end.
+      const y = ev.clientY;
+      let before = null, after = null;
+      for (const sib of siblings) {
+        const rect = sib.getBoundingClientRect();
+        const sibCard = roomBoardCards.find(c => c.id === sib.getAttribute('data-card-id'));
+        if (!sibCard) continue;
+        if (rect.top + rect.height / 2 < y) before = sibCard.pos;
+        else { after = sibCard.pos; break; }
+      }
+      const pos = (before == null && after == null) ? 1 : (before == null ? after - 1 : (after == null ? before + 1 : (before + after) / 2));
+      roomBoardMove(cardId, col, pos);
+    });
+  });
+}
+
+// ── One card, opened big ─────────────────────────────────────────────────────
+function closeBoardCard() {
+  document.getElementById('boardCardRoot').style.display = 'none';
+}
+
+function openBoardCard(card) {
+  if (!card) return;
+  const root = document.getElementById('boardCardRoot');
+  const body = document.getElementById('boardCardBody');
+  if (!root || !body) return;
+  const img = boardCardImgUrl(card);
+  const title = boardCardTitle(card);
+  const p = card.payload || {};
+  let html = '';
+  if (card.kind === 'note') {
+    html += '<div class="board-card-note">' + qEsc(title) + '</div>';
+  } else {
+    if (img) html += '<img src="' + qEscAttr(p.fullUrl || img) + '" alt="">';
+    if (title) html += '<div class="board-card-title">' + qEsc(title) + (p.year ? ' · ' + qEsc(String(p.year)) : '') + '</div>';
+    if (p.credit) html += '<div class="board-card-title">' + qEsc(p.credit) + '</div>';
+  }
+  if (card.passage) html += '<div class="board-card-passage-big">"' + qEsc(card.passage) + '"</div>';
+  if (card.rhyme) html += '<div class="board-card-rhyme">' + qEsc(card.rhyme) + '</div>';
+  html += '<div class="room-ana-acts">'
+    + '<button type="button" data-card-bring="1">↑ bring</button>'
+    + (p.link ? '<button type="button" data-card-openlink="1">open where it came from</button>' : '')
+    + (card.kind === 'side' && p.subjectId ? '<button type="button" data-card-opensidetalk="1">open the side talk</button>' : '')
+    + '<button type="button" data-card-discard="1">throw it away</button>'
+    + '</div>';
+  body.innerHTML = html;
+  root.style.display = 'flex';
+
+  const bring = body.querySelector('[data-card-bring]');
+  if (bring) bring.onclick = () => roomBoardBring(card);
+  const openLink = body.querySelector('[data-card-openlink]');
+  if (openLink) openLink.onclick = () => window.open(p.link, '_blank', 'noopener');
+  const openSide = body.querySelector('[data-card-opensidetalk]');
+  if (openSide) openSide.onclick = () => { closeBoardCard(); closeBoardFull(); roomSideOpen(p.subjectId); };
+  const discard = body.querySelector('[data-card-discard]');
+  if (discard) discard.onclick = () => roomBoardDiscard(card.id);
+}
+
+// "bring" never sends in his name — a chip naming the card, the rhyme as the
+// editable draft, same as every other pane's bring.
+function roomBoardBring(card) {
+  const t = roomThreads.find(x => x.id === roomSel);
+  if (!t || !window.studioLend || !window.studioLend.carry) return;
+  const p = card.payload || {};
+  const label = boardCardTitle(card) || card.kind;
+  window.studioLend.carry('open', t.subject_id,
+    { text: label, msgId: card.source_message_id || null }, card.rhyme || '');
+  closeBoardCard();
+  closeBoardFull();
+  renderRoomConvo();
+  const box = document.querySelector('#roomConvo .se-input');
+  if (box) box.focus();
+}
+
 async function loadRoomIdeas() {
   const want = roomSel;
   if (!want) { roomIdeasReports = []; roomIdeasRunning = false; renderRoomIdeas(); return; }
@@ -11171,6 +11562,7 @@ function roomSelect(id) {
   loadRoomIdeas();
   loadRoomAnalogies();
   loadRoomSides();
+  loadRoomBoard();
   loadRoomExtract();
   loadRoomPassages().then(loadRoomPassageWorld);
 }
@@ -12350,6 +12742,7 @@ const WS_ROUTES = {
   'convos:updated': () => { if (coreOpen() && coreView === 'room' && typeof renderRoomThreads === 'function') renderRoomThreads(); },
   'analogies:updated': () => { if (coreOpen() && coreView === 'room' && typeof loadRoomAnalogies === 'function') loadRoomAnalogies(); },
   'passages:updated': () => { if (coreOpen() && coreView === 'room' && typeof window.loadRoomPassages === 'function') window.loadRoomPassages(); },
+  'board:updated': (e) => { if (coreOpen() && coreView === 'room' && roomSel === e.convoId && typeof loadRoomBoard === 'function') loadRoomBoard(); },
   'mind:updated': () => { if (coreOpen() && coreView === 'arch' && typeof archTab !== 'undefined' && archTab === 'mind' && typeof loadMind === 'function') loadMind(true); },
   'worldlook:updated': () => { if (typeof window.refreshWorldPanels === 'function') window.refreshWorldPanels(); },
   'agent:settings:updated': () => { if (document.getElementById('aiBody') && typeof loadAiSettings === 'function') loadAiSettings(); },

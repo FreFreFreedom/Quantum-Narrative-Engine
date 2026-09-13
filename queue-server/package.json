@@ -45,7 +45,8 @@
     "splitscreen:selftest": "node scripts/splitscreen-selftest.js",
     "spectrum:selftest": "node scripts/spectrum-selftest.js",
     "codex:selftest": "node scripts/codex-selftest.js",
-    "side:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/side-selftest.js"
+    "side:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/side-selftest.js",
+    "board:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/board-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",
