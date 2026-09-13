@@ -69,18 +69,47 @@ export function normalizeTmdbImage(film, img, kind) {
   };
 }
 
-export async function tmdbImagesForFilm(film, { stills = 4, posters = 2 } = {}) {
-  if (!film || !film.tmdbId) return [];
-  const key = `tmdb:images:${film.tmdbId}`;
+async function tmdbImagesFor(media, id, film, { stills, posters }) {
+  const key = `tmdb:images:${media}:${id}`;
   let data = cacheGet(key);
   if (!data) {
-    data = await tmdbFetch(`/movie/${film.tmdbId}/images`, { include_image_language: 'null,en' });
+    data = await tmdbFetch(`/${media}/${id}/images`, { include_image_language: 'null,en' });
     if (data && !data.tmdbError && !data.tmdbKeyMissing && !data.tmdbKeyInvalid) cacheSet(key, data);
   }
   if (!data || data.tmdbError || data.tmdbKeyMissing || data.tmdbKeyInvalid) return [];
   const backdrops = (data.backdrops || []).slice(0, stills).map((img) => normalizeTmdbImage(film, img, 'still'));
   const posterImgs = (data.posters || []).slice(0, posters).map((img) => normalizeTmdbImage(film, img, 'poster'));
   return [...backdrops, ...posterImgs].filter(Boolean);
+}
+
+export async function tmdbImagesForFilm(film, { stills = 4, posters = 2 } = {}) {
+  if (!film || !film.tmdbId) return [];
+  return tmdbImagesFor('movie', film.tmdbId, film, { stills, posters });
+}
+
+// A film or series NAMED in the conversation but not in this app's corpus. The
+// corpus is 199 films; the Room talks about far more than that, and a wall that
+// only lights up for a corpus title stayed on museums forever — verified live
+// 2026-09-13 on a thread discussing Snowfall and Top Boy, neither of them in the
+// corpus. Title search only, never a theme search: TMDB has no such thing.
+export async function tmdbImagesForTitle(title, { stills = 3, posters = 1 } = {}) {
+  const q = String(title || '').trim();
+  if (q.length < 2) return [];
+  const key = `tmdb:find:${q.toLowerCase()}`;
+  let hit = cacheGet(key);
+  if (!hit) {
+    const data = await tmdbFetch('/search/multi', { query: q });
+    if (!data || data.tmdbError || data.tmdbKeyMissing || data.tmdbKeyInvalid) return [];
+    hit = (data.results || []).find((r) => (r.media_type === 'movie' || r.media_type === 'tv') && r.backdrop_path) || null;
+    if (hit) cacheSet(key, hit);
+  }
+  if (!hit) return [];
+  const film = {
+    tmdbId: hit.id,
+    title: hit.title || hit.name || q,
+    year: String(hit.release_date || hit.first_air_date || '').slice(0, 4) || null,
+  };
+  return tmdbImagesFor(hit.media_type, hit.id, film, { stills, posters });
 }
 
 // ─── Art Institute of Chicago — no key, IIIF image URLs.

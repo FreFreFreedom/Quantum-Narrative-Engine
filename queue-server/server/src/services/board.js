@@ -17,7 +17,7 @@ import { getConvo, listMessages } from './conversations.js';
 import { scanText, entityNames } from './entityMentions.js';
 import { getEntity } from './ontologyQuery.js';
 import { getEnrichment } from './filmEnrichment.js';
-import { tmdbImagesForFilm, articSearch, wikimediaSearch } from './imageSources.js';
+import { tmdbImagesForFilm, tmdbImagesForTitle, articSearch, wikimediaSearch } from './imageSources.js';
 import { broadcastAll } from '../realtime.js';
 
 let db = null;
@@ -47,7 +47,17 @@ function topicsFor(convoId, convo) {
   const entities = hits.map((h) => getEntity(db, h.entity_id)).filter(Boolean);
   const films = entities.filter((e) => e.type === 'film').slice(0, 3);
   const others = entities.filter((e) => e.type !== 'film').slice(0, 3);
-  return { films, others, title: (convo && convo.title) || '' };
+  // Titles the answers themselves marked — the Room writes a film or series name
+  // in italics, and most of what he talks about is outside the 199-film corpus.
+  const known = new Set(films.map((f) => String(f.name || '').toLowerCase()));
+  const counted = new Map();
+  for (const m of transcript.matchAll(/[*_]([A-Z][^*_\n]{1,40})[*_]/g)) {
+    const name = m[1].trim();
+    if (name.length < 2 || known.has(name.toLowerCase())) continue;
+    counted.set(name, (counted.get(name) || 0) + 1);
+  }
+  const titles = [...counted.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map((e) => e[0]);
+  return { films, others, titles, title: (convo && convo.title) || '' };
 }
 
 const _wallMemory = new Map(); // convoId -> { turns, items }
@@ -61,7 +71,7 @@ export async function wallFor(convoId, { force = false } = {}) {
   const cached = _wallMemory.get(convoId);
   if (!force && cached && (turns - seen < WALL_TURN_THRESHOLD)) return { items: cached.items };
 
-  const { films, others, title } = topicsFor(convoId, convo);
+  const { films, others, titles, title } = topicsFor(convoId, convo);
   const items = [];
 
   for (const film of films) {
@@ -70,6 +80,11 @@ export async function wallFor(convoId, { force = false } = {}) {
       const imgs = await tmdbImagesForFilm({ tmdbId: enr.tmdb_id, title: enr.title || film.name, year: enr.year });
       items.push(...imgs);
     }
+  }
+
+  for (const named of titles || []) {
+    if (items.length >= WALL_CAP) break;
+    items.push(...await tmdbImagesForTitle(named));
   }
 
   // One generic query for what else the thread is about — museums first per the
