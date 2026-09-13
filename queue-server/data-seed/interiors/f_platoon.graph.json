@@ -1,0 +1,1129 @@
+{
+  "entity": "f_platoon",
+  "source": "data-seed/scripts/f_platoon.txt",
+  "scope": "the whole script, machine-extracted (22 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "GARDNER",
+      "quote": "That what I think it is?",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "SOLDIER 1",
+      "quote": "I guess so ...",
+      "block": 2
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "SERGEANT",
+      "quote": "Okay, let's go ...",
+      "block": 3
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "DOC",
+      "quote": "You okay?",
+      "block": 4
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Ants.  I got ants on my neck ...",
+      "block": 5
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "opp",
+      "cue": "KING",
+      "quote": "You're a sick mother Bunny.",
+      "block": 6
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "ELIAS",
+      "quote": "Hold it up.",
+      "block": 7
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "I'm okay ... I'm okay.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "GARDNER",
+      "quote": "Hey Chris, I show you a picture of Lucy Jean?",
+      "block": 9
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "No ...",
+      "block": 10
+    },
+    {
+      "speaker": "p5",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Yeah she's real pretty, you're lucky ...",
+      "block": 11
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIAS",
+      "quote": "Tex you got Junior and Taylor here on your position.",
+      "block": 12
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIAS",
+      "quote": "You got Taylor ...",
+      "block": 13
+    },
+    {
+      "speaker": "p7",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "ELIAS",
+      "quote": "... Gardner you go with me",
+      "block": 14
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNES",
+      "quote": "Okay, let's move out.",
+      "block": 15
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TEX",
+      "quote": "Taylor, you're on.",
+      "block": 16
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Uh hunh.",
+      "block": 17
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "TEX",
+      "quote": "You sure you know how to work the claymore?",
+      "block": 18
+    },
+    {
+      "speaker": "p5",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Sure.",
+      "block": 19
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Junior!",
+      "block": 20
+    },
+    {
+      "speaker": "p10",
+      "to": "p5",
+      "stance": "neu",
+      "cue": "JUNIOR",
+      "quote": "Unh? ... Unh.",
+      "block": 21
+    },
+    {
+      "speaker": "p5",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Shaddup!  You're snoring ... Shhh.",
+      "block": 22
+    },
+    {
+      "speaker": "p5",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Wake up!",
+      "block": 23
+    },
+    {
+      "speaker": "p5",
+      "to": "p10",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "It's your shift, man ...",
+      "block": 24
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "THE CLAYMORE!  GET THOSE FUCKERS!",
+      "block": 25
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "THE SAFETY! TAKE THE SAFETY OFF YOU ...",
+      "block": 26
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Feed me!",
+      "block": 27
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "AAAAAGHHH! MY ARM! MY ARM!",
+      "block": 28
+    },
+    {
+      "speaker": "p10",
+      "to": "p4",
+      "stance": "neu",
+      "cue": null,
+      "quote": "DOC! GET UP HERE! TEX IS HIT!",
+      "block": 29
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "HOLD IT UP! HOLD IT UP!",
+      "block": 30
+    },
+    {
+      "speaker": "p9",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "MY ARM! JESUS FUCKING CHRIST!",
+      "block": 31
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Easy Tex easy boy!",
+      "block": 32
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Doc over here!  Gardner's hit.",
+      "block": 33
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "'Right there.",
+      "block": 34
+    },
+    {
+      "speaker": "p9",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "... godamn!  Godamn!  DUMB FUCKER, DUMB FUCKER!",
+      "block": 35
+    },
+    {
+      "speaker": "p10",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Oh shit, Doc he's hit too.",
+      "block": 36
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm hit ...",
+      "block": 37
+    },
+    {
+      "speaker": "p10",
+      "to": "p8",
+      "stance": "neu",
+      "cue": null,
+      "quote": "That dumb fuck didn't blow his claymore!",
+      "block": 38
+    },
+    {
+      "speaker": "p4",
+      "to": "p5",
+      "stance": "neu",
+      "cue": null,
+      "quote": "... it's a scratch, nothing to worry about.",
+      "block": 39
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Doc ... tell me the truth, don't lie to me.",
+      "block": 40
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I was not ... it was your ...",
+      "block": 41
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Shut up!  Shut up - and TAKE IT!  TAKE THE PAIN!",
+      "block": 42
+    },
+    {
+      "speaker": "p13",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Shaddup bitch.",
+      "block": 43
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's not ... so bad ... dying.  How long .. it ...",
+      "block": 44
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNES",
+      "quote": "Pssst!",
+      "block": 45
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNES (CONT'D)",
+      "quote": "Bunker ...",
+      "block": 46
+    },
+    {
+      "speaker": "p5",
+      "to": "p8",
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "Where?",
+      "block": 47
+    },
+    {
+      "speaker": "p14",
+      "to": null,
+      "stance": "neu",
+      "cue": "SANDERSON",
+      "quote": "Hey look at that.",
+      "block": 48
+    },
+    {
+      "speaker": "p15",
+      "to": "p14",
+      "stance": "opp",
+      "cue": "SAL",
+      "quote": "Leave it willya - it's gook shit.",
+      "block": 49
+    },
+    {
+      "speaker": "p14",
+      "to": "p15",
+      "stance": "ally",
+      "cue": "SANDERSON",
+      "quote": "Nah this stuff's important.",
+      "block": 50
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNES",
+      "quote": "Corpsman!",
+      "block": 51
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "DOC",
+      "quote": "Holy Jesus!",
+      "block": 52
+    },
+    {
+      "speaker": "p16",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "BREAK IT UP!  ELIAS!  BARNES!",
+      "block": 53
+    },
+    {
+      "speaker": "p8",
+      "to": "p7",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You're dead, you're fucking dead Elias!",
+      "block": 54
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Why the fuck didn't you do something Lieutenant!",
+      "block": 55
+    },
+    {
+      "speaker": "p17",
+      "to": "p7",
+      "stance": "opp",
+      "cue": null,
+      "quote": "What are you talking about!",
+      "block": 56
+    },
+    {
+      "speaker": "p7",
+      "to": "p17",
+      "stance": "opp",
+      "cue": null,
+      "quote": "You know what I'm talking about!",
+      "block": 57
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Whew! - where that come from?",
+      "block": 58
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Found it.  Growing in a garden.",
+      "block": 59
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sheeit, beats burning hutches anyway ...",
+      "block": 60
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yeah - stoned's the way to be ...",
+      "block": 61
+    },
+    {
+      "speaker": "p19",
+      "to": null,
+      "stance": "opp",
+      "cue": null,
+      "quote": "Take her up the ass ...",
+      "block": 62
+    },
+    {
+      "speaker": "p5",
+      "to": "p19",
+      "stance": "opp",
+      "cue": null,
+      "quote": "LET HER GO!  YOU HEAR ME!  YOU ASSHOLE!  LET HER GO!",
+      "block": 63
+    },
+    {
+      "speaker": "p19",
+      "to": "p5",
+      "stance": "opp",
+      "cue": null,
+      "quote": "What the fuck you want - she's a dink.",
+      "block": 64
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": null,
+      "quote": "It's okay ... it's okay ...",
+      "block": 65
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get outta here.",
+      "block": 66
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's okay, it's okay ...",
+      "block": 67
+    },
+    {
+      "speaker": "p20",
+      "to": "p16",
+      "stance": "neu",
+      "cue": null,
+      "quote": "... and you Lieutenant?",
+      "block": 68
+    },
+    {
+      "speaker": "p16",
+      "to": "p20",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I didn't see anything sir.",
+      "block": 69
+    },
+    {
+      "speaker": "p7",
+      "to": "p20",
+      "stance": "neu",
+      "cue": null,
+      "quote": "I did.",
+      "block": 70
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIAS (CONT'D)",
+      "quote": "They're coming ...",
+      "block": 71
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": "RHAH",
+      "quote": "Gotcha.",
+      "block": 72
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "neu",
+      "cue": "ELIAS",
+      "quote": "One of them gets through it's curtains.",
+      "block": 73
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "RHAH",
+      "quote": "Where you going?",
+      "block": 74
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "ally",
+      "cue": "CHRIS",
+      "quote": "I'll go with you.",
+      "block": 75
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": "CHRIS",
+      "quote": "GET EM!!!!!",
+      "block": 76
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "RHAH",
+      "quote": "I got one ...",
+      "block": 77
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "ally",
+      "cue": "RHAH",
+      "quote": "Stay cool.  We gonna carry you out.",
+      "block": 78
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNES",
+      "quote": "Where's Elias?",
+      "block": 79
+    },
+    {
+      "speaker": "p18",
+      "to": null,
+      "stance": "neu",
+      "cue": "RHAH",
+      "quote": "Taylor!",
+      "block": 80
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "BARNES",
+      "quote": "Elias is dead.  Join up with the platoon.  Move it.",
+      "block": 81
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "opp",
+      "cue": "CHRIS",
+      "quote": "He's dead!  Where?  ... You saw him?",
+      "block": 82
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p14",
+      "p15",
+      "p16",
+      "p17",
+      "p18",
+      "p19",
+      "p2",
+      "p20",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p5",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p11",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p13",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p15",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p14",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p8",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p20",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p16",
+        "b": "p7",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p17",
+        "b": "p7",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p6",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p19",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p7",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p5",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p18",
+        "b": "p8",
+        "weight": 3,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p19",
+        "b": "p5",
+        "weight": 3,
+        "sign": "opp",
+        "stances": {
+          "opp": 2,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p20",
+        "b": "p5",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p9",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p6",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p7",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p9",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 4
+        }
+      },
+      {
+        "a": "p5",
+        "b": "p8",
+        "weight": 4,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 3
+        }
+      },
+      {
+        "a": "p6",
+        "b": "p7",
+        "weight": 2,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p7",
+        "b": "p8",
+        "weight": 2,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p8",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 9,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p17",
+        "p18",
+        "p2",
+        "p20",
+        "p3",
+        "p4",
+        "p5",
+        "p8",
+        "p9"
+      ],
+      [
+        "p16",
+        "p19",
+        "p6",
+        "p7"
+      ]
+    ]
+  }
+}
