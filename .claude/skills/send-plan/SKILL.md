@@ -44,9 +44,11 @@ to send it — don't wait to be asked.
 
 2. **Index it.** Add its row to the `## Open work` table in `plans/README.md`.
 
-3. **Ask Antoine: start now, or park it?** His standing answer is *to be asked every
-   time* — never assume, in either direction. Parked means it waits in the app until he
-   presses start; queued means it begins on its own and he can close the terminal.
+3. **Default to starting now.** Antoine's standing instruction (2026-09-13): send it to
+   start on its own, don't ask each time. He says explicitly when a given plan should be
+   parked instead — only pass `--park` when he says so for that plan. Parked means it
+   waits in the app until he presses start; queued means it begins on its own and he can
+   close the terminal.
 
 4. **Commit and push `develop`.** Not bookkeeping — the task text points at the plan's
    path in the repo, and the coding agent works from the trunk, so an uncommitted plan
