@@ -20494,7 +20494,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // it arrived: mark it so the next render reveals it a beat at a time
           // instead of dropping the whole answer in in one frame.
           var arrivedWhole = !e.stream;
-          e.msgs.push({ role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
+          // id carried straight from the save, so the answer he is reading can be
+          // marked as a chapter right away instead of only after a reload.
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
           // A roaming thread can pick up its title from this very turn (the first
           // exchange), so the list needs to come back the same way /fold or

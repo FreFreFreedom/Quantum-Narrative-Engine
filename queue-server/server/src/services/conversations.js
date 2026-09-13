@@ -1404,11 +1404,14 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
-  saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
+  // The id travels back with the answer. Without it the just-arrived turn has no
+  // anchor on screen until the conversation is reloaded, and Chapter — which needs
+  // a message to point at — is hidden on exactly the answer he is reading.
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
 }
 
 // The non-streaming twin. Reached only when the client does not ask for NDJSON,
@@ -1440,11 +1443,14 @@ async function runChatTurn(convoId, userId, turn) {
   if (result.error) return saveFailedTurn(convoId, result, turn);
   const laneTag = computeLaneTag(turn?.intent, turn?.lane, result.via);
   const notice = noticeFor(turn, result.notice);
-  saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
+  // The id travels back with the answer. Without it the just-arrived turn has no
+  // anchor on screen until the conversation is reloaded, and Chapter — which needs
+  // a message to point at — is hidden on exactly the answer he is reading.
+  const savedId = saveAssistantTurn(convoId, result.text, { lane: laneTag, intent: turn?.intent, ...(notice ? { notice } : {}) });
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
-  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice };
+  return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
 }
 
 // code_read — a read-only helper job on the runner (claude, with Read/Grep/Glob),
