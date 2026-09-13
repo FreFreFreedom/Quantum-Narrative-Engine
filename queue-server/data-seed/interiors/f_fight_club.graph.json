@@ -1,0 +1,764 @@
+{
+  "entity": "f_fight_club",
+  "source": "data-seed/scripts/f_fight_club.txt",
+  "scope": "the whole script, machine-extracted (24 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "... stop...",
+      "block": 1
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Cool.",
+      "block": 2
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": "OPPONENT",
+      "quote": "How about next week?",
+      "block": 3
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Look at me.  How about next month?",
+      "block": 4
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "He fell down some stairs.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "I fell down some stairs.",
+      "block": 6
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK (V.O.)",
+      "quote": "Sometimes Tyler spoke for me.",
+      "block": 7
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Any historical figure.",
+      "block": 8
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Okay... Ghandi.",
+      "block": 9
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Good answer.",
+      "block": 10
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "You?",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Hello?",
+      "block": 12
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Marla?",
+      "block": 13
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "How did you find me?",
+      "block": 14
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "That's the idea -- we split them.",
+      "block": 15
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "You haven't been going to yours.",
+      "block": 16
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "I found a new one.",
+      "block": 17
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "Really?",
+      "block": 18
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "It's for men.",
+      "block": 19
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "Like testicular cancer?",
+      "block": 20
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Look, this is a bad time...",
+      "block": 21
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "I'm just on my way out...",
+      "block": 22
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK (V.O.)",
+      "quote": "This could go on for hours.",
+      "block": 23
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "So you're staying in tonight?",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "What are you doing here?",
+      "block": 25
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "What... ?",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "What the hell are you doing here?",
+      "block": 27
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "opp",
+      "cue": "MARLA",
+      "quote": "Fuck you.",
+      "block": 28
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "You got here fast.",
+      "block": 29
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "Did I call you?",
+      "block": 30
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "Don't worry.  It's not a threat to you.",
+      "block": 31
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "MARLA",
+      "quote": "Oh, no!  Somebody called the cops...",
+      "block": 32
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Defuse the bomb?",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Yes.",
+      "block": 34
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Please.",
+      "block": 35
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Whoa!  What was that all about?",
+      "block": 36
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Fire at will.",
+      "block": 37
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "What did you expect?",
+      "block": 38
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "One minute.",
+      "block": 39
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "i... ann....iinn.. ff....nnyin...",
+      "block": 40
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "I still can't think of anything.",
+      "block": 41
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "It's getting exciting now.",
+      "block": 42
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Can't you call it off... ?",
+      "block": 43
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Please...",
+      "block": 44
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "5... 4... 3... 2...",
+      "block": 45
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "What the fuck -- ?",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Paraffin.",
+      "block": 47
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "What?",
+      "block": 48
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Damn it!  God-damn it...",
+      "block": 49
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Not exactly according to plan.",
+      "block": 50
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "NO...",
+      "block": 51
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Proceed with remote detonation.",
+      "block": 52
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Haven't we already done this?",
+      "block": 53
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Oh... Christ...",
+      "block": 54
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "JACK",
+      "quote": "Why... why... why... ?",
+      "block": 55
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": "TYLER",
+      "quote": "Why what?",
+      "block": 56
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No, no, I don't.",
+      "block": 57
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Look, I can be selfish, I know that.",
+      "block": 58
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm not blind to my own failings...",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Noooo, please...",
+      "block": 60
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "... no, no, no...",
+      "block": 61
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why are you doing this?!",
+      "block": 62
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm doing this for us.",
+      "block": 63
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I swear on my life, I won't...",
+      "block": 64
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You will.  You know you will.",
+      "block": 65
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Can you live with that?",
+      "block": 66
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What have you left for me?",
+      "block": 67
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Not my mouth.  Our mouth.",
+      "block": 68
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "This is interesting.",
+      "block": 69
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It's the only way to get rid of you...",
+      "block": 70
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Do something for me.",
+      "block": 71
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?",
+      "block": 72
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?",
+      "block": 73
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What?",
+      "block": 74
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Appreciate something.",
+      "block": 75
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Look at me...",
+      "block": 76
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My eyes are open.",
+      "block": 77
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What's that smell... ?",
+      "block": 78
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I'm okay...",
+      "block": 79
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Everything's fine.",
+      "block": 80
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "What happened... ?",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Don't ask.",
+      "block": 82
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Get to the rendezvous point.  Move it!",
+      "block": 83
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "My God, you're shot...",
+      "block": 84
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Yes.",
+      "block": 85
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Who did this to you?",
+      "block": 86
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p2",
+      "p3",
+      "p4"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 32,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 32
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 14,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p2",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": false,
+    "reason": "no signed edges"
+  }
+}
