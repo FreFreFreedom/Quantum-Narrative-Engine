@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS, the Idea Studio. `/note` (conversations.js `runSaveNoteTurn`) saves a conversation as
+QNE, the Idea Studio. `/note` (conversations.js `runSaveNoteTurn`) saves a conversation as
 a `Note:` document in `knowledge_docs`. The **terminal coding agent** (Claude Code /
 OpenCode) runs in a git worktree branched from `develop` and has **no database access** (its
 brief and repo files only) — so it cannot read those notes. The app already mirrors repo
@@ -53,7 +53,7 @@ Scope (his choice): **all** notes, **one file per note**.
 
 ### Make the coder aware — `CLAUDE.md` (repo root)
 
-5. Add one line to `CLAUDE.md` (near the FMCNS / queue-runner guidance):
+5. Add one line to `CLAUDE.md` (near the QNE / queue-runner guidance):
    "Idea Studio conversations saved with `/note` are mirrored to
    `queue-server/project-docs/notes/` (one file per note, plus `index.md`). When a task
    relates to a saved note or earlier conversation, read the relevant file there."

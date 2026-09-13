@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>FMCNS</title>
+<title>QNE</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
 /* A look is one complete set of colour tokens, chosen by hand from the rail. This runs
@@ -2638,7 +2638,7 @@ button:active { transform: translateY(1px) scale(.99); }
 </defs></svg>
 
 <div id="loginGate" class="loginbox">
-  <h2 style="margin-top:0;">FMCNS Fractal Navigator</h2>
+  <h2 style="margin-top:0;">QNE Fractal Navigator</h2>
   <input type="password" id="loginPw" placeholder="Password"><br>
   <button id="loginBtn">Connect</button>
   <div id="loginErr" style="color:var(--c-danger);margin-top:8px;font-size:12px;"></div>
@@ -2653,7 +2653,7 @@ button:active { transform: translateY(1px) scale(.99); }
   <div class="rail-inner">
     <button id="railToggle" class="rail-brand" aria-expanded="false" title="Keep this panel open (or press [ )" aria-label="Keep this panel open">
       <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-brand"/></svg>
-      <span class="rail-label rail-wordmark">FMCNS</span>
+      <span class="rail-label rail-wordmark">QNE</span>
     </button>
     <div class="rail-nav" role="tablist" aria-label="App modes">
       <button id="modeContentBtn" class="rail-item active" role="tab" aria-selected="true" title="Content navigator">
@@ -15498,7 +15498,7 @@ function qWorldIdeaModal(taskId, onSaved) {
       <div class="arch-field"><div class="arch-field-label">Name *</div><input class="arch-field-body" id="wiName" placeholder="Short name for the idea" autocomplete="off"></div>
       <div class="arch-field"><div class="arch-field-label">Vision</div><textarea class="arch-field-body" id="wiVision" rows="2" placeholder="1-2 punchy sentences: the big idea">${qEsc(prefillVision)}</textarea></div>
       <div class="arch-field"><div class="arch-field-label">Why possible</div><textarea class="arch-field-body" id="wiWhy" rows="2" placeholder="Why this is achievable with today's or near-future technology"></textarea></div>
-      <div class="arch-field"><div class="arch-field-label">How FMCNS</div><textarea class="arch-field-body" id="wiHow" rows="2" placeholder="How FMCNS could be the first to build it"></textarea></div>
+      <div class="arch-field"><div class="arch-field-label">How QNE</div><textarea class="arch-field-body" id="wiHow" rows="2" placeholder="How QNE could be the first to build it"></textarea></div>
       <div class="q-row" style="margin-top:10px;justify-content:flex-end;">
         <button class="ctrlbtn" id="wiCancel">Cancel</button>
         <button class="ctrlbtn primary" id="wiSave">Save idea</button>
@@ -16412,7 +16412,7 @@ function renderIdeaBox() {
   const body = document.getElementById('tvBodyBlocks');
   body.innerHTML = `
     <div class="id-form">
-      <textarea id="bkIdeaInput" placeholder="Describe an idea — simple or complex. FMCNS will break it into parts if it combines multiple capabilities, search GitHub for real building blocks per part, and propose its own if nothing fits…" rows="3"></textarea>
+      <textarea id="bkIdeaInput" placeholder="Describe an idea — simple or complex. QNE will break it into parts if it combines multiple capabilities, search GitHub for real building blocks per part, and propose its own if nothing fits…" rows="3"></textarea>
       <div class="id-form-row">
         <span class="id-form-hint" id="bkIdeaStatus"></span>
         <button class="id-addbtn" id="bkSearchBtn">Search</button>
@@ -16551,7 +16551,7 @@ function bkPickCard(pick, partIdx, pickIdx, recommended, facts = null) {
         ${cardActs(ubtnHtml('Plant in tree', 'bk-plant', key, 'is-primary', 'Put this into the tech tree'), menu)}
       </div>
       ${pick.why_fits ? `<div class="sg-rationale"><b>Why it fits:</b> ${qEsc(pick.why_fits)}</div>` : ''}
-      ${pick.use ? `<div class="sg-rationale"><b>How FMCNS would use it:</b> ${qEsc(pick.use)}</div>` : ''}
+      ${pick.use ? `<div class="sg-rationale"><b>How QNE would use it:</b> ${qEsc(pick.use)}</div>` : ''}
       ${pick.kind === 'proven' && pick.repo ? `<div class="sg-rationale"><a href="https://github.com/${pick.repo}" target="_blank" rel="noopener">github.com/${pick.repo}</a></div>` : ''}
       ${removedReason ? `<div class="sg-rationale q-inspire-reason">Not used: ${qEsc(removedReason)}</div>` : ''}
     </div>
@@ -16888,7 +16888,7 @@ const archActLabel = (c) => (ARCH_LAYERS.find(l => l.id === archActOf(c)) || {})
 
 const ARCH_DATA = [
   { id:'observation-layer', territory:'perception', layer:'ontological', name:'Observation Layer',
-    what:'The intake surface — how new material (films, characters, countries, patterns) enters FMCNS at all.',
+    what:'The intake surface — how new material (films, characters, countries, patterns) enters QNE at all.',
     why:'Every other layer depends on something arriving here first; right now that arrival is entirely manual.',
     input:'Archive material, Claude\'s own knowledge, hand-written seed JSON', output:'Raw candidate entities, not yet structured',
     now:'Not built as its own layer. All intake is manual: I hand-curate seed data (fmcns_ontology.json) and edit it directly. No ingestion pipeline, no submission form, no automated source-checking exists.',
@@ -17023,8 +17023,8 @@ const ARCH_DATA = [
     ] },
 
   // ─── Core architecture: the app's own build system ───────────────────────────
-  // The other five territories describe the material FMCNS studies. These nine
-  // describe the machine that builds FMCNS. They exist as first-class components
+  // The other five territories describe the material QNE studies. These nine
+  // describe the machine that builds QNE. They exist as first-class components
   // for the same reason the content ones do: nothing the app cannot see in this
   // list can be ranked, watched, or proposed as work. Their NOW text is computed
   // live on the server (architecture.js NOW_COMPUTERS), like the content ones.

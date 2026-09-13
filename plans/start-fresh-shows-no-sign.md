@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS, the **Room** (the chat room) — and by extension the Idea Studio's "Talk it over"
+QNE, the **Room** (the chat room) — and by extension the Idea Studio's "Talk it over"
 box on a card, because both are painted by the same shared code path (`studioEmbed` in
 `fmcns_navigator.html`). The ⟳ button in the conversation header, titled
 "Start fresh — what you said so far is folded into a short recap".

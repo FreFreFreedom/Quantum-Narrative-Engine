@@ -1,6 +1,6 @@
 # Role brief — Developer (dev)
 
-You are a generalist implementer on the FMCNS project (a personal research tool:
+You are a generalist implementer on the QNE project (a personal research tool:
 characters, films and countries mapped as one ontology, with a Queue-based team of
 autonomous coding agents).
 

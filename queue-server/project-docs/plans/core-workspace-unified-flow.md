@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | DONE — with two headline claims corrected. Audited against the code 2026-08-19. **It shipped as two zones, not three:** there is no `.ws-detail` anywhere; the detail pane is `.ws-archdetail #archRight`, docked *inside* the graph zone and driven by selection. **And the "merged resizable floating window (Chat · New task · New idea · Queue panel)" is now Chat-only** — `fwTabIds` holds a single entry, because `travaux-quick-panel.md` later moved New-task and Queue into the slide-over and New idea into the Studio. The window is still resizable and its geometry is still persisted. Night mode works (anti-flash boot script, full `.dark` token block, header toggle) but is thinner than planned: there is no `getTheme`/`setTheme`/`toggleTheme` API and **no `fmcns:theme` event is ever dispatched**, so nothing can react to a theme change; the storage key is `fmcns-theme`, not `fmcns_theme`. Its hardcoded-hex sweep is unfinished — that work is owned by `design-system-pass.md`. A brief side-by-side workspace experiment was added and reverted the same day at Antoine's request; the two chips remain the way to switch. |
 | **Created** | 2026-08-13 |
-| **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html` + synced `queue-server/public/index.html`) |
+| **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html` + synced `queue-server/public/index.html`) |
 | **Scope** | Frontend: `fmcns_navigator.html` — merge the 5 CORE ARCHITECTURE sub-tabs into one three-zone workspace (Architecture graph · unified Flow · Detail pane), night mode for the whole app, a merged floating window (Chat · New task · New idea · Queue panel), restore the Building blocks (Idea box + Library) from `agent/github-code-discovery` (additive backend), auto-placed "Add an idea" node creation. |
 | **Depends on** | Reverted work on branch `agent/github-code-discovery` (services/codeDiscovery.js, routes/discovery.js, 4 tables) — restored additively, verified against current backend seams. |
 
@@ -173,7 +173,7 @@ Stage A first.
   - Cost: one model call, only on explicit click — nothing on view (CLAUDE.md
     rule). Model failure → clean error message + retry, no dead form.
 - **Graph intelligence**: the deep-graph-reasoning capability the Map mode has,
-  applied to FMCNS's own architecture — ask a question about the architecture
+  applied to QNE's own architecture — ask a question about the architecture
   ("what would adding this touch?", "what depends on X?", "how did this area
   evolve?"), the agent walks the graph (territories, prereqs, history), and the
   answer is a highlighted trail on the canvas + flows into New idea. One shared

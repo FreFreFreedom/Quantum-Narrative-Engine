@@ -1,4 +1,4 @@
-# FMCNS UI redesign — audit and plan
+# QNE UI redesign — audit and plan
 
 | | |
 |---|---|
@@ -570,7 +570,7 @@ six segmented groups (`.qp-mode-seg`, `.flow-typecips`, `.q-place-seg`, `.arch-v
    is rendered only when there is at least one walk.
 8. `:focus-visible` on `.ubtn`, `.uicon`, `.useg button`, `.rail-item`, tabs; remove the five
    `outline:none` or pair each with a replacement; fix the nine invalid `role=` values (they
-   are data — make them `data-role` or drop them); add `<title>FMCNS</title>` and
+   are data — make them `data-role` or drop them); add `<title>QNE</title>` and
    `<html lang="en">`.
 
 Check live: every toolbar's buttons look identical in size and radius across Content,

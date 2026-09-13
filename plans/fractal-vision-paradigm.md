@@ -1,4 +1,4 @@
-# Fold the Fractal Vision Paradigm extraction into FMCNS
+# Fold the Fractal Vision Paradigm extraction into QNE
 
 | Status | Date |
 |---|---|
@@ -8,7 +8,7 @@
 
 ## Where you are
 
-FMCNS is a private research tool that maps recurring psychological patterns across films,
+QNE is a private research tool that maps recurring psychological patterns across films,
 characters and countries. Backend is `queue-server/` (Node/Express, `node:sqlite`).
 Frontend is one large single-file vanilla-JS app, `fmcns_navigator.html`, mirrored to
 `queue-server/public/index.html` (the copy the server actually serves — **both must be

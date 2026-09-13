@@ -1,6 +1,6 @@
-# Quantum Narrative Engine (FMCNS)
+# Quantum Narrative Engine (QNE)
 
-Private research/prototyping repo for the Fractal Mythic Consciousness Navigation System — a personal tool, not a public product.
+Private research/prototyping repo for the Quantum Narrative Engine — a personal tool, not a public product.
 
 ## Contents
 

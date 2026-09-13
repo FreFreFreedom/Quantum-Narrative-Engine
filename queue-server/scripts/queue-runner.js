@@ -229,7 +229,7 @@ function desktopNotify({ head, body }) {
   // the one character that must not pass through raw. Backslashes go first or they
   // would escape the escapes.
   const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').slice(0, 220);
-  const script = `display notification "${esc(body)}" with title "FMCNS" subtitle "${esc(head)}"`;
+  const script = `display notification "${esc(body)}" with title "QNE" subtitle "${esc(head)}"`;
   try {
     const p = spawn('osascript', ['-e', script], { stdio: 'ignore', detached: false });
     p.on('error', (e) => console.log(dim(`  (desktop banner not shown — ${e.message})`)));
@@ -1453,7 +1453,7 @@ function commitWork({ wt, task, status, summary, model }) {
   // launchd there is no login shell, and a missing identity would fail the commit
   // for a reason that has nothing to do with the work.
   const committed = gitIn(wt.path, [
-    '-c', 'user.name=FMCNS queue runner',
+    '-c', 'user.name=QNE queue runner',
     '-c', 'user.email=queue-runner@fmcns.local',
     'commit', '-m', subject, '-m', body,
   ]);

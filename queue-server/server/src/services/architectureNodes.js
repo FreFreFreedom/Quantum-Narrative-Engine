@@ -265,12 +265,12 @@ export function deleteNode(db, id) {
 // The frontend supplies the node's own text plus its prereqs and the surrounding
 // built state, because the trunk data lives in the HTML file, not on the server.
 // Without that context the model produces generic software-roadmap filler instead
-// of proposals that are actually about FMCNS.
+// of proposals that are actually about QNE.
 function buildPrompt(ctx) {
   const n = ctx.node || {};
   const prereqs = (ctx.prereqs || []).map(p => `- ${p.name} (${p.status}): ${p.what || ''}`).join('\n') || '- (none)';
   const built = (ctx.built || []).map(p => `- ${p.name}`).join('\n') || '- (none yet)';
-  return `You are extending the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
+  return `You are extending the technology tree of QNE (Quantum Narrative Engine), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
 
 The tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world).
 
@@ -287,7 +287,7 @@ ${prereqs}
 Already built elsewhere in the system:
 ${built}
 
-Propose 3 distinct capabilities that could be built ON TOP of this node — things that only become possible once it works. Each must be specific to FMCNS's actual subject matter (ontology of characters, fractal navigation, cross-corpus pattern inference, the graph itself), not generic software features like "add caching" or "improve testing". Prefer proposals that open a new kind of thinking for the user, not incremental polish.
+Propose 3 distinct capabilities that could be built ON TOP of this node — things that only become possible once it works. Each must be specific to QNE's actual subject matter (ontology of characters, fractal navigation, cross-corpus pattern inference, the graph itself), not generic software features like "add caching" or "improve testing". Prefer proposals that open a new kind of thinking for the user, not incremental polish.
 
 ${USER_FACING_STYLE}
 
@@ -358,7 +358,7 @@ function catalogLines(catalog) {
 }
 
 function buildAutoPrompt(concept, catalog) {
-  return `You are extending the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
+  return `You are extending the technology tree of QNE (Quantum Narrative Engine), a personal research tool that maps characters, films and countries as one ontology of "characters" — universal ontological units — and lets its owner navigate the patterns between them fractally.
 
 The tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world). A new node belongs to exactly one of those territory ids.
 
@@ -418,7 +418,7 @@ export async function autoPlaceNode(db, conceptInput, ctx = {}) {
 // catalog (components, statuses, dependency edges) and answers; the set of ids
 // it names defines the trail the frontend lights up on the canvas.
 function buildAskPrompt(question, catalog) {
-  return `You are looking at the technology tree of FMCNS (Fractal Mythic Consciousness Navigation System) — the owner's own research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
+  return `You are looking at the technology tree of QNE (Quantum Narrative Engine) — the owner's own research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
 
 The tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system). Statuses: Concept, Designed, Prototype, Working, Validated, Advanced. A node depends on the components listed after "depends on:".
 
@@ -462,17 +462,17 @@ export async function askGraph(questionInput, ctx = {}) {
 // ─── One idea door ("New idea") ───────────────────────────────────────────────
 // Every entry point (header button, architecture toolbar, Flow top) funnels into
 // this single router: one AI call decides whether the idea is about building
-// FMCNS itself — placed in the tree as a speculative node — or any other idea —
+// QNE itself — placed in the tree as a speculative node — or any other idea —
 // saved as a Seed. Two kinds of surfaces, one brain, one placement engine.
 import { createIdea } from './workIdeas.js';
 
 function buildRoutePrompt(concept, catalog) {
-  return `You are the idea router of FMCNS (Fractal Mythic Consciousness Navigation System) — the owner's research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
+  return `You are the idea router of QNE (Quantum Narrative Engine) — the owner's research system: characters, films and countries mapped as one ontology of "characters" (universal ontological units), navigated fractally.
 
 The architecture tree has six territories: perception (how anything gets in), knowledge (the shared shape of the material, its tags and its cross-type links), reasoning (working things out over the graph), experience (how it feels to explore), interface (what you touch), self (the app's own build system — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world).
 
 Two kinds of ideas exist:
-- ARCHITECTURE ideas: about extending or improving FMCNS itself — a new capability, a change to how a part works, a fix, a new component. These become speculative nodes in the architecture tree.
+- ARCHITECTURE ideas: about extending or improving QNE itself — a new capability, a change to how a part works, a fix, a new component. These become speculative nodes in the architecture tree.
 - SEEDS: any other idea — a research direction, an exploration, a question, something to think about later. These become a simple titled note.
 
 Existing components in the tree (id — name (territory, status), depends on: ids: description):

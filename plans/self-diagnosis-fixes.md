@@ -5,7 +5,7 @@
 
 ## Context
 
-The paradigm's three-layer diagnosis was run on FMCNS itself today and written into
+The paradigm's three-layer diagnosis was run on QNE itself today and written into
 `queue-server/data-seed/docs/fractal_operational_core.md` ("The self-diagnosis re-run
 2026-09-10"). It produced four decisions plus two gluing findings. Antoine chose to fix all
 of them, with tag oppositions written by the app's own AI (cached) and the cell rung seeded by
@@ -18,7 +18,7 @@ ones). Ship directly per AGENTS.md — syntax check, commit, push `develop`.
 1. **Tags get their opposition** — each pattern named by what it stands against.
 2. **Grounded flag retired** — always true on all 492 rows, so it distinguishes nothing.
 3. **The cell rung gets the immune system** — the paradigm's own proof case enters the app.
-4. **FMCNS enters its own database** as an institution-rung entity with six parts, and the
+4. **QNE enters its own database** as an institution-rung entity with six parts, and the
    card learns to show container / parts (nothing renders `container_id` today).
 5. **One computation of the three relations**, one label set, one block on the card.
 6. **Mind and Ideas** — a naming fix plus one shared fact row (the exploration showed the
@@ -31,7 +31,7 @@ existing `computeSharedAuthor/computeEntanglement/computeBridges` as the single 
 **Since the plan was first drafted** (2026-09-10, 02:40–03:11) another session shipped the
 *descent*: an entity with two or more contained parts can be entered in the graph and its
 parts opened in turn (`recordedInside`, `#descendBtn`). §3 and §4 are rewritten to land inside
-that — the immune system and FMCNS are both seeded as containers of their parts, so the
+that — the immune system and QNE are both seeded as containers of their parts, so the
 descent works on them with no new UI. See AGENT_MEMORY.md "The graph can move" and "Two kinds
 of inside" before touching the graph.
 
@@ -122,7 +122,7 @@ the key `entities`), cluster code `XIV`, name "The Immune Proof Case". Seeded by
 
 Entities (type `soma`, scale `cell`, source `curated`). The immune system is the **container**
 of its three parts, so it gets a recorded inside and the descent works on it from day one
-(the `_readme` notes that here container means *part of*, as for FMCNS below, not *next rung
+(the `_readme` notes that here container means *part of*, as for QNE below, not *next rung
 up* as in the civic seed — the same two meanings `bootstrapData.js` l.110–118 already
 documents). Hand-written from `fractal_operational_core.md` "The immune system is the proof
 case":
@@ -149,12 +149,12 @@ The civilisation rung stays empty; noted as a follow-up in the diagnosis section
 
 ---
 
-## 4. FMCNS as an entity with parts
+## 4. QNE as an entity with parts
 
 Seed `queue-server/data-seed/self_entity.json`, seeded by the same generalised
 `migrateCuratedCluster` (cluster code `XV`, "The platform itself"):
 
-- `inst_fmcns` — type `institution`, scale `institution`, source `curated`, name "FMCNS",
+- `inst_fmcns` — type `institution`, scale `institution`, source `curated`, name "QNE",
   note: "A prosthetic analogical layer that maintains a boundary against its own dissolution
   — and therefore an entity on its own table." tags: `prosthetic-analogical-layer`,
   `self-model-vs-reality`, `boundary-busier-defending-than-looking`.
@@ -168,18 +168,18 @@ Seed `queue-server/data-seed/self_entity.json`, seeded by the same generalised
 inside* — `entityRelations.js#recordedInside`, every entity whose `container_id` is this one,
 plus any stored relations between them — and the graph's `#descendBtn` (l.2608) opens it as
 a ring of parts you can select and descend into again. Two or more parts are required. So
-**FMCNS with six territory parts gets a working descent with no frontend work**, and a
+**QNE with six territory parts gets a working descent with no frontend work**, and a
 territory opened inside it shows its own panel. Do **not** add a Parts chip row to the card
 (nothing drawn twice).
 
 What is still missing is the way *up*: a part's panel does not say what it is inside. Add one
 line to the card body (~l.7588–7616), after the theme line: `Inside <container name>` as a
 `selectEntity` link when `e.container_id` resolves in `byId`. Characters get `Inside <film>`,
-civic entities `Inside <city>`, territories `Inside FMCNS`. Empty → nothing rendered.
+civic entities `Inside <city>`, territories `Inside QNE`. Empty → nothing rendered.
 
 Optional, one line: seed 2–3 `entity_relations` between territories (`horizontal`, same rung
 `group`, with `source_ref` and `falsifier` as `validateRelation` requires — e.g. *perception
-feeds knowledge*), so the recorded inside of FMCNS shows hairlines and not only parts.
+feeds knowledge*), so the recorded inside of QNE shows hairlines and not only parts.
 
 Follow-up, not in this plan: a live link from an architecture node to its territory entity.
 
@@ -249,14 +249,14 @@ for ideas under four uses of the word), dated. Honest reporting outranks the tid
 - Boot locally with the mock env; hit `/api/ontology/facets` and confirm rung `cell` has 5,
   types include `soma`/`territory`, `grounded` absent from `/api/ontology/entities`.
 - Open the served app: tick the `institution` and `soma` types so both are on the field;
-  select "FMCNS" → the descend control appears, descending shows six territories in a ring;
-  open "Perception" inside it → its panel says `Inside FMCNS`. Select "The immune system" →
+  select "QNE" → the descend control appears, descending shows six territories in a ring;
+  open "Perception" inside it → its panel says `Inside QNE`. Select "The immune system" →
   descend shows three parts with two hairlines. Select "The thymus" → tags, a bridge to a
   character on `guilt_as_engine`, no empty sections. Select Sister Clodagh → a
   `tag ↔ against` chip; find an entity that `holds 1 tension`. Open the relations block and
   flip `in this view · anywhere`; reload and confirm the toggle is remembered.
 - Tag tensions must never sign a recorded-inside link (the descent's rule: nothing
-  inferred). Check a descent into FMCNS still draws plain hairlines after tensions load.
+  inferred). Check a descent into QNE still draws plain hairlines after tensions load.
 - Deploy per the `deploy` skill; then re-run the three counts from the diagnosis against
   production (tags with tensions, entities on rung cell, grounded gone) and append one dated
   line to the diagnosis section saying which of the four decisions are now in the app.

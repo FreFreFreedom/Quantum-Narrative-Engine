@@ -1,6 +1,6 @@
-# FMCNS — Build Status
+# QNE — Build Status
 
-Living status doc for the Fractal Mythic Consciousness Navigation System prototype work. This file lives in git — updates are commits, not new files. See `git log -- BUILD_STATUS.md` for full history; the section below is a snapshot as of the latest commit.
+Living status doc for the Quantum Narrative Engine prototype work. This file lives in git — updates are commits, not new files. See `git log -- BUILD_STATUS.md` for full history; the section below is a snapshot as of the latest commit.
 
 ---
 
@@ -48,7 +48,7 @@ as cancelled. `createPrompt` still accepts `strategy` so older callers keep work
 verified against a running server, along with a task that sends no strategy at all.
 
 **And 584 KB of the plans folder wasn't plans.** Three French code exports from the Orisha
-ERP — a different application, zero mentions of FMCNS — supplied as source material for
+ERP — a different application, zero mentions of QNE — supplied as source material for
 the Queue panel that shipped on 16 August. Deleted (recoverable via
 `git show d5068c1 -- plans/<name>`, verified byte-identical before removal); the folder went
 from 856 KB to 272 KB. The one dangling reference to them was rewritten rather than left
@@ -131,7 +131,7 @@ brute-force implementation.
 
 1. **Content** — one live graph fetched from the backend, covering characters, films, and countries together. Diagonal edges (shared director/writer), entanglement edges (shared tags), and continuum-proximity bridges (cross-type only — the Scale Echo mechanism) all render on one canvas. Entity panel shows a pattern-lens description (not generic plot/country facts) and a book-recommendation button.
 2. **Map** — real country-boundary geography (Natural Earth data), merged in from the formerly-standalone map prototype. Reads live country entities and shares the same rich detail panel as Content mode (tags, continuum bars, connections, book recs) via a shared renderer keyed off which mode is active.
-3. **Core architecture** — formerly three separate tabs (Architecture Navigator, Queue, Travaux), now one `CORE ARCHITECTURE` tab with four sub-tabs in pipeline order — **Architecture** (the meta-view of FMCNS's own build: 4 territories, 12 components, 3 view modes Architecture/Development/Evolution, live NOW status, versioned Evolution paths, build history, Claude-generated "what's next" suggestions), **Seeds** (the Idées notebook, was Travaux → Idées), **Suggestion Engine** (Claude-generated suggestions, was Travaux → Suggestions), and **Dispatch Queue** (committed work + per-item conversation threads, was the Queue tab). A shared header (quota strip + queue-pause state) is now visible across all four instead of being scattered per-tab. Queuing a prompt from Architecture, accepting a suggestion, or promoting a Seed now refreshes the Dispatch Queue count and offers a one-click jump to the queued item instead of a dead-end "see the Queue tab" message.
+3. **Core architecture** — formerly three separate tabs (Architecture Navigator, Queue, Travaux), now one `CORE ARCHITECTURE` tab with four sub-tabs in pipeline order — **Architecture** (the meta-view of QNE's own build: 4 territories, 12 components, 3 view modes Architecture/Development/Evolution, live NOW status, versioned Evolution paths, build history, Claude-generated "what's next" suggestions), **Seeds** (the Idées notebook, was Travaux → Idées), **Suggestion Engine** (Claude-generated suggestions, was Travaux → Suggestions), and **Dispatch Queue** (committed work + per-item conversation threads, was the Queue tab). A shared header (quota strip + queue-pause state) is now visible across all four instead of being scattered per-tab. Queuing a prompt from Architecture, accepting a suggestion, or promoting a Seed now refreshes the Dispatch Queue count and offers a one-click jump to the queued item instead of a dead-end "see the Queue tab" message.
 
 **Edge (relationship) hover/click, Content mode graph** — hovering a graph edge now highlights the full cluster of entities linked by that specific pattern (shared director/writer, shared tag, or continuum proximity), not just the two endpoints it connects. Clicking an edge opens a panel explaining the connection in plain language — a new backend endpoint (`POST /api/ontology/tags/:tag/explain`, cached per tag) generates the general pattern explanation for tag-based edges; author and continuum edges explain themselves from existing data. From that panel, clicking into any entity in the cluster shows that entity's own specific read of the pattern (auto-opens the tag lens for tag-based edges).
 
@@ -267,7 +267,7 @@ The paragraph above described a file with no consumer. Both halves of that are f
 
 ## Travaux module — Suggestions de Claude, Idées, Quotas Claude (2026-08-09)
 Ported from the user-uploaded "Portage" spec into a new "Travaux" tab (vanilla JS,
-same single-file app), adapted to FMCNS's schema/conventions instead of the
+same single-file app), adapted to QNE's schema/conventions instead of the
 original multi-file React/Orisha app:
 - **Suggestions de Claude**: two engines (chantiers = feature/fix ideas from
   ontology+queue state; integrations = external services not yet wired up) generate

@@ -2,7 +2,7 @@
 // think about the app.
 //
 // Why this file exists. Six prompts used to carry their own hand-written intro, and
-// every one of them described FMCNS as a content tool: "a personal research platform
+// every one of them described QNE as a content tool: "a personal research platform
 // that maps archetypal patterns across film characters, countries…". None of them
 // mentioned that the app is also a system that builds itself — a queue that hands
 // work to a coding agent, a live map of its own architecture, self-observation, a
@@ -22,7 +22,7 @@
 // suggestions.
 
 export const APP_BLURB =
-  'FMCNS (Fractal Mythic Consciousness Navigation System), a personal research system with two halves that matter equally. ' +
+  'QNE (Quantum Narrative Engine), a personal research system with two halves that matter equally. ' +
   'THE MATERIAL: characters, films and countries held in one shared shape (a "character" is the universal unit — a person, ' +
   'a film and a nation are instances of one schema), tagged with archetypal patterns, scored on named spectrum axes, and ' +
   'navigated as a graph across scales. ' +

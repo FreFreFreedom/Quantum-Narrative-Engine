@@ -2,7 +2,7 @@
 
 **Investigation only. Nothing to implement here, nothing approved.** Read on
 2026-09-09 from source, both repos cloned at HEAD. Written because two Obsidian
-plugins have already shipped, in public, the interface for moves FMCNS has so far
+plugins have already shipped, in public, the interface for moves QNE has so far
 only described — and reading working code is cheaper than re-deriving it.
 
 Scanned the whole community registry first (7,453 plugins, ranked by downloads)

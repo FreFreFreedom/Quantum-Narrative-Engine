@@ -175,13 +175,13 @@ If you’re serious, you’ll learn to read every dynamic — financial, politic
 **You:**
 Idea: glato/emerge
 Shows code as an interactive graph so you can explore how parts connect.
-How we'd use it: FMCNS can reuse its graph view so the app map redraws and stays clickable.
+How we'd use it: QNE can reuse its graph view so the app map redraws and stays clickable.
 github.com/glato/emerge
 
 **Assistant:**
 glato/emerge is built for codebases, but you’re right to see the technique as a demonstration, not a prescription: live code dependency graphs are just one substrate for structural consciousness. What matters isn’t “can I see my code as a clickable graph,” but: does treating every dependency as a living, revisable connection reveal anything true about the system’s self-similarity, feedback, or drift?
 
-If you simply plug in emerge and scroll through clickable source files, you have gained a fancier outline — there is no awareness, no interpretation, no layering of mythic or recursive feedback. But if you take FMCNS’s own “graph mode,” which already treats every component as a universal node (as it does for mythic entities and countries), and bind its mechanics to real drift — what changed lately, which nodes accumulate wounds or new power, which connections rewrite themselves in response — then you are halfway to real architectural self-reading. Emerge gives the skeleton; the project’s vision must supply pulse, interiority, and salience.
+If you simply plug in emerge and scroll through clickable source files, you have gained a fancier outline — there is no awareness, no interpretation, no layering of mythic or recursive feedback. But if you take QNE’s own “graph mode,” which already treats every component as a universal node (as it does for mythic entities and countries), and bind its mechanics to real drift — what changed lately, which nodes accumulate wounds or new power, which connections rewrite themselves in response — then you are halfway to real architectural self-reading. Emerge gives the skeleton; the project’s vision must supply pulse, interiority, and salience.
 
 What is worth copying isn’t the literal code diagram, but the move: let the architecture draw itself live, keep every node alive as a clickable, navigable locus for reflection, composting or regeneration. But unlike static code graphing, your recursion goes down: a component can be both a container (umbrella system) and a living actor (animated by agentic intention or trauma). The map learns to ask not just “what imports what,” but “what belongs together now, what is newly at war, which shadow connections have appeared?” In a fractal ontology, even the map’s rendering mechanics become objects in the system — you can focus on how the graph draws itself, treat that as a territory, and recompose the rules by which structure appears.
 
@@ -304,14 +304,14 @@ How we'd get there first: Build scale-aware traversal where zooming reveals the 
 Idea 3:
 Scale Echo
 Zoom into a person and see the same dynamics echo outward into their art, their movement, their nation.
-Why it's doable: Recursive graph traversal and archetype tagging already exist in FMCNS—only the zoom renderer is missing.
+Why it's doable: Recursive graph traversal and archetype tagging already exist in QNE—only the zoom renderer is missing.
 
 ---
 
 Idea 4:
 Resonance Ring
 Select any pattern and see every entity across all scales where that same pattern lives, connected by a ring.
-Why it's doable: FMCNS already scores entities on named spectrum axes—filtering by shared scores creates these rings.
+Why it's doable: QNE already scores entities on named spectrum axes—filtering by shared scores creates these rings.
 
 ---
 

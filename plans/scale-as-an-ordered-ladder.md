@@ -8,7 +8,7 @@
 
 ## Where you are
 
-FMCNS backend is `queue-server/` (Node/Express, `node:sqlite`). Entities (characters,
+QNE backend is `queue-server/` (Node/Express, `node:sqlite`). Entities (characters,
 films, countries) live in the `entities` table (`server/src/db/schema.js`), which has a
 plain-text `scale` column. Continuum axes live in `continuum_axes` +
 `entity_continuum` (also `schema.js`), queried through `services/ontologyQuery.js`. There

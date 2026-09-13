@@ -124,7 +124,7 @@ export const PRESETS = {
 export function presetFor(key) { return PRESETS[key] || PRESETS.standard; }
 
 const DEFAULT_GENERAL_PROMPT =
-  'You are an autonomous agent working on the FMCNS repo. Respect any CLAUDE.md at the repo root.';
+  'You are an autonomous agent working on the QNE repo. Respect any CLAUDE.md at the repo root.';
 
 const DEFAULT_EXECUTION_PROMPT = [
   '{{general}}', '\n\n',

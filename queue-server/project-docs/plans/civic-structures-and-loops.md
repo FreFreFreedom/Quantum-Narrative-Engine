@@ -34,7 +34,7 @@ node scripts/extract-traffic.js data-seed/subtitles/f_fences.srt \
 
 ## Where you are
 
-FMCNS is a private research tool. Backend: `queue-server/` (Node/Express, `node:sqlite`,
+QNE is a private research tool. Backend: `queue-server/` (Node/Express, `node:sqlite`,
 Node ≥ 22.5). Frontend: `fmcns_navigator.html`, a single vanilla-JS file mirrored to
 `queue-server/public/index.html` — **both must stay byte-identical** (`cp` before every
 commit). No tests, no linter, no build. `node --check <file>` is the only server sanity

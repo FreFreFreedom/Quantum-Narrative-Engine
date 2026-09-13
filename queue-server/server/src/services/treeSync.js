@@ -27,7 +27,7 @@ import { parseJsonObject } from './codeDiscovery.js';
 import { maybeDeriveUmbrellas } from './umbrellas.js';
 import { mainRepo, gitLogSummaries, gitDiffStat, gitChangedFiles, gitHeadSha, gitFetchOriginTrunk } from './gitOps.js';
 
-const FMCNS_BLURB = 'FMCNS (Fractal Mythic Consciousness Navigation System), a personal research tool: single-file vanilla-JS frontend, Node/Express + SQLite backend, a knowledge graph of "characters", an agent task queue, fractal navigation UI, and recommender ambitions';
+const FMCNS_BLURB = 'QNE (Quantum Narrative Engine), a personal research tool: single-file vanilla-JS frontend, Node/Express + SQLite backend, a knowledge graph of "characters", an agent task queue, fractal navigation UI, and recommender ambitions';
 const MAX_PROPOSALS = 3;
 
 function buildClassifyPrompt({ contextLabel, stat, changed, subjects }) {

@@ -23,7 +23,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnvFile(new URL('../.env', import.meta.url));
 
 const API_BASE = 'https://api.opensubtitles.com/api/v1';
-const USER_AGENT = 'FMCNS-research/1.0 (single-user research tool)';
+const USER_AGENT = 'QNE-research/1.0 (single-user research tool)';
 const SUBS_DIR = resolve(__dirname, '../data-seed/subtitles');
 const ONTOLOGY_FILE = resolve(__dirname, '../data-seed/fmcns_ontology.json');
 

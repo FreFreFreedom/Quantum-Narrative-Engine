@@ -177,7 +177,7 @@ This one keeps yielding, which is evidence rather than elegance.
   construction (§17) — an entanglement jump between a problem's shape and an instrument's.
 - The **platform has the same three layers as the things it studies** (§6), which is what makes
   the diagnostic reading possible at all.
-- The **standing self-diagnosis of FMCNS** (§14b): the ontological layer is the failing one.
+- The **standing self-diagnosis of QNE** (§14b): the ontological layer is the failing one.
 - The **recurring done/appears-done bug is an ontological-layer failure** (§14b) — the app
   unable to distinguish itself as reported from itself as real.
 - **The enterprise reading** (§6): the same diagnosis run on a company.
@@ -644,7 +644,7 @@ over in a single conversation is not coincidence — it is a method that works.
 And then the one that matters, from *the falsifiability rule* (§12): never *"does it have
 three layers"* — everything passes — but **which layer is failing, and how?**
 
-### The standing self-diagnosis of FMCNS (as of 2026-09-01)
+### The standing self-diagnosis of QNE (as of 2026-09-01)
 
 - **Ontological layer — this is the failing one.** The app can distinguish character, film
   and country; three unordered scale labels; tags; two continuum axes. It **cannot** see
@@ -736,7 +736,7 @@ is the exact pathology §7 names.
 2. **Put something on the empty rungs**, starting with the immune case at *cell*: the
    paradigm's proof case should be the first thing the app can hold at that scale.
 3. **Retire or restore the grounded flag** — either it divides the corpus or it goes.
-4. **Enter FMCNS itself as an entity** at the institution rung, with the Architecture
+4. **Enter QNE itself as an entity** at the institution rung, with the Architecture
    Navigator's components as its parts — which would also be the first entity with fragments,
    and so the first test of the fragment model.
 
@@ -744,7 +744,7 @@ is the exact pathology §7 names.
 given the tag it stands against (model-written, hand-editable, and an entity carrying both
 poles now shows that it *holds* the tension — the first measurable fragment inside an
 entity; entanglement counts a shared tension as a shared pattern); the grounded flag is
-gone; the immune system and its three parts stand on the cell rung; and FMCNS sits at the
+gone; the immune system and its three parts stand on the cell rung; and QNE sits at the
 institution rung with its six territories inside, so the descent opens on both. The
 civilisation rung is still empty.
 

@@ -1,6 +1,6 @@
 // Antoine's own writing, pointed at the entities it names — plans/testimony-in-the-ontology.md.
 //
-// FMCNS is an engine for finding structural correspondence and had never been aimed at the
+// QNE is an engine for finding structural correspondence and had never been aimed at the
 // one corpus its owner produces himself. A conversation that spent an hour on Troy Maxson
 // left no trace on Troy Maxson. This module is the trace.
 //

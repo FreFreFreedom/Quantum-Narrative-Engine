@@ -11,7 +11,7 @@
 
 ## Where you are
 
-This is the FMCNS backend, `queue-server/`. The Room is the in-app chat
+This is the QNE backend, `queue-server/`. The Room is the in-app chat
 assistant (services/chat.js-adjacent conversation feature, `conversations.js`
 plus `providers/openaiCompat.js` and `ai/text.js`). The Room's composer has a
 manual model picker (plan `plans/chat-model-picker.md`) that lets Antoine pin

@@ -749,7 +749,7 @@ Depends on: ${(n.depends || []).map((d) => byId.get(d)?.name || d).join(', ') ||
 Its current health signals:
 ${mine || '- none'}
 
-Produce up to 3 THOUGHTS about this component, not child nodes. Each thought is one of: a blind spot risk, how to make this component meaningfully better, an integration opportunity with the rest of the platform, or a next feature that makes logical sense. Each must be specific to FMCNS's real subject matter — not generic advice ("add tests", "improve caching").
+Produce up to 3 THOUGHTS about this component, not child nodes. Each thought is one of: a blind spot risk, how to make this component meaningfully better, an integration opportunity with the rest of the platform, or a next feature that makes logical sense. Each must be specific to QNE's real subject matter — not generic advice ("add tests", "improve caching").
 
 ${USER_FACING_STYLE} (applies to the "title" and "body" the owner reads; "prompt_draft" may stay technical for the coding agent)
 The title and body must NEVER mention internal component ids or slugs (like "observation-layer") — say what the change would do for the person using the app, in everyday words.
@@ -810,8 +810,8 @@ ${graphSignals || '- none'}
 Task queue: ${queueState || 'quiet'}${recent ? `\nRecent tasks: ${recent}` : ''}
 
 ${growthFocus
-  ? 'Focus: GROWTH. Examine usage patterns and quiet zones (never-worked components, isolated territories, accepted speculations that produced value). Propose up to 3 next-logical-features: new capabilities that tie the platform together or fill obvious blind spots. Each must be specific to FMCNS, not generic.'
-  : 'Focus: the platform\'s own development health. Propose up to 3 thoughts about what to do next — blind spots, integration opportunities between components, features that make logical sense. Each must be specific to FMCNS, not generic.'}
+  ? 'Focus: GROWTH. Examine usage patterns and quiet zones (never-worked components, isolated territories, accepted speculations that produced value). Propose up to 3 next-logical-features: new capabilities that tie the platform together or fill obvious blind spots. Each must be specific to QNE, not generic.'
+  : 'Focus: the platform\'s own development health. Propose up to 3 thoughts about what to do next — blind spots, integration opportunities between components, features that make logical sense. Each must be specific to QNE, not generic.'}
 
 BALANCE. The list above holds both halves of the app: the material it studies, and the app's own build system (the 'self' area — the queue, the worker, shipping, self-observation, ranking, suggestions, the idea studio, the look at the world). If you produce 3 thoughts, at least ONE must be about the build system and at least ONE about the material. Both halves are real development areas; a set of thoughts entirely about one of them is an incomplete answer, not a focused one.
 
@@ -937,7 +937,7 @@ export async function runRetrospectives(db, { force = false, max = 1 } = {}) {
       `Started: ${w.started_at || '?'} · Finished: ${w.completed_at}`,
       `Prompt: ${String(w.prompt || '').slice(0, 400)}`,
     ].join('\n');
-    const prompt = `You are the memory of FMCNS, a self-aware platform. A development task just finished. Review it and extract ONE durable lesson worth remembering — what worked, what failed, what to do differently next time. Be concrete. If the outcome was success, still find one transferable lesson.
+    const prompt = `You are the memory of QNE, a self-aware platform. A development task just finished. Review it and extract ONE durable lesson worth remembering — what worked, what failed, what to do differently next time. Be concrete. If the outcome was success, still find one transferable lesson.
 
 ${digest}
 

@@ -5,7 +5,7 @@
 | **Status** | DONE — steps 1-5, 7-8 shipped 2026-08-11; step 6 (CCR) replaced by an in-codebase fix, see `plans/dispatch-queue-free-model-fallback.md`. Audited against the code 2026-08-19. Verified complete: `ai/catalog.js`, `ai/router.js`, `ai/resetWindow.js`, `providers/openaiCompat.js`, `quotaScheduler.js`, the two quota tables, `work_prompts.resume_after`, the free-providers endpoint and the frontend panel all exist, and the raw `api.anthropic.com` call this plan objected to is gone. **One thing worth knowing:** the daily spend guard ships disabled — `queue_go_budget_usd` defaults to `0`, and `taskRunner.js` treats `0` as "no limit". The 0.33/day this plan recommended exists only as an in-memory cache default. |
 | **Created** | 2026-08-11 |
 | **Implemented (partial)** | 2026-08-11 — see note below |
-| **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
+| **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | ~6 new backend files, edits to 5 existing, 2 new SQLite tables, 1 frontend panel section |
 | **Related** | `plans/github-code-discovery.md` (uses the same `ai/text.js` seam) |
 
@@ -36,7 +36,7 @@ panel, and Railway deploy verification (everything verified against local boots 
 
 ## Context
 
-Today FMCNS stops working when the Claude subscription runs out of credit. That happens in three
+Today QNE stops working when the Claude subscription runs out of credit. That happens in three
 different ways, in three places that don't talk to each other:
 
 - **The Dispatch Queue** (`taskRunner.js`) detects a usage limit, tries haiku/sonnet/opus, and when
@@ -52,7 +52,7 @@ different ways, in three places that don't talk to each other:
 
 So a quota hit in one lane doesn't gate the others, nothing auto-resumes, and chat costs real money.
 
-The goal: **every FMCNS feature keeps running at all times, and nothing except the Claude Code
+The goal: **every QNE feature keeps running at all times, and nothing except the Claude Code
 subscription ever costs money.** That means (a) a ranked stable of free models to fall through, and
 (b) a ledger that records per-provider exhaustion *with its reset window* so work is deferred and
 auto-resumed rather than discovered mid-task and abandoned.

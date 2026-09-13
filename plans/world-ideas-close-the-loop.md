@@ -11,7 +11,7 @@
 
 ## Where you are
 
-FMCNS is a personal research app: a single-file HTML frontend (`fmcns_navigator.html`, no
+QNE is a personal research app: a single-file HTML frontend (`fmcns_navigator.html`, no
 build step, master copy at the repo root, served copy at `queue-server/public/index.html`)
 and a Node/Express backend under `queue-server/server/src/` deployed on Railway. There is
 no test suite and no linter — `node --check <file>` is the sanity check. Pushing to

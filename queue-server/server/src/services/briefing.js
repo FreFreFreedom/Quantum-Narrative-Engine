@@ -71,7 +71,7 @@ export function regenerateBriefing() {
   try {
     const now = new Date().toISOString();
     const lines = [];
-    lines.push('# FMCNS — current state (auto-generated, do not edit)', '');
+    lines.push('# QNE — current state (auto-generated, do not edit)', '');
     lines.push(`Generated: ${now}`, '');
 
     // Per-component live NOW / status / next step (architecture.js#getComponents).

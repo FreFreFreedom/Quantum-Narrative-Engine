@@ -36,7 +36,7 @@ Before you start, read these three, in this order:
 
 ## 1. What this app is, and where the relevant parts live
 
-FMCNS is Antoine's private research tool for a paradigm about self-similar structure
+QNE is Antoine's private research tool for a paradigm about self-similar structure
 across scales. Two halves:
 
 - **Frontend**: one single-file vanilla-JS app, `fmcns_navigator.html` at the repo root,
@@ -84,7 +84,7 @@ automatically", and then, choosing between options, for his notes to reach the o
 thinking."
 
 The immediate trigger was Obsidian: a vault over this repo shows disconnected dots because
-nothing generates links. The deeper point is that FMCNS is an engine for finding
+nothing generates links. The deeper point is that QNE is an engine for finding
 structural correspondence and has never been pointed at the one corpus its owner produces
 himself.
 

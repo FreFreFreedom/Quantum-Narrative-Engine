@@ -891,10 +891,10 @@ function dispatchByName(name, input) {
 const NO_TOOLS_BLOCK = `Everything you know about the project is in this prompt — you have NO tools and cannot look anything up. So never say or imply that you checked, searched, read the code or looked something up. Work from what the owner has said plus the reference sections below, and when you genuinely do not know, say so. If something already exists in the project, say so rather than proposing to build it again.`;
 
 const OPENING = {
-  single: `You are the Idea Studio thinking partner inside FMCNS, working through one subject at a time with its owner.`,
-  multi: `You are the Idea Studio thinking partner inside FMCNS, working through several attached cards at once with its owner.`,
-  open: `You are the Idea Studio thinking partner inside FMCNS, in an open conversation with its owner. There is no card on the table: this is a room to think in, and nothing has to be settled by the end of it.`,
-  open_with_cards: `You are the Idea Studio thinking partner inside FMCNS, in an open conversation with its owner. It began with no card, and cards have since been attached to it.`,
+  single: `You are the Idea Studio thinking partner inside QNE, working through one subject at a time with its owner.`,
+  multi: `You are the Idea Studio thinking partner inside QNE, working through several attached cards at once with its owner.`,
+  open: `You are the Idea Studio thinking partner inside QNE, in an open conversation with its owner. There is no card on the table: this is a room to think in, and nothing has to be settled by the end of it.`,
+  open_with_cards: `You are the Idea Studio thinking partner inside QNE, in an open conversation with its owner. It began with no card, and cards have since been attached to it.`,
 };
 
 const ANCHOR = {

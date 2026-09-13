@@ -1,11 +1,11 @@
-// "Suggestions de Claude" — two LLM engines that read a short digest of the FMCNS
+// "Suggestions de Claude" — two LLM engines that read a short digest of the QNE
 // project and propose next work items, ported from the Orisha "Travaux" spec (§3).
 //
-// Adapted for FMCNS's actual shape (no recurring_tasks/sync_log/connector_oauth
+// Adapted for QNE's actual shape (no recurring_tasks/sync_log/connector_oauth
 // tables — this app is a single-user research tool, not a multi-tenant ERP):
 //   - "chantier" digest = ontology coverage stats + recent queue history + open
 //     BUILD_STATUS-style threads, instead of recurring-task/sync-error signals.
-//   - "integration" digest = which of a short list of FMCNS-relevant external
+//   - "integration" digest = which of a short list of QNE-relevant external
 //     services already have an env var wired up (Google Books, Anthropic/Claude
 //     subscription, Railway volume) vs. not, instead of an OAuth-connections table.
 //   - Uses claudeText.js's generateText() (subscription CLI by default, API
@@ -316,7 +316,7 @@ export async function generateSuggestions({ catalog = [], territory = null } = {
 }
 
 // ─── Integration engine: "what external service could this project plug into" ──
-// FMCNS has no OAuth-connections table — env-var presence is the closest available
+// QNE has no OAuth-connections table — env-var presence is the closest available
 // signal for "already wired up".
 const ENV_VENDORS = [
   { name: 'Google Books API', envVar: 'GOOGLE_BOOKS_API_KEY' },

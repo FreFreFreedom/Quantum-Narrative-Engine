@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS is a personal research app. The frontend is one file, `fmcns_navigator.html`
+QNE is a personal research app. The frontend is one file, `fmcns_navigator.html`
 at the repo root (vanilla JS, no build step, no dev server), which **must be copied
 byte-for-byte to `queue-server/public/index.html` before any deploy** — the server
 serves the app from that copy. Deploy is `git push origin develop`. Syntax checks

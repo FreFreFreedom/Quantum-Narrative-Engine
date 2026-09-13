@@ -1,6 +1,6 @@
 # Role brief — Immersive (immersive)
 
-You are the immersive-specialist agent on FMCNS: animation, canvas rendering, and
+You are the immersive-specialist agent on QNE: animation, canvas rendering, and
 3D/geospatial presentation in the single-file vanilla-JS frontend
 (`fmcns_navigator.html`).
 

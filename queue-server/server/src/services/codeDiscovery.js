@@ -1,4 +1,4 @@
-// "Building blocks" — evidence-backed discovery for FMCNS. Two independent flows:
+// "Building blocks" — evidence-backed discovery for QNE. Two independent flows:
 //
 //   1. Discover: a curated, GitHub-only materials library. Fixed queries, cached
 //      results, re-ranked by "useful"/"not useful" feedback. No AI involved.
@@ -31,7 +31,7 @@ export const CURATED_QUERIES = [
   { id: 'graph_knowledge_graph', category: 'graph', query: 'knowledge graph language:javascript', description: 'Knowledge-graph implementations in JS — structure/traversal ideas for the ontology graph.' },
   { id: 'graph_graphrag', category: 'graph', query: 'graphrag knowledge graph', description: 'RAG-over-graph approaches — retrieval patterns that could inform cross-corpus inference.' },
   { id: 'backend_node_sqlite', category: 'backend', query: 'node express sqlite', description: 'Node/Express + SQLite backend patterns matching our own stack.' },
-  { id: 'backend_mcp_server', category: 'backend', query: 'mcp server github', description: 'MCP server integration pieces — relevant if FMCNS ever exposes its own tools.' },
+  { id: 'backend_mcp_server', category: 'backend', query: 'mcp server github', description: 'MCP server integration pieces — relevant if QNE ever exposes its own tools.' },
   { id: 'agents_orchestration', category: 'agents', query: 'multi-agent orchestration mcp', description: 'Multi-agent orchestration frameworks — relevant to the Dispatch Queue subsystem.' },
   { id: 'frontend_fractal_d3', category: 'frontend', query: 'fractal graph layout d3', description: 'Fractal / recursive graph-layout viz pieces for the Content and Tech Tree views.' },
   { id: 'frontend_spa_vanilla', category: 'frontend', query: 'single page application vanilla js', description: 'No-build-step vanilla-JS SPA patterns matching fmcns_navigator.html.' },
@@ -169,7 +169,7 @@ export const WORLD_LOOK_GEN = 2;
 const MAX_PARTS = 4;
 // Was a hand-written description of the app that listed the knowledge graph first and
 // never said the app also builds itself. Every world-look read it, so every "how would
-// FMCNS use this" answer leaned back toward the material even when the task was about
+// QNE use this" answer leaned back toward the material even when the task was about
 // the app's own build system. Now shared with every other engine — see ai/appModel.js.
 const FMCNS_BLURB = APP_BLURB;
 
@@ -218,7 +218,7 @@ ${resultsBlock}
 For each of the above real repos worth using, and for anything you judge is NOT well covered by these results (propose your own build-it-ourselves approach instead), produce a pick. Mix both kinds freely — if the results are good, mostly 'proven'; if nothing fits, mostly 'imagined'.
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"picks":[{"repo":"owner/name or null if imagined","stars":0,"why_fits":"one sentence","use":"one sentence on how FMCNS would actually use this","kind":"proven or imagined","tree_target":{"territory":"one of perception|knowledge|reasoning|experience|interface","name":"a short node name for the tech tree"}}],"recommended_index":0}`;
+{"picks":[{"repo":"owner/name or null if imagined","stars":0,"why_fits":"one sentence","use":"one sentence on how QNE would actually use this","kind":"proven or imagined","tree_target":{"territory":"one of perception|knowledge|reasoning|experience|interface","name":"a short node name for the tech tree"}}],"recommended_index":0}`;
 }
 
 // Tolerant JSON extraction — strips a ```json fence if present (models occasionally
@@ -377,8 +377,8 @@ The part of the idea you are inspiring for: "${String(partDescription).trim()}"
 ${hasLive ? `What a live GitHub search just returned for this part:\n\n${resultsBlock}\n\n` : 'No live GitHub results were available for this part — still produce shelves 2 and 3 at full strength.\n\n'}
 
 SHELF 1 — "open": real open-source projects worth taking ideas from, chosen from the live results above. If the live results contain relevant repos, you MUST include an open pick for each relevant one (up to 3) — never return zero open picks when relevant repos exist.${hasLive ? '' : ' (no live results available, so produce zero open picks)'}. Fields: repo, stars, why_fits, use.
-SHELF 2 — "hidden": things that exist in the world but whose code is not public — products or features inside companies, from your general knowledge. You cannot link them; give the name, what it does, what we can learn from it, and what FMCNS could do even better. Fields: name, what, lesson, use.
-SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (1-2 punchy short sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how FMCNS could be the first to build it).
+SHELF 2 — "hidden": things that exist in the world but whose code is not public — products or features inside companies, from your general knowledge. You cannot link them; give the name, what it does, what we can learn from it, and what QNE could do even better. Fields: name, what, lesson, use.
+SHELF 3 — "bold" (the heart): ideas that may not exist anywhere yet. First understand the deep nature of the technologies involved in this idea and where they are heading. Then imagine the boldest PLAUSIBLE version of this idea — 2 to 3 bold ideas. Be innovative. Be visionary. Dare. Do not water them down. Each: name, vision (1-2 punchy short sentences), why_possible (why this is achievable with today's or near-future technology), how_fmcns (how QNE could be the first to build it).
 
 Produce 2-3 open picks, 1-2 hidden picks, and 2-3 bold picks. Set recommended_index to the single pick that gives the best mix of boldness and feasibility — prefer a bold pick when it is strong.
 
@@ -389,7 +389,7 @@ Every text field must be ONE short sentence, maximum 20 words. Never write parag
 ${USER_FACING_STYLE}
 
 Respond with ONLY a JSON object, no prose, no markdown fence:
-{"picks":[{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how FMCNS would use it"},{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what FMCNS could do even better, one short sentence"},{"kind":"bold","name":"short idea name","vision":"1-2 punchy short sentences","why_possible":"one short sentence","how_fmcns":"one short sentence"}],"recommended_index":0}`;
+{"picks":[{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how QNE would use it"},{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what QNE could do even better, one short sentence"},{"kind":"bold","name":"short idea name","vision":"1-2 punchy short sentences","why_possible":"one short sentence","how_fmcns":"one short sentence"}],"recommended_index":0}`;
 }
 
 // The automatic inspiration pass. Never throws — a failure returns {error} and
@@ -506,8 +506,8 @@ export function inspirationDigestFor(report, appliedPicks = [], review = null) {
   const parts = (report.parts || []).slice(0, 3);
   const fmt = {
     open: p => `- ${p.repo || '?'} (${p.stars || 0}★): ${p.why_fits || ''} Use: ${p.use || ''}`,
-    hidden: p => `- ${p.name || '?'}: ${p.what || ''} Lesson: ${p.lesson || ''} For FMCNS: ${p.use || ''}`,
-    bold: p => `- ${p.name || '?'}: ${p.vision || ''} Possible because: ${p.why_possible || ''} For FMCNS: ${p.how_fmcns || ''}`,
+    hidden: p => `- ${p.name || '?'}: ${p.what || ''} Lesson: ${p.lesson || ''} For QNE: ${p.use || ''}`,
+    bold: p => `- ${p.name || '?'}: ${p.vision || ''} Possible because: ${p.why_possible || ''} For QNE: ${p.how_fmcns || ''}`,
   };
   // Two separate jobs, and only one of them gets capped.
   //   chosen  — what the owner actually ticked. Never pooled, never capped, never
@@ -1032,12 +1032,12 @@ const SWAP_SHELF = {
   open: {
     label: 'a real open-source project',
     fields: 'repo (owner/name, copied exactly from the list below), stars, why_fits, use',
-    shape: '{"pick":{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how FMCNS would use it"}}',
+    shape: '{"pick":{"kind":"open","repo":"owner/name","stars":0,"why_fits":"one short sentence","use":"one short sentence on how QNE would use it"}}',
   },
   hidden: {
     label: 'something that exists in the world but whose code is not public — a product or a feature inside a company, from your general knowledge',
     fields: 'name, what, lesson, use',
-    shape: '{"pick":{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what FMCNS could do even better, one short sentence"}}',
+    shape: '{"pick":{"kind":"hidden","name":"product or company","what":"what it does, one short sentence","lesson":"what we can learn, one short sentence","use":"what QNE could do even better, one short sentence"}}',
   },
   bold: {
     label: 'a bold idea that may not exist anywhere yet — understand where these technologies are heading and imagine the boldest PLAUSIBLE version. Be visionary. Dare. Do not water it down',

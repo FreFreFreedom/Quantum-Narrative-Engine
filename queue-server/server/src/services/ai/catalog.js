@@ -5,7 +5,7 @@
 //
 // codingRank (0-100) is a single hand-set "how good is this model at coding"
 // score, anchored on Anthropic's own tiers (opus 95 / sonnet 85 / haiku 55) so
-// free models slot in meaningfully against the models FMCNS already trusts.
+// free models slot in meaningfully against the models QNE already trusts.
 // Sorting a model list by codingRank descending IS the fallback order.
 //
 // A provider only becomes selectable once its apiKeyEnv is actually set in the

@@ -10,7 +10,7 @@ makes every plan in this folder — including that one — reachable from the Ro
 
 ## Context
 
-**Where you are.** FMCNS's frontend is one large single-file vanilla-JS app,
+**Where you are.** QNE's frontend is one large single-file vanilla-JS app,
 `fmcns_navigator.html`, mirrored byte-for-byte into `queue-server/public/index.html`
 (which is what the server actually serves — both must be kept in sync before any deploy;
 see AGENTS.md). Inside it, the **Room** is the third sub-view of the Core tab

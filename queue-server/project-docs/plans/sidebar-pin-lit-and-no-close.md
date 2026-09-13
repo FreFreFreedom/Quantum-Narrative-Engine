@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS's frontend is one large single-file vanilla-JS app, `fmcns_navigator.html` at the repo
+QNE's frontend is one large single-file vanilla-JS app, `fmcns_navigator.html` at the repo
 root — no build step, no framework, no test suite. You edit it in place and open it in a
 browser. **Content mode** is its first tab: a canvas graph of characters/films/countries with
 a Filters panel on the left (`.left`) and a Details panel on the right (`.right`). Above

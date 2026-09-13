@@ -130,7 +130,7 @@ any of this, and note in particular:
 ## Explicitly out of scope
 
 - **Habits, meals, workouts, finance, journal.** A life planner is a different
-  application. Building it in would give FMCNS a second identity and cost it the thing it
+  application. Building it in would give QNE a second identity and cost it the thing it
   is for. If Antoine wants that, a Notion template is the right tool and should stay in
   Notion.
 - **The Notion API.** Rejected deliberately, not for effort: it would create a third copy

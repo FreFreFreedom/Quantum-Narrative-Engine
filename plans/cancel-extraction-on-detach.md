@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS is a personal research tool. In the Room you attach documents (files) and can have
+QNE is a personal research tool. In the Room you attach documents (files) and can have
 the app read one section by section (`docExtraction.js`). The reading runs **server-side**
 in the background (`startExtractionSweep`), keyed by conversation + document title
 (`'File: ' + fileId`, see `roomExtractDocTitle` in `fmcns_navigator.html`). The conversation

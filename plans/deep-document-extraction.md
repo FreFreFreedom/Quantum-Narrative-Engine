@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS is a personal research tool. The **Room** is the chat view; you can attach a document
+QNE is a personal research tool. The **Room** is the chat view; you can attach a document
 (PDF or text) and have the app read it section by section. The extraction feature already
 ships (plan `pdf-section-extraction`, commit `f3931bd`) but is too shallow for deep
 documents: it slices by a **fixed 25,000-character window** (`docExtraction.js:21`), asks

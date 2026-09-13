@@ -19,7 +19,7 @@ Two things worth carrying forward, both found while building rather than while p
 
 ## Where you are
 
-FMCNS is a private research tool. Backend `queue-server/` (Node/Express, `node:sqlite`,
+QNE is a private research tool. Backend `queue-server/` (Node/Express, `node:sqlite`,
 Node ≥ 22.5). Frontend `fmcns_navigator.html`, mirrored byte-for-byte to
 `queue-server/public/index.html` — `cp` before every commit. No tests, no linter, no build;
 `node --check` on server files and a `new Function()` pass over each `<script>` block for the

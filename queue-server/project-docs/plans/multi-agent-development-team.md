@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | ~70% DONE · roster outstanding · collaboration strategies **CANCELLED**. Audited against the code 2026-08-19. Previously mislabelled PLANNED, which was wrong: `gitOps.js`, `agents.js`, `reviewRunner.js`, `briefing.js`, `routes/agents.js`, `routes/reviews.js`, the `agents`/`reviews` tables, role briefs, Part 7R AI settings and Part 0S style policy are all live, and steps 0–9 substantially landed. **Outstanding:** the specialist roster — only `dev1`/`dev2`/`dev3` are seeded, and `.agents/roles/` lacks `explorer.md`, `tester.md`, `integrator.md`. **Cancelled 2026-08-19 (Antoine: "not relevant anymore"):** the Single/Competition/Team strategies and the orchestrator behind them. `services/orchestrator.js` and `routes/strategies.js` were never written; `task_stages` was created but never read or written and is no longer created; the picker has been removed from the New-prompt form. Do not rebuild it without asking. **Superseded:** the review screen described here (a card with checks and a typed `FUSIONNER` confirmation) shipped instead as the ship-state pills driven by `services/shipChecks.js`. |
 | **Created** | 2026-08-10 |
-| **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
+| **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | Large. ~12 new files, 5 new tables, a git-operations layer, a review/merge gate, a collaboration-strategy engine, and a subscription-only migration. Built in 12 independently shippable steps; steps 0–3 already deliver parallel development. |
 | **Blocks on** | Nothing. Step 0 is a 6-line fix that must land first. |
 | **Related** | `universal-conversations-core-architecture.md` — its transport is invalidated by the subscription-only decision here; see "Amendment owed" at the end. |
@@ -231,7 +231,7 @@ restriction applies only to communication intended for Antoine.
 
 ## Context
 
-FMCNS has a Dispatch Queue that hands one build task at a time to a Claude Code CLI
+QNE has a Dispatch Queue that hands one build task at a time to a Claude Code CLI
 subprocess. It works, but it is strictly single-file-of-work: one writer, one shared
 working directory, no branches, no review, no way to tell a wedged agent from a busy one.
 
@@ -842,7 +842,7 @@ transcript — the wrong input for build agents entirely.
 Instead, a small curated file set committed to the repo, which the CLI fetches on demand:
 
 ```
-AGENTS.md                     # ~120 lines: what FMCNS is, the two-part architecture, the boot
+AGENTS.md                     # ~120 lines: what QNE is, the two-part architecture, the boot
                               # command, "no test suite — use node --check", git rules (never
                               # push/merge/checkout main), never touch queue-server/data,
                               # cost discipline

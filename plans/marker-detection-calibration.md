@@ -11,7 +11,7 @@ schema change, no pipeline.
 
 ## Where you are
 
-FMCNS is a private research tool that maps recurring psychological patterns across films,
+QNE is a private research tool that maps recurring psychological patterns across films,
 characters and countries. This task touches neither the backend (`queue-server/`) nor the
 frontend (`fmcns_navigator.html`). It reads a document already in the repo and writes one
 markdown report.

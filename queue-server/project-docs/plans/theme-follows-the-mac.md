@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS is a personal research tool. The frontend is a single-file HTML app,
+QNE is a personal research tool. The frontend is a single-file HTML app,
 `fmcns_navigator.html` (repo root, ~16.5k lines, no build step). Railway only
 deploys `queue-server/`, so the served copy is `queue-server/public/index.html`
 — the frontend sync rule says master must be copied over it after every round

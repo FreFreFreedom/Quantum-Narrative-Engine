@@ -11,7 +11,7 @@ handoff) leans on it existing first.
 
 ## Context
 
-FMCNS is a private single-user app (`quantum-narrative-engine`). Its Room is a chat
+QNE is a private single-user app (`quantum-narrative-engine`). Its Room is a chat
 feature (`services/conversations.js`, `fmcns_navigator.html`'s `#wsRoom`) where Antoine
 talks to an AI assistant about the app and about ideas. Today the Room has **no memory
 about Antoine** — nothing in the schema stores standing facts, preferences, or decisions,

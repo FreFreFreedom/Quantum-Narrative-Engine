@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS is a private research app: a Node/Express backend in `queue-server/` (entry
+QNE is a private research app: a Node/Express backend in `queue-server/` (entry
 `server/src/index.js`, SQLite via `node:sqlite`) and one single-file vanilla-JS
 frontend, `fmcns_navigator.html`, mirrored to `queue-server/public/index.html`. No
 build step, no test suite, no linter — `node --check <file>` is the sanity check.

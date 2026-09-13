@@ -1,4 +1,4 @@
-# FMCNS queue server
+# QNE queue server
 
 Claude-driven work queue, ported from the Orisha "Travaux" spec (kept in `SPEC.md` as
 the source of truth for the rest of the port). Status: **§12 steps 1-3 done** — DB +
@@ -120,4 +120,4 @@ The `Travaux`-equivalent UI (step 5), the steering hook script that lets a live
 execution actually receive mid-task messages (step 6 — `sendSteeringMessage`
 writes to an inbox file already, but nothing reads it mid-execution without the
 hook), auto-titling refinement (step 7), and model-fallback (also step 7, and also
-gated on deciding whether FMCNS needs it at all).
+gated on deciding whether QNE needs it at all).

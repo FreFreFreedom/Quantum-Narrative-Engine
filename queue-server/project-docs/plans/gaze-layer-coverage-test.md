@@ -7,7 +7,7 @@
 
 ## Where you are
 
-FMCNS is a private research tool that maps recurring psychological patterns across films,
+QNE is a private research tool that maps recurring psychological patterns across films,
 characters and countries. The backend is `queue-server/` (Node/Express). The frontend is one
 big HTML file. **This task touches neither.** It checks whether some free text sources exist
 and writes one report.

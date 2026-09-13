@@ -1,11 +1,11 @@
-// Database schema for the FMCNS work queue (ported from the Orisha "Travaux" spec, §4/§10).
+// Database schema for the QNE work queue (ported from the Orisha "Travaux" spec, §4/§10).
 // Additive + idempotent: CREATE TABLE IF NOT EXISTS, ALTER TABLE wrapped in try/catch, run on
 // every boot. Safe to call repeatedly.
 //
 // Uses Node's built-in `node:sqlite` (stable-ish since Node 22.5, still flagged experimental)
 // instead of better-sqlite3 — same synchronous API shape, but no native addon to compile, which
 // makes both this sandbox and Railway's build step far more reliable. Swap to Postgres later if
-// FMCNS ever needs multi-instance or a Railway volume turns out to be a hassle (see README).
+// QNE ever needs multi-instance or a Railway volume turns out to be a hassle (see README).
 //
 // Seam vs. the original spec: DB_PATH is env-configurable (§10.1) instead of a hard-coded path.
 
@@ -749,7 +749,7 @@ function initSchema(db) {
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN thought_id TEXT`); } catch {}
 }
 
-// ─── FMCNS ontology tables (shared with the task queue's DB, per user decision) ──
+// ─── QNE ontology tables (shared with the task queue's DB, per user decision) ──
 // One generic `entities` table for characters, films, and countries alike — this is
 // the first real step toward the "character as universal ontological unit" reframe
 // from BUILD_STATUS.md's open threads: everything (individual, film-container,
@@ -1418,7 +1418,7 @@ export function initArchitectureSchema(db) {
 }
 
 // ─── Building blocks: evidence-backed discovery (GitHub search + AI-imagined
-// proposals for FMCNS's own tech tree) ───────────────────────────────────────────
+// proposals for QNE's own tech tree) ───────────────────────────────────────────
 // Two independent flows share these tables: the curated "Discover" catalog (pure
 // GitHub search results, re-ranked by feedback) and the free-text "Idea box"
 // (a 2-pass AI call that returns both real repos and pure-imagined proposals).

@@ -302,7 +302,7 @@ glance. Zero API spend.
       commits), so agents branching from origin/main always get a fresh copy.
       Merge/revert dirty-checks ignore the generated file (it regenerates at
       boot — its drift must not block a merge).
-- [x] **`AGENTS.md`** — "Repository essentials" section (what FMCNS is, boot,
+- [x] **`AGENTS.md`** — "Repository essentials" section (what QNE is, boot,
       git rules, cost discipline, shared-knowledge pointers) so any agent
       dropped into the repo starts oriented.
 - [x] Verified: `node --check` on `briefing.js` + all changed server files;

@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS, the Idea Studio. The **Room** (the chat room) has an "Attached" panel with a **+**
+QNE, the Idea Studio. The **Room** (the chat room) has an "Attached" panel with a **+**
 picker (`roomPickList` in `fmcns_navigator.html`) listing what you can attach to a thread.
 Attaching writes a `convo_subjects` row, and `convoContext` in
 `queue-server/server/src/services/conversations.js` feeds every attached subject's context

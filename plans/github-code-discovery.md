@@ -1,11 +1,11 @@
-# Building blocks — evidence-backed discovery for FMCNS
+# Building blocks — evidence-backed discovery for QNE
 
 | | |
 |---|---|
 | **Status** | DONE — MVP + most of Phase 2. Audited against the code 2026-08-19. The MVP is 100% complete. Phase 2, recorded here as "not started", is in fact ~70% built: the history view (folded into the Idea box rather than a third sub-view), save-as-Seed, the Architecture/Seeds/Suggestions entry points (as a richer per-item "Look at the world"), and queue wiring that goes well beyond this doc (every implement task now gets a world-look as a pre-flight stage). `plantProject`, `GET /unplanted` and report reviews are also live and are not in this document at all. **Genuinely outstanding:** `architecture_node_evidence` is write-only — there is no `GET /api/discovery/evidence/:nodeId` and no service function, so the evidence behind a planted idea cannot be read back; plus the tech-tree evidence icons, report delete, and `/reports/:id/rerun` (`rerun_count` is read but never incremented). Drifts: `POST /discovery/refresh` became `GET /results?refresh=1`, and the feature was never registered as `'discovery'` in `FEATURES` — every call uses `feature: 'inspire'`. |
 | **Created** | 2026-08-11 |
 | **Updated** | 2026-08-11 — reviewed against codebase, corrected 3 factual issues, split into MVP + Phase 2 |
-| **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
+| **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | MVP: 2 new backend files (service + route), 1 frontend sub-tab with 2 views (Discover, Idea box), 4 new SQLite tables. Phase 2 (deferred): History view, tech-tree evidence icons, Architecture entry-point buttons, Queue/Seeds wiring. |
 | **Blocks on** | Nothing. |
 | **Related** | `multi-agent-development-team.md` — discovered pieces can be sent to the Dispatch Queue as tasks; `universal-conversations-core-architecture.md` — tech-tree evidence is a shared attachment surface. |
@@ -14,7 +14,7 @@
 
 ## Goal
 
-Add an evidence-backed discovery layer to FMCNS that lets Antoine describe an idea and get both **already-built options** (real GitHub repos with stars and why-they-fit analysis) and **build-it-ourselves options** (pure imagined proposals with reasoning and suggested tree placement). The AI leads the envisioning; Antoine decides the path. Zero AI calls on page load; all GitHub calls deterministic and cached.
+Add an evidence-backed discovery layer to QNE that lets Antoine describe an idea and get both **already-built options** (real GitHub repos with stars and why-they-fit analysis) and **build-it-ourselves options** (pure imagined proposals with reasoning and suggested tree placement). The AI leads the envisioning; Antoine decides the path. Zero AI calls on page load; all GitHub calls deterministic and cached.
 
 ## Why this exists
 

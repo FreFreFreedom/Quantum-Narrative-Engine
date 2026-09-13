@@ -1,4 +1,4 @@
-# FMCNS — Shared Agent Memory
+# QNE — Shared Agent Memory
 
 Living notes for **any** coding agent working in this repo — Claude Code (main or
 second account), OpenCode, or another. This file lives in git, same as
@@ -104,7 +104,7 @@ A universal claim that exempts the claimant is refuted by the exemption.
 
 It has produced: the instrument-set being itself fragmented (so the new branch is a
 reconciliation, not a theorem); the instrument recommender turning out to *be* the analogical
-layer aimed at the platform's own construction; the standing self-diagnosis of FMCNS; and the
+layer aimed at the platform's own construction; the standing self-diagnosis of QNE; and the
 reading that the recurring done/appears-done bug is an ontological-layer failure. Guard rail:
 **a fold must produce a decision, not a pleasing symmetry.**
 
@@ -240,7 +240,7 @@ the hour for drifting back into caution. Don't reinstate it.
 
 ## Perception layer investigation (2026-08-25/26)
 
-FMCNS has no perception layer yet — every tag is hand-authored, see
+QNE has no perception layer yet — every tag is hand-authored, see
 `plans/perception-investigation-status.md` for the full picture. Three investigations
 done, nothing built:
 - Subtitles cover the corpus 100% for dialogue (screenplays ~40%, English-skewed).
@@ -778,7 +778,7 @@ theme clusters instead of 104, and `GET /api/ontology/tag-gaps` reports
 - `grounded` is dead (was 1 on every row); provenance is `source`. The card has one
   relations block (`relationsBlockHtml`, scope remembered in `fmcns.relScope`) and one
   name per relation (`RELATION_NAMES`). Seeds `cell_cluster.json` and `self_entity.json`
-  put the immune system on the cell rung and FMCNS itself at the institution rung, each
+  put the immune system on the cell rung and QNE itself at the institution rung, each
   the container of its parts, so the descent opens on both.
 - **Two terminal sessions committing in the same checkout is hazardous**: at 03:25 a
   concurrent session's `git add -A` swept another session's half-written frontend and

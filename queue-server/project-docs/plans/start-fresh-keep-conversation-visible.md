@@ -6,7 +6,7 @@
 
 ## Where you are
 
-FMCNS, the Idea Studio "Talk it over" conversation box, which is also what the **Room**
+QNE, the Idea Studio "Talk it over" conversation box, which is also what the **Room**
 (the chat room) renders for each of its threads. The conversation box is painted by one
 shared code path (`studioEmbed` in `fmcns_navigator.html`), so a fix here covers both the
 card conversations and the chat room.

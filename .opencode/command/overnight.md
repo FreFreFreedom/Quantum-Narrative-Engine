@@ -3,7 +3,7 @@ description: Start an autonomous overnight run of the multi-agent plan. Safe def
 agent: fmcns-overnight
 ---
 
-You are beginning an autonomous, unattended implementation run of the FMCNS
+You are beginning an autonomous, unattended implementation run of the QNE
 multi-agent plan. Antoine is asleep — he will not answer you.
 
 Read `plans/multi-agent-development-team.md`. The REVISION section at the top is

@@ -320,8 +320,8 @@ registerSubject('task', {
             const text = pick.kind === 'open'
               ? `${pick.why_fits || ''} Use: ${pick.use || ''}`
               : pick.kind === 'hidden'
-                ? `${pick.lesson || ''} For FMCNS: ${pick.use || ''}`
-                : `${pick.vision || ''} For FMCNS: ${pick.how_fmcns || ''}`;
+                ? `${pick.lesson || ''} For QNE: ${pick.use || ''}`
+                : `${pick.vision || ''} For QNE: ${pick.how_fmcns || ''}`;
             items.push({ label, text: String(text).slice(0, 400) });
           });
         });

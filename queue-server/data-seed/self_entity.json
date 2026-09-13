@@ -1,5 +1,5 @@
 {
-  "_readme": "Hand-curated, 2026-09-10: the platform itself as an entity on its own table — the fold in fractal_operational_core.md. Container here means PART OF: the six territories sit inside FMCNS on the rung below it.",
+  "_readme": "Hand-curated, 2026-09-10: the platform itself as an entity on its own table — the fold in fractal_operational_core.md. Container here means PART OF: the six territories sit inside QNE on the rung below it.",
   "cluster": {
     "code": "XV",
     "name": "The platform itself",
@@ -16,7 +16,7 @@
       "id": "inst_fmcns",
       "type": "institution",
       "scale": "institution",
-      "name": "FMCNS",
+      "name": "QNE",
       "note": "A prosthetic analogical layer that maintains a boundary against its own dissolution — and therefore an entity on its own table.",
       "container": null,
       "testimony": [],

@@ -86,7 +86,7 @@ correctly again, proposals list scrolls independently. Synced to
 
 ## Context
 
-FMCNS's frontend (`fmcns_navigator.html`, ~7,800 lines, vanilla JS/CSS, no build
+QNE's frontend (`fmcns_navigator.html`, ~7,800 lines, vanilla JS/CSS, no build
 step, no framework) grew feature-by-feature with no shared design system. A real
 CSS custom-property foundation already exists (`:root` lines 13–39, `.dark` lines
 40–59: color/shadow/radius/motion tokens) and dark mode works end-to-end

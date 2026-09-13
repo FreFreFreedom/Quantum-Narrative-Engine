@@ -7,7 +7,7 @@
 ## Context
 
 On 2026-08-20, queue task `44558f0b` ("GraphRAG v1 — static community detection over
-FMCNS tag graph") shipped 2,268 lines: `queue-server/scripts/detect-tag-communities.js`
+QNE tag graph") shipped 2,268 lines: `queue-server/scripts/detect-tag-communities.js`
 and a 2,035-line result file, `queue-server/data-seed/tag_communities.json`. It groups
 **641 archetypal tags into 106 communities** by how often they land on the same entity —
 a Louvain single-level greedy modularity pass over the tag co-occurrence graph.

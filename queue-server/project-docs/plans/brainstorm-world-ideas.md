@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | DONE 2026-08-20 — shipped in `4d6063f` + `be356e2`. All five parts. `npm run world:selftest` (37 checks) proves the index-safety claim. Verified live: the conversation, and /more appending without moving anything. /fold and /reframe were deliberately NOT exercised against Antoine's real data — they are covered by the selftest instead. |
-| **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
+| **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Depends on** | Nothing new. Extends the shipped Idea Studio (`convos`, `services/conversations.js`, `services/subjectContext.js`, `routes/conversations.js`) and the shipped world-look (`discovery_reports`, `services/codeDiscovery.js`). |
 
 ## Context

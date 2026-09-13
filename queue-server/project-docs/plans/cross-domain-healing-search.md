@@ -12,7 +12,7 @@ first stage has been argued through with him — that stage is a research questi
 
 ## Where you are
 
-FMCNS is a private research tool. Backend `queue-server/` (Node/Express, `node:sqlite`). No
+QNE is a private research tool. Backend `queue-server/` (Node/Express, `node:sqlite`). No
 tests, no linter, no build. Deploy is `git push origin develop`. Read `AGENTS.md` first.
 
 Read before starting, in this order:

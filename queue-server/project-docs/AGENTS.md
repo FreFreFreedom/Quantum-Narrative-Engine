@@ -1,4 +1,4 @@
-# AGENTS.md — FMCNS
+# AGENTS.md — QNE
 
 Guidance for every coding agent working in this repository (OpenCode, Claude
 Code, or another). The repo also has `CLAUDE.md` (Claude Code specifics) — for
@@ -678,9 +678,9 @@ one) rather than leaving it only in chat or in a private memory store.
 
 ## Repository essentials
 
-For agents working in this repo — what FMCNS is, how to run things, the rules.
+For agents working in this repo — what QNE is, how to run things, the rules.
 
-- **FMCNS** (Fractal Mythic Consciousness Navigation System) is a personal
+- **QNE** (Quantum Narrative Engine) is a personal
   research tool: characters, films and countries are mapped as one ontology of
   "characters" (universal ontological units), navigated fractally. Private
   project, not a product. `CLAUDE.md` has the full context.

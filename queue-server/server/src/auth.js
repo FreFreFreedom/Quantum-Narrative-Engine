@@ -1,5 +1,5 @@
 // Minimal single-user JWT auth (§10.7: requireAuth is one of only two infra dependencies
-// promptQueue.js needs). FMCNS is single-user, so there's no user table/password hashing —
+// promptQueue.js needs). QNE is single-user, so there's no user table/password hashing —
 // just one shared secret (ADMIN_PASSWORD) that exchanges for a signed JWT.
 
 import jwt from 'jsonwebtoken';

@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Backend DONE as specified · front end SUPERSEDED. Audited against the code 2026-08-19. Previously mislabelled PLANNED. The backend is essentially 1:1 with this document — `convos`/`convo_messages`, `services/anthropicLoop.js` (`runToolLoop` with the promised signature), `services/subjectContext.js`, `services/conversations.js` (every promised export), `routes/conversations.js`, and the handoff back-links — including the `task` subject this doc deferred to v2. **The front end shipped as a different design:** one global "Idea Studio" modal rather than three inline detail-pane widgets, so §11's Seeds and Suggestion-Engine right-hand panes were never needed and were never built. `renderConvoThread`, `.convo-plan`, `.convo-badge`, `#archConvoHost` do not exist. **Do not implement §11 as written.** One real gap: §8's cost split was not honoured — `CONVO_CHAT_MODEL` and `CONVO_PLAN_MODEL` are both `claude-sonnet-4-5`, so chatting costs the same as planning. |
 | **Created** | 2026-08-10 |
-| **Project** | FMCNS — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
+| **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Scope** | Backend: 4 new files, 2 new tables, 1 new column, 1 new router. Frontend: 1 new widget + 3 mount points in `fmcns_navigator.html`. |
 | **Depends on** | Nothing. Purely additive — if the new router failed to mount, the app behaves exactly as today. |
 
@@ -26,7 +26,7 @@ in §8.
 
 ## Context
 
-In FMCNS today, only one kind of box can be talked to: a Dispatch Queue task. Every
+In QNE today, only one kind of box can be talked to: a Dispatch Queue task. Every
 other box in the CORE ARCHITECTURE tab — an Architecture component, a tech-tree node,
 a Seed in the notebook, a suggestion from the Suggestion Engine — is a dead card. You
 can accept it, queue it, or dismiss it, but you cannot ask it *what would this actually

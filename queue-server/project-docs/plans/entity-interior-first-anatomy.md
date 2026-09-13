@@ -26,7 +26,7 @@ have left the plan.
 
 ## Where you are
 
-FMCNS is a private research tool — single-file vanilla-JS frontends plus a Node/Express
+QNE is a private research tool — single-file vanilla-JS frontends plus a Node/Express
 backend in `queue-server/`. **No test suite, no linter, no build step.** `node --check <file>`
 is the only sanity check for server-side JS. All npm commands run from `queue-server/`.
 

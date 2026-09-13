@@ -1,5 +1,5 @@
 // "Idées" — a notebook that never auto-executes. Ported near-verbatim from the
-// Orisha "Travaux" spec (§4); the only adaptation is calling FMCNS's own
+// Orisha "Travaux" spec (§4); the only adaptation is calling QNE's own
 // promptQueue.createPrompt() instead of a generic seam.
 import { randomUUID } from 'node:crypto';
 import * as queue from './promptQueue.js';

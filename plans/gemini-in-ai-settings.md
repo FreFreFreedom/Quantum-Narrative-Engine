@@ -18,7 +18,7 @@ here; a human should confirm those live, but nothing in the code suggests they'd
 
 ## Where you are
 
-FMCNS's frontend is one large single-file vanilla-JS app, `fmcns_navigator.html` at the
+QNE's frontend is one large single-file vanilla-JS app, `fmcns_navigator.html` at the
 repo root, with a byte-identical served copy at `queue-server/public/index.html`. Both
 must be kept in sync (AGENTS.md / CLAUDE.md).
 

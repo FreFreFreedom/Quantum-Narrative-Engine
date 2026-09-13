@@ -8,7 +8,7 @@
 
 ## Where you are
 
-FMCNS is a private research tool. The Content graph in `fmcns_navigator.html` (mirrored
+QNE is a private research tool. The Content graph in `fmcns_navigator.html` (mirrored
 to `queue-server/public/index.html` — **both files must stay in sync**, see AGENTS.md)
 draws edges between entities computed by `computeEchoes` (search for `// ---------- Scale
 Echo: "find its echoes" ----------`). There is no test suite, linter or build step in this

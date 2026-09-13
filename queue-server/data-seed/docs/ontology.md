@@ -1,4 +1,4 @@
-# FMCNS — Standing Reference: Ontology, Reasoning Stack & the Quantum Narrative Engine
+# QNE — Standing Reference: Ontology, Reasoning Stack & the Quantum Narrative Engine
 
 *Living document. Baseline as of this conversation. Supersedes the DAO/credentialing and cyber-warfare threads from the "Future of cyber warfare and automation" conversation, which are explicitly out of scope for now. Locate/Navigate/Lineage/Ritual are deprioritized as a current focus — this document is about what's underneath them.*
 
@@ -6,7 +6,7 @@
 
 ## 0. What this document is for
 
-This is the architectural core of the Fractal Mythic Consciousness Navigation System (FMCNS): how the graph is structured, how it's populated, how it reasons, and what the whole system actually *is* when you stop describing it feature-by-feature and name it for what it's aiming to be — a **Quantum Narrative Engine**.
+This is the architectural core of the Quantum Narrative Engine (QNE): how the graph is structured, how it's populated, how it reasons, and what the whole system actually *is* when you stop describing it feature-by-feature and name it for what it's aiming to be — a **Quantum Narrative Engine**.
 
 The seven analytical templates (Shadow Projection Map, Conscious/Subconscious Topology, Control/Surrender Axis, Doppelganger Structure, Initiation Arc, Grief/Memory Politics, Scale Echo) are **dropped from active design** for now. They were a first-pass formalization. The real plan is to formalize the analytical layer later by training the system on your existing corpus — starting with the 994-page/1,425-message ChatGPT archive already in this project, plus future PDFs — rather than hand-designing templates in advance. Scale Echo survives as a concept because it's not really a template, it's the *mechanism* — see §4.
 

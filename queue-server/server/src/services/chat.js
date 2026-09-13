@@ -1,4 +1,4 @@
-// Embedded FMCNS assistant — a fresh Claude API connection (not the Cowork session
+// Embedded QNE assistant — a fresh Claude API connection (not the Cowork session
 // that built this app) with tool access to the live ontology database, plus
 // persistent memory across app sessions and native PDF upload support.
 //
@@ -18,7 +18,7 @@ import { randomUUID } from 'node:crypto';
 const CHAT_MODEL = process.env.CHAT_MODEL || 'claude-sonnet-4-5';
 const PRIMING_SESSION_LIMIT = 5;
 
-const SYSTEM_PROMPT = `You are the embedded assistant inside FMCNS (Fractal Mythic Consciousness Navigation System), a private research platform mapping archetypal patterns across scales — individual, family, institution, nation, civilization — through film, geography, and myth.
+const SYSTEM_PROMPT = `You are the embedded assistant inside QNE (Quantum Narrative Engine), a private research platform mapping archetypal patterns across scales — individual, family, institution, nation, civilization — through film, geography, and myth.
 
 Core framework, condensed:
 - Three layers: ONTOLOGICAL (the formal graph — entities, types, edges; what exists and connects), SEMANTIC (meaning/resonance — tags, archetypal charge, interpretive content), ANALOGICAL (cross-scale pattern mappings — which structure at one scale mirrors which structure at another, e.g. "a follower is to a cult leader as a citizen is to a tyrant").

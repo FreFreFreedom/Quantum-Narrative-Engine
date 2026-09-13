@@ -10,7 +10,7 @@
 
 ## Where you are
 
-FMCNS is a personal research tool. The **Room** is the chat view where Antoine talks to
+QNE is a personal research tool. The **Room** is the chat view where Antoine talks to
 an AI assistant about cards/ideas. Conversations are powered by the `queue-server`
 backend (Node/Express, `node:sqlite`, ESM):
 

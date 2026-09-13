@@ -4,7 +4,7 @@
 
 ## Where you are
 
-FMCNS is Antoine's private research tool. Frontend: one file, `fmcns_navigator.html`, no build step,
+QNE is Antoine's private research tool. Frontend: one file, `fmcns_navigator.html`, no build step,
 mirrored to `queue-server/public/index.html` (they must match before any deploy). Backend:
 `queue-server/`, Node with `node:sqlite`, deployed on Railway from `develop` — pushing that branch is
 the deploy. Read `AGENTS.md` and `AGENT_MEMORY.md` before starting; this plan assumes neither.

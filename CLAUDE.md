@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Private research/prototyping repo for the Fractal Mythic Consciousness Navigation
-System (FMCNS) — a personal tool, not a public product. Two parts:
+Private research/prototyping repo for the Quantum Narrative Engine
+System (QNE) — a personal tool, not a public product. Two parts:
 
 1. **Frontend**: standalone single-file HTML apps (vanilla JS, no build step) —
    open directly in a browser. `fmcns_navigator.html` is the current, actively
@@ -81,7 +81,7 @@ that produced it.
 When Antoine says he saved something in "the Room", "my notebook", as "a seed" or via
 "save it as an idea", he means **this app** — not Google Drive, Notion, or any third-party
 product. There is no connector to go looking for and nothing to copy-paste: the text is in
-FMCNS's own database and is readable over the API with the admin password already in
+QNE's own database and is readable over the API with the admin password already in
 `queue-server/.env`. A session that searches Google Drive for it and reports "nothing there"
 has looked in the wrong place.
 
@@ -298,7 +298,7 @@ Entry point is `server/src/index.js`.
 ### The work queue (Travaux / "Claude does the coding" subsystem)
 
 This is the most architecturally significant part of the backend — a queue that
-lets you hand FMCNS build tasks to a Claude Code CLI subprocess and track them
+lets you hand QNE build tasks to a Claude Code CLI subprocess and track them
 through a UI, ported from an external spec kept as source-of-truth at
 `queue-server/SPEC.md` (a large file — read specific sections rather than the
 whole thing).
@@ -353,7 +353,7 @@ whole thing).
   memory, and native PDF upload.
 - `services/architecture.js` + `routes/architecture.js` — backs the
   "Architecture Navigator" meta-view (the frontend's self-documenting view of
-  FMCNS's own build: territories/components/history/suggestions).
+  QNE's own build: territories/components/history/suggestions).
 - `services/books.js`, `bookDetail.js`, `tagLens.js`, `tagPattern.js` — generate
   and cache (per entity, or per entity+tag/book pair) Claude-written text:
   book recommendations, "deeper read" explanations, tag-specific pattern
@@ -377,7 +377,7 @@ whole thing).
   (Cowork artifact `fmcns-fractal-navigator`). Five modes/tabs: Content (unified
   graph of characters/films/countries with vertical/entanglement/continuum-bridge
   edges), Map (real country-boundary geography), Architecture Navigator (the
-  meta-view of FMCNS's own build), Queue, Travaux. Talks to the deployed backend
+  meta-view of QNE's own build), Queue, Travaux. Talks to the deployed backend
   via a hardcoded `API_BASE` / `FMCNS_CHAT_SERVER` constant near the top of the
   file (`https://quantum-narrative-engine-production.up.railway.app`) — update
   both if the backend's Railway domain ever changes. The server now serves the

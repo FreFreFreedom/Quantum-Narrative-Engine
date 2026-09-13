@@ -8,7 +8,7 @@
 // webhook (NOTIFY_WEBHOOK_URL) posting the same one-line format — swap for any
 // channel. APP_URL is env-configurable and the recap link is simply omitted if unset.
 //
-// FMCNS has one space ('fmcns') where the spec had two ('finance'/'agent'); the
+// QNE has one space ('fmcns') where the spec had two ('finance'/'agent'); the
 // space column and per-space position/scheduling logic are kept as-is so a second
 // space can be added later without a migration.
 //

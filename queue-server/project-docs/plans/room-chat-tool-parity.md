@@ -8,7 +8,7 @@
 
 ## Where you are
 
-FMCNS is a private research tool. The Room is the multi-model chat surface in
+QNE is a private research tool. The Room is the multi-model chat surface in
 `fmcns_navigator.html` (mirrored to `queue-server/public/index.html` — **both must stay in
 sync**, see AGENTS.md), backed by `queue-server/server/src/services/conversations.js`.
 There is **no test suite, no linter and no build step** in this repo — `node --check` is
