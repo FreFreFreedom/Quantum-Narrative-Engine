@@ -748,13 +748,19 @@ export async function generateText({ prompt, feature, maxTokens = 800, label = '
   // the call go through blind, exactly as it would with none at all — never
   // fail, and never swap in some other provider expecting it to see.
   if (images && images.length) {
-    if (!process.env.GOOGLE_AI_STUDIO_API_KEY || benched('google-ai-studio', 'gemini-flash-lite-latest')) {
+    // The stronger model first, the 500-a-day one behind it. Reading a picture
+    // against a page of conversation and answering in a fixed shape is more than
+    // flash-lite could hold — live, 2026-09-13, it kept returning the quoted line
+    // and then stopping, with no reading at all. Looking is rare enough that
+    // twenty a day is not a constraint.
+    const visionModel = !benched('google-ai-studio', 'gemini-flash-latest')
+      ? 'gemini-flash-latest'
+      : (!benched('google-ai-studio', 'gemini-flash-lite-latest') ? 'gemini-flash-lite-latest' : null);
+    if (!process.env.GOOGLE_AI_STUDIO_API_KEY || !visionModel) {
       images = null;
     } else {
       explicitProvider = 'google-ai-studio';
-      // The 500-a-day model, not the 20-a-day one — a rhyme isn't worth a
-      // twentieth of the day's strongest free model (catalog.js).
-      explicitModel = 'gemini-flash-lite-latest';
+      explicitModel = visionModel;
     }
   }
   // A caller-named provider (the Room's manual model picker, or the /ask forced

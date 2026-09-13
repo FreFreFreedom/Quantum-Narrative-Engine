@@ -126,7 +126,7 @@ export async function rhymeFor(cardId) {
     prompt: buildPrompt({ material: materialFor(card), transcript, hasImage: !!dataUrl }),
     feature: 'analogies', // the free lane already seeded to Gemini for this kind of pass
     label: 'board:rhyme',
-    maxTokens: 300,
+    maxTokens: 500,
     maxAttempts: 2,
     timeoutMs: 20_000,
     images: dataUrl ? [dataUrl] : null,
