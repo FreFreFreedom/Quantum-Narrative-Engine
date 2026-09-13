@@ -109,10 +109,22 @@ function frontParkedPosition(space) {
 
 function broadcast() { broadcastAll('travaux:prompts:updated', {}); }
 
+// The single model the Codex lane offers today (services/providers/codex.js).
+const CODEX_MODEL = 'gpt-6-astra';
+
 // Providers whose task model is picked directly (provider_model), not resolved
 // from a Claude-Code preset tier — opencode and ai-router both work this way.
 function usesModelPicker(provider) {
   return provider === 'opencode' || provider === 'ai-router';
+}
+
+// Which column holds this engine's resumable session. Three CLIs, three id
+// formats, and none of them can resume another's — so the column is chosen here,
+// once, instead of at each of the seven places that used to inline the ternary.
+function sessionColFor(provider) {
+  if (provider === 'opencode') return 'opencode_session_id';
+  if (provider === 'codex') return 'codex_session_id';
+  return 'session_id';
 }
 
 // What this row will actually run on. One function because the same three lines were
@@ -133,6 +145,12 @@ function usesModelPicker(provider) {
 export function runModelFor(row, q = queueDefaultEngine()) {
   if (usesModelPicker(row.provider)) return { model: row.provider_model, effort: null };
   const tier = presetFor(effectivePreset(row));
+  // Codex has one model but a real reasoning dial, so it takes the tier's effort
+  // (or the standing choice in AI Settings) and ignores the tier's Claude model —
+  // without this the card would claim a task ran on sonnet.
+  if (row.provider === 'codex') {
+    return { model: row.provider_model || CODEX_MODEL, effort: q.effort || tier.effort };
+  }
   const model = row.provider_model
     || (CLAUDE_QUEUE_MODELS.includes(q.model) ? q.model : null)
     || tier.model;
@@ -193,13 +211,13 @@ export async function createPrompt({
   //     fallback when Claude is out of quota or throttled (the local runner walks
   //     Claude → OpenCode Go → free, see scripts/queue-runner.js).
   // An explicit provider from the caller (the composer's picker) always wins.
-  const requestedProvider = ['opencode', 'ai-router', 'claude-code'].includes(provider) ? provider : null;
+  const requestedProvider = ['opencode', 'ai-router', 'claude-code', 'codex'].includes(provider) ? provider : null;
   // The standing choice from AI Settings sits between the two: a per-task pick still
   // wins, and with nothing set anywhere the tier heuristic above applies as before.
   // Until 2026-08-23 that panel reached nothing in the queue at all.
   const queueDefaults = queueDefaultEngine();
   const useProvider = requestedProvider
-    || (queueDefaults.provider === 'opencode' || queueDefaults.provider === 'claude-code' ? queueDefaults.provider : null)
+    || (['opencode', 'claude-code', 'codex'].includes(queueDefaults.provider) ? queueDefaults.provider : null)
     || (queueDefaults.provider === 'claude-side' ? 'claude-code' : null)
     || (tier === 'mini' ? 'opencode' : 'claude-code');
   // A per-task account (the card's own dropdown) always wins; with nothing passed,
@@ -1325,7 +1343,7 @@ export function updatePrompt(id, patch) {
     if (!EDITABLE.includes(k)) continue;
     if (k === 'status' && !['queued', 'paused', 'cancelled'].includes(v)) continue;
     if (k === 'status' && row.status === 'running') continue;
-    if (k === 'provider' && !['claude-code', 'opencode', 'ai-router'].includes(v)) continue;
+    if (k === 'provider' && !['claude-code', 'opencode', 'ai-router', 'codex'].includes(v)) continue;
     if (k === 'account' && !['main', 'side'].includes(v)) continue;
     if ((k === 'provider_model' || k === 'run_model') && !isValidModelId(v)) continue;
     if (k === 'title') {
@@ -1350,7 +1368,7 @@ export function updatePrompt(id, patch) {
     // Provider switch = fresh start on the other CLI's session store: the old
     // provider's session id means nothing to the new one, and carrying it over
     // would make the next same-context run try to resume a foreign session.
-    db.prepare(`UPDATE work_prompts SET session_id=NULL, opencode_session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+    db.prepare(`UPDATE work_prompts SET session_id=NULL, opencode_session_id=NULL, codex_session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
   }
   broadcast();
   const updated = getPrompt(id);
@@ -1559,7 +1577,7 @@ function sessionOfParent(row) {
   if ((parent.provider || 'opencode') !== (row.provider || 'opencode')) {
     return { sessionId: null, note: `Cannot continue the session of "${parent.title}" — it ran on another provider. Starting a fresh session.` };
   }
-  const sessionId = (row.provider === 'opencode' ? parent.opencode_session_id : parent.session_id) || null;
+  const sessionId = parent[sessionColFor(row.provider)] || null;
   const lastTask = db.prepare(`SELECT worktree_path, branch FROM agent_tasks WHERE work_prompt_id=? ORDER BY created_at DESC LIMIT 1`).get(parent.id);
   return {
     sessionId,
@@ -1583,7 +1601,7 @@ function startPrompt(row, { forceFresh = false, agentKey = null } = {}) {
   // over the chain context for the same reason. The columns are cleared on
   // dispatch, so a later manual re-run starts clean.
   if (!forceFresh && (row.retry_branch || row.retry_worktree_path)) {
-    resume = (row.provider === 'opencode' ? row.opencode_session_id : row.session_id) || null;
+    resume = row[sessionColFor(row.provider)] || null;
     worktreePath = row.retry_worktree_path;
     branch = row.retry_branch;
   } else if (!forceFresh && row.parent_prompt_id) {
@@ -1618,8 +1636,7 @@ function finishPrompt(id, task) {
   // card, the detail panel and the recap notification all read this one column.
   const asked = conciseQuestionPayload(task.pending_question);
   const q = asked ? JSON.stringify(asked) : null;
-  const isOpen = (task.provider || 'opencode') === 'opencode';
-  const sessionCol = isOpen ? 'opencode_session_id' : 'session_id';
+  const sessionCol = sessionColFor(task.provider || 'opencode');
   // Cleared outright on success, so a task that blocked once and then succeeded on a
   // re-run does not keep wearing the old cause.
   const blockedReason = status === 'done' ? null : (task.blocked_reason || null);
@@ -2004,17 +2021,16 @@ async function answerInspireQuestion(row, text, userId) {
 export function clearContext(id) {
   const row = getPrompt(id);
   if (!row) return null;
-  db.prepare(`UPDATE work_prompts SET session_id=NULL, opencode_session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
+  db.prepare(`UPDATE work_prompts SET session_id=NULL, opencode_session_id=NULL, codex_session_id=NULL, context_turns=0, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?`).run(id);
   return getPrompt(id);
 }
 
 function relaunchWithThread(row) {
   const messages = listMessages(row.id);
-  const isOpen = row.provider === 'opencode';
   const { model, effort } = runModelFor(row);
   const overThreshold = (row.context_turns || 0) >= contextResetThresholdFor(row);
   const overBudget = overContextBudget(row);
-  const activeSession = isOpen ? row.opencode_session_id : row.session_id;
+  const activeSession = row[sessionColFor(row.provider)] || null;
   const fresh = !activeSession || overThreshold || overBudget;
   // Follow-ups stay on the dev that ran the original (persisted at dispatch);
   // legacy rows without one get the least-loaded dev.
@@ -2037,8 +2053,9 @@ function relaunchWithThread(row) {
       completed_at=NULL, pending_question=NULL, context_turns=?,
       session_id=CASE WHEN ? THEN NULL ELSE session_id END,
       opencode_session_id=CASE WHEN ? THEN NULL ELSE opencode_session_id END,
+      codex_session_id=CASE WHEN ? THEN NULL ELSE codex_session_id END,
       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?
-  `).run(task.id, useAgentKey, nextTurns, fresh ? 1 : 0, fresh ? 1 : 0, row.id);
+  `).run(task.id, useAgentKey, nextTurns, fresh ? 1 : 0, fresh ? 1 : 0, fresh ? 1 : 0, row.id);
   broadcast();
   return { prompt: getPrompt(row.id), task };
 }

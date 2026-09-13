@@ -1125,7 +1125,11 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
   const bin = prov.resolveBin();
   const body = provider === 'claude-code'
     ? prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model, effort, tools, resumeSessionId })
-    : prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model: providerModel || model, sessionId: resumeSessionId, question });
+    // Codex is the second engine with a reasoning dial, so it gets `effort` too —
+    // and its working root is a flag rather than the process cwd.
+    : provider === 'codex'
+      ? prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model: providerModel || model, effort, sessionId: resumeSessionId, question, cwd: execCwd })
+      : prov.buildRunCommand({ bin, taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE, model: providerModel || model, sessionId: resumeSessionId, question });
 
   // A coding task can request the SECOND Claude account (work_prompts.account='side').
   // Hand that account's OAuth token to the spawned CLI via the provider's spawnEnv
@@ -1214,6 +1218,11 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   if (provider === 'claude-code' && account === 'side' && !process.env.CLAUDE_SIDE_OAUTH_TOKEN) {
     failEarly(next, '(this task is set to run on the second Claude account, but CLAUDE_SIDE_OAUTH_TOKEN is not set on this runner — it was not run to avoid using the main account by mistake. Set the token, or switch the task back to the main account.)');
     return;
+  }
+  if (provider === 'codex') {
+    // One model on this lane, so a preset tier has nothing to pick — but the
+    // effort dial is real and is left exactly as the task row set it.
+    model = next.provider_model || getProvider('codex').DEFAULT_MODEL;
   }
   if (provider === 'opencode') {
     // OpenCode ignores preset tiers — the user picked a concrete model
@@ -1311,7 +1320,7 @@ async function executeTask(next, { lane = 'exec' } = {}) {
   runDetachedExecution(next.id, prompt, {
     model, effort, tools: isQuestion ? READONLY_TOOLS : EXEC_TOOLS,
     resumeSessionId: next.resume_session_id || null, lane,
-    provider, providerModel: (provider === 'opencode' || provider === 'ai-router') ? model : null, question: isQuestion,
+    provider, providerModel: (provider === 'opencode' || provider === 'ai-router' || provider === 'codex') ? model : null, question: isQuestion,
     cwd: execCwd, account,
   });
 }

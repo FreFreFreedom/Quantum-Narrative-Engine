@@ -116,6 +116,9 @@ function initSchema(db) {
   // from session_id (Claude's) because the two CLIs have incompatible session
   // stores — a session is only ever resumable by the provider that created it.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN opencode_session_id TEXT`); } catch {}
+  // Codex threads resume with their own id and cannot be handed to either other
+  // CLI, so they need a column of their own for the same reason opencode did.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN codex_session_id TEXT`); } catch {}
   // Agent roster link (plan Part 1): which agent this prompt is assigned to.
   // NULL → the runner falls back to 'dev1'. ALTER, not in the CREATE, so
   // pre-existing rows get NULL and behave exactly as before. The REFERENCES is

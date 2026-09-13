@@ -453,6 +453,15 @@ row, a composer whose text box had zero width — all passed every syntax check 
 were only visible on screen. See "Ship directly" below for the checks that are
 worth running first; they do not replace opening it.
 
+**A mockup carries almost no words (hard, Antoine 2026-09-13).** His words: *"when
+you show me mark ups, please minimize the text that I have to read... make this a rule
+for future conversations also."* A mockup or moodboard page gets a short title, the
+screens, and a handful of words per screen — no subtitle, no caption paragraph under a
+heading, no closing note. Anything that needs saying is said in the reply, not printed
+on the page. Words drawn *inside* a mocked-up screen are part of the design and stay.
+Same instinct as "No explaining inside the app", one step earlier: prose wrapped around
+a design is the designer defending it.
+
 ### Don't leave published pages behind (added 2026-09-09)
 
 A visual Antoine only has to **look at once** — mockups, palette comparisons, a chart to

@@ -11422,6 +11422,9 @@ const AI_QUEUE_EFFORTS = [
   ['high', 'High — think longer before writing'],
 ];
 function aiQueueIsClaude(provider) { return provider === 'claude-code' || provider === 'claude-side'; }
+// Engines with a reasoning dial. Claude takes --effort, Codex takes the same three
+// words through its own config override; OpenCode and the free lanes have none.
+function aiQueueHasEffort(provider) { return aiQueueIsClaude(provider) || provider === 'codex'; }
 
 function aiQueueEffortOptions(selected) {
   return `<option value=""${selected ? '' : ' selected'}>Auto</option>`
@@ -11430,6 +11433,9 @@ function aiQueueEffortOptions(selected) {
 }
 
 function aiQueueModelOptions(selected, provider) {
+  // One model on the Codex lane. Say which, rather than leaving a box that looks
+  // like a choice and is not.
+  if (provider === 'codex') return `<option value="" selected>gpt-6-astra</option>`;
   if (aiQueueIsClaude(provider)) {
     return `<option value=""${selected ? '' : ' selected'}>Auto — from the task's speed</option>`
       + AI_QUEUE_CLAUDE_MODELS.map(([v, label]) =>
@@ -11670,11 +11676,12 @@ function renderAiSettings() {
           <option value="claude-code"${qdProvider === 'claude-code' ? ' selected' : ''}>Claude — main account</option>
           <option value="claude-side"${qdProvider === 'claude-side' ? ' selected' : ''}>Claude — second account</option>
           <option value="opencode"${qdProvider === 'opencode' ? ' selected' : ''}>OpenCode</option>
+          <option value="codex"${qdProvider === 'codex' ? ' selected' : ''}>Codex — ChatGPT (your Mac)</option>
         </select>
       </td>
       <td>
         <select id="aiQueueModel"${qdProvider === 'opencode' || qdIsClaude ? '' : ' disabled'}>${qdModelOpts}</select>
-        <select id="aiQueueEffort" class="ai-effort-sel"${qdIsClaude ? '' : ' hidden'} title="How long the model is asked to think before it writes. Claude only.">${aiQueueEffortOptions(qdEffort)}</select>
+        <select id="aiQueueEffort" class="ai-effort-sel"${aiQueueHasEffort(qdProvider) ? '' : ' hidden'} title="How long the model is asked to think before it writes.">${aiQueueEffortOptions(qdEffort)}</select>
       </td>
     </tr>`;
   const advJson = JSON.stringify({ queue: aiSettings.queue || {}, intel: aiSettings.intel || {} }, null, 2)
@@ -11775,11 +11782,14 @@ function renderAiSettings() {
     const es = document.getElementById('aiQueueEffort');
     if (!ms) return;
     const claude = aiQueueIsClaude(qpSel.value);
-    if (es) es.hidden = !claude;
+    if (es) es.hidden = !aiQueueHasEffort(qpSel.value);
     // Model ids do not survive a backend change — 'sonnet' means nothing to OpenCode and
     // an OpenCode id means nothing to Claude — so the pick resets rather than carrying
     // a value the new lane would silently drop on save.
     if (claude) { ms.innerHTML = aiQueueModelOptions('', 'claude-code'); ms.disabled = false; return; }
+    // Codex offers one model, shown but not choosable — the effort dial beside it is
+    // the real control on this lane.
+    if (qpSel.value === 'codex') { ms.innerHTML = aiQueueModelOptions('', 'codex'); ms.disabled = true; return; }
     if (qpSel.value !== 'opencode') { ms.disabled = true; ms.value = ''; return; }
     ms.innerHTML = aiQueueModelOptions(ms.value, 'opencode');
     ms.disabled = false;
@@ -11838,7 +11848,7 @@ function renderAiSettings() {
       // Claude used to be blanked here unconditionally, which is why pinning a model to
       // it never stuck even once the dropdown was enabled.
       queue.defaultModel = ((qpEl.value === 'opencode' || claude) && qmEl) ? qmEl.value : '';
-      queue.defaultEffort = (claude && qeEl) ? qeEl.value : '';
+      queue.defaultEffort = (aiQueueHasEffort(qpEl.value) && qeEl) ? qeEl.value : '';
     }
     try {
       const personaEl = document.getElementById('aiStudioPersona');

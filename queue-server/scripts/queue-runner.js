@@ -36,6 +36,7 @@ import {
   CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels, isSpendFree,
 } from '../server/src/services/providers/index.js';
 import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
+import * as codexCli from '../server/src/services/providers/codex.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
 import { getClaudeUsage, getSideClaudeUsage } from '../server/src/services/claudeUsage.js';
 import { gitPathFacts, gitGrepHits, gitRecentTouching, gitHeadSha } from '../server/src/services/gitOps.js';
@@ -509,9 +510,11 @@ function laneOf(modelId) {
   // the side account's ceiling close the main one too.
   if (String(modelId).startsWith('claude-main:')) return 'claude-main';
   if (String(modelId).startsWith('claude:')) return 'claude';
+  if (String(modelId).startsWith('codex:')) return 'codex';
   return String(modelId).startsWith('opencode-go/') ? 'go' : 'free';
 }
 const isClaudeLane = (id) => laneOf(id) === 'claude' || laneOf(id) === 'claude-main';
+const isCodexLane = (id) => laneOf(id) === 'codex';
 const claudeModelOf = (id) => String(id).slice(String(id).indexOf(':') + 1);
 
 // Rule 2: is there enough room in the Claude windows to start this task? Returns
@@ -1131,6 +1134,143 @@ function runClaudeOnce({ task, model, effort, cwd, branch, account = null }) {
 }
 
 // ─── One task, walking the model chain ────────────────────────────────────────
+// Run one attempt on the Codex CLI. Same shape as runClaudeOnce — its own function
+// rather than a branch inside it, because the two CLIs share no flags, no event
+// format and no session ids, and the Claude path is the hot path for every other
+// task in the queue.
+//
+// Like the Claude lane, this draws on a subscription, so its dollar cost is 0 and
+// must stay 0: agent_tasks.cost_usd is what the per-task cost cap reads, and a
+// notional figure here would stop free work from running.
+function runCodexOnce({ task, model, effort, cwd, branch }) {
+  return new Promise((done) => {
+    const bin = codexCli.resolveBin();
+    const args = ['exec', '--json', '--skip-git-repo-check',
+      '--sandbox', task.mode === 'question' ? 'read-only' : 'workspace-write'];
+    if (model) args.push('--model', model);
+    if (effort) args.push('-c', `model_reasoning_effort=${effort}`);
+    if (cwd) args.push('-C', cwd);
+    if (task.resume_session_id) args.splice(1, 0, 'resume', task.resume_session_id);
+    args.push('-');
+
+    const who = codexCli.signedInAs();
+    if (who.email) console.log(dim(`  (Codex is signed in as ${who.email}${who.plan ? `, ${who.plan}` : ''})`));
+
+    // spawnEnv() strips OPENAI_API_KEY — with it set the CLI can bill per token
+    // instead of drawing on the ChatGPT subscription. Same trap, same guard, as
+    // ANTHROPIC_API_KEY on the Claude lane.
+    const child = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], env: codexCli.spawnEnv() });
+    child.stdin.write(task.prompt);
+    child.stdin.end();
+
+    let text = '', sessionId = null, errorMessage = '';
+    let usage = null;
+    let sawRealOutput = false;
+    let lastRealOutputAt = Date.now();
+    let toolInFlight = false;
+    const capMs = attemptCapFor(task);
+    let stderrTail = '';
+    let pending = [];
+    let settled = false;
+    const startedAt = Date.now();
+    let lastPrintAt = startedAt;
+    let atLineStart = true;
+
+    const finish = (outcome, extra = {}) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(flusher);
+      clearInterval(watchdog);
+      if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+      try { child.kill('SIGKILL'); } catch {}
+      done({ outcome, text, sessionId, errorMessage, usage, cost: 0, ...extra });
+    };
+
+    const flusher = setInterval(async () => {
+      if (!pending.length && !sawRealOutput) return;
+      const chunks = pending; pending = [];
+      try {
+        const r = await api(`/worker/${task.id}/stream`, { chunks, model: `codex:${model}`, cost_usd: 0, session_id: sessionId, usage });
+        if (r.status === 409) finish('cancelled');
+      } catch { /* transient network — retry next tick */ }
+    }, STREAM_FLUSH_MS);
+
+    const idleWrite = makeIdleWriteWatch({ branch, cwd, startedAt });
+    const watchdog = setInterval(() => {
+      const now = Date.now();
+      if (now - lastPrintAt > PROGRESS_MS) {
+        lastPrintAt = now;
+        if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+        console.log(dim(progressLine({ now, startedAt, sawRealOutput, lastRealOutputAt, capMs })));
+        const idle = idleWrite(now);
+        if (idle) {
+          console.log(yellow(`  ⚠ ${idle}`));
+          desktopNotify({ head: `Still nothing built — ${task.title || 'a task'}`, body: idle });
+        }
+      }
+      const verdict = watchdogVerdict({ now, startedAt, sawRealOutput, lastRealOutputAt, toolInFlight, capMs });
+      if (verdict) return finish(verdict.outcome, { why: verdict.why });
+    }, 1_000);
+
+    let buf = '';
+    child.stdout.on('data', (d) => {
+      buf += d.toString('utf8');
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('{')) continue;
+        let evt;
+        try { evt = JSON.parse(trimmed); } catch { continue; }
+        sawRealOutput = true;
+        lastRealOutputAt = Date.now();
+        if (evt.type === 'thread.started' && evt.thread_id && !sessionId) sessionId = evt.thread_id;
+        if (evt.type === 'turn.completed' && evt.usage) {
+          usage = {
+            tokens_in: (evt.usage.input_tokens || 0) + (evt.usage.cached_input_tokens || 0) || null,
+            tokens_out: (evt.usage.output_tokens || 0) + (evt.usage.reasoning_output_tokens || 0) || null,
+          };
+        }
+        if (evt.type === 'error' || evt.type === 'turn.failed') {
+          errorMessage = String(evt.message || evt.error?.message || 'the run reported an error');
+        }
+        if (evt.type === 'item.completed' && evt.item?.type === 'agent_message' && evt.item.text) {
+          text += (text ? '\n\n' : '') + evt.item.text;
+        }
+        codexCli.streamEventToChunks(evt, (chunk) => {
+          pending.push(chunk);
+          lastPrintAt = Date.now();
+          if (chunk.kind === 'text') {
+            toolInFlight = false;
+            process.stdout.write(chunk.text);
+            atLineStart = chunk.text.endsWith('\n');
+          } else if (chunk.kind === 'tool') {
+            toolInFlight = true;
+            if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
+            const detail = chunk.input ? dim(` — ${truncate(chunk.input, 80)}`) : '';
+            console.log(`  ${magenta('⚙')} ${chunk.name || 'tool'}${detail}`);
+          }
+        });
+      }
+    });
+
+    child.stderr.on('data', (d) => { stderrTail = (stderrTail + d.toString('utf8')).slice(-4000); });
+    child.on('error', (e) => finish('model-bad', { why: `could not start (${e.message})` }));
+    child.on('close', (code) => {
+      if (settled) return;
+      const limit = codexCli.detectLimit(`${text}\n${errorMessage}\n${stderrTail}`);
+      if (limit.hit) {
+        return finish('model-bad', { why: `the ChatGPT subscription hit its ${limit.label}`, fatal: 'quota' });
+      }
+      if (!sawRealOutput) {
+        return finish('model-bad', { why: `exited (code ${code}) without producing anything${stderrTail ? ` — ${truncate(stderrTail.trim(), 160)}` : ''}` });
+      }
+      if (code === 0 && !errorMessage) return finish('done');
+      return finish('gave-up', { why: errorMessage || `exited with code ${code}` });
+    });
+  });
+}
+
 async function runTask(task) {
   console.log('');
   rule();
@@ -1169,6 +1309,13 @@ async function runTask(task) {
   // falls through to the existing opencode chain (Go, then free) if Claude can't or
   // shouldn't run it. claudeGate() is what keeps that from being wasteful — see the
   // credit-discipline block at the top of this file.
+  // A task pinned to Codex runs there and only there: it is a subscription lane
+  // like Claude's, and silently carrying it to a free model would mean the engine
+  // picked in AI Settings meant nothing.
+  if ((task.provider || 'opencode') === 'codex') {
+    chain.length = 0;
+    chain.push(`codex:${task.model || 'gpt-6-astra'}`);
+  }
   if ((task.provider || 'opencode') === 'claude-code') {
     const preset = task.effort === 'high' ? 'deep' : task.effort === 'low' ? 'fast' : 'standard';
     // account matters: a task pinned to the second subscription must be measured
@@ -1226,12 +1373,16 @@ async function runTask(task) {
 
     tried.push(model);
     const isClaude = isClaudeLane(model);
+    const isCodex = isCodexLane(model);
     const claudeAccount = laneOf(model) === 'claude-main' ? 'main' : (task.account || 'main');
     const claudeShown = `Claude (${claudeModelOf(model)}${claudeAccount === 'side' ? ', 2nd account' : ''})`;
-    console.log(`  ${dim('→')} ${bold(isClaude ? claudeShown : model)}`);
+    const shown = isClaude ? claudeShown : isCodex ? `Codex (${claudeModelOf(model)})` : model;
+    console.log(`  ${dim('→')} ${bold(shown)}`);
     const r = isClaude
       ? await runClaudeOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path, branch: wt.branch, account: claudeAccount })
-      : await runOnce({ task, model, cwd: wt.path, branch: wt.branch });
+      : isCodex
+        ? await runCodexOnce({ task, model: claudeModelOf(model), effort: task.effort || null, cwd: wt.path, branch: wt.branch })
+        : await runOnce({ task, model, cwd: wt.path, branch: wt.branch });
 
     if (r.outcome === 'cancelled') { console.log(dim('  (cancelled server-side)')); return; }
 
@@ -1283,7 +1434,6 @@ async function runTask(task) {
       report += `\n\n---\nRan on Claude ${claudeModelOf(model)} — drew about $${r.cost.toFixed(2)} worth of the subscription (covered by the plan, not billed).`;
     }
     const statusTxt = status === 'done' ? green('✓ done') : red('✗ blocked');
-    const shown = isClaude ? claudeShown : model;
     const costTxt = r.cost ? dim(isClaude ? ` — ${'$' + r.cost.toFixed(4)} of subscription quota (not billed)` : ` — $${r.cost.toFixed(4)}`) : '';
     console.log(`  ${statusTxt} on ${bold(shown)}${costTxt}`);
     // Save the work to git BEFORE reporting, so the result the server records

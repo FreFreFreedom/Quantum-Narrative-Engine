@@ -4,12 +4,14 @@
 
 import * as claudeCode from './claudeCode.js';
 import * as opencode from './opencode.js';
+import * as codex from './codex.js';
 import * as aiRouter from './openaiCompatQueue.js';
 import { listProviders as listCatalogProviders } from '../ai/catalog.js';
 
 export const PROVIDERS = {
   'claude-code': claudeCode,
   opencode,
+  codex,
   'ai-router': aiRouter,
 };
 
@@ -18,7 +20,7 @@ export function getProvider(name) {
 }
 
 export function isKnownProvider(name) {
-  return name === 'claude-code' || name === 'opencode' || name === 'ai-router';
+  return name === 'claude-code' || name === 'opencode' || name === 'codex' || name === 'ai-router';
 }
 
 const DISCOVERY_TTL_MS = 5 * 60_000;

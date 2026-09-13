@@ -98,6 +98,11 @@ function gitPush() {
  // Defaults to Hy3, the only free model with a finished-task record here; --model
  // overrides it with any id the app's catalogue knows.
  const MODEL = opt('model');
+ // --codex: run this task on the Codex CLI (OpenAI) instead of Claude or OpenCode.
+ // No --effort flag here on purpose: createPrompt has no effort parameter, so one
+ // would be silently dropped. The dial lives in AI Settings ("Coding tasks"), and a
+ // task's tier already carries medium unless that dial says otherwise.
+ const CODEX = flag('codex');
  const FREE = flag('free') || !!MODEL;
  // Everything that is not a flag or a flag's value is the plan path.
  const OPT_VALUES = new Set([PRESET, GROUP, MODEL, ACCOUNT, TITLE].filter(Boolean));
@@ -238,6 +243,7 @@ const payload = {
   ...(PREVIEW ? { preview_required: 1 } : {}),
   ...(ACCOUNT ? { account: ACCOUNT } : {}),
   ...(FREE ? { provider: 'opencode', provider_model: MODEL || 'opencode/hy3-free' } : {}),
+  ...(CODEX ? { provider: 'codex' } : {}),
 };
 
 // Resolve (create or reuse) the umbrella group this plan's part goes under.

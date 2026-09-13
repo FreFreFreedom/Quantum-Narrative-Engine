@@ -41,7 +41,8 @@
     "signature:selftest": "node scripts/signature-selftest.js",
     "bonesearch:selftest": "node scripts/bonesearch-selftest.js",
     "splitscreen:selftest": "node scripts/splitscreen-selftest.js",
-    "spectrum:selftest": "node scripts/spectrum-selftest.js"
+    "spectrum:selftest": "node scripts/spectrum-selftest.js",
+    "codex:selftest": "node scripts/codex-selftest.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.1.225",
