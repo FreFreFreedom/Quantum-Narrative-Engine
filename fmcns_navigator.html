@@ -1428,9 +1428,6 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-about button { appearance:none; border:0; background:transparent; color:var(--c-ink-4); cursor:pointer;
   font:inherit; line-height:1; padding:2px 3px; border-radius:var(--r-xs); }
 .se-about button:hover { color:var(--c-ink); background:var(--c-hover-wash); }
-.se-aboutbar .se-about-add { border:1px dashed var(--c-border-3); background:transparent; color:var(--c-ink-4);
-  border-radius:var(--r-sm); font:inherit; font-size:var(--fs-xs); padding:3px 8px; cursor:pointer; }
-.se-aboutbar .se-about-add:hover { border-color:var(--c-ink-5); color:var(--c-ink-3); }
 .se-input { flex:1; min-width:0; max-height:110px; background:transparent; border:none; border-bottom:1px solid var(--c-border-2); border-radius:0; padding:5px 1px; font-family:inherit; font-size:var(--fs-base); line-height:1.5; color:var(--c-ink); resize:none; }
 .se-input:focus { outline:none; border-bottom-color:var(--c-ink-4); }
 .se-input::placeholder { color:var(--c-ink-5); }
@@ -10314,26 +10311,13 @@ window.studioAboutBar = function (bar, opts) {
         + '<button type="button" data-about-off-type="' + qEscAttr(c.subject_type) + '"'
         + ' data-about-off-id="' + qEscAttr(c.subject_id) + '"'
         + ' title="Take it out of this conversation" aria-label="Take it out">✕</button></span>').join('')
-    + (cards.length < slots
-        ? '<button type="button" class="se-about-add" title="Put something in this conversation">'
-          + (cards.length ? '＋' : '＋ what is this about?') + '</button>'
-        : '');
+    ;
   bar.querySelectorAll('[data-about-off-id]').forEach(b => {
     b.onclick = (ev) => {
       ev.stopPropagation();
       roomDetach(b.getAttribute('data-about-off-type'), b.getAttribute('data-about-off-id'));
     };
   });
-  const add = bar.querySelector('.se-about-add');
-  if (add) add.onclick = (ev) => {
-    ev.stopPropagation();
-    // The picker already exists, in the Attached pane, with its own search and its
-    // own sources. Pressing the tab and opening it beats a second picker here.
-    document.querySelector('#roomTabs [data-room-pane="attached"]')?.click();
-    roomPickOpen = true;
-    renderRoomCards();
-    document.getElementById('roomPickSearch')?.focus();
-  };
 };
 
 /* Repaint the strip without repainting the whole answer — attaching or detaching
