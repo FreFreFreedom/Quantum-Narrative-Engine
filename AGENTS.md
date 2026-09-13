@@ -470,6 +470,26 @@ palettes from the 2026-09-09 UI session are hex values in
 `plans/ui-redesign-instrument-chrome.md`, which is why deleting the pages cost nothing.
 **Never leave a repo file citing an artifact URL** — it rots the moment he tidies up.
 
+### A design conversation ends in `plans/`, not in a private folder (hard, added 2026-09-13)
+
+**Antoine's instruction, after the second Claude account knew nothing about a design he
+and another session had spent six rounds on:** an idea that only lives in one session's
+private plan folder (`~/.claude/plans/`) or in a chat transcript is invisible to every
+other engine — the second Claude account, OpenCode, a queue agent in a worktree. As far
+as they are concerned it does not exist, and he has to explain it again from scratch.
+
+So: **when a design conversation reaches a shape — even an unfinished one — write it to
+`plans/` and add its row to `plans/README.md`, in the same session, before moving on.**
+Do not wait for it to be settled, approved, or ready to build. Mark it PLANNED and say
+plainly at the top that it is not a green light, and name the questions he has not
+answered yet. A half-formed plan in the repo is worth more than a finished one nobody
+else can read.
+
+The same applies to anything durable that came out of the talk and is not a plan: the
+vision goes in `data-seed/docs/fractal_operational_core.md`, and facts another engine
+would need go in `AGENT_MEMORY.md`. Private memory is for how to work with him, never
+for what was decided.
+
 ### A plan sent to the queue must stand alone (hard)
 
 **Restated as an unconditional rule 2026-09-11, in Antoine's words:** *"it needs to

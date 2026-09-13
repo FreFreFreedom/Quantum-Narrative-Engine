@@ -599,6 +599,37 @@ Full design: `~/.claude/plans/so-the-vision-of-whimsical-pillow.md` (approved 20
 Content and the Room become one surface, the picture follows the conversation, and the
 interior is the headline.
 
+## Content and the Room become one place (2026-09-10/11, filed 2026-09-13)
+
+Six design rounds with Antoine on rethinking the Content section produced a full plan that
+sat only in one session's private folder until 2026-09-13 — so the second Claude account
+had never heard of it. It is now **`plans/content-and-room-one-place.md`**, PLANNED and
+explicitly **not a green light**. Read it before touching Content, the Room, or the
+Integration Continuum. The short of it:
+
+- **Content and the Room stop being separate views.** One screen: the reading on the left,
+  a shaft of ladder-rungs on the right. Neither half is steered by hand — the picture
+  re-forms around whatever the conversation is naming, settling on a pause, never mid-word,
+  and resting on the quiet whole-ladder view when nothing in the corpus is named.
+- **Two designs he rejected, and the reasons bind:** a whole-corpus picture is a poster
+  ("nothing happens when you use it"), and a list of named neighbours is a menu, not a place.
+- **One pattern, not many** — connection against freedom. The 651 tag words are names that
+  one disposition takes at a place on that pattern, at a scale. This **corrects the
+  Integration Continuum**: both ends are opposite failures, holding both is the centre, so a
+  single float says two different things at once. Part 0 of the plan writes this into
+  `fractal_operational_core.md` — see also *The one pattern, and the two interiors*.
+- **The interior is the headline**, which is why the deep-read batch matters, and the
+  anatomy handle must still pass the Dogville/Maxson gate.
+- **The tension vocabulary is already half-built and a third corrupt** — 206 of 659 rows
+  have `against` set to the literal word "against" with the real partner leaked into `why`.
+  Recoverable from what is on disk; do not regenerate.
+- **Not settled by him:** whether holding both sides is the midpoint of the line or off it,
+  and whether each end carries one name or two.
+
+Corpus measurements taken from production 2026-09-10 live in that plan. Do not re-measure.
+
+---
+
 ## Open / unfinished threads (don't start unless asked)
 
 - Two queue tasks have sat **paused** since 2026-08-10: an IMSDb script connector +
@@ -693,6 +724,10 @@ whole-word, longest-first regex, no model call anywhere.
   is not proof of real progress.
 - Model ceiling: `standard`/sonnet for anything automatic; `deep`/opus only when Antoine
   picks it per task (changed 2026-09-09 — see "Model & account lanes" above).
+- A design conversation ends in `plans/` the same session, even unfinished — marked
+  PLANNED and "not a green light", with his open questions named. An idea that lives
+  only in a private plan folder or a transcript is invisible to every other engine
+  (his instruction 2026-09-13; the rule is in AGENTS.md).
 
 ---
 
@@ -830,3 +865,25 @@ rebuilt in `setTensions` and after a hand-saved tension) plus a `WeakMap` memo k
 entity's **tags array** — that array survives a graph rebuild, where the entity object does
 not, because `buildGraph` spreads new node objects from `ENTITIES`. Same answers for all
 293 entities, 34.6s → 28ms.
+
+## Where more transcripts/scripts for the interior pipeline should come from (2026-09-11)
+
+`services/trafficExtraction.js` (the machine version of building an entity's interior —
+see graph spectra, `services/graphSpectrum.js`) only has raw material for two entities:
+`data-seed/subtitles/f_dogville.srt` and `f_fences.srt`. Scaling graph spectra past those
+two needs more transcripts in the project, and Antoine asked (2026-09-11) for this sourced
+via real tools rather than by hand, and recorded here so any engine picking this up later
+doesn't have to re-search it:
+
+- **Subtitles**: an official OpenSubtitles MCP server exists —
+  `github.com/opensubtitles/mcp.opensubtitles.com`, install via
+  `claude mcp add-json "opensubtitles" '{"command":"npx","args":["-y","@opensubtitles/mcp-server@latest"]}'`.
+  Anonymous downloads are throttled to zero; it needs a free API key from
+  opensubtitles.com/api in `OPENSUBTITLES_USER_KEY` — Antoine has to make that account
+  himself (account creation is not something an agent does on his behalf). Once the key
+  exists, this is free and unlimited for search.
+- **Scripts**: IMSDb has no official free API. A paid third-party wrapper exists
+  (Parse.bot marketplace) but nothing here should reach a metered service for this — the
+  plain screenplay pages at imsdb.com are just fetchable text, the same way several
+  open-source scrapers on GitHub already do it (e.g. `j2kun/imsdb_download_all_scripts`).
+  A small direct fetch-and-parse script is the right size, not a paid API.
