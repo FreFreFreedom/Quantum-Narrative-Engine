@@ -1,6 +1,6 @@
 # QNE — current state (auto-generated, do not edit)
 
-Generated: 2026-09-12T01:18:17.548Z
+Generated: 2026-09-13T09:41:55.406Z
 
 ## Components
 
@@ -38,6 +38,11 @@ Generated: 2026-09-12T01:18:17.548Z
 
 ## Plan backlog
 
+- room-analogy-mockups — **PLANNED** 2026-09-13
+- codex-as-an-engine — **PLANNED** 2026-09-13
+- codex-quota-in-the-readout — **PLANNED** 2026-09-13
+- every-room-conversation-in-the-repo — **IN PROGRESS** 2026-09-13
+- content-and-room-one-place — **PLANNED** 2026-09-13
 - anatomy-replaces-tags — **PLANNED** 2026-09-11
 - queue-panel-and-element-picker — **DONE** 2026-09-11
 - self-diagnosis-fixes — **DONE** 2026-09-10

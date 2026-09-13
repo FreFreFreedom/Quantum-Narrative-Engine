@@ -375,7 +375,7 @@ const NOW_COMPUTERS = {
     };
   },
   'idea-studio': (db) => {
-    const convos = num(db, `SELECT COUNT(*) n FROM convos`);
+    const convos = num(db, `SELECT COUNT(*) n FROM convos WHERE subject_type<>'analogy'`);
     const seeds = num(db, `SELECT COUNT(*) n FROM work_ideas WHERE deleted_at IS NULL`);
     const planted = num(db, `SELECT COUNT(*) n FROM work_ideas WHERE deleted_at IS NULL AND work_prompt_id IS NOT NULL`);
     return {

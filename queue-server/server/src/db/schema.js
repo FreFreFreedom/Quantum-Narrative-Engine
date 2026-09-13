@@ -1709,6 +1709,17 @@ export function initConversationsSchema(db) {
   // a look. Same idea as mind_seen_turns above, for a different fire-and-forget job.
   try { db.exec(`ALTER TABLE convos ADD COLUMN world_look_seen_turns INTEGER DEFAULT 0`); } catch {}
 
+  // The analogy engine (plan "the analogy engine in the Room"). Two additive
+  // columns, same shape as the two watermarks above: how many turns the
+  // unasked analogy pass has already read, and how the engine is steered for
+  // this thread ({moves, reach, domains, when} as JSON, NULL = the defaults in
+  // services/roomAnalogies.js). The arrivals themselves are messages in a side
+  // conversation (subject_type 'analogy', subject_id = this convo), so there is
+  // no new table and no change to convo_messages — whose `kind` column carries a
+  // CHECK of ('chat','plan') that SQLite cannot alter in place anyway.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN analogy_seen_turns INTEGER DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE convos ADD COLUMN analogy_steer TEXT`); } catch {}
+
   // The manual model picker (plan "chat-model-picker"): a sticky per-conversation
   // override of the automatic turn router, {provider, model, account} as JSON, or
   // NULL when the conversation is on Auto. Read by conversations.js#getChatLane.

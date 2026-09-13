@@ -33,6 +33,7 @@ import { STUDIO_TOOLS, dispatchStudioTool, TOOLS_PROMPT_BLOCK } from './studioTo
 import { createKnowledgeNote, updateKnowledgeNote, uniqueTitle, NOTE_PREFIX } from './knowledgeDocs.js';
 import { mindBlock, harvest as harvestMind } from './mind.js';
 import { extractCandidates, formatRepoFacts } from './repoProbe.js';
+import { analogyLook } from './roomAnalogies.js';
 
 // keep SubjectContext's module-level registrations loaded (imported above)
 import './subjectContext.js';
@@ -1412,6 +1413,7 @@ async function runChatTurnStreaming(convoId, userId, onToken, turn, onStatus = n
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
+  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
 }
 
@@ -1451,6 +1453,7 @@ async function runChatTurn(convoId, userId, turn) {
   maybeAutoTitleConvo(convo);
   harvestMind(convoId); // fire-and-forget: extract standing facts after the turn
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
+  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag, intent: turn?.intent, notice, messageId: savedId };
 }
 
@@ -1476,6 +1479,7 @@ async function runCodeReadTurn(convoId, turn) {
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
+  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag: 'claude', intent: 'code_read' };
 }
 
@@ -1553,6 +1557,7 @@ async function runCheckTurn(convoId) {
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
+  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag, intent: 'check', checked: originalTag };
 }
 
@@ -1584,6 +1589,7 @@ async function runSecondTurn(convoId) {
   maybeAutoTitleConvo(convo);
   harvestMind(convoId);
   roomWorldLook(convoId); // fire-and-forget: keyed to this Room convo (plan room-world-ideas)
+  analogyLook(convoId);   // same shape, different question (plan room-analogy-engine)
   return { text: result.text, via: result.via, laneTag, intent: 'second', answered: originalTag };
 }
 

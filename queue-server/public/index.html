@@ -1417,6 +1417,32 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
    switch as the dots above. */
 .se-cursor { display:inline-block; margin-left:1px; color:var(--c-ink-4); animation:seBlink 1s var(--ease) infinite; }
 /* The composer is a line, not a box: one rule underneath that darkens on focus. */
+
+/* Analogies beside the Room. Not the world-look's question (what could be built)
+   but the other one: where is this relation already living, under other names.
+   The pane is its own small conversation, so it carries an ask box of its own. */
+.room-ana-steer { display:flex; flex-wrap:wrap; gap:5px; padding:0 0 9px; border-bottom:1px solid var(--c-border); }
+.room-ana-chip { border:1px solid var(--c-border-2); border-radius:var(--r-pill); padding:2px 9px; font-size:var(--fs-xs);
+  color:var(--c-ink-3); background:none; cursor:pointer; font-family:inherit; }
+.room-ana-chip:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
+.room-ana-chip.on { background:var(--c-accent); border-color:transparent; color:var(--c-on-accent); }
+.room-ana-item { padding:13px 0; border-bottom:1px solid var(--c-border); }
+.room-ana-item.is-carried { opacity:.5; }
+.room-ana-eyebrow { font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
+.room-ana-item h4 { font-family:var(--room-font); font-weight:400; font-size:var(--fs-md); line-height:1.25; margin:7px 0 5px; }
+.room-ana-item p { margin:0 0 6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
+.room-ana-breaks { color:var(--c-ink-5); font-size:var(--fs-xs); }
+.room-ana-acts { display:flex; gap:12px; margin-top:8px; }
+.room-ana-acts button { background:none; border:none; padding:0; cursor:pointer; font-family:inherit; font-size:var(--fs-xs); color:var(--c-accent); }
+.room-ana-acts button:hover { text-decoration:underline; }
+.room-ana-mine { font-family:var(--room-font); font-size:var(--fs-sm); background:var(--c-surface-2);
+  border-radius:var(--r-sm); padding:7px 9px; margin:12px 0 0; }
+.room-ana-ask { display:flex; gap:6px; align-items:center; margin-top:11px; }
+.room-ana-ask .searchbox { flex:1; min-width:0; }
+/* The line an unasked arrival is pinned to. A dot in the gutter, not a band. */
+.se-turn.has-analogy { position:relative; }
+.se-turn.has-analogy::before { content:''; position:absolute; left:-13px; top:7px; width:7px; height:7px;
+  border-radius:50%; background:var(--c-accent); opacity:.7; }
 .se-compose { display:flex; align-items:flex-end; gap:8px; border-top:1px solid var(--c-border); margin-top:2px; padding-top:8px; }
 /* What the next question is about. One row, above the box, because a thing the
    question is about belongs beside the question and not in a panel you have to go
@@ -3062,6 +3088,7 @@ button:active { transform: translateY(1px) scale(.99); }
           <button type="button" class="active" data-room-pane="attached" role="tab">Attached <span class="room-tabcount" id="roomCardCount"></span></button>
           <button type="button" data-room-pane="passages" role="tab">Passages <span class="room-tabcount" id="roomPassCount"></span></button>
           <button type="button" data-room-pane="ideas" role="tab">World look <span class="room-tabcount" id="roomIdeaCount"></span></button>
+          <button type="button" data-room-pane="analogies" role="tab">Analogies <span class="room-tabcount" id="roomAnaCount"></span></button>
           <button type="button" data-room-pane="mind" role="tab">Mind <span class="room-tabcount" id="roomMindCount"></span></button>
           <button type="button" data-room-pane="extract" role="tab">Extraction <span class="room-tabcount" id="roomExtractCount"></span></button>
         </div>
@@ -3098,6 +3125,9 @@ button:active { transform: translateY(1px) scale(.99); }
         </div>
         <div class="room-pane room-ideas" id="roomIdeas">
           <div id="roomIdeasHost"></div>
+        </div>
+        <div class="room-pane room-ideas" id="roomAnalogies">
+          <div id="roomAnalogiesHost"></div>
         </div>
       </div>
     </div>
@@ -9255,7 +9285,7 @@ const ROOM_ZONE_KEYS = { roomThreads: 'fmcns_room_threads_open', roomCards: 'fmc
 // Which of the right column's five panes is showing. One key where there used to
 // be five, because only one of them is open at a time now.
 const ROOM_PANE_KEY = 'fmcns_room_pane';
-const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', mind: 'roomMind', extract: 'roomExtract' };
+const ROOM_PANES = { attached: 'roomAttached', passages: 'roomPassages', ideas: 'roomIdeas', analogies: 'roomAnalogies', mind: 'roomMind', extract: 'roomExtract' };
 // A tab carries its own count so a shut pane can still say it has something in
 // it — the whole reason five headings were worth losing.
 function setRoomTabCount(id, n) {
@@ -9275,6 +9305,7 @@ const ROOM_TAB_HAS = {
   attached: () => roomAttachedCards().length > 0 || roomPickOpen,
   passages: () => roomPassages.length > 0,
   ideas: () => roomIdeasReports.length > 0 || roomIdeasRunning,
+  analogies: () => roomAnaCards().length > 0 || roomAnaBusy,
   mind: () => roomMind.length > 0,
   extract: () => roomExtractChunks.length > 0 || !!(roomExtractStatus && roomExtractStatus.total),
 };
@@ -9749,6 +9780,7 @@ async function loadRoom() {
   if (roomSel) loadRoomSubjects();
   loadRoomMind(); // refresh the Room's shared memory whenever the room is shown
   loadRoomIdeas();
+  loadRoomAnalogies();
   loadRoomExtract();
   loadRoomPassages().then(loadRoomPassageWorld);
 }
@@ -9881,6 +9913,7 @@ function renderRoom() {
   renderRoomConvo();
   renderRoomCards();
   renderRoomIdeas();
+  renderRoomAnalogies();
 }
 
 // A roaming thread's own synthetic 'open' row is the room itself, not a card, so
@@ -10464,6 +10497,181 @@ const roomIdeaSel = roomIdeasState.sel;
 function roomIdeaSelFor(id) { return roomIdeaSel[id] || (roomIdeaSel[id] = []); }
 function roomIdeaIsOpen(id, idx) { return id in roomIdeasState.open ? !!roomIdeasState.open[id] : idx === 0; }
 
+/* ── Analogies beside the Room ───────────────────────────────────────────────
+   The world-look asks what could be BUILT out of a conversation. This asks the
+   other question: where is the relation being talked about already living, under
+   other names, in another domain or at another scale. The search space is the
+   model's whole world rather than our own entities — his call, 2026-09-13: "we
+   don't have much entities compared to the gazillion that exist for real".
+
+   The pane is its own small conversation. Arrivals land in it unasked, he can ask
+   it for another kind, and he carries what he wants across himself: "bring" loads
+   the Room's composer using the same carried-quote chip a kept passage already
+   uses, and never sends. Nothing here writes into the thread. */
+let roomAna = { steer: null, items: [] };
+let roomAnaBusy = false;
+const ROOM_ANA_MOVES = ['vertical', 'horizontal', 'entanglement', 'antidote', 'counterpart'];
+
+function roomAnaCards() { return (roomAna.items || []).filter(i => i.card); }
+
+async function loadRoomAnalogies() {
+  const want = roomSel;
+  if (!want) { roomAna = { steer: null, items: [] }; renderRoomAnalogies(); return; }
+  try {
+    const out = await api('/api/convos/' + encodeURIComponent(want) + '/analogies');
+    if (roomSel !== want) return;   // a different thread was picked mid-flight
+    roomAna = { steer: out.steer || null, items: out.items || [] };
+  } catch (e) { if (roomSel === want) roomAna = { steer: null, items: [] }; }
+  renderRoomAnalogies();
+}
+
+async function roomAnaSteer(patch) {
+  if (!roomSel) return;
+  roomAna.steer = Object.assign({}, roomAna.steer || {}, patch);
+  renderRoomAnalogies();
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/analogies/steer', 'PATCH', patch);
+    roomAna.steer = out.steer || roomAna.steer;
+  } catch (e) { /* the next load settles it */ }
+  renderRoomAnalogies();
+}
+
+function roomAnaToggleMove(move) {
+  const cur = ((roomAna.steer && roomAna.steer.moves) || []).slice();
+  const i = cur.indexOf(move);
+  if (i >= 0) cur.splice(i, 1); else cur.push(move);
+  // Empty means "the defaults" on the server, which is not what an all-off click
+  // means here — so the last one standing cannot be switched off.
+  if (!cur.length) return;
+  roomAnaSteer({ moves: cur });
+}
+
+async function roomAnaAsk(text) {
+  const q = String(text || '').trim();
+  if (!q || !roomSel || roomAnaBusy) return;
+  const want = roomSel;
+  roomAnaBusy = true;
+  // Show his question straight away — he is waiting on this one, unlike the
+  // unasked pass, and a pane that sits blank for twenty seconds reads as broken.
+  roomAna.items = (roomAna.items || []).concat([{ id: 'pending', role: 'user', text: q, card: null }]);
+  renderRoomAnalogies();
+  try {
+    const out = await apiWrite('/api/convos/' + encodeURIComponent(want) + '/analogies/ask', 'POST', { text: q });
+    if (roomSel === want) roomAna = { steer: out.steer || roomAna.steer, items: out.items || roomAna.items };
+  } catch (e) { if (roomSel === want) loadRoomAnalogies(); }
+  roomAnaBusy = false;
+  renderRoomAnalogies();
+}
+
+// Carry one arrival into the Room's composer: a chip above the box naming what
+// was brought, and its question as the draft. He edits and sends, or does not.
+function roomAnaBring(card) {
+  const t = roomThreads.find(x => x.id === roomSel);
+  if (!t || !window.studioLend || !window.studioLend.carry) return;
+  window.studioLend.carry('open', t.subject_id,
+    { text: card.left + ' ↔ ' + card.right + ' — ' + card.title, msgId: card.anchor_message_id || null },
+    card.question || '');
+  renderRoomConvo();
+  const box = document.querySelector('#roomConvo .se-input');
+  if (box) box.focus();
+}
+
+function roomAnaBringAll() {
+  const cards = roomAnaCards().map(i => i.card);
+  if (!cards.length) return;
+  const t = roomThreads.find(x => x.id === roomSel);
+  if (!t || !window.studioLend || !window.studioLend.carry) return;
+  window.studioLend.carry('open', t.subject_id,
+    { text: cards.map(c => c.left + ' ↔ ' + c.right + ' — ' + c.title).join(' · '), msgId: null }, '');
+  renderRoomConvo();
+  const box = document.querySelector('#roomConvo .se-input');
+  if (box) box.focus();
+}
+
+// The dot in the gutter of the line an unasked arrival answered. Painted onto the
+// turns after the fact rather than inside the turn renderer, so the arrivals can
+// land at any time without the whole conversation being rebuilt.
+function roomAnaMarkTurns() {
+  const log = document.querySelector('#roomConvo .se-log');
+  if (!log) return;
+  const anchored = new Set(roomAnaCards().map(i => i.card.anchor_message_id).filter(Boolean));
+  log.querySelectorAll('.se-turn').forEach(el => {
+    el.classList.toggle('has-analogy', anchored.has(el.getAttribute('data-msg-id')));
+  });
+}
+
+function renderRoomAnalogies() {
+  const host = document.getElementById('roomAnalogiesHost');
+  if (!host) return;
+  const cards = roomAnaCards();
+  setRoomTabCount('roomAnaCount', cards.length);
+  if (!roomSel) { host.innerHTML = ''; return; }
+  const steer = roomAna.steer || { moves: ['vertical', 'horizontal', 'entanglement'], reach: 'anywhere', when: 'pause' };
+  const on = (m) => (steer.moves || []).indexOf(m) >= 0 ? ' on' : '';
+
+  let html = '<div class="room-ana-steer">'
+    + ROOM_ANA_MOVES.map(m => '<button type="button" class="room-ana-chip' + on(m) + '" data-ana-move="' + m + '">' + m + '</button>').join('')
+    + '<button type="button" class="room-ana-chip' + (steer.reach === 'anywhere' ? ' on' : '') + '" data-ana-reach="1"'
+    + ' title="Where it may look">' + (steer.reach === 'anywhere' ? 'anywhere' : 'only here') + '</button>'
+    + '<button type="button" class="room-ana-chip' + (steer.when === 'asked' ? '' : ' on') + '" data-ana-when="1"'
+    + ' title="Whether it speaks without being asked">' + (steer.when === 'asked' ? 'only when asked' : 'on a pause') + '</button>'
+    + '</div>';
+
+  if (!roomAna.items.length && !roomAnaBusy) {
+    html += '<div class="tv-empty">Nothing yet. Keep talking, or ask below.</div>';
+  }
+  html += (roomAna.items || []).map((it, idx) => {
+    if (!it.card) return '<div class="room-ana-mine">' + qEsc(it.text) + '</div>';
+    const c = it.card;
+    return '<div class="room-ana-item">'
+      + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + ' · ' + qEsc(c.move) + '</div>'
+      + '<h4>' + qEsc(c.title) + '</h4>'
+      + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
+      + (c.breaks ? '<p class="room-ana-breaks">Breaks: ' + qEsc(c.breaks) + '</p>' : '')
+      + '<div class="room-ana-acts">'
+      +   '<button type="button" data-ana-bring="' + idx + '">↑ bring</button>'
+      +   (c.anchor_message_id ? '<button type="button" data-ana-jump="' + idx + '">where from</button>' : '')
+      + '</div></div>';
+  }).join('');
+
+  if (roomAnaBusy) html += '<div class="tv-empty">Looking…</div>';
+  if (cards.length > 1) html += '<div class="room-ana-acts"><button type="button" data-ana-bringall="1">↑ bring all of them</button></div>';
+  html += '<div class="room-ana-ask">'
+    + '<input class="searchbox" id="roomAnaInput" placeholder="Ask for another kind…" autocomplete="off"'
+    + (roomAnaBusy ? ' disabled' : '') + '>'
+    + '<button type="button" class="ubtn ubtn--pill" id="roomAnaSend"' + (roomAnaBusy ? ' disabled' : '') + '>Ask</button>'
+    + '</div>';
+  host.innerHTML = html;
+
+  host.querySelectorAll('[data-ana-move]').forEach(b => { b.onclick = () => roomAnaToggleMove(b.getAttribute('data-ana-move')); });
+  const reach = host.querySelector('[data-ana-reach]');
+  if (reach) reach.onclick = () => roomAnaSteer({ reach: steer.reach === 'anywhere' ? 'here' : 'anywhere' });
+  const when = host.querySelector('[data-ana-when]');
+  if (when) when.onclick = () => roomAnaSteer({ when: steer.when === 'asked' ? 'pause' : 'asked' });
+  host.querySelectorAll('[data-ana-bring]').forEach(b => {
+    b.onclick = () => { const it = roomAna.items[Number(b.getAttribute('data-ana-bring'))]; if (it && it.card) roomAnaBring(it.card); };
+  });
+  host.querySelectorAll('[data-ana-jump]').forEach(b => {
+    b.onclick = () => {
+      const it = roomAna.items[Number(b.getAttribute('data-ana-jump'))];
+      const id = it && it.card && it.card.anchor_message_id;
+      if (!id) return;
+      const sel = (window.CSS && CSS.escape) ? CSS.escape(id) : id;
+      const turn = document.querySelector('#roomConvo .se-log [data-msg-id="' + sel + '"]');
+      if (turn) turn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+  });
+  const all = host.querySelector('[data-ana-bringall]');
+  if (all) all.onclick = roomAnaBringAll;
+  const input = host.querySelector('#roomAnaInput');
+  const send = host.querySelector('#roomAnaSend');
+  const fire = () => { if (input) { const v = input.value; input.value = ''; roomAnaAsk(v); } };
+  if (send) send.onclick = fire;
+  if (input) input.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); fire(); } };
+
+  roomAnaMarkTurns();
+}
+
 async function loadRoomIdeas() {
   const want = roomSel;
   if (!want) { roomIdeasReports = []; roomIdeasRunning = false; renderRoomIdeas(); return; }
@@ -10799,6 +11007,7 @@ function roomSelect(id) {
   // Reset before renderRoom() paints, so the outgoing thread's rounds never flash
   // under the newly-selected one while loadRoomIdeas() is still in flight.
   roomIdeasReports = []; roomIdeasRunning = false;
+  roomAna = { steer: null, items: [] }; roomAnaBusy = false;
   roomExtractStatus = null; roomExtractChunks = [];
   roomEndRename();
   document.getElementById('roomThreads').classList.remove('open');
@@ -10806,6 +11015,7 @@ function roomSelect(id) {
   renderRoom();
   loadRoomSubjects();
   loadRoomIdeas();
+  loadRoomAnalogies();
   loadRoomExtract();
   loadRoomPassages().then(loadRoomPassageWorld);
 }
@@ -11982,6 +12192,7 @@ const WS_ROUTES = {
   // The Room streams its own turn as it arrives, so this is only about the thread
   // list — titles, new threads, deletions — and only while the Room is on screen.
   'convos:updated': () => { if (coreOpen() && coreView === 'room' && typeof renderRoomThreads === 'function') renderRoomThreads(); },
+  'analogies:updated': () => { if (coreOpen() && coreView === 'room' && typeof loadRoomAnalogies === 'function') loadRoomAnalogies(); },
   'passages:updated': () => { if (coreOpen() && coreView === 'room' && typeof window.loadRoomPassages === 'function') window.loadRoomPassages(); },
   'mind:updated': () => { if (coreOpen() && coreView === 'arch' && typeof archTab !== 'undefined' && archTab === 'mind' && typeof loadMind === 'function') loadMind(true); },
   'worldlook:updated': () => { if (typeof window.refreshWorldPanels === 'function') window.refreshWorldPanels(); },
@@ -20923,6 +21134,16 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
   // and the card draws them in the box it already has.
   window.studioLend = {
     entry: function(type, subjectId){ return entryOf(type, subjectId); },
+    // Put something in the composer without sending it — the Room's analogy pane
+    // carries an arrival across this way, reusing the chip a kept passage uses.
+    carry: function(type, subjectId, quote, draft){
+      var e = entryOf(type, subjectId);
+      if(!e.quotes) e.quotes = [];
+      if(quote && quote.text && !e.quotes.some(function(q){ return quoteText(q) === quote.text; })) e.quotes.push(quote);
+      if(draft){ e.draft = (e.draft ? e.draft + '\n' : '') + draft; e.draftForce = true; }
+      saveDraft(e);
+      return e;
+    },
     load: function(e, repaint){ return fetchConvo(e, repaint); },
     send: function(e, text, repaint, onDone){ return sendTurn(e, text, repaint, onDone); },
     commands: commandRows,

@@ -56,6 +56,7 @@ import { startQuotaScheduler, bindQuotaSchedulerDb } from './services/quotaSched
 import { providersRoutes } from './routes/providers.js';
 import { conversationsRoutes } from './routes/conversations.js';
 import { bindConversationsDb } from './services/conversations.js';
+import { bindRoomAnalogiesDb } from './services/roomAnalogies.js';
 import { passagesRoutes } from './routes/passages.js';
 import { bindPassagesDb } from './services/passages.js';
 import { bindDocExtractionDb } from './services/docExtraction.js';
@@ -124,6 +125,7 @@ bindOpenAiSpendDb(db);
 bindRouterDb(db);
 bindQuotaSchedulerDb(db);
 bindConversationsDb(db);
+bindRoomAnalogiesDb(db);
 bindPassagesDb(db);
 bindDocExtractionDb(db);
 bindMindDb(db);

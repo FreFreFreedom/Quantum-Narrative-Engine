@@ -898,3 +898,29 @@ curated notes). `listOpenConvos(null)` is the internal unlimited export; its def
 is capped and must not feed pruning. `commitFilesToTrunk` now takes `pruneDirs`, with
 repo-relative keep paths and each source's own non-empty guard. See
 `plans/every-room-conversation-in-the-repo.md` for verification status.
+
+## Analogies beside the Room — Codex design conversation (2026-09-13)
+
+Antoine asked for a structural-analogy recommendation stream inside the living
+Room conversation, comparable in presence to World Ideas but reading relations
+across entities, domains and scales. The conversation, its conclusions and the
+fictional three-state mockup are preserved in `plans/room-analogy-mockups.md`
+(PLANNED, not a green light). Read it before extending the Room with analogy
+recommendations.
+
+## The analogy engine is live in the Room (2026-09-13)
+
+Built from `plans/room-analogy-engine.md`. A sixth Room pane that asks a different
+question from the world-look: not what could be built out of this conversation, but
+where the relation being discussed is already living under other names. Two things
+worth knowing before extending it:
+
+- **It does not search our entities.** Antoine's call: the corpus is tiny next to
+  the world, so the model proposes from its own knowledge and the corpus is not the
+  search space. Nothing here waits on a computed anatomy handle.
+- **The side pane is a conversation, and its storage is a convo.** `subject_type
+  'analogy'`, `subject_id` = the Room convo; each arrival is one message's `meta`.
+  There is no analogies table and `convo_messages.kind` cannot grow a new value —
+  it has a CHECK of ('chat','plan'). Steering and the watermark are two columns on
+  `convos`.
+

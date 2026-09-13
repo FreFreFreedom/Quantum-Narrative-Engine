@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { isKnownProvider } from '../services/ai/providers.js';
 import * as convos from '../services/conversations.js';
+import * as analogies from '../services/roomAnalogies.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -148,6 +149,36 @@ export function conversationsRoutes() {
     // into { provider, model, account, tag } so the frontend never re-implements
     // the parse, same shape as GET/POST /:id/lane below.
     res.json({ convo, chat_override: convos.getChatLane(convo.id), messages: convos.listMessages(convo.id), acts: convos.writeActsForConvo(convo.id), edits: convos.convoSubjectEdits(convo.id), subjects: convos.listConvoSubjects(convo.id), marks: convos.listMarks(convo.id) });
+  });
+
+  // ─── Analogies beside the Room (plan "the analogy engine in the Room") ─────
+  // The side pane is its own small conversation: arrivals land here unasked, he
+  // can ask for another kind, and he carries what he wants into the Room himself.
+  // Nothing here ever writes into the main thread — "bring" is a frontend move
+  // that loads the composer.
+
+  router.get('/:id/analogies', (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json(analogies.listAnalogies(req.params.id));
+  });
+
+  // His own question into the side pane. Answers inline — he is waiting on it,
+  // unlike the unasked pass which is fire-and-forget.
+  router.post('/:id/analogies/ask', asyncHandler(async (req, res) => {
+    const out = await analogies.askAnalogies(req.params.id, req.body?.text);
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json({ ...out, ...analogies.listAnalogies(req.params.id) });
+  }));
+
+  router.patch('/:id/analogies/steer', (req, res) => {
+    const out = analogies.setSteer(req.params.id, req.body || {});
+    if (isConvoError(out)) return res.status(statusFor(out.error)).json(out);
+    res.json({ steer: out });
+  });
+
+  router.delete('/:id/analogies', (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    res.json(analogies.clearAnalogies(req.params.id));
   });
 
   // POST /api/convos/:id/lane — the manual model picker's sticky pick (plan

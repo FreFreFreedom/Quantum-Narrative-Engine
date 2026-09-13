@@ -19,6 +19,7 @@
     "notify:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/notify-selftest.js",
     "group:selftest": "node scripts/group-selftest.js",
     "witness:selftest": "node scripts/witness-selftest.js",
+    "analogy:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/analogy-selftest.js",
     "world:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/worldbrainstorm-selftest.js",
     "docs:sync": "node scripts/sync-docs.js",
     "idea:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/idealanded-selftest.js",
