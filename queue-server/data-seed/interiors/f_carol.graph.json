@@ -1,0 +1,1008 @@
+{
+  "entity": "f_carol",
+  "source": "data-seed/scripts/f_carol.txt",
+  "scope": "the whole script, machine-extracted (25 windows)",
+  "turns": [
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sometimes.",
+      "block": 1
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "So now you’re a scientist?",
+      "block": 2
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Sounds more like psychology.",
+      "block": 3
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Physics is more comforting.",
+      "block": 4
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s late. I should go.",
+      "block": 5
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "You shouldn’t...",
+      "block": 6
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Why? Did you mind?",
+      "block": 7
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "No.",
+      "block": 8
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Would Richard mind?",
+      "block": 9
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Probably. (beat) I have to go.",
+      "block": 10
+    },
+    {
+      "speaker": "p2",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Come back tomorrow? Or Wednesday?",
+      "block": 11
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Maybe. I don’t know.",
+      "block": 12
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Here.",
+      "block": 13
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Come to my parents for Christmas.\n          We had a nice time tonight.",
+      "block": 14
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It was one night.",
+      "block": 15
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I don’t like to think of you.\n          Alone.",
+      "block": 16
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I’m not alone. There’s Rindy,\n          there’s-",
+      "block": 17
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Abby. There’s always Abby.",
+      "block": 18
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It shouldn’t be like this.",
+      "block": 19
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "I know.",
+      "block": 20
+    },
+    {
+      "speaker": "p5",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "She wanted to wait up for you.",
+      "block": 21
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Ah, mama’s special girl.",
+      "block": 22
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Goodnight, Florence.",
+      "block": 23
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Where’s this place in Jersey?",
+      "block": 24
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "It’s not Union City.",
+      "block": 25
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Okay, okay.",
+      "block": 26
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "There’s my ride.",
+      "block": 27
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Eight o’clock?",
+      "block": 28
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Eight o’clock.",
+      "block": 29
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hi.",
+      "block": 30
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Hello. Carol Aird.",
+      "block": 31
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Richard Semco. Glad to meet you.",
+      "block": 32
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Likewise.",
+      "block": 33
+    },
+    {
+      "speaker": "p1",
+      "to": "p6",
+      "stance": "neu",
+      "cue": null,
+      "quote": "She wanted to meet you.",
+      "block": 34
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Therese speaks very highly of you.",
+      "block": 35
+    },
+    {
+      "speaker": "p6",
+      "to": null,
+      "stance": "neu",
+      "cue": null,
+      "quote": "Love you.",
+      "block": 36
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "You still with me?",
+      "block": 37
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "THERESE",
+      "quote": "Yes.",
+      "block": 38
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "RINDY",
+      "quote": "Mommyyyy!!",
+      "block": 39
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "Where’s the star?",
+      "block": 40
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "RINDY",
+      "quote": "This one, Mommy.",
+      "block": 41
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "That’s my girl.",
+      "block": 42
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "Look how beautiful!",
+      "block": 43
+    },
+    {
+      "speaker": "p7",
+      "to": null,
+      "stance": "ally",
+      "cue": "RINDY",
+      "quote": "More stars!",
+      "block": 44
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "I don’t... think... so!",
+      "block": 45
+    },
+    {
+      "speaker": "p8",
+      "to": null,
+      "stance": "neu",
+      "cue": "O/S FLORENCE",
+      "quote": "You find everything you need, miss?",
+      "block": 46
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "THERESE",
+      "quote": "Gosh, you scared me. How silly.",
+      "block": 47
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "ally",
+      "cue": "THERESE",
+      "quote": "I’m sorry. I should have asked.",
+      "block": 48
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "opp",
+      "cue": "CAROL",
+      "quote": "Don’t apologize.",
+      "block": 49
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "And how’s that going?",
+      "block": 50
+    },
+    {
+      "speaker": "p1",
+      "to": null,
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "Well... actually.",
+      "block": 51
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "I’m glad.",
+      "block": 52
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "That’s beautiful.",
+      "block": 53
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "Will you show me your work?",
+      "block": 54
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "Invite me round.",
+      "block": 55
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "Harge. What’s wrong?",
+      "block": 56
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "I’m sorry.",
+      "block": 57
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "For what?",
+      "block": 58
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "For everything that might happen.",
+      "block": 59
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "Take me to bed.",
+      "block": 60
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "Lie down.",
+      "block": 61
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "You’re trembling.",
+      "block": 62
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "opp",
+      "cue": "THERESE",
+      "quote": "Don’t. I want to see you.",
+      "block": 63
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "My angel. Flung out of space.",
+      "block": 64
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "What town are we in?",
+      "block": 65
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "This? Waterloo. Isn’t that awful?",
+      "block": 66
+    },
+    {
+      "speaker": "p9",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "ANCIENT WOMAN",
+      "quote": "You the folks in thirteen?",
+      "block": 67
+    },
+    {
+      "speaker": "p4",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "We’re checking out.",
+      "block": 68
+    },
+    {
+      "speaker": "p9",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "ANCIENT WOMAN",
+      "quote": "Telegram come for you last night.",
+      "block": 69
+    },
+    {
+      "speaker": "p4",
+      "to": "p9",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "When did this arrive?",
+      "block": 70
+    },
+    {
+      "speaker": "p9",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "ANCIENT WOMAN",
+      "quote": "I ain’t a clock, lady. Early.",
+      "block": 71
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "Carol! What the hell-",
+      "block": 72
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "Where’s my suitcase?",
+      "block": 73
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "CAROL",
+      "quote": "I want my fucking suitcase.",
+      "block": 74
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "Carol, you’re scaring me, you can’t-",
+      "block": 75
+    },
+    {
+      "speaker": "p4",
+      "to": "p1",
+      "stance": "opp",
+      "cue": "CAROL",
+      "quote": "Stand out of the way, Therese.",
+      "block": 76
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "opp",
+      "cue": "CAROL",
+      "quote": "Where’s the tape, you sonofabitch.",
+      "block": 77
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "That can’t be right.",
+      "block": 78
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "How do I know you’re not lying?",
+      "block": 79
+    },
+    {
+      "speaker": "p10",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "TOMMY TUCKER",
+      "quote": "You don’t, ma’am.",
+      "block": 80
+    },
+    {
+      "speaker": "p1",
+      "to": "p4",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "Carol...",
+      "block": 81
+    },
+    {
+      "speaker": "p1",
+      "to": "p10",
+      "stance": "opp",
+      "cue": "THERESE",
+      "quote": "How could you.",
+      "block": 82
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "Let’s get out of here.",
+      "block": 83
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLERK",
+      "quote": "Belivet.",
+      "block": 84
+    },
+    {
+      "speaker": "p3",
+      "to": null,
+      "stance": "opp",
+      "cue": "HARGE",
+      "quote": "That’s absurd! - Are they serious-?",
+      "block": 85
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL (interrupts him)",
+      "quote": "Fred - please. Don’t - May I speak?",
+      "block": 86
+    },
+    {
+      "speaker": "p12",
+      "to": null,
+      "stance": "neu",
+      "cue": "FRED HAYMES (signals to the STENOGRAPHER)",
+      "quote": "This is off the record, honey.",
+      "block": 87
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "neu",
+      "cue": "CAROL",
+      "quote": "Might as well be on the record.",
+      "block": 88
+    },
+    {
+      "speaker": "p4",
+      "to": null,
+      "stance": "ally",
+      "cue": "CAROL",
+      "quote": "No, Fred. Let me have my say.",
+      "block": 89
+    },
+    {
+      "speaker": "p11",
+      "to": null,
+      "stance": "neu",
+      "cue": "CLERK (CONT’D)",
+      "quote": "Hand delivered. Swank.",
+      "block": 90
+    },
+    {
+      "speaker": "p13",
+      "to": "p1",
+      "stance": "neu",
+      "cue": "WAITER",
+      "quote": "Do you have a reservation?",
+      "block": 91
+    },
+    {
+      "speaker": "p1",
+      "to": "p13",
+      "stance": "neu",
+      "cue": "THERESE",
+      "quote": "I’m looking for someone.",
+      "block": 92
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "p1",
+      "p10",
+      "p11",
+      "p12",
+      "p13",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "p6",
+      "p7",
+      "p8",
+      "p9"
+    ],
+    "edges": [
+      {
+        "a": "p1",
+        "b": "p2",
+        "weight": 8,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 8
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p3",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p6",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p4",
+        "weight": 18,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 3,
+          "ally": 2,
+          "neu": 13
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p7",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p8",
+        "weight": 1,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p9",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p10",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p1",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p10",
+        "b": "p4",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p3",
+        "weight": 1,
+        "sign": "opp",
+        "stances": {
+          "opp": 1,
+          "ally": 0,
+          "neu": 0
+        }
+      },
+      {
+        "a": "p11",
+        "b": "p13",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p12",
+        "b": "p4",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p3",
+        "b": "p4",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 1,
+          "neu": 5
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p5",
+        "weight": 2,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p6",
+        "weight": 6,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 6
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p7",
+        "weight": 5,
+        "sign": "ally",
+        "stances": {
+          "opp": 0,
+          "ally": 3,
+          "neu": 2
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p8",
+        "weight": 1,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 1
+        }
+      },
+      {
+        "a": "p4",
+        "b": "p9",
+        "weight": 5,
+        "sign": "unsigned",
+        "stances": {
+          "opp": 0,
+          "ally": 0,
+          "neu": 5
+        }
+      }
+    ]
+  },
+  "structuralBalance": {
+    "testable": true,
+    "signedEdges": 4,
+    "balanced": true,
+    "frustration": 0,
+    "violations": [],
+    "bestSplit": [
+      [
+        "p1",
+        "p10",
+        "p12",
+        "p13",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ],
+      [
+        "p11"
+      ]
+    ]
+  }
+}
