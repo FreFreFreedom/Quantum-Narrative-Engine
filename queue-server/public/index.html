@@ -11288,11 +11288,16 @@ function qProviderUi() {
   const modeSel = document.getElementById('qMode');
   if (!prov) return;
   const val = prov.value;
-  const usesModelPicker = val === 'opencode' || val === 'ai-router';
-  if (preset) preset.disabled = usesModelPicker;
+  const isFreeLane = val === 'opencode' || val === 'ai-router';
+  const isClaude = aiQueueIsClaude(val);
+  const usesModelPicker = isFreeLane || isClaude;
+  // Speed/depth (the tier) still governs effort for Claude even when a specific
+  // model is picked (runModelFor in promptQueue.js) — only the free lanes, which
+  // have no tier concept, disable it.
+  if (preset) preset.disabled = isFreeLane;
   if (modelSel) {
     modelSel.disabled = !usesModelPicker;
-    if (usesModelPicker) {
+    if (isFreeLane) {
       const models = qModelsForProvider(val);
       const prev = modelSel.value;
       const err = val === 'opencode' ? qProviders.opencode?.error : qProviders.aiRouter?.error;
@@ -11304,6 +11309,10 @@ function qProviderUi() {
         : autoOpt + `<option value="">${err ? 'unavailable — ' + err : '(no models)'}</option>`;
       if (prev && [...modelSel.options].some(o => o.value === prev)) modelSel.value = prev;
       else modelSel.value = '';
+    } else if (isClaude) {
+      // Same source of truth as the AI Settings model row (aiQueueModelOptions) —
+      // haiku/sonnet/opus, defaulting to Auto (the tier picks the model).
+      modelSel.innerHTML = aiQueueModelOptions(modelSel.value, val);
     }
   }
   if (modeSel) {
@@ -12606,7 +12615,8 @@ function qProviderLabel(p) {
     base = `AI Router${p.provider_model ? ' · ' + p.provider_model : ' · 🤖 Auto'}`;
   } else {
     const presetLabel = p.preset === 'auto' ? `auto → ${p.resolved_preset || '…'}` : p.preset;
-    base = `Claude Code · ${presetLabel}`;
+    const model = p.run_model || p.provider_model || null;
+    base = `Claude Code · ${presetLabel}${model ? ' · ' + model : ''}`;
   }
   // Always named, not just flagged when non-default — "no account shown" used to
   // read as a gap when a task was simply on the (unlabeled) main account.
@@ -14751,9 +14761,10 @@ async function qAddPrompt(asPaused) {
   const manualRun = document.getElementById('qManualRun').checked;
   const isOpen = provider === 'opencode';
   const isAiRouter = provider === 'ai-router';
-  const usesModelPicker = isOpen || isAiRouter;
+  const requiresModelPick = isOpen || isAiRouter; // free lanes have no tier fallback — Claude's Auto falls back to the tier
+  const usesModelPicker = requiresModelPick || aiQueueIsClaude(provider);
   const modelSel = document.getElementById('qOpenModel');
-  if (usesModelPicker && !modelSel.value) {
+  if (requiresModelPick && !modelSel.value) {
     errEl.textContent = 'Pick a model first (or wait for the list to load).';
     btn.disabled = false; btn.textContent = 'Add to queue';
     return;
@@ -14764,7 +14775,7 @@ async function qAddPrompt(asPaused) {
       title: document.getElementById('qPromptTitle').value.trim(),
       // AI Router providers have no file-editing tools — always question-mode.
       mode: isAiRouter ? 'question' : document.getElementById('qMode').value,
-      preset: usesModelPicker ? 'standard' : document.getElementById('qPreset').value,
+      preset: requiresModelPick ? 'standard' : document.getElementById('qPreset').value,
       // Context (continue an earlier task's session, or start fresh) is decided
       // automatically server-side (contextPolicy.js) instead of a manual picker.
       context_mode: 'auto',
