@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | PLANNED |
+| **Status** | DONE — shipped 2026-09-13, verified 2026-09-13 |
 | **Created** | 2026-09-13 |
 | **Project** | QNE — `quantum-narrative-engine` (backend `queue-server/`, frontend `fmcns_navigator.html`) |
 | **Related** | [free-model-file-tools.md](free-model-file-tools.md) — the bigger, riskier sibling plan (free chat-only models get file-editing power). This plan ships first, independently. |

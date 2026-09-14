@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-13 |
+| **DONE** | 2026-09-13 — built and merged same day, label re-verified 2026-09-13 |
 
 Not a green light — Antoine names a plan before it is implemented.
 
