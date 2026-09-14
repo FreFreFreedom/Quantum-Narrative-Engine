@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-09-13 |
+| **DONE** | 2026-09-14 |
 
 Not a green light on its own — but Antoine has already said "ok implement" to
 this exact plan in the terminal session that wrote it, then asked for it to

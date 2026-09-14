@@ -2,7 +2,7 @@
 
 | Status | Date |
 |---|---|
-| **PLANNED — approved for implementation** | 2026-09-13 |
+| **DONE** | 2026-09-14 |
 
 This plan stands alone. It extends the live Room analogy engine built in
 `plans/room-analogy-engine.md`; it does not replace that feature or revive the
