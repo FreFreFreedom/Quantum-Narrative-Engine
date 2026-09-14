@@ -1508,6 +1508,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .room-ana-item.is-regenning { opacity:.5; }
 .room-ana-acts button[disabled] { cursor:default; opacity:.5; text-decoration:none; }
 .room-ana-eyebrow { font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--c-ink-5); }
+.room-ana-scale { font-size:var(--fs-xs); letter-spacing:.06em; color:var(--c-ink-4); opacity:.6; margin-top:1px; }
 .room-ana-item h4 { font-family:var(--room-font); font-weight:400; font-size:var(--fs-md); line-height:1.25; margin:7px 0 5px; }
 .room-ana-item p { margin:0 0 6px; font-size:var(--fs-sm); color:var(--c-ink-3); }
 .room-ana-acts { display:flex; gap:12px; margin-top:8px; }
@@ -10813,6 +10814,7 @@ function renderRoomAnalogies() {
     const regenning = roomAnaRegenBusy.has(it.id);
     return '<div class="room-ana-item' + (regenning ? ' is-regenning' : '') + '">'
       + '<div class="room-ana-eyebrow">' + qEsc(c.left) + ' ↔ ' + qEsc(c.right) + '</div>'
+      + (c.left_scale && c.right_scale ? '<div class="room-ana-scale">' + qEsc(c.left_scale.toUpperCase()) + ' ↔ ' + qEsc(c.right_scale.toUpperCase()) + '</div>' : '')
       + '<h4>' + qEsc(c.title) + '</h4>'
       + (c.reading ? '<p>' + qEsc(c.reading) + '</p>' : '')
       + '<div class="room-ana-acts">'
