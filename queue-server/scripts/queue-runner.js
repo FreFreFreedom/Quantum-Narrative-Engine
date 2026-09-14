@@ -248,11 +248,9 @@ async function notifyEnding(parts) {
 }
 
 // ─── New-task + possible-duplicate watch (no LLM, no cost) ────────────────────
-// Same two channels as notifyEnding, one function each deciding the message —
-// mirrors that shape rather than inlining slackNotify/desktopNotify calls below.
+// Desktop banner only — Antoine never wants Slack for these, standing rule.
 async function notifyNewTask(task) {
   const title = task.title || `(untitled ${task.id.slice(0, 8)})`;
-  await slackNotify(`🆕 *New task queued* — ${title}\n_<${APP_URL}|open the queue>`);
   desktopNotify({ head: 'New task queued', body: title });
 }
 
@@ -260,7 +258,6 @@ async function notifyPossibleDuplicate(task, other) {
   const title = task.title || `(untitled ${task.id.slice(0, 8)})`;
   const otherTitle = other.title || `(untitled ${other.id.slice(0, 8)})`;
   const body = `"${title}" looks like it may duplicate "${otherTitle}" (${other.status})`;
-  await slackNotify(`⚠️ *Possible duplicate task* — ${body}\n_<${APP_URL}|open the queue>`);
   desktopNotify({ head: 'Possible duplicate task', body });
 }
 
