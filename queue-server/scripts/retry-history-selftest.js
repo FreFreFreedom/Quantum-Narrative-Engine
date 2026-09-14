@@ -21,6 +21,7 @@ check('queue creates a retry as a new prompt', /export async function retryPromp
 check('queue refuses to overwrite an active continuation', /retry_of_prompt_id=\? AND status IN \('queued','running','paused'\)/.test(queue));
 check('retry keeps the final plan as an owned brief', /plan_source: 'own'/.test(queue));
 check('HTTP retry endpoint uses the linked continuation', /router\.post\('\/prompts\/:id\/retry'/.test(route) && /queue\.retryPrompt/.test(route));
+check('retry can pin a continuation before it dispatches', /provider = null/.test(queue) && /account = null/.test(queue) && /req\.body\?\.account/.test(route));
 
 const insert = /INSERT INTO work_prompts \(([^)]*)\)\s*\n\s*VALUES \(([^)]*)\)/.exec(queue);
 check('prompt INSERT has matching columns and placeholders', !!insert && insert[1].split(',').length === (insert[2].match(/\?/g) || []).length);

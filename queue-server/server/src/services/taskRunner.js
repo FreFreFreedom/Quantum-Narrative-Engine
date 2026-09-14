@@ -241,6 +241,21 @@ function spentSoFar(task) {
   return Number.isFinite(c) && c > 0 ? c : 0;
 }
 
+// The model named in a runner stream tells us what was actually used. A prompt can
+// start on Claude and fall through to OpenCode, so its original provider cannot
+// decide whether the streamed dollar estimate is a real charge. The subscriptions
+// report estimates for useful quota visibility; those estimates must never trip the
+// metered-spend safety cap.
+export function subscriptionRunForStream(task, activeModel) {
+  const model = String(activeModel || '').trim();
+  if (!model) return task?.provider === 'claude-code' || task?.provider === 'codex';
+  if (model.startsWith('claude:') || model.startsWith('codex:')) return true;
+  if (isSpendFree(model)) return true;
+  // The in-container Claude runner has no HTTP stream prefix, but its direct
+  // model names never contain a provider slash. OpenCode model identifiers do.
+  return (task?.provider === 'claude-code' || task?.provider === 'codex') && !model.includes('/');
+}
+
 // Global cap on concurrent WRITER (implement) tasks (plan 2b). Env-configurable;
 // defaults to 1 — every agent run is a heavy CLI process, and on a small
 // Railway container even two at once can exhaust the memory allowance and get
@@ -1540,7 +1555,7 @@ export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd
   // server-side guard as well as the runner-side one: an older runner must never
   // turn a Go task into a false cost-cap failure.
   const activeModel = model || task.run_model || task.provider_model || task.model;
-  const subscriptionRun = task.provider === 'opencode' && isSpendFree(activeModel);
+  const subscriptionRun = subscriptionRunForStream(task, activeModel);
   const capCost = subscriptionRun ? 0 : cost_usd;
   if (Number.isFinite(capCost) && capCost > 0) runCostSoFar.set(taskId, capCost);
   const patch = { heartbeat_at: new Date().toISOString(), run_state: 'working' };

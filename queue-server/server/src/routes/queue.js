@@ -237,7 +237,13 @@ export function queueRoutes() {
   // with its report; the new row is the only one that can move through the queue.
   router.post('/prompts/:id/retry', asyncHandler(async (req, res) => {
     try {
-      const out = await queue.retryPrompt(req.params.id, { created_by: req.user?.sub || 'antoine' });
+      const out = await queue.retryPrompt(req.params.id, {
+        created_by: req.user?.sub || 'antoine',
+        provider: req.body?.provider,
+        provider_model: req.body?.provider_model,
+        preset: req.body?.preset,
+        account: req.body?.account,
+      });
       if (!out) return res.status(404).json({ error: 'not_found' });
       res.status(out.existing ? 200 : 201).json(out);
       if (!out.existing) queue.advanceQueue();

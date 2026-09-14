@@ -414,7 +414,13 @@ export async function createPrompt({
 // tasks appear to disappear). The continuation deliberately starts fresh: an
 // interrupted runner session or worktree may be the reason the first attempt
 // stopped, while the original thread remains available for context in the card.
-export async function retryPrompt(id, { created_by = null } = {}) {
+export async function retryPrompt(id, {
+  created_by = null,
+  provider = null,
+  provider_model = null,
+  preset = null,
+  account = null,
+} = {}) {
   const original = getPrompt(id);
   if (!original) return null;
   if (!['blocked', 'cancelled', 'done'].includes(original.status)) {
@@ -430,13 +436,13 @@ export async function retryPrompt(id, { created_by = null } = {}) {
     title: original.title,
     prompt: original.raw_prompt || original.prompt,
     mode: original.mode,
-    preset: original.preset,
+    preset: preset || original.preset,
     created_by: created_by || original.created_by,
     status: 'queued',
     space: original.space,
     component_id: original.component_id,
-    provider: original.provider,
-    provider_model: original.provider_model,
+    provider: provider || original.provider,
+    provider_model: provider_model ?? original.provider_model,
     agent_key: original.agent_key,
     strategy: original.strategy || 'single',
     // The visible brief is already an owned plan. Never make a background planner
@@ -444,7 +450,7 @@ export async function retryPrompt(id, { created_by = null } = {}) {
     plan_source: 'own',
     context_mode: 'manual',
     manual_run: original.manual_run,
-    account: original.account,
+    account: account || original.account,
     preview_required: original.preview_required,
     ai_router_tools_enabled: original.ai_router_tools_enabled,
     retry_of_prompt_id: original.id,
