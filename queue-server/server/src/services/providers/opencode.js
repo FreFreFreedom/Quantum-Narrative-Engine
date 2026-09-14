@@ -65,8 +65,29 @@ export function streamEventToChunks(evt, onChunk) {
       kind: 'tool',
       name: evt.part.tool || evt.part.name || '',
       input: input.command || input.file_path || input.pattern || state.title || '',
+      status: String(state.status || '').toLowerCase(),
     });
   }
+}
+
+// The runner's silence watchdog must follow work a person could recognize, not
+// OpenCode's internal lifecycle noise. In particular, a `tool_use` event often
+// arrives with state.status='completed': treating that as a tool START leaves
+// toolInFlight true forever and gives a silent model the 20-minute tool allowance.
+// step_start/step_finish events also carry no visible progress and must not keep
+// moving the clock by themselves.
+export function eventActivity(evt) {
+  if (evt?.type === 'text' && evt.part?.text?.trim()) {
+    return { meaningful: true, toolInFlight: false };
+  }
+  if (evt?.type === 'tool_use' && evt.part) {
+    const status = String(evt.part.state?.status || '').toLowerCase();
+    return {
+      meaningful: true,
+      toolInFlight: status === 'pending' || status === 'running',
+    };
+  }
+  return { meaningful: false, toolInFlight: null };
 }
 
 function jsonLines(raw) {

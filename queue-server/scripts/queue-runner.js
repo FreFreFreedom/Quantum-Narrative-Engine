@@ -35,7 +35,7 @@ import { execFileSync } from 'node:child_process';
 import {
   CURATED_GO_CHAIN, CURATED_FREE_CHAIN, curatedMatch, listOpenCodeModels, isSpendFree,
 } from '../server/src/services/providers/index.js';
-import { streamEventToChunks, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
+import { streamEventToChunks, eventActivity, detectLimit, resolveBin, spawnEnv as opencodeEnv } from '../server/src/services/providers/opencode.js';
 import * as codexCli from '../server/src/services/providers/codex.js';
 import * as claudeCli from '../server/src/services/providers/claudeCode.js';
 import { getClaudeUsage, getSideClaudeUsage } from '../server/src/services/claudeUsage.js';
@@ -937,11 +937,17 @@ function runOnce({ task, model, cwd, branch }) {
         if (!line.trim()) continue;
         let evt;
         try { evt = JSON.parse(line); } catch { continue; }
-        // Only a successfully parsed event counts as the model working. This is
-        // the specific fix for the old false-heartbeat bug, where startup
-        // banners on stderr kept a dead run looking alive for 35 minutes.
-        sawRealOutput = true;
-        lastRealOutputAt = Date.now();
+        // Only visible text or a real tool event counts as progress. OpenCode's
+        // step_start/step_finish lifecycle events can continue while a model is
+        // producing nothing, so counting every parsed JSON line kept a dead run
+        // alive. A completed tool also clears toolInFlight; otherwise one tool
+        // grants every later silence the 20-minute tool allowance.
+        const activity = eventActivity(evt);
+        if (activity.meaningful) {
+          sawRealOutput = true;
+          lastRealOutputAt = Date.now();
+        }
+        if (activity.toolInFlight !== null) toolInFlight = activity.toolInFlight;
         if (evt.type === 'text' && evt.part?.text) text += evt.part.text;
         if (evt.sessionID && !sessionId) sessionId = evt.sessionID;
         if (evt.type === 'step_finish' && evt.part) {
@@ -967,9 +973,8 @@ function runOnce({ task, model, cwd, branch }) {
             process.stdout.write(chunk.text);
             atLineStart = chunk.text.endsWith('\n');
           } else if (chunk.kind === 'tool') {
-            // A tool call just started: the quiet that follows is the command
-            // running, so allow TOOL_SILENCE_MS instead of SILENCE_MS.
-            toolInFlight = true;
+            // eventActivity above already distinguished a running tool from a
+            // completed one. Do not turn completed tools back into running here.
             if (!atLineStart) { process.stdout.write('\n'); atLineStart = true; }
             const detail = chunk.input ? dim(` — ${truncate(chunk.input, 80)}`) : '';
             console.log(`  ${magenta('⚙')} ${chunk.name || 'tool'}${detail}`);
