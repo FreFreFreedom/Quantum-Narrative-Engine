@@ -2272,10 +2272,17 @@ async function sendRecap(prompt, task, { stopped = false } = {}) {
 }
 
 export function initPromptQueue() {
-  const timer = setTimeout(() => {
+  const recover = () => {
     try { advanceQueue(); } catch (e) { console.error('queue: startup advance failed —', e.message); }
-  }, 3000);
+  };
+  const timer = setTimeout(recover, 3000);
   timer.unref?.();
+  // Agent-task completion is durable in SQLite, but its final callback can be lost
+  // during a process restart or runner disconnect. Without another queue action,
+  // the parent prompt then stays "running" forever and consumes a writer slot.
+  // Reconcile regularly so a stopped callback cannot strand the rest of the line.
+  const recoveryTimer = setInterval(recover, 60_000);
+  recoveryTimer.unref?.();
 }
 
 // ─── Manual complete (oc ship) ───────────────────────────────────────────────
