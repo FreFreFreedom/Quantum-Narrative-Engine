@@ -1727,6 +1727,15 @@ export function initConversationsSchema(db) {
   try { db.exec(`ALTER TABLE convos ADD COLUMN analogy_seen_turns INTEGER DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE convos ADD COLUMN analogy_steer TEXT`); } catch {}
 
+  // Plan "natural requests and lasting context for Room analogies": the engine's
+  // living memory of what the conversation is about, refreshed after every
+  // completed exchange (JSON: central relation, focus, background threads, a
+  // nameless positions/relations frame — see roomAnalogies.js), plus its own
+  // turn watermark so a conversation with nothing new since the last refresh
+  // doesn't re-trigger one.
+  try { db.exec(`ALTER TABLE convos ADD COLUMN analogy_context TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE convos ADD COLUMN analogy_context_seen_turns INTEGER DEFAULT 0`); } catch {}
+
   // The manual model picker (plan "chat-model-picker"): a sticky per-conversation
   // override of the automatic turn router, {provider, model, account} as JSON, or
   // NULL when the conversation is on Auto. Read by conversations.js#getChatLane.
