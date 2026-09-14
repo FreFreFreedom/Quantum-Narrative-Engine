@@ -2255,6 +2255,127 @@ process.on('SIGTERM', () => {
 });
 process.on('exit', releaseSingleInstance);
 
+// ─── Running several tasks at once ───────────────────────────────────────────
+// The same env var that sizes the server's writer pool (services/taskRunner.js)
+// also sizes THIS runner's pool: two separate processes, one number in concept.
+// Effective concurrency is the smaller of the two — the server only hands out
+// as many tasks as its cap allows and this runner only starts as many as its
+// pool allows — so a mismatch between the two is harmless and the tighter one
+// just wins. Default 2 here, so the pool is what actually opens up when
+// Antoine raises the server's cap (the server keeps its own default of 1).
+const WRITER_POOL = Math.max(1, Number(process.env.MAX_CONCURRENT_WRITERS || 2));
+// task-id → the in-flight promise of its whole run. A claimed task counts as a
+// slot from the moment it is claimed until its run settles, which is what keeps
+// the pool from ever holding more than WRITER_POOL tasks at once.
+const taskPool = new Map();
+// Question-mode tasks share the main checkout as their working directory (no
+// worktree — see runTask), so two of them running at the same instant would
+// step on each other's files. One at a time among themselves, enforced HERE
+// rather than only trusted from the server's MAX_PARALLEL_QUESTIONS setting.
+// Writers are unaffected: each already has its own isolated folder.
+let questionRuns = 0;
+
+// Wait until no question task is running, then take the slot.
+async function waitForQuestionTurn() {
+  while (questionRuns > 0) {
+    const pending = [...taskPool.values()];
+    // Whichever in-flight task ends first will free the slot (the running
+    // question is always among them); the 250ms tick stops a hot spin when
+    // nothing has settled yet.
+    if (pending.length) await Promise.race(pending).catch(() => {});
+    await new Promise((s) => setTimeout(s, 250));
+  }
+}
+
+// Run one claimed task to completion, booking and releasing its pool slot.
+// runTask handles almost all of its own endings itself; this catches the one
+// crash that escapes it and reports it exactly as the serial loop used to.
+function runClaimedTask(task) {
+  const isQuestion = task.mode === 'question';
+  const run = (async () => {
+    if (isQuestion) await waitForQuestionTurn();
+    if (isQuestion) questionRuns++;
+    try {
+      await runTask(task);
+    } catch (e) {
+      console.error('  Task failed unexpectedly —', e.message);
+      try {
+        await api(`/worker/${task.id}/result`, { status: 'blocked', result: `The runner hit an error: ${e.message}`, blocked_reason: 'crashed' });
+      } catch { /* the stale-claim reaper will free it */ }
+      // A crash here is the one ending with no report to read, so the notice is the
+      // only thing that will ever mention it.
+      await notifyEnding({ task, status: 'blocked', engine: 'the runner itself',
+        startedAt: Date.now(), cost: 0, reason: 'crashed', why: e.message });
+    } finally {
+      if (isQuestion) questionRuns--;
+    }
+  })();
+  const tracked = run.finally(() => {
+    taskPool.delete(task.id);
+    // The moment a task ends is exactly when the terminal should show the
+    // queue's new state; throttled inside printSnapshot for everything else.
+    printSnapshot({ force: true }).catch(() => {});
+  });
+  taskPool.set(task.id, tracked);
+  return tracked;
+}
+
+// One claim round-trip: report usage/models, ask for a task. Returns the task
+// or null. `side_account` tells the server whether the SECOND Claude
+// subscription is reachable at all. Only this Mac has that token (never Railway
+// — see the rule in AGENT_MEMORY.md), so the server cannot answer the question
+// itself: without this it read its own empty env and reported the second account
+// as unavailable, which greyed "Claude (2nd)" out of the Room's model picker
+// even though the lane works perfectly through this runner.
+async function claimOne() {
+  let claimed = null;
+  try {
+    // getClaudeUsage() caches for 60s, so sending it on every poll costs one real
+    // read per minute — that's what keeps the app's usage bar truthful now that
+    // Claude runs here rather than in the container.
+    const usage = await usageForReport();
+    const opencodeModels = await opencodeModelsForReport();
+    const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage, side_account: !!SIDE_TOKEN, opencode_models: opencodeModels });
+    if (r.ok) {
+      const body = await r.json();
+      claimed = body.none ? null : body.task;
+    } else if (r.status === 409) {
+      console.error('The server is not in local-execution mode (EXECUTION_MODE=local). Nothing to do.');
+      await new Promise((s) => setTimeout(s, 30_000));
+    }
+  } catch (e) {
+    // Timestamped because this file has no rotation: without the time, a failure
+    // from hours ago reads as one happening right now. It did exactly that today.
+    console.error(`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] Queue unreachable —`, e.message);
+  }
+  return claimed;
+}
+
+// Publishing and housekeeping on their own small clock. Under a full pool the
+// loop is rarely "idle", so without this a finished task would wait for the
+// whole pool to drain before its work shipped; this way it goes live within
+// seconds. The idle branch still calls the same helper — redundant-but-harmless
+// when genuinely idle, and keeps the old "idle does everything" shape.
+const HOUSEKEEPING_MS = Number(process.env.RUNNER_HOUSEKEEPING_MS || 5_000);
+let housekeepingRunning = false;
+async function runHousekeeping() {
+  if (housekeepingRunning) return;
+  housekeepingRunning = true;
+  try {
+    // Publishing first: a finished task sitting unpublished matters more than
+    // anything else, and a git job is seconds long.
+    try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
+    try { await runStrandedSweep(); } catch (e) { console.error('Stranded-review sweep failed —', e.message); }
+    try { await mirrorToRepo(); } catch (e) { console.error('Room mirror failed —', e.message); }
+  } finally {
+    housekeepingRunning = false;
+  }
+}
+function startHousekeepingLane() {
+  const timer = setInterval(() => { runHousekeeping().catch(() => {}); }, HOUSEKEEPING_MS);
+  timer.unref(); // the main loop keeps the process alive; this is never the reason it stays up
+}
+
 async function main() {
   claimSingleInstance();
   rule();
@@ -2265,50 +2386,32 @@ async function main() {
   console.log(dim(`  money : nothing bills per token — subscriptions only (ALLOW_METERED_API=1 would permit real spending). Paid OpenCode Go lane: ${GO_LANE_ENABLED ? 'on (OPENCODE_GO=0 turns it off)' : 'off'}.`));
   console.log(dim(`  claude: ${CLAUDE_LANE_ENABLED ? `on — held back at ${CLAUDE_SESSION_RESERVE_PCT}% of the 5h window / ${CLAUDE_WEEK_RESERVE_PCT}% of the week (${CLAUDE_DEEP_WEEK_RESERVE_PCT}% for deep work)` : 'off (CLAUDE_QUEUE=0)'}`));
   console.log(dim(`  second account: ${SIDE_TOKEN ? `on — gated on its OWN quota (${CLAUDE_SIDE_RESERVE_PCT}% of the 5h window / ${CLAUDE_SIDE_WEEK_RESERVE_PCT}% of the week), then the main account takes over` : 'no token (CLAUDE_SIDE_OAUTH_TOKEN unset) — everything runs on the main account'}`));
+  console.log(dim(`  capacity: up to ${WRITER_POOL} task(s) at once (MAX_CONCURRENT_WRITERS), question tasks one at a time`));
   rule();
   console.log(dim('Waiting for tasks… (Ctrl-C to stop)\n'));
   try { tidyWorktrees(); } catch (e) { console.log(dim(`  (could not tidy old task folders — ${e.message})`)); }
   startHelperLane();
+  startHousekeepingLane();
   await notifyStarted();
   await printSnapshot({ force: true });
 
   while (!stopping) {
     let claimed = null;
-    try {
-      // getClaudeUsage() caches for 60s, so sending it on every 5s poll costs one
-      // real read per minute — that's what keeps the app's usage bar truthful now
-      // that Claude runs here rather than in the container.
-      const usage = await usageForReport();
-      const opencodeModels = await opencodeModelsForReport();
-      // `side_account` tells the server whether the SECOND Claude subscription is
-      // reachable at all. Only this Mac has that token (never Railway — see the
-      // rule in AGENT_MEMORY.md), so the server cannot answer the question itself:
-      // without this it read its own empty env and reported the second account as
-      // unavailable, which greyed "Claude (2nd)" out of the Room's model picker
-      // even though the lane works perfectly through this runner.
-      const r = await api('/worker/claim', { runner_id: RUNNER_ID, usage, side_account: !!SIDE_TOKEN, opencode_models: opencodeModels });
-      if (r.ok) {
-        const body = await r.json();
-        claimed = body.none ? null : body.task;
-      } else if (r.status === 409) {
-        console.error('The server is not in local-execution mode (EXECUTION_MODE=local). Nothing to do.');
-        await new Promise((s) => setTimeout(s, 30_000));
-      }
-    } catch (e) {
-      // Timestamped because this file has no rotation: without the time, a failure
-      // from hours ago reads as one happening right now. It did exactly that today.
-      console.error(`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] Queue unreachable —`, e.message);
+    if (taskPool.size < WRITER_POOL) claimed = await claimOne();
+
+    if (claimed) {
+      // Start it and keep going — the pool, not this loop, bounds how many run.
+      // A claimed question task books its slot immediately; if another question
+      // is already running it waits its turn inside runClaimedTask.
+      runClaimedTask(claimed);
+      continue;
     }
 
-    if (!claimed) {
-      // Idle is exactly when the helper lane should be worked: no task is
-      // competing for the subscription, and a server-side step is stalled
-      // waiting on this.
-      // Publishing first: a finished task sitting unpublished matters more than
-      // rescuing a text call, and a git job is seconds long.
-      try { await runGitJobs(); } catch (e) { console.error('Publishing step failed —', e.message); }
-      try { await runStrandedSweep(); } catch (e) { console.error('Stranded-review sweep failed —', e.message); }
-      try { await mirrorToRepo(); } catch (e) { console.error('Room mirror failed —', e.message); }
+    if (taskPool.size === 0) {
+      // Genuinely idle: housekeeping, the helper lane (a server-side step is
+      // stalled waiting on it), a snapshot, and a quiet wait before asking the
+      // queue again.
+      await runHousekeeping();
       if (helperInFlight < HELPER_CONCURRENCY) {
         helperInFlight++;
         try { await runHelperJobs(); } catch (e) { console.error('Helper job failed —', e.message); }
@@ -2319,19 +2422,13 @@ async function main() {
       continue;
     }
 
-    await printSnapshot({ force: true });
-    try { await runTask(claimed); }
-    catch (e) {
-      console.error('  Task failed unexpectedly —', e.message);
-      try {
-        await api(`/worker/${claimed.id}/result`, { status: 'blocked', result: `The runner hit an error: ${e.message}`, blocked_reason: 'crashed' });
-      } catch { /* the stale-claim reaper will free it */ }
-      // A crash here is the one ending with no report to read, so the notice is the
-      // only thing that will ever mention it.
-      await notifyEnding({ task: claimed, status: 'blocked', engine: 'the runner itself',
-        startedAt: Date.now(), cost: 0, reason: 'crashed', why: e.message });
-    }
-    await printSnapshot({ force: true });
+    // The pool is busy. Wait on whichever in-flight task finishes first — a
+    // freed slot gets filled as soon as it opens instead of on a fixed poll.
+    // Task completions wake the race immediately; the sleep only spaces out
+    // claim polls of an empty queue so they don't run at hot-spin speed.
+    await Promise.race([...taskPool.values()]).catch(() => {});
+    await printSnapshot();
+    await new Promise((s) => setTimeout(s, 2_000));
   }
   console.log('Runner stopped.');
   await notifyStopped('it was stopped by hand');
