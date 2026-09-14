@@ -299,6 +299,17 @@ export function conversationsRoutes() {
     res.json(out);
   }));
 
+  // POST /api/convos/sides/backfill-titles — one-time fix for side talks
+  // started before smart titles covered them (plan "fix the Aside / side-talk
+  // flow"). Mirrors /api/travaux/suggestions/classify: waits for the answer,
+  // reports how many rows changed, no polling needed. Safe to run more than
+  // once — a side talk already titled is not touched again.
+  router.post('/sides/backfill-titles', asyncHandler(async (req, res) => {
+    const out = await convos.backfillSideTitles();
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  }));
+
   // POST /api/convos/:id/remember — body: { passage, messageId? }. Returns a
   // PROPOSAL only ({kind, text, detail}) — saving is a separate, explicit call to
   // the existing fact routes (POST /api/mind/facts), because where it lands is

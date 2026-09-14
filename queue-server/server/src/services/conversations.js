@@ -155,6 +155,7 @@ const CONVO_CHAT_MODEL = process.env.CONVO_CHAT_MODEL || 'claude-haiku-4-5-20251
 const CONVO_PLAN_MODEL = process.env.CONVO_PLAN_MODEL || 'claude-sonnet-4-5';
 
 const DEFAULT_OPEN_TITLE = 'Open conversation';
+const DEFAULT_SIDE_TITLE = 'Side talk';
 
 // ─── Auto-title (roaming conversations only) ─────────────────────────────────
 // A roaming thread starts as "Open conversation" — no subject to name it after,
@@ -200,13 +201,14 @@ export function generateTitleFromText(text) {
 // names a new chat. Never overwrites a title the owner already set: a rename
 // (manual or a prior auto-title) means this has already been decided.
 function maybeAutoTitleConvo(convo) {
-  if (!db || !convo || convo.subject_type !== 'open') return;
+  if (!db || !convo || (convo.subject_type !== 'open' && convo.subject_type !== 'side')) return;
   const turns = convo.turns || 0;
   const named = String(convo.title || '').trim();
+  const defaultTitle = convo.subject_type === 'side' ? DEFAULT_SIDE_TITLE : DEFAULT_OPEN_TITLE;
 
   // Turn one: name it instantly from the words themselves, so a new thread is
   // never nameless while a model is thinking, then improve it below.
-  if (turns === 0 && named === DEFAULT_OPEN_TITLE) {
+  if (turns === 0 && named === defaultTitle) {
     const firstUser = db.prepare(
       `SELECT text FROM convo_messages WHERE convo_id=? AND role='user' ORDER BY created_at ASC, rowid ASC LIMIT 1`,
     ).get(convo.id);
@@ -603,13 +605,32 @@ export function listSideTalks(parentConvoId) {
   ).all(parentConvoId);
 }
 
+// One-time fix for side talks started before smart titles covered them (plan
+// "fix the Aside / side-talk flow") — still placeholder-named ("Aside N" is a
+// frontend fallback, so the only real placeholder on the row itself is empty or
+// the literal default) but with at least one turn to name from. Reuses
+// retitleConvo, the same forced-rename path the "rename" button already calls.
+export async function backfillSideTitles() {
+  if (!db) return { error: 'no_db' };
+  const rows = db.prepare(
+    `SELECT id FROM convos WHERE subject_type='side' AND deleted_at IS NULL AND turns >= 1
+     AND (title IS NULL OR trim(title) = '' OR trim(title) = ?)`,
+  ).all(DEFAULT_SIDE_TITLE);
+  let updated = 0;
+  for (const row of rows) {
+    const out = await retitleConvo(row.id);
+    if (out && out.ok) updated += 1;
+  }
+  return { ok: true, checked: rows.length, updated };
+}
+
 // Door #1 — an empty aside beside `parentConvoId`. Its first message (plain, or
 // carrying picked passages via sendMessage's `quotes`) is the caller's job — this
 // only opens the thread and pins it to Gemini.
 export function createSideTalk(parentConvoId, { title = null, createdBy = 'antoine' } = {}) {
   if (!db) return { error: 'no_db' };
   if (!getConvo(parentConvoId)) return { error: 'not_found' };
-  const made = createOpenConvo({ title: title || 'Side talk', createdBy });
+  const made = createOpenConvo({ title: title || DEFAULT_SIDE_TITLE, createdBy });
   if (made.error) return made;
   const subjectId = sideSubjectId(parentConvoId);
   db.prepare(`UPDATE convos SET subject_type='side', subject_id=?, parent_convo_id=? WHERE id=?`)
