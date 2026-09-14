@@ -11,6 +11,18 @@ overwritten on the next sync. To promote one into the vision proper, fold it
 into data-seed/docs/fractal_operational_core.md by hand; that is a judgment
 call, which is exactly why nothing does it automatically.
 
+## The five-step loop of un-metabolized trauma: existential wound, freezing into anger, ritualization through codes, institutionalization of violence, and the manufacture of new wounds.
+
+This recursive loop explains how neglected entities metabolize trauma: historical abandonment freezes into un-metabolizable anger, which forms protective rituals and gang codes, which institutionalizes violence as a survival currency, which continually creates new orphans and fuels the next cycle.
+
+## Horizontal circulation assumes the street or domain as a given field, studying movement, power shifts, and the cost of breaking local logic.
+
+Top Boy exemplifies horizontal circulation by not asking where the street came from, but treating the housing estate as a living ecology and examining how people navigate, rise, fall, and pay the price within an already-established local logic.
+
+## Vertical descent traces the continuous causal chain downward from geopolitical machinery to street economy and family interior.
+
+Snowfall exemplifies vertical descent by mapping how a macro-level decision (CIA funding Contras) directly reshapes the street economy and fractures the family's interior bond, treating geopolitics and family drama as a single continuous anatomy rather than separate domains.
+
 ## A gang is not an individual pathology but an emergent organ formed precisely where every other system for metabolizing injustice and pain has been amputated.
 
 Under the paradigm, street entities and gangs are structured immune or survival substitutes—coagulations of rejected anger and unprocessed intergenerational energy—growing to hold together a community abandoned by formal care.
