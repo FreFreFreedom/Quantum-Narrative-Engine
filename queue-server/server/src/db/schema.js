@@ -1808,6 +1808,36 @@ export function initMindSchema(db) {
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_mind_facts_active ON mind_facts(active, kind)`); } catch {}
+
+  // Owner emphasis (plan "owner-emphasis-when-the-room-remembers-or-changes-the-core"):
+  // his own note on why a remembered thing matters, and whether he marked it Central.
+  // Idempotent ALTERs — old rows read back with owner_note=NULL, is_central=0.
+  try { db.exec(`ALTER TABLE mind_facts ADD COLUMN owner_note TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE mind_facts ADD COLUMN is_central INTEGER NOT NULL DEFAULT 0`); } catch {}
+
+  // A Core-paradigm save is his direct instruction to publish — no second review
+  // gate. This table is the queue between "he pressed Save" and "the runner
+  // appended it to fractal_operational_core.md and pushed develop" (Railway has no
+  // git, so only the Mac runner can do that part). Stable `id` (a uuid) makes
+  // publishing idempotent: a restarted runner acknowledges by id and never appends
+  // the same addition twice.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS core_publications (
+      id TEXT PRIMARY KEY,
+      convo_id TEXT,
+      source_type TEXT,          -- 'passage' | 'direct'
+      source_text TEXT,          -- the passage or typed thought this came from
+      owner_note TEXT,
+      is_central INTEGER NOT NULL DEFAULT 0,
+      addition TEXT NOT NULL,    -- the final, dated core-document text to append
+      fact_id TEXT,              -- the mind_facts row (kind='vision') saved alongside it
+      state TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'published'
+      commit_sha TEXT,
+      created_at TEXT,
+      published_at TEXT
+    )
+  `);
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_core_pub_pending ON core_publications(state)`); } catch {}
 }
 
 // ─── Film enrichment: TMDb metadata (synopsis, genres, keywords, cast) ────────
