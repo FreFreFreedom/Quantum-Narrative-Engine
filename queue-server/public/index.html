@@ -15041,48 +15041,55 @@ function renderFlow() {
     return ids.map(gid => groupRowHtml(gid, flowGroupOpen.has(gid))).join('');
   };
 
-  // Questions section
-  {
-    const gHtml = groupRowsFor('questions');
-    const hasG = !!gHtml;
-    if (questionsRaw.length > 0 || hasG) {
-      const rows = questionsRaw.map(p => flowQueueRow(p, false)).join('');
-      html += flowSection('❓', 'Questions to answer', questionsRaw.length + groupsInSection('questions'), rows + gHtml);
+  // Questions/Running/Ready/Parked only belong to the queue view — the ✓ Done tab
+  // used to show them too (nothing gated these on flowType), so a task sitting
+  // Parked showed up under Done just because it happened to render before the
+  // Done section further down. showQueue already tracks exactly which tabs these
+  // belong to ('all' and 'queue'), so reuse it rather than adding a new flag.
+  if (showQueue) {
+    // Questions section
+    {
+      const gHtml = groupRowsFor('questions');
+      const hasG = !!gHtml;
+      if (questionsRaw.length > 0 || hasG) {
+        const rows = questionsRaw.map(p => flowQueueRow(p, false)).join('');
+        html += flowSection('❓', 'Questions to answer', questionsRaw.length + groupsInSection('questions'), rows + gHtml);
+      }
     }
-  }
 
-  // Running section
-  {
-    const gHtml = groupRowsFor('running');
-    const hasG = !!gHtml;
-    if (runningRaw.length > 0 || hasG) {
-      const rows = runningRaw.map(p => flowQueueRow(p, false)).join('');
-      html += flowSection('▶', 'Running now', runningRaw.length + groupsInSection('running'), rows + gHtml);
+    // Running section
+    {
+      const gHtml = groupRowsFor('running');
+      const hasG = !!gHtml;
+      if (runningRaw.length > 0 || hasG) {
+        const rows = runningRaw.map(p => flowQueueRow(p, false)).join('');
+        html += flowSection('▶', 'Running now', runningRaw.length + groupsInSection('running'), rows + gHtml);
+      }
     }
-  }
 
-  // Ready section
-  {
-    const gHtml = groupRowsFor('ready');
-    const hasG = !!gHtml;
-    if (readyRaw.length > 0 || hasG) {
-      const rows = readyRaw.map((p, i) => flowQueueRow(p, true, busy, i)).join('');
-      html += flowSection('⏳', 'Ready to start', readyRaw.length + groupsInSection('ready'), rows + gHtml);
+    // Ready section
+    {
+      const gHtml = groupRowsFor('ready');
+      const hasG = !!gHtml;
+      if (readyRaw.length > 0 || hasG) {
+        const rows = readyRaw.map((p, i) => flowQueueRow(p, true, busy, i)).join('');
+        html += flowSection('⏳', 'Ready to start', readyRaw.length + groupsInSection('ready'), rows + gHtml);
+      }
     }
-  }
 
-  // Parked section
-  {
-    const gHtml = groupRowsFor('parked');
-    const hasG = !!gHtml;
-    if (parkedRaw.length > 0 || hasG) {
-      const rows = parkedRaw.map(p => flowQueueRow(p, true)).join('');
-      html += flowSection('⏸', 'Parked', parkedRaw.length + groupsInSection('parked'), rows + gHtml);
+    // Parked section
+    {
+      const gHtml = groupRowsFor('parked');
+      const hasG = !!gHtml;
+      if (parkedRaw.length > 0 || hasG) {
+        const rows = parkedRaw.map(p => flowQueueRow(p, true)).join('');
+        html += flowSection('⏸', 'Parked', parkedRaw.length + groupsInSection('parked'), rows + gHtml);
+      }
     }
-  }
 
-  if (!questionsRaw.length && !runningRaw.length && !readyRaw.length && !parkedRaw.length && !groupSectionMap.size) {
-    html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt).</div>';
+    if (!questionsRaw.length && !runningRaw.length && !readyRaw.length && !parkedRaw.length && !groupSectionMap.size) {
+      html += '<div class="empty">Nothing in the queue right now — drop a prompt below (＋ New prompt).</div>';
+    }
   }
   // so ✨ markers appear on rows the moment a look lands — no need to open the
   // item first. Poll is a no-op unless the item is pending.
