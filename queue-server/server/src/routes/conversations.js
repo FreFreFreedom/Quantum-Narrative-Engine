@@ -35,7 +35,7 @@ function statusFor(err) {
   if (err === 'not_found' || err === 'not_exist' || err === 'no_plan' || err === 'not_attached') return 404;
   if (err === 'unknown_subject_type' || err === 'empty' || err === 'too_many_subjects'
       || err === 'cannot_detach_primary' || err === 'cannot_attach_open' || err === 'text_required' || err === 'no_such_message' || err === 'no_title'
-      || err === 'invalid_kind') return 400;
+      || err === 'invalid_kind' || err === 'invalid_mode') return 400;
   return 500;
 }
 
@@ -337,6 +337,52 @@ export function conversationsRoutes() {
     const lane = convos.setChatLane(req.params.id, provider ? { provider, model: req.body?.model || null, account: req.body?.account || null } : null);
     res.json({ chat_override: lane });
   });
+
+  // POST /api/convos/:id/clarification-mode — body: { mode: 'normal'|'interview' }.
+  // The Interview switch in the composer, and the narrow natural-language start/
+  // end phrases in sendMessage, both land here (or its sibling /answer-now).
+  router.post('/:id/clarification-mode', (req, res) => {
+    const mode = req.body?.mode;
+    if (mode !== 'normal' && mode !== 'interview') return res.status(400).json({ error: 'invalid_mode' });
+    const out = convos.setClarificationMode(req.params.id, mode);
+    if (out.error) return res.status(statusFor(out.error)).json(out);
+    res.json(out);
+  });
+
+  // POST /api/convos/:id/answer-now — Antoine's explicit "enough material,
+  // answer now" during Interview mode. Same NDJSON/plain-JSON split as
+  // /:id/message, since the composer streams this exactly like an ordinary turn.
+  router.post('/:id/answer-now', asyncHandler(async (req, res) => {
+    if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
+    const wantsStream = /application\/x-ndjson/i.test(String(req.headers.accept || ''));
+
+    if (!wantsStream) {
+      const out = await convos.answerNow(req.params.id, {});
+      if (out.error) return res.status(statusFor(out.error)).json(out);
+      return res.json(out);
+    }
+
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders?.();
+    const write = (obj) => { try { res.write(JSON.stringify(obj) + '\n'); res.flush?.(); } catch {} };
+    const cancel = new AbortController();
+    const clientGone = () => cancel.signal.aborted;
+    res.on('close', () => { if (!res.writableFinished) cancel.abort(); });
+
+    try {
+      const out = await convos.answerNow(req.params.id, {
+        signal: cancel.signal,
+        onToken: (t) => { if (!clientGone()) write({ type: 'token', text: t }); },
+        onStatus: (m) => { if (!clientGone()) write({ type: 'status', text: String(m || '') }); },
+      });
+      write({ type: 'done', ...out });
+    } catch (e) {
+      write({ type: 'error', error: 'answer_now_failed', message: e.message });
+    }
+    res.end();
+  }));
 
   // GET /api/convos/:id/subjects — every card attached to this conversation,
   // primary first.

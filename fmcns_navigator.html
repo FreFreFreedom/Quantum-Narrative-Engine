@@ -1376,7 +1376,7 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    above it, the lane is already pinned, and the command list is for the Studio —
    all three squeezed the box someone types in down to nothing. His words,
    2026-09-13: "i dont even know where to type". */
-.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more { display:none; }
+.se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more, .se-slim .se-interview, .se-slim .se-answer-now { display:none; }
 .se-slim .se-input { flex:1 1 auto; min-width:0; }
 /* Side talks (plan "fix the Aside / side-talk flow"): the model picker is the one
    .se-lanewrap piece worth keeping even in the slim layout — he wants to change a
@@ -1590,6 +1590,17 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .se-lanepick.is-set { color:var(--c-brand); border-color:var(--c-brand); }
 .se-lane-clear { background:none; border:none; color:var(--c-ink-4); font-size:var(--fs-sm); line-height:1; cursor:pointer; padding:2px; }
 .se-lane-clear:hover { color:var(--c-ink); }
+/* Interview mode (plan "room-clarifying-questions-and-interview-mode") — same
+   quiet-pill idiom as the lane picker beside it: muted until active, brand
+   colour once on, so the two controls read as one family. Answer now only
+   ever shows while Interview is active. */
+.se-interview { -webkit-appearance:none; appearance:none; background:none; border:1px solid var(--c-border-2); border-radius:var(--r-pill); color:var(--c-ink-4); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 8px; cursor:pointer; flex:none; align-self:center; }
+.se-interview:hover { border-color:var(--c-ink-4); color:var(--c-ink); }
+.se-interview.is-set { color:var(--c-brand); border-color:var(--c-brand); }
+.se-answer-now { -webkit-appearance:none; appearance:none; background:var(--c-brand); border:1px solid var(--c-brand); border-radius:var(--r-pill); color:var(--c-on-accent); font-size:var(--fs-2xs); font-family:inherit; line-height:1.4; padding:3px 10px; cursor:pointer; flex:none; align-self:center; }
+.se-answer-now:hover:not(:disabled) { opacity:.88; }
+.se-answer-now:disabled { opacity:.5; cursor:default; }
+.se-answer-now-inline { margin-top:4px; }
 /* The architecture panel is a fixed 330px column at every window size, so its log
    is shortened by where it lives rather than by a viewport breakpoint. */
 .ws-archdetail .se-log { max-height:240px; }
@@ -21221,6 +21232,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       key: key, type: type, subjectId: subjectId,
       convoId: null, msgs: [], acts: [], edits: [], promptId: null, via: null, title: '',
       lane: undefined,               // manual model picker: undefined = not loaded yet, null = Auto, {provider,model,tag} = pinned
+      clarify: undefined,            // Interview mode: undefined = not loaded yet, 'normal' | 'interview'
       hint: null,                    // travels with the request for subjects the DB cannot describe
       loaded: false, loading: false,  // `loaded` gates the refetch, so a repaint costs nothing
       open: false, busy: false, draft: '', err: '', note: '',
@@ -21313,6 +21325,9 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         // set from the fetch, never left undefined once loaded, so sendTurn always
         // knows whether to say "use Auto" or "use whatever's already pinned".
         e.lane = data.chat_override || null;
+        // Interview mode lives on the row, so it survives a refresh and a change of
+        // answering model — read straight off the conversation, never guessed.
+        e.clarify = (data.convo && data.convo.clarification_mode) || 'normal';
         e.loaded = true;
         e.note = '';
         index[e.key] = data.convo;   // keeps the closed line's count honest
@@ -21394,6 +21409,10 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
           // marked as a chapter right away instead of only after a reload.
           e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: d.planId ? 'plan' : 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null, cost: d.cost || 0 });
           if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
+          // /interview, /grill-me and "answer now" all report the mode they left the
+          // conversation in, so the toggle and the composer reflect it at once — no
+          // separate re-fetch needed.
+          if (d.mode) e.clarify = d.mode;
           // A roaming thread can pick up its title from this very turn (the first
           // exchange), so the list needs to come back the same way /fold or
           // /handoff already trigger it — every other subject type keeps its own
@@ -21429,6 +21448,45 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       })
       .then(function(){ e.busy = false; e.phase = ''; if(repaint) repaint(); });
     return true;
+  }
+
+  // Answer now (plan "room-clarifying-questions-and-interview-mode"): Antoine's
+  // explicit decision that Interview mode has enough material. No fake user
+  // message is inserted — the interview already IN the transcript is the
+  // material, so this hits its own endpoint rather than sendTurn with empty text.
+  function sendAnswerNow(e, repaint, onDone){
+    if(!e.convoId || e.busy) return false;
+    e.busy = true; e.note = ''; e.phase = ''; e.stream = '';
+    e.abort = new AbortController();
+    e.cancelled = false;
+    return fetch(API_BASE + '/api/convos/' + e.convoId + '/answer-now', {
+      method: 'POST',
+      signal: e.abort.signal,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, 'Accept': 'application/x-ndjson' },
+      body: JSON.stringify({}),
+    })
+      .then(function(r){ return readTurn(r, e, repaint); })
+      .then(function(d){
+        if(d.error){
+          // Generation failed — Interview mode is left exactly as it was on the
+          // server (see runAnswerNowTurn), so e.clarify is deliberately untouched.
+          e.note = d.message || 'Could not answer now — try again.';
+        } else if(d.text){
+          var arrivedWhole = !e.stream;
+          e.msgs.push({ id: d.messageId || null, role: 'assistant', kind: 'chat', text: d.text, laneTag: d.laneTag || null, intent: d.intent || null });
+          if (arrivedWhole) e.freshMsgIdx = e.msgs.length - 1;
+          e.clarify = d.mode || 'normal';
+          if(e.type === 'open' && onDone) onDone();
+        }
+        e.stream = '';
+        if(d.via) e.via = d.via;
+        if(repaint) repaint();
+      })
+      .catch(function(){
+        e.stream = '';
+        if(!e.cancelled) e.note = 'Could not answer now — try again.';
+      })
+      .then(function(){ e.busy = false; e.phase = ''; if(repaint) repaint(); });
   }
 
   function stopTurn(e){
@@ -21887,6 +21945,8 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         +       '<select class="se-lanemodel" style="display:none"></select>'
         +       '<button type="button" class="se-lane-clear" style="display:none" title="Back to Auto">✕</button>'
         +     '</span>'
+        +     '<button type="button" class="se-interview" title="Ask me questions before you answer">Interview</button>'
+        +     '<button type="button" class="se-answer-now" style="display:none">Answer now</button>'
         +     '<textarea class="se-input" rows="1" placeholder="Say what you\'re thinking…"></textarea>'
         +     '<span class="se-spend" hidden></span>'
         +     '<button type="button" class="se-send" title="Send (Enter)">↵</button>'
@@ -22010,6 +22070,34 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         fillEmbed(host, e, opts);
       };
     }
+    // Interview mode toggle + its Answer now sibling. Independently reachable
+    // from the lane picker beside it — switching lane mid-interview must not
+    // touch this, and vice versa.
+    var interviewBtn = host.querySelector('.se-interview');
+    var answerNowBtn = host.querySelector('.se-answer-now');
+    if(interviewBtn){
+      interviewBtn.onclick = function(ev){
+        ev.stopPropagation();
+        if(!e.convoId || e.busy) return;
+        if(e.clarify === 'interview'){
+          // Antoine's own decision to step back out — never inferred, never the
+          // model's call. Leaves nothing behind: no synthesis, no saved message.
+          apiWrite('/api/convos/' + e.convoId + '/clarification-mode', 'POST', { mode: 'normal' })
+            .then(function(d){ e.clarify = (d && d.mode) || 'normal'; repaint(); })
+            .catch(function(){});
+        } else {
+          e.clarify = 'interview'; repaint(); // reflect the click at once
+          sendTurn(e, '/interview', repaint, opts.onDone);
+        }
+      };
+    }
+    if(answerNowBtn){
+      answerNowBtn.onclick = function(ev){
+        ev.stopPropagation();
+        sendAnswerNow(e, repaint, opts.onDone);
+      };
+    }
+
     grow(input);
     if(e.justOpened){ e.justOpened = false; input.focus(); }
   }
@@ -22560,6 +22648,12 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         forkFromMessage(e, messageId, repaintFork);
       };
     });
+    log.querySelectorAll('[data-se-answer-now]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        sendAnswerNow(e, function(){ if(host.isConnected) fillEmbed(host, e, opts); }, opts.onDone);
+      };
+    });
     var retry = log.querySelector('[data-se-retry]');
     if (retry) retry.onclick = function(ev){
       ev.stopPropagation();
@@ -22749,6 +22843,22 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       laneClear.style.display = e.lane ? '' : 'none';
     }
 
+    // Interview mode's own reflection — independent of the lane picker above it.
+    var interviewBtn = host.querySelector('.se-interview');
+    if(interviewBtn){
+      var inInterview = e.clarify === 'interview';
+      interviewBtn.classList.toggle('is-set', inInterview);
+      interviewBtn.disabled = !e.convoId;
+      interviewBtn.title = inInterview
+        ? 'Interview mode is on — say "answer now" or use Answer now when you have enough'
+        : 'Ask me questions before you answer';
+    }
+    var answerNowBtn = host.querySelector('.se-answer-now');
+    if(answerNowBtn){
+      answerNowBtn.style.display = e.clarify === 'interview' ? '' : 'none';
+      answerNowBtn.disabled = !!e.busy;
+    }
+
     var n = e.loaded ? userTurns(e) : 0;
     host.querySelector('.se-count').textContent = n ? String(n) : '';
     // In the Room the head is hidden, so the count says what it means up in the
@@ -22872,12 +22982,19 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
         }).join('');
       }
       var shown = (you && m.body) ? m.body : m.text;
+      // A small "Answer now" beneath the newest interview question — same action
+      // as the composer's, offered right where the question is, so it is never
+      // more than a glance away from what it is answering.
+      var inlineAnswerNow = (!you && e.clarify === 'interview' && idx === e.msgs.length - 1 && !e.busy)
+        ? '<button type="button" class="se-cmd se-answer-now-inline" data-se-answer-now="1">Answer now</button>'
+        : '';
       html += '<div class="se-turn' + (you ? ' you' : '') + (plan ? ' plan' : '') + '"' + (m.id ? ' data-msg-id="' + qEsc(m.id) + '"' : '') + (m.intent === 'implement' ? ' data-implement="1"' : '') + (idx === e.freshMsgIdx ? ' data-fresh="1"' : '') + '>'
            +  '<div class="se-who">' + who + tagHtml + '</div>'
            +  foldHtml
            +  (plan ? '<pre class="se-plan">' + qEsc(m.text) + '</pre>'
                     : '<div class="se-body' + (you ? '' : ' md') + '">' + fmtBody(shown, !you, m.id || null) + '</div>')
            +  actsHtml
+           +  inlineAnswerNow
            +  '</div>';
       // An implement proposal shows three ways forward instead of free text.
       if (!you && m.intent === 'implement') {
