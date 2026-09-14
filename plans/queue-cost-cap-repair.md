@@ -1,6 +1,6 @@
 # Queue cost-cap repair and second-account continuation
 
-**Status: IMPLEMENTING 2026-09-14.** This plan records an incident, its repair and the
+**Status: DEPLOYED 2026-09-14.** This plan records an incident, its repair and the
 continuation it creates. It is not a general change to the cost budget.
 
 ## What happened
