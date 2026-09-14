@@ -1390,6 +1390,14 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
 .se-remember-text { margin:6px 0; font-size:var(--fs-sm); }
 .se-remember-detail { margin:0 0 8px; font-size:var(--fs-xs); color:var(--c-ink-3); }
 .se-remember-acts { display:flex; gap:8px; justify-content:flex-end; }
+/* Owner-emphasis capture card (plan "owner emphasis when the Room remembers or
+   changes the core"): the same small card now opens BEFORE any model call, for
+   both entrances — a selected passage and a directly typed thought. */
+.se-remember-note { width:100%; box-sizing:border-box; font:inherit; font-size:var(--fs-sm); resize:vertical;
+  background:var(--c-bg); color:var(--c-ink); border:1px solid var(--c-border); border-radius:var(--r-sm);
+  padding:6px 8px; margin:6px 0; min-height:38px; }
+.se-remember-row { display:flex; flex-wrap:wrap; gap:0; margin-bottom:4px; }
+.se-remember-row .se-remember-shelf { margin-left:0; margin-right:6px; }
 /* Side talks — the list and the one open at a time. */
 .room-side-new { margin-bottom:8px; }
 .room-side-list { display:flex; flex-direction:column; gap:2px; margin-bottom:8px; }
@@ -10597,19 +10605,22 @@ function renderRoomMind() {
   if (note) { note.textContent = _mindNote; note.className = 'room-note' + (_mindNote && _mindNote.indexOf('Could') !== -1 ? ' err' : ''); }
 }
 
-async function roomAddFact() {
+// Opens the same capture card the selected-passage Remember uses (see
+// openRememberCard, defined with the Room chat code below) — a typed thought and
+// a selected passage are two sources into one shared "what does this mean, is it
+// Central, where does it go" flow, plan "owner emphasis when the Room remembers
+// or changes the core". Falls back to the old plain save if the card isn't
+// defined yet (script order), so the input never silently does nothing.
+function roomAddFact() {
   const input = document.getElementById('roomMindInput');
   const text = input ? input.value.trim() : '';
   if (!text) return;
-  try {
-    await apiWrite('/api/mind', 'POST', { text });
-    if (input) input.value = '';
-    _mindNote = '';
-    await loadRoomMind();
-  } catch (e) {
-    _mindNote = (e && e.message === 'duplicate') ? 'That fact is already remembered.' : 'Could not save that fact.';
-    renderRoomMind();
+  if (typeof window.openRememberCard !== 'function') {
+    apiWrite('/api/mind', 'POST', { text }).then(() => { if (input) input.value = ''; loadRoomMind(); }).catch(() => {});
+    return;
   }
+  window.openRememberCard({ source: text, kind: 'direct' });
+  if (input) input.value = '';
 }
 
 async function roomForgetFact(id) {
@@ -22477,87 +22488,132 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .catch(function(){ e.note = 'Could not keep that line.'; if(repaint) repaint(); });
   }
 
-  // "Remember this" (plan "side talks in the Room, and remember this"): ask the
-  // model what a selected passage is an instance OF, then let him choose where it
-  // lands — never decided for him. One card on screen at a time.
-  var ROOM_MIND_KINDS = [['about','About him'],['taste','Taste'],['decision','Decision'],['project','Project'],['person','Person'],['style','Style'],['vision','Vision — the paradigm itself']];
+  // "Remember this" (plan "owner emphasis when the Room remembers or changes the
+  // core"): one small capture card, open BEFORE any model call, for both
+  // entrances — a selected passage here, or a directly typed thought (see
+  // openRememberCard's other caller, roomAddFact). His note, Central, and the
+  // destination are his choices made up front; the model then writes the memory
+  // (or the core addition) FROM all of that, in one Save.
   var rememberPop = null;
   function killRememberPop(){ if(rememberPop && rememberPop.parentNode) rememberPop.parentNode.removeChild(rememberPop); rememberPop = null; }
-  function roomRememberOffer(convoId, msgId, passage){
+
+  // opts: { source, kind: 'passage'|'direct', convoId?, messageId? }
+  function openRememberCard(opts){
     killRememberPop();
     var card = document.createElement('div');
     card.className = 'se-remember-pop';
-    card.innerHTML = '<div class="se-remember-text">Working out what to remember…</div>';
+    card.innerHTML = '<div class="se-remember-text">' + qEsc(opts.source) + '</div>'
+      + '<textarea class="se-remember-note" placeholder="What I mean / why this matters (optional)" rows="2"></textarea>'
+      + '<div class="se-remember-row">'
+      +   '<button type="button" class="se-remember-shelf" data-rem-central="1">Central</button>'
+      +   '<button type="button" class="se-remember-shelf is-on" data-rem-dest="memory">Memory</button>'
+      +   '<button type="button" class="se-remember-shelf" data-rem-dest="core">Core paradigm</button>'
+      + '</div>'
+      + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
     document.body.appendChild(card);
     rememberPop = card;
-    apiWrite('/api/convos/' + convoId + '/remember', 'POST', { passage: passage, messageId: msgId || null })
-      .then(function(out){
-        if(rememberPop !== card) return; // closed, or superseded, while this was in flight
-        if(!out || out.error || !out.text){
-          card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
+
+    var central = false;
+    var destination = 'memory';
+    var noteEl = card.querySelector('.se-remember-note');
+    var centralBtn = card.querySelector('[data-rem-central]');
+    var destBtns = card.querySelectorAll('[data-rem-dest]');
+    centralBtn.onclick = function(){ central = !central; centralBtn.classList.toggle('is-on', central); };
+    destBtns.forEach(function(b){
+      b.onclick = function(){
+        destination = b.getAttribute('data-rem-dest');
+        destBtns.forEach(function(x){ x.classList.toggle('is-on', x === b); });
+      };
+    });
+    card.querySelector('[data-rem-close]').onclick = killRememberPop;
+
+    var saveBtn = card.querySelector('[data-rem-save]');
+    saveBtn.onclick = function(){
+      saveBtn.disabled = true;
+      var ownerNote = (noteEl.value || '').trim() || null;
+      var body = { ownerNote: ownerNote, central: central, destination: destination };
+      var req;
+      if(opts.kind === 'direct'){
+        body.text = opts.source;
+        req = apiWrite('/api/mind/remember', 'POST', body);
+      } else {
+        body.passage = opts.source;
+        body.messageId = opts.messageId || null;
+        req = apiWrite('/api/convos/' + opts.convoId + '/remember', 'POST', body);
+      }
+      req.then(function(out){
+        if(rememberPop !== card) return; // closed while this was in flight
+        if(!out || out.error || !out.fact){
+          card.innerHTML = '<div class="se-remember-text">Could not remember that.</div>'
             + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
-        } else {
-          // Two shelves, not seven. The model still picks the exact kind underneath —
-          // this only flips between the one that reaches the written vision and the one
-          // that stays in the app's memory, because that is the only difference with a
-          // consequence. His call, 2026-09-13: "too much options here".
-          // Two pills, both on screen, and either or BOTH can be lit — a thing can
-          // belong to the paradigm and say something about him at the same time.
-          // His call, 2026-09-13.
-          var remShelf = { vision: out.kind === 'vision', plain: out.kind !== 'vision' };
-          var remPlain = (out.kind && out.kind !== 'vision') ? out.kind : 'about';
-          var shelfBtnHtml = function(k, label){
-            return '<button type="button" class="se-remember-shelf' + (remShelf[k] ? ' is-on' : '') + '" data-rem-shelf="' + k + '">' + label + '</button>';
-          };
-          card.innerHTML = '<div class="se-remember-kind">Keeps as ' + shelfBtnHtml('vision', 'the paradigm') + shelfBtnHtml('plain', 'about you') + '</div>'
-            + '<div class="se-remember-text">' + qEsc(out.text) + '</div>'
-            + (out.detail ? '<div class="se-remember-detail">' + qEsc(out.detail) + '</div>' : '')
-            + '<div class="se-remember-acts"><button type="button" data-rem-drop="1">Drop</button><button type="button" class="ubtn ubtn--pill" data-rem-save="1">Save</button></div>';
-          var saveBtn = card.querySelector('[data-rem-save]');
-          var syncShelves = function(){
-            card.querySelectorAll('[data-rem-shelf]').forEach(function(b){
-              b.classList.toggle('is-on', !!remShelf[b.getAttribute('data-rem-shelf')]);
-            });
-            // Nothing lit means nothing to keep, so Save stops offering.
-            saveBtn.disabled = !remShelf.vision && !remShelf.plain;
-          };
-          card.querySelectorAll('[data-rem-shelf]').forEach(function(btn){
-            btn.onclick = function(){
-              var k = btn.getAttribute('data-rem-shelf');
-              remShelf[k] = !remShelf[k];
-              syncShelves();
-            };
-          });
-          syncShelves();
-          saveBtn.onclick = function(){
-            saveBtn.disabled = true;
-            var kinds = [];
-            if(remShelf.vision) kinds.push('vision');
-            if(remShelf.plain) kinds.push(remPlain);
-            Promise.all(kinds.map(function(kind){
-              return apiWrite('/api/mind', 'POST', { kind: kind, text: out.text, detail: out.detail || null }).catch(function(){});
-            }))
-              .then(function(){ if(typeof loadRoomMind === 'function') loadRoomMind(); })
-              .catch(function(){})
-              .then(killRememberPop);
-          };
+          card.querySelector('[data-rem-close]').onclick = killRememberPop;
+          return;
         }
-        var closeBtn = card.querySelector('[data-rem-close]');
-        var dropBtn = card.querySelector('[data-rem-drop]');
-        if(closeBtn) closeBtn.onclick = killRememberPop;
-        if(dropBtn) dropBtn.onclick = killRememberPop;
-      })
-      .catch(function(){
+        renderRememberedResult(card, out);
+        if(typeof loadRoomMind === 'function') loadRoomMind();
+      }).catch(function(){
         if(rememberPop !== card) return;
-        card.innerHTML = '<div class="se-remember-text">Could not work out what to remember.</div>'
+        card.innerHTML = '<div class="se-remember-text">Could not remember that.</div>'
           + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
-        var closeBtn = card.querySelector('[data-rem-close]');
-        if(closeBtn) closeBtn.onclick = killRememberPop;
+        card.querySelector('[data-rem-close]').onclick = killRememberPop;
       });
+    };
+  }
+
+  // What's shown once a save lands. Memory is done the moment this renders; Core
+  // paradigm still has to reach the repo (the Mac runner's job), so its status
+  // starts at "Publishing to core…" and is polled to "In core" — a pending id is
+  // kept in localStorage so it survives a reload rather than going silent.
+  var ROOM_CORE_PENDING_KEY = 'fmcns_room_core_pending';
+  function roomCorePendingLoad(){ try { return JSON.parse(localStorage.getItem(ROOM_CORE_PENDING_KEY)) || {}; } catch(e){ return {}; } }
+  function roomCorePendingSave(map){ try { localStorage.setItem(ROOM_CORE_PENDING_KEY, JSON.stringify(map)); } catch(e){} }
+  var CORE_POLL_MS = 15000;
+
+  function renderRememberedResult(card, out){
+    var statement = out.fact && out.fact.text ? out.fact.text : '';
+    if(out.destination === 'core'){
+      card.innerHTML = '<div class="se-remember-text">' + qEsc(statement) + '</div>'
+        + '<div class="se-remember-detail" data-rem-status="1">Publishing to core…</div>'
+        + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
+      var pubId = out.publication && out.publication.id;
+      if(pubId){
+        var map = roomCorePendingLoad(); map[pubId] = statement; roomCorePendingSave(map);
+        pollCorePublication(card, pubId);
+      }
+    } else {
+      card.innerHTML = '<div class="se-remember-text">' + qEsc(statement) + '</div>'
+        + '<div class="se-remember-detail">Remembered.</div>'
+        + '<div class="se-remember-acts"><button type="button" data-rem-close="1">Close</button></div>';
+    }
+    card.querySelector('[data-rem-close]').onclick = killRememberPop;
+  }
+
+  function pollCorePublication(card, id){
+    setTimeout(function check(){
+      if(rememberPop !== card) return; // card closed — the pending id in localStorage still resolves on reload
+      api('/api/mind/core-publications/' + encodeURIComponent(id)).then(function(status){
+        if(rememberPop !== card) return;
+        var el = card.querySelector('[data-rem-status]');
+        if(status && status.state === 'published'){
+          if(el) el.textContent = 'In core';
+          var map = roomCorePendingLoad(); delete map[id]; roomCorePendingSave(map);
+        } else {
+          setTimeout(check, CORE_POLL_MS);
+        }
+      }).catch(function(){ setTimeout(check, CORE_POLL_MS); });
+    }, CORE_POLL_MS);
+  }
+
+  function roomRememberOffer(convoId, msgId, passage){
+    openRememberCard({ source: passage, kind: 'passage', convoId: convoId, messageId: msgId });
   }
   document.addEventListener('mousedown', function(ev){
     if(rememberPop && !rememberPop.contains(ev.target)) killRememberPop();
   }, true);
+  // The Mind pane's direct-text input (roomAddFact, defined outside this closure)
+  // opens the same card for its own source — one shared entrance, plan "owner
+  // emphasis when the Room remembers or changes the core".
+  window.openRememberCard = openRememberCard;
 
   // The carried passage, folded into the message actually sent. Quoted rather than
   // pasted invisibly, so the transcript still reads as a conversation afterwards —

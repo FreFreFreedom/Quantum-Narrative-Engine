@@ -7,7 +7,7 @@ import * as convos from '../services/conversations.js';
 import * as analogies from '../services/roomAnalogies.js';
 import * as board from '../services/board.js';
 import { rhymeSoon } from '../services/boardRhyme.js';
-import { rememberPassage } from '../services/mind.js';
+import { proposeRemember, saveRemembered } from '../services/mind.js';
 import * as docExtraction from '../services/docExtraction.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 
@@ -310,18 +310,28 @@ export function conversationsRoutes() {
     res.json(out);
   }));
 
-  // POST /api/convos/:id/remember — body: { passage, messageId? }. Returns a
-  // PROPOSAL only ({kind, text, detail}) — saving is a separate, explicit call to
-  // the existing fact routes (POST /api/mind/facts), because where it lands is
-  // his choice, never decided for him.
+  // POST /api/convos/:id/remember — body: { passage, messageId?, ownerNote?, central?, destination? }.
+  // One call, from the capture card's single Save action: proposes the memory
+  // from the passage + his note, then saves it. Where it lands (Memory vs Core
+  // paradigm) is always his choice, made before this fires — Core is his direct
+  // instruction to publish, no second approval screen after this.
   router.post('/:id/remember', asyncHandler(async (req, res) => {
     if (!convos.getConvo(req.params.id)) return res.status(404).json({ error: 'not_found' });
     const passage = String(req.body?.passage || '').trim();
     if (!passage) return res.status(400).json({ error: 'empty' });
-    const out = await rememberPassage(req.params.id, {
-      passage, messageId: req.body?.messageId || null, kind: req.body?.kind || null,
+    const ownerNote = req.body?.ownerNote || null;
+    const central = !!req.body?.central;
+    const destination = req.body?.destination === 'core' ? 'core' : 'memory';
+    const proposed = await proposeRemember({
+      sourceType: 'passage', text: passage, convoId: req.params.id, messageId: req.body?.messageId || null,
+      ownerNote, central, destination,
     });
-    if (out.error) return res.status(out.error === 'empty' ? 400 : 500).json(out);
+    if (proposed.error) return res.status(proposed.error === 'empty' ? 400 : 500).json(proposed);
+    const out = saveRemembered({
+      sourceType: 'passage', sourceText: passage, convoId: req.params.id, ownerNote, central,
+      destination, kind: proposed.kind, text: proposed.text, detail: proposed.detail,
+    });
+    if (out.error) return res.status(out.error === 'duplicate' ? 409 : 400).json(out);
     res.json(out);
   }));
 

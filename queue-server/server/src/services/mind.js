@@ -51,6 +51,11 @@ function scanMentions(id) {
 // in a list of the owner's preferences.
 export const KINDS = ['about', 'taste', 'decision', 'project', 'person', 'style', 'vision'];
 const MAX_FACTS = 300;
+// A fact he explicitly marked Central outranks an equal ordinary fact everywhere
+// weight is used: mindBlock() selection, sorting, recall. One named constant so the
+// number means the same thing in every place that reads it, instead of a "5" that
+// could silently drift out of sync between them.
+export const CENTRAL_WEIGHT = 5;
 // How many of his own messages must pile up before a harvest runs. Was 8, which
 // never fired for the way he actually talks: his threads are a handful of long
 // questions answered at length, so a whole conversation ends below the
@@ -72,9 +77,11 @@ function normalize(s) {
     .join(' ').trim();
 }
 
+const FACT_COLUMNS = 'id, kind, text, detail, weight, source_convo_id, source_note, owner_note, is_central, hits, last_used_at, created_at, updated_at, superseded_by, active';
+
 export function listFacts({ kind = null, activeOnly = true } = {}) {
   try {
-    let sql = `SELECT id, kind, text, detail, weight, source_convo_id, source_note, hits, last_used_at, created_at, updated_at, superseded_by, active FROM mind_facts WHERE 1=1`;
+    let sql = `SELECT ${FACT_COLUMNS} FROM mind_facts WHERE 1=1`;
     const params = [];
     if (activeOnly) sql += ` AND active=1`;
     if (kind) { sql += ` AND kind=?`; params.push(kind); }
@@ -85,13 +92,13 @@ export function listFacts({ kind = null, activeOnly = true } = {}) {
 
 export function getFact(id) {
   try {
-    return db.prepare(`SELECT id, kind, text, detail, weight, source_convo_id, source_note, hits, last_used_at, created_at, updated_at, superseded_by, active FROM mind_facts WHERE id=?`).get(id) || null;
+    return db.prepare(`SELECT ${FACT_COLUMNS} FROM mind_facts WHERE id=?`).get(id) || null;
   } catch { return null; }
 }
 
 // Deterministic dedup first — reject if an existing active fact normalises to the
 // same string. No model call for this check.
-export function saveFact({ kind, text, detail = null, sourceConvoId = null, sourceNote = null }) {
+export function saveFact({ kind, text, detail = null, sourceConvoId = null, sourceNote = null, ownerNote = null, central = false }) {
   if (!text || !text.trim()) return { error: 'text_required' };
   const k = KINDS.includes(kind) ? kind : 'about';
   const norm = normalize(text);
@@ -103,8 +110,9 @@ export function saveFact({ kind, text, detail = null, sourceConvoId = null, sour
     }
     const id = `mf_${randomUUID().slice(0, 8)}_${Date.now().toString(36)}`;
     const now = new Date().toISOString();
-    db.prepare(`INSERT INTO mind_facts (id, kind, text, detail, weight, source_convo_id, source_note, hits, created_at, updated_at, active) VALUES (?,?,?,?,1,?,?,0,?,?,1)`)
-      .run(id, k, String(text).slice(0, 240), detail ? String(detail).slice(0, 4000) : null, sourceConvoId, sourceNote, now, now);
+    const weight = central ? CENTRAL_WEIGHT : 1;
+    db.prepare(`INSERT INTO mind_facts (id, kind, text, detail, weight, source_convo_id, source_note, owner_note, is_central, hits, created_at, updated_at, active) VALUES (?,?,?,?,?,?,?,?,?,0,?,?,1)`)
+      .run(id, k, String(text).slice(0, 240), detail ? String(detail).slice(0, 4000) : null, weight, sourceConvoId, sourceNote, ownerNote ? String(ownerNote).slice(0, 2000) : null, central ? 1 : 0, now, now);
     mirrorOut();
     scanMentions(id);
     return getFact(id);
@@ -336,23 +344,33 @@ function transcriptAround(convoId, messageId) {
   return transcriptFor(slice);
 }
 
-function buildRememberPrompt(passage, transcript, factList, kindHint) {
+// Shared prompt for both remember entrances (plan "owner emphasis when the Room
+// remembers or changes the core"): a selected passage AND a directly typed
+// thought go through the same proposal path now, so a typed source gets the same
+// care a passage always did. His own note is an INSTRUCTION, not an attachment —
+// it must be honoured unless it contradicts the source, never invented past it.
+// Exported (not called from outside this module otherwise) so mind-selftest.js
+// can assert the prompt assembly directly — a wrong word here (his note read as
+// optional, Central left unstated) is a silent behavior change no model call
+// would surface in a quick manual check.
+export function buildProposePrompt({ sourceType, text, transcript, factList, ownerNote, central, destination }) {
   const facts = factList.length ? factList.map((f) => `- [${f.id}] (${f.kind}) ${f.text}`).join('\n') : '(none yet)';
-  return `You maintain the long-term memory of a personal app built for one man. He just selected a passage from a conversation to remember.
+  const sourceLabel = sourceType === 'direct' ? 'He typed this thought directly, to remember it' : 'He selected this passage from a conversation, to remember it';
+  return `You maintain the long-term memory of a personal app built for one man. ${sourceLabel}.
 
-Do not just repeat the passage back. Understand what it is an instance OF — the standing fact or the paradigm concept it is pointing at — and name THAT.
+Do not just repeat the source back. Understand what it is an instance OF — the standing fact or the paradigm concept it is pointing at — and name THAT.
 
-THE PASSAGE HE SELECTED:
+THE SOURCE:
 """
-${passage}
+${text}
 """
-
-THE CONVERSATION AROUND IT (for context only — the passage above is what matters):
-${transcript}
-
+${transcript ? `\nTHE CONVERSATION AROUND IT (for context only — the source above is what matters):\n${transcript}\n` : ''}
+${ownerNote ? `HIS OWN NOTE ON WHY THIS MATTERS — this states what HE thinks is important. Honour it and build the memory from it unless it plainly contradicts the source; it may clarify the source, it must not invent a claim absent from both:\n"""\n${ownerNote}\n"""\n` : ''}
+${central ? 'He marked this CENTRAL — it should carry real weight, not be filed as a passing note.\n' : ''}
+${destination === 'core' ? 'He is saving this straight to the CORE PARADIGM document — write the memory as a settled, coherent addition to that paradigm, not a tentative note.\n' : ''}
 WHAT YOU ALREADY KNOW:
 ${facts}
-${kindHint ? `\nHe leans toward filing this as "${kindHint}", but judge it yourself — use whichever kind actually fits.\n` : ''}
+
 Return ONLY this JSON object (no prose, no markdown fence):
 {"kind": "about"|"taste"|"decision"|"project"|"person"|"style"|"vision", "text": "<the concept itself, plain English, <= 240 chars>", "detail": "<the reasoning, the mechanism, the example that made it land>"}
 
@@ -371,17 +389,18 @@ function parseRememberReply(text) {
   } catch { return null; }
 }
 
-// Returns a PROPOSAL only — saveFact() is a separate, explicit step, because
-// where it lands is his choice (2026-09-13: "he chooses where it lands — it must
-// not be decided for him").
-export async function rememberPassage(convoId, { passage, messageId, kind } = {}) {
-  const text = String(passage || '').trim();
-  if (!text) return { error: 'empty' };
-  const transcript = transcriptAround(convoId, messageId);
+// Returns a PROPOSAL only — saving is a separate, explicit step (saveRemembered
+// below), because where it lands is his choice, never decided for him.
+// `sourceType`: 'passage' (has convoId/messageId, transcript pulled around it) or
+// 'direct' (typed straight into the Mind pane, no conversation to read around it).
+export async function proposeRemember({ sourceType = 'passage', text, convoId = null, messageId = null, ownerNote = null, central = false, destination = 'memory' } = {}) {
+  const source = String(text || '').trim();
+  if (!source) return { error: 'empty' };
+  const transcript = sourceType === 'direct' || !convoId ? null : transcriptAround(convoId, messageId);
   const factList = listFacts({ activeOnly: true }).map((f) => ({ id: f.id, text: f.text, kind: f.kind }));
   const result = await generateText({
     feature: 'summary', maxTokens: 700, label: 'mind:remember',
-    prompt: buildRememberPrompt(text, transcript, factList, KINDS.includes(kind) ? kind : null),
+    prompt: buildProposePrompt({ sourceType, text: source, transcript, factList, ownerNote, central, destination }),
   });
   if (result.error) return { error: result.error };
   const obj = parseRememberReply(result.text);
@@ -391,6 +410,71 @@ export async function rememberPassage(convoId, { passage, messageId, kind } = {}
     text: String(obj.text).slice(0, 240),
     detail: obj.detail ? String(obj.detail).slice(0, 4000) : null,
   };
+}
+
+// Today's date, in the plain form the core document's own dated entries use
+// elsewhere in the repo (data-seed docs are read by humans and agents, not
+// machine-parsed) — kept local to avoid a dependency for one line.
+function todayStamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function buildCoreAddition({ text, detail, ownerNote }) {
+  const lines = [`### ${todayStamp()} — ${text}`];
+  if (detail) lines.push('', detail);
+  if (ownerNote) lines.push('', `_Owner's note: ${ownerNote}_`);
+  return lines.join('\n');
+}
+
+// The one save path both remember entrances use once he presses Save. A plain
+// Memory save is saveFact(); a Core save additionally writes the same
+// understanding as a 'vision' fact (so the Room knows it immediately) and queues
+// a pending core_publications row for the Mac runner to append and push — see
+// scripts/queue-runner.js#publishCoreAdditions. Both writes happen together so a
+// retry can never produce the vision fact without the matching pending row, or a
+// pending row with no fact backing it in the Room in the meantime.
+export function saveRemembered({ sourceType = 'passage', sourceText, convoId = null, ownerNote = null, central = false, destination = 'memory', kind, text, detail } = {}) {
+  if (!text || !String(text).trim()) return { error: 'text_required' };
+  if (destination !== 'core') {
+    const fact = saveFact({ kind, text, detail, sourceConvoId: convoId, sourceNote: sourceType === 'direct' ? 'direct' : 'remember', ownerNote, central });
+    if (fact.error) return fact;
+    return { fact, destination: 'memory' };
+  }
+  const fact = saveFact({ kind: 'vision', text, detail, sourceConvoId: convoId, sourceNote: sourceType === 'direct' ? 'direct' : 'remember', ownerNote, central });
+  if (fact.error) return fact;
+  try {
+    const id = `cpub_${randomUUID()}`;
+    const now = new Date().toISOString();
+    const addition = buildCoreAddition({ text, detail, ownerNote });
+    db.prepare(`INSERT INTO core_publications (id, convo_id, source_type, source_text, owner_note, is_central, addition, fact_id, state, created_at) VALUES (?,?,?,?,?,?,?,?,'pending',?)`)
+      .run(id, convoId, sourceType, sourceText ? String(sourceText).slice(0, 4000) : null, ownerNote, central ? 1 : 0, addition, fact.id, now);
+    return { fact, destination: 'core', publication: { id, state: 'pending' } };
+  } catch (e) {
+    return { error: e.message || 'publication_failed' };
+  }
+}
+
+// Runner-only surface: what still needs appending to the core document, and how
+// the runner reports back once pushed. Automatic harvest() never touches this
+// table — it only ever calls saveFact(), so there is no path from a background
+// extraction to a core-document write.
+export function listPendingCorePublications() {
+  try {
+    return db.prepare(`SELECT id, convo_id, source_type, source_text, owner_note, is_central, addition, fact_id, created_at FROM core_publications WHERE state='pending' ORDER BY created_at ASC`).all();
+  } catch { return []; }
+}
+
+export function acknowledgeCorePublication(id, commitSha) {
+  try {
+    const r = db.prepare(`UPDATE core_publications SET state='published', commit_sha=?, published_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=? AND state='pending'`).run(commitSha || null, id);
+    return { ok: r.changes > 0 };
+  } catch (e) { return { error: e.message || 'ack_failed' }; }
+}
+
+export function corePublicationStatus(id) {
+  try {
+    return db.prepare(`SELECT id, state, commit_sha, published_at FROM core_publications WHERE id=?`).get(id) || null;
+  } catch { return null; }
 }
 
 const _harvestInFlight = new Set();
