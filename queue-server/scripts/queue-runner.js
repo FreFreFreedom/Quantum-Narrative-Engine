@@ -247,6 +247,55 @@ async function notifyEnding(parts) {
   desktopNotify({ head, body });
 }
 
+// ─── New-task + possible-duplicate watch (no LLM, no cost) ────────────────────
+// Same two channels as notifyEnding, one function each deciding the message —
+// mirrors that shape rather than inlining slackNotify/desktopNotify calls below.
+async function notifyNewTask(task) {
+  const title = task.title || `(untitled ${task.id.slice(0, 8)})`;
+  await slackNotify(`🆕 *New task queued* — ${title}\n_<${APP_URL}|open the queue>`);
+  desktopNotify({ head: 'New task queued', body: title });
+}
+
+async function notifyPossibleDuplicate(task, other) {
+  const title = task.title || `(untitled ${task.id.slice(0, 8)})`;
+  const otherTitle = other.title || `(untitled ${other.id.slice(0, 8)})`;
+  const body = `"${title}" looks like it may duplicate "${otherTitle}" (${other.status})`;
+  await slackNotify(`⚠️ *Possible duplicate task* — ${body}\n_<${APP_URL}|open the queue>`);
+  desktopNotify({ head: 'Possible duplicate task', body });
+}
+
+// Cheap text heuristic, no model call — normalized-title containment, or
+// shared-distinctive-word overlap above a threshold.
+const DUPLICATE_STOPWORDS = new Set(['the', 'a', 'an', 'and', 'or', 'to', 'of', 'for', 'in', 'on', 'with',
+  'is', 'it', 'this', 'that', 'be', 'are', 'at', 'as', 'from', 'by']);
+function normalizedTitle(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function distinctiveWords(s) {
+  return normalizedTitle(s).split(' ').filter((w) => w.length > 2 && !DUPLICATE_STOPWORDS.has(w));
+}
+function looksLikeDuplicateTitle(a, b) {
+  const na = normalizedTitle(a), nb = normalizedTitle(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.length > 8 && nb.length > 8 && (na.includes(nb) || nb.includes(na))) return true;
+  const wa = new Set(distinctiveWords(a));
+  const wb = new Set(distinctiveWords(b));
+  if (!wa.size || !wb.size) return false;
+  let shared = 0;
+  for (const w of wa) if (wb.has(w)) shared++;
+  return shared / Math.min(wa.size, wb.size) >= 0.6;
+}
+
+// Ids ever seen, across the runner's whole lifetime — resets on restart, which
+// is fine, a restart is a natural reset point (see plan). Notified-sets are
+// separate from seenTaskIds so a task can be "seen" without yet being flagged,
+// mirroring makeIdleWriteWatch's once-only-per-condition pattern above.
+const seenTaskIds = new Set();
+const notifiedNewTask = new Set();
+const notifiedDuplicate = new Set();
+let sawFirstSnapshot = false;
+
 // Plain words for what happened, split into the two lines a banner shows.
 //
 // WHY THE CAUSE MATTERS MORE THAN THE STATUS. "Blocked" covers two situations that
@@ -422,6 +471,26 @@ async function printSnapshot({ force = false } = {}) {
   const running = prompts.filter((p) => p.status === 'running');
   const ready = prompts.filter((p) => p.status === 'queued');
   const label = (p) => p.title || `(untitled ${p.id.slice(0, 8)})`;
+
+  // New-task + possible-duplicate watch. Skipped on the very first snapshot after
+  // a (re)start so every already-queued task doesn't get flagged as "new".
+  if (sawFirstSnapshot) {
+    const active = prompts.filter((p) => p.status === 'queued' || p.status === 'running');
+    for (const p of prompts) {
+      if (seenTaskIds.has(p.id)) continue;
+      if (!notifiedNewTask.has(p.id)) {
+        notifiedNewTask.add(p.id);
+        notifyNewTask(p).catch(() => {});
+      }
+      const dupe = active.find((other) => other.id !== p.id && looksLikeDuplicateTitle(p.title, other.title));
+      if (dupe && !notifiedDuplicate.has(p.id)) {
+        notifiedDuplicate.add(p.id);
+        notifyPossibleDuplicate(p, dupe).catch(() => {});
+      }
+    }
+  }
+  sawFirstSnapshot = true;
+  for (const p of prompts) seenTaskIds.add(p.id);
   const runningTxt = running.length
     ? `${green('●')} running: ${running.map(label).join(', ')}`
     : dim('○ idle — nothing running');
