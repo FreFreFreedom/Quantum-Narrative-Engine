@@ -1954,6 +1954,8 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
 .ai-policy-row select { font-size:var(--fs-sm); padding:5px 8px; border:1px solid var(--c-border-2); border-radius:var(--r-sm); }
 .ai-health { display:flex; gap:18px; margin-bottom:18px; font-size:var(--fs-sm); color:var(--c-ink-2); }
 .ai-health-item { display:flex; align-items:center; gap:6px; }
+.ai-health a { color:var(--c-ink-2); text-decoration:none; }
+.ai-health a:hover { text-decoration:underline; }
 .ai-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--c-danger); }
 .ai-dot.up { background:var(--c-brand); }
 .ai-cooldown { font-size:var(--fs-xs); color:var(--c-warn); margin-left:2px; }
@@ -2807,10 +2809,11 @@ button:active { transform: translateY(1px) scale(.99); }
         <span class="rail-label">Room</span>
       </button>
     </div>
-    <!-- The foot carries one read-out and two buttons, and nothing else. Pause and the
+    <!-- The foot carries one read-out and three buttons, and nothing else. Pause and the
          queue status line moved to the build panel — the queue's own surface — and the
          server pick moved into Settings, which is where a knob touched twice a year
-         belongs. What is left is the only thing here that is information. -->
+         belongs. What is left is the only thing here that is information, plus the
+         Settings/Look buttons and a link out to OpenCode Go's own usage page. -->
     <div class="rail-foot">
       <div id="usageStripHost" data-src="Side rail → the quota read-out (both Claude accounts + Codex + the paid lane) | fmcns_navigator.html: loadUsage(), usageRailHtml(), startUsagePolling() | backend: GET /api/agent/usage, services/claudeUsage.js"></div>
       <div class="rail-btnrow">
@@ -2822,6 +2825,10 @@ button:active { transform: translateY(1px) scale(.99); }
           <svg class="rail-ic ic" aria-hidden="true"><use href="#ic-look" id="lookIconUse"></use></svg>
           <span class="rail-label">Look</span>
         </button>
+        <a class="rail-item rail-btn" href="https://opencode.ai/go" target="_blank" rel="noopener" title="Your OpenCode Go usage — 5-hour, weekly and monthly bars, on their own page">
+          <svg class="rail-ic" viewBox="0 0 16 16" aria-hidden="true"><use href="#ic-globe"></use></svg>
+          <span class="rail-label">Go usage</span>
+        </a>
       </div>
     </div>
   </div>
@@ -12607,6 +12614,7 @@ function renderAiSettings() {
       <div class="ai-health" style="margin-top:18px;">
         <span class="ai-health-item"><span class="ai-dot${claudeUp ? ' up' : ''}"></span>Claude Code ${claudeUp ? 'reachable' : 'unreachable'} ${cooldownNote('claude-code')}</span>
         <span class="ai-health-item"><span class="ai-dot${opencodeUp ? ' up' : ''}"></span>OpenCode ${opencodeUp ? 'reachable' : 'unreachable'} ${cooldownNote('opencode')}</span>
+        <a class="ai-health-item" href="https://opencode.ai/go" target="_blank" rel="noopener" title="Your OpenCode Go usage — 5-hour, weekly and monthly bars, on their own page">OpenCode Go usage ↗</a>
       </div>
     </div>
 
@@ -14920,7 +14928,7 @@ function renderFlow() {
   let html = '';
 
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
-  const done = qPrompts.filter(p => rel(p) && !Q_ACTIVE_STATUSES.includes(p.status) && flowMatches([p.title, p.prompt]));
+  const done = qPrompts.filter(p => rel(p) && p.status === 'done' && flowMatches([p.title, p.prompt]));
 
   // ── Group umbrella computation ──────────────────────────────────────────────
   // Identify group rows (is_group=1) and their children (parts with parent_prompt_id).
@@ -17076,15 +17084,34 @@ function currentCodexQuota(u) {
   return session || week ? { ...quota, session, week } : null;
 }
 function codexAllowance(u) {
-  const quota = currentCodexQuota(u);
+  return allowanceText(currentCodexQuota(u));
+}
+// One quota line as "5 h: X% · Week: Y% left", from a { session, week } pair of
+// buckets. Dashes when a window is unreadable — never a zero, which would read
+// as "spent".
+function allowanceText(quota) {
   const left = bucket => { const n = uqLeft(bucket); return n == null ? '—' : n + '%'; };
   return `5 h: ${left(quota && quota.session)} · Week: ${left(quota && quota.week)} left`;
+}
+// The quota beside the "Coding tasks" row, for whichever engine is picked there.
+// Each engine has its own pool — Codex a file read on the Mac, each Claude
+// account a separate subscription window — so the figure must follow the pick.
+// OpenCode is the free lane and has no quota to exhaust; "Auto" names no engine
+// yet, so it draws nothing.
+function codingQuotaText(u, provider) {
+  if (provider === 'codex') return codexAllowance(u);
+  if (provider === 'claude-code') return allowanceText(u);
+  if (provider === 'claude-side') return allowanceText(u && u.side);
+  if (provider === 'opencode') return 'Free — no limit';
+  return '';
 }
 function refreshCodingQuota() {
   const el = document.getElementById('aiQueueQuota');
   if (!el) return;
-  el.hidden = document.getElementById('aiQueueProvider')?.value !== 'codex';
-  el.textContent = codexAllowance(lastUsage);
+  const provider = document.getElementById('aiQueueProvider')?.value || '';
+  const text = codingQuotaText(lastUsage, provider);
+  el.hidden = !text;
+  el.textContent = text;
 }
 async function loadUsage() {
   const host = document.getElementById('usageStripHost');

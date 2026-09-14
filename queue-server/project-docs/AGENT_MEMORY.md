@@ -887,3 +887,86 @@ doesn't have to re-search it:
   plain screenplay pages at imsdb.com are just fetchable text, the same way several
   open-source scrapers on GitHub already do it (e.g. `j2kun/imsdb_download_all_scripts`).
   A small direct fetch-and-parse script is the right size, not a paid API.
+
+
+## Raw Room transcripts in the mirror (2026-09-13)
+
+Implemented in the queue worktree; full Git and live verification pending. The existing
+Mac mirror now also reads `/api/convos/transcripts` into
+`queue-server/project-docs/conversations/` (three user messages minimum, raw text alongside
+curated notes). `listOpenConvos(null)` is the internal unlimited export; its default list
+is capped and must not feed pruning. `commitFilesToTrunk` now takes `pruneDirs`, with
+repo-relative keep paths and each source's own non-empty guard. See
+`plans/every-room-conversation-in-the-repo.md` for verification status.
+
+## Analogies beside the Room — Codex design conversation (2026-09-13)
+
+Antoine asked for a structural-analogy recommendation stream inside the living
+Room conversation, comparable in presence to World Ideas but reading relations
+across entities, domains and scales. The conversation, its conclusions and the
+fictional three-state mockup are preserved in `plans/room-analogy-mockups.md`
+(PLANNED, not a green light). Read it before extending the Room with analogy
+recommendations.
+
+## The analogy engine is live in the Room (2026-09-13)
+
+Built from `plans/room-analogy-engine.md`. A sixth Room pane that asks a different
+question from the world-look: not what could be built out of this conversation, but
+where the relation being discussed is already living under other names. Two things
+worth knowing before extending it:
+
+- **It does not search our entities.** Antoine's call: the corpus is tiny next to
+  the world, so the model proposes from its own knowledge and the corpus is not the
+  search space. Nothing here waits on a computed anatomy handle.
+- **The side pane is a conversation, and its storage is a convo.** `subject_type
+  'analogy'`, `subject_id` = the Room convo; each arrival is one message's `meta`.
+  There is no analogies table and `convo_messages.kind` cannot grow a new value —
+  it has a CHECK of ('chat','plan'). Steering and the watermark are two columns on
+  `convos`.
+
+## Natural requests and lasting analogy context (2026-09-13)
+
+Antoine approved the next analogy-engine pass in
+`plans/room-analogy-engine-natural-requests.md`. Remove the horizontal, vertical,
+entanglement, antidote, counterpart and reach filters; natural language becomes
+the steering, with only **as you talk / only when asked** left. Manual asks may
+request any positive number of structural analogies about any subject, delivered
+progressively to the exact count. A durable living-subject record must replace the
+six-message-only context so the engine remains aware of older Room threads and of
+its own side conversation. This is approved implementation work, assigned to
+Claude's second account on Sonnet at medium effort.
+
+## Queue World Ideas are manual (2026-09-13) — DONE
+
+Antoine approved removing automatic World Ideas from queue tasks. Core backend
+code landed inside concurrent commit `905eb78` and audited clean: `createPrompt`
+never calls `startInspiration` (only the explicit `refreshInspiration` path does),
+`advanceQueue` never gates dispatch on `inspire_state`, and `preGen.js`'s sweeps
+(`autoWorldLookSuggestions/Components/Ideas`) never touch `work_prompts`. The
+completion task added `scripts/queue-inspiration-selftest.js`
+(`npm run queue-inspiration:selftest`), fixed the raw-task checkbox label/tooltip
+in both HTML copies (it used to read as if only `--raw` skipped World Ideas — now
+"Run raw — skip planning (fastest)"), and removed four dead `effective*` variables
+left over in `createPrompt` from the merge. The task card's **Look at the world**
+button is the sole generation trigger; a precomputed report explicitly carried
+from a suggestion, seed or other source is still reused. See
+`plans/queue-world-ideas-manual-only.md`.
+
+## The Room analogy engine becomes social-first (2026-09-13)
+
+Antoine used the live pane and found its scientific analogies too hard and too
+far from what he wants. The cause is explicit prompt text — “the stranger the
+domain, the better.” The approved reform is in
+`plans/room-analogy-engine-social-structure.md`: social structures become the
+default across people, families, groups, institutions, cities and nations;
+films, books, myths and imagined societies remain valid social material; an
+explicit request may still ask for biology or any other domain. Strongest
+structural fit comes first and scale diversity only breaks ties. Structure is
+the default form; repair and counterexamples appear when requested.
+
+Antoine chose a separate critic call: generate a wider pool, then independently
+reject keyword matches, generic tropes, reversed relations, invented facts,
+scientific defaults and semantic duplicates before anything is stored. The
+implementation must reconcile completed but unmerged commit `76c301b` (natural
+requests, lasting context, progressive exact counts) with `90d9a63` and
+`3b3e28f` already on `develop` (long asks, forget and regenerate controls).
