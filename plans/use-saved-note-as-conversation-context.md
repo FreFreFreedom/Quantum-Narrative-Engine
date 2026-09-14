@@ -1,6 +1,6 @@
 | Status | Date |
 |---|---|
-| **PLANNED** | 2026-08-25 |
+| **DONE** | 2026-08-25 — confirmed live 2026-09-13: `note` subject type and `GET /api/convos/notes` both exist |
 
 # Use a saved note as conversation context (attach-to-thread)
 
