@@ -16,6 +16,7 @@
 // exception. A word appearing in a sentence is not evidence that the work is hard.
 
 import { generateText } from './ai/text.js';
+import { getClaudeUsage, getSideClaudeUsage } from './claudeUsage.js';
 
 const TIERS = ['fast', 'standard', 'deep'];
 
@@ -128,6 +129,33 @@ export function escalate(tier) {
   const i = TIERS.indexOf(tier);
   if (i === -1) return 'standard';
   return capTier(TIERS[Math.min(i + 1, TIERS.length - 1)], AUTO_MAX_TIER);
+}
+
+// Quota-aware default account picker (Antoine, 2026-09-14): a queued task that
+// doesn't already have an explicit account pinned should start on whichever Claude
+// subscription — main or side — currently has more room, instead of always
+// defaulting to main. A failed/429 read means "unknown" for that account, never
+// "zero quota": treating a throttle as zero would make the picker permanently avoid
+// that account the first time it 429s and never reconsider it. Returns 'main' or
+// 'side', or null when neither read is available (caller falls through to today's
+// existing default).
+function roomLeft(usage) {
+  if (!usage?.subscriptionAvailable) return null;
+  const pct = usage.session?.utilizationPct ?? usage.week?.utilizationPct;
+  return Number.isFinite(pct) ? 100 - pct : null;
+}
+
+export async function pickEngineByQuota() {
+  const [main, side] = await Promise.all([
+    getClaudeUsage().catch(() => null),
+    getSideClaudeUsage().catch(() => null),
+  ]);
+  const mainRoom = roomLeft(main);
+  const sideRoom = roomLeft(side);
+  if (mainRoom == null && sideRoom == null) return null;
+  if (mainRoom == null) return 'side';
+  if (sideRoom == null) return 'main';
+  return sideRoom > mainRoom ? 'side' : 'main';
 }
 
 export { TIERS };
