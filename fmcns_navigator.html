@@ -3673,6 +3673,15 @@ async function boot() {
     document.getElementById('loginGate').style.display = 'block';
   }
 }
+// A token lasts a week; when one ages out mid-session the app used to surface the
+// raw "invalid_token" wherever it happened — most visibly as the answer to a
+// question in a thread. Say what it actually is, and put the login box back.
+window.fmcnsSessionExpired = function () {
+  var gate = document.getElementById('loginGate');
+  var err = document.getElementById('loginErr');
+  if (err) err.textContent = 'Session expired, log in again.';
+  if (gate) gate.style.display = 'block';
+};
 if (TOKEN) boot();
 
 // ---------- Cluster list / search ----------
@@ -21403,7 +21412,11 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       .then(function(d){
         if(d.report && window.refreshWorldPanels) window.refreshWorldPanels(d.report);
         if(d.error && !d.ok){
-          var msg = d.error === 'no_plan'
+          var stale = /invalid_token|missing_token|unauthorized/i.test(String(d.error || ''));
+          if(stale && window.fmcnsSessionExpired) window.fmcnsSessionExpired();
+          var msg = stale
+            ? 'Your session expired — log in again, then ask that once more.'
+            : d.error === 'no_plan'
             ? 'No plan yet — ask for the brief first, then send it to the queue.'
             : (d.message || d.text || 'Something went wrong (' + d.error + ').');
           e.msgs.push({ role: 'assistant', kind: 'chat', text: msg });
