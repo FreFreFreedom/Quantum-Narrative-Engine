@@ -1,6 +1,6 @@
 | Status | Date |
 |---|---|
-| **IMPLEMENTED — deployment pending** | 2026-09-14 |
+| **IMPLEMENTED + deployed** | 2026-09-14 |
 
 # Make Side Talk titles name the actual conversation
 
