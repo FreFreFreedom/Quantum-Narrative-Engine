@@ -850,6 +850,12 @@ function runOnce({ task, model, cwd, branch }) {
     let sessionId = null;
     let errorMessage = '';
     let usage = null;
+    // `part.cost` is a useful usage estimate for every OpenCode model, including
+    // the flat Go subscription. It is only spend, however, for a metered model.
+    // The queue already calls `isSpendFree()` the source of truth when choosing a
+    // lane: treating Go's estimate as billable here contradicted that decision and
+    // stopped every serious Go task at the $0.10 metered-spend cap.
+    const meterCost = !isSpendFree(model);
     let cost = 0;
     let sawRealOutput = false;      // a PARSED model event — never raw stderr
     let lastRealOutputAt = Date.now();
@@ -952,7 +958,7 @@ function runOnce({ task, model, cwd, branch }) {
         if (evt.sessionID && !sessionId) sessionId = evt.sessionID;
         if (evt.type === 'step_finish' && evt.part) {
           const t = evt.part.tokens || {};
-          if (typeof evt.part.cost === 'number') cost += evt.part.cost;
+          if (meterCost && typeof evt.part.cost === 'number') cost += evt.part.cost;
           usage = {
             tokens_in: (t.input || 0) + (t.cache?.read || 0) + (t.cache?.write || 0) || null,
             tokens_out: (t.output || 0) + (t.reasoning || 0) || null,

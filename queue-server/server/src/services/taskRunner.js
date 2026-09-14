@@ -31,7 +31,7 @@ import { readFileSync, writeFileSync, appendFileSync, renameSync, existsSync, un
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { broadcastAll } from '../realtime.js';
-import { getProvider } from './providers/index.js';
+import { getProvider, isSpendFree } from './providers/index.js';
 import * as claudeCode from './providers/claudeCode.js';
 import { defaultOpenCodeModel, listOpenCodeModels, getDefaultAiRouterModel, CURATED_GO_CHAIN, curatedMatch } from './providers/index.js';
 import { mainRepo, createWorktree, gcWorktrees } from './gitOps.js';
@@ -1535,7 +1535,14 @@ export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd
   const task = readTasks().find((t) => t.id === taskId);
   if (!task || task.status !== 'in_progress') return { ok: false, reason: 'not_running' };
   for (const chunk of chunks) if (chunk && chunk.kind) appendStreamChunk(taskId, chunk);
-  if (Number.isFinite(cost_usd) && cost_usd > 0) runCostSoFar.set(taskId, cost_usd);
+  // The local runner reports OpenCode's per-step estimate. Go is a flat
+  // subscription, so that estimate is telemetry rather than a charge. Keep this
+  // server-side guard as well as the runner-side one: an older runner must never
+  // turn a Go task into a false cost-cap failure.
+  const activeModel = model || task.run_model || task.provider_model || task.model;
+  const subscriptionRun = task.provider === 'opencode' && isSpendFree(activeModel);
+  const capCost = subscriptionRun ? 0 : cost_usd;
+  if (Number.isFinite(capCost) && capCost > 0) runCostSoFar.set(taskId, capCost);
   const patch = { heartbeat_at: new Date().toISOString(), run_state: 'working' };
   if (model && model !== task.run_model) patch.run_model = model;
   // Persist the session id as soon as the runner has it (not just at /result) —
@@ -1546,7 +1553,7 @@ export function recordRunnerStream(taskId, { chunks = [], model = null, cost_usd
   const updated = updateTask(taskId, patch);
   if (updated) broadcastTask(updated);
   const cap = costCapUsd();
-  if (Number.isFinite(cost_usd) && cost_usd > cap) return { ok: false, reason: 'cost_cap_exceeded', cap };
+  if (Number.isFinite(capCost) && capCost > cap) return { ok: false, reason: 'cost_cap_exceeded', cap };
   return { ok: true };
 }
 
