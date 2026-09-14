@@ -194,6 +194,7 @@ export async function createPrompt({
   parent_prompt_id = null, strategy = 'single', plan_source = 'auto', context_mode = 'manual',
   convo_id = null, thought_id = null, inspiration = null, is_group = false,
   manual_run = 0, account = null, preview_required = 0, ai_router_tools_enabled = 0,
+  retry_of_prompt_id = null,
 }) {
   const text = String(prompt || '').trim();
   if (!text) throw new Error('prompt is required');
@@ -359,11 +360,11 @@ export async function createPrompt({
   const resolved = useProvider === 'claude-code' ? usePreset : null;
 
   db.prepare(`
-    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group, manual_run, account, preview_required, ai_router_tools_enabled)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO work_prompts (id, title, prompt, status, position, same_context, mode, preset, resolved_preset, suggestion_id, created_by, title_auto, space, component_id, provider, provider_model, agent_key, parent_prompt_id, strategy, strategy_state, raw_prompt, plan_source, plan_pending, convo_id, thought_id, inspire_state, inspire_report_id, inspire_picks_json, task_tier, inspire_error, is_group, manual_run, account, preview_required, ai_router_tools_enabled, retry_of_prompt_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, label, text, isGroup ? 'paused' : initial, priority ? frontPosition(inSpace) : (initial === 'paused' ? frontParkedPosition(inSpace) : nextPosition(inSpace)), chained ? 1 : 0,
     useMode, usePreset, resolved, suggestion_id, created_by, given ? 0 : 1, inSpace, component_id, useProvider, useModel, useAgentKey, useParent, strategy, strategy === 'single' ? 'idle' : 'running',
-    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, useAccount, preview_required ? 1 : 0, ai_router_tools_enabled ? 1 : 0);
+    (willDraft || plan_source === 'own') ? text : null, (isGroup ? 'skip' : plan_source), finalPlanPending, convo_id, thought_id, finalInspireState, preInsp ? preInsp.report.id : null, preInsp ? JSON.stringify(preInsp.applied) : '[]', tier, preSkipNote, isGroup ? 1 : 0, manual_run ? 1 : 0, useAccount, preview_required ? 1 : 0, ai_router_tools_enabled ? 1 : 0, retry_of_prompt_id);
 
   // Every idea that arrived with the card gets its own durable row, so the audit
   // can ask later whether it actually got built. inspire_picks_json above is the
@@ -395,6 +396,50 @@ export async function createPrompt({
   // The lazy route (POST /prompts/:id/summarize) still fills them in on first
   // open and caches them on the row, so nothing is lost except the double spend.
   return getPrompt(id);
+}
+
+// A stopped task is evidence: it must remain readable in Done even when its work
+// is tried again. Retrying therefore creates a linked continuation instead of
+// changing the original row back to queued (the old behaviour that made stopped
+// tasks appear to disappear). The continuation deliberately starts fresh: an
+// interrupted runner session or worktree may be the reason the first attempt
+// stopped, while the original thread remains available for context in the card.
+export async function retryPrompt(id, { created_by = null } = {}) {
+  const original = getPrompt(id);
+  if (!original) return null;
+  if (!['blocked', 'cancelled', 'done'].includes(original.status)) {
+    const error = new Error('Only a finished or stopped task can be continued.');
+    error.code = 'not_finished';
+    throw error;
+  }
+  const existing = db.prepare(`${SELECT()} AND retry_of_prompt_id=? AND status IN ('queued','running','paused') ORDER BY created_at DESC LIMIT 1`)
+    .get(original.id);
+  if (existing) return { prompt: getPrompt(existing.id), existing: true };
+
+  const prompt = await createPrompt({
+    title: original.title,
+    prompt: original.raw_prompt || original.prompt,
+    mode: original.mode,
+    preset: original.preset,
+    created_by: created_by || original.created_by,
+    status: 'queued',
+    space: original.space,
+    component_id: original.component_id,
+    provider: original.provider,
+    provider_model: original.provider_model,
+    agent_key: original.agent_key,
+    strategy: original.strategy || 'single',
+    // The visible brief is already an owned plan. Never make a background planner
+    // rewrite the task just because it is a continuation.
+    plan_source: 'own',
+    context_mode: 'manual',
+    manual_run: original.manual_run,
+    account: original.account,
+    preview_required: original.preview_required,
+    ai_router_tools_enabled: original.ai_router_tools_enabled,
+    retry_of_prompt_id: original.id,
+  });
+  return { prompt, existing: false };
 }
 
 // ─── Group umbrella ──────────────────────────────────────────────────────────

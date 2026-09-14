@@ -1636,6 +1636,7 @@ mark.se-jumped { background:var(--c-amber, #f3c969); color:inherit; border-radiu
       padding:var(--sp-2) var(--sp-3); background:var(--c-surface);
       box-shadow:var(--sh-xs); margin-bottom:var(--sp-1); cursor:pointer;
       transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease), background-color var(--t-fast) var(--ease), opacity var(--t-med) var(--ease); }
+.tv-body.flow-refresh .uc { animation:none !important; }
 .uc:hover { border-color:var(--c-border-3); background-image:linear-gradient(var(--c-hover-wash), var(--c-hover-wash)); }
 .uc.is-sel { border-color:var(--c-ink-4); box-shadow:0 0 0 1px var(--c-ink-4); }
 /* A card waiting on you (violet) or moving (green) says so with its border — the
@@ -13120,7 +13121,7 @@ async function qLoad() {
     modeBadgeEl.classList.toggle('on', askingCount > 0);
   }
   if (modeBtnEl) modeBtnEl.classList.toggle('warm', askingCount > 0);
-  if (coreView === 'flow' && changed) renderFlow();
+  if (coreView === 'flow' && changed) scheduleFlowRender();
   if (queuePanelOpen && changed) renderQueuePanel();
   if (qSelected) {
     const fresh = qPrompts.find(p => p.id === qSelected.id);
@@ -13214,15 +13215,13 @@ async function qAction(action, id, btn) {
         await qLoad();
         break;
       case 'start':
-      case 'rerun':
         await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
         await apiWrite('/api/travaux/prompts/advance', 'POST');
         await qLoad();
         break;
+      case 'rerun':
       case 'rerun-fresh':
-        await apiWrite(`/api/travaux/prompts/${id}/clear-context`, 'POST');
-        await apiWrite(`/api/travaux/prompts/${id}`, 'PATCH', { status: 'queued' });
-        await apiWrite('/api/travaux/prompts/advance', 'POST');
+        await apiWrite(`/api/travaux/prompts/${id}/retry`, 'POST', {});
         await qLoad();
         break;
       case 'delete':
@@ -13603,7 +13602,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
   else if (p.plan_pending) { primary = ubtnHtml('Start it now', 'skip-plan', p.id, 'is-primary', 'Skip drafting the plan and start this task now, on the raw text you submitted'); primaryAct = 'skip-plan'; }
   else if (st && st.btn) { primary = ubtnStage(st.btn, 'is-primary', p.id); primaryAct = st.btn.act || 'stage'; }
   else if (shipReady) { primary = ubtnHtml('Send it live', 'ship-now', p.id, 'is-primary', 'Send this work live now'); primaryAct = 'ship-now'; }
-  else if (canRerun) { primary = ubtnHtml('Run again', 'rerun', p.id, '', 'Run it again, carrying on from where it left off'); primaryAct = 'rerun'; }
+  else if (canRerun) { primary = ubtnHtml('Continue task', 'rerun', p.id, '', 'Keep this stopped attempt visible and queue a linked continuation'); primaryAct = 'rerun'; }
 
   // Gone from here entirely, not moved into the menu: the 💬 chat symbol (opening
   // the card already shows the conversation), the ▲▼ arrows as symbols (they are
@@ -13615,8 +13614,7 @@ function flowQueueRow(p, reorderable, busy, ahead) {
     ['queued', 'paused'].includes(p.status) ? { label: 'First in line', act: 'first', id: p.id } : null,
     reorderable ? { label: 'Move up', act: 'up', id: p.id } : null,
     reorderable ? { label: 'Move down', act: 'down', id: p.id } : null,
-    canRerun && primaryAct !== 'rerun' ? { label: 'Run again', act: 'rerun', id: p.id } : null,
-    canRerun ? { label: 'Run again fresh', act: 'rerun-fresh', id: p.id } : null,
+    canRerun && primaryAct !== 'rerun' ? { label: 'Continue task', act: 'rerun', id: p.id } : null,
     isLive ? { label: 'Put it back', act: 'ship-undo', id: p.id, danger: true } : null,
     { label: 'Delete', act: 'delete', id: p.id, danger: true },
   ];
@@ -14933,9 +14931,10 @@ function qDragMove(id, overId) {
   qPersistReorder(qRebuildFullOrder(next));
 }
 
-function renderFlow() {
+function renderFlow({ background = false } = {}) {
   const host = document.getElementById('tvBodyFlow');
   if (!host) return;
+  const restoreScroll = background ? host.scrollTop : null;
   // Never rebuild the list while the human is typing (inline title or inside the
   // expanded task card — reply box, seed fields) or mid-drag — the data below
   // stays current (polls update it) and renders again right after.
@@ -14964,7 +14963,9 @@ function renderFlow() {
   let html = '';
 
   const rel = p => !flowComponentFilter || p.component_id === flowComponentFilter;
-  const done = qPrompts.filter(p => rel(p) && p.status === 'done' && flowMatches([p.title, p.prompt]));
+  // Done is the record of endings, including attempts the runner had to stop.
+  // A continuation gets its own queue row, so this attempt never vanishes.
+  const done = qPrompts.filter(p => rel(p) && ['done', 'blocked', 'cancelled'].includes(p.status) && flowMatches([p.title, p.prompt]));
 
   // ── Group umbrella computation ──────────────────────────────────────────────
   // Identify group rows (is_group=1) and their children (parts with parent_prompt_id).
@@ -15105,7 +15106,7 @@ function renderFlow() {
       html += `<div class="flow-section"><div class="flow-sec-head flow-donehead" id="flowDoneToggle"><span class="flow-sec-title">✓ Done</span><span class="flow-sec-count">${doneCount}</span>${flowType === 'done' ? '' : `<span class="flow-done-chev">${showDoneList ? '▾' : '▸'}</span>`}</div>${showDoneList ? doneGroupRows + doneRows.map(p => flowQueueRow(p, false)).join('') : ''}</div>`;
     }
     if (flowType === 'done' && !doneCount) {
-      html += '<div class="empty">Nothing finished yet — done tasks land here.</div>';
+      html += '<div class="empty">Nothing completed or stopped yet.</div>';
     }
   }
 
@@ -15172,6 +15173,7 @@ function renderFlow() {
     html = '<div class="empty">' + guide + '</div>';
   }
   host.innerHTML = html;
+  if (restoreScroll !== null) host.scrollTop = restoreScroll;
 
   // Row wiring
   if (showNextUp) { wireNextUp(host); wireStudioSlots(host, () => { loadNextUp(true); renderFlow(); }); }
@@ -15806,8 +15808,8 @@ function qRenderDetail(p) {
     qResultLineHtml(p),
     p.blocked_why ? `<div class="q-result${p.status === 'blocked' ? ' blocked' : ''}">${qEsc(p.blocked_why)}</div>` : '',
   ].filter(Boolean).join('');
-  const outcomeHtml = outcomeBits ? `
-    <div class="arch-field"><div class="arch-field-label">What happened</div><div class="arch-field-body">${outcomeBits}</div></div>` : '';
+  const outcomeHtml = (outcomeBits || stopped) ? `
+    <div class="arch-field"><div class="arch-field-label">What happened</div><div class="arch-field-body">${outcomeBits}${stopped ? `<div class="q-row" style="margin-top:8px;"><button class="ctrlbtn" data-action="retry-detail">Continue as a new attempt</button></div>` : ''}</div></div>` : '';
   // A frozen preparation step is invisible from the status pill alone — it just
   // reads as "still working". This says it plainly, once, at the top, and works
   // for the plan-draft case too (the world-look panel below only exists for
@@ -15913,6 +15915,12 @@ function qRenderDetail(p) {
       await apiWrite(`/api/travaux/prompts/${p.id}/skip-plan`, 'POST', {});
       await qLoad();
     } catch (err) { b.disabled = false; b.textContent = 'Skip plan / Start now'; notify('Error: ' + err.message, { kind: 'error' }); }
+  });
+  host.querySelector('[data-action="retry-detail"]')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget;
+    b.disabled = true; b.textContent = 'Queueing…';
+    try { await apiWrite(`/api/travaux/prompts/${p.id}/retry`, 'POST', {}); await qLoad(); }
+    catch (err) { b.disabled = false; b.textContent = 'Continue as a new attempt'; notify('Error: ' + err.message, { kind: 'error' }); }
   });
   if (!p.summary) qSummarize(p);
   qWireInspire(p);
@@ -16679,7 +16687,13 @@ let flowRenderScheduled = false;
 function scheduleFlowRender() {
   if (flowRenderScheduled) return;
   flowRenderScheduled = true;
-  setTimeout(() => { flowRenderScheduled = false; renderFlow(); }, 150);
+  setTimeout(() => {
+    flowRenderScheduled = false;
+    const host = document.getElementById('tvBodyFlow');
+    host?.classList.add('flow-refresh');
+    renderFlow({ background: true });
+    requestAnimationFrame(() => host?.classList.remove('flow-refresh'));
+  }, 150);
 }
 // One silent lookup per item per session: after a reload, the panel and the
 // row markers come back without re-searching. If the server is already running
@@ -17222,27 +17236,27 @@ async function loadSuggestions() {
   tvSuggestions.forEach(s => { flowWorldSync('suggestion', s.id); flowWorldPoll('suggestion', s.id); });
   // Which of these have been talked about already — one request for the whole
   // list, so the closed line on each card can say so without asking per card.
-  studioIndexLoad('suggestion', tvSuggestions.map(s => s.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) renderFlow(); });
+  studioIndexLoad('suggestion', tvSuggestions.map(s => s.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) scheduleFlowRender(); });
   // Re-open the suggestion detail after a refresh (accept/dismiss/regenerate) if
   // it is still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'suggestion') {
     const fresh = tvSuggestions.find(x => x.id === flowSideSel.id);
     if (fresh) { if (!qTypingGuard()) renderSuggestionDetail(fresh); } else flowSideSel = null;
   }
-  if (coreView === 'flow') renderFlow();
+  if (coreView === 'flow') scheduleFlowRender();
 }
 
 // ── Idées ──────────────────────────────────────────────────────────────────────
 async function loadIdeas() {
   try { tvIdeas = (await api('/api/travaux/ideas')).ideas || []; } catch (e) { tvIdeas = []; }
-  studioIndexLoad('seed', tvIdeas.map(i => i.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) renderFlow(); });
+  studioIndexLoad('seed', tvIdeas.map(i => i.id)).then(() => { if (coreView === 'flow' && !qTypingGuard()) scheduleFlowRender(); });
   // Re-open the seed detail after a refresh (promote/plant/delete/add) if it is
   // still in the list — the expanded card survives the Flow re-render.
   if (flowSideSel && flowSideSel.kind === 'seed') {
     const fresh = tvIdeas.find(x => x.id === flowSideSel.id);
     if (fresh) { if (!qTypingGuard()) renderSeedDetail(fresh); } else flowSideSel = null;
   }
-  if (coreView === 'flow') renderFlow();
+  if (coreView === 'flow') scheduleFlowRender();
 }
 
 // Put an idea on screen with its conversation open: the Seeds list, that card

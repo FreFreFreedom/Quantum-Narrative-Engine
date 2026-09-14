@@ -77,10 +77,12 @@ function initSchema(db) {
       updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       started_at TEXT,
       completed_at TEXT,
+      retry_of_prompt_id TEXT REFERENCES work_prompts(id),
       deleted_at TEXT
     )
   `);
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_status ON work_prompts(status, position)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_retry_of ON work_prompts(retry_of_prompt_id)`); } catch {}
   // component_id is the join between a task and the piece of architecture it
   // belongs to. It had no index despite being read on every ranked-next-steps
   // call, every component history view and every "never worked on" signal.
@@ -198,6 +200,12 @@ function initSchema(db) {
   // dispatched; NULL = no retry context pending.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_worktree_path TEXT`); } catch {}
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_branch TEXT`); } catch {}
+  // A retry is a new attempt, never a status rewrite of the stopped attempt. This
+  // link keeps both cards visible and lets the Flow show their relationship.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN retry_of_prompt_id TEXT REFERENCES work_prompts(id)`); } catch {}
+  // This sits after the additive migration so it is also created on databases
+  // that predate retry_of_prompt_id (the earlier index attempt is harmless there).
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_work_prompts_retry_of ON work_prompts(retry_of_prompt_id)`); } catch {}
   // Task tier (free-only plan): 'mini' (tiny tweaks — instant mini-plan, no
   // world-look, fastest free model), 'standard' (normal plans, fast free model),
   // 'deep' (big builds — full plan on the strongest free model). Judged by a

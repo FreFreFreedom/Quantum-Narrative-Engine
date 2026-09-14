@@ -34,6 +34,7 @@
     "peers:selftest": "node scripts/peers-selftest.js",
     "traffic:selftest": "node scripts/traffic-selftest.js",
     "queue:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-model-selftest.js",
+    "retry:selftest": "node scripts/retry-history-selftest.js",
     "opencode-events:selftest": "node scripts/opencode-events-selftest.js",
     "queue-inspiration:selftest": "JWT_SECRET=selftest ADMIN_PASSWORD=selftest node scripts/queue-inspiration-selftest.js",
     "gaps:selftest": "node scripts/taggaps-selftest.js",

@@ -141,7 +141,8 @@ console.log('\n— Purpose is only relabelled on a stopped card —');
 check('the label is conditional', /\$\{stopped \? 'What it was meant to do' : 'Purpose'\}/.test(served), true);
 check('stopped means blocked or cancelled only',
   /const stopped = p\.status === 'blocked' \|\| p\.status === 'cancelled';/.test(served), true);
-check('an empty outcome draws no heading', /const outcomeHtml = outcomeBits \?/.test(served), true);
+check('a stopped task still exposes Continue when it has no report',
+  /const outcomeHtml = \(outcomeBits \|\| stopped\) \?/.test(served) && /data-action="retry-detail"/.test(served), true);
 
 console.log(failed ? `\n${failed} check(s) failed\n` : '\nall checks passed\n');
 process.exit(failed ? 1 : 0);

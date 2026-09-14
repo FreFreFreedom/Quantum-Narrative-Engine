@@ -233,6 +233,19 @@ export function queueRoutes() {
     res.json(row);
   });
 
+  // Retry means create a linked continuation. The stopped attempt stays in Done
+  // with its report; the new row is the only one that can move through the queue.
+  router.post('/prompts/:id/retry', asyncHandler(async (req, res) => {
+    try {
+      const out = await queue.retryPrompt(req.params.id, { created_by: req.user?.sub || 'antoine' });
+      if (!out) return res.status(404).json({ error: 'not_found' });
+      res.status(out.existing ? 200 : 201).json(out);
+      if (!out.existing) queue.advanceQueue();
+    } catch (e) {
+      res.status(e.code === 'not_finished' ? 400 : 500).json({ error: e.message });
+    }
+  }));
+
   // Create a group umbrella (a plan filed in parts). Thin wrapper delegating to
   // promptQueue.createGroup — same auth/shape as POST /prompts, is_group handled
   // inside the service. The umbrella is parked and never dispatched on its own.
