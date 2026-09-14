@@ -1378,6 +1378,10 @@ body.qp-open .notice-host { right:var(--qp-w, 420px); }
    2026-09-13: "i dont even know where to type". */
 .se-slim .se-head-title, .se-slim .se-lanewrap, .se-slim .se-more { display:none; }
 .se-slim .se-input { flex:1 1 auto; min-width:0; }
+/* Side talks (plan "fix the Aside / side-talk flow"): the model picker is the one
+   .se-lanewrap piece worth keeping even in the slim layout — he wants to change a
+   side talk's model the same way he can on the main chat. */
+.se-slim.se-lane-visible .se-lanewrap { display:flex; }
 .se-remember-shelf { font:inherit; text-transform:none; letter-spacing:normal; background:none;
   border:1px solid var(--c-border); border-radius:999px; padding:3px 10px; margin-left:6px;
   color:var(--c-ink-4); cursor:pointer; }
@@ -10914,18 +10918,26 @@ function roomSideOpen(id) {
 }
 
 // mode: 'empty' (a fresh aside) or 'fork' (branch the main thread itself into
-// the pane). `starter` carries the from-quotes door's first message + the
-// picked passages straight through, same shape sendMessage already accepts.
-async function roomSideCreate({ mode = 'empty', throughMessageId = null, starter = null } = {}) {
+// the pane). `prefill`, when given, is put straight into the new aside's own
+// message box and focused — never sent on his behalf; he writes the first
+// line and sends it himself, when he's ready.
+async function roomSideCreate({ mode = 'empty', throughMessageId = null, prefill = null } = {}) {
   if (!roomSel) return null;
   const body = { mode };
   if (throughMessageId) body.throughMessageId = throughMessageId;
-  if (starter) { body.text = starter.text; if (starter.quotes) body.quotes = starter.quotes; if (starter.body) body.body = starter.body; }
   try {
     const out = await apiWrite('/api/convos/' + encodeURIComponent(roomSel) + '/sides', 'POST', body);
     if (!out || !out.convo) return null;
     await loadRoomSides();
     roomSideOpen(out.convo.id);
+    if (prefill && window.studioLend && window.studioLend.entry) {
+      const entry = window.studioLend.entry('side', out.convo.subject_id);
+      entry.draft = prefill;
+      entry.draftForce = true;
+      renderRoomSide();
+      const box = document.querySelector('#roomSideEmbed .se-input');
+      if (box) box.focus();
+    }
     return out.convo;
   } catch (e) { return null; }
 }
@@ -10995,7 +11007,7 @@ function renderRoomSide() {
     const embedHost = document.getElementById('roomSideEmbed');
     if (embedHost) {
       window.studioEmbedOpen('side', open.subject_id);
-      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true });
+      window.studioEmbed(embedHost, { type: 'side', subjectId: open.subject_id, title: open.title || '', slim: true, showLane: true });
     }
   }
 }
@@ -21831,7 +21843,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
       // Nothing here holds state worth preserving, so it is simply redrawn — which
       // also picks up a count that arrived from the batch lookup after the card did.
       host.setAttribute('data-se', stamp);
-      host.innerHTML = '<div class="se-wrap' + (opts && opts.slim ? ' se-slim' : '') + '">' + teaserHtml(e) + '</div>';
+      host.innerHTML = '<div class="se-wrap' + (opts && opts.slim ? ' se-slim' : '') + (opts && opts.showLane ? ' se-lane-visible' : '') + '">' + teaserHtml(e) + '</div>';
       host.querySelector('.se-teaser').onclick = function(ev){
         ev.stopPropagation();
         e.open = true;
@@ -21844,7 +21856,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
     if(fresh){
       host.setAttribute('data-se', stamp);
       host.innerHTML = ''
-        + '<div class="se-wrap se-open' + (opts && opts.slim ? ' se-slim' : '') + '">'
+        + '<div class="se-wrap se-open' + (opts && opts.slim ? ' se-slim' : '') + (opts && opts.showLane ? ' se-lane-visible' : '') + '">'
         +   '<div class="se-head">'
         +     '<span class="se-head-title">Talk it over</span>'
         +     '<span class="se-count"></span>'
@@ -22167,8 +22179,7 @@ body.qp-open .studio-overlay { right: var(--qp-w, 420px); }
             if(!e.quotes) e.quotes = [];
             e.quotes.push({ text: passage, msgId: msgId || null });
             var quotes = e.quotes.slice();
-            var question = 'What should I understand this as?';
-            roomSideCreate({ starter: { text: withQuote({ quotes: quotes }, question), body: question, quotes: quotes } });
+            roomSideCreate({ prefill: withQuote({ quotes: quotes }, '') });
             e.quotes = [];
             saveDraft(e);
             repaint();
