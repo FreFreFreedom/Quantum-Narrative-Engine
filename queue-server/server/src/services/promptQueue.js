@@ -28,7 +28,7 @@ import {
   updatePendingAgentTask, cancelPendingAgentTask, sendSteeringMessage, stopTask,
   MAX_CONCURRENT_WRITERS, OOM_KILL_MARKER,
 } from './taskRunner.js';
-import { resolvePreset, escalate, capTier } from './modelPolicy.js';
+import { resolvePreset, escalate, capTier, pickEngineByQuota } from './modelPolicy.js';
 import { resolveParent } from './contextPolicy.js';
 import { defaultOpenCodeModel, getDefaultAiRouterModel, modelContextWindow, pickTaskModel, pickFastFreeModel } from './providers/index.js';
 import { listAgents, pickAgentFor } from './agents.js';
@@ -230,7 +230,17 @@ export async function createPrompt({
   // A per-task account (the card's own dropdown) always wins; with nothing passed,
   // the AI Settings "Coding tasks" default decides which subscription a new task starts on.
   const queueDefaultAccount = queueDefaults.provider === 'claude-side' ? 'side' : 'main';
-  const useAccount = ['main', 'side'].includes(account) ? account : queueDefaultAccount;
+  // With no explicit account and no explicit AI-Settings pin to the side account,
+  // start the task on whichever Claude subscription currently has more quota room
+  // left, rather than always defaulting to main (Antoine, 2026-09-14 — he had to
+  // notice and switch a whole backlog of tasks off a dead/exhausted account by hand).
+  // An unavailable quota read (both accounts unknown) falls through to the existing
+  // default unchanged.
+  let useAccount = ['main', 'side'].includes(account) ? account : null;
+  if (!useAccount && useProvider === 'claude-code' && queueDefaults.provider !== 'claude-side') {
+    useAccount = await pickEngineByQuota().catch(() => null);
+  }
+  useAccount = useAccount || queueDefaultAccount;
   // Preset → Claude model (fast=haiku, standard=sonnet, deep=opus). 'auto' resolves
   // from the tier heuristic instead of asking a model to judge it: opus is reserved
   // for genuinely deep work, so an ordinary task cannot quietly cost 5× what it
