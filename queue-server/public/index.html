@@ -3112,6 +3112,12 @@ button:active { transform: translateY(1px) scale(.99); }
                   </select>
                 </label>
               </div>
+              <div class="q-row" id="qAiRouterToolsRow" style="display:none;">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Experimental: lets this free model read, write and edit real files for this task, instead of only answering a question. Off by default.">
+                  <input type="checkbox" id="qAiRouterTools">
+                  Allow file-editing tools (experimental)
+                </label>
+              </div>
 <div class="q-row">
                 <label style="display:flex;align-items:center;gap:4px;font-size:12px;" title="Starts at once — no plan draft. For small tasks. Look at the world stays manual either way.">
                   <input type="checkbox" id="qRunRaw">
@@ -9300,6 +9306,8 @@ function initCore() {
       b.onclick = () => { document.querySelectorAll('#qPlaceSeg button').forEach(x => x.classList.toggle('active', x === b)); };
     });
     document.getElementById('qProvider').onchange = qProviderUi;
+    const arTools = document.getElementById('qAiRouterTools');
+    if (arTools) arTools.onchange = qProviderUi;
   }
   switchCoreView(coreView); // lays out the shell and lazy-inits the arch view (default)
   loadProviders(); // model picker + provider liveness for the New-prompt form
@@ -12076,11 +12084,25 @@ function qModelIsMetered(m, providerVal) {
   if (providerVal !== 'opencode') return false;
   return !(m.free || String(m.id).startsWith('opencode-go/'));
 }
+// The cheap-paid lane Antoine explicitly chose (~$5/mo, manual pick only, plan
+// cheap-paid-opencode-models.md): selectable even though metered, unlike every
+// other paid OpenCode model (opencode/gpt-5, opencode/claude-*, deepseek-v4-pro —
+// the Zen-hosted ones, which stay disabled). Matched by provider prefix, not by
+// name, since opencode.json is what actually wires these in.
+const CHEAP_PAID_PREFIXES = ['deepseek/', 'qwen/', 'zhipu/', 'moonshot/'];
+function qModelIsCheapPaid(m) {
+  return CHEAP_PAID_PREFIXES.some(p => String(m.id).startsWith(p));
+}
 function qModelOptionHtml(m, providerVal, selectedId) {
   const metered = qModelIsMetered(m, providerVal);
-  const label = `${m.free ? '🆓 ' : ''}${m.name || m.id}${metered ? ' 💳 (bills per use)' : ''}`;
+  const cheapPaid = metered && qModelIsCheapPaid(m);
+  const priceLabel = m.cost && (m.cost.input || m.cost.output)
+    ? ` 💰 ~$${m.cost.input ?? m.cost.output}/1M tok`
+    : ' 💰 paid';
+  const label = `${m.free ? '🆓 ' : ''}${m.name || m.id}${cheapPaid ? priceLabel : (metered ? ' 💳 (bills per use)' : '')}`;
   const sel = m.id === selectedId ? ' selected' : '';
-  return `<option value="${m.id}"${sel}${metered ? ' disabled' : ''}>${label}</option>`;
+  const disabled = metered && !cheapPaid;
+  return `<option value="${m.id}"${sel}${disabled ? ' disabled' : ''}>${label}</option>`;
 }
 
 // Agent roster (GET /api/travaux/agents): who can take a task. Each agent runs in
@@ -12156,8 +12178,18 @@ function qProviderUi() {
       modelSel.innerHTML = aiQueueModelOptions(modelSel.value, val);
     }
   }
+  // The file-tools checkbox only exists at all once the server's master switch
+  // (ALLOW_AI_ROUTER_TOOLS) is on — see plan free-model-file-tools.md. Hidden and
+  // force-unchecked for every other provider, so switching away from ai-router
+  // can never leave a stale opt-in armed on a later task.
+  const toolsRow = document.getElementById('qAiRouterToolsRow');
+  const toolsCb = document.getElementById('qAiRouterTools');
+  const toolsOfferable = val === 'ai-router' && !!qProviders.aiRouter?.toolsAllowed;
+  if (toolsRow) toolsRow.style.display = toolsOfferable ? '' : 'none';
+  if (!toolsOfferable && toolsCb) toolsCb.checked = false;
+  const toolsOn = toolsOfferable && toolsCb && toolsCb.checked;
   if (modeSel) {
-    if (val === 'ai-router') {
+    if (val === 'ai-router' && !toolsOn) {
       if (!modeSel.disabled) modeSel.dataset.prevMode = modeSel.value;
       modeSel.value = 'question';
       modeSel.disabled = true;
@@ -12326,13 +12358,16 @@ function aiQueueModelOptions(selected, provider) {
       + AI_QUEUE_CLAUDE_MODELS.map(([v, label]) =>
         `<option value="${v}"${v === selected ? ' selected' : ''}>${label}</option>`).join('');
   }
-  const models = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/'));
+  const models = (qProviders.opencode?.models || []).filter(m => m.free || String(m.id).startsWith('opencode-go/') || qModelIsCheapPaid(m));
   const auto = `<option value="">Auto</option>`;
   // An empty list is not the same as "nothing chosen", and used to look identical to it.
   if (!models.length) return auto + `<option value="" disabled>(no OpenCode models found)</option>`;
-  const opts = models.map(m =>
-    `<option value="${m.id}"${m.id === selected ? ' selected' : ''}>`
-    + `${m.free ? '🆓 ' : ''}${m.name && m.name !== m.id ? m.name + ' — ' : ''}${m.id}</option>`).join('');
+  const opts = models.map(m => {
+    const priceLabel = qModelIsCheapPaid(m) && m.cost && (m.cost.input || m.cost.output)
+      ? ` 💰 ~$${m.cost.input ?? m.cost.output}/1M tok` : '';
+    return `<option value="${m.id}"${m.id === selected ? ' selected' : ''}>`
+    + `${m.free ? '🆓 ' : ''}${m.name && m.name !== m.id ? m.name + ' — ' : ''}${m.id}${priceLabel}</option>`;
+  }).join('');
   // A stored model that is no longer offered keeps its place, so opening this panel
   // can never quietly replace a choice it cannot display.
   const missing = selected && !models.some(m => m.id === selected)
@@ -15608,6 +15643,7 @@ async function qAddPrompt(asPaused) {
   const manualRun = document.getElementById('qManualRun').checked;
   const isOpen = provider === 'opencode';
   const isAiRouter = provider === 'ai-router';
+  const aiRouterToolsOn = isAiRouter && !!document.getElementById('qAiRouterTools')?.checked;
   const requiresModelPick = isOpen || isAiRouter; // free lanes have no tier fallback — Claude's Auto falls back to the tier
   const usesModelPicker = requiresModelPick || aiQueueIsClaude(provider);
   const modelSel = document.getElementById('qOpenModel');
@@ -15620,8 +15656,10 @@ async function qAddPrompt(asPaused) {
     await apiWrite('/api/travaux/prompts', 'POST', {
       prompt: promptText,
       title: document.getElementById('qPromptTitle').value.trim(),
-      // AI Router providers have no file-editing tools — always question-mode.
-      mode: isAiRouter ? 'question' : document.getElementById('qMode').value,
+      // AI Router providers have no file-editing tools by default — question-mode
+      // only, unless the "Allow file-editing tools" opt-in is checked (qMode is
+      // already forced/unlocked to match by qProviderUi, so just read it).
+      mode: document.getElementById('qMode').value,
       preset: requiresModelPick ? 'standard' : document.getElementById('qPreset').value,
       // Context (continue an earlier task's session, or start fresh) is decided
       // automatically server-side (contextPolicy.js) instead of a manual picker.
@@ -15640,11 +15678,13 @@ async function qAddPrompt(asPaused) {
       // "I'll run this myself in OpenCode" — excludes this task from the
       // automated runner's advanceQueue() selection.
       manual_run: manualRun ? 1 : 0,
+      ai_router_tools_enabled: aiRouterToolsOn ? 1 : 0,
     });
     document.getElementById('qPromptText').value = '';
     document.getElementById('qPromptTitle').value = '';
     document.getElementById('qRunRaw').checked = false;
     document.getElementById('qManualRun').checked = false;
+    { const arCb = document.getElementById('qAiRouterTools'); if (arCb) arCb.checked = false; }
     // Restore provider/model visibility if manual run was checked
     {
       const prov = document.getElementById('qProvider');

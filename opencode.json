@@ -36,5 +36,32 @@
       "* .env*": "deny",
       "*/.env*": "deny"
     }
+  },
+  "provider": {
+    "deepseek": {
+      "options": { "baseURL": "https://api.deepseek.com/v1", "apiKey": "{env:DEEPSEEK_API_KEY}" },
+      "models": {
+        "deepseek-chat": { "name": "DeepSeek Chat (V3)", "cost": { "input": 0.28, "output": 0.42 } },
+        "deepseek-coder": { "name": "DeepSeek Coder", "cost": { "input": 0.28, "output": 0.42 } }
+      }
+    },
+    "qwen": {
+      "options": { "baseURL": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", "apiKey": "{env:QWEN_API_KEY}" },
+      "models": {
+        "qwen3-coder-plus": { "name": "Qwen3 Coder Plus", "cost": { "input": 1, "output": 5 } }
+      }
+    },
+    "zhipu": {
+      "options": { "baseURL": "https://open.bigmodel.cn/api/paas/v4", "apiKey": "{env:ZHIPU_PAID_API_KEY}" },
+      "models": {
+        "glm-4.6": { "name": "GLM-4.6", "cost": { "input": 0.6, "output": 2.2 } }
+      }
+    },
+    "moonshot": {
+      "options": { "baseURL": "https://api.moonshot.ai/v1", "apiKey": "{env:MOONSHOT_API_KEY}" },
+      "models": {
+        "kimi-k2-turbo-preview": { "name": "Kimi K2 Turbo", "cost": { "input": 0.6, "output": 2.5 } }
+      }
+    }
   }
 }

@@ -12,6 +12,7 @@
 
 import { isExhausted, pickChain, recordExhaustion } from './ai/router.js';
 import { chatCompletion as freeChatCompletion, detectLimit as freeDetectLimit } from './providers/openaiCompat.js';
+import { getProviderCatalog } from './ai/catalog.js';
 import * as opencode from './providers/opencode.js';
 import { listOpenCodeModels } from './providers/index.js';
 
@@ -157,4 +158,70 @@ export async function runToolLoop({ model, system, messages, tools = [], dispatc
 
   if (!finalText && hasTools) return { error: 'too_many_tool_rounds' };
   return { text: finalText, via: usedFallbackVia || 'anthropic' };
+}
+
+// Some free providers' free tier is tight enough (as low as 5 requests/minute)
+// that the chat loop's default round count could burn a big share of a task's
+// daily allowance on one task. Provider-aware cap: never let maxRounds exceed
+// what the tightest of that provider's own per-minute/per-hour limits would
+// comfortably allow.
+function safeMaxRoundsFor(providerId, requested) {
+  const cat = getProviderCatalog(providerId);
+  const rpm = cat?.limits?.rpm;
+  if (!Number.isFinite(rpm)) return requested;
+  return Math.max(2, Math.min(requested, rpm));
+}
+
+// A free-provider-only, single-model tool loop for taskRunner.js's ai-router
+// implement-mode tasks (plan free-model-file-tools.md) — same dispatch/tools
+// contract as runToolLoop above, but pinned to one caller-chosen provider/model:
+// no Anthropic branch at all (this path must never touch ANTHROPIC_API_KEY),
+// and no automatic provider-hopping mid-task, so a task that started on Groq
+// stays on Groq rather than finishing on a different provider's tool-call
+// convention. Streams each round to onEvent() instead of only returning final
+// text, so the caller can write a live transcript.
+export async function runFreeProviderToolLoop({ providerId, model, system, messages, tools = [],
+                                                 dispatch = null, maxRounds = 6, maxTokens = 1500,
+                                                 toolResultCap = 8000, onEvent = () => {} }) {
+  const hasTools = Array.isArray(tools) && tools.length > 0;
+  const rounds = safeMaxRoundsFor(providerId, maxRounds);
+  let finalText = '';
+
+  for (let round = 0; round < rounds; round++) {
+    const out = await freeChatCompletion({ providerId, model, system, messages, tools: hasTools ? tools : undefined, maxTokens });
+    if (out.error) {
+      if (out.limit || freeDetectLimit(out.message)) {
+        recordExhaustion({ providerId, model, detectedBy: 'queue', errText: out.message || '' });
+      }
+      onEvent({ type: 'error', error: { message: out.message || out.error } });
+      return { error: out.error, message: out.message };
+    }
+    if (out.usage) {
+      onEvent({ type: 'usage', usage: { prompt_tokens: out.usage.prompt_tokens, completion_tokens: out.usage.completion_tokens, cost: null } });
+    }
+    const content = out.content || [];
+    const toolUses = content.filter((b) => b.type === 'tool_use');
+    const textBlocks = content.filter((b) => b.type === 'text');
+    for (const b of textBlocks) if (b.text) onEvent({ type: 'text', text: b.text });
+
+    if (!hasTools || !toolUses.length) {
+      finalText = textBlocks.map((b) => b.text).join('\n');
+      break;
+    }
+    for (const tu of toolUses) onEvent({ type: 'tool_use', tool: { name: tu.name, input: tu.input } });
+
+    messages.push({ role: 'assistant', content });
+    const toolResults = toolUses.map((tu) => {
+      let result;
+      try { result = dispatch ? dispatch(tu.name, tu.input) : { error: 'no dispatch provided for tool call' }; } catch (e) { result = { error: e.message }; }
+      return { type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify(result ?? null).slice(0, toolResultCap) };
+    });
+    messages.push({ role: 'user', content: toolResults });
+  }
+
+  if (!finalText && hasTools) {
+    onEvent({ type: 'error', error: { message: 'too_many_tool_rounds' } });
+    return { error: 'too_many_tool_rounds' };
+  }
+  return { text: finalText };
 }

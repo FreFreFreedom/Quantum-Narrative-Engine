@@ -76,6 +76,10 @@ export function queueRoutes() {
         available: aiRouterModels.length > 0,
         models: aiRouterModels,
         error: aiRouterError,
+        // Master switch for file-editing tools on these providers (plan
+        // free-model-file-tools.md) — off by default, env-only, so the composer's
+        // per-task checkbox doesn't even exist until this is deliberately turned on.
+        toolsAllowed: process.env.ALLOW_AI_ROUTER_TOOLS === '1',
       },
       google: {
         available: !!process.env.GOOGLE_AI_STUDIO_API_KEY,

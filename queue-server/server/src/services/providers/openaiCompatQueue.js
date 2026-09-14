@@ -82,18 +82,43 @@ export async function runToolless({ prompt, model, providerId, timeoutMs = 60_00
   return baseRunToolless({ prompt, model, providerId, timeoutMs, maxTokens });
 }
 
-// Execute a task via AI Router API — writes SSE events to logPath, exit code to codePath
-export async function executeAiRouterTask({ taskId, promptPath, logPath, codePath, model, providerModel, question, tools, maxTokens = 8000 }) {
+// Execute a task via AI Router API — writes SSE events to logPath, exit code to codePath.
+// `filesRoot`: the task's worktree path — only set for implement-mode tasks that
+// opted in to file tools (plan free-model-file-tools.md). When set, this runs the
+// free-provider tool loop (real file edits) instead of a single toolless call;
+// question-mode tasks (filesRoot unset) are untouched, exactly as before.
+export async function executeAiRouterTask({ taskId, promptPath, logPath, codePath, model, providerModel, question, tools, maxTokens = 8000, filesRoot = null }) {
   const { readFileSync, writeFileSync, appendFileSync } = await import('node:fs');
-  const { postChatCompletionsStream } = await import('./openaiCompat.js');
 
   const prompt = readFileSync(promptPath, 'utf8');
   const providerId = providerModel?.split('/')[0] || model?.split('/')[0];
   const modelId = providerModel?.split('/')[1] || model?.split('/')[1] || model;
 
-  const messages = [{ role: 'user', content: prompt }];
-
   let exitCode = 1;
+
+  if (!question && filesRoot) {
+    const { runFreeProviderToolLoop } = await import('../anthropicLoop.js');
+    const { fileToolDefs, makeDispatcher } = await import('../fileTools.js');
+    const messages = [{ role: 'user', content: prompt }];
+    try {
+      const out = await runFreeProviderToolLoop({
+        providerId, model: modelId, messages,
+        system: 'You are editing files in a real working folder to complete the task described in the user message. Use the file tools to read, write, edit and list files as needed. When the task is done, reply with a short summary and no more tool calls.',
+        tools: fileToolDefs(),
+        dispatch: makeDispatcher(filesRoot),
+        onEvent: (evt) => { try { appendFileSync(logPath, JSON.stringify(evt) + '\n'); } catch {} },
+      });
+      exitCode = out.error ? 1 : 0;
+    } catch (e) {
+      try { appendFileSync(logPath, JSON.stringify({ type: 'error', error: { message: e.message } }) + '\n'); } catch {}
+    } finally {
+      writeFileSync(codePath, String(exitCode));
+    }
+    return;
+  }
+
+  const { postChatCompletionsStream } = await import('./openaiCompat.js');
+  const messages = [{ role: 'user', content: prompt }];
   let sessionId = null;
 
   try {

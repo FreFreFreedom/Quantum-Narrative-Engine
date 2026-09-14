@@ -751,6 +751,12 @@ function initSchema(db) {
   // Link from a queue task back to the Mind thought that produced it (Accept →
   // paused Flow task, Part 4), mirroring suggestion_id.
   try { db.exec(`ALTER TABLE work_prompts ADD COLUMN thought_id TEXT`); } catch {}
+
+  // Per-task opt-in (plan free-model-file-tools.md): lets an AI Router provider
+  // (Groq, Cerebras, etc. — free, chat-only by default) run in implement mode with
+  // real file-editing tools. Off by default, and only honored at all when the
+  // ALLOW_AI_ROUTER_TOOLS env master switch is also on — two gates, both required.
+  try { db.exec(`ALTER TABLE work_prompts ADD COLUMN ai_router_tools_enabled INTEGER NOT NULL DEFAULT 0`); } catch {}
 }
 
 // ─── QNE ontology tables (shared with the task queue's DB, per user decision) ──

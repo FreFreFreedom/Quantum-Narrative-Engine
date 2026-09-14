@@ -177,6 +177,14 @@ export async function getDefaultAiRouterModel() {
 //
 // Unknown id + no live list = refused. Erring towards "don't run it" is right here:
 // the cost of a wrong no is one task falling back to a free model.
+//
+// This is also what keeps the cheap-paid lane (deepseek/*, qwen/*, zhipu/*,
+// moonshot/* — added to opencode.json's `provider` block, see plan
+// cheap-paid-opencode-models.md) out of every automatic chain: those ids are
+// excluded because opencode.json gives them a nonzero cost, not because of a
+// name check here. If a future edit ever zeroes out one of their cost fields,
+// this function would start treating it as free — that's the one thing that
+// could silently break this guarantee.
 export function isSpendFree(modelId, liveModels) {
   const id = String(modelId || '').trim();
   if (!id) return false;

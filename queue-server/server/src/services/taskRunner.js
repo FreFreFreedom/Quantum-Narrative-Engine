@@ -1110,6 +1110,10 @@ function runDetachedExecution(taskId, prompt, { model = null, effort = null, too
     prov.executeAiRouterTask({
       taskId, promptPath: PROMPT, logPath: LOG, codePath: CODE,
       model, providerModel, question,
+      // Only set for an implement-mode task that opted in to file tools (both
+      // gates checked in executeTask below) — filesRoot is what turns this into
+      // a real file-editing run instead of a toolless chat call.
+      filesRoot: (!question && cwd) ? cwd : null,
     }).catch((e) => {
       // executeAiRouterTask already writes CODE in its own try/catch/finally —
       // this only guards against a throw before that block runs at all.
@@ -1252,11 +1256,15 @@ async function executeTask(next, { lane = 'exec' } = {}) {
    }
    if (provider === 'ai-router') {
      // AI Router providers are plain chat completions with no file-editing tool
-     // loop (no read/write/bash — unlike the Claude Code / OpenCode CLIs). They
-     // can only answer, not edit the repo, so implement-mode tasks must not run
-     // here — they'd "succeed" with a text answer and no code actually written.
-     if (next.mode !== 'question') {
-       failEarly(next, '(AI Router providers only support question-mode tasks — no file-editing tools)');
+     // loop by default (no read/write/bash — unlike the Claude Code / OpenCode
+     // CLIs). Implement-mode tasks are refused UNLESS both opt-in gates are on:
+     // the env-level master switch (ALLOW_AI_ROUTER_TOOLS=1, off by default —
+     // this is new, unproven code editing a real worktree) and the per-task
+     // checkbox (ai_router_tools_enabled). Without either, a task would
+     // "succeed" with a text answer and no code actually written.
+     const toolsAllowed = process.env.ALLOW_AI_ROUTER_TOOLS === '1' && !!next.ai_router_tools_enabled;
+     if (next.mode !== 'question' && !toolsAllowed) {
+       failEarly(next, '(AI Router providers only support question-mode tasks unless file-editing tools are enabled — see AI Settings)');
        return;
      }
      // AI Router models are identified by "provider-id/model-id" (e.g.
